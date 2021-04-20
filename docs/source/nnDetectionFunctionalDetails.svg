@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1198px" height="948px" viewBox="0 0 1198 948" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group 33</title>
+    <defs>
+        <path d="M0,0 L1198,0 L1198,47 L0,47 L0,0 Z" id="path-1"></path>
+        <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="1198" height="47" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-27">
+            <g id="Group-19">
+                <g id="Group-15" transform="translate(0.000000, 65.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="102"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#BEEEB8" x="1.5" y="1.5" width="184" height="102"></rect>
+                    <text id="Resampling-Strategy" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="44.4775391" y="18">Resampling</tspan>
+                        <tspan x="58.4829102" y="40">Strategy</tspan>
+                    </text>
+                    <text id="Image:-We-use-the-sa" font-family="Helvetica-Bold, Helvetica" font-size="18" font-weight="bold" fill="#000000">
+                        <tspan x="196" y="27">Image</tspan>
+                        <tspan x="248.022461" y="27" font-family="Helvetica" font-weight="normal">: We use the same image resampling </tspan>
+                        <tspan x="196" y="49" font-family="Helvetica" font-weight="normal">procedure as nnU-Net</tspan>
+                        <tspan x="196" y="71">Annotation</tspan>
+                        <tspan x="290.974609" y="71" font-family="Helvetica" font-weight="normal">: Annotations are resampled with </tspan>
+                        <tspan x="196" y="93" font-family="Helvetica" font-weight="normal">nearest neighbor</tspan>
+                    </text>
+                </g>
+                <g id="Group-15">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="65"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#FFFFFF" x="1.5" y="1.5" width="184" height="65"></rect>
+                    <text id="Parameter" font-family="Helvetica-Bold, Helvetica" font-size="18" font-weight="bold" fill="#000000">
+                        <tspan x="49.9711914" y="18">Parameter</tspan>
+                    </text>
+                    <text id="Description" font-family="Helvetica-Bold, Helvetica" font-size="18" font-weight="bold" fill="#000000">
+                        <tspan x="340.491211" y="18">Description</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(0.000000, 167.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="214"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#BEEEB8" x="1.5" y="1.5" width="184" height="214"></rect>
+                    <text id="Network-Topology-&amp;-F" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="12.1206055" y="18">Network Topology &amp;</tspan>
+                        <tspan x="36.9804688" y="40">FPN Levels &amp;</tspan>
+                        <tspan x="48.9775391" y="62">Patch Size</tspan>
+                    </text>
+                    <text id="The-anisotric-axis-o" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="27">The anisotric axis of the patch size is initialized </tspan>
+                        <tspan x="195" y="49">with the median shape of the anisotropic axis of </tspan>
+                        <tspan x="195" y="71">the dataset. The isotropic axes are initialized </tspan>
+                        <tspan x="195" y="93">with the minimum size of the isotropic axes of </tspan>
+                        <tspan x="195" y="115">the dataset. </tspan>
+                        <tspan x="195" y="137">The patch size is decreased while adapting the </tspan>
+                        <tspan x="195" y="159">network architecture and feature pyramid </tspan>
+                        <tspan x="195" y="181">network levels until the memory constrains are </tspan>
+                        <tspan x="195" y="203">fulfilled. The batch size is fixed to four.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(0.000000, 381.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="121"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#BEEEB8" x="1.5" y="1.5" width="184" height="121"></rect>
+                    <text id="Anchor-Optimization" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="63.4838867" y="18">Anchor</tspan>
+                        <tspan x="41.9814453" y="40">Optimization</tspan>
+                    </text>
+                    <text id="The-anchor-sizes-are" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="25">The anchor sizes are determined by maximising </tspan>
+                        <tspan x="195" y="47">the IoU of the best fitting anchor on the given </tspan>
+                        <tspan x="195" y="69">object sizes extracted from the training set. </tspan>
+                        <tspan x="195" y="91">Optimization of three anchor sizes per axis is </tspan>
+                        <tspan x="195" y="113">performed via differential evolution.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(0.000000, 502.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="168"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8EEDC" x="1.5" y="1.5" width="184" height="168"></rect>
+                    <text id="Low-Resolution-Model" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="30.4633789" y="18">Low Resolution</tspan>
+                        <tspan x="67.4873047" y="40">Model</tspan>
+                    </text>
+                    <text id="The-low-resolution-c" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="24">The low resolution configuration will be triggered </tspan>
+                        <tspan x="195" y="46">if the 99.5 percentile of object sizes along any</tspan>
+                        <tspan x="195" y="68">axes exceeds the patch size of the full </tspan>
+                        <tspan x="195" y="90">resolution model. If the low resolution </tspan>
+                        <tspan x="195" y="112">configuration is triggered, the target spacing </tspan>
+                        <tspan x="195" y="134">along each axes will be increased by two to </tspan>
+                        <tspan x="195" y="156">incorporate more contextual information.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(605.000000, 263.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="275"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8C6EE" x="1.5" y="1.5" width="184" height="275"></rect>
+                    <text id="Optimizer-&amp;-Learning" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="44.9916992" y="18">Optimizer &amp;</tspan>
+                        <tspan x="35.4599609" y="40">Learning Rate</tspan>
+                    </text>
+                    <text id="All-configurations-a" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="24">All configurations are trained for 60 epochs with </tspan>
+                        <tspan x="195" y="46">2500 mini batches per epoch and half of the </tspan>
+                        <tspan x="195" y="68">batch is forced to contain at least one object. </tspan>
+                        <tspan x="195" y="90">SGD with Nesterov momentum 0.9 is used.</tspan>
+                        <tspan x="195" y="112">At the beginning of the training the learning rate </tspan>
+                        <tspan x="195" y="134">is linearly ramped up from 1e-6 to 1e-2 over the </tspan>
+                        <tspan x="195" y="156">first 4000 iterations. Poly learning rate schedule </tspan>
+                        <tspan x="195" y="178">is used until epoch 50. The last 10 epochs are </tspan>
+                        <tspan x="195" y="200">trained with a cyclic learning rate fluctuating </tspan>
+                        <tspan x="195" y="222">between 1e-3 and 1e-6 during every epoch.</tspan>
+                        <tspan x="195" y="244">We snapshot the model weights after each </tspan>
+                        <tspan x="195" y="266">epoch for Stochastic Weight Averaging.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(0.000000, 671.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="121"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8C6EE" x="1.5" y="1.5" width="184" height="121"></rect>
+                    <text id="Architecture-Templat" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="43.980957" y="18">Architecture</tspan>
+                        <tspan x="55.4814453" y="40">Template</tspan>
+                    </text>
+                    <text id="Retina-U-Net-with-an" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="25">Retina U-Net with an encoder which consists of </tspan>
+                        <tspan x="195" y="47">plain convolutions, ReLU and instance </tspan>
+                        <tspan x="195" y="69">normalization blocks. The detection heads used </tspan>
+                        <tspan x="195" y="91">for anchor classification and regression consist </tspan>
+                        <tspan x="195" y="113">of three convolutions with group norm.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(605.000000, 0.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="263"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8C6EE" x="1.5" y="1.5" width="184" height="263"></rect>
+                    <text id="Loss-Functions" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="31.4697266" y="18">Loss Functions</tspan>
+                    </text>
+                    <text id="Detection-Branch:-To" font-family="Helvetica-Bold, Helvetica" font-size="18" font-weight="bold" fill="#000000">
+                        <tspan x="195" y="30">Detection Branch</tspan>
+                        <tspan x="344.027344" y="30" font-family="Helvetica" font-weight="normal">: To balance positive and </tspan>
+                        <tspan x="195" y="52" font-family="Helvetica" font-weight="normal">negative anchors, hard negative mining is used </tspan>
+                        <tspan x="195" y="74" font-family="Helvetica" font-weight="normal">while selecting 1/3 positive and 2/3 negative </tspan>
+                        <tspan x="195" y="96" font-family="Helvetica" font-weight="normal">anchors. The classification branch is trained with </tspan>
+                        <tspan x="195" y="118" font-family="Helvetica" font-weight="normal">the Binary Cross-Entropy loss and the </tspan>
+                        <tspan x="195" y="140" font-family="Helvetica" font-weight="normal">Generalized IoU Loss is used for anchor </tspan>
+                        <tspan x="195" y="162" font-family="Helvetica" font-weight="normal">regression.</tspan>
+                        <tspan x="195" y="184">Segmentation Branch</tspan>
+                        <tspan x="381.029297" y="184" font-family="Helvetica" font-weight="normal">: The segmentation </tspan>
+                        <tspan x="195" y="206" font-family="Helvetica" font-weight="normal">branch is trained with the Dice and Cross-</tspan>
+                        <tspan x="195" y="228" font-family="Helvetica" font-weight="normal">Entropy loss to distinguish foreground and </tspan>
+                        <tspan x="195" y="250" font-family="Helvetica" font-weight="normal">background pixels.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(605.000000, 538.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="72"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8C6EE" x="1.5" y="1.5" width="184" height="72"></rect>
+                    <text id="Data-Augmentation" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="15.4428711" y="18">Data Augmentation</tspan>
+                    </text>
+                    <text id="We-use-the-same-augm" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="22">We use the same augmentation strategy as </tspan>
+                        <tspan x="195" y="44">nnU-Net without simulating low resolution </tspan>
+                        <tspan x="195" y="66">samples.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(0.000000, 792.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="99"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill="#B8C6EE" x="1.5" y="1.5" width="184" height="99"></rect>
+                    <text id="Anchor-Matching" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="24.4648438" y="18">Anchor Matching</tspan>
+                    </text>
+                    <text id="Adaptive-Training-Sa" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="24">Adaptive Training Sample Selection (ATSS) is </tspan>
+                        <tspan x="195" y="46">used to match anchors and ground truth boxes. </tspan>
+                        <tspan x="195" y="68">The center of the anchor boxes do not need to </tspan>
+                        <tspan x="195" y="90">lie within the ground truth box.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(605.000000, 610.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="187"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill-opacity="0.45" fill="#EE7400" x="1.5" y="1.5" width="184" height="187"></rect>
+                    <text id="Empirical-Parameter" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="10.4770508" y="18">Empirical Parameter</tspan>
+                        <tspan x="41.9814453" y="40">Optimization</tspan>
+                    </text>
+                    <text id="Parameters-which-are" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="23">Parameters which are only required during the </tspan>
+                        <tspan x="195" y="45">inference procedure are empirically optimized </tspan>
+                        <tspan x="195" y="67">by evaluating the performance on the validation </tspan>
+                        <tspan x="195" y="89">set. This includes: the IoU threshold required for </tspan>
+                        <tspan x="195" y="111">the NMS of the model, the IoU threshold </tspan>
+                        <tspan x="195" y="133">required to perform WBC, a minimum probability </tspan>
+                        <tspan x="195" y="155">for predictions of the model, a minimum object </tspan>
+                        <tspan x="195" y="177">size.</tspan>
+                    </text>
+                </g>
+                <g id="Group-15" transform="translate(605.000000, 797.000000)">
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" x="185.5" y="1.5" width="406" height="94"></rect>
+                    <rect id="Rectangle" stroke="#979797" stroke-width="3" fill-opacity="0.45" fill="#EE7400" x="1.5" y="1.5" width="184" height="94"></rect>
+                    <text id="Model-Selection" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="67.4873047" y="18">Model</tspan>
+                        <tspan x="54.9760742" y="40">Selection</tspan>
+                    </text>
+                    <text id="If-the-low-resolutio" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="195" y="30">If the low resolution model was triggered, only </tspan>
+                        <tspan x="195" y="52">the best model as determined by the five fold </tspan>
+                        <tspan x="195" y="74">cross-validation will be used for the test set.</tspan>
+                    </text>
+                </g>
+            </g>
+            <g id="Group-25" transform="translate(0.000000, 901.000000)">
+                <use id="Rectangle-2" stroke="#585757" mask="url(#mask-2)" stroke-width="8" stroke-dasharray="3" xlink:href="#path-1"></use>
+                <g id="Group-23" transform="translate(110.000000, 13.000000)" fill="#000000">
+                    <path id="Line-8" d="M57,4 L71,11 L57,18 L57,12 L-1,12 L-1,10 L57,10 L57,4 Z" fill-rule="nonzero"></path>
+                    <text id="Symbolizes-a-depende" font-family="Helvetica" font-size="18" font-weight="normal">
+                        <tspan x="82" y="18">Symbolizes a dependency</tspan>
+                    </text>
+                </g>
+                <g id="Group-22" transform="translate(720.000000, 13.000000)" fill="#000000">
+                    <path id="Line-10" d="M59.3686857,3.88816322 L60.2402612,4.37842446 L72.2402612,11.1284245 L73.7897289,12 L72.2402612,12.8715755 L60.2402612,19.6215755 L59.3686857,20.1118368 L58.3881632,18.3686857 L59.2597388,17.8784245 L69.71,12 L59.2597388,6.12157554 L58.3881632,5.6313143 L59.3686857,3.88816322 Z M8,11 L8,13 L-1,13 L-1,11 L8,11 Z M22,11 L22,13 L13,13 L13,11 L22,11 Z M36,11 L36,13 L27,13 L27,11 L36,11 Z M50,11 L50,13 L41,13 L41,11 L50,11 Z M64,11 L64,13 L55,13 L55,11 L64,11 Z" fill-rule="nonzero"></path>
+                    <text id="Denotes-sequential-p" font-family="Helvetica" font-size="18" font-weight="normal">
+                        <tspan x="85" y="18">Denotes sequential procedures</tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

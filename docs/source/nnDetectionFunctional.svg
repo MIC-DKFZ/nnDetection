@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1186px" height="522px" viewBox="0 0 1186 522" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group 32</title>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="190" height="439"></rect>
+        <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="190" height="439" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+        <rect id="path-3" x="0" y="0" width="257" height="183" rx="11"></rect>
+        <mask id="mask-4" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="257" height="183" fill="white">
+            <use xlink:href="#path-3"></use>
+        </mask>
+        <rect id="path-5" x="0" y="0" width="257" height="183" rx="11"></rect>
+        <mask id="mask-6" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="257" height="183" fill="white">
+            <use xlink:href="#path-5"></use>
+        </mask>
+        <polygon id="path-7" points="0 0 565 0 565 439 278.49536 439 0 439"></polygon>
+        <mask id="mask-8" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="565" height="439" fill="white">
+            <use xlink:href="#path-7"></use>
+        </mask>
+        <rect id="path-9" x="0" y="0" width="193" height="440"></rect>
+        <mask id="mask-10" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="193" height="440" fill="white">
+            <use xlink:href="#path-9"></use>
+        </mask>
+        <rect id="path-11" x="0" y="0" width="202" height="439"></rect>
+        <mask id="mask-12" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="202" height="439" fill="white">
+            <use xlink:href="#path-11"></use>
+        </mask>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-28">
+            <g id="Group-3" transform="translate(0.000000, 83.000000)">
+                <g id="Group-6" transform="translate(11.000000, 12.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#D0B8EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Distribution-of-Spac" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="28.9760742" y="27">Distribution of</tspan>
+                        <tspan x="46.9760742" y="49">Spacings</tspan>
+                    </text>
+                </g>
+                <g id="Group-7" transform="translate(11.000000, 100.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#D0B8EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Median-Shape" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="25.9570312" y="37">Median Shape</tspan>
+                    </text>
+                </g>
+                <g id="Group" transform="translate(11.000000, 188.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#D0B8EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Intensity-Distributi" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="50.4829102" y="27">Intensity</tspan>
+                        <tspan x="38.9824219" y="49">Distribution</tspan>
+                    </text>
+                </g>
+                <g id="Group-8" transform="translate(11.000000, 276.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#D0B8EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Image-Modality" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="58.9863281" y="27">Image</tspan>
+                        <tspan x="50.4873047" y="49">Modality</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(11.000000, 364.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#D0B8EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Object-Sizes" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="33.4804688" y="36">Object Sizes</tspan>
+                    </text>
+                </g>
+                <use id="Rectangle" stroke="#A261F4" mask="url(#mask-2)" stroke-width="6" stroke-dasharray="3" xlink:href="#path-1"></use>
+            </g>
+            <g id="Group-18" transform="translate(202.000000, 83.000000)">
+                <g id="Group-16" transform="translate(368.000000, 14.000000)">
+                    <g id="Group-4">
+                        <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                            <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                        </g>
+                        <text id="Resampling-Strategy" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                            <tspan x="36.4775391" y="27">Resampling</tspan>
+                            <tspan x="50.4829102" y="49">Strategy</tspan>
+                        </text>
+                    </g>
+                    <g id="Group-4" transform="translate(0.000000, 74.000000)">
+                        <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                            <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                        </g>
+                        <text id="Intensity-Normalizat" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                            <tspan x="50.4829102" y="27">Intensity</tspan>
+                            <tspan x="28.9804688" y="49">Normalization</tspan>
+                        </text>
+                    </g>
+                    <g id="Group-4" transform="translate(0.000000, 148.000000)">
+                        <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                            <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                        </g>
+                        <text id="Image-Target-Spacing" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                            <tspan x="31.6303711" y="27">Image Target</tspan>
+                            <tspan x="51.4760742" y="49">Spacing</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="Group-17" transform="translate(17.000000, 19.000000)">
+                    <g id="Group-13" transform="translate(0.000000, 112.000000)">
+                        <rect id="Rectangle" stroke="#000000" fill="#B8EEDC" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                        <text id="Low-Resolution-Model" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                            <tspan x="22.4633789" y="27">Low Resolution</tspan>
+                            <tspan x="59.4873047" y="49">Model</tspan>
+                        </text>
+                    </g>
+                    <g id="Group-4">
+                        <g id="Rectangle-3" fill="#B8EEDC" stroke="#000000">
+                            <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                        </g>
+                        <text id="Full-Resolution-Mode" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                            <tspan x="24.4716797" y="27">Full Resolution</tspan>
+                            <tspan x="59.4873047" y="49">Model</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="Group-12" transform="translate(301.000000, 245.000000)">
+                    <use id="Rectangle" stroke="#000000" mask="url(#mask-4)" stroke-width="6" stroke-dasharray="5" xlink:href="#path-3"></use>
+                    <g id="Group-5" transform="translate(10.000000, 9.000000)">
+                        <g id="Group-4" transform="translate(34.000000, 0.000000)">
+                            <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                                <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                            </g>
+                            <text id="Anchor-Sizes" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                                <tspan x="30.9755859" y="38">Anchor Sizes</tspan>
+                            </text>
+                        </g>
+                        <g id="Group-4" transform="translate(33.000000, 103.000000)">
+                            <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                                <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                            </g>
+                            <text id="IoU-Maximisation" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                                <tspan x="14.9794922" y="38">IoU Maximisation</tspan>
+                            </text>
+                        </g>
+                        <path id="Line" d="M202.454243,39.0865269 L203.183858,39.7703849 C225.379833,60.5743626 236.5,76.4121768 236.5,87.5 C236.5,97.058331 228.248793,110.118623 211.785975,126.852127 L211.252069,127.393192 L205.397,133.079 L215.017314,130.536861 L215.984101,130.281279 L216.495266,132.214853 L215.528479,132.470436 L202.217588,135.989341 C201.499591,136.179152 200.846999,135.551516 200.977527,134.845354 L201.003069,134.738933 L204.907999,121.53613 L205.191619,120.577193 L207.109492,121.144433 L206.825872,122.10337 L204.003,131.645 L209.844568,125.972433 C226.299827,109.345709 234.5,96.4672512 234.5,87.5 C234.5,77.2651261 223.836676,61.9756191 202.466985,41.8412308 L201.816142,41.2296151 L201.086527,40.545757 L202.454243,39.0865269 Z" fill="#000000" fill-rule="nonzero"></path>
+                        <path id="Line" d="M0.45424297,32.0865269 L1.18385805,32.7703849 C23.3798326,53.5743626 34.5,69.4121768 34.5,80.5 C34.5,90.058331 26.2487926,103.118623 9.78597538,119.852127 L9.25206852,120.393192 L3.397,126.079 L13.0173136,123.536861 L13.9841009,123.281279 L14.4952661,125.214853 L13.5284789,125.470436 L0.217588223,128.989341 L-1.50114461,129.44371 L-0.996931108,127.738933 L2.90799856,114.53613 L3.19161865,113.577193 L5.1094921,114.144433 L4.825872,115.10337 L2.003,124.645 L7.84456847,118.972433 C24.2998272,102.345709 32.5,89.4672512 32.5,80.5 C32.5,70.2651261 21.8366761,54.9756191 0.4669855,34.8412308 L-0.183858051,34.2296151 L-0.913473132,33.545757 L0.45424297,32.0865269 Z" fill="#000000" fill-rule="nonzero"></path>
+                    </g>
+                </g>
+                <g id="Group-11" transform="translate(9.000000, 245.000000)">
+                    <use id="Rectangle" stroke="#000000" mask="url(#mask-6)" stroke-width="6" stroke-dasharray="5" xlink:href="#path-5"></use>
+                    <g id="Group-10" transform="translate(11.500000, 9.000000)">
+                        <g id="Group-4" transform="translate(33.500000, 0.000000)">
+                            <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                                <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                            </g>
+                            <text id="Patch-Size" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                                <tspan x="40.9775391" y="38">Patch Size</tspan>
+                            </text>
+                        </g>
+                        <g id="Group-4" transform="translate(32.500000, 103.000000)">
+                            <g id="Rectangle-3" fill="#BEEEB8" stroke="#000000">
+                                <rect id="Rectangle" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                            </g>
+                            <text id="Network-Topology-&amp;-F" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                                <tspan x="12.6240234" y="27">Network Topology</tspan>
+                                <tspan x="28.9804688" y="49">&amp; FPN Levels</tspan>
+                            </text>
+                        </g>
+                        <path id="Line" d="M201.954243,39.0865269 L202.683858,39.7703849 C224.879833,60.5743626 236,76.4121768 236,87.5 C236,97.058331 227.748793,110.118623 211.285975,126.852127 L210.752069,127.393192 L204.897,133.079 L214.517314,130.536861 L215.484101,130.281279 L215.995266,132.214853 L215.028479,132.470436 L201.717588,135.989341 C200.999591,136.179152 200.346999,135.551516 200.477527,134.845354 L200.503069,134.738933 L204.407999,121.53613 L204.691619,120.577193 L206.609492,121.144433 L206.325872,122.10337 L203.503,131.645 L209.344568,125.972433 C225.799827,109.345709 234,96.4672512 234,87.5 C234,77.2651261 223.336676,61.9756191 201.966985,41.8412308 L201.316142,41.2296151 L200.586527,40.545757 L201.954243,39.0865269 Z" fill="#000000" fill-rule="nonzero"></path>
+                        <path id="Line" d="M-0.0457570301,32.0865269 L0.683858051,32.7703849 C22.8798326,53.5743626 34,69.4121768 34,80.5 C34,90.058331 25.7487926,103.118623 9.28597538,119.852127 L8.75206852,120.393192 L2.897,126.079 L12.5173136,123.536861 L13.4841009,123.281279 L13.9952661,125.214853 L13.0284789,125.470436 L-0.282411777,128.989341 L-2.00114461,129.44371 L-1.49693111,127.738933 L2.40799856,114.53613 L2.69161865,113.577193 L4.6094921,114.144433 L4.325872,115.10337 L1.503,124.645 L7.34456847,118.972433 C23.7998272,102.345709 32,89.4672512 32,80.5 C32,70.2651261 21.3366761,54.9756191 -0.0330145001,34.8412308 L-0.683858051,34.2296151 L-1.41347313,33.545757 L-0.0457570301,32.0865269 Z" fill="#000000" fill-rule="nonzero"></path>
+                    </g>
+                </g>
+                <use id="Rectangle" stroke="#64BF58" mask="url(#mask-8)" stroke-width="8" stroke-dasharray="2" xlink:href="#path-7"></use>
+            </g>
+            <g id="Group-21" transform="translate(993.000000, 82.000000)">
+                <g id="Group-14" transform="translate(13.000000, 16.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill-opacity="0.449260578" fill="#EE7400" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Model-NMS-IoU-Thresh" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="36.9873047" y="29">Model NMS</tspan>
+                        <tspan x="27.6313477" y="51">IoU Threshold</tspan>
+                    </text>
+                </g>
+                <g id="Group-14" transform="translate(13.000000, 188.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill-opacity="0.449260578" fill="#EE7400" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Model-Min-Probabilit" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="42.4848633" y="29">Model Min</tspan>
+                        <tspan x="41.9794922" y="51">Probability</tspan>
+                    </text>
+                </g>
+                <g id="Group-14" transform="translate(13.000000, 102.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill-opacity="0.449260578" fill="#EE7400" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Ensemble-WBC-IoU-Thr" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="20.4814453" y="29">Ensemble WBC</tspan>
+                        <tspan x="27.6313477" y="51">IoU Threshold</tspan>
+                    </text>
+                </g>
+                <g id="Group-14" transform="translate(12.000000, 274.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill-opacity="0.449260578" fill="#EE7400" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Min-Object-Size" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="20.9780273" y="38">Min Object Size</tspan>
+                    </text>
+                </g>
+                <g id="Group-14" transform="translate(13.000000, 360.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill-opacity="0.45" fill="#EE7400" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Model-Selection" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="59.4873047" y="29">Model</tspan>
+                        <tspan x="46.9760742" y="51">Selection</tspan>
+                    </text>
+                </g>
+                <use id="Rectangle" stroke="#EE7400" mask="url(#mask-10)" stroke-width="6" stroke-dasharray="3" xlink:href="#path-9"></use>
+            </g>
+            <g id="Group-20" transform="translate(779.000000, 83.000000)">
+                <use id="Rectangle" stroke="#537EF9" mask="url(#mask-12)" stroke-width="8" stroke-dasharray="2" xlink:href="#path-11"></use>
+                <g id="Group-4" transform="translate(17.000000, 276.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#B8C6EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Optimizer-&amp;-Learning" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="36.9916992" y="27">Optimizer &amp;</tspan>
+                        <tspan x="27.4599609" y="49">Learning Rate</tspan>
+                    </text>
+                </g>
+                <g id="Group-4" transform="translate(17.000000, 364.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#B8C6EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Data-Augmentation" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="7.44287109" y="38">Data Augmentation</tspan>
+                    </text>
+                </g>
+                <g id="Group-4" transform="translate(17.000000, 100.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#B8C6EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Anchor-Matching" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="16.4648438" y="38">Anchor Matching</tspan>
+                    </text>
+                </g>
+                <g id="Group-4" transform="translate(17.000000, 188.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#B8C6EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Loss-Functions" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="23.4697266" y="38">Loss Functions</tspan>
+                    </text>
+                </g>
+                <g id="Group-4" transform="translate(17.000000, 12.000000)">
+                    <rect id="Rectangle" stroke="#000000" fill="#B8C6EE" x="0.5" y="0.5" width="167" height="61" rx="7"></rect>
+                    <text id="Network-Blueprint" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="50.9926758" y="27">Network</tspan>
+                        <tspan x="48.4790039" y="49">Blueprint</tspan>
+                    </text>
+                </g>
+            </g>
+            <g id="Group-9" transform="translate(11.000000, 0.000000)">
+                <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#D0B8EE" x="1" y="1" width="166" height="60" rx="7"></rect>
+                <text id="Data-Fingerpint" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                    <tspan x="64.9892578" y="27">Data</tspan>
+                    <tspan x="43.9790039" y="49">Fingerpint</tspan>
+                </text>
+            </g>
+            <g id="Group-4" transform="translate(406.000000, 1.000000)">
+                <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#BEEEB8" x="1" y="1" width="166" height="60" rx="7"></rect>
+                <text id="Rule-based-Parameter" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                    <tspan x="38.4682617" y="31">Rule based</tspan>
+                    <tspan x="37.4838867" y="53">Parameters</tspan>
+                </text>
+            </g>
+            <g id="Group-4" transform="translate(796.000000, 2.000000)">
+                <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="166" height="60" rx="7"></rect>
+                <text id="Fixed-Parameters" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                    <tspan x="61.9921875" y="27">Fixed</tspan>
+                    <tspan x="37.4838867" y="49">Parameters</tspan>
+                </text>
+            </g>
+            <g id="Group-4" transform="translate(1007.000000, 1.000000)">
+                <rect id="Rectangle" stroke="#000000" stroke-width="2" fill-opacity="0.45" fill="#EE7400" x="1" y="1" width="166" height="60" rx="7"></rect>
+                <text id="Empricial-Optimiztio" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                    <tspan x="46.9936523" y="27">Empricial</tspan>
+                    <tspan x="38.9868164" y="49">Optimiztion</tspan>
+                </text>
+            </g>
+            <text id="Triggers" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                <tspan x="311.322266" y="194">Triggers</tspan>
+            </text>
+            <path id="Line-8" d="M490.349078,129.629546 L490.859766,130.489312 L562.71,251.452 L567.868729,248.388459 L569,264 L555.832004,255.538092 L560.99,252.474 L489.140234,131.510688 L488.629546,130.650922 L490.349078,129.629546 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-6" d="M489.340536,129.748958 L491.251042,130.340536 L490.955253,131.295789 L434.095,314.921 L439.82782,316.696978 L429,328 L426.454274,312.555931 L432.185,314.33 L489.044747,130.704211 L489.340536,129.748958 Z" fill="#000000" fill-rule="nonzero"></path>
+            <line x1="388" y1="132" x2="485" y2="132" id="Line-2" stroke="#000000" stroke-width="2" stroke-linecap="square"></line>
+            <line x1="388" y1="242" x2="428.5" y2="241.5" id="Line-2" stroke="#000000" stroke-width="2" stroke-linecap="square"></line>
+            <path id="Line-3" d="M430.940057,240.587057 L432.412943,241.940057 L431.736443,242.6765 L362.207,318.366 L366.626097,322.425299 L352,328 L356.315897,312.954302 L360.734,317.013 L430.263557,241.3235 L430.940057,240.587057 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-4" d="M430.806036,242.599151 L431.603443,243.202594 L531.439,318.754 L535.060409,313.969958 L542,328 L526.612212,325.133647 L530.232,320.349 L430.396557,244.797406 L429.599151,244.193964 L430.806036,242.599151 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-5" d="M429.779606,240.283023 L430.748291,240.531315 L555.686,272.554 L557.176442,266.743125 L569,277 L553.700365,280.304721 L555.19,274.492 L430.251709,242.468685 L429.283023,242.220394 L429.779606,240.283023 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-7" d="M490.595962,129.717491 L490.939235,130.656726 L558.132,314.507 L563.768814,312.447788 L562,328 L550.619519,317.253622 L556.255,315.193 L489.060765,131.343274 L488.717491,130.404038 L490.595962,129.717491 Z" fill="#000000" fill-rule="nonzero"></path>
+            <circle id="Oval" stroke="#979797" fill="#000000" cx="490" cy="131" r="4.5"></circle>
+            <circle id="Oval" stroke="#979797" fill="#000000" cx="430" cy="242" r="4.5"></circle>
+            <path id="Line-9" d="M302.00995,163.990149 L304.009851,164.00995 L303.999951,165.009901 L303.638,201.51 L309.638264,201.56999 L302.5,215.5 L295.63895,201.431383 L301.638,201.49 L302.000049,164.990099 L302.00995,163.990149 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-10" d="M1091.47754,331.47803 L1091.49975,332.477783 L1091.75048,343.7606 L1091.931,351.911 L1096.61614,343.132037 L1097.08692,342.249785 L1098.85142,343.191338 L1098.38065,344.07359 L1091.89891,356.220592 L1091.06198,357.78904 L1090.15619,356.259319 L1083.14126,344.412244 L1082.63176,343.551775 L1084.35269,342.532768 L1084.8622,343.393236 L1089.932,351.955 L1089.75098,343.805034 L1089.50025,332.522217 L1089.47803,331.522464 L1091.47754,331.47803 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-10" d="M1091.47754,331.47803 L1091.49975,332.477783 L1091.75048,343.7606 L1091.931,351.911 L1096.61614,343.132037 L1097.08692,342.249785 L1098.85142,343.191338 L1098.38065,344.07359 L1091.89891,356.220592 L1091.06198,357.78904 L1090.15619,356.259319 L1083.14126,344.412244 L1082.63176,343.551775 L1084.35269,342.532768 L1084.8622,343.393236 L1089.932,351.955 L1089.75098,343.805034 L1089.50025,332.522217 L1089.47803,331.522464 L1091.47754,331.47803 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-10" d="M1091.47754,245.47803 L1091.49975,246.477783 L1091.75048,257.7606 L1091.931,265.911 L1096.61614,257.132037 L1097.08692,256.249785 L1098.85142,257.191338 L1098.38065,258.07359 L1091.89891,270.220592 L1091.06198,271.78904 L1090.15619,270.259319 L1083.14126,258.412244 L1082.63176,257.551775 L1084.35269,256.532768 L1084.8622,257.393236 L1089.932,265.955 L1089.75098,257.805034 L1089.50025,246.522217 L1089.47803,245.522464 L1091.47754,245.47803 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-10" d="M1091.47754,159.47803 L1091.49975,160.477783 L1091.75048,171.7606 L1091.931,179.911 L1096.61614,171.132037 L1097.08692,170.249785 L1098.85142,171.191338 L1098.38065,172.07359 L1091.89891,184.220592 L1091.06198,185.78904 L1090.15619,184.259319 L1083.14126,172.412244 L1082.63176,171.551775 L1084.35269,170.532768 L1084.8622,171.393236 L1089.932,179.955 L1089.75098,171.805034 L1089.50025,160.522217 L1089.47803,159.522464 L1091.47754,159.47803 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-11" d="M387.928029,21.4572448 L389.235392,22.1926367 L405.235392,31.1926367 L407.559593,32.5 L405.235392,33.8073633 L389.235392,42.8073633 L387.928029,43.5427552 L386.457245,40.9280286 L387.764608,40.1926367 L398.772,34 L397,34 L397,31 L398.775,31 L387.764608,24.8073633 L386.457245,24.0719714 L387.928029,21.4572448 Z M190,31 L190,34 L177,34 L177,31 L190,31 Z M210,31 L210,34 L197,34 L197,31 L210,31 Z M230,31 L230,34 L217,34 L217,31 L230,31 Z M250,31 L250,34 L237,34 L237,31 L250,31 Z M270,31 L270,34 L257,34 L257,31 L270,31 Z M290,31 L290,34 L277,34 L277,31 L290,31 Z M310,31 L310,34 L297,34 L297,31 L310,31 Z M330,31 L330,34 L317,34 L317,31 L330,31 Z M350,31 L350,34 L337,34 L337,31 L350,31 Z M370,31 L370,34 L357,34 L357,31 L370,31 Z M391,31 L391,34 L377,34 L377,31 L391,31 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-11" d="M777.978614,21.3862558 L779.282606,22.1276096 L795.241343,31.2005744 L797.559551,32.5185368 L795.229404,33.8152738 L779.188475,42.7421213 L777.877768,43.4715359 L776.418939,40.8501207 L777.729646,40.1207061 L791.44,32.49 L777.799898,24.7355931 L776.495906,23.9942393 L777.978614,21.3862558 Z M773.00478,30.9063989 L774.504764,30.9132481 L778.515861,30.9315636 L784.50466,30.9589098 L786.004644,30.965759 L785.990946,33.9657277 L784.490962,33.9588785 L778.502163,33.9315324 L774.491066,33.9132169 L772.991081,33.9063676 L773.00478,30.9063989 Z M753.004988,30.8150756 L754.504973,30.8219249 L764.504868,30.8675865 L766.004853,30.8744357 L765.991154,33.8744045 L764.49117,33.8675552 L754.491274,33.8218936 L752.99129,33.8150444 L753.004988,30.8150756 Z M733.005197,30.7237524 L734.505181,30.7306016 L744.505077,30.7762633 L746.005061,30.7831125 L745.991363,33.7830812 L744.491379,33.776232 L734.491483,33.7305704 L732.991498,33.7237211 L733.005197,30.7237524 Z M713.005405,30.6324291 L714.50539,30.6392784 L724.505285,30.68494 L726.00527,30.6917892 L725.991571,33.691758 L724.491587,33.6849087 L714.491691,33.6392471 L712.991707,33.6323979 L713.005405,30.6324291 Z M693.005614,30.5411059 L694.505598,30.5479551 L704.505494,30.5936168 L706.005478,30.600466 L705.99178,33.6004347 L704.491796,33.5935855 L694.4919,33.5479239 L692.991915,33.5410746 L693.005614,30.5411059 Z M673.005822,30.4497826 L674.505807,30.4566319 L684.505702,30.5022935 L686.005687,30.5091427 L685.991988,33.5091115 L684.492004,33.5022622 L674.492108,33.4566006 L672.992124,33.4497514 L673.005822,30.4497826 Z M653.006031,30.3584594 L654.506015,30.3653086 L664.505911,30.4109703 L666.005895,30.4178195 L665.992197,33.4177882 L664.492213,33.410939 L654.492317,33.3652774 L652.992332,33.3584281 L653.006031,30.3584594 Z M633.006239,30.2671361 L634.506224,30.2739854 L644.506119,30.319647 L646.006104,30.3264963 L645.992405,33.326465 L644.492421,33.3196157 L634.492525,33.2739541 L632.992541,33.2671049 L633.006239,30.2671361 Z M613.006448,30.1758129 L614.506432,30.1826621 L624.506328,30.2283238 L626.006312,30.235173 L625.992614,33.2351417 L624.49263,33.2282925 L614.492734,33.1826309 L612.992749,33.1757816 L613.006448,30.1758129 Z M593.006656,30.0844896 L594.506641,30.0913389 L604.506536,30.1370005 L606.006521,30.1438498 L605.992822,33.1438185 L604.492838,33.1369692 L594.492942,33.0913076 L592.992958,33.0844584 L593.006656,30.0844896 Z M573.006865,29.9931664 L574.506849,30.0000156 L584.506745,30.0456773 L586.006729,30.0525265 L585.993031,33.0524952 L584.493047,33.045646 L574.493151,32.9999844 L572.993166,32.9931351 L573.006865,29.9931664 Z" fill="#000000" fill-rule="nonzero"></path>
+            <path id="Line-11" d="M988.928029,21.4572448 L990.235392,22.1926367 L1006.23539,31.1926367 L1008.55959,32.5 L1006.23539,33.8073633 L990.235392,42.8073633 L988.928029,43.5427552 L987.457245,40.9280286 L988.764608,40.1926367 L1002.44,32.5 L988.764608,24.8073633 L987.457245,24.0719714 L988.928029,21.4572448 Z M976,31 L976,34 L963,34 L963,31 L976,31 Z M996,31 L996,34 L983,34 L983,31 L996,31 Z" fill="#000000" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>
