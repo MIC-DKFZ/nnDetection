@@ -1,0 +1,17 @@
+.git
+.cache
+.mypy_cache
+.gitignore
+*.py[cod]
+*$py.class
+*.vscode
+*.so
+*.sif
+
+__pycache__/
+
+/nndet.egg-info
+/build
+/notebooks
+/projects
+/singularity

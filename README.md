@@ -415,4 +415,4 @@ TODO
 ```
 
 # Acknowledgements
-TODO
+TODO (medicaldetectiontoolkit, nnunet, torchvision)
