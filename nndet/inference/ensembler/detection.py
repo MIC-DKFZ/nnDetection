@@ -30,8 +30,8 @@ from nndet.inference.detection import batched_nms_model, batched_nms_ensemble, \
     batched_wbc_ensemble, wbc_nms_no_label_ensemble
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.restore import restore_detection
-from nndet.detection.boxes import box_center, clip_boxes_to_image, remove_small_boxes
-from nndet.detection.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
+from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
+from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
 from nndet.utils.tensor import cat, to_device, to_dtype
 
 

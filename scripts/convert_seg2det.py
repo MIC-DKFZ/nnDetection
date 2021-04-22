@@ -30,7 +30,7 @@ from scipy import ndimage
 from scipy.ndimage import label
 from tqdm import tqdm
 
-from nndet.detection.boxes import box_size_np
+from nndet.core.boxes import box_size_np
 from nndet.io import get_case_ids_from_dir, load_json, save_json
 from nndet.io.transforms.instances import get_bbox_np
 from nndet.utils.config import compose

@@ -21,7 +21,7 @@ from typing import Tuple
 
 from torch._C import device
 
-from nndet.detection.boxes import box_iou, box_area
+from nndet.core.boxes import box_iou, box_area
 
 
 __all__ = ["batched_wbc", "wbc"]

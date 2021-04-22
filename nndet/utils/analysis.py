@@ -37,7 +37,7 @@ from sklearn.metrics import confusion_matrix
 from torch import Tensor
 import SimpleITK as sitk
 
-from nndet.detection.boxes import box_iou_np, box_size_np
+from nndet.core.boxes import box_iou_np, box_size_np
 from nndet.io.load import load_pickle, save_json
 from nndet.utils.info import maybe_verbose_iterable
 

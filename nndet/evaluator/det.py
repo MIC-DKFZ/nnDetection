@@ -22,7 +22,7 @@ import numpy as np
 
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.matching import matching_batch
-from nndet.detection.boxes import box_iou_np
+from nndet.core.boxes import box_iou_np
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
 from nndet.evaluator.detection.hist import PredictionHistogram

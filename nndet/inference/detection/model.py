@@ -19,7 +19,7 @@ from typing import Tuple
 from torch import Tensor
 import torch
 
-from nndet.detection.boxes import batched_nms
+from nndet.core.boxes import batched_nms
 
 
 def batched_nms_model(

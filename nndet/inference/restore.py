@@ -19,7 +19,7 @@ from typing import Sequence, Tuple, Union, Optional
 import numpy as np
 from loguru import logger
 
-from nndet.detection.boxes.utils import permute_boxes, expand_to_boxes
+from nndet.core.boxes.utils import permute_boxes, expand_to_boxes
 from nndet.preprocessing.resampling import resample_data_or_seg, get_do_separate_z, get_lowres_axis
 
 

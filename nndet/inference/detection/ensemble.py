@@ -18,7 +18,7 @@ from typing import Tuple
 
 from torch import Tensor
 
-from nndet.detection.boxes import batched_nms, nms
+from nndet.core.boxes import batched_nms, nms
 from nndet.inference.detection import batched_wbc
 
 
