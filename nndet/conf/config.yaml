@@ -1,5 +1,5 @@
 defaults:
-    - train: v001
+    - train: c010
     - prep: process
 
 exp:
