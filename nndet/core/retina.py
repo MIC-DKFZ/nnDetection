@@ -6,6 +6,8 @@ from typing import List, Tuple, Dict, Any, Optional, Union
 
 from nndet.models.abstract import AbstractModel
 from nndet.core import boxes as box_utils
+from nndet.models.encoder.abstract import EncoderType
+from nndet.models.decoder.base import DecoderType
 from nndet.models.heads.segmenter import SegmenterType
 from nndet.models.heads.comb import HeadType
 
@@ -18,7 +20,7 @@ class BaseRetinaNet(AbstractModel):
                  decoder: DecoderType,
                  head: HeadType,
                  num_classes: int,
-                 anchor_generator: AnchorType,
+                 anchor_generator: box_utils.AnchorGenerator,
                  matcher: box_utils.MatcherType,
                  decoder_levels: tuple = (2, 3, 4, 5),
                  # post-processing

@@ -1,7 +1,7 @@
 from nndet.core.boxes.anchors import get_anchor_generator, compute_anchors_for_strides, \
     AnchorGenerator2D, AnchorGenerator2DS, AnchorGenerator3D, AnchorGenerator3DS
 from nndet.core.boxes.clip import clip_boxes_to_image_, clip_boxes_to_image
-from nndet.core.boxes.coder import BoxCoderND
+from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.matcher import MatcherType, Matcher, IoUMatcher, ATSSMatcher
 from nndet.core.boxes.nms import nms, batched_nms
 from nndet.core.boxes.sampler import AbstractSampler, NegativeSampler, HardNegativeSampler, \
