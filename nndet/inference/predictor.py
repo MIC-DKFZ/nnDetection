@@ -25,7 +25,7 @@ from typing import Hashable, List, Sequence, Dict, Union, Any, Optional, Callabl
 from pathlib import Path
 
 from nndet.io.load import save_pickle
-from nndet.models.abstract import AbstractModel
+from nndet.arch.abstract import AbstractModel
 from nndet.io.transforms import NoOp
 from nndet.inference.patching import save_get_crop, create_grid
 from nndet.utils import to_device, maybe_verbose_iterable

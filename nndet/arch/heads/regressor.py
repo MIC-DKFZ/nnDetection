@@ -23,7 +23,7 @@ from abc import abstractmethod
 from loguru import logger
 
 from nndet.detection.boxes import box_iou
-from nndet.models.layers.scale import Scale
+from nndet.arch.layers.scale import Scale
 from torch import Tensor
 
 from nndet.losses import SmoothL1Loss, GIoULoss

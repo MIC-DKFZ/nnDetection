@@ -23,8 +23,8 @@ from abc import abstractmethod
 
 from nndet.detection.boxes import BoxCoderND
 from nndet.detection.boxes.sampler import AbstractSampler
-from nndet.models.heads.classifier import Classifier
-from nndet.models.heads.regressor import Regressor
+from nndet.arch.heads.classifier import Classifier
+from nndet.arch.heads.regressor import Regressor
 
 
 class AbstractHead(nn.Module):

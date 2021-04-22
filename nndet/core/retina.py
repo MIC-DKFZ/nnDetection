@@ -4,12 +4,12 @@ import torch.nn as nn
 from torch import Tensor
 from typing import List, Tuple, Dict, Any, Optional, Union
 
-from nndet.models.abstract import AbstractModel
+from nndet.arch.abstract import AbstractModel
 from nndet.core import boxes as box_utils
-from nndet.models.encoder.abstract import EncoderType
-from nndet.models.decoder.base import DecoderType
-from nndet.models.heads.segmenter import SegmenterType
-from nndet.models.heads.comb import HeadType
+from nndet.arch.encoder.abstract import EncoderType
+from nndet.arch.decoder.base import DecoderType
+from nndet.arch.heads.segmenter import SegmenterType
+from nndet.arch.heads.comb import HeadType
 
 
 class BaseRetinaNet(AbstractModel):

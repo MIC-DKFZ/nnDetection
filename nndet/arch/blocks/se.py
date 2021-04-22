@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 
 
-from nndet.models.conv import nd_pool, nd_conv
+from nndet.arch.conv import nd_pool, nd_conv
 
 
 class SELayer(nn.Module):

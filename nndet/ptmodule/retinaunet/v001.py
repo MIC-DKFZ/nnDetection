@@ -17,12 +17,11 @@ limitations under the License.
 from nndet.ptmodule.retinaunet.base import RetinaUNetModule
 
 from nndet.core.boxes.matcher import ATSSMatcher
-from nndet.models.heads.classifier import BCECLassifier
-from nndet.models.heads.regressor import GIoURegressor
-from nndet.models.heads.comb import DetectionHeadHNMNative
-from nndet.models.heads.segmenter import DiCESegmenterFgBg
-
-from nndet.models.conv import ConvInstanceRelu, ConvGroupRelu
+from nndet.arch.heads.classifier import BCECLassifier
+from nndet.arch.heads.regressor import GIoURegressor
+from nndet.arch.heads.comb import DetectionHeadHNMNative
+from nndet.arch.heads.segmenter import DiCESegmenterFgBg
+from nndet.arch.conv import ConvInstanceRelu, ConvGroupRelu
 
 from nndet.ptmodule import MODULE_REGISTRY
 

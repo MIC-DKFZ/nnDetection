@@ -41,15 +41,15 @@ from nndet.core.boxes.utils import box_iou
 
 from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModule
 
-from nndet.models.conv import Generator, ConvInstanceRelu, ConvGroupRelu
-from nndet.models.blocks.basic import StackedConvBlock2
-from nndet.models.encoder.abstract import EncoderType
-from nndet.models.encoder.modular import Encoder
-from nndet.models.decoder.base import DecoderType, BaseUFPN, UFPNModular
-from nndet.models.heads.classifier import ClassifierType, CEClassifier
-from nndet.models.heads.regressor import RegressorType, L1Regressor
-from nndet.models.heads.comb import HeadType, DetectionHeadHNM
-from nndet.models.heads.segmenter import SegmenterType, DiCESegmenter
+from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
+from nndet.arch.blocks.basic import StackedConvBlock2
+from nndet.arch.encoder.abstract import EncoderType
+from nndet.arch.encoder.modular import Encoder
+from nndet.arch.decoder.base import DecoderType, BaseUFPN, UFPNModular
+from nndet.arch.heads.classifier import ClassifierType, CEClassifier
+from nndet.arch.heads.regressor import RegressorType, L1Regressor
+from nndet.arch.heads.comb import HeadType, DetectionHeadHNM
+from nndet.arch.heads.segmenter import SegmenterType, DiCESegmenter
 
 from nndet.training.optimizer import get_params_no_wd_on_norm
 from nndet.training.learning_rate import LinearWarmupPolyLR

@@ -18,8 +18,8 @@ import torch
 import torch.nn as nn
 from typing import Callable, Tuple, Sequence, Union, List, Dict, Optional
 
-from nndet.models.encoder.abstract import AbstractEncoder
-from nndet.models.blocks.basic import AbstractBlock
+from nndet.arch.encoder.abstract import AbstractEncoder
+from nndet.arch.blocks.basic import AbstractBlock
 
 
 __all__ = ["Encoder"]
