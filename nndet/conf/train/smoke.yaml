@@ -1,0 +1,115 @@
+# @package __global__
+defaults:
+  - augmentation: base_more
+
+module: "RetinaUNetC010"
+predictor: "BoxPredictorSelective"
+plan: D3V001_3d
+
+planners:
+  2d: [D2C002]
+  3d: [D3V001] # [D3C002LR15, D3C002LR20] [D3C002NR, D3C002RibFrac] [D2C002, D3C002]
+
+augment_cfg:
+  augmentation: ${augmentation}
+  num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
+  num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
+
+  dataloader: "DataLoader{}DOffset"
+  oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
+  dataloader_kwargs: {}
+
+  num_threads: ${oc.env:det_num_threads, "12"}
+  num_cached_per_thread: 2
+  multiprocessing: True # only deactivate this if debugging
+
+trainer_cfg:
+  gpus: 1 # number of gpus
+  accelerator: ddp # distributed backend
+  precision: 16 # mixed precision
+  amp_backend: native # mixed precision backend
+  amp_level: O1 # when mixed precision backend is APEX use O1
+  # Per default training is deterministic, non-deterministic allows
+  # cudnn.benchmark which can give up to 20% performance. Set this to false
+  # to perform non-deterministic training
+  deterministic: False
+  benchmark: False
+
+  # fp16: True # enable fp16 training. Makes sense for supported hardware only!
+  monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
+  monitor_mode: "max" # metric operation mode "min" or "max"
+
+  max_num_epochs: 2 # max number of epochs
+  num_train_batches_per_epoch: 20 # number of train batches per epoch
+  num_val_batches_per_epoch: 10 # number of val batches per epoch
+
+  initial_lr: 0.01 # initial learning rate to start with
+  sgd_momentum: 0.9 # momentum term
+  sgd_nesterov: True # nesterov momentum
+  weight_decay: 3.e-5 # weight decay for optimizer
+  momentum: 0.9 # momentum term
+
+  warm_iterations: 4000 # number of iterations with warmup
+  warm_lr: 1.e-6 # learning rate to start warmup from
+
+  poly_gamma: 0.9
+
+  swa_epochs: 2 # number of epochs to run swa with cyclic learning rate
+
+model_cfg:
+  encoder_kwargs: {} # keyword arguments passed to encoder
+  decoder_kwargs: # keyword arguments passed to decoder
+    min_out_channels: 8
+    upsampling_mode: "transpose"
+
+    num_lateral: 1
+    norm_lateral: False
+    activation_lateral: False
+
+    num_out: 1
+    norm_out: False
+    activation_out: False
+
+  head_kwargs: {} # keyword arguments to passed to head
+
+  head_classifier_kwargs: # keyword arguments passed to classifier in head
+    num_convs: 2
+    norm_channels_per_group: 16
+    norm_affine: True
+    reduction: "mean"
+    loss_weight: 1.
+    # gamma: 1.
+    # alpha: 0.75
+    # reduction: "sum"
+    # loss_weight: 0.3
+    prior_prob: 0.01
+
+  head_regressor_kwargs: # keyword arguments passed to regressor in head
+    num_convs: 2
+    norm_channels_per_group: 16
+    norm_affine: True
+    reduction: "sum"
+    loss_weight: 1.
+    learn_scale: True
+
+  head_sampler_kwargs: # keyword arguments passed to sampler
+    batch_size_per_image: 32 # number of anchors sampled per image
+    positive_fraction: 0.33 # defines ratio between positive and negative anchors
+    # hard negatives are sampled from a pool of size:
+    # batch_size_per_image * (1 - positive_fraction) * pool_size
+    pool_size: 20
+    min_neg: 1 # minimum number of negative anchors sampled per image
+
+  segmenter_kwargs:
+    dice_kwargs:
+      batch_dice: True
+
+  matcher_kwargs: # keyword arguments passed to matcher
+    num_candidates: 4
+    center_in_gt: False
+
+  plan_arch_overwrites: {} # overwrite arguments of architecture
+  plan_anchors_overwrites: {} # overwrite arguments of anchors
+
+debug:
+  num_cases_val: 2 # only predict two cases for validation results

@@ -1,0 +1,20 @@
+name: "noaug"
+transforms: "NoAug"
+transforms_kwargs: {}
+
+selected_data_channels:
+selected_seg_channels:
+
+rotation_x: [-0, 0]
+rotation_y: [-0, 0]
+rotation_z: [-0, 0]
+scale_range: [1., 1.]
+
+2d_overwrites:
+  elastic_deform_alpha: [0., 0.]
+  elastic_deform_sigma: [0., 0.]
+  rotation_x: [0, 0]
+  rotation_y: [0, 0]
+  rotation_z: [0, 0]
+  dummy_2D: False
+  mirror_axes: []

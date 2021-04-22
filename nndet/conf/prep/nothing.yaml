@@ -1,0 +1,12 @@
+# parameters which are used to prepare the data and plan later training
+# define number of processes used for preprocessing
+num_processes: 6
+num_processes_processing: 3
+
+# set this to 1 if you want to override cropped data
+overwrite: False
+
+crop: False
+analyze: False
+plan: False
+process: False

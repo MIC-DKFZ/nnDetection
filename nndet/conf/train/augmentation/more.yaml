@@ -1,0 +1,55 @@
+name: "more"
+transforms: "MoreAug"
+transforms_kwargs: {}
+
+selected_data_channels:
+selected_seg_channels:
+
+p_eldef: 0.2
+do_elastic: False
+elastic_deform_alpha: [0., 900.]
+elastic_deform_sigma: [9., 13.]
+
+p_scale: 0.2
+do_scaling: True
+scale_range: [0.7, 1.4]
+independent_scale_factor_for_each_axis: False
+
+p_rot: 0.2
+do_rotation: True
+rotation_x: [-30, 30]
+rotation_y: [-30, 30]
+rotation_z: [-30, 30]
+
+order_data: 3
+border_mode_data: "constant"
+border_cval_data: 0
+order_seg: 0
+border_cval_seg: -1
+border_mode_seg: "constant"
+
+random_crop: False
+random_crop_dist_to_border:
+
+p_gamma: 0.3
+do_gamma: True
+gamma_retain_stats: True
+gamma_range: [0.7, 1.5]
+
+do_mirror: True
+mirror_axes: [0, 1, 2]
+
+do_additive_brightness: False
+additive_brightness_p_per_sample: 0.15
+additive_brightness_p_per_channel: 0.5
+additive_brightness_mu: 0.0
+additive_brightness_sigma: 0.1
+
+2d_overwrites:
+  elastic_deform_alpha: [0., 200.]
+  elastic_deform_sigma: [9., 13.]
+  rotation_x: [-180, 180]
+  rotation_y: [0, 0]
+  rotation_z: [0, 0]
+  dummy_2D: False
+  mirror_axes: [0, 1]
