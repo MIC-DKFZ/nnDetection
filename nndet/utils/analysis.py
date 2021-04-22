@@ -19,6 +19,7 @@ This is prototype code ... Use at your own risk
 This was initially part of a notebook but I needed to move it into
 this scriptish functions to run it in my default pipeline
 """
+
 import pickle
 from itertools import product
 from pathlib import Path
