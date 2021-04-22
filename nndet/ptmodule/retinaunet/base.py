@@ -32,12 +32,12 @@ from nndet.utils.tensor import to_numpy
 from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
 
-from nndet.detection.retina import BaseRetinaNet
-from nndet.detection.boxes.matcher import IoUMatcher
-from nndet.detection.boxes.sampler import HardNegativeSamplerBatched
-from nndet.detection.boxes.coder import CoderType, BoxCoderND
-from nndet.detection.boxes.anchors import get_anchor_generator
-from nndet.detection.boxes.utils import box_iou
+from nndet.core.retina import BaseRetinaNet
+from nndet.core.boxes.matcher import IoUMatcher
+from nndet.core.boxes.sampler import HardNegativeSamplerBatched
+from nndet.core.boxes.coder import CoderType, BoxCoderND
+from nndet.core.boxes.anchors import get_anchor_generator
+from nndet.core.boxes.utils import box_iou
 
 from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModule
 

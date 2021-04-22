@@ -16,7 +16,7 @@ limitations under the License.
 
 from nndet.ptmodule.retinaunet.base import RetinaUNetModule
 
-from nndet.detection.boxes.matcher import ATSSMatcher
+from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.models.heads.classifier import BCECLassifier
 from nndet.models.heads.regressor import GIoURegressor
 from nndet.models.heads.comb import DetectionHeadHNMNative
