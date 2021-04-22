@@ -137,6 +137,107 @@ class FocalLossWithLogits(nn.Module):
             )
 
 
+@torch.jit.script
+def asymmetric_focal_loss_with_logits(
+        logits: torch.Tensor,
+        target: torch.Tensor, gamma: float,
+        alpha: float = -1,
+        reduction: str = "mean",
+        ) -> torch.Tensor:
+    """
+    Asymmetric Focal loss
+    Inspired by https://arxiv.org/abs/2008.13367
+    and identical to https://arxiv.org/abs/1907.10982
+    (without margin)
+
+    Args:
+        logits: predicted logits [N, dims]
+        target: (float) binary targets [N, dims]
+        gamma: balance easy and hard examples in focal loss
+        alpha: balance positive and negative samples [0, 1] (increasing
+            alpha increase weight of foreground classes (better recall))
+        reduction: 'mean'|'sum'|'none'
+            mean: mean of loss over entire batch
+            sum: sum of loss over entire batch
+            none: no reduction
+
+    Returns:
+        torch.Tensor: loss
+
+    See Also
+        :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
+    """
+    bce_loss = F.binary_cross_entropy_with_logits(logits, target, reduction='none')
+
+    p = torch.sigmoid(logits)
+    loss = (1 - (1 - p) * (1 - target)).pow(gamma) * bce_loss
+
+    if alpha >= 0:
+        alpha_t = (alpha * target + (1 - alpha) * (1 - target))
+        loss = alpha_t * loss
+
+    return reduction_helper(loss, reduction=reduction)
+
+
+class AsymmetricFocalLossWithLogits(nn.Module):
+    def __init__(self,
+                 gamma: float = 2,
+                 alpha: float = -1,
+                 reduction: str = "mean",
+                 loss_weight: float = 1.,
+                 ):
+        """
+        Asymmetric Focal loss
+        Inspired by https://arxiv.org/abs/2008.13367
+        and identical to https://arxiv.org/abs/1907.10982
+        (without margin)
+
+        Args:
+            gamma: balance easy and hard examples in focal loss
+            alpha: balance positive and negative samples [0, 1] (increasing
+                alpha increase weight of foreground classes (better recall))
+            reduction: 'mean'|'sum'|'none'
+                mean: mean of loss over entire batch
+                sum: sum of loss over entire batch
+                none: no reduction
+        loss_weight: scalar to balance multiple losses
+        """
+        super().__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = reduction
+        self.loss_weight = loss_weight
+
+    def forward(self,
+                logits: torch.Tensor,
+                targets: torch.Tensor,
+                ) -> torch.Tensor:
+        """
+        Compute loss
+
+        Args:
+            logits: predicted logits [N, C, dims], where N is the batch size,
+                C number of classes, dims are arbitrary spatial dimensions
+                (background classes should be located at channel 0 if
+                ignore background is enabled)
+            targets: targets encoded as numbers [N, dims], where N is the
+                batch size, dims are arbitrary spatial dimensions
+
+        Returns:
+            torch.Tensor: loss
+        """
+        n_classes = logits.shape[1] + 1
+        target_onehot = make_onehot_batch(targets, n_classes=n_classes).float()
+        target_onehot = target_onehot[:, 1:]
+
+        return self.loss_weight * asymmetric_focal_loss_with_logits(
+            logits, target_onehot,
+            gamma=self.gamma,
+            alpha=self.alpha,
+            reduction=self.reduction,
+            )
+
+
 class BCEWithLogitsLossOneHot(torch.nn.BCEWithLogitsLoss):
     def __init__(self,
                  *args,
