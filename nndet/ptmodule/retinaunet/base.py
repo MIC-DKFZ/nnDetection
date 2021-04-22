@@ -26,7 +26,7 @@ from typing import Callable, Hashable, Sequence, Dict, Any, Type
 import torch
 import numpy as np
 from loguru import logger
-from torchvision.models.detection.rpn import AnchorType, AnchorGenerator
+from torchvision.models.detection.rpn import AnchorGenerator
 
 from nndet.utils.tensor import to_numpy
 from nndet.evaluator.det import BoxEvaluator
@@ -43,7 +43,8 @@ from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModu
 
 from nndet.models.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 from nndet.models.blocks.basic import StackedConvBlock2
-from nndet.models.encoder.modular import EncoderType, Encoder
+from nndet.models.encoder.abstract import EncoderType
+from nndet.models.encoder.modular import Encoder
 from nndet.models.decoder.base import DecoderType, BaseUFPN, UFPNModular
 from nndet.models.heads.classifier import ClassifierType, CEClassifier
 from nndet.models.heads.regressor import RegressorType, L1Regressor

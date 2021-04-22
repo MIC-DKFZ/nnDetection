@@ -1,7 +1,7 @@
 from __future__ import division
 
 import math
-from typing import Sequence
+from typing import Sequence, TypeVar
 
 import torch
 from torch.jit.annotations import List, Tuple
@@ -235,3 +235,6 @@ class BoxCoderND(BoxCoder):
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         dtype, device = rel_codes.dtype, rel_codes.device
         return decode_single(rel_codes, boxes, self.weights, self.bbox_xform_clip)
+
+
+CoderType = TypeVar('CoderType', bound=BoxCoderND)
