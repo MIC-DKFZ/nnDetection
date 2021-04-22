@@ -25,9 +25,6 @@ from nndet.losses.base import reduction_helper
 from nndet.utils import make_onehot_batch
 
 
-__all__ = ["focal_loss_with_logits", "FocalLossWithLogits"]
-
-
 def one_hot_smooth(data,
                    num_classes: int,
                    smoothing: float = 0.0,

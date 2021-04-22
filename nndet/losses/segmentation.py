@@ -20,8 +20,6 @@ import torch.nn as nn
 from torch import Tensor
 from typing import Callable
 
-__all__ = ["SoftDiceLoss"]
-
 
 def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):
     shape = data.shape
