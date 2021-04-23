@@ -15,11 +15,12 @@ limitations under the License.
 """
 
 import time
-import torch
 import copy
 import collections
 import numpy as np
 
+import torch
+from torch.utils.data import DataLoader
 from loguru import logger
 from typing import Hashable, List, Sequence, Dict, Union, Any, Optional, Callable, TypeVar
 from pathlib import Path
@@ -27,14 +28,11 @@ from pathlib import Path
 from nndet.io.load import save_pickle
 from nndet.arch.abstract import AbstractModel
 from nndet.io.transforms import NoOp
+from nndet.io.transforms.base import AbstractTransform
 from nndet.inference.patching import save_get_crop, create_grid
 from nndet.utils import to_device, maybe_verbose_iterable
 
-from rising.transforms import AbstractTransform
-from rising.loading import DataLoader
 
-
-__all__ = ["Predictor"]
 torch_device = Union[torch.device, str]
 
 

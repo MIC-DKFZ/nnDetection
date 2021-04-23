@@ -19,7 +19,7 @@ from typing import List, Tuple, Sequence
 
 from nndet.io.transforms import Mirror, NoOp
 
-from rising.transforms import AbstractTransform
+from nndet.io.transforms.base import AbstractTransform
 
 
 def get_tta_transforms(num_tta_transforms: int, seg: bool = True) -> Tuple[
