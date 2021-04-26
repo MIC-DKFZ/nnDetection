@@ -219,7 +219,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         self.plot_instance_distribution(**kwargs)
         return {}
 
-    def create_default_settings():
+    def create_default_settings(self):
         pass
 
     def compute_class_weights(self) -> List[float]:
@@ -258,7 +258,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         return base
 
 
-class DetectionPlanner(BaseBoxesPlanner):
+class BoxC001(BaseBoxesPlanner):
     def __init__(self,
                  preprocessed_output_dir: os.PathLike,
                  save_dir: os.PathLike,

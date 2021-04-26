@@ -26,7 +26,7 @@ from typing import Dict, Sequence, List, Tuple
 
 from nndet.io.load import load_case_cropped
 from nndet.planning import DatasetAnalyzer
-from nndet.detection.boxes import box_iou_np
+from nndet.core.boxes import box_iou_np
 
 
 def analyze_instances(analyzer: DatasetAnalyzer) -> dict:

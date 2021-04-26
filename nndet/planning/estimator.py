@@ -26,7 +26,7 @@ from typing import Sequence, Union, Callable, Tuple
 from contextlib import contextmanager
 from loguru import logger
 
-from nndet.models.abstract import AbstractModel
+from nndet.arch.abstract import AbstractModel
 
 """
 This is just a first prototype to estimate VRAM consumption for different GPUs

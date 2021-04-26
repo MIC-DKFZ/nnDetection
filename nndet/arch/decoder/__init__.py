@@ -1,1 +1,1 @@
-from nndet.arch.decoder.fpn import FPN, UFPN, FPN2
+from nndet.arch.decoder.base import BaseUFPN, UFPNModular, PAUFPN

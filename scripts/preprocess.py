@@ -34,8 +34,8 @@ from omegaconf import OmegaConf
 from nndet.utils.config import compose
 from nndet.utils.info import env_guard
 from nndet.planning import DatasetAnalyzer
-from nndet.planning.plan_experiment import PLANNER_REGISTRY
-from nndet.planning.plan_experiment import create_labels
+from nndet.planning import PLANNER_REGISTRY
+from nndet.planning.experiment.utils import create_labels
 from nndet.planning.properties.registry import medical_instance_props
 from nndet.io.load import load_pickle, load_npz_looped
 from nndet.io.prepare import maybe_split_4d_nifti, instances_from_segmentation

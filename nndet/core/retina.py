@@ -10,6 +10,7 @@ from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.decoder.base import DecoderType
 from nndet.arch.heads.segmenter import SegmenterType
 from nndet.arch.heads.comb import HeadType
+from nndet.core.boxes.anchors import AnchorGeneratorType
 
 
 class BaseRetinaNet(AbstractModel):
@@ -20,7 +21,7 @@ class BaseRetinaNet(AbstractModel):
                  decoder: DecoderType,
                  head: HeadType,
                  num_classes: int,
-                 anchor_generator: box_utils.AnchorGenerator,
+                 anchor_generator: AnchorGeneratorType,
                  matcher: box_utils.MatcherType,
                  decoder_levels: tuple = (2, 3, 4, 5),
                  # post-processing

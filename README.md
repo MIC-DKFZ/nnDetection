@@ -228,8 +228,8 @@ Eachs of this commands is explained below and more detailt information can be ob
 ### Planning & Preprocessing
 Before training the networks, nnDetection needs to preprocess and analyze the data.
 The preprocessing stage noramlizaes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
-nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a completely freed RTX2080TI) to perform live estimation of the VRAM used by the network.
-Future releases will improve this process...
+nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
+Future releases aim at improving this process...
 
 ```bash
 nndet_prep [tasks] [-o / --overwrites]
@@ -263,12 +263,11 @@ After planning and preprocessing the resulting data folder structure should look
 
 Befor starting the training copy the data (Task Folder, dataset info and preprocessed folder are needed) to a SSD (highly recommended) and unpack the image data with
 
-TODO: update name after reafactoring planner name
 ```bash
 nndet_unpack [path] [num_processes]
 
 # Example (unpack example with 6 processes)
-nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3C002_3d/imagesTr 6
+nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3V001_3d/imagesTr 6
 
 # Script
 # /experiments/utils.py - unpack()

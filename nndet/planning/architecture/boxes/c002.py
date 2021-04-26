@@ -7,7 +7,7 @@ import numpy as np
 from loguru import logger
 
 from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
-from nndet.planning.architecture.boxes.base import BaseBoxesPlanner
+from nndet.planning.architecture.boxes.base import BoxC001
 from nndet.planning.architecture.boxes.utils import (
     proxy_num_boxes_in_patch,
     scale_with_abs_strides,
@@ -21,7 +21,7 @@ from nndet.core.boxes import (
     )
 
 
-class BoxC002(BaseBoxesPlanner):
+class BoxC002(BoxC001):
     def __init__(self,
                  preprocessed_output_dir: os.PathLike,
                  save_dir: os.PathLike,

@@ -1,8 +1,11 @@
 import torch
-from typing import Callable, Sequence, List, Tuple, Union
+from typing import Callable, Sequence, List, Tuple, TypeVar, Union
 from torchvision.models.detection.rpn import AnchorGenerator
 from loguru import logger
 from itertools import product
+
+
+AnchorGeneratorType = TypeVar('AnchorGeneratorType', bound=AnchorGenerator)
 
 
 def get_anchor_generator(dim: int, s_param: bool = False) -> AnchorGenerator:

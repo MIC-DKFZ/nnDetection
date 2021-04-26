@@ -22,7 +22,7 @@ from abc import abstractmethod
 
 from loguru import logger
 
-from nndet.detection.boxes import box_iou
+from nndet.core.boxes import box_iou
 from nndet.arch.layers.scale import Scale
 from torch import Tensor
 
@@ -308,125 +308,6 @@ class GIoURegressor(BaseRegressor):
             reduction=reduction,
             loss_weight=loss_weight,
             )
-
-
-class IoUBranchGIoURegressor(GIoURegressor):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 learn_scale: bool = False,
-                 reduction: Optional[str] = "sum",
-                 loss_weight: float = 1.,
-                 loss_weight_iou_branch: float = 1.,
-                 iou_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
-                 **kwargs,
-                 ):
-        """
-        GIoU Box regression head with additional IoU prediction branch
-
-        Args:
-            conv: Convolution modules which handles a single layer
-            in_channels: number of input channels
-            internal_channels: number of channels internally used
-            anchors_per_pos: number of anchors per position
-            num_levels: number of decoder levels which are passed through the
-                regressor
-            num_convs: number of convolutions
-                in conv -> num convs -> final conv
-            add_norm: en-/disable normalization layers in internal layers
-            learn_scale: learn additional single scalar values per feature
-                pyramid level
-            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
-            loss_weight: scalar to balance multiple losses
-            loss_weight_iou_branch: weight of loss of IoU branch
-            iou_fn: iou function to compute targets for IoU branch
-            kwargs: keyword arguments passed to first and internal convolutions
-        """
-        super().__init__(
-            conv=conv,
-            in_channels=in_channels,
-            internal_channels=internal_channels,
-            anchors_per_pos=anchors_per_pos,
-            num_levels=num_levels,
-            num_convs=num_convs,
-            add_norm=add_norm,
-            learn_scale=learn_scale,
-            reduction=reduction,
-            loss_weight=loss_weight,
-            **kwargs
-        )
-
-        self.conv_iou_branch = self.build_conv_iou_branch(conv)
-        self.iou_branch_loss = nn.BCEWithLogitsLoss()
-        self.loss_weight_iou_branch = loss_weight_iou_branch
-        self.iou_fn = iou_fn
-
-    def build_conv_iou_branch(self, conv) -> nn.Module:
-        """
-        Build IoU branch convs
-        """
-        return conv(
-            self.internal_channels,
-            self.anchors_per_pos,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            add_norm=False,
-            add_act=False,
-            bias=True,
-        )
-
-    def forward(self, x: torch.Tensor, level: int, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Forward input
-
-        Args:
-            x (torch.Tensor): input feature map of size [N x C x Y x X x Z]
-
-        Returns:
-            torch.Tensor: classification logits for each anchor [N, n_anchors, dim*2]
-        """        
-        intermediate_features = self.conv_internal(x)
-        bb_logits = self.conv_out(intermediate_features)
-        iou_logits = self.conv_iou_branch(intermediate_features)
-
-        if self.learn_scale:
-            bb_logits = self.scales[level](bb_logits)
-
-        axes = (0, 2, 3, 1) if self.dim == 2 else (0, 2, 3, 4, 1)
-        bb_logits = bb_logits.permute(*axes).contiguous()
-        bb_logits = bb_logits.view(x.size()[0], -1, self.dim * 2)
-
-        iou_logits = iou_logits.permute(*axes).contiguous()
-        iou_logits = iou_logits.view(x.size()[0], -1)
-        return bb_logits, iou_logits
-
-    def compute_loss(self,
-                     pred_boxes: Tensor,
-                     target_boxes: Tensor,
-                     pred_iou: Tensor,
-                     ) -> Tensor:
-        """
-        Compute regression loss and IoU branch loss
-
-        Args:
-            pred_boxes: predicted bounding box deltas [N,  dim * 2]
-            target_boxes: target bounding box deltas [N,  dim * 2]
-            pred_iou: predicted IoU
-
-        Returns:
-            Tensor: loss
-        """
-        reg_loss = self.loss(pred_boxes, target_boxes)
-
-        target_ious = self.iou_fn(pred_boxes, target_boxes).diag(diagonal=0)
-        iou_branch_loss = self.loss_weight_iou_branch * self.iou_branch_loss(pred_iou, target_ious)
-        return reg_loss + iou_branch_loss
 
 
 RegressorType = TypeVar('RegressorType', bound=Regressor)

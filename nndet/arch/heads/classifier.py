@@ -24,7 +24,6 @@ from abc import abstractmethod
 from loguru import logger
 
 from nndet.losses.classification import (
-    AsymmetricFocalLossWithLogits,
     FocalLossWithLogits,
     BCEWithLogitsLossOneHot,
     CrossEntropyLoss,
@@ -426,121 +425,6 @@ class FocalClassifier(BaseClassifier):
             loss_weight=loss_weight,
             )
         self.logits_convert_fn = nn.Sigmoid()
-
-
-class AsymmetricFocalClassifier(FocalClassifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 prior_prob: Optional[float] = None,
-                 gamma: float = 2,
-                 alpha: float = -1,
-                 reduction: str = "sum",
-                 loss_weight: float = 1.,
-                 **kwargs
-                 ):
-        """
-        Classifier Head with sigmoid based BCE loss computation and
-        prio prob weight init
-        conv(in, internal) -> num_convs x conv(internal, internal) ->
-        conv(internal, out)
-
-        Args:
-            conv: Convolution modules which handles a single layer
-            in_channels: number of input channels
-            internal_channels: number of channels internally used
-            num_classes: number of foreground classes
-            anchors_per_pos: number of anchors per position
-            num_levels: number of decoder levels which are passed through the
-                classifier
-            num_convs: number of convolutions
-                input_conv -> num_convs -> output_convs
-            add_norm: en-/disable normalization layers in internal layers
-            prior_prob: initialize final conv with given prior probability
-            gamma: focal loss gamma
-            alpha: focal loss alpha
-            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
-            loss_weight: scalar to balance multiple losses
-            kwargs: keyword arguments passed to first and internal convolutions
-        """
-        self.prior_prob = prior_prob
-        super().__init__(
-            conv=conv,
-            in_channels=in_channels,
-            num_convs=num_convs,
-            add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes,
-            anchors_per_pos=anchors_per_pos,
-            num_levels=num_levels,
-            **kwargs,
-            )
-
-        self.loss = AsymmetricFocalLossWithLogits(
-            gamma=gamma,
-            alpha=alpha,
-            reduction=reduction,
-            loss_weight=loss_weight,
-            )
-        self.logits_convert_fn = nn.Sigmoid()  
-
-
-class FullyConntectedBCECLassifier(BCECLassifier):
-    """
-    BCE Classifier with 1x1 convs which act as fc
-    layers with shared weights across spatial locations
-
-    conv3(in, internal) -> num_convs x conv1(internal, internal) -> conv1(internal, out)
-    """
-    def build_conv_internal(self, conv, **kwargs):
-        """
-        Build internal convolutions
-        """
-        _conv_internal = nn.Sequential()
-        _conv_internal.add_module(
-            name="c_in",
-            module=conv(
-                self.in_channels,
-                self.internal_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                **kwargs,
-            ))
-        for i in range(self.num_convs):
-            _conv_internal.add_module(
-                name=f"c_internal{i}",
-                module=conv(
-                    self.internal_channels,
-                    self.internal_channels,
-                    kernel_size=1,
-                    stride=1,
-                    padding=0,
-                    **kwargs,
-                ))
-        return _conv_internal
-
-    def build_conv_out(self, conv):
-        """
-        Build final convolutions
-        """
-        out_channels = self.num_classes * self.anchors_per_pos
-        return conv(
-            self.internal_channels,
-            out_channels,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-            add_norm=False,
-            add_act=False,
-            bias=True,
-        )
 
 
 ClassifierType = TypeVar('ClassifierType', bound=Classifier)
