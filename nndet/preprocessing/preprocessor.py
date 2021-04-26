@@ -21,7 +21,7 @@ from loguru import logger
 from abc import ABC, abstractmethod
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, Sequence, List, Tuple, Union
+from typing import Dict, Sequence, List, Tuple, TypeVar, Union
 from itertools import repeat
 
 from nndet.io.transforms.instances import instances_to_boxes_np
@@ -639,3 +639,6 @@ class GenericPreprocessor:
             seg=seg,
         )
         return data.astype(np.float32), seg.astype(np.int32), properties
+
+
+PreprocessorType = TypeVar('PreprocessorType', bound=AbstractPreprocessor)
