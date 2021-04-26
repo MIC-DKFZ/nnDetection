@@ -86,7 +86,7 @@ Warning:
 2. When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container).
 I tested the following configuration on my local workstation:
 ```bash
-docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it nndetection:0.1 --shm-size=24gb /bin/bash
+docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
 ```
 
 </details>
@@ -118,8 +118,17 @@ Some of the labels were corrected in datasets which we converted and can be down
 The `Reproducing Experiments` section has an overview of multiple guides which explain the preparation of the datasets.
 
 ## Toy Dataset
-Running `nndet_example` will automatically generate an example dataset with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code.
-The problem is very easy and the final results should be near perfect.
+Running `nndet_example` will automatically generate an example dataset with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the dataset).
+
+```bash 
+# create data to test installation/environment (10 train 10 test)
+nndet_example
+
+# create full dataset for prototyping (1000 train 1000 test)
+nndet_example --full [--num_processes]
+```
+
+The full problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
 ## Reproducing Experiments
