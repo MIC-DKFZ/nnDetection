@@ -9,6 +9,14 @@
 
 </div>
 
+# What is nnDetection?
+Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
+For this task, the cumbersome and iterative process of method configuration constitutes a major research bottleneck. 
+Recently, nnU-Net has tackled this challenge for the task of image segmentation with great success.
+Following nnU-Net’s agenda, in this work we systematize and automate the configuration process for medical object detection.
+The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
+We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
+
 # Installation
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
