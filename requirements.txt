@@ -17,4 +17,3 @@ mlflow
 GitPython
 matplotlib
 seaborn
-rising
