@@ -18,9 +18,9 @@ import torch
 import torch.nn as nn
 from typing import Union, Callable, Any, Optional, Tuple, Sequence, Type
 
-from nndet.models.initializer import InitWeights_He
-from nndet.models.layers.norm import GroupNorm
-from nndet.models.layers.activation import Swish, Mish
+from nndet.arch.initializer import InitWeights_He
+from nndet.arch.layers.norm import GroupNorm
+from nndet.arch.layers.activation import Swish, Mish
 
 
 NdParam = Union[int, Tuple[int, int], Tuple[int, int, int]]
@@ -1029,7 +1029,7 @@ def nd_norm(norm_type: str, dim: int, *args, **kwargs) -> torch.nn.Module:
                 * :class:`torch.nn.InstanceNorm2d`
                 * :class:`torch.nn.InstanceNorm3d`
                 * :class:`torch.nn.LocalResponseNorm`
-                * :class:`nndet.models.layers.norm.GroupNorm`
+                * :class:`nndet.arch.layers.norm.GroupNorm`
     """
     if dim is None:
         dim_str = ""

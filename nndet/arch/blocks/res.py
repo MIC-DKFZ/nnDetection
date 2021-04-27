@@ -21,8 +21,8 @@ from typing import Sequence, Callable, Optional
 from functools import reduce 
 from loguru import logger
 
-from nndet.models.conv import nd_pool
-from nndet.models.conv import NdParam
+from nndet.arch.conv import nd_pool
+from nndet.arch.conv import NdParam
 
 
 class ResBasic(nn.Module):

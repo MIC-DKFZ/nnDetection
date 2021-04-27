@@ -24,7 +24,7 @@ from loguru import logger
 from pathlib import Path
 
 from nndet.utils.info import env_guard
-from nndet.planning.plan_experiment import PLANNER_REGISTRY
+from nndet.planning import PLANNER_REGISTRY
 from nndet.io import get_task, get_training_dir
 from nndet.io.load import load_pickle
 from nndet.inference.loading import load_all_models

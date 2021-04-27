@@ -21,7 +21,7 @@ from loguru import logger
 from abc import ABC, abstractmethod
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, Sequence, List, Tuple, Union
+from typing import Dict, Sequence, List, Tuple, TypeVar, Union
 from itertools import repeat
 
 from nndet.io.transforms.instances import instances_to_boxes_np
@@ -802,3 +802,6 @@ class PreprocessorMemEff(GenericPreprocessor):
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
+
+
+PreprocessorType = TypeVar('PreprocessorType', bound=AbstractPreprocessor)

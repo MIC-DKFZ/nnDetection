@@ -73,20 +73,16 @@ model_cfg:
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
     num_convs: 1
-    norm: "Group"
-    norm_kwargs:
-      channels_per_group: 16
-      affine: True
+    norm_channels_per_group: 16
+    norm_affine: True
     reduction: "mean"
     loss_weight: 1.
     prior_prob: 0.01
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head
     num_convs: 1
-    norm: "Group"
-    norm_kwargs:
-      channels_per_group: 16
-      affine: True
+    norm_channels_per_group: 16
+    norm_affine: True
     reduction: "sum"
     loss_weight: 1.
     learn_scale: True

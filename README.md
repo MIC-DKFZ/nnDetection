@@ -9,6 +9,14 @@
 
 </div>
 
+# What is nnDetection?
+Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
+For this task, the cumbersome and iterative process of method configuration constitutes a major research bottleneck. 
+Recently, nnU-Net has tackled this challenge for the task of image segmentation with great success.
+Following nnU-Net’s agenda, in this work we systematize and automate the configuration process for medical object detection.
+The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
+We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
+
 # Installation
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
@@ -86,7 +94,7 @@ Warning:
 2. When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container).
 I tested the following configuration on my local workstation:
 ```bash
-docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it nndetection:0.1 --shm-size=24gb /bin/bash
+docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
 ```
 
 </details>
@@ -118,8 +126,17 @@ Some of the labels were corrected in datasets which we converted and can be down
 The `Reproducing Experiments` section has an overview of multiple guides which explain the preparation of the datasets.
 
 ## Toy Dataset
-Running `nndet_example` will automatically generate an example dataset with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code.
-The problem is very easy and the final results should be near perfect.
+Running `nndet_example` will automatically generate an example dataset with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the dataset).
+
+```bash 
+# create data to test installation/environment (10 train 10 test)
+nndet_example
+
+# create full dataset for prototyping (1000 train 1000 test)
+nndet_example --full [--num_processes]
+```
+
+The full problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
 ## Reproducing Experiments
@@ -228,8 +245,8 @@ Eachs of this commands is explained below and more detailt information can be ob
 ### Planning & Preprocessing
 Before training the networks, nnDetection needs to preprocess and analyze the data.
 The preprocessing stage noramlizaes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
-nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a completely freed RTX2080TI) to perform live estimation of the VRAM used by the network.
-Future releases will improve this process...
+nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
+Future releases aim at improving this process...
 
 ```bash
 nndet_prep [tasks] [-o / --overwrites]
@@ -263,12 +280,11 @@ After planning and preprocessing the resulting data folder structure should look
 
 Befor starting the training copy the data (Task Folder, dataset info and preprocessed folder are needed) to a SSD (highly recommended) and unpack the image data with
 
-TODO: update name after reafactoring planner name
 ```bash
 nndet_unpack [path] [num_processes]
 
 # Example (unpack example with 6 processes)
-nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3C002_3d/imagesTr 6
+nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3V001_3d/imagesTr 6
 
 # Script
 # /experiments/utils.py - unpack()

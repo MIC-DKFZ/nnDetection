@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 import torch
 
@@ -31,3 +31,26 @@ class AbstractTransform(torch.nn.Module):
 
         with context:
             return super().__call__(*args, **kwargs)
+
+
+class Compose(AbstractTransform):
+    def __init__(self, *transforms):
+        """
+        Compose multiple transforms to one
+        
+        Args:
+            transforms: transformations to compose
+        """
+        super().__init__(grad=False)
+        if len(transforms) == 1 and isinstance(transforms[0], Sequence):
+            transforms = transforms[0]
+
+        self.transforms = torch.nn.ModuleList(list(transforms))
+
+    def forward(self, **batch):
+        """
+        Augment batch
+        """
+        for t in self.transforms:
+            batch = t(**batch)
+        return batch

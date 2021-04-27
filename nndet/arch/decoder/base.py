@@ -20,7 +20,7 @@ from typing import Sequence, List, Tuple, Union, Callable, Optional, TypeVar
 
 from loguru import logger
 
-from nndet.models.conv import conv_kwargs_helper
+from nndet.arch.conv import conv_kwargs_helper
 from nndet.utils import to_dtype
 
 

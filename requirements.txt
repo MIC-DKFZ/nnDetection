@@ -1,0 +1,19 @@
+pytorch_lightning
+scipy
+scikit-learn
+scikit-image>=0.14
+batchgenerators>=0.19.4
+pandas>=0.8.1
+PyYAML>=5.1, !=5.4.*
+nevergrad
+nnunet
+dicom2nifti
+medpy
+SimpleITK
+tqdm
+loguru
+hydra-core
+mlflow
+GitPython
+matplotlib
+seaborn

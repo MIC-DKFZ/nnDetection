@@ -15,9 +15,11 @@ limitations under the License.
 """
 
 import json
+import importlib
 from pathlib import Path
 
 import yaml
+from omegaconf import OmegaConf
 from hydra.experimental import compose as hydra_compose
 
 from nndet.io.paths import Pathlike, get_task
@@ -51,10 +53,14 @@ def load_dataset_info(task_dir: Pathlike) -> dict:
 
 
 def compose(task, *args, models: bool = False, **kwargs) -> dict:
-    from omegaconf import OmegaConf
     cfg = hydra_compose(*args, **kwargs)
     OmegaConf.set_struct(cfg, False)
     task_name = get_task(task, name=True, models=models)
     cfg["task"] = task_name
     cfg["data"] = load_dataset_info(get_task(task_name))
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
+
     return cfg

@@ -20,8 +20,8 @@ import torch.nn as nn
 from abc import abstractmethod
 from typing import Sequence, Callable, Union, Tuple
 
-from nndet.models.conv import NdParam
-from nndet.models.blocks.res import ResBasic
+from nndet.arch.conv import NdParam
+from nndet.arch.blocks.res import ResBasic
 
 
 class AbstractBlock(nn.Module):

@@ -20,10 +20,10 @@ import torch.nn as nn
 from torch import Tensor
 from typing import Dict, List, Union, Sequence, Optional, Tuple, TypeVar
 
-from nndet.models.conv import compute_padding_for_kernel, conv_kwargs_helper
-from nndet.models.heads.comb import AbstractHead
+from nndet.arch.conv import compute_padding_for_kernel, conv_kwargs_helper
+from nndet.arch.heads.comb import AbstractHead
+from nndet.arch.layers.interpolation import InterpolateToShapes
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
-from nndet.models.layers.interpolation import InterpolateToShapes
 
 
 class Segmenter(AbstractHead):
