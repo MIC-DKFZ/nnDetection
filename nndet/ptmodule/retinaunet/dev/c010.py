@@ -1,14 +1,14 @@
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
 from nndet.ptmodule import MODULE_REGISTRY
 
-from nndet.models.heads.comb import BoxHeadNoSampler
-from nndet.models.heads.classifier import (
+from nndet.arch.heads.comb import BoxHeadNoSampler
+from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
     FullyConntectedBCECLassifier,
     )
-from nndet.models.heads.segmenter import DiceTopKSegmenterFgBg
-from nndet.models.conv import (
+from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
+from nndet.arch.conv import (
     ConvGroupRelu,
     ConvInstanceMish,
     ConvInstanceSwish,
@@ -86,31 +86,6 @@ class RetinaUNetC010LReLUAsymFocal(RetinaUNetC010):
 
     head_cls = BoxHeadNoSampler
     head_classifier_cls = AsymmetricFocalClassifier
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetC010FocalResLike(RetinaUNetC010Focal):
-    @classmethod
-    def _build_encoder(cls, conv, plan_arch, model_cfg) -> torch.nn.Module:
-        from nndet.models.encoder.res import ResModularExp
-        from nndet.models.blocks.res import ResBottleneck
-
-        logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
-        return ResModularExp(
-            conv=conv,
-            conv_kernels=plan_arch["conv_kernels"],
-            strides=plan_arch["strides"],
-
-            num_blocks=[4, 12, 16, 8],
-            block_cls=ResBottleneck,
-
-            in_channels=plan_arch["in_channels"],
-            start_channels=plan_arch["start_channels"],
-
-            stage_kwargs=None,
-            **model_cfg['encoder_kwargs'],
-            expansion=4,
-        )
 
 
 @MODULE_REGISTRY.register
