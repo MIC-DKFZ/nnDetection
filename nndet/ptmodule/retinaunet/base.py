@@ -62,8 +62,12 @@ from nndet.inference.helper import predict_dir
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.inference.ensembler.detection import BoxEnsemblerSelective
 
-from rising.transforms import Compose
-from nndet.io.transforms import Instances2Boxes, Instances2Segmentation, FindInstances
+from nndet.io.transforms import (
+    Compose,
+    Instances2Boxes,
+    Instances2Segmentation,
+    FindInstances,
+    )
 
 
 class RetinaUNetModule(LightningBaseModuleSWA):

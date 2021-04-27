@@ -1,4 +1,7 @@
-from nndet.io.transforms.base import AbstractTransform
+from nndet.io.transforms.base import (
+    AbstractTransform,
+    Compose,
+    )
 from nndet.io.transforms.instances import (
     Instances2Boxes,
     Instances2Segmentation,
