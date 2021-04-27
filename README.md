@@ -244,7 +244,7 @@ Eachs of this commands is explained below and more detailt information can be ob
 
 ### Planning & Preprocessing
 Before training the networks, nnDetection needs to preprocess and analyze the data.
-The preprocessing stage noramlizaes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
+The preprocessing stage normalizes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
 nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
 Future releases aim at improving this process...
 
@@ -293,7 +293,7 @@ nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3V001_3d/imagesTr 6
 ### Training and Evaluation
 After the planning and preprocessing stage is finished the training phase can be started.
 The default setup of nnDetection is trained in a 5 fold cross-validation scheme.
-First, check which plans were generated during planning by checken the preprocessing folder and looking for the pickled plan files. In most cases only the defaul plan will be generated (`D3V001_3d`) but there might be instances (e.g. Kits) where the low resolution plan will be generated too (`D3V001LR1_3d`).
+First, check which plans were generated during planning by checking the preprocessing folder and looking for the pickled plan files. In most cases only the defaul plan will be generated (`D3V001_3d`) but there might be instances (e.g. Kits) where the low resolution plan will be generated too (`D3V001LR1_3d`).
 
 ```bash
 nndet_train [task] [-o / --overwrites] [--sweep]
