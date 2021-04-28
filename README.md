@@ -78,7 +78,7 @@ The docker container expects the data and models in `/opt/data` and `/opt/models
 The directories need to be mounted via docker commands e.g.
 
 ```bash
-docker run --gpus all nndetection -v /path/to/data/on/pc:/opt/data -v /path/to/models/on/pc:/opt/models -it nndetection:0.1 /bin/bash
+docker run --gpus all -v /path/to/data/on/pc:/opt/data -v /path/to/models/on/pc:/opt/models -it nndetection:0.1 /bin/bash
 ```
 
 If nnDetection is already configured on the host PC the following command can be used to start the container with the correct paths.
