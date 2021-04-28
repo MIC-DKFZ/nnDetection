@@ -19,8 +19,6 @@ import os
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
-Pathlike = Union[Path, str]
-
 
 def subfiles(dir_path: Path, identifier: str, join: bool) -> List[str]:
     """
@@ -143,7 +141,7 @@ def get_case_ids_from_dir(dir_path: Path, unique: bool = True,
     return case_ids
 
 
-def get_case_id_from_path(file_path: Pathlike, remove_modality: bool = True) -> str:
+def get_case_id_from_path(file_path: os.PathLike, remove_modality: bool = True) -> str:
     """
     Get case of from path to file
 
@@ -224,7 +222,7 @@ def get_task(task_id: str, name: bool = False, models: bool = False) -> Union[Pa
     return result
 
 
-def get_training_dir(model_dir: Pathlike, fold: int) -> Path:
+def get_training_dir(model_dir: os.PathLike, fold: int) -> Path:
     """
     Find training dir from a specific model dir
 

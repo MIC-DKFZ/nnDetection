@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import json
 import importlib
 from pathlib import Path
@@ -22,10 +23,10 @@ import yaml
 from omegaconf import OmegaConf
 from hydra.experimental import compose as hydra_compose
 
-from nndet.io.paths import Pathlike, get_task
+from nndet.io.paths import get_task
 
 
-def load_dataset_info(task_dir: Pathlike) -> dict:
+def load_dataset_info(task_dir: os.PathLike) -> dict:
     """
     Load dataset information from a given task directory
 

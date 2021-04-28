@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import shutil
 import json
 from itertools import repeat
@@ -31,8 +32,6 @@ from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.prepare import sitk_copy_metadata
 from nndet.io.transforms.instances import instances_to_segmentation_np
 
-Pathlike = Union[str, Path]
-
 
 class Exporter:
     """
@@ -41,10 +40,10 @@ class Exporter:
 
     def __init__(self,
                  data_info: dict,
-                 tr_image_dir: Pathlike,
-                 label_dir: Pathlike,
-                 target_dir: Pathlike,
-                 ts_image_dir: Pathlike = None,
+                 tr_image_dir: os.PathLike,
+                 label_dir: os.PathLike,
+                 target_dir: os.PathLike,
+                 ts_image_dir: os.PathLike = None,
                  export_stuff: bool = False,
                  processes: int = 6,
                  ):

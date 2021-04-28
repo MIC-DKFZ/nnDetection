@@ -37,15 +37,15 @@ from nndet.utils.clustering import instance_results_from_seg
 from nndet.utils.config import compose
 from nndet.utils.info import maybe_verbose_iterable
 
-Pathlike = Union[str, Path]
+
 TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 
 
 def import_nnunet_boxes(
         # settings
-        nnunet_prediction_dir: Pathlike,
-        save_dir: Pathlike,
-        boxes_gt_dir: Pathlike,
+        nnunet_prediction_dir: os.PathLike,
+        save_dir: os.PathLike,
+        boxes_gt_dir: os.PathLike,
         classes: Sequence[str],
         stuff: Optional[Sequence[int]] = None,
         num_workers: int = 6,
@@ -173,8 +173,8 @@ def import_nnunet_boxes(
 
 
 def import_dir(
-    nnunet_prediction_dir: Pathlike,
-    target_dir: Optional[Pathlike] = None,
+    nnunet_prediction_dir: os.PathLike,
+    target_dir: Optional[os.PathLike] = None,
     aggregation="max",
     min_num_voxel=0,
     min_threshold=None,

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import shutil
 import numpy as np
 import SimpleITK as sitk
@@ -21,7 +22,6 @@ import SimpleITK as sitk
 from pathlib import Path
 from typing import Dict, List, Sequence, Optional
 
-from nndet.io.paths import Pathlike
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
@@ -207,7 +207,7 @@ def instances_from_segmentation(source_file: Path, output_folder: Path,
     sitk.WriteImage(seg_itk_new, str(output_folder / f"{file_name}.nii.gz"))
 
 
-def create_test_split(splitted_dir: Pathlike,
+def create_test_split(splitted_dir: os.PathLike,
                       num_modalities: int,
                       test_size: float = 0.3,
                       random_state: int = 0,

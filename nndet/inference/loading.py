@@ -23,7 +23,6 @@ import torch
 from loguru import logger
 
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.io.paths import Pathlike
 
 
 def get_loader_fn(mode: str, **kwargs):
@@ -38,7 +37,7 @@ def get_loader_fn(mode: str, **kwargs):
     return load_fn
 
 
-def get_latest_model(base_dir: Pathlike, fold: int = 0) -> Optional[Path]:
+def get_latest_model(base_dir: os.PathLike, fold: int = 0) -> Optional[Path]:
     """
     Get the latest training dir in a given base dir
     E.g. ../RetinaUNetV0/fold0__0, ../RetinaUNetV0/fold0__1

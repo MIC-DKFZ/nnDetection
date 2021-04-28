@@ -31,7 +31,7 @@ import numpy as np
 import SimpleITK as sitk
 from loguru import logger
 
-from nndet.io.paths import subfiles, Pathlike
+from nndet.io.paths import subfiles
 
 
 __all__ = ["load_case_cropped", "load_case_from_list",
@@ -160,7 +160,7 @@ def npy_dataset(folder: str, processes: int,
             del_npy(Path(folder))
 
 
-def unpack_dataset(folder: Pathlike,
+def unpack_dataset(folder: os.PathLike,
                    processes: int,
                    delete_npz: bool = False):
     """
@@ -223,7 +223,7 @@ def npy2npz(npy_file: str, key: str):
     np.savez_compressed(npy_file[:-3] + "npz", **{key: d})
 
 
-def del_npy(folder: Pathlike):
+def del_npy(folder: os.PathLike):
     """
     Deletes all npy files inside folder
     """
@@ -255,7 +255,7 @@ def load_json(path: Path, **kwargs) -> Any:
     return data
 
 
-def save_json(data: Any, path: Pathlike, indent: int = 4, **kwargs):
+def save_json(data: Any, path: os.PathLike, indent: int = 4, **kwargs):
     """
     Load json file
 
@@ -295,7 +295,7 @@ def load_pickle(path: Path, **kwargs) -> Any:
     return data
 
 
-def save_pickle(data: Any, path: Pathlike, **kwargs):
+def save_pickle(data: Any, path: os.PathLike, **kwargs):
     """
     Load pickle file
 
@@ -351,7 +351,7 @@ def save_txt(data: str, path: Path, **kwargs):
 
 
 def load_npz_looped(
-        p: Pathlike,
+        p: os.PathLike,
         keys: Sequence[str],
         *args,
         num_tries: int = 3,

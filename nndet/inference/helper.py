@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import os
 from pathlib import Path
 from typing import Sequence, List, Dict, Callable, Optional
 
@@ -22,13 +22,13 @@ from loguru import logger
 
 from nndet.utils.tensor import to_numpy
 from nndet.io.load import load_pickle, save_pickle
-from nndet.io.paths import Pathlike, get_case_id_from_path
+from nndet.io.paths import get_case_id_from_path
 from nndet.inference.loading import load_time_ensemble
 
 
 def predict_dir(
-    source_dir: Pathlike,
-    target_dir: Pathlike,
+    source_dir: os.PathLike,
+    target_dir: os.PathLike,
     cfg: dict,
     plan: dict,
     source_models: Path,

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import os
 from typing import List
 
 from loguru import logger
@@ -21,10 +21,10 @@ from collections import OrderedDict
 from pathlib import Path
 
 from nndet.io.load import load_pickle
-from nndet.io.paths import get_case_ids_from_dir, get_case_id_from_path, Pathlike
+from nndet.io.paths import get_case_ids_from_dir, get_case_id_from_path
 
 
-def get_np_paths_from_dir(directory: Pathlike) -> List[str]:
+def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
     """
     First looks for npz files inside dir. If no files are found, it looks
     for npy files.
@@ -52,7 +52,7 @@ def get_np_paths_from_dir(directory: Pathlike) -> List[str]:
     return case_paths
 
 
-def load_dataset(folder: Pathlike) -> dict:
+def load_dataset(folder: os.PathLike) -> dict:
     """
     Load dataset (path and properties, NOT the actual data) and
     save them into dict by their path
@@ -79,7 +79,7 @@ def load_dataset(folder: Pathlike) -> dict:
     return dataset
 
 
-def load_dataset_id(folder: Pathlike) -> dict:
+def load_dataset_id(folder: os.PathLike) -> dict:
     """
     Load dataset (path and properties, NOT the actual data) and
     save them into dict by their identifier

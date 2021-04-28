@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 import time
@@ -22,7 +23,6 @@ from typing import Callable, Tuple, Dict, Sequence, Any, Optional, TypeVar
 import numpy as np
 from loguru import logger
 
-from nndet.io.paths import Pathlike
 from nndet.io.load import save_json
 from nndet.utils.info import maybe_verbose_iterable
 from nndet.utils import to_numpy
@@ -32,10 +32,10 @@ from nndet.evaluator.registry import BoxEvaluator
 class Sweeper(ABC):
     def __init__(self,
                  classes: Sequence[str],
-                 pred_dir: Pathlike,
-                 gt_dir: Pathlike,
+                 pred_dir: os.PathLike,
+                 gt_dir: os.PathLike,
                  target_metric: str,
-                 save_dir: Optional[Pathlike] = None,
+                 save_dir: Optional[os.PathLike] = None,
                  ):
         """
         Sweep multiple parameters and compute evaluation metrics
@@ -78,11 +78,11 @@ class Sweeper(ABC):
 class BoxSweeper(Sweeper):
     def __init__(self,
                  classes: Sequence[str],
-                 pred_dir: Pathlike,
-                 gt_dir: Pathlike,
+                 pred_dir: os.PathLike,
+                 gt_dir: os.PathLike,
                  target_metric: str,
                  ensembler_cls: Callable,
-                 save_dir: Optional[Pathlike] = None,
+                 save_dir: Optional[os.PathLike] = None,
                  ) -> None:
         """
         Run sweep over parameters and select the best
