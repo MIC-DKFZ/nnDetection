@@ -13,6 +13,7 @@
 #limitations under the License.
 
 FROM nvidia/cuda:11.1.1-devel-ubuntu20.04
+# FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
 
 ARG env_det_num_threads=6
 ARG env_det_verbose=1
@@ -41,6 +42,7 @@ RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -
   && ln -s /opt/miniconda/bin/activate /activate \
   && . /activate \
   && pip install numpy \
+  # && pip install torch torchvision torchaudio
   && pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
 
 # Install own code
@@ -50,8 +52,8 @@ RUN mkdir ${det_data} \
   && mkdir -p /opt/code/nndet \
   && . /activate \
   && pip install -r requirements.txt  \
-  && pip install hydra-core --upgrade --pre \
-  && pip install git+https://github.com/mibaumgartner/pytorch_model_summary.git
+  && pip install hydra-core --upgrade --pre
+  # && pip install git+https://github.com/mibaumgartner/pytorch_model_summary.git
 
 WORKDIR /opt/code/nndet
 COPY . .
