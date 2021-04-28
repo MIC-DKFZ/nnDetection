@@ -186,8 +186,8 @@ def main():
     elif sweep_instances:
         raise NotImplementedError
 
+    plan = load_pickle(target_dir / "plan.pkl")
     if consolidate != 'copy':
-        plan = load_pickle(target_dir / "plan.pkl")
         plan["inference_plan"] = inference_plan
         save_pickle(plan, target_dir / "plan_inference.pkl")
 
@@ -203,7 +203,7 @@ def main():
                 )
     else:
         logger.warning("Plan used from fold 0, not updated with consolidation")
-
+        save_pickle(plan, target_dir / "plan_inference.pkl")
 
 if __name__ == '__main__':
     main()

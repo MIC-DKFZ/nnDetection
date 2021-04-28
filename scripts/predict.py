@@ -156,7 +156,8 @@ def main():
     cfg = OmegaConf.load(str(training_dir / "config.yaml"))
 
     cfg = set_arg(cfg, "task", task_name, force_args=force_args)
-    cfg["exp"] = set_arg(cfg["exp"], "fold", fold, force_args=force_args)
+    cfg["exp"] = set_arg(cfg["exp"], "fold", fold,
+                         force_args=True if fold == -1 else force_args)
     cfg["exp"] = set_arg(cfg["exp"], "id", model, force_args=force_args)
 
     overwrites = ov if ov is not None else []
