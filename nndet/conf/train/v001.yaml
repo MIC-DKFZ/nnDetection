@@ -23,6 +23,11 @@ augment_cfg:
   num_cached_per_thread: 2
   multiprocessing: True # only deactivate this if debugging
 
+  # Additional overwrites
+  # patch_size
+  # batch_size
+  # splits
+
 trainer_cfg:
   gpus: 1 # number of gpus
   accelerator: ddp # distributed backend
