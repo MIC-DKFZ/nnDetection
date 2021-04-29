@@ -761,7 +761,7 @@ class PreprocessorRibFrac(PreprocessorNoResampling):
         return data
 
 
-class PreprocessorMemEff(GenericPreprocessor):
+class PreprocessorFP16I16(GenericPreprocessor):
     def run_process(self,
                     target_spacing: Sequence[float],
                     case_id: str,
