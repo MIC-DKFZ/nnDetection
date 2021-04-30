@@ -95,7 +95,7 @@ class Mish(torch.nn.Module):
         super().__init__()
         self.inplace = inplace
         if self.inplace:
-            logger.warning(f"Inplace not implemented for Mish activation")
+            logger.warning("Inplace not supported for Mish.")
         self.beta = beta
         self.threshold = threshold
 

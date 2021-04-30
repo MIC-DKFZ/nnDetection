@@ -416,6 +416,50 @@ class UFPNModular(BaseUFPN):
         return self.forward_out(reversed(out_list))
 
 
+class SmallUFPN(UFPNModular):
+    def compute_output_channels(self) -> List[int]:
+        """
+        Compute number of output channels
+
+        Returns:
+            List[int]: number of output channels for each level
+        """
+        out_channels = [self.fixed_out_channels] * self.num_level
+
+        if self.decoder_levels is not None:
+            ouput_levels = list(range(self.num_level))
+            # filter for levels above decoder levels
+            ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
+            assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
+            for idx, ol in enumerate(ouput_levels[::-1]):
+                div = 4 if idx==0 else 2
+                oc = max(self.min_out_channels, out_channels[ol + 1] // div)
+                out_channels[ol] = oc
+        return out_channels
+
+
+class SmallerUFPN(UFPNModular):
+    def compute_output_channels(self) -> List[int]:
+        """
+        Compute number of output channels
+
+        Returns:
+            List[int]: number of output channels for each level
+        """
+        out_channels = [self.fixed_out_channels] * self.num_level
+
+        if self.decoder_levels is not None:
+            ouput_levels = list(range(self.num_level))
+            # filter for levels above decoder levels
+            ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
+            assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
+            for idx, ol in enumerate(ouput_levels[::-1]):
+                div = 8 if idx==0 else 2
+                oc = max(self.min_out_channels, out_channels[ol + 1] // div)
+                out_channels[ol] = oc
+        return out_channels
+
+
 class PAUFPN(UFPNModular):
     def __init__(self,
                  conv: Callable,

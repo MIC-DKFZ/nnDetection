@@ -1,6 +1,10 @@
+import torch
+from loguru import logger
+
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
 from nndet.ptmodule import MODULE_REGISTRY
 
+from nndet.arch.decoder.base import SmallUFPN, SmallerUFPN
 from nndet.arch.heads.comb import BoxHeadNoSampler
 from nndet.arch.heads.classifier import (
     FocalClassifier,
@@ -20,9 +24,6 @@ from nndet.arch.conv import (
     ConvGroupLReLU
     )
 
-
-import torch
-from loguru import logger
 from nndet.training import optimizer
 
 from nndet.training.optimizer import get_params_no_wd_on_norm
@@ -294,3 +295,18 @@ class RetinaUNetC010TopK10FGBG(RetinaUNetC010):
 @MODULE_REGISTRY.register
 class RetinaUNetC010TopK10FGBGMad(RetinaUNetC010Madgrad):
     segmenter_cls = DiceTopKSegmenterFgBg
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010LReLUMishHead(RetinaUNetC010LReLU):
+    head_conv_cls = ConvGroupMish
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
+    decoder_cls=SmallUFPN
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
+    decoder_cls=SmallerUFPN
