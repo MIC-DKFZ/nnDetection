@@ -206,7 +206,7 @@ def npz2npy(npz_file: str, delete_npz: bool = False):
         a = load_npz_looped(npz_file, keys=["data", "seg"], num_tries=3)
         if a is not None:
             np.save(npz_file[:-3] + "npy", a["data"])
-            np.save(npz_file[:-4] + "_seg.npy", a["seg"].astype(np.int16))
+            np.save(npz_file[:-4] + "_seg.npy", a["seg"])
     if delete_npz:
         os.remove(npz_file)
 
