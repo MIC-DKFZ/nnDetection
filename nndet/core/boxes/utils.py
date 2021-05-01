@@ -18,7 +18,8 @@ import torch
 
 from torch import Tensor
 from numpy import ndarray
-from typing import Union, Sequence, Tuple
+from typing import Union, Sequence, Tuple, List
+from torch._C import device
 
 
 from torch.cuda.amp import autocast
@@ -390,3 +391,24 @@ def box_size(boxes: Tensor) -> Tensor:
     if boxes.shape[1] // 2 == 3:
         dists.append(boxes[:, 5] - boxes[:, 4])
     return torch.stack(dists, axis=1)
+
+
+def extend_and_cat_boxes(boxes: List[Tensor]) -> Tensor:
+    """
+    Concatenate boxes of multiple images and add batch idx at first pos
+
+    Args:
+        boxes: sequence of boxes. (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
+    Returns:
+        Tensor: concatenated boxes with batch index. The first index of each
+            box corresponds to the batch idx
+            (batch_idx, x1, y1, x2, y2, (z1, z2))[N, 1 + dim * 2]
+    """
+    extended_boxes = []
+    for i, b in enumerate(boxes):
+        extended_boxes.append(torch.cat(
+            torch.full((b.shape[0]), i, dtype=b.dtype, device=b.device), b,
+            dim=1,
+        ))
+    return torch.cat(extended_boxes, dim=0)
