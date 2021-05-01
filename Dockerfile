@@ -57,5 +57,5 @@ RUN mkdir ${det_data} \
 
 WORKDIR /opt/code/nndet
 COPY . .
-RUN echo ". /activate" > ~/.bashrc
+RUN echo ". /activate" >> ~/.bashrc
 RUN . /activate && pip install -v -e .
