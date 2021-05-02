@@ -6,7 +6,7 @@ For each stage:
     predict features
     compute loss
 """
-from typing import TypeVar, List, Dict, Union, Tuple
+from typing import TypeVar, List, Dict, Union, Tuple, Sequence
 
 import torch
 
@@ -25,6 +25,7 @@ class RoIHead(torch.nn.Module):
                  matcher: MatcherType,
                  pooler: PoolerType,
                  sampler: SamplerType, # NegativeSampler default => random balanced sampling
+                 decoder_levels: Sequence[int],
                  gt_to_proposals: bool = True,
                  ) -> None:
         super().__init__()
@@ -32,6 +33,7 @@ class RoIHead(torch.nn.Module):
         self.matcher = matcher
         self.pooler = pooler
         self.sampler = sampler
+        self.decoder_levels = decoder_levels
         self.gt_to_proposals = gt_to_proposals
 
     def forward(self, roi_features: torch.Tensor):
@@ -52,11 +54,12 @@ class RoIHead(torch.nn.Module):
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
     ):
+        _features = [features[i] for i in self.decoder_levels]
         target_boxes: List[torch.Tensor] = targets["target_boxes"]
         target_classes: List[torch.Tensor] = targets["target_classes"]        
 
-        proposal_boxes = proposals["pred_boxes"]
-        proposal_scores = proposals["pred_scores"]
+        proposal_boxes: List[torch.Tensor] = proposals["pred_boxes"]
+        proposal_scores: List[torch.Tensor] = proposals["pred_scores"]
  
         if self.gt_to_proposals:
             proposal_boxes = self.add_gt_to_proposals(proposal_boxes, target_boxes)
@@ -68,7 +71,7 @@ class RoIHead(torch.nn.Module):
             target_classes,
         )
 
-        roi_features = self.pooler(features, proposal_boxes_sampled) # [P, C, spatial]
+        roi_features = self.pooler(_features, proposal_boxes_sampled) # [P, C, spatial]
         pred_detection = self(roi_features)
 
         # compute loss
