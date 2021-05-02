@@ -69,7 +69,7 @@ class RoIHead(torch.nn.Module):
         )
 
         roi_features = self.pooler(features, proposal_boxes_sampled) # [P, C, spatial]
-        pred_detection = self(roi_features) # box_deltas [P, dim * 2], box_logits [P, num_classes]
+        pred_detection = self(roi_features)
 
         # compute loss
         losses, pos_idx, neg_idx = self.box_head.compute_loss(

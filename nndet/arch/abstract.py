@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, Tuple, Any, Optional, List, Union
 
 import torch
 from abc import abstractmethod
@@ -25,44 +25,70 @@ from torch import Tensor
 class AbstractModel(torch.nn.Module):
     @classmethod
     @abstractmethod
-    def from_config_plan(cls,
-                         model_cfg: dict,
-                         plan_arch: dict,
-                         plan_anchors: dict,
-                         log_num_anchors: str = None,
-                         **kwargs,
-                         ):
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        log_num_anchors: str = None,
+        **kwargs,
+        ):
         raise NotImplementedError
 
     @abstractmethod
-    def train_step(self,
-                   images: Tensor,
-                   targets: dict,
-                   evaluation: bool,
-                   batch_num: int,
-                   ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    def train_step(
+        self,
+        images: Tensor,
+        targets: dict,
+        predict: bool,
+        batch_num: int,
+        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
         """
         Perform a single training step
 
         Args:
             images: images to process
             targets: labels for training
-            evaluation (bool): compute final predictions which should be used for metric evaluation
-            batch_num (int): batch index inside epoch
+            predict: compute final predictions which should be used for metric evaluation
+            batch_num: batch index inside epoch
 
         Returns:
-            torch.Tensor: final loss for back propagation
-            Dict: predictions for metric calculation
-            Dict[str, torch.Tensor]: scalars for logging (e.g. individual loss components)
+            Dict[str, torch.Tensor]: losses
+            Optional[Dict]: predictions; only if `predict=True`
         """
         raise NotImplementedError
 
     @abstractmethod
-    def inference_step(self,
-                       images: Tensor,
-                       *args,
-                       **kwargs,
-                       ) -> Dict[str, Any]:
+    def train_step_with_features(
+        self,
+        images: Tensor,
+        targets: dict,
+        predict: bool,
+        batch_num: int,
+        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
+        """
+        Perform a single training step and return feature maps
+
+        Args:
+            images: images to process
+            targets: labels for training
+            predict: compute final predictions which should be used for metric evaluation
+            batch_num: batch index inside epoch
+
+        Returns:
+            Dict[str, torch.Tensor]: losses
+            Optional[Dict]: predictions; only if `predict=True`
+            List[torch.Tensor]: feature maps from backbones
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def inference_step(
+        self,
+        images: Tensor,
+        *args,
+        **kwargs,
+        ) -> Dict[str, Any]:
         """
         Perform a single training step
 
@@ -72,6 +98,26 @@ class AbstractModel(torch.nn.Module):
             **kwargs: keyword arguments
 
         Returns:
-            Dict: predictions for metric calculation
+            Dict: predictions
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def inference_step_with_features(
+        self,
+        images: Tensor,
+        **kwargs,
+        ) -> Union[Dict[str, Any], List[torch.Tensor]]:
+        """
+        Perform a single training step
+
+        Args:
+            images: images to process
+            *args: positional arguments
+            **kwargs: keyword arguments
+
+        Returns:
+            Dict: predictions
+            List[torch.Tensor]: feature maps from backbones
         """
         raise NotImplementedError

@@ -55,13 +55,18 @@ class AbstractHead(nn.Module):
                                   *args, **kwargs,
                                   ) -> Dict[str, torch.Tensor]:
         """
-        Postprocess predictions for inference e.g. ocnvert logits to probs
+        Postprocess predictions for inference e.g. convert logits to probs
 
         Args:
             Dict[str, torch.Tensor]: predictions from this head
             List[torch.Tensor]: anchors per image
         """
         raise NotImplementedError
+
+    #TODO: reafactor to different position
+    @property
+    def regress_multi_class(self):
+        return self.regressor.regress_multi_class
 
 
 class DetectionHead(AbstractHead):

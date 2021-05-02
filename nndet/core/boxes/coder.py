@@ -105,24 +105,24 @@ def decode_single(rel_codes: Tensor, boxes: Tensor,
     ww = weights[2] # [1]
     wh = weights[3] # [1]
 
-    dx = rel_codes[:, 0::offset] / wx # [N, 1]
-    dy = rel_codes[:, 1::offset] / wy # [N, 1]
-    dw = rel_codes[:, 2::offset] / ww # [N, 1]
-    dh = rel_codes[:, 3::offset] / wh # [N, 1]
+    dx = rel_codes[:, 0::offset] / wx # [N, n_classes]
+    dy = rel_codes[:, 1::offset] / wy # [N, n_classes]
+    dw = rel_codes[:, 2::offset] / ww # [N, n_classes]
+    dh = rel_codes[:, 3::offset] / wh # [N, n_classes]
 
     # Prevent sending too large values into torch.exp()
-    dw = torch.clamp(dw, max=bbox_xform_clip) # [N, 1]
-    dh = torch.clamp(dh, max=bbox_xform_clip) # [N, 1]
+    dw = torch.clamp(dw, max=bbox_xform_clip) # [N, n_classes]
+    dh = torch.clamp(dh, max=bbox_xform_clip) # [N, n_classes]
 
-    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None] # [N, 1]
-    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None] # [N, 1]
-    pred_w = torch.exp(dw) * widths[:, None] # [N, 1]
-    pred_h = torch.exp(dh) * heights[:, None] # [N, 1]
+    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None] # [N, n_classes]
+    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None] # [N, n_classes]
+    pred_w = torch.exp(dw) * widths[:, None] # [N, n_classes]
+    pred_h = torch.exp(dh) * heights[:, None] # [N, n_classes]
 
-    pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, 1]
-    pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, 1]
-    pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, 1]
-    pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, 1]
+    pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, n_classes]
+    pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, n_classes]
+    pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, n_classes]
+    pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, n_classes]
 
     if offset == 6:
         depths = boxes[:, 5] - boxes[:, 4] # [N]
@@ -131,20 +131,20 @@ def decode_single(rel_codes: Tensor, boxes: Tensor,
         wz = weights[4] # [1]
         wd = weights[5] # [1]
 
-        dz = rel_codes[:, 4::offset] / wz # [N, 1]
-        dd = rel_codes[:, 5::offset] / wd # [N, 1]
-        dd = torch.clamp(dd, max=bbox_xform_clip) # [N, 1]
+        dz = rel_codes[:, 4::offset] / wz # [N, n_classes]
+        dd = rel_codes[:, 5::offset] / wd # [N, n_classes]
+        dd = torch.clamp(dd, max=bbox_xform_clip) # [N, n_classes]
 
-        pred_ctr_z = dz * depths[:, None] + ctr_z[:, None] # [N, 1]
-        pred_z = torch.exp(dd) * depths[:, None] # [N, 1]
+        pred_ctr_z = dz * depths[:, None] + ctr_z[:, None] # [N, n_classes]
+        pred_z = torch.exp(dd) * depths[:, None] # [N, n_classes]
 
         pred_boxes5 = pred_ctr_z - torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z # [N]
         pred_boxes6 = pred_ctr_z + torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z # [N]
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4,
-                                  pred_boxes5, pred_boxes6), dim=2).flatten(1) # [N, 6]
+                                  pred_boxes5, pred_boxes6), dim=2).flatten(1) # [N, 6 * n_classes]
     else:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4),
-                                 dim=2).flatten(1) # [N, 4]
+                                 dim=2).flatten(1) # [N, 4 * n_classes]
     return pred_boxes
 
 
@@ -209,29 +209,43 @@ class BoxCoderND(BoxCoder):
         targets = encode_boxes(reference_boxes, proposals, weights)
         return targets
 
-    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+    def decode(self,
+               rel_codes: Tensor,
+               boxes: List[Tensor],
+               per_class: bool = False,
+               ) -> Tensor:
         """
         Decode boxes
 
         Args:
             rel_codes: relative offsets to reference boxes 
-                (dx, dy, dw, dh, (dz, dd))[N, dim * 2]
+                (dx, dy, dw, dh, (dz, dd))[N, dim * 2 (* n_classes)]
             boxes: list of reference boxes per image
                 (x1, y1, x2, y2, (z1, z2))
+            per_class: rel_codes regresses each anchor for each class
+                separately set this to True. This will result in regressed
+                bounding boxes for each class
 
         Returns:
             Tensor: decoded boxes
+                [N, dims * 2]: if `per_class=False`
+                [N, num_classes, dims * 2]:  if `per_class=True`
         """
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         spatial_dims = concat_boxes.shape[1]
+        
         box_sum = 0
         for val in boxes_per_image:
             box_sum += val
         pred_boxes = self.decode_single(rel_codes.reshape(box_sum, -1), concat_boxes)
-        return pred_boxes.reshape(box_sum, spatial_dims)
+
+        if per_class:
+            return pred_boxes.reshape(box_sum, -1, spatial_dims)
+        else:
+            return pred_boxes.reshape(box_sum, spatial_dims)
 
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         dtype, device = rel_codes.dtype, rel_codes.device

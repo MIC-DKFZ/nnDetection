@@ -47,6 +47,10 @@ class Regressor(nn.Module):
         """
         raise NotImplementedError
 
+    @property
+    def regress_multi_class(self):
+        return False
+
 
 class BaseRegressor(Regressor):
     def __init__(self,

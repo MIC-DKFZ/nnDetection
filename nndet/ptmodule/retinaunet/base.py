@@ -149,7 +149,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 "target_classes": batch["classes"],
                 "target_seg": batch['target'][:, 0]  # Remove channel dimension
                 },
-            evaluation=False,
+            predict=False,
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
@@ -171,7 +171,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             losses, prediction = self.model.train_step(
                 images=batch["data"],
                 targets=targets,
-                evaluation=True,
+                predict=True,
                 batch_num=batch_idx,
             )
             loss = sum(losses.values())
