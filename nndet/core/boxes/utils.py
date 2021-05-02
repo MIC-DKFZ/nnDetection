@@ -329,7 +329,8 @@ def box_center(boxes: Tensor) -> Tensor:
 
 
 def permute_boxes(boxes: Union[Tensor, ndarray],
-                  dims: Sequence[int] = None) -> Union[Tensor, ndarray]:
+                  dims: Sequence[int] = None,
+                  ) -> Union[Tensor, ndarray]:
     """
     Change ordering of axis of boxes
     

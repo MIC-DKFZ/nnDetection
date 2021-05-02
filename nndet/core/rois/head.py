@@ -76,6 +76,7 @@ class RoIHead(torch.nn.Module):
             pred_detection, labels, matched_gt_boxes, proposal_boxes_sampled)
         return losses
 
+    @torch.no_grad
     def sample_and_match(self,
                          proposal_boxes: List[torch.Tensor],
                          proposal_scores: List[torch.Tensor],

@@ -87,63 +87,64 @@ def decode_single(rel_codes: Tensor, boxes: Tensor,
     get the decoded boxes.
 
     Args:
-        rel_codes: encoded boxes [Num_boxes x (dim * 2)] (dx, dy, dw, dh, dz, dd)
-        boxes: reference boxes (x1, y1, x2, y2, (z1, z2))
+        rel_codes: encoded boxes [N x (dim * 2)] (dx, dy, dw, dh, dz, dd)
+        boxes: reference boxes [N x (dims * 2)] (x1, y1, x2, y2, (z1, z2))
     """
+    # breakpoint()
     # offset is 4 in case of 2d data and 6 in case of 3d
     offset = boxes.shape[1]
     boxes = boxes.to(rel_codes.dtype)
 
-    widths = boxes[:, 2] - boxes[:, 0]
-    heights = boxes[:, 3] - boxes[:, 1]
-    ctr_x = boxes[:, 0] + 0.5 * widths
-    ctr_y = boxes[:, 1] + 0.5 * heights
+    widths = boxes[:, 2] - boxes[:, 0] # [N]
+    heights = boxes[:, 3] - boxes[:, 1] # [N]
+    ctr_x = boxes[:, 0] + 0.5 * widths # [N]
+    ctr_y = boxes[:, 1] + 0.5 * heights # [N]
 
-    wx = weights[0]
-    wy = weights[1]
-    ww = weights[2]
-    wh = weights[3]
+    wx = weights[0] # [1]
+    wy = weights[1] # [1]
+    ww = weights[2] # [1]
+    wh = weights[3] # [1]
 
-    dx = rel_codes[:, 0::offset] / wx
-    dy = rel_codes[:, 1::offset] / wy
-    dw = rel_codes[:, 2::offset] / ww
-    dh = rel_codes[:, 3::offset] / wh
+    dx = rel_codes[:, 0::offset] / wx # [N, 1]
+    dy = rel_codes[:, 1::offset] / wy # [N, 1]
+    dw = rel_codes[:, 2::offset] / ww # [N, 1]
+    dh = rel_codes[:, 3::offset] / wh # [N, 1]
 
     # Prevent sending too large values into torch.exp()
-    dw = torch.clamp(dw, max=bbox_xform_clip)
-    dh = torch.clamp(dh, max=bbox_xform_clip)
+    dw = torch.clamp(dw, max=bbox_xform_clip) # [N, 1]
+    dh = torch.clamp(dh, max=bbox_xform_clip) # [N, 1]
 
-    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None]
-    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None]
-    pred_w = torch.exp(dw) * widths[:, None]
-    pred_h = torch.exp(dh) * heights[:, None]
+    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None] # [N, 1]
+    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None] # [N, 1]
+    pred_w = torch.exp(dw) * widths[:, None] # [N, 1]
+    pred_h = torch.exp(dh) * heights[:, None] # [N, 1]
 
-    pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-    pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
-    pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-    pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
+    pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, 1]
+    pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, 1]
+    pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w # [N, 1]
+    pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h # [N, 1]
 
     if offset == 6:
-        depths = boxes[:, 5] - boxes[:, 4]
-        ctr_z = boxes[:, 4] + 0.5 * depths
+        depths = boxes[:, 5] - boxes[:, 4] # [N]
+        ctr_z = boxes[:, 4] + 0.5 * depths # [N]
 
-        wz = weights[4]
-        wd = weights[5]
+        wz = weights[4] # [1]
+        wd = weights[5] # [1]
 
-        dz = rel_codes[:, 4::offset] / wz
-        dd = rel_codes[:, 5::offset] / wd
-        dd = torch.clamp(dd, max=bbox_xform_clip)
+        dz = rel_codes[:, 4::offset] / wz # [N, 1]
+        dd = rel_codes[:, 5::offset] / wd # [N, 1]
+        dd = torch.clamp(dd, max=bbox_xform_clip) # [N, 1]
 
-        pred_ctr_z = dz * depths[:, None] + ctr_z[:, None]
-        pred_z = torch.exp(dd) * depths[:, None]
+        pred_ctr_z = dz * depths[:, None] + ctr_z[:, None] # [N, 1]
+        pred_z = torch.exp(dd) * depths[:, None] # [N, 1]
 
-        pred_boxes5 = pred_ctr_z - torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z
-        pred_boxes6 = pred_ctr_z + torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z
+        pred_boxes5 = pred_ctr_z - torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z # [N]
+        pred_boxes6 = pred_ctr_z + torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z # [N]
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4,
-                                  pred_boxes5, pred_boxes6), dim=2).flatten(1)
+                                  pred_boxes5, pred_boxes6), dim=2).flatten(1) # [N, 6]
     else:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4),
-                                 dim=2).flatten(1)
+                                 dim=2).flatten(1) # [N, 4]
     return pred_boxes
 
 
