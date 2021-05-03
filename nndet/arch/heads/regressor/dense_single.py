@@ -1,58 +1,20 @@
-"""
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+from typing import Optional
 
 import torch
 import torch.nn as nn
-
-from typing import Optional, Tuple, Callable, TypeVar
-from abc import abstractmethod
+from torch import Tensor
 
 from loguru import logger
 
-from nndet.core.boxes import box_iou
+from nndet.arch.heads.abstract import Regressor, CONV_TYPES
 from nndet.arch.layers.scale import Scale
-from torch import Tensor
-
-from nndet.losses import SmoothL1Loss, GIoULoss
-
-
-CONV_TYPES = (nn.Conv2d, nn.Conv3d)
+from nndet.losses import (
+    SmoothL1Loss,
+    GIoULoss,
+    )
 
 
-class Regressor(nn.Module):
-    @abstractmethod
-    def compute_loss(self, pred_deltas: Tensor, target_deltas: Tensor, **kwargs) -> Tensor:
-        """
-        Compute regression loss (l1 loss)
-
-        Args:
-            pred_deltas (Tensor): predicted bounding box deltas [N,  dim * 2]
-            target_deltas (Tensor): target bounding box deltas [N,  dim * 2]
-
-        Returns:
-            Tensor: loss
-        """
-        raise NotImplementedError
-
-    @property
-    def regress_multi_class(self):
-        return False
-
-
-class BaseRegressor(Regressor):
+class DenseRegressor(Regressor):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -205,7 +167,7 @@ class BaseRegressor(Regressor):
                     torch.nn.init.constant_(layer.bias, 0)
 
 
-class L1Regressor(BaseRegressor):
+class L1Regressor(DenseRegressor):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -261,7 +223,7 @@ class L1Regressor(BaseRegressor):
             )
 
 
-class GIoURegressor(BaseRegressor):
+class GIoURegressor(DenseRegressor):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -312,6 +274,3 @@ class GIoURegressor(BaseRegressor):
             reduction=reduction,
             loss_weight=loss_weight,
             )
-
-
-RegressorType = TypeVar('RegressorType', bound=Regressor)

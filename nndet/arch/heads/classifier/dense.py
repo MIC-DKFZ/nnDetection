@@ -1,28 +1,13 @@
-"""
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+import math
+from typing import Optional
 
 import torch
-import math
 import torch.nn as nn
-
-from typing import Optional, TypeVar
 from torch import Tensor
-from abc import abstractmethod
+
 from loguru import logger
 
+from nndet.arch.heads.abstract import Classifier, CONV_TYPES
 from nndet.losses.classification import (
     AsymmetricFocalLossWithLogits,
     FocalLossWithLogits,
@@ -30,39 +15,8 @@ from nndet.losses.classification import (
     CrossEntropyLoss,
 )
 
-CONV_TYPES = (nn.Conv2d, nn.Conv3d)
 
-
-class Classifier(nn.Module):
-    @abstractmethod
-    def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
-        """
-        Compute classification loss (cross entropy loss)
-
-        Args:
-            pred_logits (Tensor): predicted logits
-            targets (Tensor): classification targets
-
-        Returns:
-            Tensor: classification loss
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
-        """
-        Convert bounding box logits to probabilities
-
-        Args:
-            box_logits (Tensor): bounding box logits [N, C], C=number of classes
-
-        Returns:
-            Tensor: probabilities
-        """
-        raise NotImplementedError
-
-
-class BaseClassifier(Classifier):
+class DenseClassifier(Classifier):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -171,7 +125,7 @@ class BaseClassifier(Classifier):
 
         Returns:
             torch.Tensor: classification logits for each anchor
-                (N x anchors x num_classes)
+                [N, anchors, num_classes]
         """
         class_logits = self.conv_out(self.conv_internal(x))
 
@@ -229,7 +183,7 @@ class BaseClassifier(Classifier):
             logger.info("Init classifier weights: conv default")
   
 
-class BCECLassifier(BaseClassifier):
+class BCECLassifier(DenseClassifier):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -293,7 +247,7 @@ class BCECLassifier(BaseClassifier):
         self.logits_convert_fn = nn.Sigmoid()
 
 
-class CEClassifier(BaseClassifier):
+class CEClassifier(DenseClassifier):
     def __init__(self,
                 conv,
                 in_channels: int,
@@ -365,7 +319,7 @@ class CEClassifier(BaseClassifier):
         return self.logits_convert_fn(box_logits)[:, 1:]
 
 
-class FocalClassifier(BaseClassifier):
+class FocalClassifier(DenseClassifier):
     def __init__(self,
                  conv,
                  in_channels: int,
@@ -541,6 +495,3 @@ class FullyConntectedBCECLassifier(BCECLassifier):
             add_act=False,
             bias=True,
         )
-
-
-ClassifierType = TypeVar('ClassifierType', bound=Classifier)

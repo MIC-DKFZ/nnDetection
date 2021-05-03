@@ -19,7 +19,7 @@ from nndet.core.boxes.utils import extend_and_cat_boxes
 from nndet.core.boxes.assign import assign_targets_to_anchors
 
 
-class RoIHead(torch.nn.Module):
+class RoIModule(torch.nn.Module):
     def __init__(self,
                  box_head: HeadType, # use head without sampler
                  matcher: MatcherType,
@@ -118,6 +118,7 @@ class RoIHead(torch.nn.Module):
         sampled_neg_inds = torch.where(torch.cat(neg_mask, dim=0))[0]
         inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
+        # TODO: check where abtch idx is really needed and change this approriately 
         _labels = torch.cat(labels, dim=0)[inds]
         _matched_gt_boxes = torch.cat(matched_gt_boxes, dim=0)[inds]
         _proposal_boxes = extend_and_cat_boxes(proposal_boxes)[inds]
@@ -144,12 +145,12 @@ class RoIHead(torch.nn.Module):
         return [torch.cat([p, g], dim=0) for p, g in zip(proposals, gt)]
 
 
-RoIHeadType = TypeVar('RoIHeadType', bound=RoIHead)
+RoIModuleType = TypeVar('RoIModuleType', bound=RoIModule)
 
 
 class Sequencer(torch.nn.Module):
     def __init__(self,
-                 roi_heads: List[RoIHeadType],
+                 roi_heads: List[RoIModuleType],
                  ) -> None:
         """
         Cascade multiple RoI Heads
