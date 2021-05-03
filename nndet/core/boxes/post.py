@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 import torch
 
 from nndet.core.boxes.clip import clip_boxes_to_image_
-from nndet.core.boxes.utils import remove_small_boxes
+from nndet.core.boxes.utils import remove_small_boxes as fn_remove_small_boxes
 from nndet.core.boxes.nms import batched_nms
 
 
@@ -52,7 +52,7 @@ def post_image_single_class_regression(
         boxes = boxes[anchor_idxs]
 
         if remove_small_boxes is not None:
-            keep = remove_small_boxes(boxes, min_size=remove_small_boxes)
+            keep = fn_remove_small_boxes(boxes, min_size=remove_small_boxes)
             boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
 
         keep = batched_nms(boxes, probs, labels, nms_thresh)

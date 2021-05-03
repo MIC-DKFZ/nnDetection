@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, TypeVar
 
 import torch
 import torch.nn as nn
@@ -165,6 +165,9 @@ class DenseRegressor(Regressor):
                 torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, 0)
+
+
+DenseRegressorType = TypeVar('DenseRegressorType', bound=DenseRegressor)
 
 
 class L1Regressor(DenseRegressor):

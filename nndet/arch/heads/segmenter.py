@@ -21,12 +21,12 @@ from torch import Tensor
 from typing import Dict, List, Union, Sequence, Optional, Tuple, TypeVar
 
 from nndet.arch.conv import compute_padding_for_kernel, conv_kwargs_helper
-from nndet.arch.heads.comb import AbstractHead
+from nndet.arch.heads.comb.base import BaseHead
 from nndet.arch.layers.interpolation import InterpolateToShapes
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
 
 
-class Segmenter(AbstractHead):
+class Segmenter(nn.Module):
     def __init__(self,
                  seg_classes: int,
                  in_channels: Sequence[int],

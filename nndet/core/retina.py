@@ -9,7 +9,7 @@ from nndet.core import boxes as box_utils
 from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.decoder.base import DecoderType
 from nndet.arch.heads.segmenter import SegmenterType
-from nndet.arch.heads.comb import HeadType
+from nndet.arch.heads.comb import AnchorHeadType
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression
@@ -21,7 +21,7 @@ class BaseRetinaNet(AbstractModel):
                  # modules
                  encoder: EncoderType,
                  decoder: DecoderType,
-                 head: HeadType,
+                 head: AnchorHeadType,
                  num_classes: int,
                  anchor_generator: AnchorGeneratorType,
                  matcher: box_utils.MatcherType,
@@ -121,7 +121,12 @@ class BaseRetinaNet(AbstractModel):
         """
         See self.train_step_with_features
         """
-        losses, prediction, _ = self.train_step_with_features()
+        losses, prediction, _ = self.train_step_with_features(
+            images=images,
+            targets=targets,
+            predict=predict,
+            batch_num=batch_num,
+        )
         return losses, prediction
 
     def train_step_with_features(
@@ -320,7 +325,7 @@ class BaseRetinaNet(AbstractModel):
         all_boxes, all_probs, all_labels = [], [], []
         # iterate over images
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
-            if self.head.regress_multi_class:
+            if not self.head.regress_multi_class:
                 boxes, probs, labels = post_image_single_class_regression(
                     boxes=boxes, 
                     probs=probs,

@@ -22,6 +22,7 @@ from collections import defaultdict
 from pathlib import Path
 from functools import partial
 from typing import Callable, Hashable, Sequence, Dict, Any, Type
+from nndet.arch.heads.regressor.dense_single import DenseRegressor
 
 import torch
 import numpy as np
@@ -35,6 +36,7 @@ from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
+from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.utils import box_iou
@@ -46,9 +48,9 @@ from nndet.arch.blocks.basic import StackedConvBlock2
 from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.decoder.base import DecoderType, BaseUFPN, UFPNModular
-from nndet.arch.heads.classifier import ClassifierType, CEClassifier
-from nndet.arch.heads.regressor import RegressorType, L1Regressor
-from nndet.arch.heads.comb import HeadType, DetectionHeadHNM
+from nndet.arch.heads.classifier import DenseClassifierType, CEClassifier
+from nndet.arch.heads.regressor import DenseRegressorType, L1Regressor
+from nndet.arch.heads.comb import AnchorHeadType, BoxHeadHNM
 from nndet.arch.heads.segmenter import SegmenterType, DiCESegmenter
 
 from nndet.training.optimizer import get_params_no_wd_on_norm
@@ -77,7 +79,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
     encoder_cls = Encoder
     decoder_cls = UFPNModular
     matcher_cls = IoUMatcher
-    head_cls = DetectionHeadHNM
+    head_cls = BoxHeadHNM
     head_classifier_cls = CEClassifier
     head_regressor_cls = L1Regressor
     head_sampler_cls = HardNegativeSamplerBatched
@@ -509,8 +511,8 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorType,
-    ) -> ClassifierType:
+        anchor_generator: AnchorGeneratorType,
+    ) -> DenseClassifierType:
         """
         Build classification subnetwork for detection head
 
@@ -543,8 +545,8 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorType,
-    ) -> RegressorType:
+        anchor_generator: AnchorGeneratorType,
+    ) -> DenseRegressor:
         """
         Build regression subnetwork for detection head
 
@@ -576,10 +578,10 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
         coder: CoderType,
-    ) -> HeadType:
+    ) -> AnchorHeadType:
         """
         Build detection head
 
@@ -606,7 +608,6 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             regressor=regressor,
             coder=coder,
             sampler=sampler,
-            log_num_anchors=None,
             **head_kwargs,
         )
         return head

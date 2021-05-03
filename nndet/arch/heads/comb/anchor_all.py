@@ -3,18 +3,17 @@ from typing import Optional, Dict, List, Tuple
 import torch
 from torch import Tensor
 
-from nndet.arch.comb.base import (
-    AnchorHead,
-    ClassifierType,
-    RegressorType,
-)
+from nndet.arch.heads.comb.base import AnchorHead
+from nndet.arch.heads.classifier.dense import DenseClassifierType
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+
 from nndet.core.boxes.coder import BoxCoderND
 
 
-class BoxHeadDense(AnchorHead):
+class BoxHeadAll(AnchorHead):
     def __init__(self,
-                 classifier: ClassifierType,
-                 regressor: RegressorType,
+                 classifier: DenseClassifierType,
+                 regressor: DenseRegressorType,
                  coder: BoxCoderND,
                  shared: Optional[torch.nn.Module] = None,
                  ):

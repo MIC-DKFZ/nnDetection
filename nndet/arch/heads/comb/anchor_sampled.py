@@ -3,20 +3,18 @@ from typing import Optional, Dict, List, Tuple
 import torch
 from torch import Tensor
 
-from nndet.arch.comb.base import (
-    AnchorHead,
-    ClassifierType,
-    RegressorType,
-)
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.sampler import SamplerType
+from nndet.arch.heads.comb.base import AnchorHead
+from nndet.arch.heads.classifier.dense import DenseClassifierType
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType
 
 
 class BoxHeadHNM(AnchorHead):
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
         coder: BoxCoderND,
         sampler: SamplerType,
         shared: Optional[torch.nn.Module] = None,

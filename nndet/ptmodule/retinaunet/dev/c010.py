@@ -5,7 +5,7 @@ from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
 from nndet.ptmodule import MODULE_REGISTRY
 
 from nndet.arch.decoder.base import SmallUFPN, SmallerUFPN
-from nndet.arch.heads.comb import BoxHeadNoSampler
+from nndet.arch.heads.comb import BoxHeadAll
 from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
@@ -37,13 +37,13 @@ class RetinaUNetC010(RetinaUNetV001):
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010Focal(RetinaUNetC010):
-    head_cls = BoxHeadNoSampler
+    head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
 
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010AsymFocal(RetinaUNetC010):
-    head_cls = BoxHeadNoSampler
+    head_cls = BoxHeadAll
     head_classifier_cls = AsymmetricFocalClassifier
 
 
@@ -76,7 +76,7 @@ class RetinaUNetC010LReLUFocal(RetinaUNetC010):
     base_conv_cls = ConvInstanceLReLU
     head_conv_cls = ConvGroupLReLU
 
-    head_cls = BoxHeadNoSampler
+    head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
 
 
@@ -85,7 +85,7 @@ class RetinaUNetC010LReLUAsymFocal(RetinaUNetC010):
     base_conv_cls = ConvInstanceLReLU
     head_conv_cls = ConvGroupLReLU
 
-    head_cls = BoxHeadNoSampler
+    head_cls = BoxHeadAll
     head_classifier_cls = AsymmetricFocalClassifier
 
 
@@ -283,7 +283,7 @@ class RetinaUNetC010GNMishAllFocal(RetinaUNetC010):
     base_conv_cls = ConvGroupMish
     head_conv_cls = ConvGroupMish
 
-    head_cls = BoxHeadNoSampler
+    head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
 
 

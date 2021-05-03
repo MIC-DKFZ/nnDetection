@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, TypeVar
 
 import torch
 import torch.nn as nn
@@ -181,6 +181,9 @@ class DenseClassifier(Classifier):
                     torch.nn.init.constant_(layer.bias, bias_value)
         else:
             logger.info("Init classifier weights: conv default")
+  
+  
+DenseClassifierType = TypeVar('DenseClassifierType', bound=DenseClassifier)
   
 
 class BCECLassifier(DenseClassifier):
