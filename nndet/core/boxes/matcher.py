@@ -27,8 +27,8 @@ class Matcher(ABC):
     def __call__(self,
                  boxes: torch.Tensor,
                  anchors: torch.Tensor,
-                 num_anchors_per_level: Sequence[int],
-                 num_anchors_per_loc: int) -> Tuple[torch.Tensor, torch.Tensor]:
+                 **kwargs,
+                 ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches for a single image
 
@@ -36,8 +36,6 @@ class Matcher(ABC):
             boxes: anchors are matches to these boxes (e.g. ground truth)
                 [N, dims * 2](x1, y1, x2, y2, (z1, z2))
             anchors: anchors to match [M, dims * 2](x1, y1, x2, y2, (z1, z2))
-            num_anchors_per_level: number of anchors per feature pyramid level
-            num_anchors_per_loc: number of anchors per position
 
         Returns:
             Tensor: matrix which contains the similarity from each boxes
@@ -56,16 +54,16 @@ class Matcher(ABC):
         else:
             # at least one ground truth
             return self.compute_matches(
-                boxes=boxes, anchors=anchors,
-                num_anchors_per_level=num_anchors_per_level,
-                num_anchors_per_loc=num_anchors_per_loc,
+                boxes=boxes,
+                anchors=anchors,
+                **kwargs
                 )
 
     def compute_matches(self,
                         boxes: torch.Tensor,
                         anchors: torch.Tensor,
-                        num_anchors_per_level: Sequence[int],
-                        num_anchors_per_loc: int) -> Tuple[torch.Tensor, torch.Tensor]:
+                        **kwargs,
+                        ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches
 
@@ -113,7 +111,8 @@ class IoUMatcher(Matcher):
     def compute_matches(self,
                         boxes: torch.Tensor,
                         anchors: torch.Tensor,
-                        **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+                        **kwargs,
+                        ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to given iou thresholds
         Adapted from
@@ -222,7 +221,8 @@ class ATSSMatcher(Matcher):
                         boxes: torch.Tensor,
                         anchors: torch.Tensor,
                         num_anchors_per_level: Sequence[int],
-                        num_anchors_per_loc: int) -> Tuple[torch.Tensor, torch.Tensor]:
+                        num_anchors_per_loc: int,
+                        ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to ATTS for a single image
         Adapted from

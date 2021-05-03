@@ -409,7 +409,14 @@ def extend_and_cat_boxes(boxes: List[Tensor]) -> Tensor:
     extended_boxes = []
     for i, b in enumerate(boxes):
         extended_boxes.append(torch.cat(
-            torch.full((b.shape[0]), i, dtype=b.dtype, device=b.device), b,
+            [torch.full((b.shape[0], 1), i, dtype=b.dtype, device=b.device), b],
             dim=1,
         ))
     return torch.cat(extended_boxes, dim=0)
+
+
+def cat_and_index(boxes: List[Tensor]) -> Tuple[Tensor, Tensor]:
+    indices = []
+    for i, b in enumerate(boxes):
+        indices.append(torch.full((b.shape[0],), i, dtype=b.dtype, device=b.device))
+    return torch.cat(boxes, dim=0), torch.cat(indices, dim=0)
