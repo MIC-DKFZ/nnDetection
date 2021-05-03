@@ -58,7 +58,6 @@ class AbstractModel(torch.nn.Module):
         """
         raise NotImplementedError
 
-    @abstractmethod
     def train_step_with_features(
         self,
         images: Tensor,
@@ -68,6 +67,7 @@ class AbstractModel(torch.nn.Module):
         ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
         """
         Perform a single training step and return feature maps
+        Only needed for one stage detectors
 
         Args:
             images: images to process
@@ -102,7 +102,6 @@ class AbstractModel(torch.nn.Module):
         """
         raise NotImplementedError
 
-    @abstractmethod
     def inference_step_with_features(
         self,
         images: Tensor,
@@ -110,6 +109,7 @@ class AbstractModel(torch.nn.Module):
         ) -> Union[Dict[str, Any], List[torch.Tensor]]:
         """
         Perform a single training step
+        Only needed for one stage detectors
 
         Args:
             images: images to process

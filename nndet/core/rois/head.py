@@ -20,6 +20,7 @@ from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression
 
 
+# TODO: refactor module name
 class RoIModule(torch.nn.Module):
     def __init__(self,
                  box_head: RoIHeadType, # use head without sampler
@@ -54,22 +55,29 @@ class RoIModule(torch.nn.Module):
                    targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
                    predict: bool = False,
                    ):
-        pass
+        _features = [features[i] for i in self.decoder_levels]
+        
+        losses, prediction, roi_features, inds, pos_inds, neg_inds = self._train_step_boxes(
+                features=_features,
+                proposal_boxes=proposals["pred_boxes"],
+                proposal_scores=proposals["pred_scores"],
+                target_boxes=targets["target_boxes"],
+                target_classes=targets["target_classes"],
+                image_size=tuple(images.shape[2:]),
+                predict=predict,
+            )
+        return losses, prediction
 
     def _train_step_boxes(
         self,
-        images: torch.Tensor,
         features: List[torch.Tensor],
-        proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-        targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
+        proposal_boxes: List[torch.Tensor],
+        proposal_scores: List[torch.Tensor],
+        target_boxes: List[torch.Tensor],
+        target_classes: List[torch.Tensor],
+        image_size: Union[Tuple[int, int], Tuple[int, int, int]],
         predict: bool = False,
-    ):
-        _features = [features[i] for i in self.decoder_levels]
-        target_boxes: List[torch.Tensor] = targets["target_boxes"]
-        target_classes: List[torch.Tensor] = targets["target_classes"]        
-        proposal_boxes: List[torch.Tensor] = proposals["pred_boxes"]
-        proposal_scores: List[torch.Tensor] = proposals["pred_scores"]
- 
+        ):
         if self.gt_to_proposals:
             proposal_boxes = self.add_gt_to_proposals(proposal_boxes, target_boxes)
 
@@ -84,10 +92,10 @@ class RoIModule(torch.nn.Module):
         batch_idx = batch_idx[inds]
 
         roi_features = self.pooler(
-            features=_features,
+            features=features,
             proposal_boxes=proposal_boxes,
             batch_idx=batch_idx,
-            image_size=tuple(images.shape[2:])
+            image_size=image_size,
             ) # [P, C, spatial]
         pred_detection = self.box_head(roi_features)
 
@@ -96,7 +104,7 @@ class RoIModule(torch.nn.Module):
 
         prediction = None
         if predict:
-            pass
+            raise NotImplementedError
         return losses, prediction, roi_features, inds, pos_inds, neg_inds
 
     @torch.no_grad()
@@ -108,12 +116,22 @@ class RoIModule(torch.nn.Module):
                        **kwargs,
                        ) -> Dict[str, Any]:
         _features = [features[i] for i in self.decoder_levels]
-        proposal_boxes: List[torch.Tensor] = proposals["pred_boxes"]
+        prediction = self._inference_step_boxes(
+            images=images,
+            features=_features,
+            proposal_boxes=proposals["pred_boxes"],
+        )
+        return prediction
 
+    def _inference_step_boxes(self,
+                              images: torch.Tensor,
+                              features: List[torch.Tensor],
+                              proposal_boxes: List[torch.Tensor],
+                              ):
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
         roi_features = self.pooler(
-            features=_features,
+            features=features,
             proposal_boxes=_proposal_boxes,
             batch_idx=batch_idx,
             image_size=tuple(images.shape[2:])
@@ -126,7 +144,11 @@ class RoIModule(torch.nn.Module):
             proposal_boxes=proposal_boxes,
             image_shapes=image_shapes,
         )
-        prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
+        prediction = {
+            "pred_boxes": boxes,
+            "pred_scores": probs,
+            "pred_labels": labels,
+            }
         return prediction
 
     # TODO: code duplication :/
@@ -237,6 +259,13 @@ class RoIModule(torch.nn.Module):
 
 
 RoIModuleType = TypeVar('RoIModuleType', bound=RoIModule)
+
+
+class CascadeRoIModule(RoIModule):
+    """
+    add gt [first stage] -> forward all RoIs -> subsample for los
+    """
+    pass
 
 
 class Sequencer(torch.nn.Module):

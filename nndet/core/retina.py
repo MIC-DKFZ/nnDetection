@@ -1,8 +1,8 @@
+from typing import List, Tuple, Dict, Any, Optional, Union
+
 import torch
 import torch.nn as nn
-
 from torch import Tensor
-from typing import List, Tuple, Dict, Any, Optional, Union
 
 from nndet.arch.abstract import AbstractModel
 from nndet.core import boxes as box_utils

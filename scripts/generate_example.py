@@ -30,20 +30,16 @@ from nndet.utils.info import env_guard
 
 
 # # 2D example
-# [Ignore, Not supported]
-# dim = 2
-# image_size = [512, 512]
-# object_size = [32, 64]
-# object_width = 6
-# num_images_tr = 100
-# num_images_ts = 100
-
-# 3D example
-
-dim = 3
-image_size = [256, 256, 256]
+dim = 2
+image_size = [256, 256]
 object_size = [16, 32]
 object_width = 4
+
+# 3D example
+# dim = 3
+# image_size = [256, 256, 256]
+# object_size = [16, 32]
+# object_width = 4
 
 
 def generate_image(image_dir, label_dir, idx):

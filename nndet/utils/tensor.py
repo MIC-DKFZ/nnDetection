@@ -149,3 +149,28 @@ def cat(t: Union[List[Tensor], Tensor], *args, **kwrags):
         return t[0]
     else:
         return torch.cat(t, *args, **kwrags)
+
+
+def detach_all(inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]) -> \
+        Union[Sequence[np.ndarray], np.ndarray, Any]:
+    """
+    Detach
+    # TODO: docu
+
+    Args:
+        inp (Union[Sequence[torch.Tensor], torch.Tensor]): tensor or sequence of tensors
+
+    Returns:
+        Union[Sequence[np.ndarray], np.ndarray]: array or seq. of arrays at target device
+         (non tensor entries are forwarded as they are)
+    """
+    if isinstance(inp, (tuple, list)):
+        old_type = type(inp)
+        return old_type([detach_all(i) for i in inp])
+    elif isinstance(inp, dict) and not isinstance(inp, defaultdict):
+        old_type = type(inp)
+        return old_type({k: detach_all(i) for k, i in inp.items()})
+    elif isinstance(inp, torch.Tensor):
+        return inp.detach()
+    else:
+        return inp
