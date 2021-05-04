@@ -20,7 +20,7 @@ from typing import Tuple, Callable, List
 import torch
 from torch import Tensor
 
-from nndet.detection.boxes.utils import box_iou
+from nndet.core.boxes.utils import box_iou
 
 
 def weighted_merging(boxes: torch.Tensor, scores: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

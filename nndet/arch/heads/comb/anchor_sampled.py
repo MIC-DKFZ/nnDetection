@@ -188,6 +188,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds])
+        breakpoint
         return losses, sampled_pos_inds, sampled_neg_inds
 
 

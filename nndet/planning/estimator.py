@@ -229,7 +229,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
                         loss_dict, _ = network.train_step(
                             images=inp["images"],
                             targets=inp["targets"],
-                            evaluation=False,
+                            predict=False,
                             batch_num=0,
                         )
                         loss = sum(loss_dict.values())

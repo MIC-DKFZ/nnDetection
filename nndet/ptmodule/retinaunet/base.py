@@ -62,7 +62,7 @@ from nndet.inference.transforms import get_tta_transforms, Inference2D
 from nndet.inference.loading import load_final_model
 from nndet.inference.helper import predict_dir
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
-from nndet.inference.ensembler.detection import BoxEnsemblerSelective
+from nndet.inference.ensembler.detection import BoxEnsemblerSelective, BoxEnsemblerSelective2D
 
 from nndet.io.transforms import (
     Compose,
@@ -655,8 +655,8 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         """
         _lookup = {
             2: {
-                "boxes": None,
-                "seg": None,
+                "boxes": BoxEnsemblerSelective2D,
+                "seg": SegmentationEnsembler,
             },
             3: {
                 "boxes": BoxEnsemblerSelective,
@@ -707,7 +707,6 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             **kwargs,
             )
         if plan["network_dim"] == 2:
-            raise NotImplementedError
             predictor.pre_transform = Inference2D(["data"])
         return predictor
 
