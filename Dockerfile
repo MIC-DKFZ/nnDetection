@@ -34,7 +34,6 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && apt-get install -
  ninja-build
 
 RUN pip install numpy
-RUN pip install torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html --no-deps
 
 # Install own code
 COPY ./requirements.txt .
