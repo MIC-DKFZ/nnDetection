@@ -29,6 +29,11 @@ from nndet.training import optimizer
 from nndet.training.optimizer import get_params_no_wd_on_norm
 from nndet.training.learning_rate import LinearWarmupPolyLR
 
+from nndet.arch.heads.classifier import DenseClassifierType
+from nndet.arch.heads.regressor import DenseRegressorType
+from nndet.arch.heads.comb import AnchorHeadType
+from nndet.core.boxes.coder import CoderType
+
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010(RetinaUNetV001):
@@ -40,9 +45,46 @@ class RetinaUNetC010Focal(RetinaUNetC010):
     head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
 
+    @classmethod
+    def _build_head(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
+        coder: CoderType,
+    ) -> AnchorHeadType:
+        """
+        Build detection head
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            classifier: classifier instance
+            regressor: regressor instance
+            coder: coder instance to encode boxes
+
+        Returns:
+            HeadType: instantiated head
+        """
+        head_name = cls.head_cls.__name__
+        head_kwargs = model_cfg['head_kwargs']
+        sampler_name = cls.head_sampler_cls.__name__
+        sampler_kwargs = model_cfg['head_sampler_kwargs']
+
+        logger.info(f"Building:: head {head_name}: {head_kwargs} "
+                    f"sampler {sampler_name}: {sampler_kwargs}")
+        head = cls.head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            **head_kwargs,
+        )
+        return head
+
 
 @MODULE_REGISTRY.register
-class RetinaUNetC010AsymFocal(RetinaUNetC010):
+class RetinaUNetC010AsymFocal(RetinaUNetC010Focal):
     head_cls = BoxHeadAll
     head_classifier_cls = AsymmetricFocalClassifier
 
@@ -72,7 +114,7 @@ class RetinaUNetC010LReLU(RetinaUNetC010):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC010LReLUFocal(RetinaUNetC010):
+class RetinaUNetC010LReLUFocal(RetinaUNetC010Focal):
     base_conv_cls = ConvInstanceLReLU
     head_conv_cls = ConvGroupLReLU
 
@@ -81,7 +123,7 @@ class RetinaUNetC010LReLUFocal(RetinaUNetC010):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC010LReLUAsymFocal(RetinaUNetC010):
+class RetinaUNetC010LReLUAsymFocal(RetinaUNetC010Focal):
     base_conv_cls = ConvInstanceLReLU
     head_conv_cls = ConvGroupLReLU
 
@@ -279,7 +321,7 @@ class RetinaUNetC010GNMishAll(RetinaUNetC010):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC010GNMishAllFocal(RetinaUNetC010):
+class RetinaUNetC010GNMishAllFocal(RetinaUNetC010Focal):
     base_conv_cls = ConvGroupMish
     head_conv_cls = ConvGroupMish
 

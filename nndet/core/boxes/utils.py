@@ -202,8 +202,8 @@ def box_iou_union_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Te
         union (Tensor[N, M]): the nxM matrix containing the pairwise union
             values
     """
-    area1 = box_area(boxes1)
-    area2 = box_area(boxes2)
+    area1 = box_area_2d(boxes1)
+    area2 = box_area_2d(boxes2)
 
     x1 = torch.max(boxes1[:, None, 0], boxes2[:, 0])  # [N, M]
     y1 = torch.max(boxes1[:, None, 1], boxes2[:, 1])  # [N, M]

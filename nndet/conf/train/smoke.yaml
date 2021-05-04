@@ -53,7 +53,7 @@ trainer_cfg:
   weight_decay: 3.e-5 # weight decay for optimizer
   momentum: 0.9 # momentum term
 
-  warm_iterations: 4000 # number of iterations with warmup
+  warm_iterations: 100 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from
 
   poly_gamma: 0.9

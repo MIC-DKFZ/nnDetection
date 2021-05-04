@@ -24,6 +24,12 @@ class RoIClassifierTwoMLP(Classifier):
                     in_channels,
                     internal_channels,
                     ),
+                torch.nn.ReLU(),
+                torch.nn.Linear(
+                    internal_channels,
+                    internal_channels,
+                    ),
+                torch.nn.ReLU(),
                 torch.nn.Linear(
                     internal_channels,
                     num_classes,

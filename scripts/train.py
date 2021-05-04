@@ -242,7 +242,7 @@ def _train(
         mode=cfg["trainer_cfg"]["monitor_mode"],
     )
     checkpoint_cb.CHECKPOINT_NAME_LAST = 'model_last'
-    callbacks.append(checkpoint_cb)
+    # callbacks.append(checkpoint_cb) # TODO: UPDATE THIS AFTER PROTO
     callbacks.append(LearningRateMonitor(logging_interval="epoch"))
 
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config.yaml"))
@@ -274,7 +274,7 @@ def _train(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
-        weights_summary='full',
+        weights_summary=None, # 'full',
         plugins=plugins,
         terminate_on_nan=True,  # TODO: make modular
         move_metrics_to_cpu=True,

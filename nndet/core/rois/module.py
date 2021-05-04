@@ -33,7 +33,7 @@ class RoIModule(torch.nn.Module):
                   # post-processing
                  roi_score_thresh: float = None,
                  roi_detections_per_img: int = 100,
-                 roi_nms_thresh: float = 0.9,
+                 roi_nms_thresh: float = 0.6,
                  ) -> None:
         super().__init__()
         self.box_head = box_head
@@ -136,6 +136,7 @@ class RoIModule(torch.nn.Module):
             batch_idx=batch_idx,
             image_size=tuple(images.shape[2:])
             ) # [P, C, spatial]
+
         pred_detection = self.box_head(roi_features)
 
         image_shapes = [images.shape[2:]] * images.shape[0]

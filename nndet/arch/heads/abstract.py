@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 from typing import TypeVar, Optional, List, Dict
 
 import torch
@@ -10,7 +10,7 @@ from nndet.core.boxes import BoxCoderND
 CONV_TYPES = (nn.Conv2d, nn.Conv3d)
 
 
-class Classifier(nn.Module, ABC):
+class Classifier(nn.Module):
     @abstractmethod
     def compute_loss(self,
                      pred_logits: Tensor,
@@ -46,7 +46,7 @@ class Classifier(nn.Module, ABC):
         raise NotImplementedError
 
 
-class Regressor(nn.Module, ABC):
+class Regressor(nn.Module):
     @abstractmethod
     def compute_loss(self,
                      pred_deltas: Tensor,
@@ -80,7 +80,7 @@ ClassifierType = TypeVar('ClassifierType', bound=Classifier)
 RegressorType = TypeVar('RegressorType', bound=Regressor)
 
 
-class BaseHead(nn.Module, ABC):
+class BaseHead(nn.Module):
     """
     Provides an abstract interface for an module which takes
     inputs and computed its own loss

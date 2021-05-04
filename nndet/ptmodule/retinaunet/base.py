@@ -155,6 +155,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
+        self.log_dict(losses, prog_bar=True)
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
     def validation_step(self, batch, batch_idx):
@@ -177,7 +178,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 batch_num=batch_idx,
             )
             loss = sum(losses.values())
-
+        self.log_dict(losses, prog_bar=True)
         self.evaluation_step(prediction=prediction, targets=targets)
         return {"loss": loss.detach().item(),
                 **{key: l.detach().item() for key, l in losses.items()}}
@@ -281,7 +282,6 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         """
         metric_scores, _ = self.box_evaluator.finish_online_evaluation()
         self.box_evaluator.reset()
-
         logger.info(f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
                     f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
                     f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f}")

@@ -217,6 +217,9 @@ class BaseRetinaNet(AbstractModel):
         images: Tensor,
         **kwargs,
     ) -> Dict[str, Any]:
+        """
+        See inference_step_with_features for more info
+        """
         prediction, _ = self.inference_step_with_features(
             iamges=images,
             **kwargs
@@ -248,8 +251,8 @@ class BaseRetinaNet(AbstractModel):
         prediction = self.postprocess_for_inference(
             images=images,
             pred_detection=pred_detection,
-            pred_seg=pred_seg,
             anchors=anchors,
+            pred_seg=pred_seg,
         )
         return prediction, features
 
@@ -257,8 +260,8 @@ class BaseRetinaNet(AbstractModel):
     def postprocess_for_inference(self,
                                   images: torch.Tensor,
                                   pred_detection: Dict[str, torch.Tensor],
-                                  pred_seg: Dict[str, torch.Tensor],
                                   anchors: List[torch.Tensor],
+                                  pred_seg: Dict[str, torch.Tensor],
                                   ) -> Dict[str, Union[List[Tensor], Tensor]]:
         """
         Postprocess predictions for inference
@@ -266,8 +269,8 @@ class BaseRetinaNet(AbstractModel):
         Args:
             images: input images
             pred_detection: detection predictions
-            pred_seg: segmentation predictions
             anchors: anchors
+            pred_seg: segmentation predictions
 
         Returns:
             Dict: post processed predictions

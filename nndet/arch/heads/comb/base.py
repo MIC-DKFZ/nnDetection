@@ -60,8 +60,10 @@ class AnchorHead(BaseHead):
             List[torch.Tensor]: anchors per image
         """
         postprocess_predictions = {
-            "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
+            "pred_boxes": self.coder.decode(
+                prediction["box_deltas"], anchors),
+            "pred_probs": self.classifier.box_logits_to_probs(
+                prediction["box_logits"]),
         }
         return postprocess_predictions
 
@@ -151,6 +153,7 @@ class RoIHead(BaseHead):
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
             "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
         }
+        print(postprocess_predictions["pred_probs"])
         return postprocess_predictions
 
     @abstractmethod

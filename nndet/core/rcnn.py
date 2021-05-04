@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Any, Optional, Union
 import torch
 
 from nndet.arch.abstract import AbstractModel
-from nndet.core.rois.head import RoIModule
+from nndet.core.rois.module import RoIModule
 from nndet.utils.tensor import detach_all
 
 
@@ -26,6 +26,7 @@ class RCNN(AbstractModel):
         """
         #TODO
         """
+        print(targets["target_boxes"])
         losses, proposals, features = self.rpn.train_step_with_features(
             images=images,
             targets=targets,

@@ -16,7 +16,7 @@ from nndet.core.boxes.utils import box_iou
 
 from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 
-from nndet.core.rois.head import RoIModule
+from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.arch.heads.classifier.roi import RoIClassifierTwoMLP
 from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
@@ -271,7 +271,9 @@ class DummyRCNN(RetinaUNetV001):
 
         logger.info(f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
                     f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-                    f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f}")
+                    f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+                    f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+                    f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} ")
 
         for key, item in metric_scores.items():
             self.log(f'{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)

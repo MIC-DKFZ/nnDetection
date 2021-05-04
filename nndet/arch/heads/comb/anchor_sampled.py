@@ -179,7 +179,6 @@ class BoxHeadHNMNative(BoxHeadHNM):
             box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds])
 
         target_boxes_sampled = torch.cat(matched_gt_boxes, dim=0)[sampled_pos_inds]
-
         if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
                 pred_boxes_sampled,
