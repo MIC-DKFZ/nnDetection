@@ -31,7 +31,8 @@ class RoIClassifierTwoMLP(Classifier):
             ]
         )
         self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes
+            num_classes=num_classes,
+            reduction="sum",
         )
 
     def forward(self, features):

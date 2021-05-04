@@ -39,9 +39,13 @@ trainer_cfg:
   monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
-  max_num_epochs: 2 # max number of epochs
-  num_train_batches_per_epoch: 20 # number of train batches per epoch
-  num_val_batches_per_epoch: 10 # number of val batches per epoch
+  # max_num_epochs: 2 # max number of epochs
+  # num_train_batches_per_epoch: 20 # number of train batches per epoch
+  # num_val_batches_per_epoch: 10 # number of val batches per epoch
+
+  max_num_epochs: 5 # max number of epochs
+  num_train_batches_per_epoch: 250 # number of train batches per epoch
+  num_val_batches_per_epoch: 50 # number of val batches per epoch
 
   initial_lr: 0.01 # initial learning rate to start with
   sgd_momentum: 0.9 # momentum term

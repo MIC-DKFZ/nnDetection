@@ -90,7 +90,6 @@ def decode_single(rel_codes: Tensor, boxes: Tensor,
         rel_codes: encoded boxes [N x (dim * 2)] (dx, dy, dw, dh, dz, dd)
         boxes: reference boxes [N x (dims * 2)] (x1, y1, x2, y2, (z1, z2))
     """
-    # breakpoint()
     # offset is 4 in case of 2d data and 6 in case of 3d
     offset = boxes.shape[1]
     boxes = boxes.to(rel_codes.dtype)

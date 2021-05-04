@@ -168,8 +168,8 @@ class BoxHeadHNMNative(BoxHeadHNM):
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
+        losses = {}
         with torch.no_grad():
-            losses = {}
             sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
             sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
@@ -188,7 +188,6 @@ class BoxHeadHNMNative(BoxHeadHNM):
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds])
-        breakpoint
         return losses, sampled_pos_inds, sampled_neg_inds
 
 

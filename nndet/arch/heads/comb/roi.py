@@ -44,7 +44,6 @@ class RoIBoxHead(RoIHead):
         sampled_inds = torch.where(target_labels >= 0)[0]
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
-        # TODO: BUG::wrong proposals, these are noramlized!
         target_deltas_sampled = self.coder.encode_single(
             matched_gt_boxes[sampled_pos_inds],
             proposals[sampled_pos_inds],

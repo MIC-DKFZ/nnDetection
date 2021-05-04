@@ -29,7 +29,7 @@ class RCNN(AbstractModel):
         losses, proposals, features = self.rpn.train_step_with_features(
             images=images,
             targets=targets,
-            predict=predict,
+            predict=True,
             batch_num=batch_num,
         )
         # do not propagate through proposals
@@ -42,7 +42,8 @@ class RCNN(AbstractModel):
             targets=targets,
             predict=predict,
             )
-        losses.update(roi_losses)
+        for key, item in roi_losses.items():
+            losses[f"roi_{key}"] = item
         return losses, roi_prediction
 
     @torch.no_grad()
@@ -52,7 +53,7 @@ class RCNN(AbstractModel):
         **kwargs,
         ) -> Dict[str, Any]:
         proposals, features = self.rpn.inference_step_with_features(
-            iamges=images,
+            images=images,
             **kwargs
         )
         roi_prediction = self.roi_module.inference_step(

@@ -54,4 +54,4 @@ class RoIRegressorConv(Regressor):
         Returns:
             Tensor: classification loss
         """
-        return torch.nn.L1Loss()(pred_logits, targets)
+        return torch.nn.L1Loss(reduction="sum")(pred_logits, targets)

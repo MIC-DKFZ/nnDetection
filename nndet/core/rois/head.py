@@ -255,7 +255,7 @@ class RoIModule(torch.nn.Module):
             List[torch.Tensor]: proposals with gt boxes
                 List[[N + M, dim * 2]], N + M = new number of proposals
         """
-        return [torch.cat([p, g], dim=0) for p, g in zip(proposals, gt)]
+        return [torch.cat([p, g], dim=0) if g.numel() > 0 else p for p, g in zip(proposals, gt)]
 
 
 RoIModuleType = TypeVar('RoIModuleType', bound=RoIModule)
