@@ -57,45 +57,26 @@ To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.
 <br>
 The provided Dockerfile can be used to setup quick development environments or deploy nnDetection.
 
-Please install [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) before continuing.
+Please install docker and [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
 
-All projects which are based on nnDetection assume that the base image was build with the following tagging scheme `nnDetection:[version]`.
+All projects which are based on nnDetection assume that the base image was built with the following tagging scheme `nnDetection:[version]`.
 To build a container (nnDetection Version 0.1) run the following command from the base directory:
-
-```bash
-docker build -t nndetection:0.1 .
-```
-
-or
 
 ```bash
 docker build -t nndetection:0.1 --build-arg env_det_num_threads=6 --build-arg env_det_verbose=1 .
 ```
 
-to overwrite the provided default parameters.
+(`--build-arg env_det_num_threads=6` and `--build-arg env_det_verbose=1` are optional and are used to overwrite the provided default parameters)
 
-The docker container expects the data and models in `/opt/data` and `/opt/models` respectively.
-The directories need to be mounted via docker commands e.g.
+The docker container expects data and models in its own `/opt/data` and `/opt/models` directories respectively.
+The directories need to be mounted via docker `-v`. For simplicity and speed, the ENV variables `det_data` and `det_models` can be set in the host system to point to the desired directories. To run:
 
-```bash
-docker run --gpus all -v /path/to/data/on/pc:/opt/data -v /path/to/models/on/pc:/opt/models -it nndetection:0.1 /bin/bash
-```
-
-If nnDetection is already configured on the host PC the following command can be used to start the container with the correct paths.
-
-```bash
-docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it nndetection:0.1 /bin/bash
-```
-
-After activating the environment via `. /activate` inside the container, training or inference scripts can be executed with the usual commands (see below).
-
-Warning:
-1. The current pytorch versions do not support the 3d conv speed up and thus compiling pytorch from source will run faster than this container.
-2. When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container).
-I tested the following configuration on my local workstation:
 ```bash
 docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
 ```
+
+Warning:
+When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
 
 </details>
 
