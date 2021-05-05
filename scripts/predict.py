@@ -180,7 +180,7 @@ def main():
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
     process = args.no_preprocess
-    if test_split:
+    if test_split and process:
         raise ValueError("When using the test split option raw data is not "
                          "supported. Need to add --no_preprocess flag!")
 
