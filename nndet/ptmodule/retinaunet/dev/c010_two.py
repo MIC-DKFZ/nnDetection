@@ -29,7 +29,7 @@ class RetinaUNetC010TwoATSS(RetinaUNetC010LReLU):
     head_cls = BoxHeadHNMNative
     head_classifier_cls = BCECLassifier
     head_regressor_cls = GIoURegressor
-    matcher_cls = IoUMatcher
+    matcher_cls = ATSSMatcher
     segmenter_cls = DiCESegmenterFgBg
 
 
@@ -41,7 +41,7 @@ class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
     head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
     head_regressor_cls = GIoURegressor
-    matcher_cls = ATSSMatcher
+    matcher_cls = IoUMatcher
     segmenter_cls = DiCESegmenterFgBg
 
     @classmethod
