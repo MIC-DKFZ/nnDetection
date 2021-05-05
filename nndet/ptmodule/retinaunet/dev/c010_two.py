@@ -22,6 +22,18 @@ class RetinaUNetC010Two(RetinaUNetC010LReLU):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC010TwoATSS(RetinaUNetC010LReLU):
+    base_conv_cls = ConvInstanceRelu
+    head_conv_cls = ConvGroupRelu
+
+    head_cls = BoxHeadHNMNative
+    head_classifier_cls = BCECLassifier
+    head_regressor_cls = GIoURegressor
+    matcher_cls = IoUMatcher
+    segmenter_cls = DiCESegmenterFgBg
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
     base_conv_cls = ConvInstanceRelu
     head_conv_cls = ConvGroupRelu
@@ -29,7 +41,7 @@ class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
     head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
     head_regressor_cls = GIoURegressor
-    matcher_cls = IoUMatcher
+    matcher_cls = ATSSMatcher
     segmenter_cls = DiCESegmenterFgBg
 
     @classmethod
@@ -63,3 +75,15 @@ class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
             **head_kwargs,
         )
         return head
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010TwoFocalATSS(RetinaUNetC010TwoFocal):
+    base_conv_cls = ConvInstanceRelu
+    head_conv_cls = ConvGroupRelu
+
+    head_cls = BoxHeadAll
+    head_classifier_cls = FocalClassifier
+    head_regressor_cls = GIoURegressor
+    matcher_cls = ATSSMatcher
+    segmenter_cls = DiCESegmenterFgBg
