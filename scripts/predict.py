@@ -131,33 +131,39 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument('model', type=str, help="model name, e.g. RetinaUNetV0")
-    parser.add_argument('-f', '--fold', type=int, help="fold to use for prediction. -1 uses the consolidated model",
-                        required=False, default=-1)
+    parser.add_argument('-f', '--fold', type=int, required=False, default=-1,
+                        help="fold to use for prediction. -1 uses the consolidated model",
+                        )
     parser.add_argument('-nmodels', '--num_models', type=int, default=None,
+                        required=False,
                         help="number of models for ensemble(per default all models will be used)."
                              "NOT usable by default -- will use all models inside the folder!",
-                        required=False)
+                        )
     parser.add_argument('-ntta', '--num_tta', type=int, default=None,
                         help="number of tta transforms (per default most tta are chosen)",
-                        required=False)
+                        required=False,
+                        )
     parser.add_argument('-o', '--overwrites', type=str, nargs='+',
+                        default=None,
+                        required=False,
                         help=("overwrites for config file. "
                               "inference_kwargs can be used to add additional "
                               "keyword arguments to inference."),
-                        default=None,
-                        required=False)
-    parser.add_argument('--no_preprocess', help="Preprocess test data", action='store_false')
-    parser.add_argument('--force_args',
+                        )
+    parser.add_argument('--no_preprocess', action='store_false', help="Preprocess test data")
+    parser.add_argument('--force_args', action='store_true',
                         help=("When transferring models betweens tasks the name "
                         "and fold might differ from the original one. "
                         "This forces an overwrite to the passed in arguments of"
-                        " this function. This can be dangerous!"), action='store_true')
-    parser.add_argument('--test_split',
+                        " this function. This can be dangerous!"),
+                        )
+    parser.add_argument('--test_split', action='store_true',
                         help=("Typical usage of nnDetection will never require "
                               "this option! Predict an already preprocessed "
                               "split of the original training data. "
                               "The 'test' split needs to be located in fold 0 "
-                              "of a manually created split file."))
+                              "of a manually created split file."),
+                        )
 
     args = parser.parse_args()
     model = args.model
