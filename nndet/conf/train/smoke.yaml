@@ -111,12 +111,12 @@ model_cfg:
       batch_dice: True
 
   matcher_kwargs: # keyword arguments passed to matcher
-    num_candidates: 4
-    center_in_gt: False
+    # num_candidates: 4
+    # center_in_gt: False
 
-    # low_threshold: 0.4
-    # high_threshold: 0.5
-    # allow_low_quality_matches: True
+    low_threshold: 0.4
+    high_threshold: 0.5
+    allow_low_quality_matches: True
 
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors
