@@ -26,7 +26,7 @@ class RCNN(AbstractModel):
         """
         #TODO
         """
-        print(targets["target_boxes"])
+        # print(targets["target_boxes"])
         losses, proposals, features = self.rpn.train_step_with_features(
             images=images,
             targets=targets,

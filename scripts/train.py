@@ -273,7 +273,7 @@ def _train(
         max_epochs=module.max_epochs,
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
-        num_sanity_val_steps=10,
+        num_sanity_val_steps=10, #10,
         weights_summary=None, # 'full',
         plugins=plugins,
         terminate_on_nan=True,  # TODO: make modular

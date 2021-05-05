@@ -153,7 +153,6 @@ class RoIHead(BaseHead):
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
             "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
         }
-        print(postprocess_predictions["pred_probs"])
         return postprocess_predictions
 
     @abstractmethod

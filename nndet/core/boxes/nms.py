@@ -65,6 +65,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
     if boxes.shape[1] == 4:
         # prefer torchvision in 2d because they have c++ cpu version
         nms_fn = nms_2d
+        # nms_fn = nms_cpu
     else:
         if boxes.is_cuda:
             nms_fn = nms_gpu

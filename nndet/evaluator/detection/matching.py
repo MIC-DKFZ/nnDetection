@@ -211,7 +211,6 @@ def _matching_single_image_single_class(
 
     # ious between sorted(!) predictions and ground truth
     ious = iou_fn(pred_boxes, gt_boxes)
-
     num_preds, num_gts = ious.shape[0], ious.shape[1]
     gt_match = np.zeros((len(iou_thresholds), num_gts))
     dt_match = np.zeros((len(iou_thresholds), num_preds))

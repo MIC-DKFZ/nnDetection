@@ -208,7 +208,6 @@ class BaseRetinaNet(AbstractModel):
         # self.save_matched_anchors(images=images, target_boxes=target_boxes,
         #                             anchors=anchors, pos_idx=pos_idx,
         #                             neg_idx=neg_idx, seg=seg_targets)
-
         return losses, prediction, features
 
     @torch.no_grad()

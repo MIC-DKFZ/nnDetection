@@ -32,8 +32,8 @@ from nndet.utils.info import env_guard
 # # 2D example
 dim = 2
 image_size = [256, 256]
-object_size = [16, 32]
-object_width = 4
+object_size = [32, 64]
+object_width = 8
 
 # 3D example
 # dim = 3
