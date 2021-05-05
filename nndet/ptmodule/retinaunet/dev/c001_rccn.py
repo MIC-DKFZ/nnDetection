@@ -29,9 +29,59 @@ from nndet.core.boxes.sampler import NegativeSampler, BalancedHardNegativeSample
 
 from nndet.core.rcnn import RCNN
 
+from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.arch.heads.classifier.dense import BCECLassifier, CEClassifier, FocalClassifier
+from nndet.arch.heads.comb.anchor_all import BoxHeadAll
+from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM, BoxHeadHNMNative, BoxHeadHNMNativeRegAll
+from nndet.arch.heads.regressor.dense_single import GIoURegressor, L1Regressor
+from nndet.arch.heads.segmenter import DiCESegmenterFgBg
+from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
+from nndet.ptmodule.retinaunet.dev.c010 import RetinaUNetC010LReLU
+
 
 @MODULE_REGISTRY.register
 class DummyRCNN(RetinaUNetV001):
+    base_conv_cls = ConvInstanceRelu
+    head_conv_cls = ConvGroupRelu
+
+    head_cls = BoxHeadAll
+    head_classifier_cls = FocalClassifier
+    head_regressor_cls = GIoURegressor
+    matcher_cls = IoUMatcher
+    segmenter_cls = DiCESegmenterFgBg
+
+    @classmethod
+    def _build_head(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier,
+        regressor,
+        coder,
+    ):
+        """
+        Build detection head
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            classifier: classifier instance
+            regressor: regressor instance
+            coder: coder instance to encode boxes
+
+        Returns:
+            HeadType: instantiated head
+        """
+        head_kwargs = model_cfg['head_kwargs']
+
+        head = cls.head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            **head_kwargs,
+        )
+        return head
+
     @classmethod
     def from_config_plan(cls,
                          model_cfg: dict,
@@ -95,11 +145,11 @@ class DummyRCNN(RetinaUNetV001):
             decoder=decoder,
         )
 
-        detections_per_img = plan_arch.get("detections_per_img", 100)
+        detections_per_img = plan_arch.get("detections_per_img", 200)
         score_thresh = plan_arch.get("score_thresh", 0)
         topk_candidates = plan_arch.get("topk_candidates", 10000)
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
-        nms_thresh = plan_arch.get("nms_thresh", 0.6)
+        nms_thresh = plan_arch.get("nms_thresh", 0.9)
 
         logger.info(f"Model Inference Summary: \n"
                     f"detections_per_img: {detections_per_img} \n"

@@ -296,7 +296,7 @@ class CEClassifier(DenseClassifier):
             num_convs=num_convs,
             add_norm=add_norm,
             internal_channels=internal_channels,
-            num_classes=num_classes,
+            num_classes=num_classes + 1,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             **kwargs,

@@ -18,3 +18,6 @@ from nndet.ptmodule.retinaunet.dev.c010 import (
 from nndet.ptmodule.retinaunet.dev.c001_rccn import (
     DummyRCNN
 )
+from nndet.ptmodule.retinaunet.dev.c010_two import (
+    RetinaUNetC010Two
+)

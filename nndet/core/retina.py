@@ -177,15 +177,15 @@ class BaseRetinaNet(AbstractModel):
 
         pred_detection, anchors, pred_seg, features = self(images)
 
-        with torch.no_grad():
-            labels, matched_gt_boxes = assign_targets_to_anchors(
-                proposal_matcher=self.proposal_matcher,
-                anchors=anchors,
-                target_boxes=target_boxes,
-                target_classes=target_classes,
-                num_anchors_per_level=self.anchor_generator.get_num_acnhors_per_level(),
-                num_anchors_per_loc=self.anchor_generator.num_anchors_per_location()[0],
-            )
+        # with torch.no_grad():
+        labels, matched_gt_boxes = assign_targets_to_anchors(
+            proposal_matcher=self.proposal_matcher,
+            anchors=anchors,
+            target_boxes=target_boxes,
+            target_classes=target_classes,
+            num_anchors_per_level=self.anchor_generator.get_num_acnhors_per_level(),
+            num_anchors_per_loc=self.anchor_generator.num_anchors_per_location()[0],
+        )
 
         losses = {}
         head_losses, pos_idx, neg_idx = self.head.compute_loss(

@@ -284,7 +284,10 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         self.box_evaluator.reset()
         logger.info(f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
                     f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-                    f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f}")
+                    f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+                    f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+                    f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+                    )
 
         seg_scores, _ = self.seg_evaluator.finish_online_evaluation()
         self.seg_evaluator.reset()

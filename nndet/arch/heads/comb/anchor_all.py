@@ -83,4 +83,5 @@ class BoxHeadAll(AnchorHead):
             box_logits[sampled_inds],
             target_labels[sampled_inds],
             ) / max(1, sampled_pos_inds.numel())
+        # breakpoint()
         return losses, sampled_pos_inds, None

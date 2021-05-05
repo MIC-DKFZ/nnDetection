@@ -1,0 +1,65 @@
+from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.arch.heads.classifier.dense import BCECLassifier, CEClassifier, FocalClassifier
+from nndet.arch.heads.comb.anchor_all import BoxHeadAll
+from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM, BoxHeadHNMNative, BoxHeadHNMNativeRegAll
+from nndet.arch.heads.regressor.dense_single import GIoURegressor, L1Regressor
+from nndet.arch.heads.segmenter import DiCESegmenterFgBg
+from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
+from nndet.ptmodule.retinaunet.dev.c010 import RetinaUNetC010LReLU
+from nndet.ptmodule import MODULE_REGISTRY
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010Two(RetinaUNetC010LReLU):
+    base_conv_cls = ConvInstanceRelu
+    head_conv_cls = ConvGroupRelu
+
+    head_cls = BoxHeadHNMNative
+    head_classifier_cls = BCECLassifier
+    head_regressor_cls = GIoURegressor
+    matcher_cls = IoUMatcher
+    segmenter_cls = DiCESegmenterFgBg
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
+    base_conv_cls = ConvInstanceRelu
+    head_conv_cls = ConvGroupRelu
+
+    head_cls = BoxHeadAll
+    head_classifier_cls = FocalClassifier
+    head_regressor_cls = GIoURegressor
+    matcher_cls = IoUMatcher
+    segmenter_cls = DiCESegmenterFgBg
+
+    @classmethod
+    def _build_head(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier,
+        regressor,
+        coder,
+    ):
+        """
+        Build detection head
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            classifier: classifier instance
+            regressor: regressor instance
+            coder: coder instance to encode boxes
+
+        Returns:
+            HeadType: instantiated head
+        """
+        head_kwargs = model_cfg['head_kwargs']
+
+        head = cls.head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            **head_kwargs,
+        )
+        return head
