@@ -29,4 +29,5 @@ from nndet.ptmodule.retinaunet.dev.c011 import (
     RetinaUNetC011L1,
     RetinaUNetC011Focal,
     RetinaUNetC011AsymFocal,
+    RetinaUNetC011DualReg,
 )
