@@ -2,8 +2,8 @@
 defaults:
   - augmentation: base_more
 
-module: "RetinaUNetC010Two"
-predictor: "BoxPredictorSelective"
+module: RetinaUNetC010
+predictor: BoxPredictorSelective
 plan: D3V001_3d
 
 planners:
@@ -39,26 +39,21 @@ trainer_cfg:
   monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
-  # max_num_epochs: 2 # max number of epochs
-  # num_train_batches_per_epoch: 20 # number of train batches per epoch
-  # num_val_batches_per_epoch: 10 # number of val batches per epoch
-
-  max_num_epochs: 5 # max number of epochs
-  num_train_batches_per_epoch: 250 # number of train batches per epoch
-  num_val_batches_per_epoch: 50 # number of val batches per epoch
+  max_num_epochs: 50 # max number of epochs
+  num_train_batches_per_epoch: 2500 # number of train batches per epoch
+  num_val_batches_per_epoch: 100 # number of val batches per epoch
 
   initial_lr: 0.01 # initial learning rate to start with
   sgd_momentum: 0.9 # momentum term
   sgd_nesterov: True # nesterov momentum
   weight_decay: 3.e-5 # weight decay for optimizer
-  momentum: 0.9 # momentum term
 
-  warm_iterations: 100 # number of iterations with warmup
+  warm_iterations: 4000 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from
 
   poly_gamma: 0.9
 
-  swa_epochs: 2 # number of epochs to run swa with cyclic learning rate
+  swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
@@ -77,38 +72,23 @@ model_cfg:
   head_kwargs: {} # keyword arguments to passed to head
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
-    num_convs: 2
+    num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
+    reduction: "mean"
+    loss_weight: 1.
     prior_prob: 0.01
 
-    loss_weight: 1.
-    reduction: "mean"
-
-    # gamma: 1.
-    # alpha: 0.75
-    # reduction: "sum"
-    # loss_weight: 0.3
-
-  # head_regressor_kwargs: # keyword arguments passed to regressor in head
-  #   num_convs: 2
-  #   norm_channels_per_group: 16
-  #   norm_affine: True
-  #   reduction: "sum"
-  #   loss_weight: 1.
-  #   learn_scale: True
-  
   head_regressor_kwargs: # keyword arguments passed to regressor in head
     num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "sum"
-    loss_weight_l1: 5.
-    loss_weight_giou: 2.
+    loss_weight: 1.
     learn_scale: True
 
   head_sampler_kwargs: # keyword arguments passed to sampler
-    batch_size_per_image: 128 # number of anchors sampled per image
+    batch_size_per_image: 32 # number of anchors sampled per image
     positive_fraction: 0.33 # defines ratio between positive and negative anchors
     # hard negatives are sampled from a pool of size:
     # batch_size_per_image * (1 - positive_fraction) * pool_size
@@ -118,18 +98,11 @@ model_cfg:
   segmenter_kwargs:
     dice_kwargs:
       batch_dice: True
+      smooth_nom: 0.
 
   matcher_kwargs: # keyword arguments passed to matcher
     num_candidates: 4
     center_in_gt: False
 
-    # low_threshold: 0.4
-    # high_threshold: 0.5
-    # allow_low_quality_matches: True
-
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors
-
-debug:
-  num_cases_val: 2 # only predict two cases for validation results
-

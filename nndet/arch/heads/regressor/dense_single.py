@@ -277,3 +277,87 @@ class GIoURegressor(DenseRegressor):
             reduction=reduction,
             loss_weight=loss_weight,
             )
+
+
+class DualRegressor(DenseRegressor):
+    def __init__(self,
+                 conv,
+                 in_channels: int,
+                 internal_channels: int,
+                 anchors_per_pos: int,
+                 num_levels: int,
+                 num_convs: int = 3,
+                 add_norm: bool = True,
+                 reduction: Optional[str] = "sum",
+                 beta: float = 1.,
+                 loss_weight_l1: float = 5.,
+                 loss_weight_giou: float = 2.,
+                 learn_scale: bool = False,
+                 **kwargs,
+                 ):
+        """
+        Build regressor heads with typical conv structure and GIoU and L1
+        loss function: loss_weight * [(1-alpha) * L1 + alpha * GIoU]
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            anchors_per_pos: number of anchors per position
+            num_levels: number of decoder levels which are passed through the
+                regressor
+            num_convs: number of convolutions
+                in conv -> num convs -> final conv
+            add_norm: en-/disable normalization layers in internal layers
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            beta: L1 to L2 change point.
+                For beta values < 1e-5, L1 loss is computed.
+            alpha: balance loss functions
+            loss_weight: scalar to balance multiple losses
+            learn_scale: learn additional single scalar values per feature
+                pyramid level
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            internal_channels=internal_channels,
+            anchors_per_pos=anchors_per_pos,
+            num_levels=num_levels,
+            num_convs=num_convs,
+            add_norm=add_norm,
+            learn_scale=learn_scale,
+            **kwargs
+        )
+        self.loss_weight_l1 = loss_weight_l1
+        self.loss_weight_giou = loss_weight_giou
+        self.loss_l1 = SmoothL1Loss(
+            beta=beta,
+            reduction=reduction,
+            )
+        self.loss_giou = GIoULoss(
+            reduction=reduction,
+            )
+
+    def compute_loss(self,
+                     pred_deltas: Tensor,
+                     target_deltas: Tensor,
+                     pred_boxes: Tensor,
+                     target_boxes: Tensor,
+                     **kwargs,
+                     ) -> Tensor:
+        """
+        Compute regression loss (l1 loss)
+
+        Args:
+            pred_deltas: predicted bounding box deltas [N,  dim * 2]
+            target_deltas: target bounding box deltas [N,  dim * 2]
+
+        Returns:
+            Tensor: loss
+        """
+        l1 = self.loss_l1(pred_deltas, target_deltas)
+        giou = self.loss_giou(pred_boxes, target_boxes)
+        return l1 * self.loss_weight_l1 + giou * self.loss_weight_giou

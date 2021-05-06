@@ -1,16 +1,23 @@
 from loguru import logger
+from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.arch.heads.comb.base import AnchorHeadType
 from nndet.arch.heads.classifier.dense import DenseClassifierType
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
 
-from nndet.arch.heads.comb import BoxHeadAll
+from nndet.arch.heads.comb import (
+    BoxHeadAll,
+    BoxHeadHNM,
+)
 from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
+    )
+from nndet.arch.heads.regressor import (
+    L1Regressor
     )
 from nndet.arch.conv import (
     ConvInstanceLReLU,
@@ -22,6 +29,24 @@ from nndet.arch.conv import (
 class RetinaUNetC011(RetinaUNetV001):
     base_conv_cls = ConvInstanceLReLU
     head_conv_cls = ConvGroupLReLU
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011L1(RetinaUNetC011):
+    head_cls = BoxHeadHNM
+    head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011L1All(RetinaUNetC011):
+    head_cls = BoxHeadHNMRegAll
+    head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011DualReg(RetinaUNetC011):
+    head_cls = BoxHeadHNMDualReg
+    head_regressor_cls = DualRegressor
 
 
 @MODULE_REGISTRY.register

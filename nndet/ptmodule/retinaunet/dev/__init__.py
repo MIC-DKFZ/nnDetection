@@ -24,3 +24,9 @@ from nndet.ptmodule.retinaunet.dev.c010_two import (
     RetinaUNetC010TwoFocal,
     RetinaUNetC010TwoFocalATSS,
 )
+from nndet.ptmodule.retinaunet.dev.c011 import (
+    RetinaUNetC011,
+    RetinaUNetC011L1,
+    RetinaUNetC011Focal,
+    RetinaUNetC011AsymFocal,
+)
