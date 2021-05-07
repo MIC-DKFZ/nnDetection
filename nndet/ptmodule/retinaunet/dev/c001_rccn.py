@@ -185,7 +185,8 @@ class DummyRCNN(RetinaUNetV001):
         coder = BoxCoderND(weights=(1.,) * (2 * 2))
         classifier = RoIClassifierTwoMLP(
             conv=conv,
-            in_channels = plan_arch["fpn_channels"] * 7 * 7,
+            output_size=output_size,
+            in_channels = plan_arch["fpn_channels"],
             internal_channels=plan_arch["fpn_channels"],
             num_classes=plan_arch["classifier_classes"],
         )
@@ -200,7 +201,7 @@ class DummyRCNN(RetinaUNetV001):
             coder=coder,
         )
         matcher = IoUMatcher(
-                low_threshold=0.5,
+                low_threshold=0.4,
                 high_threshold=0.5,
                 allow_low_quality_matches=False,
             )

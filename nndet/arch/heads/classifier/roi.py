@@ -1,3 +1,5 @@
+from typing import Tuple, Union
+
 import torch
 
 from nndet.arch.heads.abstract import Classifier, CONV_TYPES
@@ -11,6 +13,7 @@ from nndet.losses.classification import (
 class RoIClassifierTwoMLP(Classifier):
     def __init__(self,
                  conv,
+                 output_size: Union[Tuple[int, int], Tuple[int, int, int]],
                  in_channels: int,
                  internal_channels: int,
                  num_classes: int,
@@ -21,7 +24,7 @@ class RoIClassifierTwoMLP(Classifier):
         self.fc = torch.nn.Sequential(
             *[
                 torch.nn.Linear(
-                    in_channels,
+                    in_channels * output_size[0] * output_size[1],
                     internal_channels,
                     ),
                 torch.nn.ReLU(),
@@ -32,19 +35,41 @@ class RoIClassifierTwoMLP(Classifier):
                 torch.nn.ReLU(),
                 torch.nn.Linear(
                     internal_channels,
-                    num_classes,
+                    num_classes + 1,
                     ),
             ]
         )
-        self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
+        # self.conv_internal = torch.nn.Sequential(
+        #     *[
+        #         conv(in_channels,
+        #              internal_channels,
+        #              kernel_size=3,
+        #              stride=1,
+        #              padding=1,
+        #             ),
+        #         conv(internal_channels,
+        #              internal_channels,
+        #              kernel_size=3,
+        #              stride=1,
+        #              padding=1,
+        #             ),
+        #         nd_pool("AdaptiveAvg", self.dim, 1),
+        #     ]
+        # )
+        # self.fc = torch.nn.Linear(
+        #     internal_channels,
+        #     num_classes + 1,
+        # )
+        self.loss = torch.nn.CrossEntropyLoss(
             reduction="sum",
         )
 
     def forward(self, features):
+        # x = self.conv_internal(features) # N, C, spatial -> N, C, 1
+        # return self.fc(x.view(x.shape[0], -1))
+        
         return self.fc(features.view(features.shape[0], -1))
 
-    # TODO: CE refactor
     def compute_loss(self,
                      pred_logits: torch.Tensor,
                      targets: torch.Tensor,
@@ -60,6 +85,7 @@ class RoIClassifierTwoMLP(Classifier):
         Returns:
             Tensor: classification loss
         """
+        # print(torch.sigmoid(pred_logits.detach()[::2]), targets[::2])
         return self.loss(pred_logits, targets)
 
     def box_logits_to_probs(self,
@@ -75,4 +101,4 @@ class RoIClassifierTwoMLP(Classifier):
         Returns:
             Tensor: probabilities; [N, C], C=number of classes
         """
-        return torch.sigmoid(box_logits)
+        return torch.nn.functional.softmax(box_logits, dim=1)[:, 1:]

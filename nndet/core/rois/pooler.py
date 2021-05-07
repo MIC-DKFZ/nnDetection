@@ -46,7 +46,6 @@ class Pooler(torch.nn.Module):
                                     device=proposal_boxes.device,
                                     )
         # normalize boes to [0, 1]
-        # TODO: dynamically infer normalization scale in RoI Align!
         proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
 
         proposal_levels = self._find_pyramid_level(
@@ -64,14 +63,16 @@ class Pooler(torch.nn.Module):
 
         # TODO: dynamically infer scale, these normlizations are wrong
         proprosals_prepared = torch.cat(
-            [batch_idx[:, None], proposal_boxes_norm], dim=1,
+            [batch_idx[:, None], proposal_boxes], dim=1,
             )
         for idx, fmap in enumerate(features):
+            scale = fmap.shape[0] / image_size_tensor[0]
             idx = torch.where(proposal_levels == idx)[0]
             if idx.numel() > 0:
                 output[idx] = self._pool_features(
                     fmap=fmap,
                     proposals=proprosals_prepared[idx],
+                    spatial_scale=scale,
                 )
         return output
 
@@ -148,6 +149,7 @@ class RoIAlignNaiveAssign(Pooler):
     def _pool_features(self,
                        fmap: torch.Tensor,
                        proposals: torch.Tensor,
+                       spatial_scale: float,
                        ) -> torch.Tensor:
         """
         Pooling feature for proposals from given feature map
@@ -159,7 +161,9 @@ class RoIAlignNaiveAssign(Pooler):
             input=fmap,
             boxes=proposals,
             output_size=self.output_szie,
+            spatial_scale=spatial_scale,
             aligned=True,
+            sampling_ratio=2,
         )
 
 
