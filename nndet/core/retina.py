@@ -220,7 +220,7 @@ class BaseRetinaNet(AbstractModel):
         See inference_step_with_features for more info
         """
         prediction, _ = self.inference_step_with_features(
-            iamges=images,
+            images=images,
             **kwargs
         )
         return prediction
