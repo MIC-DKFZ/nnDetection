@@ -29,17 +29,19 @@ from nndet.io import save_json
 from nndet.utils.info import env_guard
 
 
+modalities = 1
+
 # # 2D example
-dim = 2
-image_size = [256, 256]
-object_size = [32, 64]
-object_width = 8
+# dim = 2
+# image_size = [256, 256]
+# object_size = [32, 64]
+# object_width = 8
 
 # 3D example
-# dim = 3
-# image_size = [256, 256, 256]
-# object_size = [16, 32]
-# object_width = 4
+dim = 3
+image_size = [128, 128, 128]
+object_size = [16, 32]
+object_width = 4
 
 
 def generate_image(image_dir, label_dir, idx):
@@ -89,7 +91,18 @@ def generate_image(image_dir, label_dir, idx):
             "1": selected_class
         },
     }
-    sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_0000.nii.gz"))
+
+    if modalities > 1:
+        sc = np.random.randint(0, modalities)
+
+        for i in range(modalities):
+            if i == sc:
+                sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_000{i}.nii.gz"))
+            else:
+                noise_itk = sitk.GetImageFromArray(np.random.rand(*image_size))
+                sitk.WriteImage(noise_itk, str(image_dir / f"case_{idx}_000{i}.nii.gz"))
+    else:
+        sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_0000.nii.gz"))
     sitk.WriteImage(mask_itk, str(label_dir / f"case_{idx}.nii.gz"))
     save_json(mask_meta, label_dir / f"case_{idx}.json")
 
@@ -122,12 +135,12 @@ def main():
     num_images_ts = 1000 if full else 10
 
     meta = {
-        "task": f"Task000D{dim}_Example",
+        "task": f"Task000D{dim}M{modalities}_Example",
         "name": "Example",
         "target_class": None,
         "test_labels": True,
         "labels": {"0": "Square", "1": "SquareHole"},
-        "modalities": {"0": "MRI"},
+        "modalities": {str(i): "MRI" for i in range(modalities)},
         "dim": dim,
     }
 

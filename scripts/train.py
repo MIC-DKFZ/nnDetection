@@ -254,6 +254,8 @@ def _train(
     trainer_kwargs = {}
     if cfg["train"]["mode"].lower() == "resume":
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
+    elif cfg["train"]["mode"].lower() == "transfer":
+        module.load_state_dict(torch.load(train_dir / "model_last.ckpt")["state_dict"])
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")

@@ -2,7 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: "RetinaUNetC010Two"
+module: "RetinaUNetC011"
 predictor: "BoxPredictorSelective"
 plan: D3V001_3d
 
@@ -39,13 +39,13 @@ trainer_cfg:
   monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
-  # max_num_epochs: 2 # max number of epochs
-  # num_train_batches_per_epoch: 20 # number of train batches per epoch
-  # num_val_batches_per_epoch: 10 # number of val batches per epoch
-
-  max_num_epochs: 5 # max number of epochs
+  max_num_epochs: 3 # max number of epochs
   num_train_batches_per_epoch: 250 # number of train batches per epoch
   num_val_batches_per_epoch: 50 # number of val batches per epoch
+
+  # max_num_epochs: 5 # max number of epochs
+  # num_train_batches_per_epoch: 250 # number of train batches per epoch
+  # num_val_batches_per_epoch: 50 # number of val batches per epoch
 
   initial_lr: 0.01 # initial learning rate to start with
   sgd_momentum: 0.9 # momentum term
@@ -90,22 +90,22 @@ model_cfg:
     # reduction: "sum"
     # loss_weight: 0.3
 
-  # head_regressor_kwargs: # keyword arguments passed to regressor in head
-  #   num_convs: 2
-  #   norm_channels_per_group: 16
-  #   norm_affine: True
-  #   reduction: "sum"
-  #   loss_weight: 1.
-  #   learn_scale: True
-  
   head_regressor_kwargs: # keyword arguments passed to regressor in head
-    num_convs: 1
+    num_convs: 2
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "sum"
-    loss_weight_l1: 5.
-    loss_weight_giou: 2.
+    loss_weight: 1.
     learn_scale: True
+  
+  # head_regressor_kwargs: # keyword arguments passed to regressor in head
+  #   num_convs: 1
+  #   norm_channels_per_group: 16
+  #   norm_affine: True
+  #   reduction: "sum"
+  #   loss_weight_l1: 5.
+  #   loss_weight_giou: 2.
+  #   learn_scale: True
 
   head_sampler_kwargs: # keyword arguments passed to sampler
     batch_size_per_image: 128 # number of anchors sampled per image

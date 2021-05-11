@@ -40,7 +40,7 @@ def init_train_dir(cfg,
         fold: fold
     """
     # determine folder for experiment
-    output_dir = Path(cfg.host.parent_results) / str(task) / str(id) / f"fold{fold}"
+    output_dir = Path(cfg.host.parent_results) / str(task) / str(id) / f"transfer"
 
     if cfg["train"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
@@ -101,6 +101,7 @@ def _pretrain(
     cfg = compose(pretask, "config.yaml", overrides=ov if ov is not None else [])
     
     targettask = get_task(targettask, name=True)
+    pretask = get_task(targettask, name=True)
 
     assert cfg.host.parent_data is not None, 'Parent data can not be None'
     assert cfg.host.parent_results is not None, 'Output dir can not be None'
@@ -161,7 +162,7 @@ def _pretrain(
     _kwargs = pre_plan.get("dataloader_kwargs", {})
     _kwargs["target_num_classes"] = target_plan["num_classes"]
     _kwargs["target_num_modalities"] = target_plan["num_modalities"]
-    pre_plan.ge["dataloader_kwargs"] = _kwargs
+    pre_plan["dataloader_kwargs"] = _kwargs
 
     save_json(create_debug_plan(pre_plan), "./plan_debug.json")
 

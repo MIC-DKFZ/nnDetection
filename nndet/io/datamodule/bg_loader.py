@@ -718,6 +718,7 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
                 }
 
 
+@DATALOADER_REGISTRY.register
 class Transfer3DLoader(DataLoader3DOffset):
     def __init__(self,
                 data: Dict,
@@ -755,6 +756,8 @@ class Transfer3DLoader(DataLoader3DOffset):
             ValueError: patch size of dataloder and final patch size need to
                 have the same length
         """
+        self.target_num_classes = target_num_classes
+        self.target_num_modalities = target_num_modalities
         super().__init__(
             data=data,
             batch_size=batch_size,
@@ -766,8 +769,6 @@ class Transfer3DLoader(DataLoader3DOffset):
             pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
-        self.target_num_classes = target_num_classes
-        self.target_num_modalities = target_num_modalities
 
     def determine_shapes(self) -> Tuple[Tuple[int], Tuple[int]]:
         """
