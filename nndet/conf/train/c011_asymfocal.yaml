@@ -2,7 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC010
+module: RetinaUNetC011AsymFocal
 predictor: BoxPredictorSelective
 plan: D3V001_3d
 
