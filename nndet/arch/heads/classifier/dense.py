@@ -426,7 +426,6 @@ class AsymmetricFocalClassifier(FocalClassifier):
             loss_weight: scalar to balance multiple losses
             kwargs: keyword arguments passed to first and internal convolutions
         """
-        self.prior_prob = prior_prob
         super().__init__(
             conv=conv,
             in_channels=in_channels,
@@ -436,6 +435,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
             num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
+            prior_prob=prior_prob,
             **kwargs,
             )
 
