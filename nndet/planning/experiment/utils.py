@@ -7,7 +7,7 @@ from itertools import repeat
 from multiprocessing import Pool
 from typing import Dict
 
-from nndet.utils.itk import load_sitk_as_array
+from nndet.io.itk import load_sitk_as_array
 from nndet.io.load import load_json, load_pickle
 from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.transforms.instances import (

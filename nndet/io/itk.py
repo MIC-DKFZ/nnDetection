@@ -84,6 +84,7 @@ def copy_meta_data_itk(source: sitk.Image, target: sitk.Image) -> sitk.Image:
     """
     # for i in source.GetMetaDataKeys():
     #     target.SetMetaData(i, source.GetMetaData(i))
+    raise NotImplementedError("Does not work!")
     target.SetOrigin(source.GetOrigin())
     target.SetDirection(source.GetDirection())
     target.SetSpacing(source.GetSpacing())
