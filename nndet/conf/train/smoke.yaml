@@ -2,8 +2,8 @@
 defaults:
   - augmentation: base_more
 
-module: "RetinaUNetC010"
-predictor: "BoxPredictorSelective"
+module: RetinaUNetV001
+predictor: BoxPredictorSelective
 plan: D3V001_3d
 
 planners:

@@ -37,7 +37,7 @@ from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
-from nndet.core.boxes.utils import box_iou
+from nndet.core.boxes.ops import box_iou
 
 from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModule
 

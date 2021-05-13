@@ -20,7 +20,7 @@ from torch.cuda.amp import autocast
 from torchvision.ops.boxes import nms as nms_2d
 
 from nndet._C import nms as nms_gpu
-from nndet.core.boxes.utils import box_iou
+from nndet.core.boxes.ops import box_iou
 
 
 def nms_cpu(boxes, scores, thresh):

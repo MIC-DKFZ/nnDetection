@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from loguru import logger
 
-from nndet.core.boxes.utils import box_iou, box_center_dist, center_in_boxes
+from nndet.core.boxes.ops import box_iou, box_center_dist, center_in_boxes
 
 INF = 100  # not really inv but here it is sufficient
 

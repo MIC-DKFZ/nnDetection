@@ -27,7 +27,7 @@ from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.load import load_pickle
 from nndet.inference.patching import save_get_crop
 from nndet.utils.info import maybe_verbose_iterable
-from nndet.core.boxes.utils_np import box_size_np
+from nndet.core.boxes.ops_np import box_size_np
 
 
 class FixedSlimDataLoaderBase(SlimDataLoaderBase):
