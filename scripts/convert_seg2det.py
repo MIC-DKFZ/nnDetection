@@ -33,8 +33,8 @@ from tqdm import tqdm
 from nndet.core.boxes import box_size_np
 from nndet.io import get_case_ids_from_dir, load_json, save_json
 from nndet.io.transforms.instances import get_bbox_np
+from nndet.io.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
 from nndet.utils.config import compose
-from nndet.utils.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
 
 
 def prepare_detection_label(case_id: str,

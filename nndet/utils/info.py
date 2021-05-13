@@ -184,53 +184,6 @@ def find_name(tdir: Union[str, Path], name: str,
     return output_dir
 
 
-def log_experiment(cfg, plans: dict, trainer_class: Callable, stage: int,
-                   repo_path: Union[pathlib.Path, str]):
-    """
-    Use python logging module to log important settings
-
-    Args:
-        cfg:
-            config file
-        plans (dict):
-            current plan for training
-        trainer_class (callable):
-            class of current trainer
-        stage (int):
-            stage
-        repo_path (Union[pathlib.Path, str]):
-            path to repo/or file inside a repository to parse additional information
-    """
-    logger.info("##################### Experiment Logging Start ##########################")
-    logger.info(f"Running in {cfg.mode.mode} mode.")
-    logger.info(f"I am running the following nnUNet: {cfg.exp.network}")
-    logger.info(f"My trainer class is: {trainer_class}")
-    logger.info("For that I will be using the following configuration:")
-    log_plan(plans)
-    logger.info(f"I am using stage {stage} from these plans")
-    logger.info(f"\nI am using data from this folder: {os.path.join(cfg.exp.dataset_dir, plans['data_identifier'])}")
-    logger.info("##################### Experiment Logging End ##########################")
-    log_git(repo_path)
-
-
-def log_plan(plans):
-    """
-    Use python logging module to log current settings
-
-    Args:
-        plans (dict):
-            current plan for training
-    """
-    logger.info("num_classes:  {}".format(plans['num_classes']))
-    logger.info("modalities:  {}".format(plans['modalities']))
-    logger.info("use_mask_for_norm {}".format(plans['use_mask_for_norm']))
-    logger.info("keep_only_largest_region {}".format(plans['keep_only_largest_region']))
-    logger.info("min_region_size_per_class {}".format(plans['min_region_size_per_class']))
-    logger.info("min_size_per_class {}".format(plans['min_size_per_class']))
-    logger.info("normalization_schemes {}".format(plans['normalization_schemes']))
-    logger.info("stages...\n")
-
-
 def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
     """
     Use python logging module to log git information
@@ -240,14 +193,6 @@ def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
     """
     try:
         git_info = get_repo_info(repo_path)
-        # logger.info("##################### GIT INFO Start ##########################")
-
-        # if repo_name is not None:
-        #     logger.info(f"Repository name: {repo_name}")
-
-        # for key, item in git_info.items():
-        #     logger.info(f"{key}: {item}")
-        # logger.info("##################### GIT INFO End ##########################")
         return git_info
     except Exception:
         logger.error("Was not able to read git information, trying to continue without.")
