@@ -5,7 +5,7 @@ import torch
 
 __all__ = ["SmoothL1Loss", "smooth_l1_loss"]
 
-from nndet.core.boxes.utils import generalized_box_iou
+from nndet.core.boxes.ops import generalized_box_iou
 from nndet.losses.base import reduction_helper
 
 
