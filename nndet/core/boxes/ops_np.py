@@ -21,7 +21,7 @@ from numpy import ndarray
 def box_area_np(boxes: ndarray) -> ndarray:
     """
     See Also:
-        :func:`nndet.core.boxes.utils.box_area`
+        :func:`nndet.core.boxes.ops.box_area`
     """
     if boxes.shape[-1] == 4:
         return box_area_2d_np(boxes)
@@ -32,7 +32,7 @@ def box_area_np(boxes: ndarray) -> ndarray:
 def box_area_3d_np(boxes: np.ndarray) -> np.ndarray:
     """
     See Also:
-        `nndet.core.boxes.utils.box_area_3d`
+        `nndet.core.boxes.ops.box_area_3d`
     """
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 5] - boxes[:, 4])
 
@@ -40,7 +40,7 @@ def box_area_3d_np(boxes: np.ndarray) -> np.ndarray:
 def box_area_2d_np(boxes: np.ndarray) -> np.ndarray:
     """
     See Also:
-        `nndet.core.boxes.utils.box_area_2d`
+        `nndet.core.boxes.ops.box_area_2d`
     """
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 

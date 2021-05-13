@@ -16,6 +16,6 @@ from nndet.core.boxes.matcher import MatcherType, Matcher, IoUMatcher, ATSSMatch
 from nndet.core.boxes.nms import nms, batched_nms
 from nndet.core.boxes.sampler import AbstractSampler, NegativeSampler, HardNegativeSampler, \
     BalancedHardNegativeSampler, HardNegativeSamplerFgAll, HardNegativeSamplerBatched
-from nndet.core.boxes.utils import box_area, box_iou, remove_small_boxes, box_center, permute_boxes, \
+from nndet.core.boxes.ops import box_area, box_iou, remove_small_boxes, box_center, permute_boxes, \
     expand_to_boxes, box_size, generalized_box_iou, box_center_dist, center_in_boxes
-from nndet.core.boxes.utils_np import box_iou_np, box_size_np, box_area_np
+from nndet.core.boxes.ops_np import box_iou_np, box_size_np, box_area_np
