@@ -29,7 +29,7 @@ from nndet.io.load import save_pickle
 from nndet.arch.abstract import AbstractModel
 from nndet.io.transforms import NoOp
 from nndet.io.transforms.base import AbstractTransform
-from nndet.inference.patching import save_get_crop, create_grid
+from nndet.io.patching import save_get_crop, create_grid
 from nndet.utils import to_device, maybe_verbose_iterable
 
 
