@@ -218,11 +218,20 @@ class CaseEvaluator(_CaseEvaluator):
         prec_fn = precision_score
         rec_fn = recall_score
 
-        score_metrics_scalar = {"auc_case": roc_auc_score, "ap_case": average_precision_score}
-        class_metrics_scalar = {"f1_case": f1_fn, "prec_case": prec_fn,
-                                "rec_case": rec_fn, "acc_case": accuracy_score}
+        score_metrics_scalar = {
+            "auc_case": roc_auc_score,
+            "ap_case": average_precision_score,
+            }
+        class_metrics_scalar = {
+            "f1_case": f1_fn,
+            "prec_case": prec_fn,
+            "rec_case": rec_fn,
+            "acc_case": accuracy_score,
+            }
         score_metrics_curve = {}
-        class_metrics_curve = {"cfm_case": confusion_matrix}
+        class_metrics_curve = {
+            "cfm_case": confusion_matrix,
+            }
         return cls(classes=classes,
                    score_metrics_scalar=score_metrics_scalar,
                    class_metrics_scalar=class_metrics_scalar,
