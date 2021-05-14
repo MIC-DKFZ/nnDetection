@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 import torch
 
 from nndet.core.boxes.clip import clip_boxes_to_image_
-from nndet.core.boxes.utils import remove_small_boxes as fn_remove_small_boxes
+from nndet.core.boxes.ops import remove_small_boxes as fn_remove_small_boxes
 from nndet.core.boxes.nms import batched_nms
 
 
