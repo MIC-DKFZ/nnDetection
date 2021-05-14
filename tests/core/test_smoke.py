@@ -7,7 +7,7 @@
 # from nndet.arch.heads.comb.roi import RoIBoxHead
 # from nndet.core.boxes.coder import BoxCoderND
 # from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
-# from nndet.core.boxes.utils import box_iou
+# from nndet.core.boxes.ops import box_iou
 # from nndet.core.boxes.matcher import IoUMatcher
 # from nndet.core.boxes.sampler import NegativeSampler
 

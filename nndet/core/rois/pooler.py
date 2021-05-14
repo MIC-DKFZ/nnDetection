@@ -5,7 +5,7 @@ import torch
 
 from torchvision.ops.roi_align import roi_align as _roi_align
 
-from nndet.core.boxes.utils import box_size, expand_to_boxes, permute_boxes
+from nndet.core.boxes.ops import box_size, expand_to_boxes, permute_boxes
 
 
 class Pooler(torch.nn.Module):
