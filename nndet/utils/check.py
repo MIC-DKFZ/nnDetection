@@ -1,5 +1,55 @@
+import functools
+import os
+import warnings
+
 from nndet.io.paths import get_task
 from nndet.utils.config import load_dataset_info
+
+
+def env_guard(func):
+    """
+    Contextmanager to check nnDetection environment variables
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # we use print here because logging might not be initialized yet and
+        # this is intended as a user warning.
+        
+        # det_data
+        if os.environ.get("det_data", None) is None:
+            raise RuntimeError(
+                "'det_data' environment variable not set. "
+                "Please refer to the installation instructions. "
+                )
+
+        # det_models
+        if os.environ.get("det_models", None) is None:
+            raise RuntimeError(
+                "'det_models' environment variable not set. "
+                "Please refer to the installation instructions. "
+                )
+
+        # OMP_NUM_THREADS
+        if os.environ.get("OMP_NUM_THREADS", None) is None:
+            raise RuntimeError(
+                "'OMP_NUM_THREADS' environment variable not set. "
+                "Please refer to the installation instructions. "
+                )
+
+        # det_num_threads
+        if os.environ.get("det_num_threads", None) is None:
+            warnings.warn(
+                "Warning: 'det_num_threads' environment variable not set. "
+                "Please read installation instructions again. "
+                "Training will not work properly.")
+
+        # det_verbose
+        if os.environ.get("det_verbose", None) is None:
+            print("'det_verbose' environment variable not set. "
+                  "Continue in verbose mode.")
+
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def _check_key_missing(cfg: dict, key: str, ktype=None):

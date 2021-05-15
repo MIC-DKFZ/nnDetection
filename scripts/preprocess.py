@@ -32,7 +32,7 @@ from hydra.experimental import initialize_config_module
 from omegaconf import OmegaConf
 
 from nndet.utils.config import compose
-from nndet.utils.info import env_guard
+from nndet.utils.check import env_guard
 from nndet.planning import DatasetAnalyzer
 from nndet.planning import PLANNER_REGISTRY
 from nndet.planning.experiment.utils import create_labels

@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Sequence
 
 from loguru import logger
-from nndet.utils.info import env_guard
+from nndet.utils.check import env_guard
 from omegaconf import OmegaConf
 
 from nndet.ptmodule import MODULE_REGISTRY

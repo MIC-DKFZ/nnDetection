@@ -25,7 +25,7 @@ from loguru import logger
 
 from nndet.io import get_task, load_json, save_json
 from nndet.utils.config import compose, load_dataset_info
-from nndet.utils.info import env_guard
+from nndet.utils.check import env_guard
 
 
 def convert_raw(task, overwrite, ov):
