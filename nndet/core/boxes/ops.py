@@ -204,10 +204,10 @@ def box_iou_union_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Te
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
 
-    x1 = torch.min(boxes1[:, None, 0], boxes2[:, 0])  # [N, M]
-    y1 = torch.min(boxes1[:, None, 1], boxes2[:, 1])  # [N, M]
-    x2 = torch.max(boxes1[:, None, 2], boxes2[:, 2])  # [N, M]
-    y2 = torch.max(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
+    x1 = torch.max(boxes1[:, None, 0], boxes2[:, 0])  # [N, M]
+    y1 = torch.max(boxes1[:, None, 1], boxes2[:, 1])  # [N, M]
+    x2 = torch.min(boxes1[:, None, 2], boxes2[:, 2])  # [N, M]
+    y2 = torch.min(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
 
     inter = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0)) + eps  # [N, M]
     union = (area1[:, None] + area2 - inter)
