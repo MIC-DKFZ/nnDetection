@@ -338,7 +338,7 @@ class CEClassifier(BaseClassifier):
             num_convs=num_convs,
             add_norm=add_norm,
             internal_channels=internal_channels,
-            num_classes=num_classes,
+            num_classes=num_classes + 1, # add one channel for background
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             **kwargs,
@@ -361,7 +361,7 @@ class CEClassifier(BaseClassifier):
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)[:, 1:]
+        return self.logits_convert_fn(box_logits)[:, 1:] # remove background predictions
 
 
 class FocalClassifier(BaseClassifier):
