@@ -1,6 +1,6 @@
 # ADAM
 **Disclaimer**: We are not the host of the data.
-Please make sure to read the requirements and usage policies of the data befor using it and **give credit to the authors of the dataset**!
+Please make sure to read the requirements and usage policies of the data and **give credit to the authors of the dataset**!
 
 Please read the information from the homepage carefully and follow the rules and instructions provided by the original authors when using the data.
 - Homepage: http://adam.isi.uu.nl/
@@ -13,4 +13,5 @@ Please read the information from the homepage carefully and follow the rules and
 3. Run `python split.py` in `projects / Task019_ADAM / scripts` of the nnDetection repository.
 4. [Info]: The provided instructions will automatically create a patient stratified random split. We used a random split for our challenge submission. By renaming the provided split file in the `preprocessed` folders, nnDetection will automatically create a random split.
 
-The data is now prepared in the correct format and the instructions from the nnDetection README can be used to train the networks.
+The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
+
