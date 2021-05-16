@@ -3,10 +3,10 @@ import shutil
 from pathlib import Path
 
 import pandas as pd
-from tqdm import tqdm
 
 from nndet.io import save_json
 from nndet.utils.check import env_guard
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def create(
@@ -92,7 +92,7 @@ def main():
     }
     save_json(meta, task_data_dir / "dataset.json")
 
-    for ip, lp in tqdm(list(zip(image_paths, label_paths))):
+    for ip, lp in maybe_verbose_iterable(list(zip(image_paths, label_paths))):
         create(image_source=ip,
                label_source=lp,
                image_target_dir=target_data_dir,

@@ -3,7 +3,7 @@
 <img src=docs/source/nnDetection.svg width="600px">
 
 ![Version](https://img.shields.io/badge/nnDetection-v1.0-blue)
-![Python](https://img.shields.io/badge/python-3.8-orange)
+![Python](https://img.shields.io/badge/python-3.8+-orange)
 ![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
 ![license](https://img.shields.io/badge/License-Apache%202.0-red.svg)
 
@@ -125,7 +125,7 @@ It can be imported from `nndet.ptmodule` and example can be found in `nndet.ptmo
 # Experiments & Data
 The data sets used for our experiments are not hosted or maintained by us, please give credit to the authors of the data sets.
 Some of the labels were corrected in data sets which we converted and can be downloaded.
-The `Reproducing Experiments` section has an overview of multiple guides which explain the preparation of the data sets.
+The `Experiments` section has an overview of multiple guides which explain the preparation of the data sets.
 
 ## Toy Data set
 Running `nndet_example` will automatically generate an example data set with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the data set).
@@ -141,9 +141,24 @@ nndet_example --full [--num_processes]
 The full problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
-## Reproducing Experiments
+## Experiments
+Besides the self-configuring method, nnDetection acts as a standard interface for many datasets.
+We provide guides to prepare all datasets from our evaluation to the correct and make it easy to reproduce our resutls.
+Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
 
 <div align="center">
+
+### Results
+
+| <!-- --> | <!-- --> | <!-- --> |
+|:--------:|:--------:|:--------:|
+| | [nnDetection V0.1](/docs/results/nnDetectionV001.md) | |
+
+</div>
+
+<div align="center">
+
+### Guides
 
 | <!-- --> | <!-- --> | <!-- --> |
 |:----------------------------------------------------------------:|:-------------------------------------------------:|:---------------------------------------:|

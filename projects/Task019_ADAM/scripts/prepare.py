@@ -2,11 +2,10 @@ import os
 import shutil
 from pathlib import Path
 
-from tqdm import tqdm
-
 from nndet.io import save_json
 from nndet.io.prepare import instances_from_segmentation
 from nndet.utils.check import env_guard
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def run_prep_fg_v_bg(
@@ -61,7 +60,7 @@ def main():
     # prepare data
     case_ids = [p.stem for p in source_data_dir.iterdir() if p.is_dir()]
     print(f"Found {len(case_ids)} case ids")
-    for cid in tqdm(case_ids):
+    for cid in maybe_verbose_iterable(case_ids):
         run_prep_fg_v_bg(
             case_id=cid,
             source_data=source_data_dir,

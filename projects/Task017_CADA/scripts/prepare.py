@@ -3,10 +3,10 @@ import shutil
 from pathlib import Path
 
 import SimpleITK as sitk
-from tqdm import tqdm
 
 from nndet.io import save_json
 from nndet.utils.check import env_guard
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def run_prep(source_data: Path, source_label: Path,
@@ -56,7 +56,7 @@ def main():
     # prepare data & label
     case_ids = [(p.stem).rsplit('_', 1)[0] for p in source_data_dir.glob("*.nii.gz")]
     print(f"Found {len(case_ids)} case ids")
-    for cid in tqdm(case_ids):
+    for cid in maybe_verbose_iterable(case_ids):
         run_prep(
             source_data=source_data_dir / f"{cid}_orig.nii.gz",
             source_label=source_label_dir / f"{cid}_labeledMasks.nii.gz",
