@@ -10,6 +10,7 @@ import SimpleITK as sitk
 from nndet.io import load_json, load_sitk
 from nndet.io.paths import get_task, get_paths_from_splitted_dir
 from nndet.utils.config import load_dataset_info
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def env_guard(func):
@@ -76,6 +77,7 @@ def check_dataset_file(task_name: str):
     Args:
         task_name: task identifier to check info for
     """
+    print("Start dataset info check.")
     cfg = load_dataset_info(get_task(task_name))
     _check_key_missing(cfg, "task", ktype=str)
     _check_key_missing(cfg, "dim", ktype=int)
@@ -113,6 +115,7 @@ def check_dataset_file(task_name: str):
         if ic != idx:
             raise ValueError("Found wrong order of modalities in dataset info."
                              f"Found {found_mods} but expected {list(range(len(found_mods)))}")
+    print("Dataset info check complete.")
 
 
 def check_data_and_label_splitted(
@@ -138,6 +141,7 @@ def check_data_and_label_splitted(
         ValueError: instances in label info file need to start at 1
         ValueError: instances in label info file need to be consecutive
     """
+    print("Start data and label check.")
     cfg = load_dataset_info(get_task(task_name))
 
     splitted_paths = get_paths_from_splitted_dir(
@@ -147,7 +151,7 @@ def check_data_and_label_splitted(
         test=test,
     )
 
-    for case_paths in splitted_paths:
+    for case_paths in maybe_verbose_iterable(splitted_paths):
         # check all files exist
         for cp in case_paths:
             if not Path(cp).is_file():
@@ -167,7 +171,7 @@ def check_data_and_label_splitted(
             if j := not min(mask_info_instances) == 1:
                 raise ValueError(f"Instance IDs need to start at 1, found {j} in {mask_info_path}")
 
-            for i in range(len(mask_info_instances)):
+            for i in range(1, len(mask_info_instances) + 1):
                 if i not in mask_info_instances:
                     raise ValueError(f"Exptected {i} to be an Instance ID in "
                                     f"{mask_info_path} but only found {mask_info_instances}")
@@ -176,6 +180,7 @@ def check_data_and_label_splitted(
 
         if full_check:
             _full_check(case_paths, mask_info_path)
+    print("Data and label check complete.")
 
 
 def _full_check(case_paths: List[Path], mask_info_path: Optional[Path] = None) -> None:
