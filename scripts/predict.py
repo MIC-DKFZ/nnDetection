@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import argparse
+from multiprocessing import Value
 import os
 import sys
 from typing import Any, Mapping, Type, TypeVar
@@ -29,6 +30,7 @@ from nndet.io import get_task, get_training_dir
 from nndet.io.load import load_pickle
 from nndet.inference.loading import load_all_models
 from nndet.inference.helper import predict_dir
+from nndet.utils.check import check_data_and_label_splitted
 
 
 def run(cfg: dict,
@@ -164,6 +166,10 @@ def main():
                               "The 'test' split needs to be located in fold 0 "
                               "of a manually created split file."),
                         )
+    parser.add_argument('--check',
+                    help="Run check of the test data before predicting",
+                    action='store_true',
+                    )
 
     args = parser.parse_args()
     model = args.model
@@ -174,6 +180,7 @@ def main():
     ov = args.overwrites
     force_args = args.force_args
     test_split = args.test_split
+    check = args.check
 
     task_name = get_task(task, name=True)
     task_model_dir = Path(os.getenv("det_models"))
@@ -195,6 +202,16 @@ def main():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
     cfg.merge_with_dotlist(overwrites)
+
+    if check:
+        if test_split:
+            raise ValueError("Check is not supported for test split option.")
+        check_data_and_label_splitted(
+            task_name=cfg["task"],
+            test=True,
+            labels=False,
+            full_check=True
+        )
 
     run(OmegaConf.to_container(cfg, resolve=True),
         training_dir,

@@ -41,6 +41,7 @@ from nndet.io.load import load_pickle, load_npz_looped
 from nndet.io.prepare import maybe_split_4d_nifti, instances_from_segmentation
 from nndet.io.paths import get_paths_raw_to_split, get_paths_from_splitted_dir, subfiles, get_case_id_from_path
 from nndet.preprocessing import ImageCropper
+from nndet.utils.check import check_dataset_file, check_data_and_label_splitted
 
 
 def run_splitting_4d(data_dir: Path, output_dir: Path, num_processes: int) -> None:
@@ -423,11 +424,36 @@ def main():
     parser.add_argument('-o', '--overwrites', type=str, nargs='+',
                         help="overwrites for config file", default=[],
                         required=False)
+    parser.add_argument('--full_check',
+                        help="Run a full check of the data.",
+                        action='store_true',
+                        )
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
+    full_check = args.full_check
 
     initialize_config_module(config_module="nndet.conf")
+    # perform preprocessing checks first
+    for task in tasks:
+        _ov = copy.deepcopy(ov) if ov is not None else []
+        cfg = compose(task, "config.yaml", overrides=_ov)
+        check_dataset_file(cfg["task"])
+        check_data_and_label_splitted(
+            cfg["task"],
+            test=False,
+            labels=True,
+            full_check=full_check,
+            )
+        if cfg["data"]["test_labels"]:
+            check_data_and_label_splitted(
+                cfg["task"],
+                test=True,
+                labels=True,
+                full_check=full_check,
+                )
+
+    # start preprocessing
     for task in tasks:
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=_ov)
