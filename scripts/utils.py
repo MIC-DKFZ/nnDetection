@@ -183,6 +183,7 @@ def unpack():
 def env():
     import os
     import torch
+    import sys
     print(f"PyTorch Version: {torch.version}")
     print(f"PyTorch CUDA: {torch.version.cuda}")
     print(f"PyTorch Backend cudnn: {torch.backends.cudnn.version()}")
@@ -196,3 +197,9 @@ def env():
     print(f"System Arch List: {os.getenv('TORCH_CUDA_ARCH_LIST', None)}")
     print(f"System OMP_NUM_THREADS: {os.getenv('OMP_NUM_THREADS', None)}")
     print(f"System CUDA_HOME is None: {os.getenv('CUDA_HOME', None) is None}")
+    
+    print(f"Python Version: {sys.version}")
+
+
+if __name__ == '__main__':
+    env()
