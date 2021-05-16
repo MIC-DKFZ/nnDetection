@@ -324,8 +324,8 @@ if __name__ == '__main__':
                         required=False,
                         )
     parser.add_argument('--simple', action='store_true',
-                    help="Argmax with max probability aggregation",
-                    )
+                        help="Argmax with max probability aggregation.",
+                        )
     # Evaluation related settings
     parser.add_argument('--save_seg', help="Save semantic segmentation", action='store_true')
     parser.add_argument('--save_iseg', help="Save instance segmentation", action='store_true')

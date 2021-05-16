@@ -89,6 +89,29 @@ To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.
     <div align="center">
         <img src=docs/source/nnDetectionModule.svg width="600px">
     </div>
+
+nnDetection uses multiple Registries to keep track of different modules and easily switch them via the config files.
+
+***Config Files***
+nnDetection uses [Hydra](https://hydra.cc/) to dynamically configure and compose configurations.
+The configuration files are located in `nndet.conf` and can be overwritten to customize the behavior of the pipeline.
+
+***AUGMENTATION_REGISTRY***
+The augmentation registry can be imported from `nndet.io.augmentation` and contains different augmentation configurations. Examples can be found in `nndet.io.augmentation.bg_aug`.
+
+***DATALOADER_REGISTRY***
+The dataloader registry contains different dataloader classes to customize the IO of nnDetection.
+It can be imported from `nndet.io.datamodule` and examples can be found in `nndet.io.datamodule.bg_loader`.
+
+***PLANNER_REGISTRY***
+New plans can be registered via the planner registry which contain classes to define and perform different architecture and preprocessing schemes.
+It can be imported from `nndet.planning.experiment` and example can be found in `nndet.planning.experiment.v001`.
+
+***MODULE_REGISTRY***
+The module registry contains the core modules of nnDetection which inherits from the [Pytorch Lightning](https://github.com/PyTorchLightning/pytorch-lightning) Module.
+It is the main module which is used for training and inference and contains all the necessary steps to build the final models.
+It can be imported from `nndet.ptmodule` and example can be found in `nndet.ptmodule.retinaunet`.
+
 </details>
 
 <details close>
@@ -346,10 +369,17 @@ nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` as described above.
 
 ## nnU-Net for Detection
-TODO
+Besides nnDetection we also include the scripts to prepare and evaluate nnU-Net in the context of obejct detection.
+Both frameworks need to be configured correctly before running the scripts to assure correctness.
+After preparing the dataset in the nnDetection format (which is a superset of the nnU-Net format) it is possible to export it to nnU-Net via `scripts/nnunet/nnunet_export.py`. Since nnU-Net needs task ids without any additions it may be necessary to overwrite the task name via the `-nt` option for some dataets (e.g. `Task019FG_ADAM` needs to be renamed to `Task019_ADAM`).
+Follow the usual nnU-Net preprocessing and training pipeline to generate the needed models.
+Use the `--npz` option during training to save the predicted probabilities which are needed to generate the detection results.
+After determining the best ensemble configuration from nnU-Net pass all paths to `scripts/nnunet/nnunet_export.py` which will ensemble and postprocess the predictions for object detection.
+Per default the `nnU-Net Plus` scheme will be used which incorporates the empirical parameter optimization step.
+Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 
 ## Pretrained models
-TODO
+**Coming Soon**
 
 # FAQ
 <details close>
@@ -410,8 +440,17 @@ Please use the provided Dockerfile or the installation instructions to run nnDet
 # Cite
 If you use nnDetection for your project/research/work please cite the following paper:
 ```text
-TODO
+Coming Soon
 ```
 
 # Acknowledgements
-TODO (medicaldetectiontoolkit, nnunet, torchvision)
+nnDetection combines the information from multiple open source repositores we wish to acknoledge for their awesome work, please check them out!
+
+## [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)
+nnU-Net is self-configuring method for semantic segmentation and many steps of nnDetection follow in the footsteps of nnU-Net.
+
+## [Medical Detection Toolkit](https://github.com/MIC-DKFZ/medicaldetectiontoolkit)
+The Medical Detection Toolkit introduced the first codebase for 3D Object Detection and multiple tricks were transferred to nnDetection to assure optimal configuration for medical object detection.
+
+## [Torchvision](https://github.com/pytorch/vision)
+nnDetection tried to follow the implementations of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used some of the core modules of the torchvision implementation.
