@@ -128,6 +128,7 @@ setup(
             'nndet_boxes2nii = scripts.utils:boxes2nii',
             'nndet_seg2nii = scripts.utils:seg2nii',
             'nndet_unpack = scripts.utils:unpack',
+            'nndet_env = scripts.utils:env',
         ]
     },
 )

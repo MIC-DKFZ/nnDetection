@@ -18,6 +18,32 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
 
 # Installation
+## Docker Installation
+The easiest way to get started with nnDetection is the provided is to build a Docker Container with the provided Dockerfile.
+
+Please install docker and [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
+
+All projects which are based on nnDetection assume that the base image was built with the following tagging scheme `nnDetection:[version]`.
+To build a container (nnDetection Version 0.1) run the following command from the base directory:
+
+```bash
+docker build -t nndetection:0.1 --build-arg env_det_num_threads=6 --build-arg env_det_verbose=1 .
+```
+
+(`--build-arg env_det_num_threads=6` and `--build-arg env_det_verbose=1` are optional and are used to overwrite the provided default parameters)
+
+The docker container expects data and models in its own `/opt/data` and `/opt/models` directories respectively.
+The directories need to be mounted via docker `-v`. For simplicity and speed, the ENV variables `det_data` and `det_models` can be set in the host system to point to the desired directories. To run:
+
+```bash
+docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
+```
+
+Warning:
+When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
+
+
+## Source Installation
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
 3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+)
@@ -50,34 +76,6 @@ To test the whole installation please run the Toy Dataset example.
 <summary>Maximising Training Speed</summary>
 <br>
 To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7+
-</details>
-
-<details close>
-<summary>Docker Container</summary>
-<br>
-The provided Dockerfile can be used to setup quick development environments or deploy nnDetection.
-
-Please install docker and [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
-
-All projects which are based on nnDetection assume that the base image was built with the following tagging scheme `nnDetection:[version]`.
-To build a container (nnDetection Version 0.1) run the following command from the base directory:
-
-```bash
-docker build -t nndetection:0.1 --build-arg env_det_num_threads=6 --build-arg env_det_verbose=1 .
-```
-
-(`--build-arg env_det_num_threads=6` and `--build-arg env_det_verbose=1` are optional and are used to overwrite the provided default parameters)
-
-The docker container expects data and models in its own `/opt/data` and `/opt/models` directories respectively.
-The directories need to be mounted via docker `-v`. For simplicity and speed, the ENV variables `det_data` and `det_models` can be set in the host system to point to the desired directories. To run:
-
-```bash
-docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
-```
-
-Warning:
-When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
-
 </details>
 
 # nnDetection
@@ -134,11 +132,12 @@ After running the generation script follow the `Planning`, `Training` and `Infer
 </div>
 
 ## Adding New Datasets
-nnDetection relie on a standardized input format which is very similar to the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) format and allows easy integration of new datasets.
-The format is explained below.
+nnDetection relies on a standardized input format which is very similar to the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) format and allows easy integration of new datasets.
+More details about the format can be found below.
 
 ### Folders
 All datasets should reside inside `Task[Number]_[Name]` folder inside the specified detection data folder (et the path to this folder with the `det_data` environment flag).
+To avoid conflicts with our provided pretrained models we recommend to use task numbers starting from 100.
 An overview is provided below ([Name] symbolise folder, `-` symbolise files, indents refer to substructures)
 
 ```text
@@ -317,7 +316,7 @@ nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
 ```
 
 ### Inference
-After running all fold it is time to collect the models and creat a unified inference plan.
+After running all folds it is time to collect the models and creat a unified inference plan.
 The following command will copy all the models and predictions per fold and by adding the `sweep` options the empiricaly hyperparameter optimization across all fold can be started.
 This will generate a unified plan for all models which will be used during inference.
 
@@ -331,6 +330,7 @@ nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep_boxes
 # /experiments/consolidate.py - main()
 ```
 
+For the final test set predictions simply select the best model according to the validation scores and run the prediction command below.
 Data which is located in `raw_splitted/imagesTs` will be automatically preprocessed and predicted by running the following command:
 ```bash
 nndet_predict [task] [model] [--fold] [--num_models] [--num_tta] [--no_preprocess]

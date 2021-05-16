@@ -178,3 +178,21 @@ def unpack():
     p = args.path
     num_processes = args.num_processes
     unpack_dataset(p, num_processes, False)
+
+
+def env():
+    import os
+    import torch
+    print(f"PyTorch Version: {torch.version}")
+    print(f"PyTorch CUDA: {torch.version.cuda}")
+    print(f"PyTorch Backend cudnn: {torch.backends.cudnn.version()}")
+    print(f"PyTorch CUDA Arch List: {torch.cuda.get_arch_list()}")
+    print(f"PyTorch Current Device Capability: {torch.cuda.get_device_capability()}")
+    print(f"PyTorch CUDA available: {torch.cuda.is_available()}")
+
+    stream = os.popen('nvcc --version')
+    output = stream.read()
+    print(f"System NVCC: {output}")
+    print(f"System Arch List: {os.getenv('TORCH_CUDA_ARCH_LIST', None)}")
+    print(f"System OMP_NUM_THREADS: {os.getenv('OMP_NUM_THREADS', None)}")
+    print(f"System CUDA_HOME is None: {os.getenv('CUDA_HOME', None) is None}")
