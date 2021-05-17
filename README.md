@@ -152,7 +152,7 @@ Furthermore, we provide pretrained models which can be used without investing la
 
 | <!-- --> | <!-- --> | <!-- --> |
 |:--------:|:--------:|:--------:|
-| | [nnDetection V0.1](/docs/results/nnDetectionV001.md) | |
+| | [nnDetection v0.1](/docs/results/nnDetectionV001.md) | |
 
 </div>
 
