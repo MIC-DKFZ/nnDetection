@@ -13,6 +13,7 @@ from nndet.io.prepare import maybe_split_4d_nifti, create_test_split
 
 from nndet.io import get_case_ids_from_dir, load_json, save_yaml
 from nndet.utils.check import env_guard
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def process_case(case_id,
@@ -118,7 +119,7 @@ def main():
         case_ids = sorted([c for c in case_ids if c])
         logger.info(f"Found {len(case_ids)} for preparation.")
 
-        for cid in case_ids:
+        for cid in maybe_verbose_iterable(case_ids):
             process_case(cid,
                          source_data_dir,
                          source_labels_dir,

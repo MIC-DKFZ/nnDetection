@@ -45,8 +45,10 @@ def main():
     meta = {
         "name": "CADA",
         "task": "Task017_CADA",
+        
         "target_class": None,
         "test_labels": False,
+        
         "labels": {"0": "aneurysm"},
         "modalities": {"0": "CT"},
         "dim": 3,

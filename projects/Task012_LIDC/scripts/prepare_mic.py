@@ -15,6 +15,7 @@ from pathlib import Path
 from nndet.io.load import save_json, load_json
 from nndet.io.paths import subfiles
 from nndet.utils.check import env_guard
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def prepare_case(case_dir: Path, target_dir: Path, df: pd.DataFrame):
@@ -121,7 +122,7 @@ def main():
     case_dirs = [x for x in data_dir.iterdir() if x.is_dir()]
     df = pd.read_csv(source_data_dir / 'characteristics.csv', sep=';')
 
-    for cd in case_dirs:
+    for cd in maybe_verbose_iterable(case_dirs):
         prepare_case(cd, target_dir, df)
 
     # TODO download custom split file
