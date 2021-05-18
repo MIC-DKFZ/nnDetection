@@ -2,7 +2,7 @@
 
 <img src=docs/source/nnDetection.svg width="600px">
 
-![Version](https://img.shields.io/badge/nnDetection-v1.0-blue)
+![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
 ![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
 ![license](https://img.shields.io/badge/License-Apache%202.0-red.svg)
@@ -152,7 +152,7 @@ Furthermore, we provide pretrained models which can be used without investing la
 
 | <!-- --> | <!-- --> | <!-- --> |
 |:--------:|:--------:|:--------:|
-| | [nnDetection v0.1](/docs/results/nnDetectionV001.md) | |
+| | [nnDetection v0.1](./docs/results/nnDetectionV001.md) | |
 
 </div>
 
@@ -162,10 +162,10 @@ Furthermore, we provide pretrained models which can be used without investing la
 
 | <!-- --> | <!-- --> | <!-- --> |
 |:----------------------------------------------------------------:|:-------------------------------------------------:|:---------------------------------------:|
-| [Task 003 Liver](/projects/Task001_Decathlon/README.md)          | [Task 011 Kits](/projects/Task011_Kits/README.md) | [Task 020 RibFrac](/projects/Task020_RibFrac/README.md)      |
-| [Task 007 Pancreas](/projects/Task001_Decathlon/README.md)       | [Task 012 LIDC](/projects/Task012_LIDC/README.md) | [Task 021 ProstateX](/projects/Task021_ProstateX/README.md)  |
-| [Task 008 Hepatic Vessel](/projects/Task001_Decathlon/README.md) | [Task 017 CADA](/projects/Task017_CADA/README.md) | [Task 025 LymphNodes](/projects/Task025_LymphNodes/README.md) |
-| [Task 010 Colon](/projects/Task001_Decathlon/README.md)          | [Task 019 ADAM](/projects/Task019_ADAM/README.md) | [Task 016 Luna](/projects/Task016_Luna/README.md)         |
+| [Task 003 Liver](./projects/Task001_Decathlon/README.md)          | [Task 011 Kits](./projects/Task011_Kits/README.md) | [Task 020 RibFrac](./projects/Task020_RibFrac/README.md)      |
+| [Task 007 Pancreas](./projects/Task001_Decathlon/README.md)       | [Task 012 LIDC](./projects/Task012_LIDC/README.md) | [Task 021 ProstateX](./projects/Task021_ProstateX/README.md)  |
+| [Task 008 Hepatic Vessel](./projects/Task001_Decathlon/README.md) | [Task 017 CADA](./projects/Task017_CADA/README.md) | [Task 025 LymphNodes](./projects/Task025_LymphNodes/README.md) |
+| [Task 010 Colon](./projects/Task001_Decathlon/README.md)          | [Task 019 ADAM](./projects/Task019_ADAM/README.md) | [Task 016 Luna](./projects/Task016_Luna/README.md)         |
 
 </div>
 
