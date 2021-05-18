@@ -210,8 +210,8 @@ task: Task000D3_Example
 name: "Example" # [Optional]
 dim: 3 # number of spatial dimensions of the data
 
-# TODO: check these
-target_class: # define class of interest for patient level evaluations # TODO: check if this should be included
+# Note: need to use integer value which is defined below of target class!
+target_class: 1 # [Optional] define class of interest for patient level evaluations
 test_labels: True # manually splitted test set
 
 labels: # classes of data set; need to start at 0

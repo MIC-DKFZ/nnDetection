@@ -115,6 +115,13 @@ def check_dataset_file(task_name: str):
         if ic != idx:
             raise ValueError("Found wrong order of modalities in dataset info."
                              f"Found {found_mods} but expected {list(range(len(found_mods)))}")
+    
+    # check target class
+    target_class = cfg.get("target_class", None)
+    if target_class is not None and not isinstance(target_class, int):
+        raise ValueError("If target class is defined, it needs to be an integer, "
+                         f"found {type(target_class)} : {target_class}")
+
     print("Dataset info check complete.")
 
 
