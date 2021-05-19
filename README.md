@@ -2,8 +2,8 @@
 
 <img src=docs/source/nnDetection.svg width="600px">
 
-![Version](https://img.shields.io/badge/nnDetection-v1.0-blue)
-![Python](https://img.shields.io/badge/python-3.8-orange)
+![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
+![Python](https://img.shields.io/badge/python-3.8+-orange)
 ![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
 ![license](https://img.shields.io/badge/License-Apache%202.0-red.svg)
 
@@ -18,6 +18,32 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
 
 # Installation
+## Docker
+The easiest way to get started with nnDetection is the provided is to build a Docker Container with the provided Dockerfile.
+
+Please install docker and [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
+
+All projects which are based on nnDetection assume that the base image was built with the following tagging scheme `nnDetection:[version]`.
+To build a container (nnDetection Version 0.1) run the following command from the base directory:
+
+```bash
+docker build -t nndetection:0.1 --build-arg env_det_num_threads=6 --build-arg env_det_verbose=1 .
+```
+
+(`--build-arg env_det_num_threads=6` and `--build-arg env_det_verbose=1` are optional and are used to overwrite the provided default parameters)
+
+The docker container expects data and models in its own `/opt/data` and `/opt/models` directories respectively.
+The directories need to be mounted via docker `-v`. For simplicity and speed, the ENV variables `det_data` and `det_models` can be set in the host system to point to the desired directories. To run:
+
+```bash
+docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
+```
+
+Warning:
+When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
+
+
+## Source
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
 3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+)
@@ -43,41 +69,13 @@ Run the following command in the terminal (!not! in pytorch root folder) to veri
 python -c "import torch; import nndet._C; import nndet"
 ```
 
-To test the whole installation please run the Toy Dataset example.
+To test the whole installation please run the Toy Data set example.
 </details>
 
 <details close>
 <summary>Maximising Training Speed</summary>
 <br>
 To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7+
-</details>
-
-<details close>
-<summary>Docker Container</summary>
-<br>
-The provided Dockerfile can be used to setup quick development environments or deploy nnDetection.
-
-Please install docker and [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
-
-All projects which are based on nnDetection assume that the base image was built with the following tagging scheme `nnDetection:[version]`.
-To build a container (nnDetection Version 0.1) run the following command from the base directory:
-
-```bash
-docker build -t nndetection:0.1 --build-arg env_det_num_threads=6 --build-arg env_det_verbose=1 .
-```
-
-(`--build-arg env_det_num_threads=6` and `--build-arg env_det_verbose=1` are optional and are used to overwrite the provided default parameters)
-
-The docker container expects data and models in its own `/opt/data` and `/opt/models` directories respectively.
-The directories need to be mounted via docker `-v`. For simplicity and speed, the ENV variables `det_data` and `det_models` can be set in the host system to point to the desired directories. To run:
-
-```bash
-docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it --shm-size=24gb nndetection:0.1 /bin/bash
-```
-
-Warning:
-When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
-
 </details>
 
 # nnDetection
@@ -91,6 +89,29 @@ When running a training inside the container it is necessary to [increase the sh
     <div align="center">
         <img src=docs/source/nnDetectionModule.svg width="600px">
     </div>
+
+nnDetection uses multiple Registries to keep track of different modules and easily switch them via the config files.
+
+***Config Files***
+nnDetection uses [Hydra](https://hydra.cc/) to dynamically configure and compose configurations.
+The configuration files are located in `nndet.conf` and can be overwritten to customize the behavior of the pipeline.
+
+***AUGMENTATION_REGISTRY***
+The augmentation registry can be imported from `nndet.io.augmentation` and contains different augmentation configurations. Examples can be found in `nndet.io.augmentation.bg_aug`.
+
+***DATALOADER_REGISTRY***
+The dataloader registry contains different dataloader classes to customize the IO of nnDetection.
+It can be imported from `nndet.io.datamodule` and examples can be found in `nndet.io.datamodule.bg_loader`.
+
+***PLANNER_REGISTRY***
+New plans can be registered via the planner registry which contain classes to define and perform different architecture and preprocessing schemes.
+It can be imported from `nndet.planning.experiment` and example can be found in `nndet.planning.experiment.v001`.
+
+***MODULE_REGISTRY***
+The module registry contains the core modules of nnDetection which inherits from the [Pytorch Lightning](https://github.com/PyTorchLightning/pytorch-lightning) Module.
+It is the main module which is used for training and inference and contains all the necessary steps to build the final models.
+It can be imported from `nndet.ptmodule` and example can be found in `nndet.ptmodule.retinaunet`.
+
 </details>
 
 <details close>
@@ -102,43 +123,59 @@ When running a training inside the container it is necessary to [increase the sh
 </details>
 
 # Experiments & Data
-The datasets used for our experiments are not hosted or maintained by us, please give credit to the authors of the datasets.
-Some of the labels were corrected in datasets which we converted and can be downloaded.
-The `Reproducing Experiments` section has an overview of multiple guides which explain the preparation of the datasets.
+The data sets used for our experiments are not hosted or maintained by us, please give credit to the authors of the data sets.
+Some of the labels were corrected in data sets which we converted and can be downloaded.
+The `Experiments` section has an overview of multiple guides which explain the preparation of the data sets.
 
-## Toy Dataset
-Running `nndet_example` will automatically generate an example dataset with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the dataset).
+## Toy Data set
+Running `nndet_example` will automatically generate an example data set with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the data set).
 
 ```bash 
 # create data to test installation/environment (10 train 10 test)
 nndet_example
 
-# create full dataset for prototyping (1000 train 1000 test)
+# create full data set for prototyping (1000 train 1000 test)
 nndet_example --full [--num_processes]
 ```
 
 The full problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
-## Reproducing Experiments
+## Experiments
+Besides the self-configuring method, nnDetection acts as a standard interface for many datasets.
+We provide guides to prepare all datasets from our evaluation to the correct and make it easy to reproduce our resutls.
+Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
 
 <div align="center">
 
+### Results
+
 | <!-- --> | <!-- --> | <!-- --> |
-|:--------------------------------:|:----------------------:|:----------------------------:|
-| [Task 003 Liver](#TODO)          | [Task 011 Kits](#TODO) | [Task 020 RibFrac](#TODO)    |
-| [Task 007 Pancreas](#TODO)       | [Task 012 LIDC](#TODO) | [Task 021 ProstateX](#TODO)  |
-| [Task 008 Hepatic Vessel](#TODO) | [Task 017 CADA](#TODO) | [Task 025 LymphNodes](#TODO) |
-| [Task 010 Colon](#TODO)          | [Task 019 ADAM](#TODO) | [Task 016 Luna](#TODO)       |
+|:--------:|:--------:|:--------:|
+| | [nnDetection v0.1](./docs/results/nnDetectionV001.md) | |
 
 </div>
 
-## Adding New Datasets
-nnDetection relie on a standardized input format which is very similar to the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) format and allows easy integration of new datasets.
-The format is explained below.
+<div align="center">
+
+### Guides
+
+| <!-- --> | <!-- --> | <!-- --> |
+|:----------------------------------------------------------------:|:-------------------------------------------------:|:---------------------------------------:|
+| [Task 003 Liver](./projects/Task001_Decathlon/README.md)          | [Task 011 Kits](./projects/Task011_Kits/README.md) | [Task 020 RibFrac](./projects/Task020_RibFrac/README.md)      |
+| [Task 007 Pancreas](./projects/Task001_Decathlon/README.md)       | [Task 012 LIDC](./projects/Task012_LIDC/README.md) | [Task 021 ProstateX](./projects/Task021_ProstateX/README.md)  |
+| [Task 008 Hepatic Vessel](./projects/Task001_Decathlon/README.md) | [Task 017 CADA](./projects/Task017_CADA/README.md) | [Task 025 LymphNodes](./projects/Task025_LymphNodes/README.md) |
+| [Task 010 Colon](./projects/Task001_Decathlon/README.md)          | [Task 019 ADAM](./projects/Task019_ADAM/README.md) | [Task 016 Luna](./projects/Task016_Luna/README.md)         |
+
+</div>
+
+## Adding New Data sets
+nnDetection relies on a standardized input format which is very similar to the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) format and allows easy integration of new data sets.
+More details about the format can be found below.
 
 ### Folders
-All datasets should reside inside `Task[Number]_[Name]` folder inside the specified detection data folder (et the path to this folder with the `det_data` environment flag).
+All data sets should reside inside `Task[Number]_[Name]` folder inside the specified detection data folder (et the path to this folder with the `det_data` environment flag).
+To avoid conflicts with our provided pretrained models we recommend to use task numbers starting from 100.
 An overview is provided below ([Name] symbolise folder, `-` symbolise files, indents refer to substructures)
 
 ```text
@@ -164,8 +201,8 @@ ${det_data}
         ...
 ```
 
-### Dataset Info
-`dataset.yaml` or `dataset.json` provides general information about the dataset:
+### Data set Info
+`dataset.yaml` or `dataset.json` provides general information about the data set:
 Note: [Important] Classes and modalities start with index 0!
 ```yaml
 task: Task000D3_Example
@@ -173,22 +210,22 @@ task: Task000D3_Example
 name: "Example" # [Optional]
 dim: 3 # number of spatial dimensions of the data
 
-# TODO: check these
-target_class: # define class of interest for patient level evaluations # TODO: check if this should be included
+# Note: need to use integer value which is defined below of target class!
+target_class: 1 # [Optional] define class of interest for patient level evaluations
 test_labels: True # manually splitted test set
 
-labels: # classes of dataset; need to start at 0
+labels: # classes of data set; need to start at 0
     "0": "Square"
     "1": "SquareHole"
 
-modalities: # modalities of dataset; need to start at 0
+modalities: # modalities of data set; need to start at 0
     "0": "CT"
 ```
 
 ### Image Format
 nnDetection uses the same image format as nnU-Net.
 Each case consists of at least one 3D nifty file with one modalityand are saved in the `images` folders.
-If multiple modalities are available, each modalities uses a separate file and the sequence at the end of the name indicates the modality (corresponds to the number specified in the dataset file).
+If multiple modalities are available, each modalities uses a separate file and the sequence at the end of the name indicates the modality (corresponds to the number specified in the data set file).
 
 An example with two modalities could look like this:
 ```text
@@ -215,6 +252,7 @@ The nifty file hould contain all annotated instances where each instance has a u
 ```
 
 Each label file needs a corresponding json file to define the classes.
+We also wrote an [Detection Annotation Guide](https://www.notion.so/Object-Detection-Annotation-Guide-5318f090091c4e3db7e046a5990bd03c) which includes a dedicated section of the nnDetection format with additional visualizations :)
 
 ## Using nnDetection
 The following paragrah provides an high level overview of the functionality of nnDetection and which commands are available.
@@ -251,7 +289,7 @@ After planning and preprocessing the resulting data folder structure should look
         [imagesTr] # stores cropped image data; contains npz files
         [labelsTr] # stores labels
     [preprocessed]
-        [analysis]
+        [analysis] # some plots to visualize properties of the underlying data set
         [properties] # sufficient for new plans
         [labelsTr] # labels in original format (original spacing)
         [labelsTs] # optional
@@ -261,7 +299,7 @@ After planning and preprocessing the resulting data folder structure should look
         - {name of plan}.pkl e.g. D3V001_3d.pkl
 ```
 
-Befor starting the training copy the data (Task Folder, dataset info and preprocessed folder are needed) to a SSD (highly recommended) and unpack the image data with
+Befor starting the training copy the data (Task Folder, data set info and preprocessed folder are needed) to a SSD (highly recommended) and unpack the image data with
 
 ```bash
 nndet_unpack [path] [num_processes]
@@ -317,7 +355,7 @@ nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
 ```
 
 ### Inference
-After running all fold it is time to collect the models and creat a unified inference plan.
+After running all folds it is time to collect the models and creat a unified inference plan.
 The following command will copy all the models and predictions per fold and by adding the `sweep` options the empiricaly hyperparameter optimization across all fold can be started.
 This will generate a unified plan for all models which will be used during inference.
 
@@ -331,6 +369,7 @@ nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep_boxes
 # /experiments/consolidate.py - main()
 ```
 
+For the final test set predictions simply select the best model according to the validation scores and run the prediction command below.
 Data which is located in `raw_splitted/imagesTs` will be automatically preprocessed and predicted by running the following command:
 ```bash
 nndet_predict [task] [model] [--fold] [--num_models] [--num_tta] [--no_preprocess]
@@ -346,10 +385,17 @@ nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` as described above.
 
 ## nnU-Net for Detection
-TODO
+Besides nnDetection we also include the scripts to prepare and evaluate nnU-Net in the context of obejct detection.
+Both frameworks need to be configured correctly before running the scripts to assure correctness.
+After preparing the data set in the nnDetection format (which is a superset of the nnU-Net format) it is possible to export it to nnU-Net via `scripts/nnunet/nnunet_export.py`. Since nnU-Net needs task ids without any additions it may be necessary to overwrite the task name via the `-nt` option for some dataets (e.g. `Task019FG_ADAM` needs to be renamed to `Task019_ADAM`).
+Follow the usual nnU-Net preprocessing and training pipeline to generate the needed models.
+Use the `--npz` option during training to save the predicted probabilities which are needed to generate the detection results.
+After determining the best ensemble configuration from nnU-Net pass all paths to `scripts/nnunet/nnunet_export.py` which will ensemble and postprocess the predictions for object detection.
+Per default the `nnU-Net Plus` scheme will be used which incorporates the empirical parameter optimization step.
+Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 
 ## Pretrained models
-TODO
+**Coming Soon**
 
 # FAQ
 <details close>
@@ -387,9 +433,9 @@ In many cases this limitation can be circumvented by converting the bounding box
 </details>
 
 <details close>
-<summary>Mask RCNN and 2D Datasets</summary>
+<summary>Mask RCNN and 2D Data sets</summary>
 <br>
-2D datasets and Mask R-CNN are not supported in the first release.
+2D data sets and Mask R-CNN are not supported in the first release.
 We hope to provide these sometime in the future.
 </details>
 
@@ -410,8 +456,17 @@ Please use the provided Dockerfile or the installation instructions to run nnDet
 # Cite
 If you use nnDetection for your project/research/work please cite the following paper:
 ```text
-TODO
+Coming Soon
 ```
 
 # Acknowledgements
-TODO (medicaldetectiontoolkit, nnunet, torchvision)
+nnDetection combines the information from multiple open source repositores we wish to acknoledge for their awesome work, please check them out!
+
+## [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)
+nnU-Net is self-configuring method for semantic segmentation and many steps of nnDetection follow in the footsteps of nnU-Net.
+
+## [Medical Detection Toolkit](https://github.com/MIC-DKFZ/medicaldetectiontoolkit)
+The Medical Detection Toolkit introduced the first codebase for 3D Object Detection and multiple tricks were transferred to nnDetection to assure optimal configuration for medical object detection.
+
+## [Torchvision](https://github.com/pytorch/vision)
+nnDetection tried to follow the implementations of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used some of the core modules of the torchvision implementation.

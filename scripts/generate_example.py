@@ -26,7 +26,7 @@ import SimpleITK as sitk
 from loguru import logger
 
 from nndet.io import save_json
-from nndet.utils.info import env_guard
+from nndet.utils.check import env_guard
 
 
 # # 2D example
