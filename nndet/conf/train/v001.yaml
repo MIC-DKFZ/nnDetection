@@ -24,9 +24,9 @@ augment_cfg:
   multiprocessing: True # only deactivate this if debugging
 
   # Additional overwrites
-  # patch_size
-  # batch_size
-  # splits
+  # patch_size; Default: plan
+  # batch_size; Default: plan
+  # splits; Default: splits_final
 
 trainer_cfg:
   gpus: 1 # number of gpus
@@ -39,8 +39,10 @@ trainer_cfg:
   # to perform non-deterministic training
   deterministic: False
   benchmark: False
+  terminate_on_nan: True # [optional; Default True]
+  weights_summary: full # [optional; Default 'full']
 
-  # fp16: True # enable fp16 training. Makes sense for supported hardware only!
+  save_top_k: 0 # topk model selection [optonal; Default 1]
   monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 

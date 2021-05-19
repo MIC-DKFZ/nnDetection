@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from collections import defaultdict
-from typing import Dict, Sequence, Callable, Tuple, Union, Mapping
+from typing import Dict, Sequence, Callable, Tuple, Union, Mapping, Optional
 
 import numpy as np
 from loguru import logger
@@ -35,7 +35,7 @@ class _CaseEvaluator(AbstractEvaluator):
                  class_metrics_scalar: Mapping[str, Callable] = None,
                  score_metrics_curve: Mapping[str, Callable] = None,
                  class_metrics_curve: Mapping[str, Callable] = None,
-                 target_class: int = None,
+                 target_class: Optional[int] = None,
                  ):
         """
         Compute case level evaluation metrics
@@ -73,7 +73,10 @@ class _CaseEvaluator(AbstractEvaluator):
         self.score_metrics_curve = score_metrics_curve if score_metrics_curve is not None else {}
         self.class_metrics_curve = class_metrics_curve if class_metrics_curve is not None else {}
 
-        self.target_class = target_class
+        if isinstance(target_class, str):
+            raise ValueError(f"Need integer value of target class not the name!")
+
+        self.target_class = int(target_class)
         self.classes = classes
         self.num_classes = len(classes)
 
@@ -218,11 +221,20 @@ class CaseEvaluator(_CaseEvaluator):
         prec_fn = precision_score
         rec_fn = recall_score
 
-        score_metrics_scalar = {"auc_case": roc_auc_score, "ap_case": average_precision_score}
-        class_metrics_scalar = {"f1_case": f1_fn, "prec_case": prec_fn,
-                                "rec_case": rec_fn, "acc_case": accuracy_score}
+        score_metrics_scalar = {
+            "auc_case": roc_auc_score,
+            "ap_case": average_precision_score,
+            }
+        class_metrics_scalar = {
+            "f1_case": f1_fn,
+            "prec_case": prec_fn,
+            "rec_case": rec_fn,
+            "acc_case": accuracy_score,
+            }
         score_metrics_curve = {}
-        class_metrics_curve = {"cfm_case": confusion_matrix}
+        class_metrics_curve = {
+            "cfm_case": confusion_matrix,
+            }
         return cls(classes=classes,
                    score_metrics_scalar=score_metrics_scalar,
                    class_metrics_scalar=class_metrics_scalar,

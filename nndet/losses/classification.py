@@ -63,18 +63,13 @@ def focal_loss_with_logits(
     See Also
         :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
     """
-    bce_loss = F.binary_cross_entropy_with_logits(logits, target, reduction='none')
-
     p = torch.sigmoid(logits)
-    pt = (p * target + (1 - p) * (1 - target))
-
-    focal_term = (1. - pt).pow(gamma)
-    loss = focal_term * bce_loss
+    focal_term = (1. - (p * target + (1 - p) * (1 - target))).pow(gamma)
+    loss = focal_term * F.binary_cross_entropy_with_logits(logits, target, reduction='none')
 
     if alpha >= 0:
         alpha_t = (alpha * target + (1 - alpha) * (1 - target))
         loss = alpha_t * loss
-
     return reduction_helper(loss, reduction=reduction)
 
 
@@ -134,7 +129,7 @@ class FocalLossWithLogits(nn.Module):
             )
 
 
-@torch.jit.script
+# @torch.jit.script
 def asymmetric_focal_loss_with_logits(
         logits: torch.Tensor,
         target: torch.Tensor, gamma: float,
@@ -144,15 +139,13 @@ def asymmetric_focal_loss_with_logits(
     """
     Asymmetric Focal loss
     Inspired by https://arxiv.org/abs/2008.13367
-    and identical to https://arxiv.org/abs/1907.10982
-    (without margin)
+    and https://arxiv.org/abs/1907.10982 (without margin)
 
     Args:
         logits: predicted logits [N, dims]
         target: (float) binary targets [N, dims]
         gamma: balance easy and hard examples in focal loss
-        alpha: balance positive and negative samples [0, 1] (increasing
-            alpha increase weight of foreground classes (better recall))
+        alpha: balance factor for background (different from focal loss)
         reduction: 'mean'|'sum'|'none'
             mean: mean of loss over entire batch
             sum: sum of loss over entire batch
@@ -164,30 +157,23 @@ def asymmetric_focal_loss_with_logits(
     See Also
         :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
     """
-    bce_loss = F.binary_cross_entropy_with_logits(logits, target, reduction='none')
-
     p = torch.sigmoid(logits)
-    loss = (1 - (1 - p) * (1 - target)).pow(gamma) * bce_loss
-
-    if alpha >= 0:
-        alpha_t = (alpha * target + (1 - alpha) * (1 - target))
-        loss = alpha_t * loss
-
+    focal_term = target + alpha * (p - target).abs().pow(gamma) * (1 - target)
+    loss = focal_term * F.binary_cross_entropy_with_logits(logits, target, reduction='none')
     return reduction_helper(loss, reduction=reduction)
 
 
 class AsymmetricFocalLossWithLogits(nn.Module):
     def __init__(self,
                  gamma: float = 2,
-                 alpha: float = -1,
+                 alpha: float = 1,
                  reduction: str = "mean",
                  loss_weight: float = 1.,
                  ):
         """
         Asymmetric Focal loss
-        Inspired by https://arxiv.org/abs/2008.13367
-        and identical to https://arxiv.org/abs/1907.10982
-        (without margin)
+        https://arxiv.org/abs/2008.13367
+        and https://arxiv.org/abs/1907.10982
 
         Args:
             gamma: balance easy and hard examples in focal loss

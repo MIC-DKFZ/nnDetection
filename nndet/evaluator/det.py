@@ -218,3 +218,75 @@ class BoxEvaluator(DetectionEvaluator):
                                     )
                 )
         return cls(metrics=tuple(metrics), iou_fn=iou_fn)
+
+
+class CountDifferenceEvaluator(AbstractEvaluator):
+    def __init__(self, min_prob: float = 0.5):
+        super().__init__()
+        self.min_prob = min_prob
+        
+        self.num_gt = []
+        self.num_pred = []
+
+    def run_online_evaluation(self,
+                              pred_scores: Sequence[np.ndarray],
+                              gt_classes: Sequence[np.ndarray],
+                              ) -> Dict:
+        """
+        Preprocess batch results for final evaluation
+
+        Args:
+            pred_scores: predicted score for each bounding box; List[[D]],
+                D number of predictions
+            gt_classes: ground truth classes; List[[G]], G number of ground
+                truth
+
+        Returns
+            dict: empty dict
+        """
+        assert len(pred_scores) == len(gt_classes)
+        for p, g in zip(pred_scores, gt_classes):
+            if p.size > 0:
+                self.num_pred.append((p > self.min_prob).sum())
+            else:
+                self.num_pred.append(0)
+            self.num_gt.append(len(g))
+        return {}
+
+    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        """
+        Accumulate results of individual batches and compute final metrics
+
+        Returns:
+            Dict[str, float]: dictionary with scalar values for evaluation
+                `mean`: mean number of count differences
+                `median`: median number of count differences
+                `max`: max number of count differences
+                `min`: min number of count differences
+            Dict[str, np.ndarray]: absolute difference per case
+                `diff_per_case`: count difference per case
+                `diff_per_case_sign`: count difference per case signed
+                    computed as: #gt - #pred
+        """
+        gts = np.asarray(self.num_gt)
+        preds = np.asarray(self.num_pred)
+
+        diff_per_case = gts - preds
+        metric_scores = {
+            "mean": np.mean(np.absolute(diff_per_case)),
+            "median": np.median(np.absolute(diff_per_case)),
+            "max": np.max(np.absolute(diff_per_case)),
+            "min": np.min(np.absolute(diff_per_case)),
+        }
+        metric_curves = {
+            "diff_per_case": np.absolute(diff_per_case),
+            "diff_per_case_sign": diff_per_case,
+        }
+        return metric_scores, metric_curves
+
+    def reset(self):
+        """
+        Reset internal state of evaluator
+        """
+        self.num_gt = []
+        self.num_pred = []

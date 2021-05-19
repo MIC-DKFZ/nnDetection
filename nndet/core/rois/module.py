@@ -15,7 +15,7 @@ from nndet.core.boxes import MatcherType
 from nndet.core.rois.pooler import PoolerType
 from nndet.core.boxes.sampler import SamplerType
 
-from nndet.core.boxes.utils import cat_and_index, extend_and_cat_boxes
+from nndet.core.boxes.ops import cat_and_index, extend_and_cat_boxes
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression
 

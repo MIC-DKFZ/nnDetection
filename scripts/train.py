@@ -34,7 +34,8 @@ from omegaconf.omegaconf import OmegaConf
 import nndet
 from nndet.utils.config import compose, load_dataset_info
 from nndet.utils.info import log_git, write_requirements_to_file, \
-    create_debug_plan, flatten_mapping, env_guard
+    create_debug_plan, flatten_mapping
+from nndet.utils.check import env_guard
 from nndet.utils.analysis import run_analysis_suite
 from nndet.io.datamodule.bg_module import Datamodule
 from nndet.io.paths import get_task, get_training_dir
@@ -237,7 +238,7 @@ def _train(
         dirpath=train_dir,
         filename='model_best',
         save_last=True,
-        save_top_k=1,
+        save_top_k=cfg["trainer_cfg"].get("save_top_k", 1),
         monitor=cfg["trainer_cfg"]["monitor_key"],
         mode=cfg["trainer_cfg"]["monitor_mode"],
     )
@@ -275,10 +276,10 @@ def _train(
         max_epochs=module.max_epochs,
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
-        num_sanity_val_steps=10, #10,
-        weights_summary='full',
+        num_sanity_val_steps=10,
+        weights_summary=cfg["trainer_cfg"].get("weights_summary", 'full'),
         plugins=plugins,
-        terminate_on_nan=True,  # TODO: make modular
+        terminate_on_nan=cfg["trainer_cfg"].get("terminate_on_nan", True),
         move_metrics_to_cpu=True,
         **trainer_kwargs
     )

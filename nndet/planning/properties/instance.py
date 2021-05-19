@@ -155,7 +155,7 @@ def analyze_instances_per_case(analyzer: DatasetAnalyzer,
     props["num_instances"] = count_instances(props, all_classes)
     props["has_classes"] = list(set(props["instances"].values()))
     props["volume_per_class"], props["region_volume_per_class"] = \
-        instance_class_and_region_sizes(iseg, props, all_classes)
+        instance_class_and_region_sizes(case_id, iseg, props, all_classes)
     props["boxes"] = iseg_to_boxes(iseg)
     props["all_ious"], props["class_ious"] = case_ious(props["boxes"], props)
     return props
@@ -178,6 +178,7 @@ def count_instances(props: dict, all_classes: Sequence[int]) -> Dict[int, int]:
 
 
 def instance_class_and_region_sizes(
+        case_id: str,
         iseg: np.ndarray,
         props: dict,
         all_classes: Sequence[int],
@@ -209,7 +210,8 @@ def instance_class_and_region_sizes(
     ids = np.unique(iseg)
     ids = ids[ids > 0]
     if len(ids) != len(list(instance_classes.keys())):
-        logger.warning(f"Instance lost. Found {instance_classes} in properties but {ids} in seg.")
+        logger.warning(f"Instance lost. Found {instance_classes} in "
+                       f"properties but {ids} in seg of {case_id}.")
     volumer_per_instance = {c: np.sum(iseg == c) * vol_per_voxel for c in ids}
 
     for instance_id, instance_vol in volumer_per_instance.items():
@@ -278,13 +280,10 @@ def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.
         class_ious = OrderedDict()
         case_classes = list(set(map(int, props["instances"].values())))
         case_instances = sorted(list(map(int, props["instances"].keys())))
-        try:  # TODO: fix bug in case of missing instances
-            for cls in case_classes:
-                cls_box_indices = [props["instances"][str(ci)] == cls for ci in case_instances]
-                class_ious[cls] = compute_each_iou(boxes[cls_box_indices])
-        except:
-            pass
-            # from IPython import embed; embed()
+
+        for cls in case_classes:
+            cls_box_indices = [props["instances"][str(ci)] == cls for ci in case_instances]
+            class_ious[cls] = compute_each_iou(boxes[cls_box_indices])
     else:
         all_ious = np.array([])
         class_ious = {}

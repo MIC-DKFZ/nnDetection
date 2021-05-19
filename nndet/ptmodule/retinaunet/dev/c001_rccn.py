@@ -12,7 +12,7 @@ from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
-from nndet.core.boxes.utils import box_iou
+from nndet.core.boxes.ops import box_iou
 
 from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 
@@ -23,7 +23,6 @@ from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
-from nndet.core.boxes.utils import box_iou
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import NegativeSampler, BalancedHardNegativeSampler
 
@@ -185,7 +184,8 @@ class DummyRCNN(RetinaUNetV001):
         coder = BoxCoderND(weights=(1.,) * (2 * 2))
         classifier = RoIClassifierTwoMLP(
             conv=conv,
-            in_channels = plan_arch["fpn_channels"] * 7 * 7,
+            output_size=output_size,
+            in_channels = plan_arch["fpn_channels"],
             internal_channels=plan_arch["fpn_channels"],
             num_classes=plan_arch["classifier_classes"],
         )
@@ -200,7 +200,7 @@ class DummyRCNN(RetinaUNetV001):
             coder=coder,
         )
         matcher = IoUMatcher(
-                low_threshold=0.5,
+                low_threshold=0.4,
                 high_threshold=0.5,
                 allow_low_quality_matches=False,
             )
