@@ -252,6 +252,7 @@ The nifty file hould contain all annotated instances where each instance has a u
 ```
 
 Each label file needs a corresponding json file to define the classes.
+We also wrote an [Detection Annotation Guide](https://www.notion.so/Object-Detection-Annotation-Guide-5318f090091c4e3db7e046a5990bd03c) which includes a dedicated section of the nnDetection format with additional visualizations :)
 
 ## Using nnDetection
 The following paragrah provides an high level overview of the functionality of nnDetection and which commands are available.
