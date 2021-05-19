@@ -19,7 +19,8 @@ from omegaconf.omegaconf import OmegaConf
 import nndet
 from nndet.utils.config import compose
 from nndet.utils.info import log_git, write_requirements_to_file, \
-    create_debug_plan, flatten_mapping, env_guard
+    create_debug_plan, flatten_mapping
+from nndet.utils.check import env_guard
 from nndet.io.datamodule.bg_module import Datamodule
 from nndet.io.paths import get_task, get_training_dir
 from nndet.io.load import load_pickle, save_json, save_pickle
@@ -100,8 +101,8 @@ def _pretrain(
     initialize_config_module(config_module="nndet.conf")
     cfg = compose(pretask, "config.yaml", overrides=ov if ov is not None else [])
     
+    pretask = get_task(pretask, name=True)
     targettask = get_task(targettask, name=True)
-    pretask = get_task(targettask, name=True)
 
     assert cfg.host.parent_data is not None, 'Parent data can not be None'
     assert cfg.host.parent_results is not None, 'Output dir can not be None'
@@ -150,20 +151,12 @@ def _pretrain(
         raise NotImplementedError("Not supported yet.")
     if pre_plan["num_modalities"] > target_plan["num_modalities"]:
         raise NotImplementedError("Not supported yet.")
-
     # update properties from target plan
     # use same patch size to make sure that network config will work
     pre_plan["patch_size"] = target_plan["patch_size"]
     # pre_plan["batch_size"] = target_plan["batch_size"]
-
     pre_plan["architecture"] = target_plan["architecture"]
     pre_plan["anchors"] = target_plan["anchors"]
-
-    _kwargs = pre_plan.get("dataloader_kwargs", {})
-    _kwargs["target_num_classes"] = target_plan["num_classes"]
-    _kwargs["target_num_modalities"] = target_plan["num_modalities"]
-    pre_plan["dataloader_kwargs"] = _kwargs
-
     save_json(create_debug_plan(pre_plan), "./plan_debug.json")
 
     data_dir = Path(cfg.host["preprocessed_output_dir"]) / pre_plan["data_identifier"] / "imagesTr"

@@ -15,3 +15,6 @@ from nndet.io.transforms.utils import (
 from nndet.io.transforms.spatial import (
     Mirror,
 )
+from nndet.io.transforms.transfer import (
+    TransferInputChannel,
+)

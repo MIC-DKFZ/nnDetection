@@ -69,6 +69,7 @@ from nndet.io.transforms import (
     Instances2Boxes,
     Instances2Segmentation,
     FindInstances,
+    TransferInputChannel,
     )
 
 
@@ -115,7 +116,8 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             )
         self.seg_evaluator = SegmentationEvaluator.create()
 
-        self.pre_trafo = Compose(
+        # box transformations
+        trafos = [
             FindInstances(
                 instance_key="target",
                 save_key="present_instances",
@@ -132,8 +134,23 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 map_key="instance_mapping",
                 present_instances="present_instances",
                 )
+        ]
+
+        # transfer learning setup
+        # TODO: might move this to base class
+        data_channels = self.plan["num_modalities"] # number of channels of source data
+        network_channels = self.plan["architecture"]["in_channels"] # number of channels of target data
+        if network_channels > data_channels:
+            logger.info("Detected Transfer Learning Setup with different soruce "
+                        "and target channels. Adding additional transformation.")
+            trafos.append(
+                TransferInputChannel(
+                    out_channels=network_channels,
+                    data_key="data",
+                    )
             )
 
+        self.pre_trafo = Compose(trafos)
         self.eval_score_key = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 
     def training_step(self, batch, batch_idx):

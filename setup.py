@@ -120,7 +120,7 @@ setup(
 
             'nndet_train = scripts.train:train',
             'nndet_sweep = scripts.train:sweep',
-            'nndet_transfer = scripts.transfer:pretrain',
+            'nndet_pretrain = scripts.pretrain:pretrain',
 
             'nndet_eval = scripts.train:evaluate',
             'nndet_predict = scripts.predict:main',
