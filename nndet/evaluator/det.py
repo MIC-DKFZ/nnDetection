@@ -36,6 +36,7 @@ class DetectionEvaluator(AbstractEvaluator):
                  metrics: Sequence[DetectionMetric],
                  iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
                  max_detections: int = 100,
+                 match_fn: Callable = matching_batch,
                  ):
         """
         Class for evaluate detection metrics
@@ -46,6 +47,8 @@ class DetectionEvaluator(AbstractEvaluator):
             max_detections (int): number of maximum detections per image (reduces computation)
         """
         self.iou_fn = iou_fn
+        self.match_fn = match_fn
+
         self.max_detections = max_detections
         self.metrics = metrics
         self.results_list = []  # store results of each image
@@ -98,11 +101,18 @@ class DetectionEvaluator(AbstractEvaluator):
         if gt_ignore is None:
             gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1) for gt_boxes_img in gt_boxes]
 
-        self.results_list.extend(matching_batch(
-            self.iou_fn, self.iou_thresholds, pred_boxes=pred_boxes, pred_classes=pred_classes,
-            pred_scores=pred_scores, gt_boxes=gt_boxes, gt_classes=gt_classes, gt_ignore=gt_ignore,
-            max_detections=self.max_detections))
-
+        self.results_list.extend(
+            self.match_fn(
+                self.iou_fn, self.iou_thresholds, 
+                pred_boxes=pred_boxes,
+                pred_classes=pred_classes,
+                pred_scores=pred_scores,
+                gt_boxes=gt_boxes,
+                gt_classes=gt_classes,
+                gt_ignore=gt_ignore,
+                max_detections=self.max_detections,
+                )
+            )
         return {}
 
     def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:

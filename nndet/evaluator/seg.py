@@ -75,8 +75,6 @@ class SegmentationEvaluator(AbstractEvaluator):
         fp_hard = fp_hard.sum(axis=0)
         fn_hard = fn_hard.sum(axis=0)
 
-        self.results_list["fg_dice"] = list(
-            (2 * tp_hard) / (2 * tp_hard + fp_hard + fn_hard + 1e-8))
         self.results_list["tp"].append(tp_hard)
         self.results_list["fp"].append(fp_hard)
         self.results_list["fn"].append(fn_hard)

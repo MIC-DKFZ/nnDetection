@@ -17,7 +17,7 @@ limitations under the License.
 from abc import abstractmethod, ABC
 
 import numpy as np
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence, Tuple
 
 
 __all__ = ["AbstractEvaluator", "AbstractMetric", "DetectionMetric"]
@@ -47,7 +47,10 @@ class AbstractEvaluator(ABC):
 
 
 class AbstractMetric(ABC):
-    def __call__(self, *args, **kwargs) -> (Dict[str, float], Dict[str, np.ndarray]):
+    def __call__(self,
+                 *args,
+                 **kwargs,
+                 ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric. See :func:`compute` for more information.
 
@@ -62,8 +65,9 @@ class AbstractMetric(ABC):
         return self.compute(*args, **kwargs)
 
     @abstractmethod
-    def compute(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> (
-            Dict[str, float], Dict[str, np.ndarray]):
+    def compute(self,
+                results_list: List[Dict[int, Dict[str, np.ndarray]]],
+                ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric
 
