@@ -1,5 +1,5 @@
 import torch
-from typing import Callable, Sequence, List, Tuple, TypeVar, Union
+from typing import Sequence, List, Tuple, TypeVar, Union
 from torchvision.models.detection.rpn import AnchorGenerator
 from loguru import logger
 from itertools import product

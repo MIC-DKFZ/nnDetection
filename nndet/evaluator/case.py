@@ -74,7 +74,7 @@ class _CaseEvaluator(AbstractEvaluator):
         self.class_metrics_curve = class_metrics_curve if class_metrics_curve is not None else {}
 
         if isinstance(target_class, str):
-            raise ValueError(f"Need integer value of target class not the name!")
+            raise ValueError("Need integer value of target class not the name!")
 
         self.target_class = int(target_class)
         self.classes = classes

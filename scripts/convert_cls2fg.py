@@ -18,7 +18,6 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
-from tokenize import PseudoExtras
 
 from hydra.experimental import initialize_config_module
 from loguru import logger
@@ -68,7 +67,7 @@ def convert_raw(task, overwrite, ov):
 
         # remap properties file to foreground class
         target_label_dir = target_splitted_dir / f"labels{postfix}"
-        for f in [l for l in target_label_dir.glob("*.json")]:
+        for f in [x for x in target_label_dir.glob("*.json")]:
             props = load_json(f)
             props["instances"] = {key: 0 for key in props["instances"].keys()}
             save_json(props, f)

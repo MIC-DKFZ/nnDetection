@@ -1,6 +1,6 @@
 import torch
 
-from nndet.arch.heads.abstract import Regressor, CONV_TYPES
+from nndet.arch.heads.abstract import Regressor
 from nndet.arch.conv import nd_pool
 
 

@@ -19,7 +19,6 @@ from nndet.core.boxes import (
     get_anchor_generator,
     expand_to_boxes,
     box_center,
-    box_size,
     compute_anchors_for_strides,
     box_iou,
     box_size_np,
@@ -141,11 +140,11 @@ class BaseBoxesPlanner(ArchitecturePlanner):
             else:
                 area = box_area_np(self.all_boxes)
             plt.hist(area, bins=100)
-            plt.savefig(self.save_dir / f'box_areas.png')
+            plt.savefig(self.save_dir / 'box_areas.png')
             plt.xscale('log')
-            plt.savefig(self.save_dir / f'box_areas_xlog.png')
+            plt.savefig(self.save_dir / 'box_areas_xlog.png')
             plt.yscale('log')
-            plt.savefig(self.save_dir / f'box_areas_xylog.png')
+            plt.savefig(self.save_dir / 'box_areas_xylog.png')
             plt.close()
 
     def plot_class_distribution(self, **kwargs):
@@ -167,9 +166,9 @@ class BaseBoxesPlanner(ArchitecturePlanner):
             plt.xlabel("Classes")
             plt.ylabel("Num Instances")
             plt.xticks(ind, classes)
-            plt.savefig(self.save_dir / f'num_classes.png')
+            plt.savefig(self.save_dir / 'num_classes.png')
             plt.yscale('log')
-            plt.savefig(self.save_dir / f'num_classes_ylog.png')
+            plt.savefig(self.save_dir / 'num_classes_ylog.png')
             plt.close()
 
     def plot_instance_distribution(self, **kwargs):
@@ -181,15 +180,15 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         if plt is not None:
             num_instances_per_case = list(self.num_instances_per_case.values())
             plt.hist(num_instances_per_case, bins=100, range=(0, 100))
-            plt.savefig(self.save_dir / f'instances_per_case.png')
+            plt.savefig(self.save_dir / 'instances_per_case.png')
             plt.close()
 
             plt.hist(num_instances_per_case, bins=30, range=(0, 30))
-            plt.savefig(self.save_dir / f'instances_per_case_0_30.png')
+            plt.savefig(self.save_dir / 'instances_per_case_0_30.png')
             plt.close()
 
             plt.hist(num_instances_per_case, bins=11, range=(0, 11))
-            plt.savefig(self.save_dir / f'instances_per_case_0_10.png')
+            plt.savefig(self.save_dir / 'instances_per_case_0_10.png')
             plt.close()
 
     @abstractmethod
@@ -445,8 +444,8 @@ class BoxC001(BaseBoxesPlanner):
         import nevergrad as ng
         dim = int(boxes_torch.shape[1] // 2)
 
-        sizes = box_size(boxes_torch)
-        maxs = sizes.max(dim=0)[0]
+        # sizes = box_size(boxes_torch)
+        # maxs = sizes.max(dim=0)[0]
         best_iou = 0
         # TBPSA, PSO
         for algo in ["TwoPointsDE", "TwoPointsDE", "TwoPointsDE"]:
@@ -524,7 +523,7 @@ class BoxC001(BaseBoxesPlanner):
                 pass
             else:
                 patch_size = self._decrease_patch_size(
-                    patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)
+                    patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)  # noqa: F821
             num_pool_per_axis, pooling, convs, patch_size, must_be_divisible_by = \
                 self.plan_pool_and_conv_pool_late(patch_size, target_spacing_transposed)
             self.architecture_kwargs["conv_kernels"] = convs

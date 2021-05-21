@@ -20,7 +20,6 @@ from loguru import logger
 from collections import OrderedDict
 from pathlib import Path
 
-from nndet.io.load import load_pickle
 from nndet.io.paths import get_case_ids_from_dir, get_case_id_from_path
 
 
@@ -45,7 +44,7 @@ def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
         case_paths = get_case_ids_from_dir(
             Path(directory), remove_modality=False, join=True, pattern="*.npz")
         if not case_paths:
-            logger.error(f"Did not find any npz files.")
+            logger.error("Did not find any npz files.")
             raise RuntimeError(f"Did not find any npz files. Folder: {directory}")
     case_paths = [f for f in case_paths if "_seg" not in f]
     case_paths.sort()

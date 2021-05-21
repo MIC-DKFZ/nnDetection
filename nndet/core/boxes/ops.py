@@ -19,7 +19,6 @@ import torch
 from torch import Tensor
 from numpy import ndarray
 from typing import Union, Sequence, Tuple, List
-from torch._C import device
 
 
 from torch.cuda.amp import autocast

@@ -166,7 +166,7 @@ def run_cropping_and_convert(cropped_output_dir: Path,
             logger.error(f"Found corrupted files: {case_ids_failed}.")
             raise RuntimeError("Corrupted files")
     else:
-        logger.info(f"Crop check successful: Loading check completed")
+        logger.info("Crop check successful: Loading check completed")
 
 
 def run_dataset_analysis(cropped_output_dir: Path,

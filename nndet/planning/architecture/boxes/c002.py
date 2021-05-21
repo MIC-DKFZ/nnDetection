@@ -194,7 +194,7 @@ class BoxC002(BoxC001):
                 pass
             else:
                 patch_size = self._decrease_patch_size(
-                    patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)
+                    patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)  # noqa: F821
             num_pool_per_axis, pooling, convs, patch_size, must_be_divisible_by = \
                 self.plan_pool_and_conv_pool_late(patch_size, target_spacing_transposed)
             self.architecture_kwargs["conv_kernels"] = convs
@@ -372,7 +372,7 @@ class BoxC002(BoxC001):
                 ax = fig.add_subplot(111, projection='3d')
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
                 ax.set_title(f"Transpose forward {transpose_forward}")
-                plt.savefig(self.save_dir / f'bbox_sizes_3d_orig.png')
+                plt.savefig(self.save_dir / 'bbox_sizes_3d_orig.png')
                 plt.close()
 
                 dists = box_size_np(self._get_scaled_boxes(
@@ -380,7 +380,7 @@ class BoxC002(BoxC001):
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection='3d')
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
-                plt.savefig(self.save_dir / f'bbox_sizes_3d.png')
+                plt.savefig(self.save_dir / 'bbox_sizes_3d.png')
                 plt.close()
             else:
                 fig = plt.figure()
@@ -388,7 +388,7 @@ class BoxC002(BoxC001):
                 ax.scatter(dists[:, 0], dists[:, 1])
                 ax.grid(True)
                 ax.set_title(f"Transpose forward {transpose_forward}")
-                plt.savefig(self.save_dir / f'bbox_sizes_2d_orig.png')
+                plt.savefig(self.save_dir / 'bbox_sizes_2d_orig.png')
                 plt.close()
 
                 dists = box_size_np(self._get_scaled_boxes(
@@ -397,5 +397,5 @@ class BoxC002(BoxC001):
                 ax = fig.add_subplot(111)
                 ax.scatter(dists[:, 0], dists[:, 1])
                 ax.grid(True)
-                plt.savefig(self.save_dir / f'bbox_sizes_2d.png')
+                plt.savefig(self.save_dir / 'bbox_sizes_2d.png')
                 plt.close()

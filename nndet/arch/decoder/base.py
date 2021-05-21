@@ -16,7 +16,7 @@ limitations under the License.
 
 import torch
 import torch.nn as nn
-from typing import Sequence, List, Tuple, Union, Callable, Optional, TypeVar
+from typing import Sequence, List, Tuple, Union, Callable, TypeVar
 
 from loguru import logger
 
@@ -405,12 +405,12 @@ class UFPNModular(BaseUFPN):
             level = self.num_level - idx
 
             if idx != 1:
-                x = x + up
+                x = x + up  # noqa: F821
                 if self.num_fusion > 0:
                     x = self.fusion_bottom_up[f"P{level}"](x)
 
             if idx != self.num_level:
-                up = self.up[f"P{level}"](x)
+                up = self.up[f"P{level}"](x)  # noqa: F841
 
             out_list.append(x)
         return self.forward_out(reversed(out_list))
@@ -596,12 +596,12 @@ class PAUFPN(UFPNModular):
             level = self.num_level - idx
 
             if idx != 1:
-                x = x + up
+                x = x + up  # noqa: F821
                 if self.num_fusion > 0:
                     x = self.fusion_bottom_up[f"P{level}"](x)
 
             if idx != self.num_level:
-                up = self.up[f"P{level}"](x)
+                up = self.up[f"P{level}"](x)  # noqa: F841
 
             intermediate.append(self.out[f"P{level}"](x))
 
@@ -609,12 +609,12 @@ class PAUFPN(UFPNModular):
         out_list = []  # sorted highest to lowest res
         for level, x in enumerate(reversed(intermediate)):
             if level != 0:
-                x = x + down
+                x = x + down  # noqa: F821
                 if self.num_fusion > 0:
                     x = self.fusion_top_down[f"N{level}"](x)
 
             if level != self.num_level - 1:
-                down = self.down[f"N{level}"](x)
+                down = self.down[f"N{level}"](x)  # noqa: F841
 
             out_list.append(x)
         return self.forward_out(out_list)

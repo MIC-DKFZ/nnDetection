@@ -1,7 +1,6 @@
 from typing import List, Tuple, Dict, Any, Optional, Union
 
 import torch
-import torch.nn as nn
 from torch import Tensor
 
 from nndet.arch.abstract import AbstractModel

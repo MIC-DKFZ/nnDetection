@@ -15,10 +15,9 @@ limitations under the License.
 """
 
 import argparse
-from multiprocessing import Value
 import os
 import sys
-from typing import Any, Mapping, Type, TypeVar
+from typing import Any, Mapping
 
 from omegaconf import OmegaConf
 from loguru import logger

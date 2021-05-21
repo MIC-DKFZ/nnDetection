@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
 from pathlib import Path
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -635,7 +634,7 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
         """
         k = list(self._data.keys())[0]
         if (p := Path(self._data[k]['data_file'])).is_file():
-            data = np.load(str(p), self.memmap_mode)
+            data = np.load(str(p), self.memmap_mode)  # noqa: F841
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
@@ -644,7 +643,7 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
-        num_data_channels = data.shape[0]
+        # num_data_channels = data.shape[0]
         num_seg_channels = seg.shape[0]
         data_shape = (self.batch_size, 4, *self.patch_size_generator)
         seg_shape = (self.batch_size, num_seg_channels, *self.patch_size_generator)

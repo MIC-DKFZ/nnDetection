@@ -63,7 +63,7 @@ class BaseSWA(StochasticWeightAveraging):
         self.update_statistics = update_statistics
         logger.info(f"Initialize SWA with swa epoch start {self.swa_start}")
 
-    def pl_module_contains_batch_norm(self, pl_module: 'pl.LightningModule'):
+    def pl_module_contains_batch_norm(self, pl_module: 'pl.LightningModule'):  # noqa: F821
         if self.update_statistics:
             raise NotImplementedError("Updating the statistis of the "
                                       "normalization layer is not suported yet.")
@@ -71,8 +71,8 @@ class BaseSWA(StochasticWeightAveraging):
             return self.update_statistics
 
     def on_train_epoch_start(self,
-                             trainer: 'pl.Trainer',
-                             pl_module: 'pl.LightningModule',
+                             trainer: 'pl.Trainer',  # noqa: F821
+                             pl_module: 'pl.LightningModule',  # noqa: F821
                              ):
         """
         Repalce current lr scheduler with SWA scheduler

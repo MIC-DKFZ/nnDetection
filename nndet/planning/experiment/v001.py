@@ -1,4 +1,4 @@
-from typing import Dict, Optional, List
+from typing import Dict, List
 
 import numpy as np
 
@@ -80,11 +80,11 @@ class D3V001(AbstractPlanner):
         Result is
         saved into :param:`transpose_forward` and :param:`transpose_backward`
         """
-        spacings = self.data_properties['all_spacings']
-        sizes = self.data_properties['all_sizes']
+        # spacings = self.data_properties['all_spacings']
+        # sizes = self.data_properties['all_sizes']
 
         target_spacing = self.determine_target_spacing()
-        new_sizes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
+        # new_sizes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
 
         dims = len(target_spacing)
         max_spacing_axis = np.argmax(target_spacing)

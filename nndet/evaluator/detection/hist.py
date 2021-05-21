@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import time
 import numpy as np
 
 from pathlib import Path
@@ -105,7 +104,7 @@ class PredictionHistogram(DetectionMetric):
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"WARNING, no results found for froc computation")
+            logger.warning("WARNING, no results found for froc computation")
             return {}, {}
 
         # r['dtMatches'] [T, R], where R = sum(all detections)

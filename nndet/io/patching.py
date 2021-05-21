@@ -211,7 +211,7 @@ def create_grid(cshape: typing.Union[typing.Sequence[int], int],
         raise TypeError(
             "overlap and dshape must be defined for same dimensionality.")
     if any(np.subtract(dshape, cshape) < 0):
-        axes = np.nonzero(np.subtract(dshape, cshape) < 0)
+        # axes = np.nonzero(np.subtract(dshape, cshape) < 0)
         logger.warning(f"Found patch size which is bigger than data: data {dshape} patch {cshape}")
     if any(np.subtract(cshape, overlap) < 0):
         raise TypeError("Overlap must be smaller than size of patches.")

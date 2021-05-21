@@ -1,7 +1,6 @@
 import torch
 
 from nndet.io.transforms.base import AbstractTransform
-from torch._C import device, dtype
 
 
 class TransferInputChannel(AbstractTransform):

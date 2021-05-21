@@ -26,12 +26,12 @@ from torch import Tensor
 from loguru import logger
 
 from nndet.inference.detection.model import batched_weighted_nms_model
-from nndet.inference.detection import batched_nms_model, batched_nms_ensemble, \
-    batched_wbc_ensemble, wbc_nms_no_label_ensemble
+from nndet.inference.detection import batched_nms_model, \
+    batched_wbc_ensemble
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.restore import restore_detection
 from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
-from nndet.utils.tensor import cat, to_device, to_dtype
+from nndet.utils.tensor import cat, to_device
 
 from nndet.core.boxes.merging import (
     GreedyIoUBoxMerger,
@@ -328,7 +328,7 @@ class BoxEnsembler(BaseEnsembler):
         # iou_threshs = np.linspace(0.0, 0.8, 9)
         iou_threshs = np.linspace(0.0, 0.5, 6)
         iou_threshs[0] = 1e-5
-        small_boxes_thresh = np.linspace(2., 7., 6)
+        # small_boxes_thresh = np.linspace(2., 7., 6)
 
         param_sweep = {
             # ensemble multiple models

@@ -25,7 +25,6 @@ from multiprocessing.pool import Pool
 from collections import OrderedDict
 from pathlib import Path
 from typing import Sequence, Any, Tuple, Union
-from zipfile import BadZipfile
 
 import numpy as np
 import SimpleITK as sitk
@@ -381,7 +380,7 @@ def load_npz_looped(
             break
         except Exception as e:
             if i == num_tries - 1:
-                logger.error(f"Could not unpack {p}")
+                logger.error(f"Could not unpack {p} with {e}")
                 return None
             time.sleep(5.)
     return data

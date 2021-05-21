@@ -24,8 +24,6 @@ from nndet.arch.conv import (
     ConvGroupLReLU
 )
 
-from nndet.training import optimizer
-
 from nndet.training.optimizer import get_params_no_wd_on_norm
 from nndet.training.learning_rate import LinearWarmupPolyLR
 

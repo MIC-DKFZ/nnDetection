@@ -34,8 +34,8 @@ I hope to update this soon.
 """
 
 
-def b2mb(x): return x / (2**20)
-def mb2b(x): return x * (2**20)
+def b2mb(x): return x / (2**20)  # noqa: E704
+def mb2b(x): return x * (2**20)  # noqa: E704
 
 
 # remove 11mb from target memory to have a little wiggle room

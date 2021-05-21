@@ -1,6 +1,5 @@
 from __future__ import division
 
-import math
 from typing import Sequence, TypeVar
 
 import torch
@@ -248,7 +247,7 @@ class BoxCoderND(BoxCoder):
             return pred_boxes.reshape(box_sum, spatial_dims)
 
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
-        dtype, device = rel_codes.dtype, rel_codes.device
+        # dtype, device = rel_codes.dtype, rel_codes.device
         return decode_single(rel_codes, boxes, self.weights, self.bbox_xform_clip)
 
 

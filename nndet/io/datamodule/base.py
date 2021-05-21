@@ -89,7 +89,7 @@ class BaseModule(pl.LightningDataModule):
         splits = load_pickle(splits_file)
 
         if self.fold is None:
-            logger.warning(f"USING SAME TRAIN AND VAL SET")
+            logger.warning("USING SAME TRAIN AND VAL SET")
             tr_keys = val_keys = list(self.dataset.keys())
         else:
             tr_keys = splits[self.fold]['train']

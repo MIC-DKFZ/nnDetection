@@ -22,7 +22,7 @@ from itertools import repeat
 from collections import OrderedDict
 from skimage.morphology import label
 from multiprocessing import Pool
-from typing import Dict, List, Sequence, Tuple, Callable
+from typing import Dict, Sequence, Tuple, Callable
 
 from nndet.planning.analyzer import DatasetAnalyzer
 from nndet.io.load import load_case_cropped
@@ -178,6 +178,6 @@ def collect_class_and_region_sizes(seg: np.ndarray, all_classes: Sequence[int],
 
         region_volume_per_class[c] = []
         labelmap, numregions = label(seg == c, return_num=True)
-        for l in range(1, numregions + 1):
-            region_volume_per_class[c].append(np.sum(labelmap == l) * vol_per_voxel)
+        for x in range(1, numregions + 1):
+            region_volume_per_class[c].append(np.sum(labelmap == x) * vol_per_voxel)
     return volume_per_class, region_volume_per_class

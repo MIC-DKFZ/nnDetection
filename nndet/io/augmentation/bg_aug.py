@@ -191,10 +191,11 @@ class BaseMoreAug(NoAug):
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
-            ignore_axes = (0,)
+            # ignore_axes = (0,)
             tr_transforms.append(Convert3DTo2DTransform())
         else:
-            ignore_axes = None
+            pass
+            # ignore_axes = None
 
         tr_transforms.append(SpatialTransform(
             self._spatial_transform_patch_size,

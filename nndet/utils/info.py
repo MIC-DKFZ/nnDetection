@@ -17,18 +17,14 @@ limitations under the License.
 import os
 import copy
 import pathlib
-import warnings
-import functools
 
 from collections.abc import MutableMapping
 from subprocess import PIPE, run
-from omegaconf.omegaconf import OmegaConf
 
 from tqdm import tqdm
-from typing import Mapping, Sequence, Union, Callable, Any, Iterable
+from typing import Mapping, Union, Callable, Any, Iterable, Optional
 from loguru import logger
 from contextlib import contextmanager
-from typing import Union, Optional
 from pathlib import Path
 from git import Repo, InvalidGitRepositoryError
 
@@ -143,7 +139,7 @@ def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
     Use python logging module to log git information
 
     Args:
-        repo_path (Union[pathlib.Path, str]): path to repo or file inside repository (repository is recursively searched)
+        repo_path: path to repo or file inside repository (repository is recursively searched)
     """
     try:
         git_info = get_repo_info(repo_path)

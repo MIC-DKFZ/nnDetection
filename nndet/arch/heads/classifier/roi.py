@@ -2,12 +2,7 @@ from typing import Tuple, Union
 
 import torch
 
-from nndet.arch.heads.abstract import Classifier, CONV_TYPES
-from nndet.arch.conv import nd_pool
-
-from nndet.losses.classification import (
-    BCEWithLogitsLossOneHot,
-)
+from nndet.arch.heads.abstract import Classifier
 
 
 class RoIClassifierTwoMLP(Classifier):

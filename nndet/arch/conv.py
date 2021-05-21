@@ -18,7 +18,6 @@ import torch
 import torch.nn as nn
 from typing import Union, Callable, Any, Optional, Tuple, Sequence, Type
 
-from nndet.arch.initializer import InitWeights_He
 from nndet.arch.layers.norm import GroupNorm
 from nndet.arch.layers.activation import Swish, Mish
 

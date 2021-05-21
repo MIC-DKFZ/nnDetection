@@ -284,9 +284,9 @@ class ImageCropper(object):
                 `classes`: present classes in segmentation
                 `size_after_cropping`: size after cropping
         """
-        shape_before = data.shape
+        # shape_before = data.shape
         data, seg, bbox = crop_to_nonzero(data, seg, nonzero_label=-1)
-        shape_after = data.shape
+        # shape_after = data.shape
         # logger.info(f"Shape before crop {shape_before}; after crop {shape_after}; "
         #             f"spacing {np.array(properties['original_spacing'])}")
 

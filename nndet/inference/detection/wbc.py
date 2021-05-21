@@ -19,8 +19,6 @@ import torch
 from torch import Tensor
 from typing import Tuple
 
-from torch._C import device
-
 from nndet.core.boxes import box_iou, box_area
 
 

@@ -55,7 +55,7 @@ def collect_overview(prediction_dir: Path, gt_dir: Path,
         gt_data = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         gt_boxes = gt_data["boxes"]
         gt_classes = gt_data["classes"]
-        gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
+        # gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
 
         case_result = load_pickle(f)
         pred_boxes = case_result["pred_boxes"]
@@ -89,7 +89,7 @@ def collect_overview(prediction_dir: Path, gt_dir: Path,
             matched_vals = np.max(match_quality_matrix, axis=0)
             matched_idxs[matched_vals < iou] = -1
 
-            matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
+            # matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
             target_labels = gt_classes[matched_idxs.clip(min=0)]
             target_labels[matched_idxs == -1] = -1
 
@@ -118,7 +118,8 @@ def collect_overview(prediction_dir: Path, gt_dir: Path,
 
             # False Positive Analysis
             fp_keep = (pred_labels != target_labels) * (pred_labels != -1)
-            fp_boxes, fp_scores, fp_labels, fp_target_labels = pred_boxes[fp_keep], pred_scores[fp_keep], pred_labels[
+            fp_boxes = pred_boxes[fp_keep]  # noqa: F841
+            fp_scores, fp_labels, fp_target_labels = pred_scores[fp_keep], pred_labels[
                 fp_keep], target_labels[fp_keep]
             idx = np.argsort(fp_scores)[::-1][:max_num_fp_per_image]
             # results[case_id]["fp_box"] = fp_boxes[idx]
@@ -162,7 +163,7 @@ def collect_score_iou(prediction_dir: Path, gt_dir: Path, iou: float, score: flo
         gt_data = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         gt_boxes = gt_data["boxes"]
         gt_classes = gt_data["classes"]
-        gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
+        # gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
 
         case_result = load_pickle(f)
         pred_boxes = case_result["pred_boxes"]
@@ -189,7 +190,7 @@ def collect_score_iou(prediction_dir: Path, gt_dir: Path, iou: float, score: flo
             matched_vals = np.max(match_quality_matrix, axis=0)
             matched_idxs[matched_vals < iou] = -1
 
-            matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
+            # matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
             target_labels = gt_classes[matched_idxs.clip(min=0)]
             target_labels[matched_idxs == -1] = -1
 
@@ -248,14 +249,13 @@ def collect_boxes(prediction_dir: Path, gt_dir: Path, iou: float, score: float):
     all_target = []
     all_boxes = []
 
-    i = 0
     for f in prediction_dir.glob("*_boxes.pkl"):
         case_id = f.stem.rsplit('_', 1)[0]
 
         gt_data = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         gt_boxes = gt_data["boxes"]
         gt_classes = gt_data["classes"]
-        gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
+        # gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
 
         case_result = load_pickle(f)
         pred_boxes = case_result["pred_boxes"]
@@ -281,7 +281,7 @@ def collect_boxes(prediction_dir: Path, gt_dir: Path, iou: float, score: float):
             matched_vals = np.max(match_quality_matrix, axis=0)
             matched_idxs[matched_vals < iou] = -1
 
-            matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
+            # matched_gt_boxes_per_image = gt_boxes[matched_idxs.clip(min=0)]
             target_labels = gt_classes[matched_idxs.clip(min=0)]
             target_labels[matched_idxs == -1] = -1
 
@@ -385,11 +385,11 @@ def run_analysis_suite(prediction_dir: Path, gt_dir: Path, save_dir: Path):
 
         all_pred, all_target, all_pred_ious, all_pred_scores = collect_score_iou(
             prediction_dir, gt_dir, iou=iou, score=score)
-        confusion_ax = plot_confusion_matrix(all_pred, all_target, iou=iou, score=score)
+        # confusion_ax = plot_confusion_matrix(all_pred, all_target, iou=iou, score=score)
         plt.savefig(_save_dir / "confusion_matrix.png")
         plt.close()
 
-        iou_score_ax = plot_joint_iou_score(all_pred_ious, all_pred_scores)
+        # iou_score_ax = plot_joint_iou_score(all_pred_ious, all_pred_scores)
         plt.savefig(_save_dir / "joint_iou_score.png")
         plt.close()
 

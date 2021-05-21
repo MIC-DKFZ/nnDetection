@@ -151,7 +151,7 @@ class FROCMetric(DetectionMetric):
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"WARNING, no results found for froc computation")
+            logger.warning("WARNING, no results found for froc computation")
             return ({"froc_score": 0},
                     {"froc_curve": np.zeros(len(self.fpi_thresholds))})
 

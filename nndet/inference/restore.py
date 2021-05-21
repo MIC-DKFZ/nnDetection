@@ -109,7 +109,7 @@ def restore_fmap(fmap: np.ndarray,
                                                 do_separate_z=do_separate_z, cval=0,
                                                 order_z=interpolation_order_z)
     else:
-        logger.info(f"Resampling: no resampling necessary")
+        logger.info("Resampling: no resampling necessary")
         fmap_old_spacing = fmap_transposed
 
     if crop_bbox is not None:

@@ -238,7 +238,7 @@ class AbstractPlanner(ABC):
         target = np.percentile(np.vstack(spacings), self.target_spacing_percentile, 0)
 
         target_size = np.percentile(np.vstack(sizes), self.target_spacing_percentile, 0)
-        target_size_mm = np.array(target) * np.array(target_size)
+        # target_size_mm = np.array(target) * np.array(target_size)
         # we need to identify datasets for which a different target spacing could be beneficial. These datasets have
         # the following properties:
         # - one axis which much lower resolution than the others

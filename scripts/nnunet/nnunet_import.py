@@ -24,7 +24,7 @@ from itertools import repeat
 from multiprocessing import Pool
 
 from pathlib import Path, PurePath
-from typing import Union, Sequence, Optional
+from typing import Sequence, Optional
 
 import numpy as np
 
@@ -35,7 +35,6 @@ from nndet.evaluator.registry import evaluate_box_dir
 from nndet.io import load_pickle, save_pickle, get_task, load_json
 from nndet.utils.clustering import instance_results_from_seg
 from nndet.utils.config import compose
-from nndet.utils.info import maybe_verbose_iterable
 
 
 TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
@@ -383,7 +382,7 @@ if __name__ == '__main__':
     stuff = [int(s) for s in stuff_classes.keys()]
 
     if mode.lower() == "val":
-        nnunet_prediction_dir = nndet_unet_dir / f"validation_raw_all"
+        nnunet_prediction_dir = nndet_unet_dir / "validation_raw_all"
         nnunet_prediction_dir.mkdir(parents=True, exist_ok=True)
 
         # copy all predictions from nnunet into one directory
@@ -431,7 +430,7 @@ if __name__ == '__main__':
         target_dir = nndet_unet_dir / "val_predictions"
     else:
         case_ids = [p.stem for p in nnunet_dir.iterdir() if p.name.endswith(".npz")]
-        nnunet_prediction_dir = nndet_unet_dir / f"test_raw_all"
+        nnunet_prediction_dir = nndet_unet_dir / "test_raw_all"
         nnunet_prediction_dir.mkdir(parents=True, exist_ok=True)
 
         if num_workers > 0:
@@ -448,7 +447,7 @@ if __name__ == '__main__':
         postprocessing_settings = load_pickle(nndet_unet_dir / "postprocessing.pkl")
         target_dir = nndet_unet_dir / "test_predictions"
 
-    logger.info(f"Creating final predictions")
+    logger.info("Creating final predictions")
     target_dir.mkdir(parents=True, exist_ok=True)
     import_dir(
         nnunet_prediction_dir=nnunet_prediction_dir,

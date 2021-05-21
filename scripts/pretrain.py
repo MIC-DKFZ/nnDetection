@@ -22,7 +22,7 @@ from nndet.utils.info import log_git, write_requirements_to_file, \
     create_debug_plan, flatten_mapping
 from nndet.utils.check import env_guard
 from nndet.io.datamodule.bg_module import Datamodule
-from nndet.io.paths import get_task, get_training_dir
+from nndet.io.paths import get_task
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.ptmodule import MODULE_REGISTRY
 
@@ -41,7 +41,7 @@ def init_train_dir(cfg,
         fold: fold
     """
     # determine folder for experiment
-    output_dir = Path(cfg.host.parent_results) / str(task) / str(id) / f"transfer"
+    output_dir = Path(cfg.host.parent_results) / str(task) / str(id) / "transfer"
 
     if cfg["train"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():

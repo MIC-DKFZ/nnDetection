@@ -16,7 +16,6 @@ limitations under the License.
 
 import os
 import shutil
-import json
 from itertools import repeat
 from multiprocessing import Pool
 
@@ -24,12 +23,10 @@ import SimpleITK as sitk
 import numpy as np
 from loguru import logger
 from pathlib import Path
-from typing import Sequence, Union
 
-from nndet.io.itk import load_sitk_as_array, load_sitk
+from nndet.io.itk import load_sitk_as_array
 from nndet.io.load import save_json, load_json
 from nndet.io.paths import get_case_ids_from_dir
-from nndet.io.prepare import sitk_copy_metadata
 from nndet.io.transforms.instances import instances_to_segmentation_np
 
 
@@ -97,7 +94,7 @@ class Exporter:
         label_target_dir.mkdir(exist_ok=True, parents=True)
         num_classes = len(self.data_info.get("labels", {}))
         if num_classes == 0:
-            logger.warning(f"Did not find any fg classes.")
+            logger.warning("Did not find any fg classes.")
 
         logger.info(f"Found {len(case_ids)} to process.")
         logger.info(f"Export stuff: {self.export_stuff}")

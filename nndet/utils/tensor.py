@@ -5,7 +5,7 @@ import re
 import numpy as np
 from torch import Tensor
 
-from torch._six import container_abcs, string_classes, int_classes
+from torch._six import container_abcs, string_classes
 from typing import Sequence, Union, Any, Mapping, Callable, List
 
 np_str_obj_array_pattern = re.compile(r'[SaUO]')
@@ -141,7 +141,7 @@ def to_tensor(inp: Any) -> Any:
 
 def cat(t: Union[List[Tensor], Tensor], *args, **kwrags):
     if not isinstance(t, (list, Tensor)):
-        raise ValueError(f"Can only concatenate lists and tensors.")
+        raise ValueError("Can only concatenate lists and tensors.")
 
     if isinstance(t, Tensor):
         return t

@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import time
-import copy
 import collections
 import numpy as np
 

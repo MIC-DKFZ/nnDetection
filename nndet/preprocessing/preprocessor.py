@@ -406,9 +406,9 @@ class GenericPreprocessor:
             np.ndarray: normalized data
         """
         assert len(self.norm_scheme_per_modality) == len(data), \
-            f"norm_scheme_per_modality must have as many entries as data has modalities"
+            "norm_scheme_per_modality must have as many entries as data has modalities"
         assert len(self.use_mask_for_norm) == len(data), \
-            f"use_mask_for_norm must have as many entries as data has modalities"
+            "use_mask_for_norm must have as many entries as data has modalities"
 
         for c in range(len(data)):
             scheme = self.norm_scheme_per_modality[c]

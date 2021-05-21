@@ -21,13 +21,12 @@ import copy
 from collections import defaultdict
 from pathlib import Path
 from functools import partial
-from typing import Callable, Hashable, Sequence, Dict, Any, Type
+from typing import Callable, Hashable, Sequence, Dict, Any
 from nndet.arch.heads.regressor.dense_single import DenseRegressor
 
 import torch
 import numpy as np
 from loguru import logger
-from torchvision.models.detection.rpn import AnchorGenerator
 
 from nndet.utils.tensor import to_numpy
 from nndet.evaluator.det import BoxEvaluator
@@ -41,13 +40,13 @@ from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.ops import box_iou
 
-from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModule
+from nndet.ptmodule.base_module import LightningBaseModuleSWA
 
 from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 from nndet.arch.blocks.basic import StackedConvBlock2
 from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.encoder.modular import Encoder
-from nndet.arch.decoder.base import DecoderType, BaseUFPN, UFPNModular
+from nndet.arch.decoder.base import DecoderType, UFPNModular
 from nndet.arch.heads.classifier import DenseClassifierType, CEClassifier
 from nndet.arch.heads.regressor import DenseRegressorType, L1Regressor
 from nndet.arch.heads.comb import AnchorHeadType, BoxHeadHNM
@@ -771,7 +770,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
 
         if run_prediction:
             logger.info("Predict cases with default settings...")
-            predictor = predict_dir(
+            predict_dir(
                 source_dir=train_data_dir,
                 target_dir=prediction_dir,
                 cfg=cfg,

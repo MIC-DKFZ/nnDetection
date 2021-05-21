@@ -48,7 +48,7 @@ class Swish(torch.nn.Module):
         super().__init__()
         self.inplace = inplace
         if self.inplace:
-            logger.warning(f"Inplace not implemented for Swish activation")
+            logger.warning("Inplace not implemented for Swish activation")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return swish(x, inplace=self.inplace)
