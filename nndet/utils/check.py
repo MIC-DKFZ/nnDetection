@@ -173,15 +173,16 @@ def check_data_and_label_splitted(
                 raise ValueError(f"Expected {mask_info_path} to be a raw splitted "
                                 "mask info path but it does not exist.")
             mask_info = load_json(mask_info_path)
-            mask_info_instances = list(map(int, mask_info["instances"].keys()))
+            if mask_info["instances"]:
+                mask_info_instances = list(map(int, mask_info["instances"].keys()))
 
-            if j := not min(mask_info_instances) == 1:
-                raise ValueError(f"Instance IDs need to start at 1, found {j} in {mask_info_path}")
+                if j := not min(mask_info_instances) == 1:
+                    raise ValueError(f"Instance IDs need to start at 1, found {j} in {mask_info_path}")
 
-            for i in range(1, len(mask_info_instances) + 1):
-                if i not in mask_info_instances:
-                    raise ValueError(f"Exptected {i} to be an Instance ID in "
-                                    f"{mask_info_path} but only found {mask_info_instances}")
+                for i in range(1, len(mask_info_instances) + 1):
+                    if i not in mask_info_instances:
+                        raise ValueError(f"Exptected {i} to be an Instance ID in "
+                                        f"{mask_info_path} but only found {mask_info_instances}")
         else:
             mask_info_path = None
 
