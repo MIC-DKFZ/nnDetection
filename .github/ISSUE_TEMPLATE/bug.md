@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 ### :skull: Bug
-<!-- Please provide a short and cleaer describtion of the bug. What happens? What should happen? -->
+<!-- Please provide a short and cleaer describtion of the bug. What happens? What should happen? If applicable, please include the full error message. -->
 
 ### Environment
 Please provide some information about the used environment.
@@ -26,7 +26,15 @@ otherwise execute the script directly from the nndetection source folder:
 python scripts/utils.py
 ```
 -->
+How was nnDetection installed [`docker` | `source`]:
+
+
 Environment Information:
 ```text
-PASTE HERE
+[paste here]
+```
+
+If necessary, please provide the used run command with all overwrites:
+```text
+[paste here]
 ```
