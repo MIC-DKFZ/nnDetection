@@ -32,7 +32,7 @@ class AbstractModel(torch.nn.Module):
         plan_anchors: dict,
         log_num_anchors: str = None,
         **kwargs,
-        ):
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -42,7 +42,7 @@ class AbstractModel(torch.nn.Module):
         targets: dict,
         predict: bool,
         batch_num: int,
-        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
         """
         Perform a single training step
 
@@ -64,7 +64,7 @@ class AbstractModel(torch.nn.Module):
         targets: dict,
         predict: bool,
         batch_num: int,
-        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
         """
         Perform a single training step and return feature maps
         Only needed for one stage detectors
@@ -88,7 +88,7 @@ class AbstractModel(torch.nn.Module):
         images: Tensor,
         *args,
         **kwargs,
-        ) -> Dict[str, Any]:
+    ) -> Dict[str, Any]:
         """
         Perform a single training step
 
@@ -106,7 +106,7 @@ class AbstractModel(torch.nn.Module):
         self,
         images: Tensor,
         **kwargs,
-        ) -> Union[Dict[str, Any], List[torch.Tensor]]:
+    ) -> Union[Dict[str, Any], List[torch.Tensor]]:
         """
         Perform a single training step
         Only needed for one stage detectors

@@ -15,7 +15,7 @@
 # def test_coder_smoke():
 #     output_size = (7, 7)
 #     conv = Generator(ConvInstanceRelu, 2)
-    
+
 #     coder = BoxCoderND(weights=(1.,) * (2 * 2))
 #     classifier = RoIClassifierTwoMLP(
 #         conv=conv,
@@ -74,7 +74,7 @@
 #     #     proposals=proposals,
 #     #     targets=gt,
 #     # )
-    
+
 #     module.inference_step(
 #         images=images,
 #         features=feature_maps,

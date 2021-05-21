@@ -30,13 +30,13 @@ from nndet.io.load import load_case_cropped
 def get_modalities(analyzer: DatasetAnalyzer) -> dict:
     """
     Extract modalities from analyzer data info
-    
+
     Args:
         analyzer: calling analyzer; need to provide `modalities` dict in :param:`data_info`
-    
+
     Returns:
         dict: extract modalities
-            `modalities` (Dict[int, str]): modalities 
+            `modalities` (Dict[int, str]): modalities
     """
     modalities = analyzer.data_info["modalities"]
     modalities = {int(k): modalities[k] for k in modalities.keys()}
@@ -46,17 +46,17 @@ def get_modalities(analyzer: DatasetAnalyzer) -> dict:
 def analyze_intensities(analyzer: DatasetAnalyzer) -> dict:
     """
     Either recompute or load intensity statistics from dataset
-    
+
     Args:
-        analyzer: calling analyer; need to provide a dictionary where 
+        analyzer: calling analyer; need to provide a dictionary where
             modalities are named in :param:`data_info` in key `modalities`
 
     Returns:
-        Dict: 
+        Dict:
             `intensity_properties`: result of :func:`run_collect_intensity_properties`
     """
     num_modalities = len(analyzer.data_info["modalities"].keys())
-    
+
     if analyzer.overwrite or not analyzer.intensity_properties_file.is_file():
         results = run_collect_intensity_properties(analyzer, num_modalities)
     else:
@@ -69,12 +69,12 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
                                      num_modalities: int, save: bool = True) -> Dict[int, Dict]:
     """
     Collect intensity properties over forground from whole dataset
-    
+
     Args:
         analyzer: calling analyzer
         num_modalities: number of modalities
         save (optional): Save result in `analyzer.intensity_properties_file`. Defaults to True.
-    
+
     Returns:
         Dict[int, Dict]: Intensity properties of foreground over the dataset.
             Evaluated statistics: `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
@@ -93,7 +93,7 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
             props_per_case = OrderedDict()
             for case_id, lp in zip(analyzer.case_ids, local_props):
                 props_per_case[case_id] = lp
-            
+
             all_voxels = []
             for iv in voxels:
                 all_voxels += iv
@@ -110,13 +110,13 @@ def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str,
                              modality_id: int, subsample: int = 10) -> list:
     """
     Get voxels from foreground
-    
+
     Args:
         analyzer: calling analyzer
         case_id: case identifier
         modality_id: modality to choose for analyses
         subsample (optional): Subsample voxels for computational purposes. Defaults to 10.
-    
+
     Returns:
         list: foreground voxels
     """
@@ -130,10 +130,10 @@ def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str,
 def compute_stats(voxels: Union[Sequence, np.ndarray]):
     """
     Compute statistics of voxels
-    
+
     Args:
         voxels: input voxels
-    
+
     Returns:
         Dict[str, np.ndarray]: computed statistics
             `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
@@ -141,7 +141,7 @@ def compute_stats(voxels: Union[Sequence, np.ndarray]):
     if len(voxels) == 0:
         stats = {"median": np.nan, "mean": np.nan, "std": np.nan, "min": np.nan,
                  "max": np.nan, "percentile_99_5": np.nan, "percentile_00_5": np.nan,
-                }
+                 }
     else:
         stats = {
             "median": np.median(voxels),
@@ -153,4 +153,3 @@ def compute_stats(voxels: Union[Sequence, np.ndarray]):
             "percentile_00_5": np.percentile(voxels, 00.5),
         }
     return stats
-

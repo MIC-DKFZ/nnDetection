@@ -105,7 +105,7 @@ class SegmentationEnsembler(BaseEnsembler):
             seg_key=seg_key,
             data_key=data_key,
             **kwargs,
-            )
+        )
 
     def add_model(self,
                   name: Optional[str] = None,
@@ -240,16 +240,16 @@ class SegmentationEnsembler(BaseEnsembler):
         """
         _old_dtype = logit_maps.dtype
         logit_maps_np = restore_fmap(
-                fmap=logit_maps.detach().cpu().numpy(),
-                transpose_backward=self.properties["transpose_backward"],
-                original_spacing=self.properties["original_spacing"],
-                spacing_after_resampling=self.properties["spacing_after_resampling"],
-                original_size_before_cropping=self.properties["original_size_before_cropping"],
-                size_after_cropping=self.properties["size_after_cropping"],
-                crop_bbox=self.properties["crop_bbox"],
-                interpolation_order=1,
-                interpolation_order_z=0,
-                do_separate_z=None,
+            fmap=logit_maps.detach().cpu().numpy(),
+            transpose_backward=self.properties["transpose_backward"],
+            original_spacing=self.properties["original_spacing"],
+            spacing_after_resampling=self.properties["spacing_after_resampling"],
+            original_size_before_cropping=self.properties["original_size_before_cropping"],
+            size_after_cropping=self.properties["size_after_cropping"],
+            crop_bbox=self.properties["crop_bbox"],
+            interpolation_order=1,
+            interpolation_order_z=0,
+            do_separate_z=None,
         )
         logit_maps = torch.from_numpy(logit_maps_np).to(dtype=_old_dtype)
         return logit_maps
@@ -286,7 +286,7 @@ class SegmentationEnsembler(BaseEnsembler):
             "itk_origin": self.properties["itk_origin"],
             "itk_spacing": self.properties["itk_spacing"],
             "itk_direction": self.properties["itk_direction"],
-            }
+        }
 
     def save_state(self,
                    target_dir: Path,

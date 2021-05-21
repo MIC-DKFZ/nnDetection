@@ -84,14 +84,14 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
 class SoftDiceLoss(nn.Module):
     def __init__(self,
                  nonlin: Callable = None,
-                 batch_dice: bool = False, 
+                 batch_dice: bool = False,
                  do_bg: bool = False,
                  smooth_nom: float = 1e-5,
                  smooth_denom: float = 1e-5,
                  ):
         """
         Soft dice loss
-        
+
         Args:
             nonlin: treat batch as pseudo volume. Defaults to False.
             do_bg: include background for dice computation. Defaults to True.
@@ -111,16 +111,16 @@ class SoftDiceLoss(nn.Module):
     def forward(self,
                 inp: torch.Tensor,
                 target: torch.Tensor,
-                loss_mask: torch.Tensor=None,
+                loss_mask: torch.Tensor = None,
                 ):
         """
         Compute loss
-        
+
         Args:
             inp (torch.Tensor): predictions
             target (torch.Tensor): ground truth
             loss_mask ([torch.Tensor], optional): binary mask. Defaults to None.
-        
+
         Returns:
             torch.Tensor: soft dice loss
         """
@@ -248,4 +248,3 @@ class TopKLossSigmoid(torch.nn.BCEWithLogitsLoss):
 
         k = int(losses.numel() * self.topk)
         return self.loss_weight * losses.view(-1).topk(k=k, sorted=False)[0].mean()
-

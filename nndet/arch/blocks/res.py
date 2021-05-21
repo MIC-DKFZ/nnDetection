@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 
 from typing import Sequence, Callable, Optional
-from functools import reduce 
+from functools import reduce
 from loguru import logger
 
 from nndet.arch.conv import nd_pool
@@ -65,7 +65,7 @@ class ResBasic(nn.Module):
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
                 conv(in_channels, out_channels, kernel_size=1, relu=None),
-                )
+            )
         else:
             self.shortcut = None
 
@@ -98,7 +98,7 @@ class ResBasic(nn.Module):
     def init_weights(self) -> None:
         try:
             torch.nn.init.zeros_(self.conv2.norm.weight)
-        except:
+        except BaseException:
             logger.info(f"Zero init of last norm layer {self.conv2.norm} failed")
 
 
@@ -157,7 +157,7 @@ class ResBottleneck(nn.Module):
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
                 conv(in_channels, out_channels, kernel_size=1, relu=None),
-                )
+            )
         else:
             self.shortcut = None
 
@@ -191,5 +191,5 @@ class ResBottleneck(nn.Module):
     def init_weights(self) -> None:
         try:
             torch.nn.init.zeros_(self.conv2.norm.weight)
-        except:
+        except BaseException:
             logger.info(f"Zero init of last norm layer {self.conv2.norm} failed")

@@ -10,8 +10,8 @@ from nndet.core.boxes.coder import BoxCoderND
 
 class RoIBoxHead(RoIHead):
     def __init__(self,
-                 classifier, # : DenseClassifierType,
-                 regressor, # : DenseRegressorType,
+                 classifier,  # : DenseClassifierType,
+                 regressor,  # : DenseRegressorType,
                  coder: BoxCoderND,
                  shared: Optional[torch.nn.Module] = None,
                  ):
@@ -30,7 +30,7 @@ class RoIBoxHead(RoIHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            )
+        )
 
     def compute_loss(self,
                      prediction: Dict[str, Tensor],
@@ -59,5 +59,5 @@ class RoIBoxHead(RoIHead):
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds],
             target_labels[sampled_inds].long(),
-            ) / max(1, sampled_pos_inds.numel())
+        ) / max(1, sampled_pos_inds.numel())
         return losses, sampled_pos_inds, None

@@ -23,7 +23,7 @@ from loguru import logger
 from batchgenerators.dataloading import (
     MultiThreadedAugmenter,
     SingleThreadedAugmenter,
-    )
+)
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 from nndet.io.datamodule import DATALOADER_REGISTRY
@@ -53,7 +53,7 @@ def get_augmenter(dataloader,
     """
     Wrapper to switch between multi-threaded and single-threaded augmenter
     """
-    if multiprocessing: 
+    if multiprocessing:
         logger.info(f"Using {num_processes} num_processes "
                     f"and {num_cached_per_queue} num_cached_per_queue for augmentation.")
         loader = FixedLengthMultiThreadedAugmenter(
@@ -64,19 +64,21 @@ def get_augmenter(dataloader,
             seeds=seeds,
             pin_memory=pin_memory,
             **kwargs,
-            )
+        )
     else:
         loader = FixedLengthSingleThreadedAugmenter(
             data_loader=dataloader,
             transform=transform,
             **kwargs,
-            )
+        )
     return loader
 
 
 import subprocess
 import os
 # TODO: remove this! do something different
+
+
 def get_allowed_n_proc_DA():
     hostname = subprocess.getoutput(['hostname'])
     if hostname in ['hdf19-gpu16', 'hdf19-gpu17', 'e230-AMDworkstation']:
@@ -201,7 +203,7 @@ class Datamodule(BaseModule):
         params["use_mask_for_norm"] = self.plan['use_mask_for_norm']
         params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
         params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
-        params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]] 
+        params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]
 
         augmentation_cls = AUGMENTATION_REGISTRY[params["transforms"]]
         self.augmentation = augmentation_cls(
@@ -236,7 +238,7 @@ class Datamodule(BaseModule):
             num_batches_per_epoch=self.augment_cfg[
                 "num_train_batches_per_epoch"],
             **self.dataloader_kwargs,
-            )
+        )
 
         tr_gen = get_augmenter(
             dataloader=dl_tr,
@@ -247,7 +249,7 @@ class Datamodule(BaseModule):
             multiprocessing=self.augment_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
-            )
+        )
         logger.info("TRAINING KEYS:\n %s" % (str(self.dataset_tr.keys())))
         return tr_gen
 
@@ -272,7 +274,7 @@ class Datamodule(BaseModule):
             num_batches_per_epoch=self.augment_cfg[
                 "num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
-            )
+        )
 
         val_gen = get_augmenter(
             dataloader=dl_val,
@@ -283,6 +285,6 @@ class Datamodule(BaseModule):
             multiprocessing=self.augment_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
-            )
+        )
         logger.info("VALIDATION KEYS:\n %s" % (str(self.dataset_val.keys())))
         return val_gen

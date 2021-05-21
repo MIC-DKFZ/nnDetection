@@ -11,7 +11,7 @@ def assign_targets_to_anchors(
     target_boxes: List[torch.Tensor],
     target_classes: List[torch.Tensor],
     **kwargs,
-    ) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
     """
     Compute labels and matched ground truth for each anchor
     Adapted from torchvision https://github.com/pytorch/vision
@@ -39,7 +39,7 @@ def assign_targets_to_anchors(
         # indices of ground truth box for each proposal
         match_quality_matrix, matched_idxs = proposal_matcher(
             gt_boxes, anchors_per_image, **kwargs,
-            )
+        )
 
         # get the targets corresponding GT for each proposal
         # NB: need to clamp the indices because we can have a single

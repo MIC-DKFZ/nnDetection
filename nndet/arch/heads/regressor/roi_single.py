@@ -20,13 +20,13 @@ class RoIRegressorConv(Regressor):
                      kernel_size=3,
                      stride=1,
                      padding=1,
-                    ),
+                     ),
                 conv(internal_channels,
                      internal_channels,
                      kernel_size=3,
                      stride=1,
                      padding=1,
-                    ),
+                     ),
                 nd_pool("AdaptiveAvg", self.dim, 1),
             ]
         )
@@ -36,7 +36,7 @@ class RoIRegressorConv(Regressor):
         )
 
     def forward(self, features):
-        x = self.conv_internal(features) # N, C, spatial -> N, C, 1
+        x = self.conv_internal(features)  # N, C, spatial -> N, C, 1
         return self.fc(x.view(x.shape[0], -1))
 
     def compute_loss(self,

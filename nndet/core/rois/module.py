@@ -23,14 +23,14 @@ from nndet.core.boxes.post import post_image_single_class_regression
 # TODO: refactor module name
 class RoIModule(torch.nn.Module):
     def __init__(self,
-                 box_head: RoIHeadType, # use head without sampler
+                 box_head: RoIHeadType,  # use head without sampler
                  matcher: MatcherType,
                  pooler: PoolerType,
-                 sampler: SamplerType, # NegativeSampler default => random balanced sampling
+                 sampler: SamplerType,  # NegativeSampler default => random balanced sampling
                  num_classes: int,
                  decoder_levels: Sequence[int],
                  gt_to_proposals: bool = True,
-                  # post-processing
+                 # post-processing
                  roi_score_thresh: float = None,
                  roi_detections_per_img: int = 100,
                  roi_nms_thresh: float = 0.6,
@@ -56,16 +56,16 @@ class RoIModule(torch.nn.Module):
                    predict: bool = False,
                    ):
         _features = [features[i] for i in self.decoder_levels]
-        
+
         losses, prediction, roi_features, inds, pos_inds, neg_inds = self._train_step_boxes(
-                features=_features,
-                proposal_boxes=proposals["pred_boxes"],
-                proposal_scores=proposals["pred_scores"],
-                target_boxes=targets["target_boxes"],
-                target_classes=targets["target_classes"],
-                image_size=tuple(images.shape[2:]),
-                predict=predict,
-            )
+            features=_features,
+            proposal_boxes=proposals["pred_boxes"],
+            proposal_scores=proposals["pred_scores"],
+            target_boxes=targets["target_boxes"],
+            target_classes=targets["target_classes"],
+            image_size=tuple(images.shape[2:]),
+            predict=predict,
+        )
         return losses, prediction
 
     def _train_step_boxes(
@@ -77,7 +77,7 @@ class RoIModule(torch.nn.Module):
         target_classes: List[torch.Tensor],
         image_size: Union[Tuple[int, int], Tuple[int, int, int]],
         predict: bool = False,
-        ):
+    ):
         if self.gt_to_proposals:
             proposal_boxes = self.add_gt_to_proposals(proposal_boxes, target_boxes)
 
@@ -96,7 +96,7 @@ class RoIModule(torch.nn.Module):
             proposal_boxes=proposal_boxes,
             batch_idx=batch_idx,
             image_size=image_size,
-            ) # [P, C, spatial]
+        )  # [P, C, spatial]
         pred_detection = self.box_head(roi_features)
 
         losses, _, _ = self.box_head.compute_loss(
@@ -135,7 +135,7 @@ class RoIModule(torch.nn.Module):
             proposal_boxes=_proposal_boxes,
             batch_idx=batch_idx,
             image_size=tuple(images.shape[2:])
-            ) # [P, C, spatial]
+        )  # [P, C, spatial]
 
         pred_detection = self.box_head(roi_features)
 
@@ -149,7 +149,7 @@ class RoIModule(torch.nn.Module):
             "pred_boxes": boxes,
             "pred_scores": probs,
             "pred_labels": labels,
-            }
+        }
         return prediction
 
     # TODO: code duplication :/
@@ -158,9 +158,9 @@ class RoIModule(torch.nn.Module):
         pred_detection: Dict[str, torch.Tensor],
         proposal_boxes: List[torch.Tensor],
         image_shapes: List[Tuple[int]],
-        ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+    ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposal_boxes]
-        
+
         pred_detection = self.box_head.postprocess_for_inference(pred_detection, proposal_boxes)
         pred_boxes, pred_probs = pred_detection["pred_boxes"], pred_detection["pred_probs"]
 
@@ -173,7 +173,7 @@ class RoIModule(torch.nn.Module):
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
             if not self.box_head.regress_multi_class:
                 boxes, probs, labels = post_image_single_class_regression(
-                    boxes=boxes, 
+                    boxes=boxes,
                     probs=probs,
                     num_foreground_classes=self.num_foreground_classes,
                     image_shape=image_shape,
@@ -222,20 +222,20 @@ class RoIModule(torch.nn.Module):
             anchors=proposal_boxes,
             target_boxes=target_boxes,
             target_classes=target_classes,
-            )
+        )
 
         # subsample rois
         pos_mask, neg_mask = self.sampler(
             target_labels=labels,
             fg_probs=proposal_scores,
-            )
+        )
         sampled_pos_inds = torch.where(torch.cat(pos_mask, dim=0))[0]
         sampled_neg_inds = torch.where(torch.cat(neg_mask, dim=0))[0]
         inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         _labels = torch.cat(labels, dim=0)[inds]
         _matched_gt_boxes = torch.cat(matched_gt_boxes, dim=0)[inds]
-        
+
         return inds, sampled_pos_inds, sampled_neg_inds, _labels, _matched_gt_boxes
 
     def add_gt_to_proposals(self,
@@ -275,7 +275,7 @@ class Sequencer(torch.nn.Module):
                  ) -> None:
         """
         Cascade multiple RoI Heads
-        
+
         TODO: gradient scaling
         TODO: detach proposals
         """

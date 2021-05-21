@@ -67,7 +67,7 @@ class COCOMetric(DetectionMetric):
             results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
                 per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
                 `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of 
+                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
                     ground truth
                 `dtScores`: prediction scores [D] detection scores
                 `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
@@ -252,13 +252,13 @@ class COCOMetric(DetectionMetric):
         Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list) 
+            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
                 per cateory (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
                 `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
                 `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
                     ground truth
                 `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth should be 
+                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth should be
                     ignored
                 `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
 
@@ -307,7 +307,7 @@ class COCOMetric(DetectionMetric):
                     continue
 
                 # ignore cases need to be handled differently for tp and fp
-                tps = np.logical_and(dt_matches,  np.logical_not(dt_ignores))
+                tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
                 fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
                 tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
@@ -323,13 +323,13 @@ class COCOMetric(DetectionMetric):
 
         return {
             'counts': [num_iou_th, num_recall_th, num_classes, num_max_detections],  # [4]
-            'recall':   recall,  # [num_iou_th, num_classes, num_max_detections]
+            'recall': recall,  # [num_iou_th, num_classes, num_max_detections]
             'precision': precision,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
             'scores': scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
         }
 
 
-def compute_stats_single_threshold(tp: np.ndarray, fp: np.ndarray, dt_scores_sorted: np.ndarray, 
+def compute_stats_single_threshold(tp: np.ndarray, fp: np.ndarray, dt_scores_sorted: np.ndarray,
                                    recall_thresholds: Sequence[float], num_gt: int) -> Tuple[
                                        float, np.ndarray, np.ndarray]:
     """
@@ -368,12 +368,13 @@ def compute_stats_single_threshold(tp: np.ndarray, fp: np.ndarray, dt_scores_sor
     th_scores = np.zeros((num_recall_th,))
     # numpy is slow without cython optimization for accessing elements
     # use python array gets significant speed improvement
-    pr = pr.tolist(); precision = precision.tolist()
+    pr = pr.tolist()
+    precision = precision.tolist()
 
     # smooth precision curve (create box shape)
     for i in range(len(tp) - 1, 0, -1):
-        if pr[i] > pr[i-1]:
-            pr[i-1] = pr[i]
+        if pr[i] > pr[i - 1]:
+            pr[i - 1] = pr[i]
 
     # get indices to nearest given recall threshold (nn interpolation!)
     inds = np.searchsorted(rc, recall_thresholds, side='left')
@@ -381,7 +382,7 @@ def compute_stats_single_threshold(tp: np.ndarray, fp: np.ndarray, dt_scores_sor
         for save_idx, array_index in enumerate(inds):
             precision[save_idx] = pr[array_index]
             th_scores[save_idx] = dt_scores_sorted[array_index]
-    except:
+    except BaseException:
         pass
 
     return recall, np.array(precision), np.array(th_scores)

@@ -26,17 +26,17 @@ class RoIClassifierTwoMLP(Classifier):
                 torch.nn.Linear(
                     in_channels * output_size[0] * output_size[1],
                     internal_channels,
-                    ),
+                ),
                 torch.nn.ReLU(),
                 torch.nn.Linear(
                     internal_channels,
                     internal_channels,
-                    ),
+                ),
                 torch.nn.ReLU(),
                 torch.nn.Linear(
                     internal_channels,
                     num_classes + 1,
-                    ),
+                ),
             ]
         )
         # self.conv_internal = torch.nn.Sequential(
@@ -67,7 +67,7 @@ class RoIClassifierTwoMLP(Classifier):
     def forward(self, features):
         # x = self.conv_internal(features) # N, C, spatial -> N, C, 1
         # return self.fc(x.view(x.shape[0], -1))
-        
+
         return self.fc(features.view(features.shape[0], -1))
 
     def compute_loss(self,

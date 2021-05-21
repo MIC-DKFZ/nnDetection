@@ -75,7 +75,7 @@ class PredictionHistogram(DetectionMetric):
 
     def plot_hist(self, results_list: List[Dict[int, Dict[str, np.ndarray]]],
                   title_prefix: str = "") -> Tuple[
-                    Dict[str, float], Dict[str, Dict[str, Any]]]:
+            Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Compute prediction histograms for multiple IoU values
 
@@ -114,7 +114,7 @@ class PredictionHistogram(DetectionMetric):
         dt_scores = np.concatenate([r['dtScores'] for r in results])
         gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
         self.check_number_of_iou(dt_matches, dt_ignores)
-        
+
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning nothing.")
@@ -124,7 +124,7 @@ class PredictionHistogram(DetectionMetric):
             # filter scores with ignores detections
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
-            _ = self.compute_histogram_one_iou(\
+            _ = self.compute_histogram_one_iou(
                 dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix)
         return {}, {}
 
@@ -133,7 +133,7 @@ class PredictionHistogram(DetectionMetric):
                                   title_prefix: str):
         """
         Plot prediction histogram
-        
+
         Args:
             dt_matches (np.ndarray): binary array indicating which bounding
                 boxes have a large enough overlap with gt;
@@ -146,7 +146,7 @@ class PredictionHistogram(DetectionMetric):
             title_prefix: prefix for title of histogram plot
         """
         num_matched = np.sum(dt_matches)
-        false_negatives = num_gt - num_matched # false negatives
+        false_negatives = num_gt - num_matched  # false negatives
         true_positives = np.sum(dt_matches)
         false_positives = np.sum(dt_matches == 0)
 
@@ -156,11 +156,11 @@ class PredictionHistogram(DetectionMetric):
         plt.figure()
         plt.yscale('log')
         if 0 in dt_matches:
-            plt.hist(_dt_scores[_dt_matches == 0], bins=self.bins, range=(0., 1.), 
-                    alpha=0.3, color='g', label='false pos.')
+            plt.hist(_dt_scores[_dt_matches == 0], bins=self.bins, range=(0., 1.),
+                     alpha=0.3, color='g', label='false pos.')
         if 1 in dt_matches:
             plt.hist(_dt_scores[_dt_matches == 1], bins=self.bins, range=(0., 1.),
-                    alpha=0.3, color='b', label='true pos. (false neg. @ score=0)')
+                     alpha=0.3, color='b', label='true pos. (false neg. @ score=0)')
         plt.legend()
         title = title_prefix + (f"tp:{true_positives} fp:{false_positives} "
                                 f"fn:{false_negatives} pos:{true_positives+false_negatives}")

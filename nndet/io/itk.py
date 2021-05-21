@@ -61,7 +61,8 @@ def create_circle_mask_itk(image_itk: sitk.Image,
 
         # loop over every pixel position
         for coord in coord_box:
-            world_coord = image_itk.TransformIndexToPhysicalPoint(tuple(reversed(coord)))  # reverse order to x, y, z for sitk
+            world_coord = image_itk.TransformIndexToPhysicalPoint(
+                tuple(reversed(coord)))  # reverse order to x, y, z for sitk
             dist = np.linalg.norm(np.array(world_coord) - np.array(world_center))
             if dist <= world_rad:
                 mask_np[tuple(coord)] = _id

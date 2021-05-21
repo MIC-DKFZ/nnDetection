@@ -195,7 +195,7 @@ class ConvInstanceRelu(BaseConvNormAct):
         """
         norm = "Instance" if add_norm else None
         act = "ReLU" if add_act else None
-        
+
         super().__init__(
             dim=dim,
             in_channels=in_channels,
@@ -360,7 +360,7 @@ class ConvInstanceLReLU(BaseConvNormAct):
             norm=norm,
             act=act,
             act_kwargs={
-                "negative_slope": act_negative_slope    
+                "negative_slope": act_negative_slope
             },
             norm_kwargs={
                 "eps": norm_eps,
@@ -424,7 +424,7 @@ class ConvGroupRelu(BaseConvNormAct):
         """
         norm = "Group" if add_norm else None
         act = "ReLU" if add_act else None
-        
+
         super().__init__(
             dim=dim,
             in_channels=in_channels,
@@ -517,7 +517,7 @@ class ConvGroupLReLU(BaseConvNormAct):
             norm=norm,
             act=act,
             act_kwargs={
-                "negative_slope": act_negative_slope    
+                "negative_slope": act_negative_slope
             },
             norm_kwargs={
                 "eps": norm_eps,
@@ -582,7 +582,7 @@ class ConvGroupSiLU(BaseConvNormAct):
         """
         norm = "Group" if add_norm else None
         act = "SiLU" if add_act else None
-        
+
         super().__init__(
             dim=dim,
             in_channels=in_channels,

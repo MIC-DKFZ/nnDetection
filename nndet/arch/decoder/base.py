@@ -105,7 +105,7 @@ class BaseUFPN(nn.Module):
     def forward_lateral(self, inp_seq: Sequence[torch.Tensor]) -> List[torch.Tensor]:
         """
         Apply lateral connections to incoming feature maps
-        
+
         Args:
             inp_seq: sequence with feature maps (largest to samllest)
 
@@ -210,7 +210,7 @@ class BaseUFPN(nn.Module):
         return conv_kwargs_helper(
             norm=self.conv_settings[t]["norm"],
             activation=self.conv_settings[t]["activation"],
-            )
+        )
 
     def get_lateral(self, conv: Callable, level: int) -> nn.Module:
         """
@@ -432,7 +432,7 @@ class SmallUFPN(UFPNModular):
             ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
             assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
             for idx, ol in enumerate(ouput_levels[::-1]):
-                div = 4 if idx==0 else 2
+                div = 4 if idx == 0 else 2
                 oc = max(self.min_out_channels, out_channels[ol + 1] // div)
                 out_channels[ol] = oc
         return out_channels
@@ -454,7 +454,7 @@ class SmallerUFPN(UFPNModular):
             ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
             assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
             for idx, ol in enumerate(ouput_levels[::-1]):
-                div = 8 if idx==0 else 2
+                div = 8 if idx == 0 else 2
                 oc = max(self.min_out_channels, out_channels[ol + 1] // div)
                 out_channels[ol] = oc
         return out_channels

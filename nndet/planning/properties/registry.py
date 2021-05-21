@@ -27,13 +27,13 @@ from nndet.planning.properties import (
 def medical_segmentation_props(intensity_properties: bool = True):
     """
     Default set for analysis of medical segmentation images
-    
+
     Args:
         intensity_properties (optional): analyze intensity properties. Defaults to True.
-    
+
     Returns:
         Sequence[Callable]: properties to calculate. Results can be summarized as follows:
-    
+
     See Also:
         :func:`nndet.planning.medical.get_sizes_and_spacings_after_cropping`,
         :func:`nndet.planning.medical.get_size_reduction_by_cropping`,

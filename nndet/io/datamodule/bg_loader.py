@@ -547,7 +547,7 @@ class DataLoader2DOffset(DataLoader3DFast):
         spatial_shape = case_data.shape[2:]
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
-        box = candidates["boxes"][[idx]] # [1, 6]
+        box = candidates["boxes"][[idx]]  # [1, 6]
         box_size = box_size_np(box)[0, 1:]
         box = box[0]
 

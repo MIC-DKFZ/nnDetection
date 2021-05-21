@@ -30,12 +30,12 @@ from nndet.io.load import load_case_cropped
 
 def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:
     """
-    Analyze segmentation of dataset (if overwrite is disabled and analysis was already run, 
+    Analyze segmentation of dataset (if overwrite is disabled and analysis was already run,
     this function will only load the results)
-    
+
     Args:
         analyzer: analyzer which calls this function
-    
+
     Returns:
         Dict:
             `class_dct`(np.ndarray): contains all present classes
@@ -97,12 +97,12 @@ def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str,
 
 def run_analyze_segmentation(
     analyzer: DatasetAnalyzer, all_classes: Sequence[int],
-    save: bool = True, 
+    save: bool = True,
     analyze_fn: Callable[[DatasetAnalyzer, str, Sequence[int]], Dict] = analyze_segmentation_per_case) \
         -> Dict[str, Dict]:
     """
     Analyze segmentations of all cases in analyzer
-    
+
     Args:
         analyzer: analyzer which called this function
         all_classes: values of all classes
@@ -112,7 +112,7 @@ def run_analyze_segmentation(
             to compute needed properties of a single segmentation case. Takes
             the calling analyzer, the case id and a sequence of integers representing
             all classes in the dataset and should return a single dict
-    
+
     Returns:
         Dict[Dict]: computed properties per case
     """
@@ -134,12 +134,12 @@ def check_if_all_in_one_region(seg: np.ndarray,
                                regions: Sequence[Sequence[int]]) -> Dict[Tuple[int], bool]:
     """
     Check if regions are splited over multiple instances or are all connected
-    
+
     Args:
         seg: segmentation
         regions: Sequence of multiple regions to analyze.
             Each region can contain multiple classes
-    
+
     Returns:
         Dict[Tuple[int], bool]: result for each region
     """
@@ -160,22 +160,22 @@ def collect_class_and_region_sizes(seg: np.ndarray, all_classes: Sequence[int],
                                    vol_per_voxel: float) -> (Dict, Dict[str, Dict]):
     """
     Collect class and region sizes from segmentation
-    
+
     Args:
         seg: segmentation
         all_classes: array with all classes
         vol_per_voxel: physical volume per voxel
-    
+
     Returns:
         Dict: volume per class (dict index corresponds to class)
-        Dict[List]: sizes of each region; 
+        Dict[List]: sizes of each region;
             first dict indexes thes class while second dict indexed the regions
     """
     volume_per_class = OrderedDict()
     region_volume_per_class = OrderedDict()
     for c in all_classes:
         volume_per_class[c] = np.sum(seg == c) * vol_per_voxel
-        
+
         region_volume_per_class[c] = []
         labelmap, numregions = label(seg == c, return_num=True)
         for l in range(1, numregions + 1):

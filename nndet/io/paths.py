@@ -78,7 +78,7 @@ def get_paths_from_splitted_dir(
     test: bool = False,
     labels: bool = True,
     remove_ids: Optional[Sequence[str]] = None,
-    ) -> List[List[Path]]:
+) -> List[List[Path]]:
     """
     Create list to all cases (data and label; label is at last position) inside splitted data dir
 
@@ -99,7 +99,7 @@ def get_paths_from_splitted_dir(
     training_ids = get_case_ids_from_dir(
         splitted_4d_output_dir / data_subdir,
         remove_modality=True,
-        )
+    )
     if remove_ids is not None:
         training_ids = [t for t in training_ids if t not in remove_ids]
 

@@ -5,7 +5,7 @@ import torch
 from nndet.core.boxes.merging import (
     GreedyIoUBoxMerger,
     VoteLabelGreedyIoUBoxMerger,
-    )
+)
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def boxes_neighboring_track():
         [4., 0., 5., 1., 0., 1.],
         [5., 0., 6., 1., 0., 1.],
         [6., 0., 7., 1., 0., 1.],
-        ]
+    ]
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def boxes_neighboring_no_track():
         [4., 0.5, 5., 1.5, 0.5, 1.5],
         [5., 1., 6., 1.5, 1., 1.5],
         [6., 1.5, 7., 2., 1.5, 2.],
-        ]
+    ]
 
 
 @pytest.fixture

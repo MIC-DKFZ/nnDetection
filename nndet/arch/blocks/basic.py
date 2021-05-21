@@ -58,34 +58,34 @@ class StackedBlock(AbstractBlock):
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
         channels to :param:`out_channels`.
-        
+
         Args:
             conv: conv generator to use for internal convolutions
             in_channels: number of input channels
             conv_kernel: kernel size of convolution
             stride: Stride of first convolution. If None stride=1 will be used.
                 Defaults to None.
-            out_channels: If given, then number of output channels will be set 
-                to this value. Otherwise the number of the input channels are 
+            out_channels: If given, then number of output channels will be set
+                to this value. Otherwise the number of the input channels are
                 doubled. Defaults to None.
             max_out_channels: Maximum number of output channels.
                 Defaults to None.
             num_blocks: Number of blocks. Defaults to 1.
-        
+
         Raises:
             ValueError: raise if given output channels are larger than max
                 output channels
         """
-        super().__init__(out_channels=None) # out_channels will be overwritten later
+        super().__init__(out_channels=None)  # out_channels will be overwritten later
         if (out_channels is not None and
             max_out_channels is not None and
-            out_channels > max_out_channels):
+                out_channels > max_out_channels):
             raise ValueError("Output channels can not be larger"
                              "than max output channels")
         if out_channels is None:
             out_channels = in_channels * self.expansion
         if max_out_channels is not None and out_channels > max_out_channels:
-            out_channels = max_out_channels 
+            out_channels = max_out_channels
         if stride is None:
             stride = 1
 
@@ -108,7 +108,7 @@ class StackedBlock(AbstractBlock):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward tensor
-        
+
         Returns:
             torch.Tensor: output tensor
         """
@@ -200,9 +200,9 @@ class StackedResidualBlock(StackedBlock):
             nn.Module: stacked convolutions
         """
         return ResBasic(conv=conv, in_channels=in_channels,
-                                  out_channels=out_channels,
-                                  kernel_size=kernel_size, stride=stride,
-                                  padding=padding, **kwargs)
+                        out_channels=out_channels,
+                        kernel_size=kernel_size, stride=stride,
+                        padding=padding, **kwargs)
 
 
 class StackedConvBlock(AbstractBlock):
@@ -221,34 +221,34 @@ class StackedConvBlock(AbstractBlock):
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
         channels to :param:`out_channels`.
-        
+
         Args:
             conv: conv generator to use for internal convolutions
             in_channels: number of input channels
             conv_kernel: kernel size of convolution
             stride: Stride of first convolution. If None stride=1 will be used.
                 Defaults to None.
-            out_channels: If given, then number of output channels will be set 
-                to this value. Otherwise the number of the input channels are 
+            out_channels: If given, then number of output channels will be set
+                to this value. Otherwise the number of the input channels are
                 doubled. Defaults to None.
             max_out_channels: Maximum number of output channels.
                 Defaults to None.
             num_blocks: Number of convolutions. Defaults to 2.
-        
+
         Raises:
             ValueError: raise if given output channels are larger than max
                 output channels
         """
-        super().__init__(out_channels=None) # out_channels will be overwritten later
+        super().__init__(out_channels=None)  # out_channels will be overwritten later
         if (out_channels is not None and
             max_out_channels is not None and
-            out_channels > max_out_channels):
+                out_channels > max_out_channels):
             raise ValueError("Output channels can not be larger"
                              "than max output channels")
         if out_channels is None:
             out_channels = in_channels * self.expansion
         if max_out_channels is not None and out_channels > max_out_channels:
-            out_channels = max_out_channels 
+            out_channels = max_out_channels
         if stride is None:
             stride = 1
 
@@ -277,7 +277,7 @@ class StackedConvBlock(AbstractBlock):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward tensor
-        
+
         Returns:
             torch.Tensor: output tensor
         """

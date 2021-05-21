@@ -11,14 +11,14 @@ from nndet.planning.architecture.boxes.base import BoxC001
 from nndet.planning.architecture.boxes.utils import (
     proxy_num_boxes_in_patch,
     scale_with_abs_strides,
-    )
+)
 from nndet.core.boxes import (
     get_anchor_generator,
     expand_to_boxes,
     box_center,
     box_size_np,
     permute_boxes,
-    )
+)
 
 
 class BoxC002(BoxC001):
@@ -37,7 +37,7 @@ class BoxC002(BoxC001):
             estimator=estimator,
             model_cfg=model_cfg,
             **kwargs
-            )
+        )
 
     def create_default_settings(self):
         """
@@ -75,8 +75,10 @@ class BoxC002(BoxC001):
                           in self.dataset_properties["instance_props_per_patient"].items()]
         self.all_spacings = [case["original_spacing"] for case_id, case
                              in self.dataset_properties["instance_props_per_patient"].items()]
-        self.num_instances_per_case = {case_id: sum(case["num_instances"].values())
-                                for case_id, case in self.dataset_properties["instance_props_per_patient"].items()}
+        self.num_instances_per_case = {
+            case_id: sum(
+                case["num_instances"].values()) for case_id,
+            case in self.dataset_properties["instance_props_per_patient"].items()}
 
         self.all_ious = self.dataset_properties["all_ious"]
         self.class_ious = self.dataset_properties["class_ious"]
@@ -177,9 +179,9 @@ class BoxC002(BoxC001):
 
         Args:
             target_spacing_transposed: spacing after data is transposed and resampled
-            target_median_shape_transposed: median shape after data is 
+            target_median_shape_transposed: median shape after data is
                 transposed and resampled
-        
+
         Returns:
             Sequence[int]: patch size to use for training
         """
@@ -215,8 +217,8 @@ class BoxC002(BoxC001):
                     patch_size=patch_size,
                     target_spacing_transposed=target_spacing_transposed,
                     transpose_forward=transpose_forward,
-                    ),
-                )
+                ),
+            )
             if fits_in_mem:
                 break
             first_run = False
@@ -236,7 +238,7 @@ class BoxC002(BoxC001):
             target_spacing_transposed=target_spacing_transposed,
             transpose_forward=transpose_forward,
             cat=False,
-            ):
+        ):
             max_instances_per_image.append(
                 max(proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)).item())
         return max(max_instances_per_image)
@@ -268,12 +270,13 @@ class BoxC002(BoxC001):
         strides = np.cumprod(filt_rel_strides, axis=0) / np.asarray(rel_strides[0])
 
         params = self.find_anchors(boxes_torch, strides.astype(np.int32), anchor_generator)
-        scaled_params = {key: scale_with_abs_strides(item, strides, dim_idx) for dim_idx, (key, item) in enumerate(params.items())}
+        scaled_params = {key: scale_with_abs_strides(item, strides, dim_idx)
+                         for dim_idx, (key, item) in enumerate(params.items())}
         logger.info(f"Determined Anchors: {params}; Results in params: {scaled_params}")
         self.anchors = scaled_params
         self.anchors["stride"] = 1
         return self.anchors
-    
+
     def _get_scaled_boxes(self,
                           target_spacing_transposed: Sequence[float],
                           transpose_forward: Sequence[int],
@@ -303,7 +306,7 @@ class BoxC002(BoxC001):
         Generate initial patch which relies on the spacing of underlying images.
         This is based on the fact that most acquisition protocols are optimized
         to focus on the most importatnt aspects.
-        
+
         Returns:
             List[int]: initial patch size
         """
@@ -340,7 +343,7 @@ class BoxC002(BoxC001):
         logger.info(f"Using initial patch size: {initial_patch_size}")
         return initial_patch_size
 
-    def plot_box_distribution(self, 
+    def plot_box_distribution(self,
                               target_spacing_transposed: Sequence[float],
                               transpose_forward: Sequence[int],
                               **kwargs):

@@ -39,7 +39,7 @@ def predict_dir(
     case_ids: Optional[Sequence[str]] = None,
     save_state: bool = False,
     **kwargs
-    ):
+):
     """
     Predict all preprocessed(!) cases inside a directory
 

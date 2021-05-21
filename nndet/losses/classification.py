@@ -41,7 +41,7 @@ def focal_loss_with_logits(
         target: torch.Tensor, gamma: float,
         alpha: float = -1,
         reduction: str = "mean",
-        ) -> torch.Tensor:
+) -> torch.Tensor:
     """
     Focal loss
     https://arxiv.org/abs/1708.02002
@@ -126,7 +126,7 @@ class FocalLossWithLogits(nn.Module):
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
-            )
+        )
 
 
 # @torch.jit.script
@@ -135,7 +135,7 @@ def asymmetric_focal_loss_with_logits(
         target: torch.Tensor, gamma: float,
         alpha: float = -1,
         reduction: str = "mean",
-        ) -> torch.Tensor:
+) -> torch.Tensor:
     """
     Asymmetric Focal loss
     Inspired by https://arxiv.org/abs/2008.13367
@@ -218,7 +218,7 @@ class AsymmetricFocalLossWithLogits(nn.Module):
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
-            )
+        )
 
 
 class BCEWithLogitsLossOneHot(torch.nn.BCEWithLogitsLoss):

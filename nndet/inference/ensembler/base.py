@@ -59,7 +59,7 @@ class BaseEnsembler(ABC):
 
         self.parameters = parameters
         self.parameters.update(kwargs)
-        
+
         if device is None:
             self.device = torch.device("cpu")
         elif isinstance(device, str):
@@ -223,7 +223,7 @@ class BaseEnsembler(ABC):
 
     @classmethod
     def get_case_ids(cls, base_dir: PathLike):
-        return [c.stem.rsplit(f"_{cls.ID}", 1)[0] 
+        return [c.stem.rsplit(f"_{cls.ID}", 1)[0]
                 for c in Path(base_dir).glob(f"*_{cls.ID}.pt")]
 
 

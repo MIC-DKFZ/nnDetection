@@ -32,8 +32,8 @@ class BoxHeadAll(AnchorHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            )
-        self.logger = None # get_logger(log_num_anchors) if log_num_anchors is not None else None
+        )
+        self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
 
     def compute_loss(self,
                      prediction: Dict[str, Tensor],
@@ -82,6 +82,6 @@ class BoxHeadAll(AnchorHead):
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds],
             target_labels[sampled_inds],
-            ) / max(1, sampled_pos_inds.numel())
+        ) / max(1, sampled_pos_inds.numel())
         # breakpoint()
         return losses, sampled_pos_inds, None

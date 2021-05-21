@@ -433,4 +433,3 @@ def _padded_crop(data: np.ndarray,
             origin,
             clipped_crop,
             )
-

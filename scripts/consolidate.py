@@ -53,7 +53,7 @@ def consolidate_predictions(
     source_dirs: Sequence[Path],
     target_dir: Path,
     consolidate: str,
-    ):
+):
     """
     Consolidate sweep states to find new postprocessing hyperparameters
 
@@ -150,7 +150,7 @@ def main():
         source_dirs=training_dirs,
         target_dir=target_dir,
         consolidate=consolidate,
-        )
+    )
 
     shutil.copy2(training_dirs[0] / "plan.pkl", target_dir)
     shutil.copy2(training_dirs[0] / "config.yaml", target_dir)
@@ -200,7 +200,7 @@ def main():
                 ensembler_cls=ensembler_cls,
                 restore=restore,
                 **inference_plan,
-                )
+            )
     else:
         logger.warning("Plan used from fold 0, not updated with consolidation")
         save_pickle(plan, target_dir / "plan_inference.pkl")

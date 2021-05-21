@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
 def boxes2nii():
     import os
     import argparse
@@ -70,7 +71,7 @@ def boxes2nii():
         res = load_pickle(prediction_dir / f"{cid}_boxes.pkl")
 
         instance_mask = np.zeros(res["original_size_of_raw_data"], dtype=np.uint8)
-        
+
         boxes = res["pred_boxes"]
         scores = res["pred_scores"]
         labels = res["pred_labels"]
@@ -156,12 +157,12 @@ def seg2nii():
     case_ids = [p.stem.rsplit('_', 1)[0] for p in prediction_dir.glob("*_seg.pkl")]
     for cid in maybe_verbose_iterable(case_ids):
         res = load_pickle(prediction_dir / f"{cid}_seg.pkl")
-    
+
         seg_itk = sitk.GetImageFromArray(res["pred_seg"])
         seg_itk.SetOrigin(res["itk_origin"])
         seg_itk.SetDirection(res["itk_direction"])
         seg_itk.SetSpacing(res["itk_spacing"])
-        
+
         sitk.WriteImage(seg_itk, str(save_dir / f"{cid}_seg.nii.gz"))
 
 
@@ -170,7 +171,7 @@ def unpack():
     from pathlib import Path
 
     from nndet.io.load import unpack_dataset
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=Path, help="Path to folder to unpack")
     parser.add_argument('num_processes', type=int, help="number of processes to use for unpacking")
@@ -197,7 +198,7 @@ def env():
     print(f"System Arch List: {os.getenv('TORCH_CUDA_ARCH_LIST', None)}")
     print(f"System OMP_NUM_THREADS: {os.getenv('OMP_NUM_THREADS', None)}")
     print(f"System CUDA_HOME is None: {os.getenv('CUDA_HOME', None) is None}")
-    
+
     print(f"Python Version: {sys.version}")
 
 

@@ -18,7 +18,7 @@
 #     class GetForeground(torch.nn.Module):
 #         def __init__(self, *args, **kwargs):
 #             super().__init__()
-        
+
 #         def forward(self, *input, **kwargs):
 #             return super().forward(*input, **kwargs)
 
@@ -168,7 +168,7 @@
 #         assert (pred_boxes.allclose(torch.tensor([[1., 1., 4., 4.]]).to(pred_boxes)))
 #         assert (pred_scores.allclose(torch.tensor([1.]).to(pred_scores)))
 #         assert (pred_labels.allclose(torch.tensor([1.]).to(pred_labels)))
-    
+
 #     def test_integration_detection_center(self):
 #         predictor_cls = PREDICTOR_REGISTRY.get("BoxPredictor")
 #         plan = {"patch_size": (5, 5), "batch_size": 2}
@@ -178,7 +178,7 @@
 #         pred_boxes = result["det"]["pred_boxes"]
 #         pred_scores = result["det"]["pred_scores"]
 #         pred_labels = result["det"]["pred_labels"]
-#         # because of the patch based inference, the bounding box is not 
+#         # because of the patch based inference, the bounding box is not
 #         # the ground truth
 #         # self.assertTrue(pred_boxes.allclose(torch.tensor([[1., 1., 4., 4.]]).to(pred_boxes)))
 #         assert (pred_scores.allclose(torch.tensor([1.]).to(pred_scores)))

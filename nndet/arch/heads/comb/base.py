@@ -32,7 +32,7 @@ class AnchorHead(BaseHead):
                 intermediate = self.shared(p, level=level)
             else:
                 intermediate = p
-            
+
             offsets.append(self.regressor(intermediate, level=level))
             logits.append(self.classifier(intermediate, level=level))
 
@@ -46,9 +46,9 @@ class AnchorHead(BaseHead):
         return {"box_deltas": box_deltas, "box_logits": box_logits}
 
     def postprocess_for_inference(self,
-                                prediction: Dict[str, torch.Tensor],
-                                anchors: List[torch.Tensor],
-                                ) -> Dict[str, torch.Tensor]:
+                                  prediction: Dict[str, torch.Tensor],
+                                  anchors: List[torch.Tensor],
+                                  ) -> Dict[str, torch.Tensor]:
         """
         Postprocess predictions for inference e.g. ocnvert logits to probs
 
@@ -124,7 +124,7 @@ class RoIHead(BaseHead):
             intermediate = self.shared(fmaps)
         else:
             intermediate = fmaps
-        
+
         box_deltas = self.regressor(intermediate)
         box_logits = self.classifier(intermediate)
 
@@ -133,12 +133,12 @@ class RoIHead(BaseHead):
         return {
             "box_deltas": box_deltas,
             "box_logits": box_logits,
-            }
+        }
 
     def postprocess_for_inference(self,
-                        prediction: Dict[str, torch.Tensor],
-                        anchors: List[torch.Tensor],
-                        ) -> Dict[str, torch.Tensor]:
+                                  prediction: Dict[str, torch.Tensor],
+                                  anchors: List[torch.Tensor],
+                                  ) -> Dict[str, torch.Tensor]:
         """
         Postprocess predictions for inference e.g. ocnvert logits to probs
 
@@ -182,6 +182,7 @@ class RoIHead(BaseHead):
                 classification loss)
         """
         raise NotImplementedError
+
 
 AnchorHeadType = TypeVar('AnchorHeadType', bound=AnchorHead)
 RoIHeadType = TypeVar('RoIHeadType', bound=RoIHead)

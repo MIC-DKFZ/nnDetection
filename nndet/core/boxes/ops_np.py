@@ -117,17 +117,17 @@ def box_iou_3d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     z2 = np.minimum(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
     inter = np.clip((x2 - x1), a_min=0, a_max=None) * np.clip((y2 - y1), a_min=0, a_max=None) * \
-            np.clip((z2 - z1), a_min=0, a_max=None)  # [N, M]
+        np.clip((z2 - z1), a_min=0, a_max=None)  # [N, M]
     return inter / (area1[:, None] + area2 - inter)
 
 
 def box_size_np(boxes: ndarray) -> ndarray:
     """
     Compute length of boxes along all dimensions
-    
+
     Args:
         boxes (ndarray): boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
-    
+
     Returns:
         ndarray: size along axis (x, y, (z))[N, dim]
     """
@@ -137,6 +137,7 @@ def box_size_np(boxes: ndarray) -> ndarray:
     if boxes.shape[1] // 2 == 3:
         dists.append(boxes[:, 5] - boxes[:, 4])
     return np.stack(dists, axis=-1)
+
 
 def box_center_np(boxes: np.ndarray) -> np.ndarray:
     """

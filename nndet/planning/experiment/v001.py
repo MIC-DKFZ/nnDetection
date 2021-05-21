@@ -82,7 +82,7 @@ class D3V001(AbstractPlanner):
         """
         spacings = self.data_properties['all_spacings']
         sizes = self.data_properties['all_sizes']
-        
+
         target_spacing = self.determine_target_spacing()
         new_sizes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
 

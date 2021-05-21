@@ -48,7 +48,7 @@ def collect_overview(prediction_dir: Path, gt_dir: Path,
                      top_n: int = 10,
                      ):
     results = defaultdict(dict)
-    
+
     for f in prediction_dir.glob("*_boxes.pkl"):
         case_id = f.stem.rsplit('_', 1)[0]
 
@@ -207,7 +207,7 @@ def collect_score_iou(prediction_dir: Path, gt_dir: Path, iou: float, score: flo
     return all_pred, all_target, all_pred_ious, all_pred_scores
 
 
-def plot_confusion_matrix(all_pred, all_target, iou: float, score:float):
+def plot_confusion_matrix(all_pred, all_target, iou: float, score: float):
     if len(all_pred) > 0 and len(all_target) > 0:
         cm = confusion_matrix(np.concatenate(all_target), np.concatenate(all_pred))
         plt.figure()
@@ -243,7 +243,7 @@ def plot_joint_iou_score(all_pred_ious, all_pred_scores):
     return f
 
 
-def collect_boxes(prediction_dir: Path, gt_dir: Path, iou:float, score: float):
+def collect_boxes(prediction_dir: Path, gt_dir: Path, iou: float, score: float):
     all_pred = []
     all_target = []
     all_boxes = []
@@ -256,7 +256,7 @@ def collect_boxes(prediction_dir: Path, gt_dir: Path, iou:float, score: float):
         gt_boxes = gt_data["boxes"]
         gt_classes = gt_data["classes"]
         gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1, 1) for gt_boxes_img in [gt_boxes]]
-        
+
         case_result = load_pickle(f)
         pred_boxes = case_result["pred_boxes"]
         pred_scores = case_result["pred_scores"]
@@ -326,7 +326,7 @@ def plot_sizes(all_pred, all_target, all_boxes, iou, score):
 
 
 def plot_sizes_bar(all_pred, all_target, all_boxes, iou, score,
-                   max_bin: Optional[int] = None ):
+                   max_bin: Optional[int] = None):
     if len(all_pred) == 0 or len(all_target) == 0:
         return None, None
     _all_pred = np.concatenate(all_pred)
@@ -353,7 +353,7 @@ def plot_sizes_bar(all_pred, all_target, all_boxes, iou, score,
     kwargs = {}
     if max_bin is not None:
         kwargs["binrange"] = [0, max_bin]
-    
+
     ax = sns.histplot(data=data, bins=100, element="step",
                       palette={"tp": "g", "fp": "r", "fn": "b"},
                       legend=True, fill=False, **kwargs
@@ -406,7 +406,7 @@ def run_analysis_suite(prediction_dir: Path, gt_dir: Path, save_dir: Path):
         with open(str(_save_dir / 'sizes_bar.pkl'), "wb") as fp:
             pickle.dump(sizes_fig, fp, protocol=4)
         plt.close()
-        
+
         sizes_fig, sizes_ax = plot_sizes_bar(all_pred, all_target, all_boxes,
                                              iou=iou, score=score, max_bin=100)
         plt.savefig(_save_dir / "sizes_bar_100.png")
@@ -420,22 +420,22 @@ def convert_box_to_nii_meta(pred_boxes: Tensor,
                             pred_labels: Tensor,
                             props: dict,
                             ) -> Tuple[sitk.Image, dict]:
-        instance_mask = np.zeros(props["original_size_of_raw_data"], dtype=np.uint8)
+    instance_mask = np.zeros(props["original_size_of_raw_data"], dtype=np.uint8)
 
-        for instance_id, pbox in enumerate(pred_boxes, start=1):
-            mask_slicing = [slice(int(pbox[0]), int(pbox[2])),
-                            slice(int(pbox[1]), int(pbox[3])),
-                            ]
-            if instance_mask.ndim == 3:
-                mask_slicing.append(slice(int(pbox[4]), int(pbox[5])))
-            instance_mask[tuple(mask_slicing)] = instance_id
-        logger.info(f"Created instance mask with {instance_mask.max()} instances.")
+    for instance_id, pbox in enumerate(pred_boxes, start=1):
+        mask_slicing = [slice(int(pbox[0]), int(pbox[2])),
+                        slice(int(pbox[1]), int(pbox[3])),
+                        ]
+        if instance_mask.ndim == 3:
+            mask_slicing.append(slice(int(pbox[4]), int(pbox[5])))
+        instance_mask[tuple(mask_slicing)] = instance_id
+    logger.info(f"Created instance mask with {instance_mask.max()} instances.")
 
-        instance_mask_itk = sitk.GetImageFromArray(instance_mask)
-        instance_mask_itk.SetOrigin(props["itk_origin"])
-        instance_mask_itk.SetDirection(props["itk_direction"])
-        instance_mask_itk.SetSpacing(props["itk_spacing"])
-        
-        prediction_meta = {idx: {"score": float(score), "label": int(label)}
-            for idx, (score, label) in enumerate(zip(pred_scores, pred_labels), start=1)}
-        return instance_mask_itk, prediction_meta
+    instance_mask_itk = sitk.GetImageFromArray(instance_mask)
+    instance_mask_itk.SetOrigin(props["itk_origin"])
+    instance_mask_itk.SetDirection(props["itk_direction"])
+    instance_mask_itk.SetSpacing(props["itk_spacing"])
+
+    prediction_meta = {idx: {"score": float(score), "label": int(label)}
+                       for idx, (score, label) in enumerate(zip(pred_scores, pred_labels), start=1)}
+    return instance_mask_itk, prediction_meta

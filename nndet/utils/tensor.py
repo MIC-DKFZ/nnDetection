@@ -14,11 +14,11 @@ np_str_obj_array_pattern = re.compile(r'[SaUO]')
 def make_onehot_batch(labels: torch.Tensor, n_classes: torch.Tensor) -> torch.Tensor:
     """
     Create onehot encoding of labels
-    
+
     Args:
         labels: label tensor to enode [N, dims]
         n_classes: number of classes
-    
+
     Returns:
         Tensor: onehot encoded tensor [N, C, dims]; N: batch size,
             C: number of classes, dims: spatial dimensions

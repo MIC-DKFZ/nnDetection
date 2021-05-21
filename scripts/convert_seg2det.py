@@ -45,8 +45,8 @@ def prepare_detection_label(case_id: str,
                             min_vol: float = 0,
                             ):
     if (label_dir / f"{case_id}.json").is_file():
-            logger.info(f"Found existing case {case_id} -> skipping")
-            return
+        logger.info(f"Found existing case {case_id} -> skipping")
+        return
     logger.info(f"Processing {case_id}")
     seg_itk = load_sitk(label_dir / f"{case_id}.nii.gz")
     spacing = np.asarray(seg_itk.GetSpacing())[::-1]
@@ -109,13 +109,13 @@ if __name__ == '__main__':
     segmentation dataset by using connected components on the labels.
     To account for separated pixels inside the annotations only annotations
     with a specified minimal size are converted into objects.
-    
+
     The data needs to be in the same format as in nnunet: images
     stay the same, labels will be semantic segmentations.
 
     ============================================================================
     ================================IMPORTANT==================================+
-    ============================================================================  
+    ============================================================================
     Needs additional information from dataset.json/.yaml:
         `seg2det_stuff`: these are classes which are interpreted semantically
         `seg2det_things`: these are classes which are interpreted as instances
@@ -147,7 +147,6 @@ if __name__ == '__main__':
                         help="Create a ranking of instances based on their volume",
                         action='store_true',
                         )
-
 
     args = parser.parse_args()
     tasks = args.tasks

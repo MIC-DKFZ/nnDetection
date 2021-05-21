@@ -32,7 +32,7 @@ def save_metric_output(scores, curves, base_dir, name):
     Helper function to save output of the function in a nice format
     """
     scores_string = {str(key): str(item) for key, item in scores.items()}
-    
+
     save_json(scores_string, base_dir / f"{name}.json")
     save_pickle({"scores": scores, "curves": curves}, base_dir / f"{name}.pkl")
 
@@ -42,7 +42,7 @@ def evaluate_box_dir(
     gt_dir: PathLike,
     classes: Sequence[str],
     save_dir: Optional[Path] = None,
-    ) -> Tuple[Dict, Dict]:
+) -> Tuple[Dict, Dict]:
     """
     Run box evaluation inside a directory
 
@@ -55,7 +55,7 @@ def evaluate_box_dir(
     Returns:
         Dict[str, float]: dictionary with scalar values for evaluation
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
-    
+
     See Also:
         :class:`nndet.evaluator.registry.BoxEvaluator`
     """
@@ -80,7 +80,7 @@ def evaluate_box_dir(
             pred_boxes=[pred["pred_boxes"]], pred_classes=[pred["pred_labels"]],
             pred_scores=[pred["pred_scores"]], gt_boxes=[gt["boxes"]],
             gt_classes=[gt["classes"]], gt_ignore=None,
-            )
+        )
     return evaluator.finish_online_evaluation()
 
 
@@ -89,7 +89,7 @@ def evaluate_case_dir(
     gt_dir: PathLike,
     classes: Sequence[str],
     target_class: Optional[int] = None,
-    ) -> Tuple[Dict, Dict]:
+) -> Tuple[Dict, Dict]:
     """
     Run evaluation of case results inside a directory
 
@@ -103,7 +103,7 @@ def evaluate_case_dir(
     Returns:
         Dict[str, float]: dictionary with scalar values for evaluation
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graph)
-    
+
     See Also:
         :class:`nndet.evaluator.registry.CaseEvaluator`
     """
@@ -124,7 +124,7 @@ def evaluate_case_dir(
             pred_classes=[pred["pred_labels"]],
             pred_scores=[pred["pred_scores"]],
             gt_classes=[gt["classes"]]
-            )
+        )
     return evaluator.finish_online_evaluation()
 
 
@@ -132,7 +132,7 @@ def evaluate_seg_dir(
     pred_dir: PathLike,
     gt_dir: PathLike,
     classes: Sequence[str],
-    ) -> Tuple[Dict, None]:
+) -> Tuple[Dict, None]:
     """
     Compute dice metric across a directory
 
@@ -157,10 +157,10 @@ def evaluate_seg_dir(
     evaluator = PerCaseSegmentationEvaluator.create(classes=classes)
 
     for case_id in case_ids:
-        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)["seg"] # 1, dims
+        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)["seg"]  # 1, dims
         pred = load_pickle(pred_dir / f"{case_id}_seg.pkl")
         evaluator.run_online_evaluation(
             seg=pred[None],
             target=gt,
-            )
+        )
     return evaluator.finish_online_evaluation()

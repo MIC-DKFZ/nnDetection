@@ -88,7 +88,7 @@ class BoxSweeper(Sweeper):
         Run sweep over parameters and select the best
 
         Args:
-            classes: classes present in dataset 
+            classes: classes present in dataset
             pred_dir: directory where predictions are saved
             gt_dir: directory where ground truth is saved
             target_metric: metric to optimize
@@ -126,7 +126,7 @@ class BoxSweeper(Sweeper):
                 values=values,
                 param_name=param_name,
                 state=state,
-                )
+            )
             state[param_name] = best_value
 
             if _best_score < best_score:
@@ -145,7 +145,7 @@ class BoxSweeper(Sweeper):
                       ):
         """
         Evaluate parameters and select the best
-        
+
         Args:
             values: values to evaluate
             param_name: name of parameter
@@ -198,7 +198,7 @@ class BoxSweeper(Sweeper):
         for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
             ensembler = self.ensembler_cls.from_checkpoint(
                 base_dir=self.pred_dir, case_id=case_id, device=self.device,
-                )
+            )
             ensembler.update_parameters(**state)
             ensembler.update_parameters(**overwrite)
 

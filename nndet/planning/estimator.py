@@ -33,6 +33,7 @@ This is just a first prototype to estimate VRAM consumption for different GPUs
 I hope to update this soon.
 """
 
+
 def b2mb(x): return x / (2**20)
 def mb2b(x): return x * (2**20)
 
@@ -86,7 +87,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
             self.context = CUDA_CONTEXT[context]
         else:
             self.context = context
-        
+
         self.offset = offset
         self.block_mem_tensor = None
 
@@ -130,7 +131,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
             network=copy.deepcopy(network),
             optimizer_cls=optimizer_cls,
             num_instances=num_instances,
-            )
+        )
         # else:
         #     res = self._estimate_mem_not_available(
         #         min_shape=min_shape, target_shape=target_shape,
@@ -223,7 +224,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
                                    for _ in range(self.batch_size)],
                                "target_seg": torch.zeros(
                                    (self.batch_size, *shape[1:]), device=device, dtype=torch.float),
-                           }}
+                    }}
                     fixed_mem = torch.cuda.memory_reserved()
                     with torch.cuda.amp.autocast():
                         loss_dict, _ = network.train_step(
@@ -244,7 +245,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
             dyn_mem = float('Inf')
         finally:
             del loss
-        
+
         del opt
         del inp
         del block_tensor
@@ -268,7 +269,7 @@ def num_gpus():
 def smi_memory_allocated(gpu_id: int = 0) -> int:
     """
     Read memory consumption from nvidia smi
-    
+
     Returns:
         int: measured GPU memory in bytes
     """
@@ -282,14 +283,14 @@ class Tracemalloc():
     def __init__(self, measure_fn):
         super().__init__()
         self.measure_fn = measure_fn
-    
+
     def __enter__(self):
         self.begin = self.measure_fn()
         return self
 
     def __exit__(self, *exc):
-        self.end  = self.measure_fn()
-        self.used   = self.end - self.begin
+        self.end = self.measure_fn()
+        self.used = self.end - self.begin
         logger.info(f"Measured {self.used} byte GPU mem consumption")
 
 

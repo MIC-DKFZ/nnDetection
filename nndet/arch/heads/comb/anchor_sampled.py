@@ -18,7 +18,7 @@ class BoxHeadHNM(AnchorHead):
         coder: BoxCoderND,
         sampler: SamplerType,
         shared: Optional[torch.nn.Module] = None,
-        ):
+    ):
         """
         Box detection head with classifier and regression module.
         Uses hard negative example mining to compute loss
@@ -36,9 +36,9 @@ class BoxHeadHNM(AnchorHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            )
+        )
 
-        self.logger = None # get_logger(log_num_anchors) if log_num_anchors is not None else None
+        self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
         self.fg_bg_sampler = sampler
 
     def compute_loss(self,
@@ -96,7 +96,7 @@ class BoxHeadHNM(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 box_deltas[sampled_pos_inds],
                 target_deltas_sampled,
-                ) / max(1, sampled_pos_inds.numel())
+            ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds])
@@ -183,7 +183,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 pred_boxes_sampled,
                 target_boxes_sampled,
-                ) / max(1, sampled_pos_inds.numel())
+            ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds])
@@ -246,7 +246,7 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 pred_boxes,
                 target_boxes,
-                ) / max(1, pos_inds.numel())
+            ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
 
@@ -307,7 +307,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 box_deltas[pos_inds],
                 target_deltas_sampled,
-                ) / max(1, pos_inds.numel())
+            ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
 
@@ -369,6 +369,6 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
                 target_deltas=target_deltas_sampled,
                 pred_boxes=pred_boxes_sampled,
                 target_boxes=batch_matched_gt_boxes[sampled_pos_inds],
-                ) / max(1, sampled_pos_inds.numel())
+            ) / max(1, sampled_pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds

@@ -119,13 +119,13 @@ def main():
         help="Increase size of dataset. "
         "Default sizes train/test 10/10 and full 1000/1000.",
         action='store_true',
-        )
+    )
     parser.add_argument(
         '--num_processes',
         help="Use multiprocessing to create dataset.",
         type=int,
         default=0,
-        )
+    )
     args = parser.parse_args()
 
     full = args.full
@@ -165,14 +165,14 @@ def main():
                 images_tr_dir,
                 labels_tr_dir,
                 idx,
-                )
+            )
 
         for idx in range(num_images_tr, num_images_tr + num_images_ts):
             generate_image(
                 images_ts_dir,
                 labels_ts_dir,
                 idx,
-                )
+            )
     else:
         logger.info("Using multiprocessing to create example dataset.")
         with Pool(processes=num_processes) as p:

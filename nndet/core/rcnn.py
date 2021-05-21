@@ -22,7 +22,7 @@ class RCNN(AbstractModel):
         targets: dict,
         predict: bool,
         batch_num: int,
-        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
         """
         #TODO
         """
@@ -42,7 +42,7 @@ class RCNN(AbstractModel):
             proposals=proposals,
             targets=targets,
             predict=predict,
-            )
+        )
         for key, item in roi_losses.items():
             losses[f"roi_{key}"] = item
         return losses, roi_prediction
@@ -52,7 +52,7 @@ class RCNN(AbstractModel):
         self,
         images: torch.Tensor,
         **kwargs,
-        ) -> Dict[str, Any]:
+    ) -> Dict[str, Any]:
         proposals, features = self.rpn.inference_step_with_features(
             images=images,
             **kwargs
@@ -61,7 +61,7 @@ class RCNN(AbstractModel):
             images=images,
             features=features,
             proposals=proposals,
-            )
+        )
         return roi_prediction
 
 
@@ -71,7 +71,7 @@ class RCNN(AbstractModel):
 #                  ) -> None:
 #         """
 #         Cascade multiple RoI Heads
-        
+
 #         TODO: gradient scaling
 #         TODO: detach proposals
 #         """
@@ -83,4 +83,3 @@ class RCNN(AbstractModel):
 #             # predict rois
 #             pass
 #         pass
-

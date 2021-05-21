@@ -55,7 +55,7 @@ def maybe_split_4d_nifti(source_file: Path, output_folder: Path):
         return
     elif dim == 4:
         imgs_splitted = split_4d_itk(img_itk)
-        
+
         for idx, img in enumerate(imgs_splitted):
             sitk.WriteImage(img, str(output_folder / (filename[:-7] + "_%04.0d.nii.gz" % idx)))
     else:
@@ -86,9 +86,9 @@ def split_4d_itk(img_itk: sitk.Image) -> List[sitk.Image]:
 
     images_new = []
     for i, t in enumerate(range(img_npy.shape[0])):
-            img = img_npy[t]
-            images_new.append(
-                create_itk_image_spatial_props(img, spacing, origin, direction))
+        img = img_npy[t]
+        images_new.append(
+            create_itk_image_spatial_props(img, spacing, origin, direction))
     return images_new
 
 
@@ -124,7 +124,7 @@ def sitk_copy_metadata(img_source: sitk.Image, img_target: sitk.Image) -> sitk.I
 
     Returns:
         SimpleITK.Image: target image with copied metadata
-    """ 
+    """
     raise RuntimeError("Deprecated")
     spacing = img_source.GetSpacing()
     img_target.SetSpacing(spacing)

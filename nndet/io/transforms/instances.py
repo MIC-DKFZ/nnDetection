@@ -139,7 +139,7 @@ def instances_to_boxes_np(
     seg: np.ndarray,
     dim: int = None,
     instances: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Convert instance segmentation to bounding boxes (not batched)
 
@@ -334,11 +334,11 @@ def get_bbox_np(seg: np.ndarray,
                 ) -> dict:
     """
     Get bounding boxes and mapping from instances to classes
-    
+
     Args:
         seg: instance segmentation [1, dims]
         mapping: define mapping from instance ids to classes
-    
+
     Returns:
         dict: extracted boxes and classes
             `boxes` (np.ndarray): bounding boxes [N, dims * 2]

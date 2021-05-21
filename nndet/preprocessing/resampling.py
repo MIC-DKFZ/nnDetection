@@ -46,7 +46,7 @@ def resample_patient(data,
                      force_separate_z=False,
                      cval_data=0,
                      cval_seg=-1,
-                     order_z_data=0, 
+                     order_z_data=0,
                      order_z_seg=0,
                      separate_z_anisotropy_threshold: float = 3,
                      ):

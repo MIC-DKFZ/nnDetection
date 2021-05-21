@@ -15,14 +15,14 @@ from nndet.arch.heads.comb import (
 from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
-    )
+)
 from nndet.arch.heads.regressor import (
     L1Regressor
-    )
+)
 from nndet.arch.conv import (
     ConvInstanceLReLU,
     ConvGroupLReLU
-    )
+)
 
 
 @MODULE_REGISTRY.register

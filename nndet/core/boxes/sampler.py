@@ -95,7 +95,7 @@ class HardNegativeSamplerMixin(ABC):
                 where A is the the number of anchors in one image
         """
         pool = int(num_neg * self.pool_size)
-        pool = min(negative.numel(), pool) # protect against not enough negatives
+        pool = min(negative.numel(), pool)  # protect against not enough negatives
 
         # select pool of highest scoring false positives
         _, negative_idx_pool = img_fg_probs[negative].topk(pool, sorted=True)
@@ -242,10 +242,10 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
     """
     Samples negatives and positives on a per batch basis
     (default sampler only does this on a per image basis)
-    
+
     Note:
         :attr:`batch_size_per_image` is manipulated to sample the correct
-        number of samples per batch, use :attr:`_batch_size_per_image` 
+        number of samples per batch, use :attr:`_batch_size_per_image`
         to get the number of anchors per image
     """
 

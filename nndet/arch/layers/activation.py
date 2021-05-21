@@ -58,7 +58,7 @@ class Swish(torch.nn.Module):
 def mish(x: torch.Tensor,
          inplace: bool = False,
          beta: float = 1,
-         threshold: float=20,
+         threshold: float = 20,
          ) -> torch.Tensor:
     """
     Apples mish function as described in

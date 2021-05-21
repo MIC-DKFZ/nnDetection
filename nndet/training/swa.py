@@ -45,11 +45,11 @@ class BaseSWA(StochasticWeightAveraging):
         Args:
             swa_epoch_start: Epoch to start SWA weight saving.
             avg_fn: Function to average saved weights. Defaults to None.
-            device: Device to save averaged model. Defaults to 
+            device: Device to save averaged model. Defaults to
                 torch.device("cpu").
             update_statistics: Perform a final update of the normalization
                 layers. Defaults to None.
-                
+
         Notes: Does not support updating of norm weights after training
         """
         super().__init__(
@@ -79,7 +79,7 @@ class BaseSWA(StochasticWeightAveraging):
         """
         if trainer.current_epoch == self.swa_start:
             optimizer = trainer.optimizers[0]
-            
+
             # move average model to request device.
             self._average_model = self._average_model.to(self._device or pl_module.device)
 
@@ -139,7 +139,7 @@ class SWACycleLinear(BaseSWA):
             cycle_final_lr: final learning rate of cycle
             num_iterations_per_epoch: number of train iterations per epoch
             avg_fn: Function to average saved weights. Defaults to None.
-            device: Device to save averaged model. Defaults to 
+            device: Device to save averaged model. Defaults to
                 torch.device("cpu").
             update_statistics: Perform a final update of the normalization
                 layers. Defaults to None.
@@ -149,7 +149,7 @@ class SWACycleLinear(BaseSWA):
             avg_fn=avg_fn,
             device=device,
             update_statistics=update_statistics,
-            )
+        )
         self.cycle_initial_lr = cycle_initial_lr
         self.cycle_final_lr = cycle_final_lr
         self.num_iterations_per_epoch = num_iterations_per_epoch
@@ -161,6 +161,6 @@ class SWACycleLinear(BaseSWA):
                 cycle_num_iterations=self.num_iterations_per_epoch,
                 cycle_initial_lr=self.cycle_initial_lr,
                 cycle_final_lr=self.cycle_final_lr,
-                ),
+            ),
             "interval": "step",
         }

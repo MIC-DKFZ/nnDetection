@@ -66,7 +66,7 @@ def load_time_ensemble(
     cfg: dict,
     plan: dict,
     num_models: int = None,
-    ) -> Sequence[dict]:
+) -> Sequence[dict]:
     """
     Load time ensembled models
 
@@ -96,7 +96,7 @@ def load_time_ensemble(
         )
         state_dict = torch.load(path, map_location="cpu")["state_dict"]
         t = model.load_state_dict(state_dict)
-        
+
         logger.info(f"Loaded {path} with {t}")
         model.float()
         model.eval()
@@ -114,7 +114,7 @@ def load_final_model(
     plan: dict,
     num_models: int = 1,
     identifier: str = "last",
-    ) -> Sequence[dict]:
+) -> Sequence[dict]:
     """
     Load final model from training
 
@@ -143,7 +143,7 @@ def load_final_model(
         model_cfg=cfg["model_cfg"],
         trainer_cfg=cfg["trainer_cfg"],
         plan=plan,
-        )
+    )
     state_dict = torch.load(path, map_location="cpu")["state_dict"]
     t = model.load_state_dict(state_dict)
     logger.info(f"Loaded {path} with {t}")
@@ -153,12 +153,12 @@ def load_final_model(
 
 
 def load_all_models(
-    source_models: Path, 
-    cfg: dict, 
+    source_models: Path,
+    cfg: dict,
     plan: dict,
-    *args, 
+    *args,
     **kwargs,
-    ):
+):
     """
     Load all models to ensemble
 
@@ -185,7 +185,7 @@ def load_all_models(
             model_cfg=cfg["model_cfg"],
             trainer_cfg=cfg["trainer_cfg"],
             plan=plan,
-            )
+        )
         state_dict = torch.load(path, map_location="cpu")["state_dict"]
         t = model.load_state_dict(state_dict)
         logger.info(f"Loaded {path} with {t}")

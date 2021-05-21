@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 import torch
 import numpy as np
 
@@ -8,7 +8,7 @@ from nndet.core.boxes.nms import nms, batched_nms, nms_cpu as nms_pytorch
 
 
 def generate_boxes(count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=False, seed=0):
-    """ 
+    """
     generate radnom boxes of format [y1, x1, y2, x2, (z1, z2)]
     :param count: nr of boxes
     :param dim: dimension of boxes (2 or 3)
@@ -50,7 +50,7 @@ def generate_boxes(count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=Fa
 def generate_2d_fixed():
     """
     Generate 2d example
-    
+
     Returns:
         Tensor: boxes (x1, y1, x2, y2)[N, 4]
         Tensor: scores [N]
@@ -65,14 +65,14 @@ def generate_2d_fixed():
 def generate_3d_fixed():
     """
     Generate 2d example
-    
+
     Returns:
         Tensor: boxes (x1, y1, x2, y2, (z1, z2))[N, 6]
         Tensor: scores [N]
         Tensor: expected keep [M] (for threshold 0.01)
     """
-    boxes = torch.tensor([[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3], 
-                    [2, 2, 4, 4, 2, 4]]).float()
+    boxes = torch.tensor([[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3],
+                          [2, 2, 4, 4, 2, 4]]).float()
     scores = torch.tensor([1, 0.8, 0.6]).float()
     expected = torch.tensor([0, 2])
     return boxes, scores, expected
@@ -111,7 +111,7 @@ class TestNMS:
         computed_vision = nms_torchvision(boxes, scores, th)
         computed_pytorch = nms_pytorch(boxes, scores, th)
         assert ((computed_vision == computed_pytorch).all())
-    
+
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     def test_nms_cuda_3d_fixed(self, th):
         boxes, scores, expected = generate_3d_fixed()

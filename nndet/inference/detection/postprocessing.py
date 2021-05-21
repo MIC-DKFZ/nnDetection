@@ -30,7 +30,7 @@ def batched_nms_model(
         weights: Tensor,
         iou_thresh: float,
         *args, **kwargs,
-        ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     keep = batched_nms(boxes=boxes, scores=scores,
                        idxs=labels, iou_threshold=iou_thresh,
                        )
@@ -44,7 +44,7 @@ def batched_nms_ensemble(
         weights: Tensor,
         iou_thresh: float,
         *args, **kwargs,
-        ) -> Tuple[Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor]:
     keep = batched_nms(boxes=boxes, scores=scores,
                        idxs=labels, iou_threshold=iou_thresh,
                        )

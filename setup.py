@@ -40,11 +40,11 @@ def get_extensions():
     print("Building with {}".format(sys.version_info))
 
     this_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-    extensions_dir = this_dir/'nndet'/'csrc'
+    extensions_dir = this_dir / 'nndet' / 'csrc'
 
     main_file = list(extensions_dir.glob('*.cpp'))
     source_cpu = []  # list((extensions_dir/'cpu').glob('*.cpp')) temporary until I added header files ...
-    source_cuda = list((extensions_dir/'cuda').glob('*.cu'))
+    source_cuda = list((extensions_dir / 'cuda').glob('*.cu'))
     print("main_file {}".format(main_file))
     print("source_cpu {}".format(source_cpu))
     print("source_cuda {}".format(source_cuda))
@@ -67,7 +67,7 @@ def get_extensions():
             "-D__CUDA_NO_HALF_CONVERSIONS__",
             "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
-        
+
         # It's better if pytorch can do this by default ..
         CC = os.environ.get("CC", None)
         if CC is not None:
@@ -75,7 +75,7 @@ def get_extensions():
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
     include_dirs = [str(extensions_dir)]
-    
+
     ext_modules = [
         extension(
             'nndet._C',
@@ -85,8 +85,9 @@ def get_extensions():
             extra_compile_args=extra_compile_args,
         )
     ]
-    
+
     return ext_modules
+
 
 requirements = resolve_requirements(os.path.join(os.path.dirname(__file__),
                                                  'requirements.txt'))
@@ -105,14 +106,14 @@ setup(
     maintainer_email='m.baumgartner@dkfz-heidelberg.de',
     ext_modules=get_extensions(),
     extras_require={
-          'dev': [
-              'pytest',
-              'pytest-cov',
-              'pytest-mock',
-              'flake8',
-              'autopep8',
-              ],
-          },
+        'dev': [
+            'pytest',
+            'pytest-cov',
+            'pytest-mock',
+            'flake8',
+            'autopep8',
+        ],
+    },
     cmdclass={
         'build_ext': BuildExtension,
         'clean': clean,

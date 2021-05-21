@@ -13,16 +13,16 @@ from nndet.inference.ensembler import SegmentationEnsembler
 class Example:
     case = {"data": torch.zeros(1, 10, 10)}
     properties = {
-            "transpose_backward": (0, 1),
-            "original_spacing": (1.0, 1.0),
-            "spacing_after_resampling": (1., 1.),
-            "crop_bbox": (0, 10, 0, 10,),
-            "size_after_cropping": [100, 100],
-            "original_size_of_raw_data": [100, 100],
-            "itk_origin": 0,
-            "itk_spacing": 1,
-            "itk_direction": -1,
-        }
+        "transpose_backward": (0, 1),
+        "original_spacing": (1.0, 1.0),
+        "spacing_after_resampling": (1., 1.),
+        "crop_bbox": (0, 10, 0, 10,),
+        "size_after_cropping": [100, 100],
+        "original_size_of_raw_data": [100, 100],
+        "itk_origin": 0,
+        "itk_spacing": 1,
+        "itk_direction": -1,
+    }
     batch0 = {"crop": [[...], [slice(0, 10)], [slice(0, 8)]]}
     result0 = {"pred_seg": torch.ones(1, 3, 10, 8)}
     batch1 = copy.deepcopy(batch0)
@@ -91,7 +91,7 @@ class TestSegmentationEnsembler:
         seg = torch.rand(3, 7, 7)
         new_seg, slicer = ensembler.crop_to_case_boundaries(seg, crop)
         print(new_seg.shape)
-        
+
         assert new_seg.allclose(seg[:, 3:, :3])
         assert all([a == b for a, b in zip((slicer[1].start, slicer[1].stop), (0, 4))])
         assert all([a == b for a, b in zip((slicer[2].start, slicer[2].stop), (7, 10))])

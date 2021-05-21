@@ -15,7 +15,7 @@ from nndet.io.load import load_pickle, save_pickle
 from nndet.io.paths import (
     get_case_ids_from_dir,
     get_paths_from_splitted_dir,
-    )
+)
 from nndet.planning.architecture.abstract import ArchitecturePlannerType
 from nndet.preprocessing.preprocessor import PreprocessorType
 from nndet.planning.experiment.utils import run_create_label_preprocessed
@@ -363,7 +363,7 @@ class AbstractPlanner(ABC):
             cropped_data_dir=Path(cropped_data_dir),
             preprocessed_output_dir=self.preprocessed_output_dir,
             num_processes=num_processes,
-            )
+        )
         self.create_labels_tr_preprocessed(
             preprocessed_plan_dir=self.preprocessed_output_dir / plan["data_identifier"],
             dim=3,
@@ -375,7 +375,7 @@ class AbstractPlanner(ABC):
         preprocessed_plan_dir: Path,
         dim: int,
         num_processes: int = 6,
-        ):
+    ):
         """
         Creates labels for visualization and analysis purposes from
         preprocessed data
@@ -397,12 +397,12 @@ class AbstractPlanner(ABC):
         if num_processes > 0:
             with Pool(processes=num_processes) as p:
                 p.starmap(run_create_label_preprocessed,
-                        zip(repeat(source_dir),
-                            case_ids,
-                            repeat(dim),
-                            repeat(target_dir),
-                            )
-                        )
+                          zip(repeat(source_dir),
+                              case_ids,
+                              repeat(dim),
+                              repeat(target_dir),
+                              )
+                          )
         else:
             for cid in case_ids:
                 run_create_label_preprocessed(source_dir, cid, dim, target_dir)
@@ -439,7 +439,7 @@ class AbstractPlanner(ABC):
             test=True,
             labels=False,
             remove_ids=cases_processed,
-            )
+        )
 
         logger.info(f"Found {len(cases)} cases for preprocssing in {splitted_4d_output_dir} "
                     f"and {len(cases_processed)} alrady processed cases.")
@@ -448,11 +448,11 @@ class AbstractPlanner(ABC):
         if num_processes > 0:
             with Pool(processes=num_processes) as p:
                 p.starmap(preprocessor.run_test,
-                        zip(cases,
-                            repeat(plan["target_spacing"]),
-                            repeat(target_dir),
-                            )
-                        )
+                          zip(cases,
+                              repeat(plan["target_spacing"]),
+                              repeat(target_dir),
+                              )
+                          )
         else:
             for c in cases:
                 preprocessor.run_test(c, plan["target_spacing"], target_dir)

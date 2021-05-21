@@ -117,7 +117,7 @@ class BaseRetinaNet(AbstractModel):
         targets: dict,
         predict: bool,
         batch_num: int,
-        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
         """
         See self.train_step_with_features
         """
@@ -135,7 +135,7 @@ class BaseRetinaNet(AbstractModel):
         targets: dict,
         predict: bool,
         batch_num: int,
-        ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict], List[torch.Tensor]]:
         """
         Perform a single training step (forward pass + loss computation)
 
@@ -229,7 +229,7 @@ class BaseRetinaNet(AbstractModel):
         self,
         images: Tensor,
         **kwargs,
-        ) -> Union[Dict[str, Any], List[torch.Tensor]]:
+    ) -> Union[Dict[str, Any], List[torch.Tensor]]:
         """
         Perform inference for a batch of images
 
@@ -297,7 +297,7 @@ class BaseRetinaNet(AbstractModel):
         pred_detection: Dict[str, Tensor],
         anchors: List[Tensor],
         image_shapes: List[Tuple[int]],
-        ) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]:
+    ) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]:
         """
         Postprocess bounding box deltas and logits to generate final boxes and
         scores
@@ -310,7 +310,7 @@ class BaseRetinaNet(AbstractModel):
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
             anchors: proposals for each image
             image_shapes: shape of each image
-        
+
         Returns:
             List[Tensor]: final boxes [R, dim * 2]
             List[Tensor]: final scores (for final class) [R]
@@ -329,7 +329,7 @@ class BaseRetinaNet(AbstractModel):
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
             if not self.head.regress_multi_class:
                 boxes, probs, labels = post_image_single_class_regression(
-                    boxes=boxes, 
+                    boxes=boxes,
                     probs=probs,
                     num_foreground_classes=self.num_foreground_classes,
                     image_shape=image_shape,

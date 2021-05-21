@@ -29,7 +29,7 @@ def batched_nms_model(
         weights: Tensor,
         iou_thresh: float,
         *args, **kwargs,
-        ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     """
     Model nms for ensembler (same as batched nms with adjusted signature)
 
@@ -61,7 +61,7 @@ def batched_weighted_nms_model(
         weights: Tensor,
         iou_thresh: float,
         *args, **kwargs,
-        ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     """
     Model nms for ensembler (same as batched nms with adjusted signature)
 

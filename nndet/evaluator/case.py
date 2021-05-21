@@ -52,7 +52,7 @@ class _CaseEvaluator(AbstractEvaluator):
                 be a scalar.
             class_metrics_scalar: metrics which accept ground truth classes [N]
                 and prediction classes [N] for evaluation; N is the nunber
-                of cases and C is the number of classes. The output should 
+                of cases and C is the number of classes. The output should
                 be a scalar.
             score_metrics_curve: metrics which accept ground truth classes [N]
                 and prediction scores [N, C] for evaluation; N is the nunber
@@ -60,7 +60,7 @@ class _CaseEvaluator(AbstractEvaluator):
                 an array like object.
             class_metrics_curve: metrics which accept ground truth classes [N]
                 and prediction classes [N] for evaluation; N is the nunber
-                of cases and C is the number of classes. The output should 
+                of cases and C is the number of classes. The output should
                 be an array like object.
             target_class: target class for case evaluation (internally
                 results are evaluated in a binary case target class vs rest).
@@ -105,7 +105,7 @@ class _CaseEvaluator(AbstractEvaluator):
 
         Returns:
             Dict: empty dict
-        
+
         Notes:
             This caches the max predicted probability per class per element
             and the unique classes present per element.
@@ -121,7 +121,7 @@ class _CaseEvaluator(AbstractEvaluator):
 
         self.results_list["case_classes"].extend(case_classes)
         self.results_list["case_scores"].extend(case_scores)
-        return  {}
+        return {}
 
     def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
@@ -160,7 +160,7 @@ class _CaseEvaluator(AbstractEvaluator):
     def aggregate_classes(self) -> np.ndarray:
         """
         Aggregate classes of each instance in a case to one case class
-        
+
         Returns:
             np.ndarray: class per case [N], where N is the number of cases
         """
@@ -180,17 +180,17 @@ class _CaseEvaluator(AbstractEvaluator):
             np.ndarray: predicted scores
             np.ndarray: predicted classes
         """
-        _pred_scores = np.stack(self.results_list["case_scores"], axis=0) # N, num_classes
-        
+        _pred_scores = np.stack(self.results_list["case_scores"], axis=0)  # N, num_classes
+
         if self.target_class is not None:
-            pred_scores = _pred_scores[:, self.target_class] # N
+            pred_scores = _pred_scores[:, self.target_class]  # N
             # pred_classes = (np.argmax(_pred_scores, axis=1) == self.target_class).astype(np.int32) # N
             # This is not always the correct choice, depending on the final
             # nonlinearity of the network (sigmoid vs. softmax)
-            pred_classes = (pred_scores > 0.5).astype(np.int32) # N
+            pred_classes = (pred_scores > 0.5).astype(np.int32)  # N
         else:
-            pred_scores = _pred_scores.max(axis=1) # N
-            pred_classes = (pred_scores > 0.5).astype(np.int32) # N
+            pred_scores = _pred_scores.max(axis=1)  # N
+            pred_classes = (pred_scores > 0.5).astype(np.int32)  # N
         return pred_scores, pred_classes
 
 
@@ -208,7 +208,7 @@ class CaseEvaluator(_CaseEvaluator):
             target_class: if multiple classes are given, define
                 a target class to evaluate in an target_class vs rest setting.
                 Defaults to None.
-        
+
         Returns:
             CaseEvaluator: evaluator
         """
@@ -224,17 +224,17 @@ class CaseEvaluator(_CaseEvaluator):
         score_metrics_scalar = {
             "auc_case": roc_auc_score,
             "ap_case": average_precision_score,
-            }
+        }
         class_metrics_scalar = {
             "f1_case": f1_fn,
             "prec_case": prec_fn,
             "rec_case": rec_fn,
             "acc_case": accuracy_score,
-            }
+        }
         score_metrics_curve = {}
         class_metrics_curve = {
             "cfm_case": confusion_matrix,
-            }
+        }
         return cls(classes=classes,
                    score_metrics_scalar=score_metrics_scalar,
                    class_metrics_scalar=class_metrics_scalar,

@@ -21,27 +21,27 @@ def env_guard(func):
     def wrapper(*args, **kwargs):
         # we use print here because logging might not be initialized yet and
         # this is intended as a user warning.
-        
+
         # det_data
         if os.environ.get("det_data", None) is None:
             raise RuntimeError(
                 "'det_data' environment variable not set. "
                 "Please refer to the installation instructions. "
-                )
+            )
 
         # det_models
         if os.environ.get("det_models", None) is None:
             raise RuntimeError(
                 "'det_models' environment variable not set. "
                 "Please refer to the installation instructions. "
-                )
+            )
 
         # OMP_NUM_THREADS
         if os.environ.get("OMP_NUM_THREADS", None) is None:
             raise RuntimeError(
                 "'OMP_NUM_THREADS' environment variable not set. "
                 "Please refer to the installation instructions. "
-                )
+            )
 
         # det_num_threads
         if os.environ.get("det_num_threads", None) is None:
@@ -62,8 +62,8 @@ def env_guard(func):
 def _check_key_missing(cfg: dict, key: str, ktype=None):
     if key not in cfg:
         raise ValueError(f"Dataset information did not contain "
-                        f"'{key}' key, found {list(cfg.keys())}")
-    
+                         f"'{key}' key, found {list(cfg.keys())}")
+
     if ktype is not None:
         if not isinstance(cfg[key], ktype):
             raise ValueError(f"Found {key} of type {type(cfg[key])} in "
@@ -115,7 +115,7 @@ def check_dataset_file(task_name: str):
         if ic != idx:
             raise ValueError("Found wrong order of modalities in dataset info."
                              f"Found {found_mods} but expected {list(range(len(found_mods)))}")
-    
+
     # check target class
     target_class = cfg.get("target_class", None)
     if target_class is not None and not isinstance(target_class, int):
@@ -130,7 +130,7 @@ def check_data_and_label_splitted(
     test: bool = False,
     labels: bool = True,
     full_check: bool = True,
-    ):
+):
     """
     Perform checks of data and label in raw splitted format
 
@@ -140,7 +140,7 @@ def check_data_and_label_splitted(
         labels: check labels
         full_check: Per default a full check will be performed which needs to
             load all files. If this is disabled, a computationall light check
-            will be performed 
+            will be performed
 
     Raises:
         ValueError: if not all raw splitted files were found
@@ -171,7 +171,7 @@ def check_data_and_label_splitted(
             mask_info_path = mask_path.parent / f"{mask_path.stem.split('.')[0]}.json"
             if not Path(mask_info_path).is_file():
                 raise ValueError(f"Expected {mask_info_path} to be a raw splitted "
-                                "mask info path but it does not exist.")
+                                 "mask info path but it does not exist.")
             mask_info = load_json(mask_info_path)
             if mask_info["instances"]:
                 mask_info_instances = list(map(int, mask_info["instances"].keys()))
@@ -182,7 +182,7 @@ def check_data_and_label_splitted(
                 for i in range(1, len(mask_info_instances) + 1):
                     if i not in mask_info_instances:
                         raise ValueError(f"Exptected {i} to be an Instance ID in "
-                                        f"{mask_info_path} but only found {mask_info_instances}")
+                                         f"{mask_info_path} but only found {mask_info_instances}")
         else:
             mask_info_path = None
 
@@ -218,12 +218,12 @@ def _full_check(case_paths: List[Path], mask_info_path: Optional[Path] = None) -
         mask_instances = mask_instances[mask_instances > 0]
 
         for mi in mask_instances:
-            if not mi in info_instances:
+            if mi not in info_instances:
                 raise ValueError(f"Found instance ID {mi} in mask which is "
-                                f"not present in info {info_instances}")
+                                 f"not present in info {info_instances}")
         if not len(info_instances) == len(mask_instances):
             raise ValueError("Found instances in info which are not present in mask: "
-                            f"mask: {mask_instances} info {info_instances}")
+                             f"mask: {mask_instances} info {info_instances}")
 
 
 def _check_itk_params(img_seq: Sequence[sitk.Image], paths: Sequence[Path]) -> None:
@@ -241,15 +241,15 @@ def _check_itk_params(img_seq: Sequence[sitk.Image], paths: Sequence[Path]) -> N
         ValueError: raised if spacing does not match
     """
     for idx, img in enumerate(img_seq[1:], start=1):
-        if not (np.asarray(img_seq[0].GetDimension()) == \
-            np.asarray(img.GetDimension())).all():
+        if not (np.asarray(img_seq[0].GetDimension()) ==
+                np.asarray(img.GetDimension())).all():
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
-        if not (np.asarray(img_seq[0].GetOrigin()) == \
-            np.asarray(img.GetOrigin())).all():
+        if not (np.asarray(img_seq[0].GetOrigin()) ==
+                np.asarray(img.GetOrigin())).all():
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same origin!")
-        if not (np.asarray(img_seq[0].GetDirection()) == \
-            np.asarray(img.GetDirection())).all():
+        if not (np.asarray(img_seq[0].GetDirection()) ==
+                np.asarray(img.GetDirection())).all():
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same direction!")
-        if not (np.asarray(img_seq[0].GetSpacing()) == \
-            np.asarray(img.GetSpacing())).all():
+        if not (np.asarray(img_seq[0].GetSpacing()) ==
+                np.asarray(img.GetSpacing())).all():
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same spacing!")

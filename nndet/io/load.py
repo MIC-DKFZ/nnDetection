@@ -95,16 +95,16 @@ def load_properties_of_cropped(path: Path):
     """
     Load property file of after cropping was performed
     (files are name after case id and .pkl ending)
-    
+
     Args:
         path (Path): path to file (if .pkl is missing, it will be added automatically)
-    
+
     Returns:
         Dict: loaded properties
     """
     if not path.suffix == '.pkl':
         path = Path(str(path) + '.pkl')
-    
+
     with open(path, 'rb') as f:
         properties = pickle.load(f)
     return properties
@@ -113,11 +113,11 @@ def load_properties_of_cropped(path: Path):
 def load_case_cropped(folder: Path, case_id: str) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Load single case after cropping
-    
+
     Args:
         folder (Path): path to folder where cases are located
         case_id (str): case identifier
-    
+
     Returns:
         np.ndarray: data
         np.ndarray: segmentation
@@ -356,7 +356,7 @@ def load_npz_looped(
         *args,
         num_tries: int = 3,
         **kwargs,
-        ) -> Union[np.ndarray, dict]:
+) -> Union[np.ndarray, dict]:
     """
     Try | Except loop to load numpy files
     (especially large numpy files can fail with BadZipFile Errors)

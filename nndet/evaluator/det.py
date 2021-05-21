@@ -118,12 +118,12 @@ class DetectionEvaluator(AbstractEvaluator):
         for metric_idx, metric in enumerate(self.metrics):
             _filter = partial(self.iou_filter, iou_idx=self.iou_mapping[metric_idx])
             iou_filtered_results = list(map(_filter, self.results_list))
-            
+
             score, curve = metric(iou_filtered_results)
-            
+
             if score is not None:
                 metric_scores.update(score)
-            
+
             if curve is not None:
                 metric_curves.update(curve)
         return metric_scores, metric_curves
@@ -134,7 +134,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         This functions can be used to filter specific IoU values from the results
         to make sure that the correct IoUs are passed to metric
-        
+
         Parameters
         ----------
         image_dict : dict
@@ -143,7 +143,7 @@ class DetectionEvaluator(AbstractEvaluator):
             indices of IoU values to filter from keys
         filter_keys : tuple, optional
             keys to filter, by default ('dtMatches', 'gtMatches', 'dtIgnore')
-        
+
         Returns
         -------
         dict
@@ -194,12 +194,12 @@ class BoxEvaluator(DetectionEvaluator):
         metrics.append(
             FROCMetric(classes,
                        iou_thresholds=iou_thresholds,
-                       fpi_thresholds=(1/8, 1/4, 1/2, 1, 2, 4, 8),
+                       fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
                        per_class=per_class,
                        verbose=verbose,
-                       save_dir= None if fast else save_dir
+                       save_dir=None if fast else save_dir
                        )
-            )
+        )
         metrics.append(
             COCOMetric(classes,
                        iou_list=iou_thresholds,
@@ -208,7 +208,7 @@ class BoxEvaluator(DetectionEvaluator):
                        per_class=per_class,
                        verbose=verbose,
                        )
-            )
+        )
 
         if not fast:
             metrics.append(
@@ -216,7 +216,7 @@ class BoxEvaluator(DetectionEvaluator):
                                     save_dir=save_dir,
                                     iou_thresholds=(0.1, 0.5),
                                     )
-                )
+            )
         return cls(metrics=tuple(metrics), iou_fn=iou_fn)
 
 
@@ -224,7 +224,7 @@ class CountDifferenceEvaluator(AbstractEvaluator):
     def __init__(self, min_prob: float = 0.5):
         super().__init__()
         self.min_prob = min_prob
-        
+
         self.num_gt = []
         self.num_pred = []
 

@@ -33,13 +33,13 @@ def compute_anchors_for_strides(anchors: torch.Tensor,
                                 cat: bool) -> Union[List[torch.Tensor], torch.Tensor]:
     """
     Compute anchors sizes which follow a given sequence of strides
-    
+
     Args:
         anchors: anchors for stride 0
         strides: sequence of strides to adjust anchors for
         cat: concatenate resulting anchors, if false a Sequence of Anchors
             is returned
-    
+
     Returns:
         Union[List[torch.Tensor], torch.Tensor]: new anchors
     """
@@ -48,7 +48,7 @@ def compute_anchors_for_strides(anchors: torch.Tensor,
     for stride in strides:
         if isinstance(stride, (int, float)):
             stride = [stride] * dim
-        
+
         stride_formatted = [stride[0], stride[1], stride[0], stride[1]]
         if dim == 3:
             stride_formatted.extend([stride[2], stride[2]])
@@ -122,10 +122,10 @@ class AnchorGenerator2D(AnchorGenerator):
             size0, size1 = size
             stride0, stride1 = stride
             device = base_anchors.device
-            
+
             shifts_x = torch.arange(0, size0, dtype=torch.float, device=device) * stride0
             shifts_y = torch.arange(0, size1, dtype=torch.float, device=device) * stride1
-            
+
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
@@ -169,7 +169,7 @@ class AnchorGenerator2D(AnchorGenerator):
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
         return base_anchors.round()
 
-    def set_cell_anchors(self,  dtype: torch.dtype, device: Union[torch.device, str] = "cpu") -> None:
+    def set_cell_anchors(self, dtype: torch.dtype, device: Union[torch.device, str] = "cpu") -> None:
         """
         Set :para:`self.cell_anchors` if it was not already set
 
@@ -366,7 +366,7 @@ class AnchorGenerator2DS(AnchorGenerator2D):
         """
         Helper to generate anchors for different input sizes
         Uses a different parametrization of anchors
-        (if Sequence[int] is provided it is interpreted as one 
+        (if Sequence[int] is provided it is interpreted as one
         value per feature map size)
 
         Args:
@@ -450,7 +450,7 @@ class AnchorGenerator3DS(AnchorGenerator3D):
         """
         Helper to generate anchors for different input sizes
         Uses a different parametrization of anchors
-        (if Sequence[int] is provided it is interpreted as one 
+        (if Sequence[int] is provided it is interpreted as one
         value per feature map size)
 
         Args:
@@ -516,7 +516,7 @@ class AnchorGenerator3DS(AnchorGenerator3D):
         anchors = torch.stack(
             [-all_sizes[:, 0], -all_sizes[:, 1], all_sizes[:, 0], all_sizes[:, 1],
              -all_sizes[:, 2], all_sizes[:, 2]], dim=1
-            )
+        )
         return anchors
 
     def num_anchors_per_location(self) -> List[int]:
@@ -526,5 +526,5 @@ class AnchorGenerator3DS(AnchorGenerator3D):
         Returns:
             List[int]: number of anchors per positions for each resolution
         """
-        return [len(w) * len(h) * len(d) 
+        return [len(w) * len(h) * len(d)
                 for w, h, d in zip(self.width, self.height, self.depth)]

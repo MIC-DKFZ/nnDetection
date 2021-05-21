@@ -193,7 +193,7 @@ def run_dataset_analysis(cropped_output_dir: Path,
         data_info=data_info,
         num_processes=num_processes,
         overwrite=overwrite,
-        )
+    )
     properties = medical_instance_props(intensity_properties=intensity_properties)
     _ = analyzer.analyze_dataset(properties)
 
@@ -208,7 +208,7 @@ def run_planning_and_process(
     model_cfg: Dict,
     num_processes: int,
     run_preprocessing: bool = True,
-    ):
+):
     """
     Run planning and preprocessing
 
@@ -242,7 +242,7 @@ def run_planning_and_process(
                     cropped_data_dir=cropped_output_dir / "imagesTr",
                     plan=plan,
                     num_processes=num_processes,
-                    )
+                )
                 case_ids_failed, result_check = run_check(
                     data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
                     remove=True,
@@ -342,15 +342,15 @@ def check_case(case_npz: Path,
             seg = case_dict["seg"]
             seg_instances = np.unique(seg)  # automatically sorted
             seg_instances = seg_instances[seg_instances > 0]
-            
+
             instances_properties = properties["instances"].keys()
             props_instances = np.sort(np.array(list(map(int, instances_properties))))
-            
+
             if (len(seg_instances) != len(props_instances)) or any(seg_instances != props_instances):
                 logger.warning(f"Inconsistent instances {case_npz} from "
-                                f"properties {props_instances} from seg {seg_instances}. "
-                                f"Very small instances can get lost in resampling "
-                                f"but larger instances should not disappear!")       
+                               f"properties {props_instances} from seg {seg_instances}. "
+                               f"Very small instances can get lost in resampling "
+                               f"but larger instances should not disappear!")
             for i in seg_instances:
                 if str(i) not in instances_properties:
                     raise RuntimeError(f"Found instance {seg_instances} in segmentation "
@@ -444,14 +444,14 @@ def main():
             test=False,
             labels=True,
             full_check=full_check,
-            )
+        )
         if cfg["data"]["test_labels"]:
             check_data_and_label_splitted(
                 cfg["task"],
                 test=True,
                 labels=True,
                 full_check=full_check,
-                )
+            )
 
     # start preprocessing
     for task in tasks:

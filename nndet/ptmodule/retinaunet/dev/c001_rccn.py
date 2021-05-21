@@ -110,16 +110,16 @@ class DummyRCNN(RetinaUNetV001):
         encoder = cls._build_encoder(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
-            )
+        )
         decoder = cls._build_decoder(
             encoder=encoder,
             plan_arch=plan_arch,
             model_cfg=model_cfg,
-            )
+        )
         matcher = cls.matcher_cls(
             similarity_fn=box_iou,
             **model_cfg["matcher_kwargs"],
-            )
+        )
 
         classifier = cls._build_head_classifier(
             plan_arch=plan_arch,
@@ -185,7 +185,7 @@ class DummyRCNN(RetinaUNetV001):
         classifier = RoIClassifierTwoMLP(
             conv=conv,
             output_size=output_size,
-            in_channels = plan_arch["fpn_channels"],
+            in_channels=plan_arch["fpn_channels"],
             internal_channels=plan_arch["fpn_channels"],
             num_classes=plan_arch["classifier_classes"],
         )
@@ -200,10 +200,10 @@ class DummyRCNN(RetinaUNetV001):
             coder=coder,
         )
         matcher = IoUMatcher(
-                low_threshold=0.4,
-                high_threshold=0.5,
-                allow_low_quality_matches=False,
-            )
+            low_threshold=0.4,
+            high_threshold=0.5,
+            allow_low_quality_matches=False,
+        )
         pooler = RoIAlignNaiveAssign(
             output_size=output_size
         )
@@ -240,7 +240,7 @@ class DummyRCNN(RetinaUNetV001):
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
                 "target_seg": batch['target'][:, 0]  # Remove channel dimension
-                },
+            },
             predict=False,
             batch_num=batch_idx,
         )
@@ -252,10 +252,10 @@ class DummyRCNN(RetinaUNetV001):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
             targets = {
-                    "target_boxes": batch["boxes"],
-                    "target_classes": batch["classes"],
-                    "target_seg": batch['target'][:, 0]  # Remove channel dimension
-                }
+                "target_boxes": batch["boxes"],
+                "target_classes": batch["classes"],
+                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+            }
             prediction = self.model.inference_step(
                 images=batch["data"],
                 targets=targets,
@@ -265,7 +265,6 @@ class DummyRCNN(RetinaUNetV001):
 
         self.evaluation_step(prediction=prediction, targets=targets)
         return {"loss": 0}
-
 
     def evaluation_step(
         self,
@@ -309,7 +308,7 @@ class DummyRCNN(RetinaUNetV001):
             gt_boxes=gt_boxes,
             gt_classes=gt_classes,
             gt_ignore=gt_ignore,
-            )
+        )
 
     def evaluation_end(self):
         """
@@ -327,4 +326,3 @@ class DummyRCNN(RetinaUNetV001):
 
         for key, item in metric_scores.items():
             self.log(f'{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
-

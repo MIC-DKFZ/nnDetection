@@ -85,13 +85,14 @@ class BaseHead(nn.Module):
     Provides an abstract interface for an module which takes
     inputs and computed its own loss
     """
+
     def __init__(
         self,
         classifier: ClassifierType,
         regressor: RegressorType,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        ):
+    ):
         """
         Provides an abstract interface for an module which takes
         inputs and computed its own loss
@@ -107,7 +108,7 @@ class BaseHead(nn.Module):
         self.classifier = classifier
         self.regressor = regressor
         self.shared = shared
-        self.coder = coder        
+        self.coder = coder
 
     @abstractmethod
     def forward(self,
@@ -115,11 +116,11 @@ class BaseHead(nn.Module):
                 ) -> Dict[str, torch.Tensor]:
         """
         Compute forward pass
-        
+
         Args
             x: feature maps
         """
-        raise NotImplementedError 
+        raise NotImplementedError
 
     @abstractmethod
     def compute_loss(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
@@ -140,7 +141,7 @@ class BaseHead(nn.Module):
         Args:
             Dict[str, torch.Tensor]: predictions from this head
             List[torch.Tensor]: anchors per image
-        
+
         Returns:
             Dict[str, torch.Tensor]: postprocessed predictions
         """

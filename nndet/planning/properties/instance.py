@@ -32,10 +32,10 @@ from nndet.core.boxes import box_iou_np
 def analyze_instances(analyzer: DatasetAnalyzer) -> dict:
     """
     Analyze instance segmentations
-    
+
     Args:
         analyzer (DatasetAnalyzer): calling analyzer
-    
+
     Returns:
         dict: extracted properties
     """
@@ -182,7 +182,7 @@ def instance_class_and_region_sizes(
         iseg: np.ndarray,
         props: dict,
         all_classes: Sequence[int],
-        ) -> Tuple[
+) -> Tuple[
         Dict[int, float], Dict[int, List[float]]]:
     """
     Compute physical volume of all instances
@@ -234,7 +234,7 @@ def iseg_to_boxes(iseg: np.ndarray) -> np.ndarray:
     Returns:
         (np.ndarray): bounding boxes (x1, y1, x2, y2, (z1, z2))[N, dims * 2]
             (order of boxes corresponds to instance ids)
-    
+
     Notes:
         Please refer to `nndet.io.transforms.instances` for the function
         and don't use this one.

@@ -26,10 +26,10 @@ from nndet.planning.analyzer import DatasetAnalyzer
 def get_sizes_and_spacings_after_cropping(analyzer: DatasetAnalyzer) -> Dict[str, List]:
     """
     Load all sizes and spacings after cropping
-    
+
     Args:
         analyzer: analyzer which calls this property
-    
+
     Returns:
         Dict[str, List]: loaded sizes and spacings inside list
             `all_sizes`: contains all sizes
@@ -46,10 +46,10 @@ def get_sizes_and_spacings_after_cropping(analyzer: DatasetAnalyzer) -> Dict[str
 def get_size_reduction_by_cropping(analyzer: DatasetAnalyzer) -> Dict[str, Dict]:
     """
     Compute all size reductions of each case
-    
+
     Args:
         analyzer: analzer which calls this property
-    
+
     Returns:
         Dict: computed size reductions
             `size_reductions`: dictionary with each case id and reduction

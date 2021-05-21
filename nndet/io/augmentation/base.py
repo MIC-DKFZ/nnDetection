@@ -26,7 +26,7 @@ def get_patch_size(
     rot_y: float,
     rot_z: float,
     scale_range: Sequence[float],
-    ) -> np.ndarray:
+) -> np.ndarray:
     """
     Compute enlarged patch size for augmentations to reduce
     artifacts at the borders before final cropping
@@ -66,7 +66,7 @@ def get_patch_size(
 
 
 class AugmentationSetup(ABC):
-    def __init__(self, 
+    def __init__(self,
                  patch_size: Sequence[int],
                  params: dict,
                  ) -> None:
@@ -76,10 +76,10 @@ class AugmentationSetup(ABC):
         Args:
             patch_size: output patch size of augmentations
             params: augmentation parameters
-        
+
         Notes:
             The needed keys of :attr:`params` depend on the exact
-            transformations which should be used. 
+            transformations which should be used.
         """
         self.patch_size = patch_size
         self.params = params

@@ -6,12 +6,12 @@ __all__ = ["matching_batch"]
 
 
 def matching_batch(
-    iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray], 
+    iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
     iou_thresholds: Sequence[float], pred_boxes: Sequence[np.ndarray],
     pred_classes: Sequence[np.ndarray], pred_scores: Sequence[np.ndarray],
     gt_boxes: Sequence[np.ndarray], gt_classes: Sequence[np.ndarray],
     gt_ignore: Sequence[Sequence[bool]], max_detections: int = 100,
-    ) -> List[Dict[int, Dict[str, np.ndarray]]]:
+) -> List[Dict[int, Dict[str, np.ndarray]]]:
     """
     Match boxes of a batch to corresponding ground truth for each category
     independently
@@ -43,24 +43,24 @@ def matching_batch(
     results = []
     # iterate over images/batches
     for pboxes, pclasses, pscores, gboxes, gclasses, gignore in zip(
-        pred_boxes, pred_classes, pred_scores, gt_boxes, gt_classes, gt_ignore):
+            pred_boxes, pred_classes, pred_scores, gt_boxes, gt_classes, gt_ignore):
         img_classes = np.union1d(pclasses, gclasses)
         result = {}  # dict contains results for each class in one image
         for c in img_classes:
-            pred_mask = pclasses == c # mask predictions with current class
-            gt_mask = gclasses == c # mask ground trtuh with current class
+            pred_mask = pclasses == c  # mask predictions with current class
+            gt_mask = gclasses == c  # mask ground trtuh with current class
 
-            if not np.any(gt_mask): # no ground truth
+            if not np.any(gt_mask):  # no ground truth
                 result[c] = _matching_no_gt(
                     iou_thresholds=iou_thresholds,
                     pred_scores=pscores[pred_mask],
                     max_detections=max_detections)
-            elif not np.any(pred_mask): # no predictions
+            elif not np.any(pred_mask):  # no predictions
                 result[c] = _matching_no_pred(
                     iou_thresholds=iou_thresholds,
                     gt_ignore=gignore[gt_mask],
                 )
-            else: # at least one prediction and one ground truth
+            else:  # at least one prediction and one ground truth
                 result[c] = _matching_single_image_single_class(
                     iou_fn=iou_fn,
                     pred_boxes=pboxes[pred_mask],
@@ -78,7 +78,7 @@ def _matching_no_gt(
         iou_thresholds: Sequence[float],
         pred_scores: np.ndarray,
         max_detections: int,
-        ):
+):
     """
     Matching result with not ground truth in image
 
@@ -123,7 +123,7 @@ def _matching_no_gt(
 def _matching_no_pred(
         iou_thresholds: Sequence[float],
         gt_ignore: np.ndarray,
-        ):
+):
     """
     Matching result with no predictions
 
@@ -168,7 +168,7 @@ def _matching_single_image_single_class(
         gt_ignore: np.ndarray,
         max_detections: int,
         iou_thresholds: Sequence[float],
-        ) -> Dict[str, np.ndarray]:
+) -> Dict[str, np.ndarray]:
     """
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
 
@@ -219,7 +219,7 @@ def _matching_single_image_single_class(
     for tind, t in enumerate(iou_thresholds):
         for dind, _d in enumerate(pred_boxes):  # iterate detections starting from highest scoring one
             # information about best match so far (m=-1 -> unmatched)
-            iou = min([t, 1-1e-10])
+            iou = min([t, 1 - 1e-10])
             m = -1
 
             for gind, _g in enumerate(gt_boxes):  # iterate ground truth
@@ -249,9 +249,9 @@ def _matching_single_image_single_class(
 
     # store results for given image and category
     return {
-            'dtMatches': dt_match,  # [T, D], where T = number of thresholds, D = number of detections
-            'gtMatches': gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
-            'dtScores': pred_scores,  # [D] detection scores
-            'gtIgnore': gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
-            'dtIgnore': dt_ignore,  # [T, D], indicate which detections should be ignored
-        }
+        'dtMatches': dt_match,  # [T, D], where T = number of thresholds, D = number of detections
+        'gtMatches': gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
+        'dtScores': pred_scores,  # [D] detection scores
+        'gtIgnore': gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
+        'dtIgnore': dt_ignore,  # [T, D], indicate which detections should be ignored
+    }

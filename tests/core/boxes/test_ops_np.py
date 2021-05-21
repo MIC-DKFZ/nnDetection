@@ -22,7 +22,7 @@ def boxes0_3d():
 @pytest.fixture
 def boxes1_3d():
     return np.array([[1, 1, 3, 3, 1, 3],
-                     [1, 1, 3, 3, 1, 3], 
+                     [1, 1, 3, 3, 1, 3],
                      [1, 1, 3, 3, 1, 3]]).astype(float)
 
 

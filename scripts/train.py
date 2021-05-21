@@ -70,7 +70,7 @@ def train():
         task=task,
         ov=ov,
         do_sweep=do_sweep,
-        )
+    )
 
 
 @env_guard
@@ -93,11 +93,11 @@ def sweep():
         task=task,
         model=model,
         fold=fold,
-        )
+    )
 
 
 @env_guard
-def evaluate(): 
+def evaluate():
     """
     Evaluation entry
 
@@ -123,13 +123,13 @@ def evaluate():
     task = args.task
     test = args.test
 
-    do_boxes_eval = args.boxes    
+    do_boxes_eval = args.boxes
     do_case_eval = args.case
     do_seg_eval = args.seg
     do_instances_eval = args.instances
 
     do_analyze_boxes = args.analyze_boxes
-    
+
     _evaluate(
         task=task,
         model=model,
@@ -166,7 +166,7 @@ def _train(
     task: str,
     ov: List[str],
     do_sweep: bool,
-    ):
+):
     """
     Run training
 
@@ -192,7 +192,7 @@ def _train(
             "task": cfg["task"],
             "job_id": os.getenv('LSB_JOBID', 'no_id'),
             "mlflow.runName": cfg["exp"]["id"],
-            },
+        },
         save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
     )
     pl_logger.log_hyperparams(flatten_mapping(
@@ -223,16 +223,16 @@ def _train(
     data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
 
     datamodule = Datamodule(
-            augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
-            plan=plan,
-            data_dir=data_dir,
-            fold=cfg["exp"]["fold"],
-        )
+        augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
+        plan=plan,
+        data_dir=data_dir,
+        fold=cfg["exp"]["fold"],
+    )
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
-        )
+    )
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
@@ -248,7 +248,7 @@ def _train(
 
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config.yaml"))
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
-    save_pickle(plan, train_dir / "plan.pkl") # backup plan
+    save_pickle(plan, train_dir / "plan.pkl")  # backup plan
     splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
     save_pickle(splits, train_dir / "splits.pkl")
 
@@ -302,7 +302,7 @@ def _train(
         save_pickle(plan, train_dir / "plan_inference.pkl")
 
         ensembler_cls = module.get_ensembler_cls(
-            key="boxes", dim=plan["network_dim"]) # TODO: make this configurable    
+            key="boxes", dim=plan["network_dim"])  # TODO: make this configurable
         for restore in [True, False]:
             target_dir = train_dir / "val_predictions" if restore else \
                 train_dir / "val_predictions_preprocessed"
@@ -318,8 +318,8 @@ def _train(
             model=cfg["exp"]["id"],
             fold=cfg["exp"]["fold"],
             test=False,
-            do_boxes_eval=True, # TODO: make this configurable
-            do_analyze_boxes=True, # TODO: make this configurable
+            do_boxes_eval=True,  # TODO: make this configurable
+            do_analyze_boxes=True,  # TODO: make this configurable
         )
 
 
@@ -327,7 +327,7 @@ def _sweep(
     task: str,
     model: str,
     fold: int,
-    ):
+):
     """
     Determine best postprocessing parameters for a trained model
 
@@ -357,7 +357,7 @@ def _sweep(
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
-        )
+    )
 
     splits = load_pickle(train_dir / "splits.pkl")
     case_ids = splits[cfg["exp"]["fold"]]["val"]
@@ -366,14 +366,14 @@ def _sweep(
         save_dir=train_dir,
         train_data_dir=data_dir,
         case_ids=case_ids,
-        run_prediction=True, # TODO: add commmand line arg
+        run_prediction=True,  # TODO: add commmand line arg
     )
 
     plan["inference_plan"] = inference_plan
     save_pickle(plan, train_dir / "plan_inference.pkl")
 
     ensembler_cls = module.get_ensembler_cls(
-        key="boxes", dim=plan["network_dim"]) # TODO: make this configurable    
+        key="boxes", dim=plan["network_dim"])  # TODO: make this configurable
     for restore in [True, False]:
         target_dir = train_dir / "val_predictions" if restore else \
             train_dir / "val_predictions_preprocessed"
@@ -389,8 +389,8 @@ def _sweep(
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
-        do_boxes_eval=True, # TODO: make this configurable
-        do_analyze_boxes=True, # TODO: make this configurable
+        do_boxes_eval=True,  # TODO: make this configurable
+        do_analyze_boxes=True,  # TODO: make this configurable
     )
 
 
@@ -407,7 +407,7 @@ def _evaluate(
 ):
     """
     This entrypoint runs the evaluation
-    
+
     Args:
         task: current task
         model: full name of the model run determine empricial parameters for
@@ -453,23 +453,23 @@ def _evaluate(
                 gt_dir=gt_dir,
                 classes=list(data_cfg["labels"].keys()),
                 save_dir=save_dir / "boxes",
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_boxes")
         if do_case_eval:
             logger.info(f"Computing case metrics: restore {restore}")
             scores, curves = evaluate_case_dir(
-                pred_dir=pred_dir, 
-                gt_dir=gt_dir, 
-                classes=list(data_cfg["labels"].keys()), 
+                pred_dir=pred_dir,
+                gt_dir=gt_dir,
+                classes=list(data_cfg["labels"].keys()),
                 target_class=data_cfg["target_class"],
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_case")
         if do_seg_eval:
             logger.info(f"Computing seg metrics: restore {restore}")
             scores, curves = evaluate_seg_dir(
                 pred_dir=pred_dir,
                 gt_dir=gt_dir,
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_seg")
         if do_instances_eval:
             raise NotImplementedError

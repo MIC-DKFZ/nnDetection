@@ -37,7 +37,7 @@ def batched_wbc(
     score_thresh: float,
     use_area: bool = False,
     missing_weight: float = 1.,
-    ) -> Tuple[Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Computed weighted box clustering per class
 
@@ -100,7 +100,7 @@ def wbc(
     score_thresh: float,
     use_area: bool = True,
     missing_weight: float = 1.,
-    ) -> Tuple[Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor]:
     """
     Weighted box clustering
 
@@ -145,7 +145,7 @@ def wbc(
             n_expected=n_expected,
             n_found=len(box_idx),
             missing_weight=missing_weight,
-            )
+        )
 
         if new_score > score_thresh:
             new_boxes.append(new_box)
@@ -168,7 +168,7 @@ def compute_cluster_consolidation(
     n_expected: Tensor,
     n_found: int,
     missing_weight: float,
-    ) -> Tuple[Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor]:
     """
     Consolidate predictions of a single cluster
 
@@ -206,7 +206,7 @@ def compute_cluster_consolidation2(
     n_expected: Tensor,
     n_found: int,
     missing_weight: float,
-    ) -> Tuple[Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor]:
     """
     Consolidate predictions of a single cluster
 
@@ -230,8 +230,8 @@ def compute_cluster_consolidation2(
     boxes = boxes[topk_idx]
     scores = scores[topk_idx]
     n_missing_preds = torch.max(torch.tensor([0.], device=n_expected.device),
-                            (n_expected - n_found).float())
-    
+                                (n_expected - n_found).float())
+
     # weigh predictions with high ious higher, penalty term for missing predictions
     consolidated_score = scores.mean() * (1 - missing_weight * n_missing_preds / n_expected)
     consolidated_boxes = (boxes * topk_weighted_scores.reshape(-1, 1)).sum(dim=0) / topk_weighted_scores.sum()

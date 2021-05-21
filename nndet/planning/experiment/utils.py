@@ -13,7 +13,7 @@ from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.transforms.instances import (
     get_bbox_np,
     instances_to_segmentation_np,
-    )
+)
 
 
 def create_label_case(
@@ -22,7 +22,7 @@ def create_label_case(
     instances: np.ndarray,
     mapping: Dict[int, int],
     dim: int,
-    ) -> None:
+) -> None:
     """
     Crete labels for evaluation and analysis purposes
 
@@ -36,7 +36,7 @@ def create_label_case(
     instances_save_path = target_dir / f"{case_id}_instances_gt.npz"
     boxes_save_path = target_dir / f"{case_id}_boxes_gt.npz"
     seg_save_path = target_dir / f"{case_id}_seg_gt.npz"
-    
+
     if instances_save_path.is_file() and boxes_save_path.is_file() and seg_save_path.is_file():
         logger.warning(f"Skipping prepare label {case_id} because it already exists")
     else:
@@ -58,7 +58,7 @@ def create_labels(
     preprocessed_output_dir: os.PathLike,
     source_dir: os.PathLike,
     num_processes: int = 6,
-    ):
+):
     """
     Creates labels for visualization and analysis purposes from raw labels
     Prepares: instance segmentation, bounding boxes, semantic segmentation
@@ -82,12 +82,12 @@ def create_labels(
             if num_processes > 0:
                 with Pool(processes=num_processes) as p:
                     p.starmap(run_create_label,
-                            zip(repeat(source_label_dir),
-                                case_ids,
-                                repeat(3),
-                                repeat(target_dir),
-                                )
-                            )
+                              zip(repeat(source_label_dir),
+                                  case_ids,
+                                  repeat(3),
+                                  repeat(target_dir),
+                                  )
+                              )
             else:
                 for cid in case_ids:
                     run_create_label(source_label_dir, cid, 3, target_dir)
@@ -127,7 +127,7 @@ def run_create_label_preprocessed(
     case_id: str,
     dim: int,
     target_dir: Path,
-    ):
+):
     """
     Helper to run preparation with multiprocessing
 

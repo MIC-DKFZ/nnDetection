@@ -37,7 +37,7 @@ class Compose(AbstractTransform):
     def __init__(self, *transforms):
         """
         Compose multiple transforms to one
-        
+
         Args:
             transforms: transformations to compose
         """

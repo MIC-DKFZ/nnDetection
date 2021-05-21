@@ -53,7 +53,7 @@ def run(cfg: dict,
             number of transformation is used
         test_split: Typical usage of nnDetection will never require
             this option! Predict an already preprocessed split of the original
-            training data. The 'test' split needs to be located in fold 0 
+            training data. The 'test' split needs to be located in fold 0
             of a manually created split file.
     """
     plan = load_pickle(training_dir / "plan_inference.pkl")
@@ -81,7 +81,7 @@ def run(cfg: dict,
     else:
         source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTs"
         case_ids = None
-    
+
     predict_dir(source_dir=source_dir,
                 target_dir=prediction_dir,
                 cfg=cfg,
@@ -155,9 +155,9 @@ def main():
     parser.add_argument('--no_preprocess', action='store_false', help="Preprocess test data")
     parser.add_argument('--force_args', action='store_true',
                         help=("When transferring models betweens tasks the name "
-                        "and fold might differ from the original one. "
-                        "This forces an overwrite to the passed in arguments of"
-                        " this function. This can be dangerous!"),
+                              "and fold might differ from the original one. "
+                              "This forces an overwrite to the passed in arguments of"
+                              " this function. This can be dangerous!"),
                         )
     parser.add_argument('--test_split', action='store_true',
                         help=("Typical usage of nnDetection will never require "
@@ -167,9 +167,9 @@ def main():
                               "of a manually created split file."),
                         )
     parser.add_argument('--check',
-                    help="Run check of the test data before predicting",
-                    action='store_true',
-                    )
+                        help="Run check of the test data before predicting",
+                        action='store_true',
+                        )
 
     args = parser.parse_args()
     model = args.model

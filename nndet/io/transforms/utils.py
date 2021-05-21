@@ -75,6 +75,6 @@ class FilterKeys(AbstractTransform):
     def __init__(self, keys: Sequence[Hashable]):
         super().__init__(grad=False)
         self.keys = keys
-    
+
     def forward(self, **data) -> dict:
         return {k: data[k] for k in self.keys}

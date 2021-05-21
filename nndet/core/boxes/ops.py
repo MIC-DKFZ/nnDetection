@@ -29,7 +29,7 @@ def box_area_3d(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2, z1, z2) coordinates.
-    
+
     Arguments:
         boxes (Union[Tensor, ndarray]): boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2, z1, z2) format. [N, 6]
@@ -56,13 +56,13 @@ def box_area_2d(boxes: Tensor) -> Tensor:
 def box_area(boxes: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
     """
     Computes the area of a set of bounding boxes
-    
+
     Args:
         boxes (Union[Tensor, ndarray]): boxes of shape; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-    
+
     Returns:
         Union[Tensor, ndarray]: area of boxes
-    
+
     See Also:
         :func:`box_area_3d`, :func:`torchvision.ops.boxes.box_area`
     """
@@ -73,7 +73,7 @@ def box_area(boxes: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
 
 
 @autocast(enabled=False)
-def box_iou(boxes1: Tensor, boxes2: Tensor,  eps: float = 0) -> Tensor:
+def box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
     (Works for Tensors and Numpy Arrays)
@@ -133,7 +133,7 @@ def box_iou_union_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Te
     """
     Return intersection-over-union (Jaccard index) and  of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
-    
+
     Args:
         boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
         boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[M, 6]
@@ -242,7 +242,7 @@ def generalized_box_iou_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     Remove boxes with at least one side smaller than min_size.
-    
+
     Arguments:
         boxes (Tensor): boxes (x1, y1, x2, y2, (z1, z2)) [N, dim * 2]
         min_size (float): minimum size
@@ -333,7 +333,7 @@ def permute_boxes(boxes: Union[Tensor, ndarray],
                   ) -> Union[Tensor, ndarray]:
     """
     Change ordering of axis of boxes
-    
+
     Args:
         boxes: boxes [N, dims * 2](x1, y1, x2, y2(, z1, z2))
         dims: the desired ordering of dimensions; By default the dimensions
@@ -361,10 +361,10 @@ def permute_boxes(boxes: Union[Tensor, ndarray],
 def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
     """
     Expand x,y,z data to box format
-    
+
     Args:
         data (Tensor): data to expand (N, dim)[:, (x, y, [z])]
-    
+
     Returns:
         Tensor: expanded tensors
     """
@@ -379,10 +379,10 @@ def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
 def box_size(boxes: Tensor) -> Tensor:
     """
     Compute length of boxes along all dimensions
-    
+
     Args:
         boxes (Tensor): boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
-    
+
     Returns:
         Tensor: size along axis (x, y, (z))[N, dim]
     """

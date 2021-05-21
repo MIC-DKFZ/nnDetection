@@ -33,7 +33,7 @@ class FROCMetric(DetectionMetric):
     def __init__(self,
                  classes: Sequence[str],
                  iou_thresholds: Sequence[float] = (0.1, 0.5),
-                 fpi_thresholds: Sequence[float] = (1/8, 1/4, 1/2, 1, 2, 4, 8),
+                 fpi_thresholds: Sequence[float] = (1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
                  per_class: bool = False, verbose: bool = True,
                  save_dir: Optional[Union[str, Path]] = None,
                  ):
@@ -144,7 +144,7 @@ class FROCMetric(DetectionMetric):
 
         Returns:
             Dict[str, float]: FROC score per IoU
-            Dict[str,np.ndarray]: FROC curve computed at specified fps 
+            Dict[str,np.ndarray]: FROC curve computed at specified fps
                 thresholds per IoU; [R] R is the number of fps thresholds
         """
         num_images = len(results_list)
@@ -160,9 +160,9 @@ class FROCMetric(DetectionMetric):
         dt_ignores = np.concatenate([r['dtIgnore'] for r in results], axis=1)
         dt_scores = np.concatenate([r['dtScores'] for r in results])
         gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
-        
+
         self.check_number_of_iou(dt_matches, dt_ignores)
-        
+
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning 0 in FROC.")
@@ -172,19 +172,18 @@ class FROCMetric(DetectionMetric):
         # keep shape in case of 1 threshold
         old_shape = dt_matches.shape
         dt_matches = dt_matches[np.logical_not(dt_ignores)].reshape(old_shape)
-        
+
         curves = {}
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
             # filter scores with ignores detections
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
-            
+
             _fps, _sens, _th = (self.compute_froc_curve_one_iou(
                 dt_matches[iou_idx], _scores, num_images, num_gt))
-            
+
             # interpolate at defined fpr thresholds
             curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)
-
 
         # linearly interpolate curves for needed fps values
         scores = {f"FROC_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
@@ -316,7 +315,7 @@ def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figur
     """
     fig, ax = plt.subplots()
     ax.set_xscale("log", base=2)
-    
+
     if fpi_values is not None:
         ax.set_xlim(min(fpi_values), max(fpi_values))
         ax.set_xticks(fpi_values)

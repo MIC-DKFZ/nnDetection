@@ -57,7 +57,7 @@ class Matcher(ABC):
                 boxes=boxes,
                 anchors=anchors,
                 **kwargs
-                )
+            )
 
     def compute_matches(self,
                         boxes: torch.Tensor,
@@ -147,7 +147,7 @@ class IoUMatcher(Matcher):
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
         between_thresholds = (matched_vals >= self.low_threshold) & (
-                matched_vals < self.high_threshold
+            matched_vals < self.high_threshold
         )
         matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS

@@ -11,7 +11,7 @@ from nndet.arch.layers.scale import Scale
 from nndet.losses import (
     SmoothL1Loss,
     GIoULoss,
-    )
+)
 
 
 class DenseRegressor(Regressor):
@@ -223,7 +223,7 @@ class L1Regressor(DenseRegressor):
             beta=beta,
             reduction=reduction,
             loss_weight=loss_weight,
-            )
+        )
 
 
 class GIoURegressor(DenseRegressor):
@@ -276,7 +276,7 @@ class GIoURegressor(DenseRegressor):
         self.loss = GIoULoss(
             reduction=reduction,
             loss_weight=loss_weight,
-            )
+        )
 
 
 class DualRegressor(DenseRegressor):
@@ -336,10 +336,10 @@ class DualRegressor(DenseRegressor):
         self.loss_l1 = SmoothL1Loss(
             beta=beta,
             reduction=reduction,
-            )
+        )
         self.loss_giou = GIoULoss(
             reduction=reduction,
-            )
+        )
 
     def compute_loss(self,
                      pred_deltas: Tensor,

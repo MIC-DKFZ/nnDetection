@@ -58,11 +58,11 @@ class AbstractEncoder(nn.Module):
     @abstractmethod
     def get_strides(self) -> List[Dict[str, Union[List[int], int]]]:
         """
-        Compute number backbone strides for 2d and 3d case and all options 
+        Compute number backbone strides for 2d and 3d case and all options
         of network
 
         Returns
-            List[Dict[str, Union[List[int], int]]]: dict with 'xy' for 2d 
+            List[Dict[str, Union[List[int], int]]]: dict with 'xy' for 2d
                 stride and optional 'z' for 3d cases. List
                 describes stride at respective output level
         """

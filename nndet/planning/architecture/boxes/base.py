@@ -25,11 +25,11 @@ from nndet.core.boxes import (
     box_size_np,
     box_area_np,
     permute_boxes,
-    )
+)
 from nndet.planning.architecture.boxes.utils import (
     fixed_anchor_init,
     scale_with_abs_strides,
-    )
+)
 
 
 class BaseBoxesPlanner(ArchitecturePlanner):
@@ -50,7 +50,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
 
         self.preprocessed_output_dir = Path(preprocessed_output_dir)
         self.save_dir = Path(save_dir)
-        self.save_dir.mkdir(parents=True, exist_ok=True)        
+        self.save_dir.mkdir(parents=True, exist_ok=True)
 
         self.network_cls = network_cls
         self.estimator = estimator
@@ -79,8 +79,10 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         self.all_ious = self.dataset_properties["all_ious"]
         self.class_ious = self.dataset_properties["class_ious"]
         self.num_instances = self.dataset_properties["num_instances"]
-        self.num_instances_per_case = {case_id: sum(case["num_instances"].values())
-                                       for case_id, case in self.dataset_properties["instance_props_per_patient"].items()}
+        self.num_instances_per_case = {
+            case_id: sum(
+                case["num_instances"].values()) for case_id,
+            case in self.dataset_properties["instance_props_per_patient"].items()}
         self.dim = self.dataset_properties["dim"]
 
         self.architecture_kwargs["classifier_classes"] = \
@@ -160,7 +162,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
                 num_instances.append(item)
                 classes.append(str(key))
             ind = np.arange(len(num_instances))
-            
+
             plt.bar(ind, num_instances)
             plt.xlabel("Classes")
             plt.ylabel("Num Instances")
@@ -181,7 +183,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
             plt.hist(num_instances_per_case, bins=100, range=(0, 100))
             plt.savefig(self.save_dir / f'instances_per_case.png')
             plt.close()
-            
+
             plt.hist(num_instances_per_case, bins=30, range=(0, 30))
             plt.savefig(self.save_dir / f'instances_per_case_0_30.png')
             plt.close()
@@ -248,11 +250,11 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         """
         Create identifier for this planner. If available append
         :attr:`plan_tag` to the base name
-        
+
         Returns:
             str: identifier
         """
-        base =  super().get_planner_id()
+        base = super().get_planner_id()
         if hasattr(self, "plan_tag"):
             base = base + getattr(self, "plan_tag")
         return base
@@ -330,7 +332,7 @@ class BoxC001(BaseBoxesPlanner):
 
         Returns:
             dict: training and architecture information
-        
+
         See Also:
             :method:`_plan_architecture`, :method:`_plan_anchors`
         """
@@ -338,7 +340,7 @@ class BoxC001(BaseBoxesPlanner):
             transpose_forward=transpose_forward,
             target_spacing_transposed=target_spacing_transposed,
             median_shape_transposed=median_shape_transposed,
-            )
+        )
         self.architecture_kwargs["class_weight"] = self.compute_class_weights()
         patch_size = self._plan_architecture(
             transpose_forward=transpose_forward,
@@ -350,7 +352,7 @@ class BoxC001(BaseBoxesPlanner):
             target_spacing_transposed=target_spacing_transposed,
             median_shape_transposed=median_shape_transposed,
             transpose_forward=transpose_forward,
-        )        
+        )
 
         plan = {"patch_size": patch_size,
                 "batch_size": self.batch_size,
@@ -382,7 +384,8 @@ class BoxC001(BaseBoxesPlanner):
         strides = np.cumprod(filt_rel_strides, axis=0) / np.asarray(rel_strides[0])
 
         params = self.find_anchors(boxes_torch, strides.astype(np.int32), anchor_generator)
-        scaled_params = {key: scale_with_abs_strides(item, strides, dim_idx) for dim_idx, (key, item) in enumerate(params.items())}
+        scaled_params = {key: scale_with_abs_strides(item, strides, dim_idx)
+                         for dim_idx, (key, item) in enumerate(params.items())}
         logger.info(f"Determined Anchors: {params}; Results in params: {scaled_params}")
         self.anchors = scaled_params
         self.anchors["stride"] = 1
@@ -401,7 +404,7 @@ class BoxC001(BaseBoxesPlanner):
             boxes_np (np.ndarray): bounding boxes [N, dim * 2](x1, y1, x2, y2, (z1, z2))
             upper_percentile: percentile for upper boundary. Defaults to 99.5.
             lower_percentile: percentile for lower boundary. Defaults to 00.5.
-        
+
         Returns:
             np.ndarray: filtered boxes
 
@@ -418,14 +421,14 @@ class BoxC001(BaseBoxesPlanner):
             mask = mask * ax_mask
         return boxes_np[mask.astype(bool)]
 
-    def find_anchors(self, 
+    def find_anchors(self,
                      boxes_torch: torch.Tensor,
                      strides: Sequence[Sequence[int]],
                      anchor_generator: AnchorGenerator,
                      ) -> Dict[str, Sequence[int]]:
         """
         Find anchors which maximize iou over dataset
-        
+
         Args:
             boxes_torch: filtered ground truth boxes
             strides (Sequence[Sequence[int]]): strides of network to compute
@@ -506,9 +509,9 @@ class BoxC001(BaseBoxesPlanner):
 
         Args:
             target_spacing_transposed: spacing after data is transposed and resampled
-            target_median_shape_transposed: median shape after data is 
+            target_median_shape_transposed: median shape after data is
                 transposed and resampled
-        
+
         Returns:
             Sequence[int]: patch size to use for training
         """
@@ -524,7 +527,7 @@ class BoxC001(BaseBoxesPlanner):
                     patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)
             num_pool_per_axis, pooling, convs, patch_size, must_be_divisible_by = \
                 self.plan_pool_and_conv_pool_late(patch_size, target_spacing_transposed)
-            self.architecture_kwargs["conv_kernels"] = convs 
+            self.architecture_kwargs["conv_kernels"] = convs
             self.architecture_kwargs["strides"] = pooling
             num_resolutions = len(self.architecture_kwargs["conv_kernels"])
 
@@ -569,7 +572,7 @@ class BoxC001(BaseBoxesPlanner):
                 correctly transposed
             pooling: pooling kernels of network
             must_be_divisible_by: necessary divisor per axis
-        
+
         Returns:
             np.ndarray: new patch size
         """
@@ -592,7 +595,7 @@ class BoxC001(BaseBoxesPlanner):
         Generate initial patch which relies on the spacing of underlying images.
         This is based on the fact that most acquisition protocols are optimized
         to focus on the most importatnt aspects.
-        
+
         Returns:
             List[int]: initial patch size
         """
@@ -641,7 +644,7 @@ class BoxC001(BaseBoxesPlanner):
     def get_anchors_for_estimation(self):
         """
         Adjust anchor plan for varying  number of feature maps
-        
+
         Returns:
             dict: adjusted anchor plan
         """

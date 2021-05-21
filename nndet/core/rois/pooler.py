@@ -42,9 +42,9 @@ class Pooler(torch.nn.Module):
         # THIS ONLY WORKS FOR ISOTROPIC POOLING
         # NEED TO GENERALIZE TO NON ISOTROPIC POOLING
         image_size_tensor = torch.tensor(image_size,
-                                    dtype=proposal_boxes.dtype,
-                                    device=proposal_boxes.device,
-                                    )
+                                         dtype=proposal_boxes.dtype,
+                                         device=proposal_boxes.device,
+                                         )
         # normalize boes to [0, 1]
         proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
 
@@ -52,7 +52,7 @@ class Pooler(torch.nn.Module):
             proposal_boxes_norm=proposal_boxes_norm,
             features=features,
             image_size=image_size,
-            )
+        )
 
         # TODO: need to check dtype due to autocast stuff
         output = torch.zeros(
@@ -64,7 +64,7 @@ class Pooler(torch.nn.Module):
         # TODO: dynamically infer scale, these normlizations are wrong
         proprosals_prepared = torch.cat(
             [batch_idx[:, None], proposal_boxes], dim=1,
-            )
+        )
         for idx, fmap in enumerate(features):
             scale = fmap.shape[0] / image_size_tensor[0]
             idx = torch.where(proposal_levels == idx)[0]
@@ -128,13 +128,13 @@ class RoIAlignNaiveAssign(Pooler):
                             ) -> torch.Tensor:
         """
         Assign proposals to pyramid levels for pooling
-        Proposals with an image size of 
+        Proposals with an image size of
         """
         # norm proposals. Proposals with 3/4 of the image size will be mapped to 1
         # We normalize the box size instead of the area/vol
         # since this should give better numerical results especially
         # when using mixed precision (i.e. 128^3 does not fit float16)
-        normed_size = box_size(proposal_boxes_norm) * 1.33 # [N, 3]
+        normed_size = box_size(proposal_boxes_norm) * 1.33  # [N, 3]
 
         if len(image_size) == 2:
             v = torch.log2((normed_size[:, 0] * normed_size[:, 1]).sqrt())

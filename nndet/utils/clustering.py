@@ -208,4 +208,4 @@ def instance_results_from_seg(probs: np.ndarray,
         "pred_boxes": instance_boxes,
         "pred_labels": instance_classes_seq,
         "pred_scores": instance_scores,
-        }
+    }

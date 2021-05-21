@@ -63,7 +63,7 @@
 
 #     def compute_loss(self,
 #                      pred_deltas: torch.Tensor,
-#                      target_deltas: torch.Tensor, 
+#                      target_deltas: torch.Tensor,
 #                      target_labels: torch.Tensor,
 #                      **kwargs,
 #                      ) -> torch.Tensor:
@@ -83,7 +83,7 @@
 #                          target_deltas,
 #                          **kwargs,
 #                          )
-    
+
 # from abc import abstractmethod
 # from typing import Optional
 
@@ -115,7 +115,7 @@
 #     @abstractmethod
 #     def compute_loss(self,
 #                      pred_deltas: torch.Tensor,
-#                      target_deltas: torch.Tensor, 
+#                      target_deltas: torch.Tensor,
 #                      target_labels: torch.Tensor,
 #                      **kwargs,
 #                      ) -> torch.Tensor:
@@ -160,7 +160,7 @@
 
 #     def compute_loss(self,
 #                     pred_deltas: torch.Tensor,
-#                     target_deltas: torch.Tensor, 
+#                     target_deltas: torch.Tensor,
 #                     target_labels: torch.Tensor,
 #                     **kwargs,
 #                     ) -> torch.Tensor:

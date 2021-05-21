@@ -26,19 +26,19 @@ from nndet.core.boxes.ops import box_iou
 def nms_cpu(boxes, scores, thresh):
     """
     Performs non-maximum suppression for 3d boxes on cpu
-    
+
     Args:
         boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
         scores (Tensor): score for each box [N]
         iou_threshold (float): threshould when boxes are discarded
-    
+
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
+        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
             sorted in decreasing order of scores
     """
     ious = box_iou(boxes, boxes)
     _, _idx = torch.sort(scores, descending=True)
-    
+
     keep = []
     while _idx.nelement() > 0:
         keep.append(_idx[0])
@@ -52,14 +52,14 @@ def nms_cpu(boxes, scores, thresh):
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
     """
     Performs non-maximum suppression
-    
+
     Args:
         boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
         scores (Tensor): score for each box [N]
         iou_threshold (float): threshould when boxes are discarded
-    
+
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
+        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
             sorted in decreasing order of scores
     """
     if boxes.shape[1] == 4:
@@ -79,15 +79,15 @@ def batched_nms(boxes: Tensor, scores: Tensor, idxs: Tensor, iou_threshold: floa
     Performs non-maximum suppression in a batched fashion.
     Each index value correspond to a category, and NMS
     will not be applied between elements of different categories.
-    
+
     Args:
         boxes (Tensor): boxes where NMS will be performed. (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
         scores (Tensor): scores for each one of the boxes [N]
         idxs (Tensor): indices of the categories for each one of the boxes. [N]
         iou_threshold (float):  discards all overlapping boxes with IoU > iou_threshold
-    
+
     Returns
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
+        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
             sorted in decreasing order of scores
     """
     if boxes.numel() == 0:

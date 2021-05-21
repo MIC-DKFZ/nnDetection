@@ -60,7 +60,7 @@ class LightningBaseModule(pl.LightningModule):
 
         self.example_input_array_shape = (
             1, plan["architecture"]["in_channels"], *plan["patch_size"],
-            )
+        )
 
         self.epoch_start_tic = 0
         self.epoch_end_toc = 0
@@ -78,7 +78,7 @@ class LightningBaseModule(pl.LightningModule):
         """
         self.epoch_start_tic = time()
         return super().on_epoch_start()
-    
+
     def validation_epoch_end(self, validation_step_outputs):
         """
         Print time of epoch
@@ -193,8 +193,8 @@ class LightningBaseModuleSWA(LightningBaseModule):
                 cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
                 cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
                 num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
-                )
             )
+        )
         return callbacks
 
 

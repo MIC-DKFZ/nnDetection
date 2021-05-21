@@ -8,7 +8,7 @@ from nndet.core.boxes import BoxCoderND
 @pytest.fixture
 def coder2d():
     return BoxCoderND([1., 1., 1., 1.])
-    
+
 
 @pytest.fixture
 def coder3d():

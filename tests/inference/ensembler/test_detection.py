@@ -15,25 +15,25 @@ from dataclasses import dataclass
 class Example:
     case = {"data": torch.zeros(1, 10, 10)}
     properties = {
-            "transpose_backward": (0, 1),
-            "original_spacing": (1.0, 1.0),
-            "spacing_after_resampling": (1., 1.),
-            "crop_bbox": (0, 10, 0, 10,),
-            "original_size_of_raw_data": [100, 100],
-            "itk_origin": 0,
-            "itk_spacing": 1,
-            "itk_direction": -1,
-        }
+        "transpose_backward": (0, 1),
+        "original_spacing": (1.0, 1.0),
+        "spacing_after_resampling": (1., 1.),
+        "crop_bbox": (0, 10, 0, 10,),
+        "original_size_of_raw_data": [100, 100],
+        "itk_origin": 0,
+        "itk_spacing": 1,
+        "itk_direction": -1,
+    }
     batch0 = {
         "data": torch.zeros(2, 1, 5, 5),
         "tile_origin": [[0], [0]],
         "crop": [[...], [slice(0, 6)], [slice(0, 6)]],
-        }
+    }
     result0 = {
         "pred_boxes": [torch.tensor([[0, 0, 1, 1]]).float()],
         "pred_scores": [torch.tensor([1.])],
         "pred_labels": [torch.tensor([1])],
-        }
+    }
     batch1 = copy.deepcopy(batch0)
     batch1["tile_origin"] = [[5], [5]]
     result1 = copy.deepcopy(result0)
@@ -65,7 +65,7 @@ class TestDetectionEnsembler:
             parameters={},
         )
         ensembler.add_model("model_test", 0.5)
-        
+
         assert ensembler.model_current == "model_test"
         assert ensembler.model_weights["model_test"] == 0.5
         assert "model_test" in ensembler.model_results
@@ -84,9 +84,9 @@ class TestDetectionEnsembler:
         ensembler.process_batch(example.result0, example.batch0)
 
         expected_boxes0 = [torch.tensor([[0, 0, 1, 1]]).float(),
-                          torch.tensor([[5, 5, 6, 6]]).float(),
-                          ]
-        expected_boxes1 = [torch.tensor([[0, 0, 1, 1]]).float(),]
+                           torch.tensor([[5, 5, 6, 6]]).float(),
+                           ]
+        expected_boxes1 = [torch.tensor([[0, 0, 1, 1]]).float(), ]
 
         for exp_box, ens_box in zip(expected_boxes0, ensembler.model_results["model_test0"]["boxes"]):
             assert (exp_box.allclose(ens_box))

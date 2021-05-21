@@ -69,7 +69,7 @@ class BoxEnsembler(BaseEnsembler):
             parameters=parameters,
             device=device,
             **kwargs,
-            )
+        )
         # parameters to access information from predictions and batches
         self.data_key = data_key
         self.score_key = score_key
@@ -169,9 +169,9 @@ class BoxEnsembler(BaseEnsembler):
         }
 
     def postprocess_image(self,
-                          boxes: torch.Tensor, 
-                          probs: torch.Tensor, 
-                          labels: torch.Tensor, 
+                          boxes: torch.Tensor,
+                          probs: torch.Tensor,
+                          labels: torch.Tensor,
                           weights: torch.Tensor,
                           shape: Optional[Tuple[int]] = None
                           ) -> Tuple[torch.Tensor, torch.Tensor,
@@ -290,7 +290,7 @@ class BoxEnsembler(BaseEnsembler):
         Args:
             target_dir: folder to save result to
             name: name of case
-        
+
         Notes:
             The device is not saved inside the checkpoint and everything
             will be loaded on the CPU.
@@ -355,7 +355,7 @@ class BoxEnsembler(BaseEnsembler):
                 `tile_origin: origin of crop with respect to actual data (
                     in case of padding)
                 `crop`: Sequence[slice] original crop from data
-        
+
         Warnings:
             Make sure to move cached values to the CPU after they have been
             processed.
@@ -373,7 +373,7 @@ class BoxEnsembler(BaseEnsembler):
                 labels=l.float(),
                 weights=torch.ones_like(s).float(),
                 shape=tuple(tile_size),
-                )
+            )
             boxes.append(_boxes.cpu())
             scores.append(_scores.cpu())
             labels.append(_labels.cpu())
@@ -476,7 +476,7 @@ class BoxEnsembler(BaseEnsembler):
             "itk_origin": self.properties["itk_origin"],
             "itk_spacing": self.properties["itk_spacing"],
             "itk_direction": self.properties["itk_direction"],
-            }
+        }
 
     def process_model(self, name: Hashable) ->\
             Tuple[Tensor, Tensor, Tensor, Tensor]:
@@ -552,7 +552,7 @@ class BoxEnsemblerLW(BoxEnsembler):
         """
         Assign boxes near the corner a lower weight.
         The middle has a plateau with weight one, starting from patchsize / 2
-        the weights decreases linearly until 0.5 is reached. 
+        the weights decreases linearly until 0.5 is reached.
 
         Args:
             box_centers: center predicted box [N, dims]
@@ -561,7 +561,7 @@ class BoxEnsemblerLW(BoxEnsembler):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        plateau_length = 0.5 # adjust width of plateau and min weight
+        plateau_length = 0.5  # adjust width of plateau and min weight
         if box_centers.numel() > 0:
             tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
 
@@ -582,6 +582,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
     Uses the mean over the whole overlap map. Depending on overlap
     and patch stride this is not correct.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.reduced_cache = False
@@ -705,7 +706,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        plateau_length = 0.5 # adjust width of plateau and min weight
+        plateau_length = 0.5  # adjust width of plateau and min weight
         if box_centers.numel() > 0:
             tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
 
@@ -749,7 +750,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
                     labels=l.float(),
                     weights=w.float(),
                     shape=tuple(self.properties["shape"]),
-                    )
+                )
                 model_boxes.append(_b)
                 model_probs.append(_p)
                 model_labels.append(_l)
@@ -841,7 +842,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         Args:
             target_dir: folder to save result to
             name: name of case
-        
+
         Notes:
             The device is not saved inside the checkpoint and everything
             will be loaded on the CPU.
@@ -858,7 +859,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             data_key=self.data_key,
             overlap_map_mean=self.overlap_map_mean,
             **kwargs,
-            )
+        )
 
     def reduce_cache(self):
         """
@@ -938,7 +939,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
             label_key=label_key,
             data_key=data_key,
             **kwargs,
-            )
+        )
         self.overlap_map = None
 
     @classmethod
@@ -1044,7 +1045,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         """
         Assign boxes near the corner a lower weight.
         The midle has a plateau with weight one, starting from patchsize / 2
-        the weights decreases linearly until 0.5 is reached. 
+        the weights decreases linearly until 0.5 is reached.
 
         Args:
             box_centers: center predicted box [N, dims]
@@ -1058,7 +1059,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
             tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
 
             max_dist = tile_center.norm(p=2)  # [1]
-            boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1) # [N]
+            boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
             weight = -(boxes_dist / max_dist - plateau_length).clamp_(min=0) + 1
             return weight
         else:
@@ -1091,7 +1092,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
             labels=labels,
             weights=weights,
             shape=tuple(self.properties["shape"]),
-            )
+        )
 
     def process_ensemble(self, boxes: List[Tensor], probs: List[Tensor],
                          labels: List[Tensor], weights: List[Tensor],
@@ -1148,7 +1149,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         Args:
             target_dir: folder to save result to
             name: name of case
-        
+
         Notes:
             The device is not saved inside the checkpoint and everything
             will be loaded on the CPU.
@@ -1161,7 +1162,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
 
             if len(probs) > self.parameters["model_topk"]:
                 _, idx_sorted = probs.sort(descending=True)
-                idx_sorted = idx_sorted[:self.parameters["model_topk"]]            
+                idx_sorted = idx_sorted[:self.parameters["model_topk"]]
                 self.model_results[model]["boxes"] = boxes[idx_sorted]
                 self.model_results[model]["scores"] = probs[idx_sorted]
                 self.model_results[model]["labels"] = labels[idx_sorted]
@@ -1344,7 +1345,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             "pred_scores": probs,
             "pred_labels": labels,
             "restore": restore,
-            }
+        }
 
     def track_2d_to_3d(self, boxes: Tensor, probs: Tensor, labels: Tensor):
         """

@@ -37,22 +37,22 @@ def create_imagelist(img_size: Sequence[int]) -> ImageList:
 
 
 def create_feature_maps_2d(img_size: Sequence[int],
-                        fm_strides: Sequence[int]) -> Sequence[torch.Tensor]:
+                           fm_strides: Sequence[int]) -> Sequence[torch.Tensor]:
     """
     img size includes batch and channel dimensions
     """
     fm_sizes = [(img_size[0], int(img_size[1] * fms),
-                    int(img_size[2] / fms), int(img_size[3] / fms)) for fms in fm_strides]
+                 int(img_size[2] / fms), int(img_size[3] / fms)) for fms in fm_strides]
     return [torch.rand(size) for idx, size in enumerate(fm_sizes)]
 
 
 def create_feature_maps_3d(img_size: Sequence[int],
-                            fm_strides: Sequence[int]) -> Sequence[torch.Tensor]:
+                           fm_strides: Sequence[int]) -> Sequence[torch.Tensor]:
     """
     img size includes batch and channel dimensions
     """
     fm_sizes = [(img_size[0], int(img_size[1] * fms), int(img_size[2] / fms),
-                    int(img_size[3] / fms), int(img_size[4] / fms)) for fms in fm_strides]
+                 int(img_size[3] / fms), int(img_size[4] / fms)) for fms in fm_strides]
     return [torch.rand(size) for idx, size in enumerate(fm_sizes)]
 
 
@@ -76,11 +76,11 @@ def test_anchor_generator_2d_torchvision():
     anchors_vision = torchvision_generator(
         create_imagelist(img_size),
         create_feature_maps_2d(img_size, fm_strides),
-        )
+    )
     anchors_own = own_generator(
         torch.rand(img_size),
         create_feature_maps_2d(img_size, fm_strides),
-        )
+    )
     for vision, own in zip(anchors_vision, anchors_own):
         assert ((vision == own).all())
 
@@ -92,7 +92,7 @@ def test_anchor_generator_2d_assertion(generator2d):
         anchors = generator2d(
             torch.rand(img_size),
             create_feature_maps_2d(img_size, fm_strides),
-            )
+        )
 
 
 def test_anchor_generator_3d(generator3d):
@@ -101,17 +101,17 @@ def test_anchor_generator_3d(generator3d):
     anchors = generator3d(
         torch.rand(img_size),
         create_feature_maps_3d(img_size, fm_strides),
-        )[0]
-    
-    assert all([a == b for a, b in zip(anchors.shape, (2, 6))]) 
+    )[0]
+
+    assert all([a == b for a, b in zip(anchors.shape, (2, 6))])
     assert ((anchors[0] == torch.tensor([-64., -64., 64., 64., -2., 2.])).all())
     assert ((anchors[1] == torch.tensor([-64., -64., 64., 64., -4., 4.])).all())
 
     anchors = generator3d(
         torch.rand(img_size),
         create_feature_maps_3d(img_size, fm_strides),
-        )[0]
-    assert all([a == b for a, b in zip(anchors.shape, (2, 6))]) 
+    )[0]
+    assert all([a == b for a, b in zip(anchors.shape, (2, 6))])
 
 
 def test_anchor_generator_3d_assertion(generator3d):
@@ -121,7 +121,7 @@ def test_anchor_generator_3d_assertion(generator3d):
         anchors = generator3d(
             torch.rand(img_size),
             create_feature_maps_3d(img_size, fm_strides),
-            )
+        )
 
 
 def test_anchor_generator_2ds(generator2ds):
@@ -130,15 +130,15 @@ def test_anchor_generator_2ds(generator2ds):
     anchors = generator2ds(
         torch.rand(img_size),
         create_feature_maps_2d(img_size, fm_strides),
-        )[0]
-    assert all([a == b for a, b in zip(anchors.shape, (1, 4))]) 
+    )[0]
+    assert all([a == b for a, b in zip(anchors.shape, (1, 4))])
     assert ((anchors == torch.tensor([-64., -64., 64., 64.])).all())
 
     anchors = generator2ds(
         torch.rand(img_size),
         create_feature_maps_2d(img_size, fm_strides),
-        )[0]
-    assert all([a == b for a, b in zip(anchors.shape, (1, 4))]) 
+    )[0]
+    assert all([a == b for a, b in zip(anchors.shape, (1, 4))])
 
 
 def test_anchor_generator_3ds(generator3ds):
@@ -147,13 +147,13 @@ def test_anchor_generator_3ds(generator3ds):
     anchors = generator3ds(
         torch.rand(img_size),
         create_feature_maps_3d(img_size, fm_strides),
-        )[0]
-    assert all([a == b for a, b in zip(anchors.shape, (2, 6))]) 
+    )[0]
+    assert all([a == b for a, b in zip(anchors.shape, (2, 6))])
     assert ((anchors[0] == torch.tensor([-64., -64., 64., 64., -2., 2.])).all())
     assert ((anchors[1] == torch.tensor([-64., -64., 64., 64., -4., 4.])).all())
 
     anchors = generator3ds(
         torch.rand(img_size),
         create_feature_maps_3d(img_size, fm_strides),
-        )[0]
-    assert all([a == b for a, b in zip(anchors.shape, (2, 6))]) 
+    )[0]
+    assert all([a == b for a, b in zip(anchors.shape, (2, 6))])

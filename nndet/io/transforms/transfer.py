@@ -39,7 +39,7 @@ class TransferInputChannel(AbstractTransform):
             tuple(_in_shape),
             dtype=in_data.dtype,
             device=in_data.device,
-            )
+        )
         c = torch.randint(low=0, high=self.out_channels, size=(1,)).item()
         out_data[:, [c]] = in_data
         data[self.data_key] = out_data

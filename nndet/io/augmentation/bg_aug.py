@@ -34,7 +34,7 @@ from batchgenerators.transforms import (
     RenameTransform,
     NumpyToTensor,
     CenterCropTransform,
-    )
+)
 from batchgenerators.transforms.color_transforms import BrightnessTransform
 from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
 
@@ -42,7 +42,7 @@ from nnunet.training.data_augmentation.custom_transforms import (
     Convert3DTo2DTransform,
     Convert2DTo3DTransform,
     MaskTransform,
-    )
+)
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 
@@ -126,7 +126,7 @@ class DefaultAug(NoAug):
         tr_transforms.append(SpatialTransform(
             self._spatial_transform_patch_size,
             patch_center_dist_from_border=None,
-            
+
             do_elastic_deform=self.params.get("do_elastic"),
             alpha=self.params.get("elastic_deform_alpha"),
             sigma=self.params.get("elastic_deform_sigma"),
@@ -138,7 +138,7 @@ class DefaultAug(NoAug):
 
             do_scale=self.params.get("do_scaling"),
             scale=self.params.get("scale_range"),
-            
+
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
             border_cval_data=self.params.get("border_cval_data"),
@@ -159,8 +159,8 @@ class DefaultAug(NoAug):
         if self.params.get("do_gamma", False):
             tr_transforms.append(
                 GammaTransform(self.params.get("gamma_range"), False, True,
-                            retain_stats=self.params.get("gamma_retain_stats"),
-                            p_per_sample=self.params["p_gamma"])
+                               retain_stats=self.params.get("gamma_retain_stats"),
+                               p_per_sample=self.params["p_gamma"])
             )
 
         if self.params.get("do_mirror", False):
@@ -199,7 +199,7 @@ class BaseMoreAug(NoAug):
         tr_transforms.append(SpatialTransform(
             self._spatial_transform_patch_size,
             patch_center_dist_from_border=None,
-            
+
             do_elastic_deform=self.params.get("do_elastic"),
             alpha=self.params.get("elastic_deform_alpha"),
             sigma=self.params.get("elastic_deform_sigma"),
@@ -211,7 +211,7 @@ class BaseMoreAug(NoAug):
 
             do_scale=self.params.get("do_scaling"),
             scale=self.params.get("scale_range"),
-            
+
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
             border_cval_data=self.params.get("border_cval_data"),
@@ -254,7 +254,7 @@ class BaseMoreAug(NoAug):
         if self.params.get("do_gamma"):
             tr_transforms.append(GammaTransform(
                 self.params.get("gamma_range"),
-                False, 
+                False,
                 True,
                 retain_stats=self.params.get("gamma_retain_stats"),
                 p_per_sample=self.params["p_gamma"]))
@@ -294,7 +294,7 @@ class MoreAug(NoAug):
         tr_transforms.append(SpatialTransform(
             self._spatial_transform_patch_size,
             patch_center_dist_from_border=None,
-            
+
             do_elastic_deform=self.params.get("do_elastic"),
             alpha=self.params.get("elastic_deform_alpha"),
             sigma=self.params.get("elastic_deform_sigma"),
@@ -306,7 +306,7 @@ class MoreAug(NoAug):
 
             do_scale=self.params.get("do_scaling"),
             scale=self.params.get("scale_range"),
-            
+
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
             border_cval_data=self.params.get("border_cval_data"),
@@ -401,7 +401,7 @@ class InsaneAug(NoAug):
         tr_transforms.append(SpatialTransform(
             self._spatial_transform_patch_size,
             patch_center_dist_from_border=None,
-            
+
             do_elastic_deform=self.params.get("do_elastic"),
             alpha=self.params.get("elastic_deform_alpha"),
             sigma=self.params.get("elastic_deform_sigma"),
@@ -413,7 +413,7 @@ class InsaneAug(NoAug):
 
             do_scale=self.params.get("do_scaling"),
             scale=self.params.get("scale_range"),
-            
+
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
             border_cval_data=self.params.get("border_cval_data"),
@@ -435,10 +435,10 @@ class InsaneAug(NoAug):
         # channel gets in the way
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.15))
         tr_transforms.append(GaussianBlurTransform((0.5, 1.5),
-                                                different_sigma_per_channel=True,
-                                                p_per_sample=0.2,
-                                                p_per_channel=0.5),
-                            )
+                                                   different_sigma_per_channel=True,
+                                                   p_per_sample=0.2,
+                                                   p_per_channel=0.5),
+                             )
         tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.3),
                                                                p_per_sample=0.15))
         if self.params.get("do_additive_brightness"):
@@ -457,7 +457,7 @@ class InsaneAug(NoAug):
                                                             order_upsample=3,
                                                             p_per_sample=0.25,
                                                             ignore_axes=ignore_axes),
-                            )
+                             )
         tr_transforms.append(GammaTransform(
             self.params.get("gamma_range"),
             True,

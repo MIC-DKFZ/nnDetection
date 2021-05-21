@@ -8,15 +8,15 @@ from nndet.core.boxes.matcher import ATSSMatcher
 @pytest.fixture
 def anchors():
     anchors = torch.tensor(
-            [
-                [0, 0, 4, 4, 0, 4],
-                [4, 4, 8, 8, 0, 4],
-                [0, 4, 4, 8, 0, 4],
-                [4, 0, 8, 4, 0, 4],
+        [
+            [0, 0, 4, 4, 0, 4],
+            [4, 4, 8, 8, 0, 4],
+            [0, 4, 4, 8, 0, 4],
+            [4, 0, 8, 4, 0, 4],
 
-                [0, 0, 8, 8, 0, 4],
-            ]
-        )
+            [0, 0, 8, 8, 0, 4],
+        ]
+    )
     return anchors
 
 

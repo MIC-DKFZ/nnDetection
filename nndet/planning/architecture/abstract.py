@@ -32,11 +32,11 @@ class ArchitecturePlanner(ABC):
         Approximate vram usage of model for planning
         """
         pass
-    
+
     def get_planner_id(self) -> str:
         """
         Create identifier for this planner
-        
+
         Returns:
             str: identifier
         """

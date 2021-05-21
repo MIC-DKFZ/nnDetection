@@ -23,7 +23,7 @@ def boxes0_3d():
 @pytest.fixture
 def boxes1_3d():
     return torch.tensor([[1, 1, 3, 3, 1, 3],
-                         [1, 1, 3, 3, 1, 3], 
+                         [1, 1, 3, 3, 1, 3],
                          [1, 1, 3, 3, 1, 3]]).float()
 
 
@@ -36,7 +36,7 @@ def check_ious(boxes: torch.Tensor, similarity_fn):
 def test_box_area_2d(boxes0_2d, boxes1_2d):
     areas0 = box_area(boxes0_2d)
     areas1 = box_area(boxes1_2d)
-    
+
     assert ((areas0 == torch.tensor([4, 4])).all())
     assert ((areas1 == torch.tensor([4, 4, 4])).all())
 
@@ -44,7 +44,7 @@ def test_box_area_2d(boxes0_2d, boxes1_2d):
 def test_box_area_3d(boxes0_3d, boxes1_3d):
     areas0 = box_area(boxes0_3d)
     areas1 = box_area(boxes1_3d)
-    
+
     assert ((areas0 == torch.tensor([8, 8])).all())
     assert ((areas1 == torch.tensor([8, 8, 8])).all())
 

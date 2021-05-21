@@ -139,7 +139,7 @@ def import_nnunet_boxes(
         # create temp dir
         sweep_prediction = sweep_dir / f"sweep_aggregation_{aggregation}"
         sweep_prediction.mkdir(parents=True)
-        
+
         # import with settings
         import_dir(
             nnunet_prediction_dir=nnunet_prediction_dir,
@@ -166,7 +166,7 @@ def import_nnunet_boxes(
     idx = int(np.argmax(scores))
     postprocessing_settings["aggregation"] = aggreagtion_settings[idx]
     logger.info(f"Found aggregation {aggreagtion_settings[idx]} with score {scores[idx]}")
-    
+
     save_pickle(postprocessing_settings, save_dir / "postprocessing.pkl")
     save_json(summary, save_dir / "summary.json")
     return postprocessing_settings
@@ -279,11 +279,16 @@ def nnunet_dataset_json(nnunet_task: str):
 
 def copy_and_ensemble(cid, nnunet_dirs, nnunet_prediction_dir):
     logger.info(f"Copy and ensemble: {cid}")
-    case = [np.load(_nnunet_dir / f"fold_{fold}" / "validation_raw" / f"{cid}.npz")["softmax"] for _nnunet_dir in nnunet_dirs]
+    case = [
+        np.load(
+            _nnunet_dir /
+            f"fold_{fold}" /
+            "validation_raw" /
+            f"{cid}.npz")["softmax"] for _nnunet_dir in nnunet_dirs]
     assert len(case) == len(nnunet_dirs)
     case_ensemble = np.mean(case, axis=0)
     assert case_ensemble.shape == case[0].shape
-    
+
     np.savez_compressed(nnunet_prediction_dir / f"{cid}.npz", softmax=case_ensemble)
 
 
@@ -293,7 +298,7 @@ def copy_and_ensemble_test(cid, nnunet_dirs, nnunet_prediction_dir):
     assert len(case) == len(nnunet_dirs)
     case_ensemble = np.mean(case, axis=0)
     assert case_ensemble.shape == case[0].shape
-    
+
     np.savez_compressed(nnunet_prediction_dir / f"{cid}.npz", softmax=case_ensemble)
 
 
@@ -362,7 +367,7 @@ if __name__ == '__main__':
     logger.add(sys.stdout, level="INFO")
     log_file = task_dir / "nnUNet" / "import.log"
     logger.add(log_file, level="INFO")
-    
+
     if simple:
         nndet_unet_dir = task_dir / "nnUNet_Simple" / "consolidated"
     else:
@@ -372,18 +377,22 @@ if __name__ == '__main__':
     stuff_classes = cfg.get("labels_stuff", {})
     num_instance_classes = len(instance_classes)
     stuff_classes = {
-                str(int(key) + num_instance_classes): item
-                for key, item in stuff_classes.items() if int(key) > 0
-            }
+        str(int(key) + num_instance_classes): item
+        for key, item in stuff_classes.items() if int(key) > 0
+    }
     stuff = [int(s) for s in stuff_classes.keys()]
 
     if mode.lower() == "val":
-        nnunet_prediction_dir = nndet_unet_dir /f"validation_raw_all"
+        nnunet_prediction_dir = nndet_unet_dir / f"validation_raw_all"
         nnunet_prediction_dir.mkdir(parents=True, exist_ok=True)
 
         # copy all predictions from nnunet into one directory
         for fold in range(5):
-            case_ids = [p.stem for p in (nnunet_dir / f"fold_{fold}" / "validation_raw").iterdir() if p.name.endswith(".npz")]
+            case_ids = [
+                p.stem for p in (
+                    nnunet_dir /
+                    f"fold_{fold}" /
+                    "validation_raw").iterdir() if p.name.endswith(".npz")]
             logger.info(f"Copy and ensemble results fold {fold} with {len(case_ids)} cases.")
 
             # copy properties
@@ -393,10 +402,10 @@ if __name__ == '__main__':
             if num_workers > 0:
                 with Pool(processes=max(num_workers // 4, 1)) as p:
                     p.starmap(copy_and_ensemble,
-                            zip(case_ids,
-                                repeat(nnunet_dirs),
-                                repeat(nnunet_prediction_dir),
-                                ))
+                              zip(case_ids,
+                                  repeat(nnunet_dirs),
+                                  repeat(nnunet_prediction_dir),
+                                  ))
             else:
                 for cid in case_ids:
                     copy_and_ensemble(cid, nnunet_dirs, nnunet_prediction_dir)
@@ -422,16 +431,16 @@ if __name__ == '__main__':
         target_dir = nndet_unet_dir / "val_predictions"
     else:
         case_ids = [p.stem for p in nnunet_dir.iterdir() if p.name.endswith(".npz")]
-        nnunet_prediction_dir = nndet_unet_dir /f"test_raw_all"
+        nnunet_prediction_dir = nndet_unet_dir / f"test_raw_all"
         nnunet_prediction_dir.mkdir(parents=True, exist_ok=True)
-        
+
         if num_workers > 0:
-                with Pool(processes=max(num_workers // 4, 1)) as p:
-                    p.starmap(copy_and_ensemble_test,
-                              zip(case_ids,
-                                  repeat(nnunet_dirs),
-                                  repeat(nnunet_prediction_dir),
-                                  ))
+            with Pool(processes=max(num_workers // 4, 1)) as p:
+                p.starmap(copy_and_ensemble_test,
+                          zip(case_ids,
+                              repeat(nnunet_dirs),
+                              repeat(nnunet_prediction_dir),
+                              ))
         else:
             for cid in case_ids:
                 copy_and_ensemble_test(cid, nnunet_dirs, nnunet_prediction_dir)

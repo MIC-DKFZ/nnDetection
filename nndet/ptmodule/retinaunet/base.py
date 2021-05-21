@@ -70,7 +70,7 @@ from nndet.io.transforms import (
     Instances2Segmentation,
     FindInstances,
     TransferInputChannel,
-    )
+)
 
 
 class RetinaUNetModule(LightningBaseModuleSWA):
@@ -94,7 +94,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                  ):
         """
         RetinaUNet Lightning Module Skeleton
-        
+
         Args:
             model_cfg: model configuration. Check :method:`from_config_plan`
                 for more information
@@ -113,7 +113,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             classes=_classes,
             fast=True,
             save_dir=None,
-            )
+        )
         self.seg_evaluator = SegmentationEvaluator.create()
 
         # box transformations
@@ -121,25 +121,25 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             FindInstances(
                 instance_key="target",
                 save_key="present_instances",
-                ),
+            ),
             Instances2Boxes(
                 instance_key="target",
                 map_key="instance_mapping",
                 box_key="boxes",
                 class_key="classes",
                 present_instances="present_instances",
-                ),
+            ),
             Instances2Segmentation(
                 instance_key="target",
                 map_key="instance_mapping",
                 present_instances="present_instances",
-                )
+            )
         ]
 
         # transfer learning setup
         # TODO: might move this to base class
-        data_channels = self.plan["num_modalities"] # number of channels of source data
-        network_channels = self.plan["architecture"]["in_channels"] # number of channels of target data
+        data_channels = self.plan["num_modalities"]  # number of channels of source data
+        network_channels = self.plan["architecture"]["in_channels"]  # number of channels of target data
         if network_channels > data_channels:
             logger.info("Detected Transfer Learning Setup with different soruce "
                         "and target channels. Adding additional transformation.")
@@ -147,7 +147,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 TransferInputChannel(
                     out_channels=network_channels,
                     data_key="data",
-                    )
+                )
             )
 
         self.pre_trafo = Compose(trafos)
@@ -167,7 +167,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
                 "target_seg": batch['target'][:, 0]  # Remove channel dimension
-                },
+            },
             predict=False,
             batch_num=batch_idx,
         )
@@ -184,10 +184,10 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
             targets = {
-                    "target_boxes": batch["boxes"],
-                    "target_classes": batch["classes"],
-                    "target_seg": batch['target'][:, 0]  # Remove channel dimension
-                }
+                "target_boxes": batch["boxes"],
+                "target_classes": batch["classes"],
+                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+            }
             losses, prediction = self.model.train_step(
                 images=batch["data"],
                 targets=targets,
@@ -242,7 +242,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             gt_boxes=gt_boxes,
             gt_classes=gt_classes,
             gt_ignore=gt_ignore,
-            )
+        )
 
         pred_seg = to_numpy(prediction["pred_seg"])
         gt_seg = to_numpy(targets["target_seg"])
@@ -250,7 +250,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         self.seg_evaluator.run_online_evaluation(
             seg_probs=pred_seg,
             target=gt_seg,
-            )
+        )
 
     def training_epoch_end(self, training_step_outputs):
         """
@@ -333,7 +333,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             weight_decay=self.trainer_cfg["weight_decay"],
             momentum=self.trainer_cfg["sgd_momentum"],
             nesterov=self.trainer_cfg["sgd_nesterov"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -399,16 +399,16 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         encoder = cls._build_encoder(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
-            )
+        )
         decoder = cls._build_decoder(
             encoder=encoder,
             plan_arch=plan_arch,
             model_cfg=model_cfg,
-            )
+        )
         matcher = cls.matcher_cls(
             similarity_fn=box_iou,
             **model_cfg["matcher_kwargs"],
-            )
+        )
 
         classifier = cls._build_head_classifier(
             plan_arch=plan_arch,
@@ -681,8 +681,8 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             3: {
                 "boxes": BoxEnsemblerSelective,
                 "seg": SegmentationEnsembler,
-                }
             }
+        }
         if dim == 2:
             raise NotImplementedError
         return _lookup[dim][key]
@@ -725,7 +725,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             tta_inverse_transforms=tta_inverse_transforms,
             batch_size=batch_size,
             **kwargs,
-            )
+        )
         if plan["network_dim"] == 2:
             predictor.pre_transform = Inference2D(["data"])
         return predictor
@@ -783,7 +783,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 save_state=True,
                 model_fn=load_final_model,
                 **kwargs,
-                )
+            )
 
         logger.info("Start parameter sweep...")
         ensembler_cls = self.get_ensembler_cls(key="boxes", dim=self.plan["network_dim"])
@@ -794,6 +794,6 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             target_metric=self.eval_score_key,
             ensembler_cls=ensembler_cls,
             save_dir=_save_dir,
-            )
+        )
         inference_plan = sweeper.run_postprocessing_sweep()
         return inference_plan

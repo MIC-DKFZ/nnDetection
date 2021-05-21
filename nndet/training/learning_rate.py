@@ -28,7 +28,7 @@ def linear_warm_up(
     initial_lr: float,
     num_iterations: int,
     final_lr: float,
-    ) -> float:
+) -> float:
     """
     Linear learning rate warm up
 
@@ -44,8 +44,8 @@ def linear_warm_up(
     assert final_lr > initial_lr
     if iteration >= num_iterations:
         logger.warning(f"WarmUp was stepped too often, {iteration} "
-                f"but only {num_iterations} were expected!")
-    
+                       f"but only {num_iterations} were expected!")
+
     return initial_lr + (final_lr - initial_lr) * (float(iteration) / float(num_iterations))
 
 
@@ -54,7 +54,7 @@ def poly_lr(
     initial_lr: float,
     num_iterations: int,
     gamma: float,
-    ) -> float:
+) -> float:
     """
     initial_lr * (1 - epoch / max_epochs) ** gamma
 
@@ -73,8 +73,8 @@ def poly_lr(
     """
     if iteration >= num_iterations:
         logger.warning(f"PolyLR was stepped too often, {iteration} "
-                f"but only {num_iterations} were expected! "
-                f"Using {num_iterations - 1} for lr computation.")
+                       f"but only {num_iterations} were expected! "
+                       f"Using {num_iterations - 1} for lr computation.")
         iteration = num_iterations - 1
     return initial_lr * (1 - iteration / float(num_iterations)) ** gamma
 
@@ -84,7 +84,7 @@ def cyclic_linear_lr(
     num_iterations_cycle: int,
     initial_lr: float,
     final_lr: float,
-    ) -> float:
+) -> float:
     """
     Linearly cycle learning rate
 
@@ -120,8 +120,8 @@ def cosine_annealing_lr(
     Returns:
         float: learning rate
     """
-    return final_lr + 0.5 * (initial_lr - final_lr) * (1 + \
-        math.cos(math.pi * float(iteration) / float(num_iterations)))
+    return final_lr + 0.5 * (initial_lr - final_lr) * (1 +
+                                                       math.cos(math.pi * float(iteration) / float(num_iterations)))
 
 
 class LinearWarmupPolyLR(_LRScheduler):
@@ -172,7 +172,7 @@ class LinearWarmupPolyLR(_LRScheduler):
                 initial_lr=self.warm_lr[idx],
                 num_iterations=self.warm_iterations,
                 final_lr=base_lr,
-                ) for idx, base_lr in enumerate(self.base_lrs)]
+            ) for idx, base_lr in enumerate(self.base_lrs)]
         else:
             # poly lr phase
             lrs = [poly_lr(
@@ -189,7 +189,7 @@ class CycleLinear(_LRScheduler):
                  optimizer: Optimizer,
                  cycle_num_iterations: int,
                  cycle_initial_lr: Union[float, Sequence[float]],
-                 cycle_final_lr:Union[float, Sequence[float]],
+                 cycle_final_lr: Union[float, Sequence[float]],
                  last_epoch: int = -1,
                  ) -> None:
         """
@@ -227,7 +227,7 @@ class CycleLinear(_LRScheduler):
         Compute current learning rate for each param group
         """
         lrs = [cyclic_linear_lr(
-            iteration=max(self._step_count - 1, 0), # init steps once
+            iteration=max(self._step_count - 1, 0),  # init steps once
             num_iterations_cycle=self.cycle_num_iterations,
             initial_lr=self.cycle_initial_lr[idx],
             final_lr=self.cycle_final_lr[idx],

@@ -41,7 +41,7 @@ class Predictor:
                  ensembler: Dict[str, Callable],
                  models: Sequence[AbstractModel],
                  crop_size: Sequence[int],
-                 overlap: float = 0.5, 
+                 overlap: float = 0.5,
                  tile_keys: Sequence[str] = ('data',),
                  model_keys: Sequence[str] = ('data',),
                  tta_transforms: Sequence[AbstractTransform] = (NoOp(),),
@@ -106,7 +106,7 @@ class Predictor:
         self.overlap = overlap
         self.tile_keys = tile_keys
         self.model_keys = model_keys
-        
+
         self.batch_size = batch_size
 
         if len(tta_transforms) != len(tta_inverse_transforms):
@@ -115,7 +115,7 @@ class Predictor:
         self.tta_inverse_transforms = tta_inverse_transforms
         self.post_transform = post_transform
         self.pre_transform = pre_transform
-        
+
         self.grid_mode = 'symmetric'
         self.save_get_mode = 'shift'
 
@@ -210,7 +210,7 @@ class Predictor:
             dshape=dshape[1:],
             overlap=overlap,
             mode=self.grid_mode,
-            )
+        )
 
         tiles = []
         for crop in crops:
@@ -249,7 +249,7 @@ class Predictor:
                                 collate_fn=slice_collate,
                                 )
         for model_idx, (model, model_weight) in enumerate(
-            zip(self.models, self.model_weights)):
+                zip(self.models, self.model_weights)):
             logger.info(f"Predicting model {model_idx + 1} of "
                         f"{len(self.models)} with weight {model_weight}.")
 
@@ -263,7 +263,7 @@ class Predictor:
                     ensembler.add_model(name=f"model{model_idx}_t{t}", model_weight=model_weight)
 
                 for batch_num, batch in enumerate(maybe_verbose_iterable(
-                    dataloader, desc="Crop", position=1)):
+                        dataloader, desc="Crop", position=1)):
                     self.predict_with_transformation(
                         model=model,
                         batch=batch,
@@ -316,10 +316,10 @@ class Predictor:
 def slice_collate(batch: List[Any]):
     """
     Add support for slices to collate function
-    
+
     Args:
         batch: batch to collate
-    
+
     Returns:
         Any: collated items
     """

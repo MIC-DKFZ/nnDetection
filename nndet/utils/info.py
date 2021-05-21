@@ -87,7 +87,7 @@ def get_repo_info(path: Union[str, Path]):
 
 def maybe_verbose_iterable(data: Iterable, **kwargs) -> Iterable:
     """
-    If verbose flag of nndet is enabled, uses tqdm to create a 
+    If verbose flag of nndet is enabled, uses tqdm to create a
     progress bar
 
     Args:
@@ -127,7 +127,7 @@ def find_name(tdir: Union[str, Path], name: str,
     if postfix is None:
         postfix = ""
 
-    i=0
+    i = 0
     while True:
         output_dir = tdir / f"{name}{i:03d}{postfix}"
         if not output_dir.exists():
@@ -199,11 +199,11 @@ def log_error(fn: Callable) -> Any:
 def file_logger(path: Union[str, Path], level: str = "DEBUG", overwrite: bool = True):
     """
     context manager to automatically clean up file logger
-    
+
     Args:
         path: path to output file
         level: logging level. Defaults to "Debug".
-    
+
     Yields:
         None
     """
@@ -237,7 +237,7 @@ def stringify_nested_dict(data: dict):
 def flatten_mapping(
     nested_mapping: Mapping,
     sep: str = ".",
-    ) -> Mapping[str, Any]:
+) -> Mapping[str, Any]:
     _mapping = {}
     for key, item in nested_mapping.items():
         if isinstance(item, MutableMapping):

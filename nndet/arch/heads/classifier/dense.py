@@ -181,10 +181,10 @@ class DenseClassifier(Classifier):
                     torch.nn.init.constant_(layer.bias, bias_value)
         else:
             logger.info("Init classifier weights: conv default")
-  
-  
+
+
 DenseClassifierType = TypeVar('DenseClassifierType', bound=DenseClassifier)
-  
+
 
 class BCECLassifier(DenseClassifier):
     def __init__(self,
@@ -238,7 +238,7 @@ class BCECLassifier(DenseClassifier):
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             **kwargs,
-            )
+        )
 
         self.loss = BCEWithLogitsLossOneHot(
             num_classes=num_classes,
@@ -246,26 +246,26 @@ class BCECLassifier(DenseClassifier):
             reduction=reduction,
             smoothing=smoothing,
             loss_weight=loss_weight,
-            )
+        )
         self.logits_convert_fn = nn.Sigmoid()
 
 
 class CEClassifier(DenseClassifier):
     def __init__(self,
-                conv,
-                in_channels: int,
-                internal_channels: int,
-                num_classes: int,
-                anchors_per_pos: int,
-                num_levels: int,
-                num_convs: int = 3,
-                add_norm: bool = True,
-                prior_prob: Optional[float] = None,
-                weight: Optional[Tensor] = None,
-                reduction: str = "mean",
-                loss_weight: float = 1.,
-                **kwargs
-                ):
+                 conv,
+                 in_channels: int,
+                 internal_channels: int,
+                 num_classes: int,
+                 anchors_per_pos: int,
+                 num_levels: int,
+                 num_convs: int = 3,
+                 add_norm: bool = True,
+                 prior_prob: Optional[float] = None,
+                 weight: Optional[Tensor] = None,
+                 reduction: str = "mean",
+                 loss_weight: float = 1.,
+                 **kwargs
+                 ):
         """
         Classifier Head with sigmoid based BCE loss computation and prio
         prob weight init
@@ -296,17 +296,17 @@ class CEClassifier(DenseClassifier):
             num_convs=num_convs,
             add_norm=add_norm,
             internal_channels=internal_channels,
-            num_classes=num_classes + 1, # add one channel for background
+            num_classes=num_classes + 1,  # add one channel for background
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             **kwargs,
-            )
+        )
 
         self.loss = CrossEntropyLoss(
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
-            )
+        )
         self.logits_convert_fn = nn.Softmax(dim=1)
 
     def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
@@ -319,7 +319,7 @@ class CEClassifier(DenseClassifier):
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)[:, 1:] # remove background predictions
+        return self.logits_convert_fn(box_logits)[:, 1:]  # remove background predictions
 
 
 class FocalClassifier(DenseClassifier):
@@ -374,14 +374,14 @@ class FocalClassifier(DenseClassifier):
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             **kwargs,
-            )
+        )
 
         self.loss = FocalLossWithLogits(
             gamma=gamma,
             alpha=alpha,
             reduction=reduction,
             loss_weight=loss_weight,
-            )
+        )
         self.logits_convert_fn = nn.Sigmoid()
 
 
@@ -437,15 +437,15 @@ class AsymmetricFocalClassifier(FocalClassifier):
             num_levels=num_levels,
             prior_prob=prior_prob,
             **kwargs,
-            )
+        )
 
         self.loss = AsymmetricFocalLossWithLogits(
             gamma=gamma,
             alpha=alpha,
             reduction=reduction,
             loss_weight=loss_weight,
-            )
-        self.logits_convert_fn = nn.Sigmoid()  
+        )
+        self.logits_convert_fn = nn.Sigmoid()
 
 
 class FullyConntectedBCECLassifier(BCECLassifier):
@@ -455,6 +455,7 @@ class FullyConntectedBCECLassifier(BCECLassifier):
 
     conv3(in, internal) -> num_convs x conv1(internal, internal) -> conv1(internal, out)
     """
+
     def build_conv_internal(self, conv, **kwargs):
         """
         Build internal convolutions

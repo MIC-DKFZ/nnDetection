@@ -34,7 +34,7 @@ def init_train_dir(cfg,
                    ) -> Path:
     """
     Initialize training directory and make it the current working directory
-    
+
     Args:
         task: task name
         id: experiment identifier
@@ -81,14 +81,14 @@ def pretrain():
         pretask=pretask,
         targettask=targettask,
         ov=ov,
-        )
+    )
 
 
 def _pretrain(
     pretask: str,
     targettask: str,
     ov: List[str],
-    ):
+):
     """
     Run training
 
@@ -100,7 +100,7 @@ def _pretrain(
     print(f"Overwrites: {ov}")
     initialize_config_module(config_module="nndet.conf")
     cfg = compose(pretask, "config.yaml", overrides=ov if ov is not None else [])
-    
+
     pretask = get_task(pretask, name=True)
     targettask = get_task(targettask, name=True)
 
@@ -117,7 +117,7 @@ def _pretrain(
             "task": cfg["task"],
             "job_id": os.getenv('LSB_JOBID', 'no_id'),
             "mlflow.runName": cfg["exp"]["id"],
-            },
+        },
         save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
     )
     pl_logger.log_hyperparams(flatten_mapping(
@@ -162,16 +162,16 @@ def _pretrain(
     data_dir = Path(cfg.host["preprocessed_output_dir"]) / pre_plan["data_identifier"] / "imagesTr"
 
     datamodule = Datamodule(
-            augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
-            plan=pre_plan,
-            data_dir=data_dir,
-            fold=cfg["exp"]["fold"],
-        )
+        augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
+        plan=pre_plan,
+        data_dir=data_dir,
+        fold=cfg["exp"]["fold"],
+    )
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=pre_plan,
-        )
+    )
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
@@ -194,8 +194,8 @@ def _pretrain(
     OmegaConf.save(cfg_target, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
 
     # save plans
-    save_pickle(target_plan, train_dir / "plan.pkl") # save plan for downstream task
-    save_pickle(pre_plan, train_dir / "pre_plan.pkl") # backup plan
+    save_pickle(target_plan, train_dir / "plan.pkl")  # save plan for downstream task
+    save_pickle(pre_plan, train_dir / "pre_plan.pkl")  # backup plan
 
     splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
     save_pickle(splits, train_dir / "pre_splits.pkl")
@@ -223,7 +223,7 @@ def _pretrain(
         max_epochs=module.max_epochs,
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
-        num_sanity_val_steps=10, #10,
+        num_sanity_val_steps=10,  # 10,
         weights_summary='full',
         plugins=plugins,
         terminate_on_nan=True,  # TODO: make modular

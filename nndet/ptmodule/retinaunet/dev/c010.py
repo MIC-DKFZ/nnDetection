@@ -10,7 +10,7 @@ from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
     FullyConntectedBCECLassifier,
-    )
+)
 from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.arch.conv import (
     ConvGroupRelu,
@@ -22,7 +22,7 @@ from nndet.arch.conv import (
     ConvGroupSiLU,
     ConvInstanceLReLU,
     ConvGroupLReLU
-    )
+)
 
 from nndet.training import optimizer
 
@@ -153,12 +153,12 @@ class RetinaUNetC010LK(RetinaUNetC010):
             weight_decay=self.trainer_cfg["weight_decay"],
             momentum=self.trainer_cfg["sgd_momentum"],
             nesterov=self.trainer_cfg["sgd_nesterov"],
-            )
+        )
         optimizer = optim.Lookahead(
             _optimizer,
             k=5,
             alpha=0.5,
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -170,7 +170,7 @@ class RetinaUNetC010LK(RetinaUNetC010):
             poly_gamma=self.trainer_cfg["poly_gamma"],
             num_iterations=num_iterations
         )
-        return [optimizer] , {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
 
 
 @MODULE_REGISTRY.register
@@ -185,7 +185,7 @@ class RetinaUNetC010AdamW(RetinaUNetC010):
             wd_groups,
             self.trainer_cfg["initial_lr"],
             weight_decay=self.trainer_cfg["weight_decay"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -197,7 +197,7 @@ class RetinaUNetC010AdamW(RetinaUNetC010):
             poly_gamma=self.trainer_cfg["poly_gamma"],
             num_iterations=num_iterations
         )
-        return [optimizer] , {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
 
 
 @MODULE_REGISTRY.register
@@ -219,7 +219,7 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
             wd_groups,
             lr=self.trainer_cfg["initial_lr"],
             weight_decay=self.trainer_cfg["weight_decay"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -231,7 +231,7 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
             poly_gamma=self.trainer_cfg["poly_gamma"],
             num_iterations=num_iterations
         )
-        return [optimizer] , {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
 
 
 @MODULE_REGISTRY.register
@@ -253,7 +253,7 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
             wd_groups,
             self.trainer_cfg["initial_lr"],
             weight_decay=self.trainer_cfg["weight_decay"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -265,7 +265,7 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
             poly_gamma=self.trainer_cfg["poly_gamma"],
             num_iterations=num_iterations
         )
-        return [optimizer] , {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
 
 
 @MODULE_REGISTRY.register
@@ -288,7 +288,7 @@ class RetinaUNetC010Madgrad(RetinaUNetC010):
             self.trainer_cfg["initial_lr"],
             weight_decay=self.trainer_cfg["weight_decay"],
             momentum=self.trainer_cfg["momentum"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.trainer_cfg["max_num_epochs"] * \
@@ -346,9 +346,9 @@ class RetinaUNetC010LReLUMishHead(RetinaUNetC010LReLU):
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
-    decoder_cls=SmallUFPN
+    decoder_cls = SmallUFPN
 
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
-    decoder_cls=SmallerUFPN
+    decoder_cls = SmallerUFPN

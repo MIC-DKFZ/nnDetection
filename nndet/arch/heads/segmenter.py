@@ -57,7 +57,7 @@ class DiCESegmenter(Segmenter):
                  internal_channels: Optional[int] = None,
                  num_internal: int = 0,
                  add_norm: bool = True,
-                 add_act: bool= True,
+                 add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  ce_kwargs: Optional[dict] = None,
@@ -87,9 +87,9 @@ class DiCESegmenter(Segmenter):
             seg_classes=seg_classes,
             in_channels=in_channels,
             decoder_levels=decoder_levels,
-            )
+        )
         self.num_internal = num_internal
-        
+
         if internal_channels is None:
             self.internal_channels = self.in_channels[0]
         else:
@@ -131,7 +131,7 @@ class DiCESegmenter(Segmenter):
             add_norm=None,
             add_act=None,
             bias=True,
-            )
+        )
 
     def build_conv_internal(self,
                             conv,
@@ -158,8 +158,8 @@ class DiCESegmenter(Segmenter):
                         add_norm=add_norm,
                         add_act=add_act,
                         **kwargs
-                        )
                     )
+                )
         else:
             _intermediate = None
         return _intermediate
@@ -200,7 +200,7 @@ class DiCESegmenter(Segmenter):
         return {
             "seg_ce": self.alpha * self.ce_loss(seg_logits, target.long()),
             "seg_dice": (1 - self.alpha) * self.dice_loss(seg_logits, target),
-            }
+        }
 
     def postprocess_for_inference(self,
                                   prediction: Dict[str, torch.Tensor],
@@ -229,7 +229,7 @@ class DiCESegmenterFgBg(DiCESegmenter):
                  internal_channels: Optional[int] = None,
                  num_internal: int = 0,
                  add_norm: bool = True,
-                 add_act: bool= True,
+                 add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  **kwargs,
@@ -255,7 +255,7 @@ class DiCESegmenterFgBg(DiCESegmenter):
 
         Warnings:
             If this class is used, the reportet dice scores during training
-            are wrong if multiple classes are present in the dataset. 
+            are wrong if multiple classes are present in the dataset.
         """
         super().__init__(conv=conv,
                          in_channels=in_channels,
@@ -298,7 +298,7 @@ class DiceTopKSegmenter(DiCESegmenter):
                  internal_channels: Optional[int] = None,
                  num_internal: int = 0,
                  add_norm: bool = True,
-                 add_act: bool= True,
+                 add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  topk: float = 0.1,
@@ -324,18 +324,18 @@ class DiceTopKSegmenter(DiCESegmenter):
             topk: percentage of all entries to use for loss computation
         """
         super().__init__(conv=conv,
-                    in_channels=in_channels,
-                    seg_classes=seg_classes,
-                    decoder_levels=decoder_levels,
-                    internal_channels=internal_channels,
-                    num_internal=num_internal,
-                    add_norm=add_norm,
-                    add_act=add_act,
-                    kernel_size=kernel_size,
-                    alpha=alpha,
-                    ce_kwargs=None,
-                    **kwargs,
-                    )
+                         in_channels=in_channels,
+                         seg_classes=seg_classes,
+                         decoder_levels=decoder_levels,
+                         internal_channels=internal_channels,
+                         num_internal=num_internal,
+                         add_norm=add_norm,
+                         add_act=add_act,
+                         kernel_size=kernel_size,
+                         alpha=alpha,
+                         ce_kwargs=None,
+                         **kwargs,
+                         )
         self.ce_loss = TopKLoss(
             topk=topk
         )
@@ -350,7 +350,7 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
                  internal_channels: Optional[int] = None,
                  num_internal: int = 0,
                  add_norm: bool = True,
-                 add_act: bool= True,
+                 add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  topk: float = 0.1,
@@ -377,7 +377,7 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
 
         Warnings:
             If this class is used, the reportet dice scores during training
-            are wrong if multiple classes are present in the dataset. 
+            are wrong if multiple classes are present in the dataset.
         """
         super().__init__(conv=conv,
                          in_channels=in_channels,
@@ -405,7 +405,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
                  internal_channels: Optional[int] = None,
                  num_internal: int = 0,
                  add_norm: bool = True,
-                 add_act: bool= True,
+                 add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  dsv_weight: float = 1.,
@@ -433,17 +433,17 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
             dsv_weight: additional weight for dsv losses
         """
         super().__init__(conv=conv,
-                    in_channels=in_channels,
-                    seg_classes=1,
-                    decoder_levels=decoder_levels,
-                    internal_channels=internal_channels,
-                    num_internal=num_internal,
-                    add_norm=add_norm,
-                    add_act=add_act,
-                    kernel_size=kernel_size,
-                    alpha=alpha,
-                    **kwargs,
-                    )
+                         in_channels=in_channels,
+                         seg_classes=1,
+                         decoder_levels=decoder_levels,
+                         internal_channels=internal_channels,
+                         num_internal=num_internal,
+                         add_norm=add_norm,
+                         add_act=add_act,
+                         kernel_size=kernel_size,
+                         alpha=alpha,
+                         **kwargs,
+                         )
 
         assert len(self.decoder_levels) > 0
         self.dsv_conv = conv(self.in_channels[-1],

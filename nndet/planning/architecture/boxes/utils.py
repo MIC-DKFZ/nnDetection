@@ -13,7 +13,7 @@ def scale_with_abs_strides(seq: Sequence[float],
                            ) -> List[Tuple[float]]:
     """
     Scale values with absolute stride between feature maps
-    
+
     Args:
         seq: sequence to scale
         strides: strides to scale with.
@@ -41,7 +41,7 @@ def proxy_num_boxes_in_patch(boxes: Tensor, patch_size: Sequence[int]) -> Tensor
     Returns:
         Tensor: count of boxes which center point is in the range of patch_size / 2
     """
-    patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2 # [1, 1, dims]    
+    patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2  # [1, 1, dims]
 
     center = box_center(boxes)  # [N, dims]
     center_dists = (center[None] - center[:, None]).abs()  # [N, N, dims]
@@ -75,10 +75,10 @@ def get_shape_must_be_divisible_by(num_pool_per_axis: Sequence[int]) -> np.ndarr
     """
     Returns a multiple of 2 which indicates by which factor an axis needs to
     be dividable to avoid problems with upsampling
-    
+
     Args:
         num_pool_per_axis: number of pooling operations per axis
-    
+
     Returns:
         np.ndarray: necessary divisor of axis
     """
@@ -88,11 +88,11 @@ def get_shape_must_be_divisible_by(num_pool_per_axis: Sequence[int]) -> np.ndarr
 def pad_shape(shape: Sequence[int], must_be_divisible_by: Sequence[int]) -> np.ndarray:
     """
     Pads shape so that it is divisibly by must_be_divisible_by
-    
+
     Args:
         shape: shape to pad
         must_be_divisible_by: divisor
-    
+
     Returns:
         np.ndarray: padded shape
     """
@@ -117,7 +117,7 @@ def scale_with_abs_strides(seq: Sequence[float],
                            ) -> List[Tuple[float]]:
     """
     Scale values with absolute stride between feature maps
-    
+
     Args:
         seq: sequence to scale
         strides: strides to scale with.
@@ -145,7 +145,7 @@ def proxy_num_boxes_in_patch(boxes: Tensor, patch_size: Sequence[int]) -> Tensor
     Returns:
         Tensor: count of boxes which center point is in the range of patch_size / 2
     """
-    patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2 # [1, 1, dims]    
+    patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2  # [1, 1, dims]
 
     center = box_center(boxes)  # [N, dims]
     center_dists = (center[None] - center[:, None]).abs()  # [N, N, dims]

@@ -38,7 +38,7 @@ class BaseModule(pl.LightningDataModule):
         """
         Baseclass for nnDetection data nodules.
         Overwrite :method:`setup` to customize the bahvior.
-        The splits are created iniside the init because we 
+        The splits are created iniside the init because we
 
         Args:
             plan: plan file

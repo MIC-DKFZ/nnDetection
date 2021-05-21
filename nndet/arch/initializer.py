@@ -25,7 +25,7 @@ class InitWeights_He(object):
                  ):
         """
         Init weights according to https://arxiv.org/abs/1502.01852
-        
+
         Args:
             neg_slope (float, optional): the negative slope of the rectifier
                 used after this layer (only with 'leaky_relu').
@@ -39,7 +39,7 @@ class InitWeights_He(object):
     def __call__(self, module: nn.Module):
         """
         Apply weight init
-        
+
         Args:
             module: module to initialize weights of (only inits wights of convs)
         """

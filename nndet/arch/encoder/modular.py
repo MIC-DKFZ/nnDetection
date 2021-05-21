@@ -110,10 +110,10 @@ class Encoder(AbstractEncoder):
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
         Forward data through encoder
-        
+
         Args:
             x: input data
-        
+
         Returns:
             List[torch.Tensor]: list of output from stages defined by
                 param:`out_stages`

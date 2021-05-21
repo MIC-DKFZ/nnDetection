@@ -29,7 +29,7 @@ def batched_nms_ensemble(
         weights: Tensor,
         iou_thresh: float,
         *args, **kwargs,
-        ) -> Tuple[Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Ensemble nms for ensembler (same as batched nms with adjusted signature)
 

@@ -269,13 +269,13 @@ class GreedyIoUBoxMerger(Merger):
         _labels = labels[0]  # all labels are the same
 
         box_3d = torch.tensor([
-                min(slices),
-                min(_boxes[:, 0]),
-                max(slices) + 1,
-                max(_boxes[:, 2]),
-                min(_boxes[:, 1]),
-                max(_boxes[:, 3]),
-            ])
+            min(slices),
+            min(_boxes[:, 0]),
+            max(slices) + 1,
+            max(_boxes[:, 2]),
+            min(_boxes[:, 1]),
+            max(_boxes[:, 3]),
+        ])
         score_3d = _scores.median()
         label_3d = _labels
         return box_3d, score_3d, label_3d
@@ -404,13 +404,13 @@ class VoteLabelGreedyIoUBoxMerger(GreedyIoUBoxMerger):
         _labels = torch.stack(labels, dim=0)
 
         box_3d = torch.tensor([
-                min(slices),
-                min(_boxes[:, 0]),
-                max(slices) + 1,
-                max(_boxes[:, 2]),
-                min(_boxes[:, 1]),
-                max(_boxes[:, 3]),
-            ])
+            min(slices),
+            min(_boxes[:, 0]),
+            max(slices) + 1,
+            max(_boxes[:, 2]),
+            min(_boxes[:, 1]),
+            max(_boxes[:, 3]),
+        ])
 
         label_counts = _labels.int().bincount(weights=_scores)
         label_3d = torch.argmax(label_counts).float()  # bins indicate the correct label

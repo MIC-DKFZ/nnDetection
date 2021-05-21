@@ -267,7 +267,7 @@ class GenericPreprocessor:
             data=data,
             seg=seg,
             properties=properties,
-            )
+        )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
         np.savez_compressed(str(output_dir_stage / f"{case_id}.npz"),
@@ -347,7 +347,7 @@ class GenericPreprocessor:
             "transpose": self.transpose_forward,
             "spacing_transposed": _original_spacing,
             "shape (transposed": data.shape,
-            }
+        }
 
         return data, seg, _original_spacing, _target_spacing, before
 
@@ -385,14 +385,13 @@ class GenericPreprocessor:
                                      force_separate_z=False,
                                      order_z_data=9999,
                                      order_z_seg=9999,
-                                     separate_z_anisotropy_threshold=
-                                     self.resample_anisotropy_threshold,
+                                     separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
                                      )
 
         after = {
             "spacing": target_spacing,
             "shape (resampled)": data.shape,
-            }
+        }
         return data, seg, after
 
     def normalize(self, data: np.ndarray, seg: np.ndarray) -> np.ndarray:
@@ -477,11 +476,11 @@ class GenericPreprocessor:
         return data
 
     def normalize_ct3(self,
-                     data: np.ndarray,
-                     seg: np.ndarray,
-                     modality: int,
-                     use_nonzero_mask: Dict[int, bool],
-                     ) -> np.ndarray:
+                      data: np.ndarray,
+                      seg: np.ndarray,
+                      modality: int,
+                      use_nonzero_mask: Dict[int, bool],
+                      ) -> np.ndarray:
         """
         clip to lb and ub from train data foreground and use foreground mn
         and sd from training data (This uses the foreground mean and std!)
@@ -559,19 +558,19 @@ class GenericPreprocessor:
 
     @staticmethod
     def compute_candidates(
-                           data: np.ndarray,
-                           seg: np.ndarray,
-                           properties: dict,
-                           ) -> dict:
+        data: np.ndarray,
+        seg: np.ndarray,
+        properties: dict,
+    ) -> dict:
         """
         Precompute candidate sampling positions for training
         This method computes the bounding boxes of each present
         instance which can be used to oversample foreground effectively.
-        
+
         Args:
             data: data after resampling
             seg: instance segmentation after resampling
-        """        
+        """
         dim = data.ndim - 1
         boxes = instances_to_boxes_np(seg[0], dim=dim)[0]
 
@@ -581,7 +580,7 @@ class GenericPreprocessor:
 
         instances_props = properties["instances"]
         labels = [int(instances_props[str(i)]) for i in instances]
-        
+
         assert (len(boxes) == len(instances)) or ((boxes.size == 0) and (len(instances) == 0))
         assert len(labels) == len(instances)
         return {
@@ -684,8 +683,7 @@ class Preprocessor2D(GenericPreprocessor):
                                      force_separate_z=False,
                                      order_z_data=9999,
                                      order_z_seg=9999,
-                                     separate_z_anisotropy_threshold=
-                                     self.resample_anisotropy_threshold,
+                                     separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
                                      )
 
         after = {
