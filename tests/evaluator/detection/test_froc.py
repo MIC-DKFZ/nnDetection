@@ -33,8 +33,8 @@ def results_list():
 
 
 class TestFROC:
-    def test_get_iou_thresholds(self):
-        assert (self.metric.get_iou_thresholds(), [0.1])
+    def test_get_iou_thresholds(self, metric):
+        assert metric.get_iou_thresholds() == [0.1]
 
     def test_compute(self, mocker: MockerFixture, metric, results_list):
         froc_mul_class_mock = mocker.Mock(return_value=({'froc_score_cls': 0}, {'froc_curve_cls': 1}))
@@ -106,7 +106,7 @@ class TestFROC:
         assert np.isclose(sens, [0., 1./4, 1./4, 1./2, 1./2, 3./4, 3./4, 1., 1.]).all()
         assert np.isclose(th[1:], [0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]).all()
 
-    def test_froc_plotting(self):
+    def test_froc_plotting(self, metric):
         with TemporaryDirectory(dir=os.getcwd()) as _dir:
             vals = np.array([0., 1./4, 1./4, 1./2, 3./4, 1.])
             
