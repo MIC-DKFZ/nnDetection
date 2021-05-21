@@ -270,16 +270,18 @@ nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are 
 Future releases aim at improving this process...
 
 ```bash
-nndet_prep [tasks] [-o / --overwrites]
+nndet_prep [tasks] [-o / --overwrites] [--full_check]
 
 # Example
 nndet_prep 000
 
 # Script
-# /experiments/preprocess.py - main()
+# /scripts/preprocess.py - main()
 ```
 
 `-o` option can be used to overwrite parameters for planning and preprocessing (refer to the onfig files to see all parameters). A typical usecase is to increase or decrease `prep.num_processes` (number of processes used for cropping) and `prep.num_processes_processing` (number of processes used for resampling) depending on the size/number of modalities of the data and available RAM. The current values are fairly save if 64GB of RAM is available.
+The `--full_check` will iterate over the data before starting any preprocessing and check correct formatting of the data and labels.
+If any problems occur during preprocessing please run the full check version to make sure that the format is correct.
 
 After planning and preprocessing the resulting data folder structure should look like this:
 ```text
@@ -308,7 +310,7 @@ nndet_unpack [path] [num_processes]
 nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3V001_3d/imagesTr 6
 
 # Script
-# /experiments/utils.py - unpack()
+# /scripts/utils.py - unpack()
 ```
 
 ### Training and Evaluation
@@ -323,7 +325,7 @@ nndet_train [task] [-o / --overwrites] [--sweep]
 nndet_train 000 --sweep
 
 # Script
-# /experiments/train.py - train()
+# /scripts/train.py - train()
 ```
 
 Use `-o exp.fold=X` to overwrite the trained fold, this should be run for all folds `X = 0, 1, 2, 3, 4`!
@@ -348,7 +350,7 @@ nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--seg] [--instance
 nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
 
 # Script
-# /experiments/train.py - evaluate()
+# /scripts/train.py - evaluate()
 
 # Note: --test invokes evaluation of the test set
 # Note: --seg, --instances are placeholders for future versions and not working yet
@@ -366,7 +368,7 @@ nndet_consolidate [task] [model] [--overwrites] [--consolidate] [--num_folds] [-
 nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep_boxes
 
 # Script
-# /experiments/consolidate.py - main()
+# /scripts/consolidate.py - main()
 ```
 
 For the final test set predictions simply select the best model according to the validation scores and run the prediction command below.
@@ -378,7 +380,7 @@ nndet_predict [task] [model] [--fold] [--num_models] [--num_tta] [--no_preproces
 nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
 
 # Script
-# /experiments/predict.py - main()
+# /scripts/predict.py - main()
 # Note: --num_models is not supported by default
 ```
 
