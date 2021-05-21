@@ -397,6 +397,28 @@ Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 ## Pretrained models
 **Coming Soon**
 
+
+## Guidelines and Continuous Integration
+To run the CI please install nnDetection via the `[dev]` option.
+The installation command could look like this:
+```bash
+pip install -e .[dev] -v
+```
+
+nnDetection follows the pep8 standard and uses `flake8` for automated type formatting.
+The following command can be run inside the nnDetection source directory to find problems with the formatting:
+
+```bash
+flake8
+```
+
+The unittests can be run via the following command (also from the source directory):
+
+```bash
+pytest
+```
+
+
 # FAQ
 <details close>
 <summary>GPU requirements</summary>
@@ -452,20 +474,6 @@ Inference and the metric computation are not properly designed to support these 
 We are planning to provide prebuild wheels in the future but no prebuild wheels are available right now.
 Please use the provided Dockerfile or the installation instructions to run nnDetection.
 </details>
-
-# Guidelines and Continuous Integration
-To run the CI please install nnDetection via the `[dev]` option.
-The installation command could look like this:
-```bash
-pip install -e .[dev] -v
-```
-
-nnDetection follows the pep8 standard and uses `flake8` for automated type formatting.
-Please run 
-
-```bash
-
-```
 
 # Cite
 If you use nnDetection for your project/research/work please cite the following paper:
