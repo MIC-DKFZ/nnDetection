@@ -453,6 +453,20 @@ We are planning to provide prebuild wheels in the future but no prebuild wheels 
 Please use the provided Dockerfile or the installation instructions to run nnDetection.
 </details>
 
+# Guidelines and Continuous Integration
+To run the CI please install nnDetection via the `[dev]` option.
+The installation command could look like this:
+```bash
+pip install -e .[dev] -v
+```
+
+nnDetection follows the pep8 standard and uses `flake8` for automated type formatting.
+Please run 
+
+```bash
+
+```
+
 # Cite
 If you use nnDetection for your project/research/work please cite the following paper:
 ```text
