@@ -191,7 +191,10 @@ def check_data_and_label_splitted(
     print("Data and label check complete.")
 
 
-def _full_check(case_paths: List[Path], mask_info_path: Optional[Path] = None) -> None:
+def _full_check(
+    case_paths: List[Path],
+    mask_info_path: Optional[Path] = None,
+    ) -> None:
     """
     Performas itk and instance chekcs on provided paths
 
@@ -220,13 +223,16 @@ def _full_check(case_paths: List[Path], mask_info_path: Optional[Path] = None) -
         for mi in mask_instances:
             if not mi in info_instances:
                 raise ValueError(f"Found instance ID {mi} in mask which is "
-                                f"not present in info {info_instances}")
+                                f"not present in info {info_instances} in {mask_info_path}")
         if not len(info_instances) == len(mask_instances):
             raise ValueError("Found instances in info which are not present in mask: "
-                            f"mask: {mask_instances} info {info_instances}")
+                            f"mask: {mask_instances} info {info_instances} in {mask_info_path}")
 
 
-def _check_itk_params(img_seq: Sequence[sitk.Image], paths: Sequence[Path]) -> None:
+def _check_itk_params(
+    img_seq: Sequence[sitk.Image],
+    paths: Sequence[Path],
+    ) -> None:
     """
     Check Dimension, Origin, Direction and Spacing of a Sequence of images
 
