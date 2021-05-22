@@ -1,4 +1,5 @@
 from loguru import logger
+from nndet.arch.blocks.basic import MySEBlockExp2, MySEBlockExp4, StackedConvBlock2, StackedConvBlock3
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
@@ -21,7 +22,8 @@ from nndet.arch.heads.regressor import (
 )
 from nndet.arch.conv import (
     ConvInstanceLReLU,
-    ConvGroupLReLU
+    ConvGroupLReLU,
+    Generator
 )
 
 
@@ -96,3 +98,49 @@ class RetinaUNetC011Focal(RetinaUNetC011):
 class RetinaUNetC011AsymFocal(RetinaUNetC011Focal):
     head_cls = BoxHeadAll
     head_classifier_cls = AsymmetricFocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011C3(RetinaUNetV001):
+    block = StackedConvBlock3
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011MySE2(RetinaUNetV001):
+    block = MySEBlockExp2
+    
+    @classmethod
+    def _build_encoder(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        """
+        Build encoder network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            EncoderType: encoder instance
+        """
+        conv = Generator(cls.base_conv_cls, plan_arch["dim"])
+        logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
+        encoder = cls.encoder_cls(
+            conv=conv,
+            conv_kernels=plan_arch["conv_kernels"],
+            strides=plan_arch["strides"],
+            block_cls=cls.block,
+            in_channels=plan_arch["in_channels"],
+            start_channels=plan_arch["start_channels"],
+            stage_kwargs=None,
+            max_channels=plan_arch.get("max_channels", 320),
+            first_block_cls=StackedConvBlock2,
+            **model_cfg['encoder_kwargs'],
+        )
+        return encoder
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011MySE4(RetinaUNetV001):
+    block = MySEBlockExp4

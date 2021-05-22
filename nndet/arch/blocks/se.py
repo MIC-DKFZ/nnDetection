@@ -37,13 +37,23 @@ class SELayer(nn.Module):
             reduction: channel reduction for internal computations
         """
         super(SELayer, self).__init__()
-        self.pool = nd_pool("AdaptiveAvg", dim, 1)
+        self.pool = nd_pool("AdaptiveAvg", dim, tuple([1] * dim))
         self.fc = nn.Sequential(
-            nd_conv(dim, in_channels, in_channels // reduction,
-                    kernel_size=1, stride=1, bias=False),
-            nn.ReLU(inplace=True),
-            nd_conv(dim, in_channels // reduction, in_channels,
-                    kernel_size=1, stride=1, bias=False),
+            nd_conv(dim,
+                    in_channels,
+                    in_channels // reduction,
+                    kernel_size=1,
+                    stride=1,
+                    bias=False,
+                    ),
+            nn.ReLU(inplace=False),
+            nd_conv(dim,
+                    in_channels // reduction,
+                    in_channels,
+                    kernel_size=1,
+                    stride=1,
+                    bias=False,
+                    ),
             nn.Sigmoid(),
         )
 

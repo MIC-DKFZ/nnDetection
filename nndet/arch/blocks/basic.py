@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from nndet.arch.blocks.mbconv import MyFusedMBConv
+from nndet.arch.blocks.se import SELayer
 import torch
 import torch.nn as nn
 
@@ -202,7 +204,50 @@ class StackedResidualBlock(StackedBlock):
         return ResBasic(conv=conv, in_channels=in_channels,
                         out_channels=out_channels,
                         kernel_size=kernel_size, stride=stride,
-                        padding=padding, **kwargs)
+                        padding=padding, **kwargs,
+                        )
+
+
+class MySEBlockExp2(StackedBlock):
+    expansion = 2
+
+    def build_block(self,
+                    conv: Callable,
+                    in_channels: int,
+                    out_channels: int,
+                    kernel_size: NdParam,
+                    stride: NdParam,
+                    padding: NdParam,
+                    **kwargs,
+                    ) -> nn.Module:
+        """
+        Fused MB Conv block
+
+        Args:
+            conv: generator for convolutions
+            in_channels: number of input channels
+            out_channels: number of output channels
+            kernel_size: kernel size oh convolutions
+            stride: stride of first convolution
+            padding: padding of convolutions
+
+        Returns:
+            nn.Module: stacked convolutions
+        """
+        return MyFusedMBConv(
+            conv=conv,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            expansion=self.expansion,
+            **kwargs,
+        )
+
+
+class MySEBlockExp4(MySEBlockExp2):
+    expansion = 4
 
 
 class StackedConvBlock(AbstractBlock):
