@@ -66,9 +66,9 @@ class LightningBaseModule(pl.LightningModule):
         self.epoch_end_toc = 0
 
     @property
-    def max_epochs(self):
+    def train_epochs(self):
         """
-        Number of epochs to train
+        Return number of train epochs
         """
         if "max_num_epochs" in self.plan:
             epochs = self.plan["max_num_epochs"]
@@ -77,6 +77,13 @@ class LightningBaseModule(pl.LightningModule):
             epochs = self.trainer_cfg["max_num_epochs"]
             logger.info(f"Using max epochs {epochs} from config.")
         return epochs
+
+    @property
+    def max_epochs(self):
+        """
+        Number of epochs of full training
+        """
+        return self.train_epochs
 
     def on_epoch_start(self) -> None:
         """
@@ -182,16 +189,6 @@ class LightningBaseModule(pl.LightningModule):
 
 
 class LightningBaseModuleSWA(LightningBaseModule):
-    @property
-    def train_epochs(self):
-        if "max_num_epochs" in self.plan:
-            epochs = self.plan["max_num_epochs"]
-            logger.info(f"Using max epochs {epochs} from plan.")
-        else:
-            epochs = self.trainer_cfg["max_num_epochs"]
-            logger.info(f"Using max epochs {epochs} from config.")
-        return epochs
-
     @property
     def max_epochs(self):
         """

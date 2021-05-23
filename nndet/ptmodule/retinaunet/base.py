@@ -335,8 +335,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         )
 
         # configure lr scheduler
-        num_iterations = self.trainer_cfg["max_num_epochs"] * \
-            self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
