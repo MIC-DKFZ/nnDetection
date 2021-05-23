@@ -70,7 +70,14 @@ class LightningBaseModule(pl.LightningModule):
         """
         Number of epochs to train
         """
-        return self.trainer_cfg["max_num_epochs"]
+        if "max_num_epochs" in self.plan:
+            epochs = self.plan["max_num_epochs"]
+            logger.info(f"Using max epochs {epochs} from plan.")
+            return epochs
+        else:
+            epochs = self.trainer_cfg["max_num_epochs"]
+            logger.info(f"Using max epochs {epochs} from config.")
+            return epochs 
 
     def on_epoch_start(self) -> None:
         """
