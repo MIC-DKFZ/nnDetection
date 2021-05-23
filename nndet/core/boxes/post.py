@@ -55,7 +55,7 @@ def post_image_single_class_regression(
         keep = fn_remove_small_boxes(boxes, min_size=remove_small_boxes)
         boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
 
-    keep = batched_nms(boxes, probs, labels, nms_thresh)
+    boxes, probs, labels, _ = batched_nms(boxes, probs, labels, nms_thresh)
 
     if detections_per_img is not None:
         keep = keep[:detections_per_img]

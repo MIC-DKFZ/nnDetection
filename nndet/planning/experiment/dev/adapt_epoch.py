@@ -10,9 +10,9 @@ from nndet.planning.experiment import PLANNER_REGISTRY
 @PLANNER_REGISTRY.register
 class D3V001AEP(D3V001):
     def plan_experiment(self,
-                    model_name: str,
-                    model_cfg: Dict,
-                    ) -> List[str]:
+                        model_name: str,
+                        model_cfg: Dict,
+                        ) -> List[str]:
         """
         Plan the whole experiment (currently only one stage is supported)
         (uses :func:`self.save_plans()` to save the results)
@@ -44,8 +44,8 @@ class D3V001AEP(D3V001):
     def determine_num_epochs(self) -> Dict[str, int]:
         num_instances = sum(self.data_properties["num_instances"].values())
 
-        epochs  = math.floor(max(30., 40. + 5. * math.log(num_instances / 500., 2)))
-        
+        epochs = math.floor(max(30., 40. + 5. * math.log(num_instances / 500., 2)))
+
         logger.info(f"Found {num_instances} instances in dataset, using {epochs} epochs for training. "
                     "Assuming 2500iter/epoch.")
         return {

@@ -28,7 +28,7 @@ class MyFusedMBConv(torch.nn.Module):
                 padding=padding,
                 act_inplace=False,
                 **kwargs,
-                ),
+            ),
             SELayer(
                 dim=conv.dim,
                 in_channels=in_channels * expansion,
@@ -42,11 +42,11 @@ class MyFusedMBConv(torch.nn.Module):
                 padding=padding,
                 act_inplace=False,
                 **kwargs,
-                ),
-            )
+            ),
+        )
 
         stride_prod = (reduce((lambda x, y: x * y), stride)
-                if isinstance(stride, Sequence) else stride)
+                       if isinstance(stride, Sequence) else stride)
         if stride_prod > 1:
             self.shortcut = torch.nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
@@ -58,7 +58,7 @@ class MyFusedMBConv(torch.nn.Module):
     def forward(self, x):
         res = x
         x = self.fw(x)
-        
+
         if self.shortcut:
             res = self.shortcut(res)
 

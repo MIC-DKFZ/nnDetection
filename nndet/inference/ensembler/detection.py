@@ -25,12 +25,11 @@ from torch import Tensor
 
 from loguru import logger
 
-from nndet.inference.detection.model import batched_weighted_nms_model
-from nndet.inference.detection import batched_nms_model, \
-    batched_wbc_ensemble
+from nndet.core.boxes.nms import batched_weighted_nms, batched_nms
+from nndet.core.boxes.wbc import batched_wbc
+from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.restore import restore_detection
-from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
 from nndet.utils.tensor import cat, to_device
 
 from nndet.core.boxes.merging import (
@@ -155,14 +154,14 @@ class BoxEnsembler(BaseEnsembler):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_nms_model,
+            "model_nms_fn": batched_nms,
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
 
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc_ensemble,
+            "ensemble_nms_fn": batched_wbc,
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -531,13 +530,22 @@ class BoxEnsembler(BaseEnsembler):
         weights = weights[idx]
 
         n_exp_preds = self.overlap_map.mean_num_overlap_of_boxes(boxes)
-        boxes, probs, labels = self.parameters["ensemble_nms_fn"](
+        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+            _kwargs = {"n_exp_preds": n_exp_preds}
+        else:
+            _kwargs = {}
+
+        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
             boxes, probs, labels,
             weights=weights,
             iou_thresh=self.parameters["model_iou"],
-            n_exp_preds=n_exp_preds,
-            score_thresh=self.parameters["ensemble_score_thresh"],
+            **_kwargs
         )
+
+        keep = probs > self.parameters["ensemble_score_thresh"]
+        boxes = boxes[keep]
+        probs = probs[keep]
+        labels = labels[keep]
         return boxes.cpu(), probs.cpu(), labels.cpu()
 
 
@@ -612,14 +620,14 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_nms_model,
+            "model_nms_fn": batched_nms,
             "model_score_thresh": 0.1,
             "model_topk": 1000,
             "model_detections_per_image": 1000,
 
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc_ensemble,
+            "ensemble_nms_fn": batched_wbc,
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -791,13 +799,22 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         weights = weights[idx]
 
         n_exp_preds = self.overlap_map_mean.expand(len(boxes)).to(boxes)
-        boxes, probs, labels = self.parameters["ensemble_nms_fn"](
+        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+            _kwargs = {"n_exp_preds": n_exp_preds}
+        else:
+            _kwargs = {}
+
+        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
             boxes, probs, labels,
             weights=weights,
             iou_thresh=self.parameters["model_iou"],
-            n_exp_preds=n_exp_preds,
-            score_thresh=self.parameters["ensemble_score_thresh"],
+            **_kwargs
         )
+
+        keep = probs > self.parameters["ensemble_score_thresh"]
+        boxes = boxes[keep]
+        probs = probs[keep]
+        labels = labels[keep]
         return boxes.cpu(), probs.cpu(), labels.cpu()
 
     @torch.no_grad()
@@ -965,14 +982,14 @@ class BoxEnsemblerSelective(BoxEnsembler):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_weighted_nms_model,
+            "model_nms_fn": batched_weighted_nms,
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
 
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc_ensemble,
+            "ensemble_nms_fn": batched_wbc,
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -990,8 +1007,8 @@ class BoxEnsemblerSelective(BoxEnsembler):
             # single model
             "model_iou": iou_threshs,
             "model_nms_fn": [
-                batched_weighted_nms_model,
-                batched_nms_model,
+                batched_nms,
+                batched_weighted_nms,
             ],
             # ensemble multiple models
             "ensemble_iou": iou_threshs,
@@ -1126,13 +1143,22 @@ class BoxEnsemblerSelective(BoxEnsembler):
         weights = weights[idx]
 
         n_exp_preds = torch.tensor([num_models] * len(boxes)).to(boxes)
-        boxes, probs, labels = self.parameters["ensemble_nms_fn"](
+        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+            _kwargs = {"n_exp_preds": n_exp_preds}
+        else:
+            _kwargs = {}
+
+        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
             boxes, probs, labels,
             weights=weights,
-            iou_thresh=self.parameters["ensemble_iou"],
-            n_exp_preds=n_exp_preds,
-            score_thresh=self.parameters["ensemble_score_thresh"],
+            iou_thresh=self.parameters["model_iou"],
+            **_kwargs
         )
+
+        keep = probs > self.parameters["ensemble_score_thresh"]
+        boxes = boxes[keep]
+        probs = probs[keep]
+        labels = labels[keep]
         return boxes.cpu(), probs.cpu(), labels.cpu()
 
     def save_state(self,
@@ -1220,8 +1246,8 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             # single model
             "model_iou": iou_threshs,
             "model_nms_fn": [
-                batched_weighted_nms_model,
-                batched_nms_model,
+                batched_weighted_nms,
+                batched_nms,
             ],
             # ensemble multiple models
             "ensemble_iou": iou_threshs,

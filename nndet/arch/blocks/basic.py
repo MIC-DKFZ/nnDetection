@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from nndet.arch.blocks.mbconv import MyFusedMBConv
-from nndet.arch.blocks.se import SELayer
 import torch
 import torch.nn as nn
 
 from abc import abstractmethod
 from typing import Sequence, Callable, Union, Tuple
 
+from nndet.arch.blocks.mbconv import MyFusedMBConv
 from nndet.arch.conv import NdParam
 from nndet.arch.blocks.res import ResBasic
 

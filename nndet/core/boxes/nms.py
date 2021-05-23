@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Optional, Tuple
 import torch
 from torch import Tensor
 from torch.cuda.amp import autocast
@@ -49,7 +50,11 @@ def nms_cpu(boxes, scores, thresh):
 
 
 @autocast(enabled=False)
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
+def nms(
+    boxes: Tensor,
+    scores: Tensor,
+    iou_threshold: float,
+) -> Tensor:
     """
     Performs non-maximum suppression
 
@@ -74,20 +79,26 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
     return nms_fn(boxes.float(), scores.float(), iou_threshold)
 
 
-def batched_nms(boxes: Tensor, scores: Tensor, idxs: Tensor, iou_threshold: float):
+def _batched_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iou_threshold: float,
+) -> Tensor:
     """
     Performs non-maximum suppression in a batched fashion.
     Each index value correspond to a category, and NMS
     will not be applied between elements of different categories.
 
     Args:
-        boxes (Tensor): boxes where NMS will be performed. (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): scores for each one of the boxes [N]
-        idxs (Tensor): indices of the categories for each one of the boxes. [N]
-        iou_threshold (float):  discards all overlapping boxes with IoU > iou_threshold
+        boxes: boxes where NMS will be performed
+            (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: scores for each one of the boxes [N]
+        idxs: indices of the categories for each one of the boxes. [N]
+        iou_threshold:  discards all overlapping boxes with IoU > iou_threshold
 
     Returns
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
+        keep: int64 tensor with the indices of the elements that have been kept by NMS,
             sorted in decreasing order of scores
     """
     if boxes.numel() == 0:
@@ -100,3 +111,77 @@ def batched_nms(boxes: Tensor, scores: Tensor, idxs: Tensor, iou_threshold: floa
     offsets = idxs.to(boxes) * (max_coordinate + 1)
     boxes_for_nms = boxes + offsets[:, None]
     return nms(boxes_for_nms, scores, iou_threshold)
+
+
+def batched_nms(
+        boxes: Tensor,
+        scores: Tensor,
+        labels: Tensor,
+        iou_thresh: float,
+        weights: Optional[Tensor] = None,
+) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor]]:
+    """
+    Model nms for ensembler (same as batched nms with adjusted signature)
+
+    Args:
+        boxes: predicted boxes
+        scores: predicted scores
+        labels: predicted labels
+        weights: weight per box
+        iou_thresh: IoU threshold for nms
+
+    Returns:
+        Tensor: postprocessed boxes
+        Tensor: postprocessed scores (descending)
+        Tensor: postprocessed labels
+        Tensor: if weights is not None, corresponding weights, None otherwise
+    """
+    keep = _batched_nms(
+        boxes=boxes,
+        scores=scores,
+        idxs=labels,
+        iou_threshold=iou_thresh,
+    )
+
+    if weights is not None:
+        _weights = weights[keep]
+    else:
+        _weights = None
+
+    return boxes[keep], scores[keep], labels[keep], _weights
+
+
+def batched_weighted_nms(
+        boxes: Tensor,
+        scores: Tensor,
+        labels: Tensor,
+        iou_thresh: float,
+        weights: Tensor,
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    """
+    Uses scores and weights to compute NMS suppression
+    Returned scores are the original ones
+
+    Args:
+        boxes: predicted boxes
+        scores: predicted scores
+        labels: predicted labels
+        weights: weight per box
+        iou_thresh: IoU threshold for nms
+
+    Returns:
+        Tensor: postprocessed boxes
+        Tensor: kept scores.
+        Tensor: postprocessed labels
+        Tensor: vector filled with ones.
+    """
+    _scores = scores * weights
+    keep = _batched_nms(
+        boxes=boxes,
+        scores=_scores,
+        idxs=labels,
+        iou_threshold=iou_thresh,
+    )
+    new_weights = torch.ones_like(weights)
+
+    return boxes[keep], scores[keep], labels[keep], new_weights[keep]

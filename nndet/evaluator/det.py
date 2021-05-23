@@ -103,7 +103,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         self.results_list.extend(
             self.match_fn(
-                self.iou_fn, self.iou_thresholds, 
+                self.iou_fn, self.iou_thresholds,
                 pred_boxes=pred_boxes,
                 pred_classes=pred_classes,
                 pred_scores=pred_scores,
@@ -111,8 +111,8 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_classes=gt_classes,
                 gt_ignore=gt_ignore,
                 max_detections=self.max_detections,
-                )
             )
+        )
         return {}
 
     def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:

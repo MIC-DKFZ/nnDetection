@@ -108,7 +108,7 @@ class RetinaUNetC011C3(RetinaUNetV001):
 @MODULE_REGISTRY.register
 class RetinaUNetC011MySE2(RetinaUNetV001):
     block = MySEBlockExp2
-    
+
     @classmethod
     def _build_encoder(
         cls,
@@ -140,6 +140,7 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
             **model_cfg['encoder_kwargs'],
         )
         return encoder
+
 
 @MODULE_REGISTRY.register
 class RetinaUNetC011MySE4(RetinaUNetV001):

@@ -131,5 +131,10 @@ class TestNMS:
     def test_batched_nms(self, th):
         boxes, scores, _ = generate_2d_fixed()
         groups = torch.tensor([0, 1, 0])
-        computed_vision = batched_nms(boxes, scores, groups, th)
-        assert ((computed_vision == torch.tensor([0, 1, 2])).all())
+        boxes_res, scores_res, labels_res, _ = \
+            batched_nms(boxes, scores, groups, th)
+        
+        # no suppression
+        assert boxes_res.allclose(boxes)
+        assert scores_res.allclose(scores)
+        assert labels_res.allclose(groups)

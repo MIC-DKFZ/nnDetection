@@ -19,10 +19,49 @@ import torch
 from torch import Tensor
 from typing import Tuple
 
-from nndet.core.boxes import box_iou, box_area
+from nndet.core.boxes.ops import box_iou, box_area
+from nndet.core.boxes.nms import nms
 
 
-__all__ = ["batched_wbc", "wbc"]
+def batched_wbc_nms_no_label(
+        boxes: Tensor,
+        scores: Tensor,
+        labels: Tensor,
+        weights: Tensor,
+        iou_thresh: float,
+        n_exp_preds: Tensor,
+) -> Tuple[Tensor, Tensor, Tensor, None]:
+    """
+    Applies WBC and postprocesses with class agnostic NMS
+
+    Args:
+        boxes: predicted boxes (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
+        scores: predicted scores [N]
+        labels: predicted labels [N]
+        weights: weight for each box [N] (gaussian weighting of boxes near
+            corners need to be included in this weight)
+        iou_thresh: iou threshold used for clustering boxes
+        n_exp_preds: number of expected predictions per box (computed as the
+            mean number predictions inside the bounding box)
+        use_area: assigns higher weights to larger boxes based on
+            empirical observations indicating an increase in image
+            evidence from larger areas.
+        missing_weight: weight for score dampening when predictions are missing
+
+    Returns:
+        Tensor: clustered boxes
+        Tensor: clustered scores
+        Tensor: labels
+        None: make returns consistent across functions
+    """
+    boxes, scores, labels = batched_wbc(
+        boxes, scores, labels,
+        weights=weights,
+        n_exp_preds=n_exp_preds,
+        iou_thresh=iou_thresh,
+    )
+    keep = nms(boxes, scores, iou_thresh)
+    return boxes[keep], scores[keep], labels[keep], None
 
 
 def batched_wbc(
@@ -32,10 +71,9 @@ def batched_wbc(
     weights: Tensor,
     iou_thresh: float,
     n_exp_preds: Tensor,
-    score_thresh: float,
     use_area: bool = False,
     missing_weight: float = 1.,
-) -> Tuple[Tensor, Tensor, Tensor]:
+) -> Tuple[Tensor, Tensor, Tensor, None]:
     """
     Computed weighted box clustering per class
 
@@ -48,7 +86,6 @@ def batched_wbc(
         iou_thresh: iou threshold used for clustering boxes
         n_exp_preds: number of expected predictions per box (computed as the
             mean number predictions inside the bounding box)
-        score_thresh: minimum score of predictions after clustering
         use_area: assigns higher weights to larger boxes based on
             empirical observations indicating an increase in image
             evidence from larger areas.
@@ -58,6 +95,7 @@ def batched_wbc(
         Tensor: clustered boxes
         Tensor: clustered scores
         Tensor: labels
+        None: make returns consistent across functions
     """
     clustered_boxes = []
     clustered_scores = []
@@ -70,8 +108,9 @@ def batched_wbc(
         _n_exp_preds = n_exp_preds[_labels_mask]
 
         b, s = wbc(_boxes, _scores,
-                   weights=_weights, n_exp_preds=_n_exp_preds,
-                   iou_thresh=iou_thresh, score_thresh=score_thresh,
+                   weights=_weights,
+                   n_exp_preds=_n_exp_preds,
+                   iou_thresh=iou_thresh,
                    use_area=use_area,
                    missing_weight=missing_weight,
                    )
@@ -82,11 +121,15 @@ def batched_wbc(
     if clustered_boxes:
         return (torch.cat(clustered_boxes, dim=0),
                 torch.cat(clustered_scores, dim=0),
-                torch.cat(clustered_labels, dim=0))
+                torch.cat(clustered_labels, dim=0),
+                None,
+                )
     else:
         return (torch.tensor([]).view(-1, boxes.shape[1]),
                 torch.tensor([]).view(-1),
-                torch.tensor([]).view(-1))
+                torch.tensor([]).view(-1),
+                None,
+                )
 
 
 def wbc(
@@ -95,7 +138,6 @@ def wbc(
     weights: Tensor,
     n_exp_preds: Tensor,
     iou_thresh: float,
-    score_thresh: float,
     use_area: bool = True,
     missing_weight: float = 1.,
 ) -> Tuple[Tensor, Tensor]:
@@ -109,7 +151,6 @@ def wbc(
         n_exp_preds: expected number of predictions per box
         iou_thresh: iou threshold for determining clusters of boxes which are
             combined
-        score_thresh: minimum scores of boxes after consolidation
         use_area: assigns higher weights to larger boxes based on
             empirical observations indicating an increase in image
             evidence from larger areas.
@@ -137,17 +178,16 @@ def wbc(
         # compute new scores
         n_expected = n_exp_preds[box_idx].float().mean()
         new_box, new_score = compute_cluster_consolidation(
-            boxes[box_idx], scores[box_idx],
+            boxes[box_idx],
+            scores[box_idx],
             weights=weights[box_idx],
             ious=ious[highest_scoring_id][box_idx],
             n_expected=n_expected,
             n_found=len(box_idx),
             missing_weight=missing_weight,
         )
-
-        if new_score > score_thresh:
-            new_boxes.append(new_box)
-            new_scores.append(new_score)
+        new_boxes.append(new_box)
+        new_scores.append(new_score)
 
         # get all elements that were not matched and discard all others.
         non_matches = torch.where(ious[highest_scoring_id][idx_pool] <= iou_thresh)[0].flatten()
