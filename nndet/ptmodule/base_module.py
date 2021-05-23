@@ -183,17 +183,21 @@ class LightningBaseModule(pl.LightningModule):
 
 class LightningBaseModuleSWA(LightningBaseModule):
     @property
-    def max_epochs(self):
-        """
-        Number of epochs to train
-        """
+    def train_epochs(self):
         if "max_num_epochs" in self.plan:
             epochs = self.plan["max_num_epochs"]
             logger.info(f"Using max epochs {epochs} from plan.")
         else:
             epochs = self.trainer_cfg["max_num_epochs"]
             logger.info(f"Using max epochs {epochs} from config.")
-        return epochs + self.trainer_cfg["swa_epochs"]
+        return epochs
+
+    @property
+    def max_epochs(self):
+        """
+        Number of epochs to train
+        """
+        return self.train_epochs + self.trainer_cfg["swa_epochs"]
 
     def configure_callbacks(self):
         from nndet.training.swa import SWACycleLinear
@@ -201,7 +205,7 @@ class LightningBaseModuleSWA(LightningBaseModule):
         callbacks = []
         callbacks.append(
             SWACycleLinear(
-                swa_epoch_start=self.trainer_cfg["max_num_epochs"],
+                swa_epoch_start=self.train_epochs,
                 cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
                 cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
                 num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
