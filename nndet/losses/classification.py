@@ -16,13 +16,12 @@ limitations under the License.
 
 import torch
 import torch.nn.functional as F
-import torch.nn as nn
 from torch.cuda.amp import autocast
 
 from torch import Tensor
 from loguru import logger
 
-from nndet.losses.base import reduction_helper
+from nndet.losses.base import reduction_helper, Loss
 from nndet.utils import make_onehot_batch
 
 
@@ -74,7 +73,7 @@ def focal_loss_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-class FocalLossWithLogits(nn.Module):
+class FocalLossWithLogits(Loss):
     def __init__(self,
                  gamma: float = 2,
                  alpha: float = -1,
@@ -96,12 +95,13 @@ class FocalLossWithLogits(nn.Module):
                 sum: sum of loss over entire batch
                 none: no reduction
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
         self.gamma = gamma
         self.alpha = alpha
-        self.reduction = reduction
-        self.loss_fp32 = loss_fp32
-        self.loss_weight = loss_weight
 
     def forward(self,
                 logits: torch.Tensor,
@@ -179,7 +179,7 @@ def asymmetric_focal_loss_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-class AsymmetricFocalLossWithLogits(nn.Module):
+class AsymmetricFocalLossWithLogits(Loss):
     def __init__(self,
                  gamma: float = 2,
                  alpha: float = 1,
@@ -203,12 +203,13 @@ class AsymmetricFocalLossWithLogits(nn.Module):
                 sum: sum of loss over entire batch
                 none: no reduction
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
         self.gamma = gamma
         self.alpha = alpha
-        self.reduction = reduction
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
 
     def forward(self,
                 logits: torch.Tensor,
@@ -252,7 +253,7 @@ class AsymmetricFocalLossWithLogits(nn.Module):
         return loss
 
 
-class BCEWithLogitsLossOneHot(torch.nn.BCEWithLogitsLoss):
+class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
     def __init__(self,
                  *args,
                  num_classes: int,
@@ -270,13 +271,16 @@ class BCEWithLogitsLossOneHot(torch.nn.BCEWithLogitsLoss):
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            **kwargs,
+            )
         self.smoothing = smoothing
         if smoothing > 0:
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
         self.num_classes = num_classes
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
 
     def forward(self,
                 input: Tensor,
@@ -322,9 +326,14 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
         """
-        super().__init__(*args, **kwargs)
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
+        super().__init__(
+            *args,
+            **kwargs,
+            )
+        self.loss_weight=loss_weight
+        self.loss_fp32=loss_fp32
+        if loss_fp32:
+            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
     def forward(self,
                 input: Tensor,
@@ -356,9 +365,14 @@ class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
         """
-        super().__init__(*args, **kwargs)
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
+        super().__init__(
+            *args,
+            **kwargs,
+            )
+        self.loss_weight=loss_weight
+        self.loss_fp32=loss_fp32
+        if loss_fp32:
+            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
     def forward(self,
                 input: Tensor,

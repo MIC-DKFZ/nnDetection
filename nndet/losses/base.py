@@ -15,8 +15,42 @@ limitations under the License.
 """
 
 import torch
+from loguru import logger
 
-__all__ = ["reduction_helper"]
+
+class Loss(torch.nn.Module):
+    def __init__(self,
+                 *args,
+                 loss_weight: float = 1.,
+                 loss_fp32: bool = False,
+                 reduction: str = "sum",
+                 **kwargs,
+                 ) -> None:
+        """
+        Base class for all nnDetection losses
+
+        Args:
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            reduction: 'mean'|'sum'|'none'
+                mean: mean of loss over entire batch
+                sum: sum of loss over entire batch
+                none: no reduction
+        """
+        super().__init__(*args, **kwargs)
+        self.reduction = reduction
+        self.loss_fp32 = loss_fp32
+        self.loss_weight = loss_weight
+
+    @property
+    def loss_fp32(self) -> bool:
+        return self._loss_fp32
+    
+    @loss_fp32.setter
+    def loss_fp32(self, val: bool):
+        self._loss_fp32 = val
+        if val:
+            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
 
 def reduction_helper(

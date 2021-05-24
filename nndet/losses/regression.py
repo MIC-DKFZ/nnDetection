@@ -3,10 +3,10 @@ from torch.tensor import Tensor
 from torch.cuda.amp import autocast
 
 from nndet.core.boxes.ops import generalized_box_iou
-from nndet.losses.base import reduction_helper
+from nndet.losses.base import reduction_helper, Loss
 
 
-class SmoothL1Loss(torch.nn.Module):
+class SmoothL1Loss(Loss):
     def __init__(self,
                  beta: float,
                  loss_weight: float = 1.,
@@ -29,11 +29,12 @@ class SmoothL1Loss(torch.nn.Module):
         See Also:
             :func:`smooth_l1_loss`
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
         self.beta = beta
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
-        self.reduction = reduction
 
     def forward(self,
                 inp: torch.Tensor,
@@ -131,7 +132,7 @@ def smooth_l1_loss(
     return reduction_helper(loss, reduction=reduction)
 
 
-class GIoULoss(torch.nn.Module):
+class GIoULoss(Loss):
     def __init__(self,
                  eps: float = 1e-7,
                  loss_weight: float = 1.,
@@ -159,10 +160,12 @@ class GIoULoss(torch.nn.Module):
             to find the best weights for the losses and the final models use only GIoU loss
             with weights 20 and 1 for box and proposal regression tasks respectively"
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
         self.eps = eps
-        self.loss_weight = loss_weight
-        self.reduction = reduction
 
     def forward(self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor) -> torch.Tensor:
         """

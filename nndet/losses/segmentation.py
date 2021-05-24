@@ -22,7 +22,7 @@ from torch.cuda.amp import autocast
 from torch import Tensor
 from loguru import logger
 
-from nndet.losses.base import reduction_helper
+from nndet.losses.base import Loss, reduction_helper
 from nndet.losses.classification import CrossEntropyLoss, BCEWithLogitsLoss
 
 
@@ -122,7 +122,7 @@ def soft_dice(
     return reduction_helper(dc, reduction=reduction) * (-1)
 
 
-class SoftDiceLoss(nn.Module):
+class SoftDiceLoss(Loss):
     def __init__(self,
                  nonlin: Callable = None,
                  batch_dice: bool = False,
@@ -148,7 +148,11 @@ class SoftDiceLoss(nn.Module):
                  'sum': The output will be summed.
                  'none': NOT supported
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
 
         self.do_bg = do_bg
         self.batch_dice = batch_dice
@@ -157,13 +161,8 @@ class SoftDiceLoss(nn.Module):
         self.smooth_denom = smooth_denom
         logger.info(f"Running batch dice {self.batch_dice} and "
                     f"do bg {self.do_bg} in dice loss.")
-        self.reduction = reduction
-
         if self.reduction.lower() == "none":
             raise ValueError(f"SoftDice does not support reduction {reduction}.")
-
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
 
     def forward(self,
                 inp: torch.Tensor,
@@ -229,9 +228,9 @@ class TopKLoss(CrossEntropyLoss):
             raise ValueError("Reduction is not supported in TopKLoss."
                              "This will always return the mean!")
         super().__init__(
-            reduction="none",
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
+            reduction="none",
             **kwargs,
         )
         if topk < 0 or topk > 1:
@@ -280,9 +279,9 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
             raise ValueError("Reduction is not supported in TopKLoss."
                              "This will always return the mean!")
         super().__init__(
-            reduction="none",
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
+            reduction="none",
             **kwargs,
         )
         self.smoothing = smoothing

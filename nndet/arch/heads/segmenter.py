@@ -21,6 +21,7 @@ from typing import Dict, List, Union, Sequence, Optional, Tuple, TypeVar
 
 from nndet.arch.conv import compute_padding_for_kernel
 from nndet.arch.layers.interpolation import InterpolateToShapes
+from nndet.losses.classification import CrossEntropyLoss
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
 
 
@@ -60,6 +61,7 @@ class DiCESegmenter(Segmenter):
                  alpha: float = 0.5,
                  ce_kwargs: Optional[dict] = None,
                  dice_kwargs: Optional[dict] = None,
+                 loss_fp32: bool = False,
                  **kwargs,
                  ):
         """
@@ -80,6 +82,7 @@ class DiCESegmenter(Segmenter):
             alpha: weight dice and ce loss (alpha * ce + (1-alpha) * soft_dice)
             ce_kwargs: keyword arguments passed to CE loss
             dice_kwargs: keyword arguments passed to dice loss
+            loss_fp32: If True, loss is forced to be computed in float32
         """
         super().__init__(
             seg_classes=seg_classes,
@@ -107,11 +110,18 @@ class DiCESegmenter(Segmenter):
         dice_kwargs.setdefault("smooth_nom", 1e-5)
         dice_kwargs.setdefault("smooth_denom", 1e-5)
         dice_kwargs.setdefault("do_bg", False)
-        self.dice_loss = SoftDiceLoss(nonlin=torch.nn.Softmax(dim=1), **dice_kwargs)
+        self.dice_loss = SoftDiceLoss(
+            nonlin=torch.nn.Softmax(dim=1),
+            loss_fp32=loss_fp32,
+            **dice_kwargs,
+            )
 
         if ce_kwargs is None:
             ce_kwargs = {}
-        self.ce_loss = torch.nn.CrossEntropyLoss(**ce_kwargs)
+        self.ce_loss = CrossEntropyLoss(
+            loss_fp32=loss_fp32,
+            **ce_kwargs,
+            )
 
         self.logits_convert_fn = nn.Softmax(dim=1)
         self.alpha = alpha
@@ -230,6 +240,7 @@ class DiCESegmenterFgBg(DiCESegmenter):
                  add_act: bool = True,
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
+                 loss_fp32: bool = False,
                  **kwargs,
                  ):
         """
@@ -250,6 +261,7 @@ class DiCESegmenterFgBg(DiCESegmenter):
             alpha: weight dice and ce loss (alpha * ce + (1-alpha) * soft_dice)
             ce_kwargs: keyword arguments passed to CE loss
             dice_kwargs: keyword arguments passed to dice loss
+            loss_fp32: If True, loss is forced to be computed in float32
 
         Warnings:
             If this class is used, the reportet dice scores during training
@@ -265,6 +277,7 @@ class DiCESegmenterFgBg(DiCESegmenter):
                          add_act=add_act,
                          kernel_size=kernel_size,
                          alpha=alpha,
+                         loss_fp32=loss_fp32,
                          **kwargs,
                          )
 
@@ -300,6 +313,7 @@ class DiceTopKSegmenter(DiCESegmenter):
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  topk: float = 0.1,
+                 loss_fp32: bool = False,
                  **kwargs,
                  ):
         """
@@ -320,6 +334,7 @@ class DiceTopKSegmenter(DiCESegmenter):
             alpha: weight dice and ce loss (alpha * ce + (1-alpha) * soft_dice)
             ce_kwargs: keyword arguments passed to CE loss
             topk: percentage of all entries to use for loss computation
+            loss_fp32: If True, loss is forced to be computed in float32
         """
         super().__init__(conv=conv,
                          in_channels=in_channels,
@@ -335,7 +350,8 @@ class DiceTopKSegmenter(DiCESegmenter):
                          **kwargs,
                          )
         self.ce_loss = TopKLoss(
-            topk=topk
+            topk=topk,
+            loss_fp32=loss_fp32,
         )
 
 
@@ -352,6 +368,7 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  topk: float = 0.1,
+                 loss_fp32: bool = False,
                  **kwargs,
                  ):
         """
@@ -372,6 +389,7 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
             alpha: weight dice and ce loss (alpha * ce + (1-alpha) * soft_dice)
             ce_kwargs: keyword arguments passed to CE loss
             topk: percentage of all entries to use for loss computation
+            loss_fp32: If True, loss is forced to be computed in float32
 
         Warnings:
             If this class is used, the reportet dice scores during training
@@ -387,10 +405,12 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
                          add_act=add_act,
                          kernel_size=kernel_size,
                          alpha=alpha,
+                         loss_fp32=loss_fp32,
                          **kwargs,
                          )
         self.ce_loss = TopKLoss(
-            topk=topk
+            topk=topk,
+            loss_fp32=loss_fp32,
         )
 
 
@@ -407,6 +427,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
                  kernel_size: Union[int, Sequence[int]] = 3,
                  alpha: float = 0.5,
                  dsv_weight: float = 1.,
+                 loss_fp32: bool = False,
                  **kwargs,
                  ):
         """
@@ -429,6 +450,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
             ce_kwargs: keyword arguments passed to CE loss
             dice_kwargs: keyword arguments passed to dice loss
             dsv_weight: additional weight for dsv losses
+            loss_fp32: If True, loss is forced to be computed in float32
         """
         super().__init__(conv=conv,
                          in_channels=in_channels,
@@ -440,6 +462,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
                          add_act=add_act,
                          kernel_size=kernel_size,
                          alpha=alpha,
+                         loss_fp32=loss_fp32,
                          **kwargs,
                          )
 
