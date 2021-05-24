@@ -1,9 +1,8 @@
 from typing import Optional
 
 import torch
-
-
-__all__ = ["SmoothL1Loss", "smooth_l1_loss"]
+from torch.tensor import Tensor
+from torch.cuda.amp import autocast
 
 from nndet.core.boxes.ops import generalized_box_iou
 from nndet.losses.base import reduction_helper
@@ -14,6 +13,7 @@ class SmoothL1Loss(torch.nn.Module):
                  beta: float,
                  reduction: Optional[str] = None,
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  ):
         """
         Module wrapper for functional
@@ -25,6 +25,8 @@ class SmoothL1Loss(torch.nn.Module):
                  'none': No reduction will be applied to the output.
                  'mean': The output will be averaged.
                  'sum': The output will be summed.
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
 
         See Also:
             :func:`smooth_l1_loss`
@@ -33,8 +35,12 @@ class SmoothL1Loss(torch.nn.Module):
         self.reduction = reduction
         self.beta = beta
         self.loss_weight = loss_weight
+        self.loss_fp32 = loss_fp32
 
-    def forward(self, inp: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(self,
+                inp: torch.Tensor,
+                target: torch.Tensor,
+                ) -> torch.Tensor:
         """
         Compute loss
 
@@ -45,10 +51,31 @@ class SmoothL1Loss(torch.nn.Module):
         Returns:
             Tensor: computed loss
         """
-        return self.loss_weight * reduction_helper(smooth_l1_loss(inp, target, self.beta), self.reduction)
+        if self.loss_fp32:
+            with autocast(enabled=False):
+                loss = self.loss_weight * smooth_l1_loss(
+                    inp.float(),
+                    target.float(),
+                    beta=self.beta,
+                    reduction=self.reduction,
+                    )
+        else:
+            loss = self.loss_weight * smooth_l1_loss(
+                    inp,
+                    target,
+                    beta=self.beta,
+                    reduction=self.reduction,
+                    )
+        return loss
 
 
-def smooth_l1_loss(inp, target, beta: float):
+@torch.jit.script
+def smooth_l1_loss(
+    inp: Tensor,
+    target: Tensor,
+    beta: float,
+    reduction: str,
+) -> Tensor:
     """
     From https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/smooth_l1_loss.py
 
@@ -103,7 +130,7 @@ def smooth_l1_loss(inp, target, beta: float):
         n = torch.abs(inp - target)
         cond = n < beta
         loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
-    return loss
+    return reduction_helper(loss, reduction=reduction)
 
 
 class GIoULoss(torch.nn.Module):
@@ -111,6 +138,7 @@ class GIoULoss(torch.nn.Module):
                  reduction: Optional[str] = None,
                  eps: float = 1e-7,
                  loss_weight: float = 1.,
+                 loss_fp32: bool = True,
                  ):
         """
         Generalized IoU Loss
@@ -119,6 +147,9 @@ class GIoULoss(torch.nn.Module):
 
         Args:
             eps: small constant for numerical stability
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: IGNORED, loss is always computed in fp32. This argument
+                is only added here to have a uniform API.
 
         Notes:
             Original paper uses lambda=10 to balance regression and cls losses

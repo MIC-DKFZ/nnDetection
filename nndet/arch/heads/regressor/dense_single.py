@@ -182,6 +182,7 @@ class L1Regressor(DenseRegressor):
                  beta: float = 1.,
                  reduction: Optional[str] = "sum",
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  learn_scale: bool = False,
                  **kwargs,
                  ):
@@ -204,6 +205,7 @@ class L1Regressor(DenseRegressor):
                 For beta values < 1e-5, L1 loss is computed.
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             learn_scale: learn additional single scalar values per feature
                 pyramid level
             kwargs: keyword arguments passed to first and internal convolutions
@@ -223,6 +225,7 @@ class L1Regressor(DenseRegressor):
             beta=beta,
             reduction=reduction,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
 
 
@@ -237,6 +240,7 @@ class GIoURegressor(DenseRegressor):
                  add_norm: bool = True,
                  reduction: Optional[str] = "sum",
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  learn_scale: bool = False,
                  **kwargs,
                  ):
@@ -258,6 +262,8 @@ class GIoURegressor(DenseRegressor):
             add_norm: en-/disable normalization layers in internal layers
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
+            loss_fp32: IGNORED, loss is always computed in fp32. This argument
+                is only added here to have a uniform API.
             learn_scale: learn additional single scalar values per feature
                 pyramid level
             kwargs: keyword arguments passed to first and internal convolutions
@@ -276,6 +282,7 @@ class GIoURegressor(DenseRegressor):
         self.loss = GIoULoss(
             reduction=reduction,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
 
 
@@ -292,6 +299,7 @@ class DualRegressor(DenseRegressor):
                  beta: float = 1.,
                  loss_weight_l1: float = 5.,
                  loss_weight_giou: float = 2.,
+                 loss_fp32: bool = False,
                  learn_scale: bool = False,
                  **kwargs,
                  ):
@@ -315,7 +323,9 @@ class DualRegressor(DenseRegressor):
             beta: L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
             alpha: balance loss functions
-            loss_weight: scalar to balance multiple losses
+            loss_weight_l1: loss weight to balance l1 loss
+            loss_weight_giou: loss weight to balance giou loss
+            loss_fp32: If True, l1 loss is forced to be computed in float32
             learn_scale: learn additional single scalar values per feature
                 pyramid level
             kwargs: keyword arguments passed to first and internal convolutions
@@ -329,6 +339,7 @@ class DualRegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
+            loss_fp32=loss_fp32,
             **kwargs
         )
         self.loss_weight_l1 = loss_weight_l1
@@ -336,9 +347,11 @@ class DualRegressor(DenseRegressor):
         self.loss_l1 = SmoothL1Loss(
             beta=beta,
             reduction=reduction,
+            loss_fp32=loss_fp32,
         )
         self.loss_giou = GIoULoss(
             reduction=reduction,
+            loss_fp32=loss_fp32,
         )
 
     def compute_loss(self,
@@ -354,6 +367,8 @@ class DualRegressor(DenseRegressor):
         Args:
             pred_deltas: predicted bounding box deltas [N,  dim * 2]
             target_deltas: target bounding box deltas [N,  dim * 2]
+            pred_boxes: predicted bounding boxes [N,  dim * 2]
+            target_boxes: target bounding boxes [N,  dim * 2]
 
         Returns:
             Tensor: loss

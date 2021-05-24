@@ -147,7 +147,7 @@ class DenseClassifier(Classifier):
         Returns:
             Tensor: classification loss
         """
-        return self.loss(pred_logits, targets.long(), **kwargs)
+        return self.loss(pred_logits, targets, **kwargs)
 
     def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
         """
@@ -201,6 +201,7 @@ class BCECLassifier(DenseClassifier):
                  reduction: str = "mean",
                  smoothing: float = 0.0,
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  **kwargs
                  ):
         """
@@ -225,6 +226,7 @@ class BCECLassifier(DenseClassifier):
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
         """
         self.prior_prob = prior_prob
@@ -246,6 +248,7 @@ class BCECLassifier(DenseClassifier):
             reduction=reduction,
             smoothing=smoothing,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = nn.Sigmoid()
 
@@ -264,6 +267,7 @@ class CEClassifier(DenseClassifier):
                  weight: Optional[Tensor] = None,
                  reduction: str = "mean",
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  **kwargs
                  ):
         """
@@ -287,6 +291,7 @@ class CEClassifier(DenseClassifier):
             weight: weight in cross entrpoy loss (see pytorch for more info)
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
         """
         self.prior_prob = prior_prob
@@ -306,6 +311,7 @@ class CEClassifier(DenseClassifier):
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = nn.Softmax(dim=1)
 
@@ -337,6 +343,7 @@ class FocalClassifier(DenseClassifier):
                  alpha: float = -1,
                  reduction: str = "sum",
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  **kwargs
                  ):
         """
@@ -361,6 +368,7 @@ class FocalClassifier(DenseClassifier):
             alpha: focal loss alpha
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
         """
         self.prior_prob = prior_prob
@@ -381,6 +389,7 @@ class FocalClassifier(DenseClassifier):
             alpha=alpha,
             reduction=reduction,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = nn.Sigmoid()
 
@@ -400,6 +409,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
                  alpha: float = -1,
                  reduction: str = "sum",
                  loss_weight: float = 1.,
+                 loss_fp32: bool = False,
                  **kwargs
                  ):
         """
@@ -424,6 +434,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
             alpha: focal loss alpha
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -444,6 +455,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
             alpha=alpha,
             reduction=reduction,
             loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = nn.Sigmoid()
 
