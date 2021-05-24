@@ -407,7 +407,7 @@ The installation command could look like this:
 pip install -e .[dev] -v
 ```
 
-nnDetection follows the pep8 standard and uses `flake8` for automated type formatting.
+nnDetection follows the pep8 standard and uses `flake8` for automated code formatting.
 The following command can be run inside the nnDetection source directory to find problems with the formatting:
 
 ```bash

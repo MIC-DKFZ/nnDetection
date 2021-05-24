@@ -19,21 +19,24 @@ import torch
 __all__ = ["reduction_helper"]
 
 
-def reduction_helper(data: torch.Tensor, reduction: str) -> torch.Tensor:
+def reduction_helper(
+    data: torch.Tensor,
+    reduction: str,
+) -> torch.Tensor:
     """
     Helper to collapse data with different modes
 
     Args:
         data: data to collapse
-        reduction: type of reduction. One of `mean`, `sum`, None
+        reduction: type of reduction. One of `mean`, `sum`, 'none'
 
     Returns:
         Tensor: reduced data
     """
-    if reduction == 'mean':
+    if reduction.lower() == 'mean':
         return torch.mean(data)
-    if reduction == 'none' or reduction is None:
+    if reduction.lower() == 'none':
         return data
-    if reduction == 'sum':
+    if reduction.lower() == 'sum':
         return torch.sum(data)
     raise AttributeError('Reduction parameter unknown.')

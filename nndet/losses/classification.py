@@ -78,9 +78,9 @@ class FocalLossWithLogits(nn.Module):
     def __init__(self,
                  gamma: float = 2,
                  alpha: float = -1,
-                 reduction: str = "sum",
                  loss_fp32: bool = False,
                  loss_weight: float = 1.,
+                 reduction: str = "sum",
                  ):
         """
         Focal loss with multiple classes (uses one hot encoding and sigmoid)
@@ -89,12 +89,12 @@ class FocalLossWithLogits(nn.Module):
             gamma: balance easy and hard examples in focal loss
             alpha: balance positive and negative samples [0, 1] (increasing
                 alpha increase weight of foreground classes (better recall))
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean'|'sum'|'none'
                 mean: mean of loss over entire batch
                 sum: sum of loss over entire batch
                 none: no reduction
-            loss_weight: scalar to balance multiple losses
-            loss_fp32: If True, loss is forced to be computed in float32
         """
         super().__init__()
         self.gamma = gamma
@@ -183,9 +183,9 @@ class AsymmetricFocalLossWithLogits(nn.Module):
     def __init__(self,
                  gamma: float = 2,
                  alpha: float = 1,
-                 reduction: str = "mean",
                  loss_weight: float = 1.,
                  loss_fp32: bool = False,
+                 reduction: str = "mean",
                  ):
         """
         Asymmetric Focal loss
@@ -196,12 +196,12 @@ class AsymmetricFocalLossWithLogits(nn.Module):
             gamma: balance easy and hard examples in focal loss
             alpha: balance positive and negative samples [0, 1] (increasing
                 alpha increase weight of foreground classes (better recall))
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean'|'sum'|'none'
                 mean: mean of loss over entire batch
                 sum: sum of loss over entire batch
                 none: no reduction
-            loss_weight: scalar to balance multiple losses
-            loss_fp32: If True, loss is forced to be computed in float32
         """
         super().__init__()
         self.gamma = gamma
@@ -332,6 +332,40 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
                 ) -> Tensor:
         """
         Same as CE from pytorch
+        """
+        if self.loss_fp32:
+            with autocast(enabled=False):
+                loss = self.loss_weight * super().forward(input.float(), target.long())
+        else:
+            loss = self.loss_weight * super().forward(input, target.long())
+        return loss
+
+
+class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
+    def __init__(self,
+                 *args,
+                 loss_weight: float = 1.,
+                 loss_fp32: bool = False,
+                 **kwargs,
+                 ) -> None:
+        """
+        Same as BCE with Logits from pytorch
+        Targets can be float or long, it is castet to the correct type
+
+        Args:
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+        """
+        super().__init__(*args, **kwargs)
+        self.loss_weight = loss_weight
+        self.loss_fp32 = loss_fp32
+
+    def forward(self,
+                input: Tensor,
+                target: Tensor,
+                ) -> Tensor:
+        """
+        Same as BCE with Logits from pytorch
         """
         if self.loss_fp32:
             with autocast(enabled=False):

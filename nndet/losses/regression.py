@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from torch.tensor import Tensor
 from torch.cuda.amp import autocast
@@ -11,9 +9,9 @@ from nndet.losses.base import reduction_helper
 class SmoothL1Loss(torch.nn.Module):
     def __init__(self,
                  beta: float,
-                 reduction: Optional[str] = None,
                  loss_weight: float = 1.,
                  loss_fp32: bool = False,
+                 reduction: str = "none",
                  ):
         """
         Module wrapper for functional
@@ -21,21 +19,21 @@ class SmoothL1Loss(torch.nn.Module):
         Args:
             beta (float): L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
             reduction (str): 'none' | 'mean' | 'sum'
                  'none': No reduction will be applied to the output.
                  'mean': The output will be averaged.
                  'sum': The output will be summed.
-            loss_weight: scalar to balance multiple losses
-            loss_fp32: If True, loss is forced to be computed in float32
 
         See Also:
             :func:`smooth_l1_loss`
         """
         super().__init__()
-        self.reduction = reduction
         self.beta = beta
         self.loss_weight = loss_weight
         self.loss_fp32 = loss_fp32
+        self.reduction = reduction
 
     def forward(self,
                 inp: torch.Tensor,
@@ -135,10 +133,10 @@ def smooth_l1_loss(
 
 class GIoULoss(torch.nn.Module):
     def __init__(self,
-                 reduction: Optional[str] = None,
                  eps: float = 1e-7,
                  loss_weight: float = 1.,
                  loss_fp32: bool = True,
+                 reduction: str = "none",
                  ):
         """
         Generalized IoU Loss
@@ -163,8 +161,8 @@ class GIoULoss(torch.nn.Module):
         """
         super().__init__()
         self.eps = eps
-        self.reduction = reduction
         self.loss_weight = loss_weight
+        self.reduction = reduction
 
     def forward(self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor) -> torch.Tensor:
         """
