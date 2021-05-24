@@ -101,6 +101,16 @@ class RetinaUNetC011AsymFocal(RetinaUNetC011Focal):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC011C3AsymFocal(RetinaUNetC011AsymFocal):
+    block = StackedConvBlock3
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011C3Focal(RetinaUNetC011Focal):
+    block = StackedConvBlock3
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC011C3(RetinaUNetV001):
     block = StackedConvBlock3
 
