@@ -58,14 +58,14 @@ class SmoothL1Loss(torch.nn.Module):
                     target.float(),
                     beta=self.beta,
                     reduction=self.reduction,
-                    )
+                )
         else:
             loss = self.loss_weight * smooth_l1_loss(
-                    inp,
-                    target,
-                    beta=self.beta,
-                    reduction=self.reduction,
-                    )
+                inp,
+                target,
+                beta=self.beta,
+                reduction=self.reduction,
+            )
         return loss
 
 

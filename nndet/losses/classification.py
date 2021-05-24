@@ -317,7 +317,7 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
         """
         Same as CE from pytorch
         Targets can be float or long, it is castet to the correct type
-        
+
         Args:
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
