@@ -369,7 +369,7 @@ class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
         """
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target.long())
+                loss = self.loss_weight * super().forward(input.float(), target.float())
         else:
-            loss = self.loss_weight * super().forward(input, target.long())
+            loss = self.loss_weight * super().forward(input, target)
         return loss

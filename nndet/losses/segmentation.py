@@ -174,8 +174,8 @@ class SoftDiceLoss(nn.Module):
         Compute loss
 
         Args:
-            inp: predictions
-            target: ground truth
+            inp: predictions [N, C, dims]
+            target: ground truth [N, dims]
             loss_mask: binary mask. Defaults to None.
 
         Returns:
@@ -252,7 +252,7 @@ class TopKLoss(CrossEntropyLoss):
         """
         losses = super().forward(input, target)
 
-        k = int(losses.numel() * self.topk)
+        k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
 
 
@@ -310,5 +310,5 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
         target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
         losses = super().forward(input, target_one_hot.float())
 
-        k = int(losses.numel() * self.topk)
-        return self.loss_weight * losses.view(-1).topk(k=k, sorted=False)[0].mean()
+        k = int(max(losses.numel() * self.topk, 1))
+        return losses.view(-1).topk(k=k, sorted=False)[0].mean()
