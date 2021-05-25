@@ -3,9 +3,10 @@
 
 <div align="center">
 
-<img src=#TODO width="600px">
+<img src=./source/v001/results_full.svg width="800px">
 
-</div>
+
+&nbsp;
 
 ### Train Pool [AP @ IoU 0.1]
 
@@ -17,6 +18,8 @@
 | nnUNetPlus  | 0.304    | 0.700    | 0.955    | 0.935    |
 | nnUNetBasic | 0.232    | 0.667    | 0.930    | 0.908    |
 
+&nbsp;
+
 ### Validation Pool [AP @ IoU 0.1]
 
 5 Fold Cross Validation
@@ -27,6 +30,8 @@
 | nnUNetPlus  | 0.720    | 0.197      | 0.721    | 0.721            | 0.579 | 0.678 |
 | nnUNetBasic | 0.657    | 0.204      | 0.691    | 0.699            | 0.509 | 0.567 |
 
+&nbsp;
+
 Test Split
 
 | Model       | ProstateX  | Pancreas | Hepatic Vessel   | Colon | Liver |
@@ -35,6 +40,8 @@ Test Split
 | nnUNetPlus  | 0.078      | 0.704    | 0.684            | 0.731 | 0.760 |
 
 ADAM Results are listed under Benchmarks
+
+&nbsp;
 
 ### Test Pool [AP @ IoU 0.1]
 
@@ -46,6 +53,8 @@ ADAM Results are listed under Benchmarks
 | nnUNetPlus  | 0.162       |
 | nnUNetBasic | 0.159       |
 
+&nbsp;
+
 Test Split
 
 | Model       | Lymph Nodes |
@@ -55,27 +64,34 @@ Test Split
 
 Luna results are listed under Benchmarks
 
+&nbsp;
+
+</div>
+
 ## Benchmarks
 ### Luna
 
 <div align="center">
 
-<img src=#TODO width="600px">
-
-</div>
+<img src=./source/v001/luna.png width="800px">
 
 | Methods     | 1/8   | 1/4   | 1/2   | 1     | 2     | 4     | 8     | CPM   |
 |:-----------:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 | nnDetection | 0.812 | 0.885 | 0.927 | 0.950 | 0.969 | 0.979 | 0.985 | 0.930 |
 
+&nbsp;
+
+</div>
+
 ### ADAM Live Leaderboard
 
 <div align="center">
 
-<img src=#TODO width="600px">
+<img src=./source/v001/adam.svg width="300">
 
-</div>
 
 | Model       | Sens | FP  |
 |:-----------:|:----:|:---:|
 | nnDetection | 0.64 | 0.3 |
+
+</div>
