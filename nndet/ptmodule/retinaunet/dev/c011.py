@@ -1,5 +1,5 @@
+import copy
 from loguru import logger
-from nndet.arch.blocks.basic import MySEBlockExp2, MySEBlockExp4, StackedConvBlock2, StackedConvBlock3
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
@@ -9,6 +9,14 @@ from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
 
+from nndet.arch.blocks.basic import (
+    MySEBlockExp2,
+    MySEBlockExp4,
+    StackedConvBlock2,
+    StackedConvBlock3,
+    StackedResPlain,
+    StackedResBottleneck,
+)
 from nndet.arch.heads.comb import (
     BoxHeadAll,
     BoxHeadHNM,
@@ -135,6 +143,12 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
         Returns:
             EncoderType: encoder instance
         """
+        _kwargs = copy.deepcopy(model_cfg['encoder_kwargs'])
+        num_blocks = _kwargs.pop("num_blocks", None)
+        if num_blocks is not None:
+            i = len(plan_arch["conv_kernels"]) - 1
+            _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [{"num_blocks": num_blocks}] * i
+        
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
         logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
         encoder = cls.encoder_cls(
@@ -144,10 +158,9 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
             block_cls=cls.block,
             in_channels=plan_arch["in_channels"],
             start_channels=plan_arch["start_channels"],
-            stage_kwargs=None,
             max_channels=plan_arch.get("max_channels", 320),
             first_block_cls=StackedConvBlock2,
-            **model_cfg['encoder_kwargs'],
+            **_kwargs,
         )
         return encoder
 
@@ -155,3 +168,8 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
 @MODULE_REGISTRY.register
 class RetinaUNetC011MySE4(RetinaUNetV001):
     block = MySEBlockExp4
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011ResPlain(RetinaUNetC011MySE2):
+    block = StackedResPlain

@@ -25,7 +25,7 @@ from nndet.arch.conv import nd_pool
 from nndet.arch.conv import NdParam
 
 
-class ResBasic(nn.Module):
+class ResPlain(nn.Module):
     def __init__(self,
                  conv: Callable,
                  in_channels: int,
@@ -55,8 +55,12 @@ class ResBasic(nn.Module):
 
         self.conv1 = conv(in_channels, out_channels, kernel_size=kernel_size,
                           padding=padding, stride=stride)
-        self.conv2 = conv(out_channels, out_channels, kernel_size=kernel_size,
-                          padding=padding, relu=None)
+        self.conv2 = conv(out_channels,
+                          out_channels,
+                          kernel_size=kernel_size,
+                          padding=padding,
+                          add_act=False,
+                          )
         self.relu = nn.ReLU(inplace=True)
 
         stride_prod = (reduce((lambda x, y: x * y), stride)
@@ -64,7 +68,7 @@ class ResBasic(nn.Module):
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
-                conv(in_channels, out_channels, kernel_size=1, relu=None),
+                conv(in_channels, out_channels, kernel_size=1, add_act=False),
             )
         else:
             self.shortcut = None
@@ -146,7 +150,7 @@ class ResBottleneck(nn.Module):
                           kernel_size=kernel_size, padding=padding, stride=stride,
                           )
         self.conv3 = conv(internal_channels, out_channels,
-                          kernel_size=1, padding=0, relu=None, stride=1,
+                          kernel_size=1, padding=0, add_act=False, stride=1,
                           )
         self.relu = nn.ReLU(inplace=True)
 
@@ -156,7 +160,7 @@ class ResBottleneck(nn.Module):
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
-                conv(in_channels, out_channels, kernel_size=1, relu=None),
+                conv(in_channels, out_channels, kernel_size=1, add_act=False),
             )
         else:
             self.shortcut = None
