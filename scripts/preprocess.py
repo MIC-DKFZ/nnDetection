@@ -425,30 +425,36 @@ def main():
                         help="Run a full check of the data.",
                         action='store_true',
                         )
+    parser.add_argument('--no_check',
+                        help="Skip basic check.",
+                        action='store_true',
+                        )
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
     full_check = args.full_check
+    no_check = args.no_check
 
     initialize_config_module(config_module="nndet.conf")
     # perform preprocessing checks first
-    for task in tasks:
-        _ov = copy.deepcopy(ov) if ov is not None else []
-        cfg = compose(task, "config.yaml", overrides=_ov)
-        check_dataset_file(cfg["task"])
-        check_data_and_label_splitted(
-            cfg["task"],
-            test=False,
-            labels=True,
-            full_check=full_check,
-            )
-        if cfg["data"]["test_labels"]:
+    if not no_check:
+        for task in tasks:
+            _ov = copy.deepcopy(ov) if ov is not None else []
+            cfg = compose(task, "config.yaml", overrides=_ov)
+            check_dataset_file(cfg["task"])
             check_data_and_label_splitted(
                 cfg["task"],
-                test=True,
+                test=False,
                 labels=True,
                 full_check=full_check,
                 )
+            if cfg["data"]["test_labels"]:
+                check_data_and_label_splitted(
+                    cfg["task"],
+                    test=True,
+                    labels=True,
+                    full_check=full_check,
+                    )
 
     # start preprocessing
     for task in tasks:
