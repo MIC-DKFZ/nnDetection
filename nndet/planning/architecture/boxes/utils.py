@@ -171,3 +171,7 @@ def fixed_anchor_init(dim: int):
         anchor_plan["sizes"] = ((4, 8, 16), (8, 16, 32), (16, 32, 64), (32, 64, 128))
         anchor_plan["zsizes"] = ((2, 3, 4), (4, 6, 8), (8, 12, 16), (12, 24, 48))
     return anchor_plan
+
+
+def concatenate_property_boxes(all_boxes: Sequence[np.ndarray]) -> np.ndarray:
+    return np.concatenate([b for b in all_boxes if not isinstance(b, list) and b.size > 0], axis=0)

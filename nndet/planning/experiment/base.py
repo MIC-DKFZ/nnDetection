@@ -35,8 +35,6 @@ class AbstractPlanner(ABC):
         super().__init__()
         self.preprocessed_output_dir = Path(preprocessed_output_dir)
 
-        self.plan: Optional[Dict] = {}
-
         self.transpose_forward = None
         self.transpose_backward = None
 
@@ -88,13 +86,31 @@ class AbstractPlanner(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def determine_forward_backward_permutation(self):
+    def determine_forward_backward_permutation(self, mode: str):
         """
         Permute dimensions of input. Results should be saved into
         :param:`transpose_forward` and :param:`transpose_backward`
 
+        Args:
+            mode: define current operation mode. Typically one of
+                '2d' | '3d' | '3dlr1'
+
         Raises:
             NotImplementedError: Should be overwritten in subcalsses
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def determine_target_spacing(self, mode: str) -> np.ndarray:
+        """
+        Determine target spacing.
+
+        Args:
+            mode: define current operation mode. Typically one of
+                '2d' | '3d' | '3dlr1'
+
+        Same as nnUNet v21
+        https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/experiment_planning/experiment_planner_baseline_3DUNet_v21.py
         """
         raise NotImplementedError
 
@@ -119,12 +135,17 @@ class AbstractPlanner(ABC):
         """
         return f"{self.__class__.__name__}_{mode}"
 
-    def plan_base(self) -> Dict:
+    def plan_base(self, mode: str) -> Dict:
         """
         Create the base plan
 
+        Args:
+            mode: define current operation mode. Typically one of
+                '2d' | '3d' | '3dlr1'
+
         Returns:
             Dict: plan with base attributes
+                'mode': selected mode for plan
                 `target_spacing`: target to resample data
                 `normalization_schemes` normalization type for each modality
                 `use_mask_for_norm`: use mask for norm
@@ -141,13 +162,14 @@ class AbstractPlanner(ABC):
         """
         use_nonzero_mask_for_normalization = self.determine_whether_to_use_mask_for_norm()
         logger.info(f"Are we using the nonzero maks for normalization? {use_nonzero_mask_for_normalization}")
-        target_spacing = self.determine_target_spacing()
+        target_spacing = self.determine_target_spacing(mode=mode)
         logger.info(f"Base target spacing is {target_spacing}")
-        self.determine_forward_backward_permutation()
+        self.determine_forward_backward_permutation(mode=mode)
         normalization_schemes = self.determine_normalization()
         logger.info(f"Normalization schemes {normalization_schemes}")
 
         plan = {
+            'mode': mode,
             'target_spacing': target_spacing,
             'normalization_schemes': normalization_schemes,
             'use_mask_for_norm': use_nonzero_mask_for_normalization,
@@ -225,47 +247,13 @@ class AbstractPlanner(ABC):
         base_plan["do_dummy_2D_data_aug"] = do_dummy_2d_data_aug
         return base_plan
 
-    def determine_target_spacing(self) -> np.ndarray:
-        """
-        Determine target spacing.
-
-        Same as nnUNet v21
-        https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/experiment_planning/experiment_planner_baseline_3DUNet_v21.py
-        """
-        spacings = self.data_properties['all_spacings']
-        sizes = self.data_properties['all_sizes']
-
-        target = np.percentile(np.vstack(spacings), self.target_spacing_percentile, 0)
-
-        target_size = np.percentile(np.vstack(sizes), self.target_spacing_percentile, 0)
-        target_size_mm = np.array(target) * np.array(target_size)
-        # we need to identify datasets for which a different target spacing could be beneficial. These datasets have
-        # the following properties:
-        # - one axis which much lower resolution than the others
-        # - the lowres axis has much less voxels than the others
-        # - (the size in mm of the lowres axis is also reduced)
-        worst_spacing_axis = np.argmax(target)
-        other_axes = [i for i in range(len(target)) if i != worst_spacing_axis]
-        other_spacings = [target[i] for i in other_axes]
-        other_sizes = [target_size[i] for i in other_axes]
-
-        has_aniso_spacing = target[worst_spacing_axis] > (self.anisotropy_threshold * min(other_spacings))
-        has_aniso_voxels = target_size[worst_spacing_axis] * self.anisotropy_threshold < min(other_sizes)
-        # we don't use the last one for now
-        # median_size_in_mm = target[target_size_mm] * RESAMPLING_SEPARATE_Z_ANISOTROPY_THRESHOLD < max(target_size_mm)
-
-        if has_aniso_spacing and has_aniso_voxels:
-            spacings_of_that_axis = np.vstack(spacings)[:, worst_spacing_axis]
-            target_spacing_of_that_axis = np.percentile(spacings_of_that_axis, 10)
-            # don't let the spacing of that axis get higher than the other axes
-            if target_spacing_of_that_axis < min(other_spacings):
-                target_spacing_of_that_axis = max(min(other_spacings), target_spacing_of_that_axis) + 1e-5
-            target[worst_spacing_axis] = target_spacing_of_that_axis
-        return target
-
-    def determine_postprocessing(self) -> dict:
+    def determine_postprocessing(self, mode: str) -> dict:
         """
         Placeholder for the future
+
+        Args:
+            mode: define current operation mode. Typically one of
+                '2d' | '3d' | '3dlr1'
 
         Deprecated version returned:
             'keep_only_largest_region'
@@ -324,7 +312,7 @@ class AbstractPlanner(ABC):
                     use_mask_for_norm[i] = False
         return use_mask_for_norm
 
-    def save_plan(self, mode: str) -> str:
+    def save_plan(self, plan: dict, mode: str) -> str:
         """
         Save plan
 
@@ -339,7 +327,7 @@ class AbstractPlanner(ABC):
             exist_ok=True,
         )
         identifier = f"{self.__class__.__name__}_{mode}"
-        save_pickle(self.plan, self.preprocessed_output_dir / f"{identifier}.pkl")
+        save_pickle(plan, self.preprocessed_output_dir / f"{identifier}.pkl")
         return identifier
 
     def run_preprocessing(

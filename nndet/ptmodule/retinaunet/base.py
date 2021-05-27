@@ -38,6 +38,7 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.ops import box_iou
+from nndet.core.boxes.anchors import AnchorGeneratorType
 
 from nndet.ptmodule.base_module import LightningBaseModuleSWA, LightningBaseModule
 
@@ -509,7 +510,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorType,
+        anchor_generator: AnchorGeneratorType,
     ) -> ClassifierType:
         """
         Build classification subnetwork for detection head
@@ -543,7 +544,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorType,
+        anchor_generator: AnchorGeneratorType,
     ) -> RegressorType:
         """
         Build regression subnetwork for detection head

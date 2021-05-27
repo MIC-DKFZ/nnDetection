@@ -202,7 +202,7 @@ def run_planning_and_process(
     splitted_4d_output_dir: Path,
     cropped_output_dir: Path,
     preprocessed_output_dir: Path,
-    planners: Dict[str, Sequence[str]],
+    planner_name: str,
     dim: int,
     model_name: str,
     model_cfg: Dict,
@@ -216,8 +216,7 @@ def run_planning_and_process(
         splitted_4d_output_dir: base dir of splitted data
         cropped_output_dir: base dir of cropped data
         preprocessed_output_dir: base dir of preprocessed data
-        planners: define planners for
-            the needed dimension
+        planner_name: planner name
         dim: number of spatial dimensions
         model_name: name of model to run planning for
         model_cfg: hyperparameters of model (used during planning to
@@ -225,51 +224,49 @@ def run_planning_and_process(
         num_processes: number of processes to use for preprocessing
         run_preprocessing: Preprocess and check data. Defaults to True.
     """
-    selected_planners = planners[f"{dim}d"]
-    for planner_name in selected_planners:
-        planner_cls = PLANNER_REGISTRY.get(planner_name)
-        planner = planner_cls(
-            preprocessed_output_dir=preprocessed_output_dir
-        )
-        plan_identifiers = planner.plan_experiment(
-            model_name=model_name,
-            model_cfg=model_cfg,
-        )
-        if run_preprocessing:
-            for plan_id in plan_identifiers:
-                plan = load_pickle(preprocessed_output_dir / plan_id)
+    planner_cls = PLANNER_REGISTRY.get(planner_name)
+    planner = planner_cls(
+        preprocessed_output_dir=preprocessed_output_dir
+    )
+    plan_identifiers = planner.plan_experiment(
+        model_name=model_name,
+        model_cfg=model_cfg,
+    )
+    if run_preprocessing:
+        for plan_id in plan_identifiers:
+            plan = load_pickle(preprocessed_output_dir / plan_id)
+            planner.run_preprocessing(
+                cropped_data_dir=cropped_output_dir / "imagesTr",
+                plan=plan,
+                num_processes=num_processes,
+                )
+            case_ids_failed, result_check = run_check(
+                data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
+                remove=True,
+                processes=num_processes
+            )
+
+            # delete and rerun corrupted cases
+            if not result_check:
+                logger.warning(f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
+                                f"Running preprocessing of those cases without multiprocessing.")
                 planner.run_preprocessing(
                     cropped_data_dir=cropped_output_dir / "imagesTr",
                     plan=plan,
-                    num_processes=num_processes,
-                    )
+                    num_processes=0,
+                )
                 case_ids_failed, result_check = run_check(
                     data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
-                    remove=True,
-                    processes=num_processes
+                    remove=False,
+                    processes=0
                 )
-
-                # delete and rerun corrupted cases
                 if not result_check:
-                    logger.warning(f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
-                                   f"Running preprocessing of those cases without multiprocessing.")
-                    planner.run_preprocessing(
-                        cropped_data_dir=cropped_output_dir / "imagesTr",
-                        plan=plan,
-                        num_processes=0,
-                    )
-                    case_ids_failed, result_check = run_check(
-                        data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
-                        remove=False,
-                        processes=0
-                    )
-                    if not result_check:
-                        logger.error(f"Could not fix corrupted files {case_ids_failed}!")
-                        raise RuntimeError("Found corrupted files, check logs!")
-                    else:
-                        logger.info("Fixed corrupted files.")
+                    logger.error(f"Could not fix corrupted files {case_ids_failed}!")
+                    raise RuntimeError("Found corrupted files, check logs!")
                 else:
-                    logger.info(f"{plan_id} check successful: Loading check completed")
+                    logger.info("Fixed corrupted files.")
+            else:
+                logger.info(f"{plan_id} check successful: Loading check completed")
 
     if run_preprocessing:
         create_labels(
@@ -406,7 +403,7 @@ def run(cfg, instances_from_seg):
             splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
             cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
             preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
-            planners=cfg["planners"],
+            planner_name=cfg["planner"],
             dim=data_info["dim"],
             model_name=cfg["module"],
             model_cfg=cfg["model_cfg"],

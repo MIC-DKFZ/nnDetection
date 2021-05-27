@@ -438,7 +438,7 @@ In many cases this limitation can be circumvented by converting the bounding box
 <summary>Mask RCNN and 2D Data sets</summary>
 <br>
 2D data sets and Mask R-CNN are not supported in the first release.
-We hope to provide these sometime in the future.
+We hope to provide these in the future.
 </details>
 
 <details close>
