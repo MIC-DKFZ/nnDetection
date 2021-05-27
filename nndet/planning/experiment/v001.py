@@ -62,7 +62,7 @@ class D3V001(AbstractPlanner):
             plan_3dlr1["data_identifier"] = self.get_data_identifier(mode=mode)
             plan_3dlr1["postprocessing"] = self.determine_postprocessing(mode=mode)
 
-            self.plan = self.plan_base_stage(
+            plan_3dlr1 = self.plan_base_stage(
                 plan_3dlr1,
                 model_name=model_name,
                 model_cfg=model_cfg,
