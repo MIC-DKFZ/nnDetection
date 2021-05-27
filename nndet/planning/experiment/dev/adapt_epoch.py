@@ -25,20 +25,45 @@ class D3V001AEP(D3V001):
             List: identifiers of created plans
         """
         identifiers = []
-        base_plan = self.plan_base()
-        base_plan["postprocessing"] = self.determine_postprocessing()
+        
+        # create full resolution 3d plan
+        mode = "3d"
+        plan_3d = self.plan_base(mode=mode)
+        plan_3d["network_dim"] = 3
+        plan_3d["dataloader_kwargs"] = {}
+        plan_3d["data_identifier"] = self.get_data_identifier(mode=mode)
+        plan_3d["postprocessing"] = self.determine_postprocessing(mode=mode)
+        
+        plan_3d = self.plan_base_stage(
+            plan_3d,
+            model_name=model_name,
+            model_cfg=model_cfg,
+            )
 
-        base_plan["mode"] = "3d"
-        base_plan["data_identifier"] = self.get_data_identifier(mode=base_plan["mode"])
-        base_plan["network_dim"] = 3
-        base_plan["dataloader_kwargs"] = {}
-        base_plan.update(self.determine_num_epochs())
+        # determine if additional low res model needs to be trained
+        plan_3d["trigger_lr1"] = self.trigger_low_res_model(
+            prev_res_patch_size=plan_3d["patch_size"],
+            transpose_forward=plan_3d["transpose_forward"],
+        )
+        plan_3d.update(self.determine_num_epochs())
+        identifiers.append(self.save_plan(plan=plan_3d, mode=plan_3d["mode"]))
 
-        self.plan = self.plan_base_stage(base_plan,
-                                         model_name=model_name,
-                                         model_cfg=model_cfg,
-                                         )
-        identifiers.append(self.save_plan(mode=base_plan["mode"]))
+        if plan_3d["trigger_lr1"]:
+            logger.info("Triggered Low Resolution Model")
+            mode = "3dlr1"
+            plan_3dlr1 = self.plan_base(mode=mode)
+            plan_3dlr1["network_dim"] = 3
+            plan_3dlr1["dataloader_kwargs"] = {}
+            plan_3dlr1["data_identifier"] = self.get_data_identifier(mode=mode)
+            plan_3dlr1["postprocessing"] = self.determine_postprocessing(mode=mode)
+
+            plan_3dlr1 = self.plan_base_stage(
+                plan_3dlr1,
+                model_name=model_name,
+                model_cfg=model_cfg,
+                )
+            plan_3dlr1.update(self.determine_num_epochs())
+            identifiers.append(self.save_plan(plan=plan_3dlr1, mode=plan_3dlr1["mode"]))
         return identifiers
 
     def determine_num_epochs(self) -> Dict[str, int]:
