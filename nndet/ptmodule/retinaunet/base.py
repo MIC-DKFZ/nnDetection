@@ -172,7 +172,9 @@ class RetinaUNetModule(LightningBaseModuleSWA):
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
-        self.log_dict(losses, prog_bar=True)
+        
+        # self.log_dict(losses, prog_bar=True)
+
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
     def validation_step(self, batch, batch_idx):
@@ -195,7 +197,9 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 batch_num=batch_idx,
             )
             loss = sum(losses.values())
-        self.log_dict(losses, prog_bar=True)
+
+        # self.log_dict(losses, prog_bar=True)
+
         self.evaluation_step(prediction=prediction, targets=targets)
         return {"loss": loss.detach().item(),
                 **{key: l.detach().item() for key, l in losses.items()}}
@@ -313,7 +317,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
         for key, item in metric_scores.items():
-            self.log(f'{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
+            self.log(f'val_epoch_{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
 
     def configure_optimizers(self):
         """
