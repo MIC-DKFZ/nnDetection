@@ -8,6 +8,7 @@ from nndet.arch.heads.comb.base import AnchorHeadType
 from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
+from nndet.arch.blocks.basic import StackedConvBlock2Max
 
 from nndet.arch.blocks.basic import (
     MySEBlockExp2,
@@ -57,6 +58,11 @@ class RetinaUNetC011L1All(RetinaUNetC011):
 class RetinaUNetC011DualReg(RetinaUNetC011):
     head_cls = BoxHeadHNMDualReg
     head_regressor_cls = DualRegressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011L1Max(RetinaUNetC011L1):
+    block=StackedConvBlock2Max
 
 
 @MODULE_REGISTRY.register

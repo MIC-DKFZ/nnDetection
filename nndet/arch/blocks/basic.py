@@ -14,14 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import torch
-import torch.nn as nn
-
+from functools import reduce
 from abc import abstractmethod
 from typing import Sequence, Callable, Union, Tuple
 
+import torch
+import torch.nn as nn
+
+
 from nndet.arch.blocks.mbconv import MyFusedMBConv
-from nndet.arch.conv import NdParam
+from nndet.arch.conv import NdParam, nd_pool
 from nndet.arch.blocks.res import ResPlain, ResBottleneck
 
 
@@ -150,6 +152,61 @@ class StackedConvBlock2(StackedBlock):
             conv(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size,
                  stride=1, padding=padding, **kwargs),
         )
+
+
+class StackedConvBlock2Max(StackedBlock):
+    def build_block(self, conv: Callable, in_channels: int,
+                    out_channels: int, kernel_size: NdParam,
+                    stride: NdParam, padding: NdParam,
+                    **kwargs) -> nn.Module:
+        """
+        Build 2 consequtive convolutions
+
+        Args:
+            conv: generator for convolutions
+            in_channels: number of input channels
+            out_channels: number of output channels
+            kernel_size: kernel size oh convolutions
+            stride: stride of first convolution
+            padding: padding of convolutions
+
+        Returns:
+            nn.Module: stacked convolutions
+        """
+        stride_prod = (reduce((lambda x, y: x * y), stride)
+                       if isinstance(stride, Sequence) else stride)
+        if stride_prod:
+            modules = [
+                nd_pool(
+                    "Max",
+                    conv.dim,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                    padding=padding,
+                    )
+            ]
+        else:
+            modules = []
+
+        modules += [
+            conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+                ),
+            conv(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+                ),
+        ]
+        return torch.nn.Sequential(*modules)
 
 
 class StackedConvBlock3(StackedBlock):
