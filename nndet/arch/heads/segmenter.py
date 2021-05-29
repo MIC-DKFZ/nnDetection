@@ -207,7 +207,7 @@ class DiCESegmenter(Segmenter):
         seg_logits = pred_seg["seg_logits"]
         return {
             "seg_ce": self.alpha * self.ce_loss(seg_logits, target.long()),
-            "seg_dice": (1 - self.alpha) * self.dice_loss(seg_logits, target),
+            "seg_softdice": (1 - self.alpha) * self.dice_loss(seg_logits, target),
         }
 
     def postprocess_for_inference(self,

@@ -317,7 +317,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
         for key, item in metric_scores.items():
-            self.log(f'val_epoch_{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
+            self.log(f'{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
 
     def configure_optimizers(self):
         """
