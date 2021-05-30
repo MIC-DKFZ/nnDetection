@@ -27,14 +27,10 @@ from nndet.io.paths import Pathlike
 
 
 def get_loader_fn(mode: str, **kwargs):
-    if mode == "best":
-        load_fn = partial(load_time_ensemble, **kwargs)
-    elif mode == "final":
-        load_fn = partial(load_final_model, **kwargs)
-    elif mode == "latest":
-        load_fn = partial(load_final_model, identifier="latest", **kwargs)
+    if mode.lower() == "all":
+        load_fn = load_all_models
     else:
-        raise ValueError(f"Unknown mode {mode}")
+        load_fn = partial(load_final_model, identifier=mode, **kwargs)
     return load_fn
 
 
@@ -59,54 +55,6 @@ def get_latest_model(base_dir: Pathlike, fold: int = 0) -> Optional[Path]:
         return sorted(m, key=lambda x: x.stem, reverse=True)[0]
     else:
         return None
-
-
-# TODO: update
-def load_time_ensemble(
-    source_models: Path,
-    cfg: dict,
-    plan: dict,
-    num_models: int = None,
-    ) -> Sequence[dict]:
-    """
-    Load time ensembled models
-
-    Args:
-        source_models: path to directory where models are saved
-        cfg: config used for experiment
-            `model`: name of model in DETECTION_REGISTRY
-        plan: plan used for training
-        num_models: number of models to load
-
-    Returns:
-        Sequence[dict]: loaded models
-            `model`: loaded model
-            `rank`: rank of model
-    """
-    logger.info("Loading time ensemble")
-    model_names = list(source_models.glob('model_best*.ckpt'))
-    if not model_names:
-        raise RuntimeError(f"Did not find any models in {source_models}")
-
-    models = []
-    for path in model_names:
-        model = MODULE_REGISTRY[cfg["module"]](
-            model_cfg=cfg["model_cfg"],
-            trainer_cfg=cfg["trainer_cfg"],
-            plan=plan,
-        )
-        state_dict = torch.load(path, map_location="cpu")["state_dict"]
-        t = model.load_state_dict(state_dict)
-        
-        logger.info(f"Loaded {path} with {t}")
-        model.float()
-        model.eval()
-        rank = int(str(path).rsplit(os.sep, 1)[-1][10])
-        models.append({"model": model.cpu(), "rank": rank})
-    if num_models is not None:
-        models = models[:num_models]
-        logger.info(f"Using {len(models)} models for for inference.")
-    return models
 
 
 def load_final_model(

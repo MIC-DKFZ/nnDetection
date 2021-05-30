@@ -58,7 +58,7 @@ from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.inference.predictor import Predictor
 from nndet.inference.sweeper import BoxSweeper
 from nndet.inference.transforms import get_tta_transforms, Inference2D
-from nndet.inference.loading import load_final_model
+from nndet.inference.loading import get_loader_fn
 from nndet.inference.helper import predict_dir
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.inference.ensembler.detection import BoxEnsemblerSelective
@@ -762,7 +762,7 @@ class RetinaUNetModule(LightningBaseModuleSWA):
                 num_tta_transforms=None,
                 case_ids=case_ids,
                 save_state=True,
-                model_fn=load_final_model,
+                model_fn=get_loader_fn(mode=self.trainer_cfg.get("sweep_ckpt", "last")),
                 **kwargs,
                 )
 

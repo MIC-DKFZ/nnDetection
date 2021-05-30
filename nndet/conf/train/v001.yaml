@@ -21,6 +21,11 @@ augment_cfg:
   num_cached_per_thread: 2
   multiprocessing: True # only deactivate this if debugging
 
+  # Additional overwrites
+  # patch_size; Default: plan
+  # batch_size; Default: plan
+  # splits; Default: splits_final
+
 trainer_cfg:
   gpus: 1 # number of gpus
   accelerator: ddp # distributed backend
@@ -52,6 +57,7 @@ trainer_cfg:
   poly_gamma: 0.9
 
   swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
+  # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
