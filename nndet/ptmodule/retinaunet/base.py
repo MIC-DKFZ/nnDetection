@@ -41,7 +41,7 @@ from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.anchors import AnchorGeneratorType
 
-from nndet.ptmodule.base_module import LightningBaseModuleSWA
+from nndet.ptmodule.base_module import LightningBaseModule
 
 from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 from nndet.arch.blocks.basic import StackedConvBlock2
@@ -73,7 +73,7 @@ from nndet.io.transforms import (
 )
 
 
-class RetinaUNetModule(LightningBaseModuleSWA):
+class RetinaUNetModule(LightningBaseModule):
     base_conv_cls = ConvInstanceRelu
     head_conv_cls = ConvGroupRelu
     block = StackedConvBlock2

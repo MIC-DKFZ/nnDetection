@@ -27,6 +27,7 @@ from loguru import logger
 
 from nndet.io.load import save_txt
 from nndet.inference.predictor import Predictor
+from nndet.training.swa import SWACycleLinear
 
 
 class LightningBaseModule(pl.LightningModule):
@@ -83,7 +84,7 @@ class LightningBaseModule(pl.LightningModule):
         """
         Number of epochs of full training
         """
-        return self.train_epochs
+        return self.train_epochs + self.trainer_cfg.get("swa_epochs", 0)
 
     def on_epoch_start(self) -> None:
         """
@@ -187,27 +188,19 @@ class LightningBaseModule(pl.LightningModule):
         """
         raise NotImplementedError
 
-
-class LightningBaseModuleSWA(LightningBaseModule):
-    @property
-    def max_epochs(self):
-        """
-        Number of epochs to train
-        """
-        return self.train_epochs + self.trainer_cfg["swa_epochs"]
-
     def configure_callbacks(self):
-        from nndet.training.swa import SWACycleLinear
-
-        callbacks = []
-        callbacks.append(
-            SWACycleLinear(
-                swa_epoch_start=self.train_epochs,
-                cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
-                cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
-                num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
+        callbacks = super().configure_callbacks()
+        
+        if e := self.trainer_cfg.get("swa_epochs", 0) > 0:
+            logger.info(f"Training with SWA, found {e} swa epochs.")
+            callbacks.append(
+                SWACycleLinear(
+                    swa_epoch_start=self.train_epochs,
+                    cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
+                    cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
+                    num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
+                )
             )
-        )
         return callbacks
 
 
