@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+"""
+Don't use these. Next nnDetection Version will introduce better/fixed implementations.
+"""
 import torch
 import torch.nn as nn
 

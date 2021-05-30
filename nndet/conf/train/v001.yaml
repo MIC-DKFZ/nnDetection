@@ -59,6 +59,7 @@ trainer_cfg:
   poly_gamma: 0.9
 
   swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
+  # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
