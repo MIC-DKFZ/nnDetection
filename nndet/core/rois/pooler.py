@@ -16,7 +16,7 @@ class Pooler(torch.nn.Module):
         Perform RoI Pooling for multi scale features
         """
         super().__init__()
-        self.output_szie = output_size
+        self.output_size = output_size
 
     def forward(self,
                 features: List[torch.Tensor],
@@ -56,7 +56,7 @@ class Pooler(torch.nn.Module):
 
         # TODO: need to check dtype due to autocast stuff
         output = torch.zeros(
-            [proposal_boxes_norm.shape[0], features[0].shape[1], *self.output_szie],
+            [proposal_boxes_norm.shape[0], features[0].shape[1], *self.output_size],
             dtype=features[0].dtype,
             device=features[0].device,
         )
@@ -66,9 +66,10 @@ class Pooler(torch.nn.Module):
             [batch_idx[:, None], proposal_boxes], dim=1,
         )
         for idx, fmap in enumerate(features):
-            scale = fmap.shape[0] / image_size_tensor[0]
+            scale = fmap.shape[2] / image_size_tensor[0]
             idx = torch.where(proposal_levels == idx)[0]
             if idx.numel() > 0:
+                # breakpoint()
                 output[idx] = self._pool_features(
                     fmap=fmap,
                     proposals=proprosals_prepared[idx],
@@ -160,10 +161,10 @@ class RoIAlignNaiveAssign(Pooler):
         return _roi_align(
             input=fmap,
             boxes=proposals,
-            output_size=self.output_szie,
+            output_size=self.output_size,
             spatial_scale=spatial_scale,
-            aligned=True,
-            sampling_ratio=2,
+            # aligned=True,
+            # sampling_ratio=2,
         )
 
 

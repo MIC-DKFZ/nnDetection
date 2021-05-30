@@ -57,6 +57,7 @@ trainer_cfg:
   poly_gamma: 0.9
 
   swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
+  weights_summary:
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
@@ -80,13 +81,13 @@ model_cfg:
     norm_affine: True
     prior_prob: 0.01
 
-    loss_weight: 1.
-    reduction: "mean"
+    # loss_weight: 1.
+    # reduction: "mean"
 
-    # gamma: 1.
-    # alpha: 0.75
-    # reduction: "sum"
-    # loss_weight: 0.3
+    gamma: 1.
+    alpha: 0.75
+    reduction: "sum"
+    loss_weight: 0.3
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head
     num_convs: 2
@@ -120,12 +121,12 @@ model_cfg:
       batch_dice: True
 
   matcher_kwargs: # keyword arguments passed to matcher
-    num_candidates: 4
-    center_in_gt: False
+    # num_candidates: 4
+    # center_in_gt: False
 
-    # low_threshold: 0.4
-    # high_threshold: 0.5
-    # allow_low_quality_matches: True
+    low_threshold: 0.4
+    high_threshold: 0.5
+    allow_low_quality_matches: True
 
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors

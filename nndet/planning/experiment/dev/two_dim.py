@@ -55,7 +55,7 @@ class D2C004(D3V001):
             # create full resolution 3d plan
             mode = "2d"
             plan_2d = self.plan_base(mode=mode)
-            plan_2d["network_dim"] = 3
+            plan_2d["network_dim"] = 2
             plan_2d["dataloader_kwargs"] = {}
             plan_2d["data_identifier"] = self.get_data_identifier(mode=mode)
             plan_2d["postprocessing"] = self.determine_postprocessing(mode=mode)
@@ -67,10 +67,10 @@ class D2C004(D3V001):
                 )
             plan_2d["do_dummy_2D_data_aug"] = False
             # determine if additional low res model needs to be trained
-            plan_2d["trigger_lr1"] = self.trigger_low_res_model(
-                prev_res_patch_size=plan_2d["patch_size"],
-                transpose_forward=plan_2d["transpose_forward"],
-            )
+            # plan_2d["trigger_lr1"] = self.trigger_low_res_model(
+            #     prev_res_patch_size=plan_2d["patch_size"],
+            #     transpose_forward=plan_2d["transpose_forward"],
+            # )
             identifiers.append(self.save_plan(plan=plan_2d, mode=mode))
             return identifiers
         else:

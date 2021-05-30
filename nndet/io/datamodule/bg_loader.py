@@ -478,7 +478,6 @@ class DataLoader2DOffset(DataLoader3DFast):
             case_data = np.load(self._data[case_id]['data_file'], self.memmap_mode, allow_pickle=False)
             case_seg = np.load(self._data[case_id]['seg_file'], self.memmap_mode, allow_pickle=False)
             properties = load_pickle(self._data[case_id]['properties_file'])
-
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
                 crop = self.get_bg_crop(

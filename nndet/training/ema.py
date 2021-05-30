@@ -28,6 +28,10 @@ class EMAWeightsCB(Callback):
                 evaluation. Defaults to True.
             dirpath: if povided, save EMA weights here
                 (only contains the statedict!)
+
+        Notes:
+            This is only a prototype.
+            Multi GPU and ema_eval are not supported.
         """
         self.ema: Optional[EMAWeights] = None
         self.device = device

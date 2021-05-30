@@ -58,5 +58,9 @@ def post_image_single_class_regression(
     boxes, probs, labels, _ = batched_nms(boxes, probs, labels, nms_thresh)
 
     if detections_per_img is not None:
-        keep = keep[:detections_per_img]
-    return boxes[keep], probs[keep], labels[keep]
+        boxes = boxes[:detections_per_img]
+        probs = probs[:detections_per_img]
+        labels = labels[:detections_per_img]
+        # keep = keep[:detections_per_img]
+    # return boxes[keep], probs[keep], labels[keep]
+    return boxes, probs, labels
