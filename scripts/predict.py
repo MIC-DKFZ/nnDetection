@@ -81,7 +81,7 @@ def run(cfg: dict,
     else:
         source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTs"
         case_ids = None
-    
+
     predict_dir(source_dir=source_dir,
                 target_dir=prediction_dir,
                 cfg=cfg,
