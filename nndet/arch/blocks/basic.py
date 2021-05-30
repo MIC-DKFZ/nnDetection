@@ -175,7 +175,7 @@ class StackedConvBlock2Max(StackedBlock):
         """
         stride_prod = (reduce((lambda x, y: x * y), stride)
                        if isinstance(stride, Sequence) else stride)
-        if stride_prod:
+        if stride_prod > 1:
             modules = [
                 nd_pool(
                     "Max",

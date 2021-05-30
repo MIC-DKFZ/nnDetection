@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 from loguru import logger
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
@@ -34,6 +35,7 @@ from nndet.arch.conv import (
     ConvGroupLReLU,
     Generator
 )
+from nndet.training.ema import ModuleEMA
 
 
 @MODULE_REGISTRY.register
@@ -61,7 +63,7 @@ class RetinaUNetC011DualReg(RetinaUNetC011):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC011L1Max(RetinaUNetC011L1):
+class RetinaUNetC011L1MaxF(RetinaUNetC011L1):
     block=StackedConvBlock2Max
 
 
