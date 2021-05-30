@@ -78,7 +78,7 @@ class EMAWeightsCB(Callback):
     def on_train_end(self, trainer, pl_module: LightningModule) -> None:
         # on_train_end -> save ema weights
         if self.dirpath is not None:
-            torch.save(self.ema.get_state_dict(), str(self.dirpath / "model_ema.ckpt"))
+            torch.save({"state_dict": self.ema.get_state_dict()}, str(self.dirpath / "model_ema.ckpt"))
         return super().on_train_end(trainer, pl_module)
 
 
@@ -121,7 +121,7 @@ class EMAWeights:
             if self.device is not None:
                 _update = _update.to(self.device)
 
-            weight = self.beta * weight + (1 - self.beta) * _update
+            self.module_state_dict[nw] = self.beta * weight + (1 - self.beta) * _update
 
     def get_state_dict(self) -> dict:
         """

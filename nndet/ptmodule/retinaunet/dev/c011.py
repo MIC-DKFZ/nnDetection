@@ -192,7 +192,7 @@ class RetinaUNetC011L1EMA(RetinaUNetC011):
         callbacks.append(
             EMAWeightsCB(
                 device="cpu",
-                beta=0.9998,
+                beta=self.trainer_cfg["ema_beta"],
                 ema_eval=False,
                 dirpath="./", # FIXME
             )

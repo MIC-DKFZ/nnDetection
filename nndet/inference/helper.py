@@ -22,7 +22,7 @@ from loguru import logger
 
 from nndet.utils.tensor import to_numpy
 from nndet.io.load import load_pickle, save_pickle
-from nndet.io.paths import Pathlike, get_case_id_from_path
+from nndet.io.paths import get_case_id_from_path
 from nndet.inference.loading import load_final_model
 
 

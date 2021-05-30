@@ -51,6 +51,8 @@ trainer_cfg:
   poly_gamma: 0.9
 
   swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
+  ema_beta: 0.996
+  sweep_ckpt: "ema"
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
