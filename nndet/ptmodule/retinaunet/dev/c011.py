@@ -10,6 +10,7 @@ from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
 from nndet.arch.blocks.basic import StackedConvBlock2Max
+from nndet.training.ema import EMAWeightsCB
 
 from nndet.arch.blocks.basic import (
     MySEBlockExp2,
@@ -35,7 +36,7 @@ from nndet.arch.conv import (
     ConvGroupLReLU,
     Generator
 )
-from nndet.training.ema import ModuleEMA
+from pytorch_lightning.utilities.device_dtype_mixin import DeviceDtypeModuleMixin
 
 
 @MODULE_REGISTRY.register
@@ -181,3 +182,19 @@ class RetinaUNetC011MySE4(RetinaUNetV001):
 @MODULE_REGISTRY.register
 class RetinaUNetC011ResPlain(RetinaUNetC011MySE2):
     block = StackedResPlain
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011L1EMA(RetinaUNetC011):
+    def configure_callbacks(self):
+        callbacks = super().configure_callbacks()
+        
+        callbacks.append(
+            EMAWeightsCB(
+                device="cpu",
+                beta=0.9998,
+                ema_eval=False,
+                dirpath="./", # FIXME
+            )
+        )
+        return callbacks
