@@ -364,7 +364,10 @@ def check_case(case_npz: Path,
     return case_id, True
 
 
-def run(cfg, instances_from_seg):
+def run(cfg,
+        num_processes: int,
+        num_processes_preprocessing: int,
+        ):
     """
     Python interface for script
 
@@ -375,7 +378,6 @@ def run(cfg, instances_from_seg):
     logger.remove()
     logger.add(sys.stdout, level="INFO")
     logger.add(Path(cfg["host"]["data_dir"]) / "logging.log", level="DEBUG")
-    logger.info(f"Running instances_from_seg: {instances_from_seg}")
     data_info = cfg["data"]
 
     if cfg["prep"]["crop"]:
@@ -384,7 +386,7 @@ def run(cfg, instances_from_seg):
                                  splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
                                  data_info=data_info,
                                  overwrite=cfg["prep"]["overwrite"],
-                                 num_processes=cfg["prep"]["num_processes"],
+                                 num_processes=num_processes,
                                  )
 
     if cfg["prep"]["analyze"]:
@@ -392,7 +394,7 @@ def run(cfg, instances_from_seg):
         run_dataset_analysis(cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
                              preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
                              data_info=data_info,
-                             num_processes=cfg["prep"]["num_processes"],
+                             num_processes=num_processes,
                              intensity_properties=True,
                              overwrite=cfg["prep"]["overwrite"],
                              )
@@ -407,7 +409,7 @@ def run(cfg, instances_from_seg):
             dim=data_info["dim"],
             model_name=cfg["module"],
             model_cfg=cfg["model_cfg"],
-            num_processes=cfg["prep"]["num_processes_processing"],
+            num_processes=num_processes_preprocessing,
             run_preprocessing=cfg["prep"]["process"],
         )
 
@@ -429,11 +431,21 @@ def main():
                         help="Skip basic check.",
                         action='store_true',
                         )
+    parser.add_argument('-np', '--num_processes',
+                        type=int, default=4, required=False,
+                        help="Number of processes to use for croppping.",
+                        )
+    parser.add_argument('-npp', '--num_processes_preprocessing',
+                        type=int, default=3, required=False,
+                        help="Number of processes to use for resampling.",
+                        )
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
     full_check = args.full_check
     no_check = args.no_check
+    num_processes = args.num_processes
+    num_processes_preprocessing = args.num_processes_preprocessing
 
     initialize_config_module(config_module="nndet.conf")
     # perform preprocessing checks first
@@ -460,8 +472,10 @@ def main():
     for task in tasks:
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=_ov)
-        instances_from_seg = cfg.data.get("instances_from_seg", False)
-        run(OmegaConf.to_container(cfg, resolve=True), instances_from_seg)
+        run(OmegaConf.to_container(cfg, resolve=True),
+            num_processes=num_processes,
+            num_processes_preprocessing=num_processes_preprocessing,
+            )
 
 
 if __name__ == '__main__':

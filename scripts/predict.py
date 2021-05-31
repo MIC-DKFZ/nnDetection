@@ -39,6 +39,7 @@ def run(cfg: dict,
         num_models: int = None,
         num_tta_transforms: int = None,
         test_split: bool = False,
+        num_processes: int = 3,
         ):
     """
     Run inference pipeline
@@ -71,7 +72,7 @@ def run(cfg: dict,
             preprocessed_output_dir=preprocessed_output_dir,
             splitted_4d_output_dir=cfg["host"]["splitted_4d_output_dir"],
             plan=plan,
-            num_processes=cfg["prep"]["num_processes_processing"],
+            num_processes=num_processes,
         )
 
     prediction_dir.mkdir(parents=True, exist_ok=True)
@@ -169,7 +170,11 @@ def main():
     parser.add_argument('--check',
                     help="Run check of the test data before predicting",
                     action='store_true',
-                    )
+                    )   
+    parser.add_argument('-npp', '--num_processes_preprocessing',
+                        type=int, default=3, required=False,
+                        help="Number of processes to use for resampling.",
+                        )
 
     args = parser.parse_args()
     model = args.model
@@ -181,6 +186,7 @@ def main():
     force_args = args.force_args
     test_split = args.test_split
     check = args.check
+    num_processes = args.num_processes_preprocessing
 
     task_name = get_task(task, name=True)
     task_model_dir = Path(os.getenv("det_models"))
@@ -219,6 +225,7 @@ def main():
         num_models=num_models,
         num_tta_transforms=num_tta_transforms,
         test_split=test_split,
+        num_processes=num_processes,
         )
 
 

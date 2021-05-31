@@ -147,13 +147,15 @@ if __name__ == '__main__':
                         help="Create a ranking of instances based on their volume",
                         action='store_true',
                         )
-
+    parser.add_argument('--num_processes', type=int, default=4, required=False,
+                        help="Number of processes to use for conversion.")
 
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
     overwrite = args.overwrite
     do_volume_ranking = args.volume_ranking
+    num_processes = args.num_processes
     initialize_config_module(config_module="nndet.conf")
 
     for task in tasks:
@@ -183,7 +185,7 @@ if __name__ == '__main__':
             #                             min_vol=cfg["data"].get("min_vol", 0),
             #                             )
 
-            with Pool(processes=6) as p:
+            with Pool(processes=num_processes) as p:
                 p.starmap(prepare_detection_label, zip(
                     case_ids,
                     repeat(label_dir),
