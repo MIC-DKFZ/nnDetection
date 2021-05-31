@@ -10,6 +10,7 @@ Please read the information from the homepage carefully and follow the rules and
 1. Follow the installation instructions of nnDetection and create a data directory name `Task012_LIDC`.
 2. Place the `data_nrrd` folder and `characteristics.csv` into `Task012_LIDC / raw`
 3. Run `python prepare_mic.py` in `projects / Task012_LIDC / scripts` of the nnDetection repository.
+4. Copy the `splits_final.pkl` from `projects / Task012_LIDC` into the preprocessed folder of the data (if the preprocessing wasn't run until now, it is nesseary to manually create the folder)
 
 The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
 

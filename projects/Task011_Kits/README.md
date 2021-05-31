@@ -9,7 +9,7 @@ Please read the information from the homepage carefully and follow the rules and
 0. Follow the installation instructions of nnDetection and create a data directory name `Task011_Kits`.
 1. Follow the instructions and usage policies to download the data and place all the folders which contain the data and labels for each case into `Task011_Kits / raw`
 2. Run `python prepare.py` in `projects / Task011_Kits / scripts` of the nnDetection repository.
-3. Run `nndet_seg2det 011` to convert the semantic segmentation labels to instance segmentations.
-4. Run ... to download and replace the manually corrected labels. # TODO
+3. Remove cases 15, 37, 23, 68, 125, 133 (taken from nnU-Net paper)
+4. Download labels from [here](https://zenodo.org/record/4876472#.YLSv7TYzYeY) and replace `labelsTr` in the splitted folder with the downloaded ones.
 
 The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
