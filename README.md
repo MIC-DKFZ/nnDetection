@@ -90,7 +90,7 @@ To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.
         <img src=docs/source/nnDetectionModule.svg width="600px">
     </div>
 
-nnDetection uses multiple Registries to keep track of different modules and easily switch them via the config files.
+nnDetection uses multiple Registries to keep track of different modules and easily switch between them via the config files.
 
 ***Config Files***
 nnDetection uses [Hydra](https://hydra.cc/) to dynamically configure and compose configurations.
@@ -104,13 +104,13 @@ The dataloader registry contains different dataloader classes to customize the I
 It can be imported from `nndet.io.datamodule` and examples can be found in `nndet.io.datamodule.bg_loader`.
 
 ***PLANNER_REGISTRY***
-New plans can be registered via the planner registry which contain classes to define and perform different architecture and preprocessing schemes.
-It can be imported from `nndet.planning.experiment` and example can be found in `nndet.planning.experiment.v001`.
+New plans can be registered via the planner registry which contains classes to define and perform different architecture and preprocessing schemes.
+It can be imported from `nndet.planning.experiment` and examples can be found in `nndet.planning.experiment.v001`.
 
 ***MODULE_REGISTRY***
 The module registry contains the core modules of nnDetection which inherits from the [Pytorch Lightning](https://github.com/PyTorchLightning/pytorch-lightning) Module.
 It is the main module which is used for training and inference and contains all the necessary steps to build the final models.
-It can be imported from `nndet.ptmodule` and example can be found in `nndet.ptmodule.retinaunet`.
+It can be imported from `nndet.ptmodule` and examples can be found in `nndet.ptmodule.retinaunet`.
 
 </details>
 
@@ -124,8 +124,8 @@ It can be imported from `nndet.ptmodule` and example can be found in `nndet.ptmo
 
 # Experiments & Data
 The data sets used for our experiments are not hosted or maintained by us, please give credit to the authors of the data sets.
-Some of the labels were corrected in data sets which we converted and can be downloaded.
-The `Experiments` section has an overview of multiple guides which explain the preparation of the data sets.
+Some of the labels were corrected in data sets which we converted and can be downloaded (links can be found in the guides).
+The `Experiments` section contains multiple guides which explain the preparation of the data sets via the provided scripts.
 
 ## Toy Data set
 Running `nndet_example` will automatically generate an example data set with 3D squares and sqaures with holes which can be used to test the installation or experiment with prototype code (it is still necessary to run the other nndet commands to process/train/predict the data set).
@@ -138,12 +138,12 @@ nndet_example
 nndet_example --full [--num_processes]
 ```
 
-The full problem is very easy and the final results should be near perfect.
+The `full` problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
 ## Experiments
-Besides the self-configuring method, nnDetection acts as a standard interface for many datasets.
-We provide guides to prepare all datasets from our evaluation to the correct and make it easy to reproduce our resutls.
+Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
+We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
 Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
 
 <div align="center">
@@ -170,13 +170,13 @@ Furthermore, we provide pretrained models which can be used without investing la
 </div>
 
 ## Adding New Data sets
-nnDetection relies on a standardized input format which is very similar to the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) format and allows easy integration of new data sets.
+nnDetection relies on a standardized input format which is very similar to [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) and allows easy integration of new data sets.
 More details about the format can be found below.
 
 ### Folders
-All data sets should reside inside `Task[Number]_[Name]` folder inside the specified detection data folder (et the path to this folder with the `det_data` environment flag).
+All data sets should reside inside `Task[Number]_[Name]` folders inside the specified detection data folder (the path to this folder can be set via the `det_data` environment flag).
 To avoid conflicts with our provided pretrained models we recommend to use task numbers starting from 100.
-An overview is provided below ([Name] symbolise folder, `-` symbolise files, indents refer to substructures)
+An overview is provided below ([Name] symbolise folders, `-` symbolise files, indents refer to substructures)
 
 ```text
 ${det_data}
@@ -224,8 +224,8 @@ modalities: # modalities of data set; need to start at 0
 
 ### Image Format
 nnDetection uses the same image format as nnU-Net.
-Each case consists of at least one 3D nifty file with one modalityand are saved in the `images` folders.
-If multiple modalities are available, each modalities uses a separate file and the sequence at the end of the name indicates the modality (corresponds to the number specified in the data set file).
+Each case consists of at least one 3D nifty file with a single modality and are saved in the `images` folders.
+If multiple modalities are available, each modality uses a separate file and the sequence number at the end of the name indicates the modality (these need to correspond to the numbers specified in the data set file and be consistent across the whole data set).
 
 An example with two modalities could look like this:
 ```text
@@ -240,7 +240,7 @@ If multiple modalities are available, please check beforehand if they need to be
 
 ### Label Format
 Labels are encoded with two files per case: one nifty file which contains the instance segmentation and one json file which includes the "meta" information of each instance.
-The nifty file hould contain all annotated instances where each instance has a unique number and are in consecutive order (e.g. 0 ALWAYS refers to background, 1 refers to the first instance, 2 refers to the second instance ...)
+The nifty file should contain all annotated instances where each instance has a unique number and are in consecutive order (e.g. 0 ALWAYS refers to background, 1 refers to the first instance, 2 refers to the second instance ...)
 `case[XXXX].json` label files need to provide the class of every instance in the segmentation. In this example the first isntance is assigned to class `0` and the second instance is assigned to class `1`:
 ```json
 {
@@ -266,7 +266,7 @@ Eachs of this commands is explained below and more detailt information can be ob
 ### Planning & Preprocessing
 Before training the networks, nnDetection needs to preprocess and analyze the data.
 The preprocessing stage normalizes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
-nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (i.e. we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
+nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
 Future releases aim at improving this process...
 
 ```bash
@@ -281,7 +281,7 @@ nndet_prep 000
 
 `-o` option can be used to overwrite parameters for planning and preprocessing (refer to the config files to see all parameters). The number of processes used for cropping and analysis can be adjusted by using `-np` and the number of processes used for resampling can be set via `-npp`. The current values are fairly save if 64GB of RAM is available.
 The `--full_check` will iterate over the data before starting any preprocessing and check correct formatting of the data and labels.
-If any problems occur during preprocessing please run the full check version to make sure that the format is correct.
+If any problems occur during preprocessing please run the full check to make sure that the format is correct.
 
 After planning and preprocessing the resulting data folder structure should look like this:
 ```text
@@ -316,7 +316,8 @@ nndet_unpack ${det_data}/Task000D3_Example/preprocessed/D3V001_3d/imagesTr 6
 ### Training and Evaluation
 After the planning and preprocessing stage is finished the training phase can be started.
 The default setup of nnDetection is trained in a 5 fold cross-validation scheme.
-First, check which plans were generated during planning by checking the preprocessing folder and looking for the pickled plan files. In most cases only the defaul plan will be generated (`D3V001_3d`) but there might be instances (e.g. Kits) where the low resolution plan will be generated too (`D3V001LR1_3d`).
+First, check which plans were generated during planning by checking the preprocessing folder and look for the pickled plan files.
+In most cases only the defaul plan will be generated (`D3V001_3d`) but there might be instances (e.g. Kits) where the low resolution plan will be generated too (`D3V001_3dlr1`).
 
 ```bash
 nndet_train [task] [-o / --overwrites] [--sweep]
@@ -342,7 +343,7 @@ nndet_sweep 000 RetinaUNetV001_D3V001_3d 0
 # /experiments/train.py - sweep()
 ```
 
-Evaluation can be invoked by the following command (requires access to model and preprocessed data):
+Evaluation can be invoked by the following command (requires access to the model and preprocessed data):
 ```bash
 nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--seg] [--instances] [--analyze_boxes]
 
@@ -358,7 +359,7 @@ nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
 
 ### Inference
 After running all folds it is time to collect the models and creat a unified inference plan.
-The following command will copy all the models and predictions per fold and by adding the `sweep` options the empiricaly hyperparameter optimization across all fold can be started.
+The following command will copy all the models and predictions from the folds. By adding the `sweep_` options, the empiricaly hyperparameter optimization across all folds can be started.
 This will generate a unified plan for all models which will be used during inference.
 
 ```bash
@@ -383,7 +384,7 @@ nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
 # /scripts/predict.py - main()
 ```
 
-If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` as described above.
+If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
 
 ## nnU-Net for Detection
 Besides nnDetection we also include the scripts to prepare and evaluate nnU-Net in the context of obejct detection.
