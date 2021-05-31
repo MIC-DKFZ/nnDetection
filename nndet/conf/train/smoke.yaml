@@ -38,7 +38,8 @@ trainer_cfg:
   monitor_mode: "max" # metric operation mode "min" or "max"
 
   max_num_epochs: 3 # max number of epochs
-  num_train_batches_per_epoch: 100 # number of train batches per epoch
+  num_train_batches_per_epoch: 500 # number of train batches per epoch
+  # num_train_batches_per_epoch: 100 # number of train batches per epoch
   num_val_batches_per_epoch: 50 # number of val batches per epoch
 
   # max_num_epochs: 5 # max number of epochs
@@ -89,6 +90,8 @@ model_cfg:
     reduction: "sum"
     loss_weight: 0.3
 
+    loss_fp32: True
+
   head_regressor_kwargs: # keyword arguments passed to regressor in head
     num_convs: 2
     norm_channels_per_group: 16
@@ -98,6 +101,7 @@ model_cfg:
     # loss_weight_l1: 5.
     # loss_weight_giou: 2.
     learn_scale: True
+    loss_fp32: True
   
   # head_regressor_kwargs: # keyword arguments passed to regressor in head
   #   num_convs: 1
@@ -119,6 +123,7 @@ model_cfg:
   segmenter_kwargs:
     dice_kwargs:
       batch_dice: True
+    loss_fp32: True
 
   matcher_kwargs: # keyword arguments passed to matcher
     # num_candidates: 4

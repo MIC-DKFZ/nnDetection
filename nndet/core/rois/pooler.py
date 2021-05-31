@@ -163,8 +163,8 @@ class RoIAlignNaiveAssign(Pooler):
             boxes=proposals,
             output_size=self.output_size,
             spatial_scale=spatial_scale,
-            # aligned=True,
-            # sampling_ratio=2,
+            aligned=True,
+            sampling_ratio=2,
         )
 
 
