@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="2160px" height="1584px" viewBox="0 0 2160 1584" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group 75</title>
+    <defs>
+        <polygon id="path-1" points="0 0.25 2051.705 0.25 2051.705 0.75 0 0.75"></polygon>
+        <polygon id="path-3" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-5" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-7" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-9" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-11" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-13" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-15" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-17" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-19" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-21" points="0 0 2051.705 0 2051.705 1 0 1"></polygon>
+        <polygon id="path-23" points="0 0.25 1183.67618 0.25 1183.67618 0.75 0 0.75"></polygon>
+        <polygon id="path-25" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-27" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-29" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-31" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-33" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-35" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-37" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-39" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-41" points="0 0 1183.67618 0 1183.67618 1 0 1"></polygon>
+        <polygon id="path-43" points="0 0.25 1183.67618 0.25 1183.67618 0.75 0 0.75"></polygon>
+        <polygon id="path-45" points="0 0 48.912238 0 48.912238 143.67257 0 143.67257"></polygon>
+        <polygon id="path-47" points="0 -5.68434189e-14 48.912238 -5.68434189e-14 48.912238 430.926141 0 430.926141"></polygon>
+        <polygon id="path-49" points="-1.13686838e-13 5.68434189e-14 48.912238 5.68434189e-14 48.912238 451.883092 -1.13686838e-13 451.883092"></polygon>
+        <polygon id="path-51" points="0 -5.68434189e-14 48.912239 -5.68434189e-14 48.912239 456.74065 0 456.74065"></polygon>
+        <polygon id="path-53" points="0 -5.68434189e-14 48.912239 -5.68434189e-14 48.912239 444.269809 0 444.269809"></polygon>
+        <polygon id="path-55" points="0 0 48.912239 0 48.912239 474.529351 0 474.529351"></polygon>
+        <polygon id="path-57" points="-1.13686838e-13 0 48.912239 0 48.912239 493.278229 -1.13686838e-13 493.278229"></polygon>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-75">
+            <g id="Group-14" transform="translate(0.000000, 46.000000)">
+                <polygon id="Fill-1" fill="#FFFFFF" points="0 720 2160 720 2160 0 0 0"></polygon>
+                <polygon id="Fill-2" fill="#FFFFFF" points="95.335 671.54 2147.04 671.54 2147.04 21.431623 95.335 21.431623"></polygon>
+                <line x1="253.658959" y1="671.54" x2="253.658959" y2="21.431623" id="Stroke-3" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="LIDC" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="222.323021" y="695.756797">LIDC</tspan>
+                </text>
+                <line x1="427.164667" y1="671.54" x2="427.164667" y2="21.431623" id="Stroke-5" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="RibFrac" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="377.445917" y="695.756797">RibFrac</tspan>
+                </text>
+                <line x1="600.670375" y1="671.54" x2="600.670375" y2="21.431623" id="Stroke-7" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="CADA" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="562.6235" y="695.756797">CADA</tspan>
+                </text>
+                <line x1="774.176084" y1="671.54" x2="774.176084" y2="21.431623" id="Stroke-9" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Kits19" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="732.074521" y="695.756797">Kits19</tspan>
+                </text>
+                <line x1="947.681792" y1="671.54" x2="947.681792" y2="21.431623" id="Stroke-11" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="ADAM" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="907.416167" y="695.756797">ADAM</tspan>
+                </text>
+                <line x1="1121.1875" y1="671.54" x2="1121.1875" y2="21.431623" id="Stroke-13" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="ProstateX" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1056.34375" y="695.756797">ProstateX</tspan>
+                </text>
+                <line x1="1294.69321" y1="671.54" x2="1294.69321" y2="21.431623" id="Stroke-15" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Pancreas" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1234.07602" y="695.756797">Pancreas</tspan>
+                </text>
+                <line x1="1468.19892" y1="671.54" x2="1468.19892" y2="21.431623" id="Stroke-17" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Hepatic-Vessel" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1369.55048" y="695.756797">Hepatic Vessel</tspan>
+                </text>
+                <line x1="1641.70463" y1="671.54" x2="1641.70463" y2="21.431623" id="Stroke-19" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Colon" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1603.45462" y="695.756797">Colon</tspan>
+                </text>
+                <line x1="1815.21033" y1="671.54" x2="1815.21033" y2="21.431623" id="Stroke-21" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Liver" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1782.08533" y="695.756797">Liver</tspan>
+                </text>
+                <line x1="1988.71604" y1="671.54" x2="1988.71604" y2="21.431623" id="Stroke-23" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Lymph-Nodes" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1897.62229" y="695.756797">Lymph Nodes</tspan>
+                </text>
+                <g id="Group-27" transform="translate(95.335000, 670.790000)">
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="Clip-26"></g>
+                    <line x1="-2.84217094e-14" y1="0.75" x2="2051.705" y2="0.75" id="Stroke-25" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-2)"></line>
+                </g>
+                <text id="0.0" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="675.998984">0.0</tspan>
+                </text>
+                <g id="Group-30" transform="translate(95.335000, 606.211946)">
+                    <mask id="mask-4" fill="white">
+                        <use xlink:href="#path-3"></use>
+                    </mask>
+                    <g id="Clip-29"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-28" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-4)"></line>
+                </g>
+                <text id="0.1" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="611.17093">0.1</tspan>
+                </text>
+                <g id="Group-33" transform="translate(95.335000, 541.383891)">
+                    <mask id="mask-6" fill="white">
+                        <use xlink:href="#path-5"></use>
+                    </mask>
+                    <g id="Clip-32"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-31" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-6)"></line>
+                </g>
+                <text id="0.2" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="546.342876">0.2</tspan>
+                </text>
+                <g id="Group-36" transform="translate(95.335000, 476.555837)">
+                    <mask id="mask-8" fill="white">
+                        <use xlink:href="#path-7"></use>
+                    </mask>
+                    <g id="Clip-35"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-34" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-8)"></line>
+                </g>
+                <text id="0.3" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="481.514822">0.3</tspan>
+                </text>
+                <g id="Group-39" transform="translate(95.335000, 411.727783)">
+                    <mask id="mask-10" fill="white">
+                        <use xlink:href="#path-9"></use>
+                    </mask>
+                    <g id="Clip-38"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-37" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-10)"></line>
+                </g>
+                <text id="0.4" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="416.686767">0.4</tspan>
+                </text>
+                <g id="Group-42" transform="translate(95.335000, 346.899729)">
+                    <mask id="mask-12" fill="white">
+                        <use xlink:href="#path-11"></use>
+                    </mask>
+                    <g id="Clip-41"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-40" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-12)"></line>
+                </g>
+                <text id="0.5" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="351.858713">0.5</tspan>
+                </text>
+                <g id="Group-45" transform="translate(95.335000, 282.071674)">
+                    <mask id="mask-14" fill="white">
+                        <use xlink:href="#path-13"></use>
+                    </mask>
+                    <g id="Clip-44"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-43" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-14)"></line>
+                </g>
+                <text id="0.6" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="287.030659">0.6</tspan>
+                </text>
+                <g id="Group-48" transform="translate(95.335000, 217.243620)">
+                    <mask id="mask-16" fill="white">
+                        <use xlink:href="#path-15"></use>
+                    </mask>
+                    <g id="Clip-47"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-46" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-16)"></line>
+                </g>
+                <text id="0.7" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="222.202604">0.7</tspan>
+                </text>
+                <g id="Group-51" transform="translate(95.335000, 152.415566)">
+                    <mask id="mask-18" fill="white">
+                        <use xlink:href="#path-17"></use>
+                    </mask>
+                    <g id="Clip-50"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-49" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-18)"></line>
+                </g>
+                <text id="0.8" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="157.37455">0.8</tspan>
+                </text>
+                <g id="Group-54" transform="translate(95.335000, 87.587512)">
+                    <mask id="mask-20" fill="white">
+                        <use xlink:href="#path-19"></use>
+                    </mask>
+                    <g id="Clip-53"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-52" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-20)"></line>
+                </g>
+                <text id="0.9" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="92.5464959">0.9</tspan>
+                </text>
+                <g id="Group-57" transform="translate(95.335000, 22.759457)">
+                    <mask id="mask-22" fill="white">
+                        <use xlink:href="#path-21"></use>
+                    </mask>
+                    <g id="Clip-56"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="2051.705" y2="0.5" id="Stroke-55" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-22)"></line>
+                </g>
+                <g id="Group-58" transform="translate(0.303750, 1.718442)" fill="#333333" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal">
+                    <text id="1.0">
+                        <tspan x="42.609375" y="26">1.0</tspan>
+                    </text>
+                    <text id="mAP@0.10" transform="translate(16.000000, 347.038854) rotate(-90.000000) translate(-16.000000, -347.038854) ">
+                        <tspan x="-55" y="357.038854">mAP@0.10</tspan>
+                    </text>
+                </g>
+                <g id="Group-62" transform="translate(188.594318, 279.141001)">
+                    <polygon id="Fill-59" fill-opacity="0.9" fill="#55A868" points="0 392.398999 43.376427 392.398999 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-61" stroke-opacity="0.9" stroke="#FFFFFF" points="0 392.398999 43.376427 392.398999 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-66" transform="translate(362.100026, 175.356212)">
+                    <polygon id="Fill-63" fill-opacity="0.9" fill="#55A868" points="-5.68434189e-14 496.183788 43.376427 496.183788 43.376427 0 -5.68434189e-14 0"></polygon>
+                    <polygon id="Stroke-65" stroke-opacity="0.9" stroke="#FFFFFF" points="-5.68434189e-14 496.183788 43.376427 496.183788 43.376427 0 -5.68434189e-14 0"></polygon>
+                </g>
+                <g id="Group-70" transform="translate(535.605735, 71.973134)">
+                    <polygon id="Fill-67" fill-opacity="0.9" fill="#55A868" points="1.13686838e-13 599.566866 43.376427 599.566866 43.376427 0 1.13686838e-13 0"></polygon>
+                    <polygon id="Stroke-69" stroke-opacity="0.9" stroke="#FFFFFF" points="1.13686838e-13 599.566866 43.376427 599.566866 43.376427 0 1.13686838e-13 0"></polygon>
+                </g>
+                <g id="Group-74" transform="translate(709.111443, 72.581485)">
+                    <polygon id="Fill-71" fill-opacity="0.9" fill="#55A868" points="0 598.958515 43.376427 598.958515 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-73" stroke-opacity="0.9" stroke="#FFFFFF" points="0 598.958515 43.376427 598.958515 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-78" transform="translate(882.617151, 165.872765)">
+                    <polygon id="Fill-75" fill-opacity="0.9" fill="#55A868" points="0 505.667235 43.376427 505.667235 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-77" stroke-opacity="0.9" stroke="#FFFFFF" points="0 505.667235 43.376427 505.667235 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-82" transform="translate(1056.122859, 477.022439)">
+                    <polygon id="Fill-79" fill-opacity="0.9" fill="#55A868" points="0 194.517561 43.376427 194.517561 43.376427 8.52651283e-14 0 8.52651283e-14"></polygon>
+                    <polygon id="Stroke-81" stroke-opacity="0.9" stroke="#FFFFFF" points="0 194.517561 43.376427 194.517561 43.376427 8.52651283e-14 0 8.52651283e-14"></polygon>
+                </g>
+                <g id="Group-86" transform="translate(1229.628568, 174.538814)">
+                    <polygon id="Fill-83" fill-opacity="0.9" fill="#55A868" points="0 497.001186 43.376427 497.001186 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-85" stroke-opacity="0.9" stroke="#FFFFFF" points="0 497.001186 43.376427 497.001186 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-90" transform="translate(1403.134276, 199.890993)">
+                    <polygon id="Fill-87" fill-opacity="0.9" fill="#55A868" points="2.27373675e-13 471.649007 43.376427 471.649007 43.376427 0 2.27373675e-13 0"></polygon>
+                    <polygon id="Stroke-89" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 471.649007 43.376427 471.649007 43.376427 0 2.27373675e-13 0"></polygon>
+                </g>
+                <g id="Group-94" transform="translate(1576.639984, 241.827019)">
+                    <polygon id="Fill-91" fill-opacity="0.9" fill="#55A868" points="0 429.712981 43.376427 429.712981 43.376427 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-93" stroke-opacity="0.9" stroke="#FFFFFF" points="0 429.712981 43.376427 429.712981 43.376427 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-98" transform="translate(1750.145692, 264.214449)">
+                    <polygon id="Fill-95" fill-opacity="0.9" fill="#55A868" points="0 407.325551 43.376427 407.325551 43.376427 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-97" stroke-opacity="0.9" stroke="#FFFFFF" points="0 407.325551 43.376427 407.325551 43.376427 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-102" transform="translate(1923.651401, 538.572269)">
+                    <polygon id="Fill-99" fill-opacity="0.9" fill="#55A868" points="0 132.967731 43.376427 132.967731 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-101" stroke-opacity="0.9" stroke="#FFFFFF" points="0 132.967731 43.376427 132.967731 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-106" transform="translate(231.970745, 421.981841)">
+                    <polygon id="Fill-103" fill-opacity="0.9" fill="#4C72B0" points="2.84217094e-14 249.558159 43.376427 249.558159 43.376427 -5.68434189e-14 2.84217094e-14 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-105" stroke-opacity="0.9" stroke="#FFFFFF" points="2.84217094e-14 249.558159 43.376427 249.558159 43.376427 -5.68434189e-14 2.84217094e-14 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-110" transform="translate(405.476453, 217.594969)">
+                    <polygon id="Fill-107" fill-opacity="0.9" fill="#4C72B0" points="0 453.945031 43.376428 453.945031 43.376428 0 0 0"></polygon>
+                    <polygon id="Stroke-109" stroke-opacity="0.9" stroke="#FFFFFF" points="0 453.945031 43.376428 453.945031 43.376428 0 0 0"></polygon>
+                </g>
+                <g id="Group-114" transform="translate(578.982162, 52.389165)">
+                    <polygon id="Fill-111" fill-opacity="0.9" fill="#4C72B0" points="0 619.150835 43.376427 619.150835 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-113" stroke-opacity="0.9" stroke="#FFFFFF" points="0 619.150835 43.376427 619.150835 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-118" transform="translate(752.487870, 65.205574)">
+                    <polygon id="Fill-115" fill-opacity="0.9" fill="#4C72B0" points="0 606.334426 43.376427 606.334426 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-117" stroke-opacity="0.9" stroke="#FFFFFF" points="0 606.334426 43.376427 606.334426 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-122" transform="translate(925.993578, 204.709473)">
+                    <polygon id="Fill-119" fill-opacity="0.9" fill="#4C72B0" points="1.13686838e-13 466.830527 43.376427 466.830527 43.376427 0 1.13686838e-13 0"></polygon>
+                    <polygon id="Stroke-121" stroke-opacity="0.9" stroke="#FFFFFF" points="1.13686838e-13 466.830527 43.376427 466.830527 43.376427 0 1.13686838e-13 0"></polygon>
+                </g>
+                <g id="Group-126" transform="translate(1099.499286, 543.453652)">
+                    <polygon id="Fill-123" fill-opacity="0.9" fill="#4C72B0" points="0 128.086348 43.376428 128.086348 43.376428 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-125" stroke-opacity="0.9" stroke="#FFFFFF" points="0 128.086348 43.376428 128.086348 43.376428 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-130" transform="translate(1273.004995, 203.712705)">
+                    <polygon id="Fill-127" fill-opacity="0.9" fill="#4C72B0" points="2.27373675e-13 467.827295 43.376427 467.827295 43.376427 0 2.27373675e-13 0"></polygon>
+                    <polygon id="Stroke-129" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 467.827295 43.376427 467.827295 43.376427 0 2.27373675e-13 0"></polygon>
+                </g>
+                <g id="Group-134" transform="translate(1446.510703, 203.884034)">
+                    <polygon id="Fill-131" fill-opacity="0.9" fill="#4C72B0" points="0 467.655966 43.376427 467.655966 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-133" stroke-opacity="0.9" stroke="#FFFFFF" points="0 467.655966 43.376427 467.655966 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-138" transform="translate(1620.016411, 295.786296)">
+                    <polygon id="Fill-135" fill-opacity="0.9" fill="#4C72B0" points="0 375.753704 43.376427 375.753704 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-137" stroke-opacity="0.9" stroke="#FFFFFF" points="0 375.753704 43.376427 375.753704 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-142" transform="translate(1793.522119, 231.984709)">
+                    <polygon id="Fill-139" fill-opacity="0.9" fill="#4C72B0" points="0 439.555291 43.376428 439.555291 43.376428 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-141" stroke-opacity="0.9" stroke="#FFFFFF" points="0 439.555291 43.376428 439.555291 43.376428 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-146" transform="translate(1967.027828, 566.707509)">
+                    <polygon id="Fill-143" fill-opacity="0.9" fill="#4C72B0" points="2.27373675e-13 104.832491 43.376427 104.832491 43.376427 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-145" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 104.832491 43.376427 104.832491 43.376427 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-150" transform="translate(275.347172, 446.731143)">
+                    <polygon id="Fill-147" fill-opacity="0.9" fill="#C44E52" points="0 224.808857 43.376427 224.808857 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-149" stroke-opacity="0.9" stroke="#FFFFFF" points="0 224.808857 43.376427 224.808857 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-154" transform="translate(448.852881, 238.732286)">
+                    <polygon id="Fill-151" fill-opacity="0.9" fill="#C44E52" points="0 432.807714 43.376427 432.807714 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-153" stroke-opacity="0.9" stroke="#FFFFFF" points="0 432.807714 43.376427 432.807714 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-158" transform="translate(622.358589, 68.260579)">
+                    <polygon id="Fill-155" fill-opacity="0.9" fill="#C44E52" points="0 603.279421 43.376427 603.279421 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-157" stroke-opacity="0.9" stroke="#FFFFFF" points="0 603.279421 43.376427 603.279421 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-162" transform="translate(795.864297, 82.358196)">
+                    <polygon id="Fill-159" fill-opacity="0.9" fill="#C44E52" points="1.13686838e-13 589.181804 43.376427 589.181804 43.376427 0 1.13686838e-13 0"></polygon>
+                    <polygon id="Stroke-161" stroke-opacity="0.9" stroke="#FFFFFF" points="1.13686838e-13 589.181804 43.376427 589.181804 43.376427 0 1.13686838e-13 0"></polygon>
+                </g>
+                <g id="Group-166" transform="translate(969.370005, 245.509114)">
+                    <polygon id="Fill-163" fill-opacity="0.9" fill="#C44E52" points="0 426.030886 43.376427 426.030886 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-165" stroke-opacity="0.9" stroke="#FFFFFF" points="0 426.030886 43.376427 426.030886 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-170" transform="translate(1142.875714, 538.811123)">
+                    <polygon id="Fill-167" fill-opacity="0.9" fill="#C44E52" points="2.27373675e-13 132.728877 43.376427 132.728877 43.376427 0 2.27373675e-13 0"></polygon>
+                    <polygon id="Stroke-169" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 132.728877 43.376427 132.728877 43.376427 0 2.27373675e-13 0"></polygon>
+                </g>
+                <g id="Group-174" transform="translate(1316.381422, 222.936867)">
+                    <polygon id="Fill-171" fill-opacity="0.9" fill="#C44E52" points="0 448.603133 43.376427 448.603133 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-173" stroke-opacity="0.9" stroke="#FFFFFF" points="0 448.603133 43.376427 448.603133 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-178" transform="translate(1489.887130, 218.200255)">
+                    <polygon id="Fill-175" fill-opacity="0.9" fill="#C44E52" points="0 453.339745 43.376427 453.339745 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-177" stroke-opacity="0.9" stroke="#FFFFFF" points="0 453.339745 43.376427 453.339745 43.376427 5.68434189e-14 0 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-182" transform="translate(1663.392838, 341.431173)">
+                    <polygon id="Fill-179" fill-opacity="0.9" fill="#C44E52" points="2.27373675e-13 330.108827 43.376427 330.108827 43.376427 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-181" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 330.108827 43.376427 330.108827 43.376427 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-186" transform="translate(1836.898547, 303.406635)">
+                    <polygon id="Fill-183" fill-opacity="0.9" fill="#C44E52" points="2.27373675e-13 368.133365 43.376427 368.133365 43.376427 -5.68434189e-14 2.27373675e-13 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-185" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 368.133365 43.376427 368.133365 43.376427 -5.68434189e-14 2.27373675e-13 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-190" transform="translate(2010.404255, 568.391437)">
+                    <polygon id="Fill-187" fill-opacity="0.9" fill="#C44E52" points="0 103.148563 43.376427 103.148563 43.376427 0 0 0"></polygon>
+                    <polygon id="Stroke-189" stroke-opacity="0.9" stroke="#FFFFFF" points="0 103.148563 43.376427 103.148563 43.376427 0 0 0"></polygon>
+                </g>
+                <g id="Group-203" transform="translate(94.835000, 20.931623)" stroke="#D6D6D6" stroke-linecap="square" stroke-width="1.25">
+                    <line x1="0.5" y1="650.608377" x2="0.5" y2="0.5" id="Stroke-191"></line>
+                    <line x1="2052.205" y1="650.608377" x2="2052.205" y2="0.5" id="Stroke-192"></line>
+                    <line x1="0.5" y1="650.608377" x2="2052.205" y2="650.608377" id="Stroke-193"></line>
+                    <line x1="0.5" y1="0.5" x2="2052.205" y2="0.5" id="Stroke-194"></line>
+                </g>
+            </g>
+            <text id="mAP@0.10" transform="translate(451.303750, 1372.757296) rotate(-90.000000) translate(-451.303750, -1372.757296) " font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                <tspan x="380.30375" y="1382.7573">mAP@0.10</tspan>
+            </text>
+            <g id="Group-8" transform="translate(1709.761875, 800.448420)">
+                <path d="M5.99838795,127.458203 L317.001612,127.458203 C321.000537,127.458203 323,125.658203 323,122.058203 L323,5.88320328 C323,2.28320328 321.000537,0.483203285 317.001612,0.483203285 L5.99838795,0.483203285 C1.99946265,0.483203285 0,2.28320328 0,5.88320328 L0,122.058203 C0,125.658203 1.99946265,127.458203 5.99838795,127.458203 Z" id="Fill-195" fill-opacity="0.8" fill="#FFFFFF"></path>
+                <path d="M5.8312502,127.458203 L308.16875,127.458203 C312.05625,127.458203 314,125.658203 314,122.058203 L314,5.88320328 C314,2.28320328 312.05625,0.483203285 308.16875,0.483203285 L5.8312502,0.483203285 C1.94375007,0.483203285 0,2.28320328 0,5.88320328 L0,122.058203 C0,125.658203 1.94375007,127.458203 5.8312502,127.458203 Z" id="Stroke-196" stroke-opacity="0.8" stroke="#D6D6D6"></path>
+                <polygon id="Fill-197" fill-opacity="0.9" fill="#55A868" points="10.8 31.7988283 64.8 31.7988283 64.8 12.8988283 10.8 12.8988283"></polygon>
+                <polygon id="Stroke-198" stroke-opacity="0.9" stroke="#FFFFFF" points="10.8 31.7988283 64.8 31.7988283 64.8 12.8988283 10.8 12.8988283"></polygon>
+                <text id="nnDetection" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="86.4" y="26">nnDetection</tspan>
+                </text>
+                <polygon id="Fill-199" fill-opacity="0.9" fill="#4C72B0" points="10.8 71.4238283 64.8 71.4238283 64.8 52.5238283 10.8 52.5238283"></polygon>
+                <polygon id="Stroke-200" stroke-opacity="0.9" stroke="#FFFFFF" points="10.8 71.4238283 64.8 71.4238283 64.8 52.5238283 10.8 52.5238283"></polygon>
+                <text id="nnU-Net-Plus" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="86.4" y="65.625">nnU-Net Plus</tspan>
+                </text>
+                <polygon id="Fill-201" fill-opacity="0.9" fill="#C44E52" points="10.8 111.048828 64.8 111.048828 64.8 92.1488283 10.8 92.1488283"></polygon>
+                <polygon id="Stroke-202" stroke-opacity="0.9" stroke="#FFFFFF" points="10.8 111.048828 64.8 111.048828 64.8 92.1488283 10.8 92.1488283"></polygon>
+                <text id="nnU-Net-Basic" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="86.4" y="105.25">nnU-Net Basic</tspan>
+                </text>
+            </g>
+            <text id="Training-Pool" font-family="LucidaGrande, Lucida Grande" font-size="36" font-weight="normal" fill="#767676">
+                <tspan x="333" y="109">Training Pool</tspan>
+            </text>
+            <text id="Five-Fold-Cross-Vali" font-family="LucidaGrande-Bold, Lucida Grande" font-size="36" font-weight="bold" fill="#767676">
+                <tspan x="41" y="35">Five Fold Cross Validation Results</tspan>
+            </text>
+            <text id="Test-Pool**" font-family="LucidaGrande, Lucida Grande" font-size="36" font-weight="normal" fill="#767676">
+                <tspan x="1931" y="118">Test Pool**</tspan>
+            </text>
+            <text id="Validation-Pool" font-family="LucidaGrande, Lucida Grande" font-size="36" font-weight="normal" fill="#767676">
+                <tspan x="1339" y="110">Validation Pool</tspan>
+            </text>
+            <line x1="1903.5" y1="72.5" x2="1903.5" y2="715.5" id="Line" stroke="#979797" stroke-width="7" stroke-linecap="square"></line>
+            <text id="N=91" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1780" y="775">N=91</tspan>
+            </text>
+            <text id="N=88" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1610" y="775">N=88</tspan>
+            </text>
+            <text id="N=196" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1248" y="775">N=196</tspan>
+            </text>
+            <text id="N=212" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1417" y="775">N=212</tspan>
+            </text>
+            <text id="N=105" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1079" y="775">N=105</tspan>
+            </text>
+            <text id="N=1035" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="204" y="770">N=1035</tspan>
+            </text>
+            <g id="test_full" transform="translate(394.000000, 856.000000)">
+                <polygon id="Fill-1" fill="#FFFFFF" points="0 720 1296 720 1296 0 0 0"></polygon>
+                <polygon id="Fill-2" fill="#FFFFFF" points="95.335 671.54 1279.01118 671.54 1279.01118 22.96 95.335 22.96"></polygon>
+                <line x1="198.050701" y1="671.54" x2="198.050701" y2="22.96" id="Stroke-3" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="ProstateX" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="133.206951" y="695.756797">ProstateX</tspan>
+                </text>
+                <line x1="393.699656" y1="671.54" x2="393.699656" y2="22.96" id="Stroke-5" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Pancreas" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="333.082469" y="695.756797">Pancreas</tspan>
+                </text>
+                <line x1="589.348611" y1="671.54" x2="589.348611" y2="22.96" id="Stroke-7" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Hepatic-Vessel" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="490.700174" y="695.756797">Hepatic Vessel</tspan>
+                </text>
+                <line x1="784.997566" y1="671.54" x2="784.997566" y2="22.96" id="Stroke-9" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Colon" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="746.747566" y="695.756797">Colon</tspan>
+                </text>
+                <line x1="980.646521" y1="671.54" x2="980.646521" y2="22.96" id="Stroke-11" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Liver" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="947.521521" y="695.756797">Liver</tspan>
+                </text>
+                <line x1="1176.29548" y1="671.54" x2="1176.29548" y2="22.96" id="Stroke-13" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round"></line>
+                <text id="Lymph-Nodes" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="1093.20173" y="696.756797">Lymph Nodes</tspan>
+                </text>
+                <g id="Group-17" transform="translate(95.335000, 670.790000)">
+                    <mask id="mask-24" fill="white">
+                        <use xlink:href="#path-23"></use>
+                    </mask>
+                    <g id="Clip-16"></g>
+                    <line x1="-2.84217094e-14" y1="0.75" x2="1183.67618" y2="0.75" id="Stroke-15" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-24)"></line>
+                </g>
+                <text id="0.0" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="675.998984">0.0</tspan>
+                </text>
+                <g id="Group-20" transform="translate(95.335000, 606.182000)">
+                    <mask id="mask-26" fill="white">
+                        <use xlink:href="#path-25"></use>
+                    </mask>
+                    <g id="Clip-19"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-18" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-26)"></line>
+                </g>
+                <text id="0.1" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="611.140984">0.1</tspan>
+                </text>
+                <g id="Group-23" transform="translate(95.335000, 541.324000)">
+                    <mask id="mask-28" fill="white">
+                        <use xlink:href="#path-27"></use>
+                    </mask>
+                    <g id="Clip-22"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-21" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-28)"></line>
+                </g>
+                <text id="0.2" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="546.282984">0.2</tspan>
+                </text>
+                <g id="Group-26" transform="translate(95.335000, 476.466000)">
+                    <mask id="mask-30" fill="white">
+                        <use xlink:href="#path-29"></use>
+                    </mask>
+                    <g id="Clip-25"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-24" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-30)"></line>
+                </g>
+                <text id="0.3" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="481.424984">0.3</tspan>
+                </text>
+                <g id="Group-29" transform="translate(95.335000, 411.608000)">
+                    <mask id="mask-32" fill="white">
+                        <use xlink:href="#path-31"></use>
+                    </mask>
+                    <g id="Clip-28"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-27" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-32)"></line>
+                </g>
+                <text id="0.4" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="416.566984">0.4</tspan>
+                </text>
+                <g id="Group-32" transform="translate(95.335000, 346.750000)">
+                    <mask id="mask-34" fill="white">
+                        <use xlink:href="#path-33"></use>
+                    </mask>
+                    <g id="Clip-31"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-30" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-34)"></line>
+                </g>
+                <text id="0.5" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="351.708984">0.5</tspan>
+                </text>
+                <g id="Group-35" transform="translate(95.335000, 281.892000)">
+                    <mask id="mask-36" fill="white">
+                        <use xlink:href="#path-35"></use>
+                    </mask>
+                    <g id="Clip-34"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-33" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-36)"></line>
+                </g>
+                <text id="0.6" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="286.850984">0.6</tspan>
+                </text>
+                <g id="Group-38" transform="translate(95.335000, 217.034000)">
+                    <mask id="mask-38" fill="white">
+                        <use xlink:href="#path-37"></use>
+                    </mask>
+                    <g id="Clip-37"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-36" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-38)"></line>
+                </g>
+                <text id="0.7" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="221.992984">0.7</tspan>
+                </text>
+                <g id="Group-41" transform="translate(95.335000, 152.176000)">
+                    <mask id="mask-40" fill="white">
+                        <use xlink:href="#path-39"></use>
+                    </mask>
+                    <g id="Clip-40"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-39" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-40)"></line>
+                </g>
+                <text id="0.8" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="157.134984">0.8</tspan>
+                </text>
+                <g id="Group-44" transform="translate(95.335000, 87.318000)">
+                    <mask id="mask-42" fill="white">
+                        <use xlink:href="#path-41"></use>
+                    </mask>
+                    <g id="Clip-43"></g>
+                    <line x1="-2.84217094e-14" y1="0.5" x2="1183.67618" y2="0.5" id="Stroke-42" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-42)"></line>
+                </g>
+                <text id="0.9" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal" fill="#333333">
+                    <tspan x="42.913125" y="92.2769844">0.9</tspan>
+                </text>
+                <g id="Group-47" transform="translate(95.335000, 22.710000)">
+                    <mask id="mask-44" fill="white">
+                        <use xlink:href="#path-43"></use>
+                    </mask>
+                    <g id="Clip-46"></g>
+                    <line x1="-2.84217094e-14" y1="0.25" x2="1183.67618" y2="0.25" id="Stroke-45" stroke="#D6D6D6" stroke-linecap="round" stroke-linejoin="round" mask="url(#mask-44)"></line>
+                </g>
+                <g id="Group-48" transform="translate(2.303750, 1.418984)" fill="#333333" font-family="LucidaGrande, Lucida Grande" font-size="27" font-weight="normal">
+                    <text id="1.0">
+                        <tspan x="40.609375" y="26">1.0</tspan>
+                    </text>
+                    <text id="mAP@0.10" transform="translate(16.000000, 341.000000) rotate(-90.000000) translate(-16.000000, -341.000000) ">
+                        <tspan x="-55" y="351">mAP@0.10</tspan>
+                    </text>
+                </g>
+                <g id="Group-52" transform="translate(149.138463, 527.867430)">
+                    <mask id="mask-46" fill="white">
+                        <use xlink:href="#path-45"></use>
+                    </mask>
+                    <g id="Clip-50"></g>
+                    <polygon id="Fill-49" fill-opacity="0.9" fill="#55A868" mask="url(#mask-46)" points="0 143.67257 48.912238 143.67257 48.912238 0 0 0"></polygon>
+                    <polygon id="Stroke-51" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-46)" points="0 143.67257 48.912238 143.67257 48.912238 0 0 0"></polygon>
+                </g>
+                <g id="Group-56" transform="translate(344.787418, 158.183486)">
+                    <polygon id="Fill-53" fill-opacity="0.9" fill="#55A868" points="0 513.356514 48.912238 513.356514 48.912238 0 0 0"></polygon>
+                    <polygon id="Stroke-55" stroke-opacity="0.9" stroke="#FFFFFF" points="0 513.356514 48.912238 513.356514 48.912238 0 0 0"></polygon>
+                </g>
+                <g id="Group-60" transform="translate(540.436373, 240.613859)">
+                    <mask id="mask-48" fill="white">
+                        <use xlink:href="#path-47"></use>
+                    </mask>
+                    <g id="Clip-58"></g>
+                    <polygon id="Fill-57" fill-opacity="0.9" fill="#55A868" mask="url(#mask-48)" points="0 430.926141 48.912238 430.926141 48.912238 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-59" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-48)" points="0 430.926141 48.912238 430.926141 48.912238 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-64" transform="translate(736.085328, 219.656908)">
+                    <mask id="mask-50" fill="white">
+                        <use xlink:href="#path-49"></use>
+                    </mask>
+                    <g id="Clip-62"></g>
+                    <polygon id="Fill-61" fill-opacity="0.9" fill="#55A868" mask="url(#mask-50)" points="-1.13686838e-13 451.883092 48.912238 451.883092 48.912238 5.68434189e-14 -1.13686838e-13 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-63" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-50)" points="-1.13686838e-13 451.883092 48.912238 451.883092 48.912238 5.68434189e-14 -1.13686838e-13 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-68" transform="translate(931.734283, 158.620492)">
+                    <polygon id="Fill-65" fill-opacity="0.9" fill="#55A868" points="0 512.919508 48.912238 512.919508 48.912238 0 0 0"></polygon>
+                    <polygon id="Stroke-67" stroke-opacity="0.9" stroke="#FFFFFF" points="0 512.919508 48.912238 512.919508 48.912238 0 0 0"></polygon>
+                </g>
+                <g id="Group-72" transform="translate(1127.383238, 496.081909)">
+                    <polygon id="Fill-69" fill-opacity="0.9" fill="#55A868" points="0 175.458091 48.912238 175.458091 48.912238 0 0 0"></polygon>
+                    <polygon id="Stroke-71" stroke-opacity="0.9" stroke="#FFFFFF" points="0 175.458091 48.912238 175.458091 48.912238 0 0 0"></polygon>
+                </g>
+                <g id="Group-76" transform="translate(198.050701, 620.476057)">
+                    <polygon id="Fill-73" fill-opacity="0.9" fill="#4C72B0" points="0 51.063943 48.912239 51.063943 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-75" stroke-opacity="0.9" stroke="#FFFFFF" points="0 51.063943 48.912239 51.063943 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-80" transform="translate(393.699656, 214.799350)">
+                    <mask id="mask-52" fill="white">
+                        <use xlink:href="#path-51"></use>
+                    </mask>
+                    <g id="Clip-78"></g>
+                    <polygon id="Fill-77" fill-opacity="0.9" fill="#4C72B0" mask="url(#mask-52)" points="0 456.74065 48.912239 456.74065 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-79" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-52)" points="0 456.74065 48.912239 456.74065 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-84" transform="translate(589.348611, 227.270191)">
+                    <mask id="mask-54" fill="white">
+                        <use xlink:href="#path-53"></use>
+                    </mask>
+                    <g id="Clip-82"></g>
+                    <polygon id="Fill-81" fill-opacity="0.9" fill="#4C72B0" mask="url(#mask-54)" points="0 444.269809 48.912239 444.269809 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                    <polygon id="Stroke-83" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-54)" points="0 444.269809 48.912239 444.269809 48.912239 -5.68434189e-14 0 -5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-88" transform="translate(784.997566, 197.010649)">
+                    <mask id="mask-56" fill="white">
+                        <use xlink:href="#path-55"></use>
+                    </mask>
+                    <g id="Clip-86"></g>
+                    <polygon id="Fill-85" fill-opacity="0.9" fill="#4C72B0" mask="url(#mask-56)" points="0 474.529351 48.912239 474.529351 48.912239 0 0 0"></polygon>
+                    <polygon id="Stroke-87" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-56)" points="0 474.529351 48.912239 474.529351 48.912239 0 0 0"></polygon>
+                </g>
+                <g id="Group-92" transform="translate(980.646521, 178.261771)">
+                    <mask id="mask-58" fill="white">
+                        <use xlink:href="#path-57"></use>
+                    </mask>
+                    <g id="Clip-90"></g>
+                    <polygon id="Fill-89" fill-opacity="0.9" fill="#4C72B0" mask="url(#mask-58)" points="-1.13686838e-13 493.278229 48.912239 493.278229 48.912239 0 -1.13686838e-13 0"></polygon>
+                    <polygon id="Stroke-91" stroke-opacity="0.9" stroke="#FFFFFF" mask="url(#mask-58)" points="-1.13686838e-13 493.278229 48.912239 493.278229 48.912239 0 -1.13686838e-13 0"></polygon>
+                </g>
+                <g id="Group-96" transform="translate(1176.295476, 561.697114)">
+                    <polygon id="Fill-93" fill-opacity="0.9" fill="#4C72B0" points="2.27373675e-13 109.842886 48.912239 109.842886 48.912239 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                    <polygon id="Stroke-95" stroke-opacity="0.9" stroke="#FFFFFF" points="2.27373675e-13 109.842886 48.912239 109.842886 48.912239 5.68434189e-14 2.27373675e-13 5.68434189e-14"></polygon>
+                </g>
+                <g id="Group-107" transform="translate(94.835000, 22.460000)" stroke="#D6D6D6" stroke-linecap="square" stroke-width="1.25">
+                    <line x1="0.5" y1="649.08" x2="0.5" y2="0.5" id="Stroke-97"></line>
+                    <line x1="1184.17618" y1="649.08" x2="1184.17618" y2="0.5" id="Stroke-98"></line>
+                    <line x1="0.5" y1="649.08" x2="1184.17618" y2="649.08" id="Stroke-99"></line>
+                    <line x1="0.5" y1="0.5" x2="1184.17618" y2="0.5" id="Stroke-100"></line>
+                </g>
+            </g>
+            <text id="N=113" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="904" y="775">N=113</tspan>
+            </text>
+            <text id="N=500" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="387" y="770">N=500</tspan>
+            </text>
+            <text id="N=109" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="563" y="770">N=109</tspan>
+            </text>
+            <text id="N=204" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="732" y="770">N=204</tspan>
+            </text>
+            <text id="N=123" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1950" y="775">N=123</tspan>
+            </text>
+            <line x1="863.5" y1="74.5" x2="863.5" y2="715.5" id="Line" stroke="#979797" stroke-width="7" stroke-linecap="square"></line>
+            <text id="Hold-out-Test-Split" font-family="LucidaGrande-Bold, Lucida Grande" font-size="36" font-weight="bold" fill="#767676">
+                <tspan x="446" y="848">Hold-out Test Split Results</tspan>
+            </text>
+            <text id="Test-Pool**" font-family="LucidaGrande, Lucida Grande" font-size="36" font-weight="normal">
+                <tspan x="1476" y="920" fill="#767676">Test Pool</tspan>
+                <tspan x="1636.55859" y="920" fill="#333333">**</tspan>
+            </text>
+            <text id="Validation-Pool*" font-family="LucidaGrande, Lucida Grande" font-size="36" font-weight="normal">
+                <tspan x="878.316406" y="920" fill="#767676">Validation Pool</tspan>
+                <tspan x="1139.33398" y="920" fill="#000000">*</tspan>
+            </text>
+            <text id="N=91" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="949" y="1579">N=91</tspan>
+            </text>
+            <text id="N=45" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="561" y="1579">N=45</tspan>
+            </text>
+            <text id="N=38" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1143" y="1579">N=38</tspan>
+            </text>
+            <text id="N=40" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1340" y="1579">N=40</tspan>
+            </text>
+            <text id="N=85" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="755" y="1579">N=85</tspan>
+            </text>
+            <text id="N=53" font-family="LucidaGrande, Lucida Grande" font-size="24" font-weight="normal" fill="#333333">
+                <tspan x="1542" y="1579">N=53</tspan>
+            </text>
+            <line x1="1468.5" y1="884.5" x2="1468.5" y2="1526.5" id="Line" stroke="#979797" stroke-width="7" stroke-linecap="square"></line>
+        </g>
+    </g>
+</svg>

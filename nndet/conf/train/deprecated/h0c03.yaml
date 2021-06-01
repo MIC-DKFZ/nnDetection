@@ -1,0 +1,60 @@
+# @package __global__
+defaults:
+  - augmentation: base
+
+model: "RetinaUNetC008"
+trainer: "DetectionTrainerPolyLR"
+predictor: "BoxPredictorSelective"
+plan: D3C002_3d
+
+planners:
+  2d: [D2C002]
+  3d: [D2C002, D3C002] # [D3C002LR15, D3C002LR20] [D3C002NR, D3C002RibFrac] [D2C002, D3C002]
+
+augment_cfg:
+  oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
+  augmentation: ${augmentation}
+  dataloader: "DataLoader{}DFast"
+  dataloader_kwargs: {}
+
+trainer_cfg:
+  # Per default training is deterministic, non-deterministic allows
+  # cudnn.benchmark which can give up to 20% performance. Set this to false
+  # to perform non-deterministic training
+  deterministic: True
+  fp16: True # enable fp16 training. Makes sense for supported hardware only!
+  eval_score_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # metric to optimize
+
+  num_batches_per_epoch: 2500 # number of train batches per epoch
+  num_val_batches_per_epoch: 100 # number of val batches per epoch
+  max_num_epochs: 50 # max number of epochs
+  overwrites: {}
+
+  initial_lr: 3.e-4 # initial learning rate to start with
+  weight_decay: 3.e-5 # weight decay for optimizer
+
+  warmup: 4000 # number of iterations with warmup
+  warmup_lr: 1.e-6 # learning rate to start warmup from
+
+model_cfg:
+  matching:
+    # IoU Matcher Parameters
+    fg_iou_thresh: 0.4 # IoU threshold for anchors to be matched positive
+    bg_iou_thresh: 0.3 # IoU threshold for anchors to be matched negative
+    # If ground truth has no matched anchors, use the best anchor which was found
+    allow_low_quality_matches: True
+
+    # ATSS matching
+    num_candidates: 4
+    center_in_gt: False
+
+  hnm: # parameters for hard negative mining
+    batch_size_per_image: 32 # number of anchors sampled per image
+    positive_fraction: 0.33 # defines ratio between positive and negative anchors
+    # hard negatives are sampled from a pool of size:
+    # batch_size_per_image * (1 - positive_fraction) * pool_size
+    pool_size: 20
+    min_neg: 1 # minimum number of negative anchors sampled per image
+
+  plan_arch_overwrites: {} # overwrite arguments of architecture
+  plan_anchors_overwrites: {} # overwrite arguments of anchors

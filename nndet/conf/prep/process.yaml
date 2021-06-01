@@ -1,0 +1,7 @@
+# set this to 1 if you want to override cropped data
+overwrite: False
+
+crop: True
+analyze: True
+plan: True
+process: True

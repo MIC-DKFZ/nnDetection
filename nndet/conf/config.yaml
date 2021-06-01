@@ -1,0 +1,33 @@
+defaults:
+    - train: v001
+    - prep: process
+
+exp:
+  tag: ""
+  fold: 0
+  id: ${module}_${plan}${exp.tag}
+
+train:
+  mode: "overwrite" # can be either `overwrite` or `resume`
+  val_test: True # run testing on validation data to get final training results
+
+host:
+  # DO NOT CHANGE THESE
+  parent_data: ${oc.env:det_data}
+  parent_results: ${oc.env:det_models}
+
+  # base is the folder where the raw data is stored
+  data_dir: ${host.parent_data}/${task}
+  prep_dir: ${host.parent_data}/${task}
+  network_training_output_dir: ${host.parent_results} # kept for historical reasons
+
+  # create intermediate folder for preprocessing steps
+  raw_output_dir: ${host.prep_dir}/raw
+  splitted_4d_output_dir: ${host.prep_dir}/raw_splitted
+  cropped_output_dir: ${host.prep_dir}/raw_cropped
+  # preprocessing_output_dir is where the preprocessed data is stored. If you run a training I very strongly recommend
+  # this is a SSD!
+  preprocessed_output_dir: ${host.parent_data}/${task}/preprocessed
+
+  # network training
+  plan_path: ${host.preprocessed_output_dir}/${plan}.pkl

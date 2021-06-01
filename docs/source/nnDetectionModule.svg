@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1186px" height="312px" viewBox="0 0 1186 312" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group 31</title>
+    <defs>
+        <polygon id="path-1" points="0 0 526 0 526 312 259.271786 312 0 312"></polygon>
+        <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="526" height="312" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+        <rect id="path-3" x="25" y="13" width="238" height="284"></rect>
+        <mask id="mask-4" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="238" height="284" fill="white">
+            <use xlink:href="#path-3"></use>
+        </mask>
+        <polygon id="path-5" points="0 1.08246745e-15 442 1.08246745e-15 648 0 648 147 442 147 442 312 0 312"></polygon>
+        <mask id="mask-6" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="648" height="312" fill="white">
+            <use xlink:href="#path-5"></use>
+        </mask>
+        <rect id="path-7" x="455" y="156" width="193" height="156"></rect>
+        <mask id="mask-8" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="193" height="156" fill="white">
+            <use xlink:href="#path-7"></use>
+        </mask>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-31">
+            <g id="Group-29">
+                <g id="Group-9" transform="translate(38.000000, 25.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#D0B8EE" x="1" y="1" width="209" height="60" rx="7"></rect>
+                    <text id="planning.properties." font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="25.9467773" y="27">planning.properties.</tspan>
+                        <tspan x="71.4785156" y="49">instance</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(38.000000, 125.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#D0B8EE" x="1" y="1" width="209" height="60" rx="7"></rect>
+                    <text id="planning.properties." font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="25.9467773" y="27">planning.properties.</tspan>
+                        <tspan x="71.9838867" y="49">intensity</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(36.000000, 225.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#D0B8EE" x="1" y="1" width="209" height="60" rx="7"></rect>
+                    <text id="planning.properties." font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="25.9467773" y="27">planning.properties.</tspan>
+                        <tspan x="73.987793" y="49">medical</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(282.000000, 13.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#BEEEB8" x="1" y="1" width="221" height="60" rx="7"></rect>
+                    <text id="planning.-plan_exper" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="74.9682617" y="27">planning.</tspan>
+                        <tspan x="44.9580078" y="49">plan_experiment</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(282.000000, 87.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#BEEEB8" x="1" y="1" width="221" height="60" rx="7"></rect>
+                    <text id="planning.-plan_archi" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="74.9682617" y="27">planning.</tspan>
+                        <tspan x="42.4575195" y="49">plan_architecture</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(282.000000, 161.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#BEEEB8" x="1" y="1" width="221" height="60" rx="7"></rect>
+                    <text id="planning.-estimator" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="74.9682617" y="27">planning.</tspan>
+                        <tspan x="74.4892578" y="49">estimator</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(282.000000, 235.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#BEEEB8" x="1" y="1" width="221" height="60" rx="7"></rect>
+                    <text id="preprocessing" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="54.96875" y="38">preprocessing</tspan>
+                    </text>
+                </g>
+                <use id="Rectangle" stroke="#64BF58" mask="url(#mask-2)" stroke-width="8" stroke-dasharray="2" xlink:href="#path-1"></use>
+                <use id="Rectangle" stroke="#A261F4" mask="url(#mask-4)" stroke-width="6" stroke-dasharray="3" xlink:href="#path-3"></use>
+            </g>
+            <g id="Group-30" transform="translate(538.000000, 0.000000)">
+                <g id="Group-9" transform="translate(226.000000, 161.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="io.datamodule.-bg_lo" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="30.4594727" y="27">io.datamodule.</tspan>
+                        <tspan x="49.4658203" y="49">bg_loader</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(226.000000, 235.000000)" fill="#E0E0E0" stroke="#000000" stroke-width="2">
+                    <rect id="Rectangle" x="1" y="1" width="177" height="60" rx="7"></rect>
+                </g>
+                <g id="Group-9" transform="translate(454.000000, 8.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#E0E0E0" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="evaluator" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="52.4760742" y="38">evaluator</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(454.000000, 75.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#E0E0E0" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="utils" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="73.4951172" y="38">utils</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(12.000000, 13.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#E0E0E0" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="ptmodule" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="52.4760742" y="38">ptmodule</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(226.000000, 87.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="io.-augmentation" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="79.9946289" y="27">io.</tspan>
+                        <tspan x="34.9594727" y="49">augmentation</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(226.000000, 13.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="training" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="59.9819336" y="38">training</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(12.000000, 161.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="models" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="60.4873047" y="38">models</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(462.000000, 169.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#F7C08C" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="inferene" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="56.9760742" y="38">inferene</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(462.000000, 241.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#F7C08C" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="inferene.-sweeper" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="54.4755859" y="27">inferene.</tspan>
+                        <tspan x="55.4819336" y="49">sweeper</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(12.000000, 87.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="detection" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="52.9726562" y="38">detection</tspan>
+                    </text>
+                </g>
+                <g id="Group-9" transform="translate(12.000000, 235.000000)">
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <rect id="Rectangle" stroke="#000000" stroke-width="2" fill="#B8C6EE" x="1" y="1" width="177" height="60" rx="7"></rect>
+                    <text id="losses" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                        <tspan x="63.9897461" y="38">losses</tspan>
+                    </text>
+                </g>
+                <use id="Rectangle" stroke="#537EF9" mask="url(#mask-6)" stroke-width="8" stroke-dasharray="2" xlink:href="#path-5"></use>
+                <use id="Rectangle" stroke="#EE7400" mask="url(#mask-8)" stroke-width="6" stroke-dasharray="3" xlink:href="#path-7"></use>
+                <text id="io.datamodule.-bg_mo" font-family="Helvetica" font-size="18" font-weight="normal" fill="#000000">
+                    <tspan x="256.459473" y="262">io.datamodule.</tspan>
+                    <tspan x="270.96582" y="284">bg_module</tspan>
+                </text>
+            </g>
+        </g>
+    </g>
+</svg>
