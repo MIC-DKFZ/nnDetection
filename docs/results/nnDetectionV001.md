@@ -3,7 +3,7 @@
 
 <div align="center">
 
-<img src=./source/v001/results_full.svg width="800px">
+<img src=./source/v001/results_full_final.svg width="800px">
 
 
 &nbsp;
@@ -12,11 +12,13 @@
 
 5 Fold Cross Validation
 
-| Model       | LIDC     | RibFrac  | CADA     | Kits19   |
-|:-----------:|:--------:|:--------:|:--------:|:--------:|
-| nnDetection | 0.605    | 0.765    | 0.924    | 0.923    |
-| nnUNetPlus  | 0.304    | 0.700    | 0.955    | 0.935    |
-| nnUNetBasic | 0.232    | 0.667    | 0.930    | 0.908    |
+| Model       | LIDC                 | RibFrac  | CADA     | Kits19   |
+|:-----------:|:--------------------:|:--------:|:--------:|:--------:|
+| nnDetection | 0.605                | 0.765    | 0.924    | 0.923    |
+| nnUNetPlus  | 0.385<sup>*</sup>    | 0.700    | 0.955    | 0.935    |
+| nnUNetBasic | 0.346<sup>*</sup>    | 0.667    | 0.930    | 0.908    |
+
+<sup>*</sup> results with corrected numerical values in softdice loss. Out of the box results: nnUNetPlus 0.304 and nnUNetBasic 0.232
 
 &nbsp;
 
