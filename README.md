@@ -471,4 +471,4 @@ nnU-Net is self-configuring method for semantic segmentation and many steps of n
 The Medical Detection Toolkit introduced the first codebase for 3D Object Detection and multiple tricks were transferred to nnDetection to assure optimal configuration for medical object detection.
 
 ## [Torchvision](https://github.com/pytorch/vision)
-nnDetection tried to follow the implementations of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used some of the core modules of the torchvision implementation.
+nnDetection tried to follow the interfaces of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used based our implementations of some of the core modules of the torchvision implementation.
