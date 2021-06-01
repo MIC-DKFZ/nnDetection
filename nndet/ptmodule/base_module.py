@@ -109,7 +109,8 @@ class LightningBaseModule(pl.LightningModule):
         the input through the network which does not include
         detection spcific postprocessing!
         """
-        return self.model(x)
+        return self.model.inference_step(x)
+        # return self.model(x)
 
     @property
     def example_input_array(self):

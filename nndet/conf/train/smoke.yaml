@@ -58,7 +58,7 @@ trainer_cfg:
   poly_gamma: 0.9
 
   swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
-  weights_summary:
+  weights_summary: "full"
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
