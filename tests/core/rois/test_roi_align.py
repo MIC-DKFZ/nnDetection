@@ -18,6 +18,6 @@ def test_roi_align():
                              spatial_scale=0.5,
                              # sampling_ratio=2,
                              )
-    breakpoint()
+
     print(pooled_fmap)
     c =1
