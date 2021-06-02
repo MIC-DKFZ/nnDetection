@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import traceback
@@ -18,7 +19,7 @@ from nndet.io.load import save_pickle, save_json, save_yaml, load_json
 from nndet.utils.check import env_guard
 
 
-def create_masks(source: Path, target: Path, df: pd.DataFrame):
+def create_masks(source: Path, target: Path, df: pd.DataFrame, num_processes: int):
     files = []
     split = {}
     for i in range(10):
@@ -50,7 +51,7 @@ def create_masks(source: Path, target: Path, df: pd.DataFrame):
         rads.append(r)
 
     assert len(files) == len(centers) == len(rads)
-    with Pool(processes=6) as p:
+    with Pool(processes=num_processes) as p:
         p.starmap(_create_mask, zip(files, repeat(target), centers, rads))
     # for t in zip(files, repeat(target), centers, rads):
     #     _create_mask(*t)
@@ -89,13 +90,13 @@ def create_splits(source, target):
     save_pickle(splits, target)
 
 
-def convert_data(source: Path, target: Path):
+def convert_data(source: Path, target: Path, num_processes: int):
     for subset_dir in source.glob('subset*'):
         subset_dir = Path(subset_dir)
         if not subset_dir.is_dir():
             continue
 
-        with Pool(processes=6) as p:
+        with Pool(processes=num_processes) as p:
             p.starmap(_convert_data, zip(subset_dir.glob('*.mhd'), repeat(target)))
 
 
@@ -110,6 +111,12 @@ def _convert_data(f, target):
 
 @env_guard
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num_processes', type=int, default=4, required=False,
+                        help="Number of processes to use for preparation.")
+    args = parser.parse_args()
+    num_processes = args.num_processes
+
     det_data_dir = Path(os.getenv('det_data'))
     task_data_dir = det_data_dir / "Task016_Luna"
     source_data_dir = task_data_dir / "raw"
@@ -152,10 +159,10 @@ def main():
 
     # prepare data and labels
     csv = source_data_dir / "annotations.csv"
-    convert_data(source_data_dir, target_data_dir)
+    convert_data(source_data_dir, target_data_dir, num_processes=num_processes)
 
     df = pd.read_csv(csv, index_col='seriesuid')
-    create_masks(source_data_dir, target_label_dir, df)
+    create_masks(source_data_dir, target_label_dir, df, num_processes=num_processes)
 
     # generate split
     logger.info("Generating luna splits... ")
