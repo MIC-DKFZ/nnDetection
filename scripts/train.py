@@ -211,10 +211,10 @@ def _train(
     meta_data["date"] = str(datetime.now())
     meta_data["git"] = log_git(nndet.__path__[0], repo_name="nndet")
     save_json(meta_data, "./meta.json")
-    try:
-        write_requirements_to_file("requirements.txt")
-    except Exception as e:
-        logger.error(f"Could not log req: {e}")
+    # try:
+    #     write_requirements_to_file("requirements.txt")
+    # except Exception as e:
+    #     logger.error(f"Could not log req: {e}")
 
     plan_path = Path(str(cfg.host["plan_path"]))
     plan = load_pickle(plan_path)
