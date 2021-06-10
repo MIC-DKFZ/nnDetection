@@ -28,6 +28,7 @@ from loguru import logger
 from nndet.io.load import save_txt
 from nndet.inference.predictor import Predictor
 from nndet.training.swa import SWACycleLinear
+from nndet.training.misc import EpochTimerCallback
 
 
 class LightningBaseModule(pl.LightningModule):
@@ -63,9 +64,6 @@ class LightningBaseModule(pl.LightningModule):
             1, plan["architecture"]["in_channels"], *plan["patch_size"],
         )
 
-        self.epoch_start_tic = 0
-        self.epoch_end_toc = 0
-
     @property
     def train_epochs(self):
         """
@@ -85,22 +83,6 @@ class LightningBaseModule(pl.LightningModule):
         Number of epochs of full training
         """
         return self.train_epochs + self.trainer_cfg.get("swa_epochs", 0)
-
-    def on_epoch_start(self) -> None:
-        """
-        Save time
-        """
-        self.epoch_start_tic = time()
-        return super().on_epoch_start()
-
-    def validation_epoch_end(self, validation_step_outputs):
-        """
-        Print time of epoch
-        (needed for cluster where progress bar is deactivated)
-        """
-        self.epoch_end_toc = time()
-        logger.info(f"This epoch took {int(self.epoch_end_toc - self.epoch_start_tic)} s")
-        return super().validation_epoch_end(validation_step_outputs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -191,7 +173,8 @@ class LightningBaseModule(pl.LightningModule):
 
     def configure_callbacks(self):
         callbacks = super().configure_callbacks()
-        
+        callbacks.append(EpochTimerCallback())
+
         if e := self.trainer_cfg.get("swa_epochs", 0) > 0:
             logger.info(f"Training with SWA, found {e} swa epochs.")
             callbacks.append(
