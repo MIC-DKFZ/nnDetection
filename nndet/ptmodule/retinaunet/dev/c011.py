@@ -97,11 +97,8 @@ class RetinaUNetC011Focal(RetinaUNetC011):
         """
         head_name = cls.head_cls.__name__
         head_kwargs = model_cfg['head_kwargs']
-        sampler_name = cls.head_sampler_cls.__name__
-        sampler_kwargs = model_cfg['head_sampler_kwargs']
 
-        logger.info(f"Building:: head {head_name}: {head_kwargs} "
-                    f"sampler {sampler_name}: {sampler_kwargs}")
+        logger.info(f"Building:: head {head_name}: {head_kwargs}")
         head = cls.head_cls(
             classifier=classifier,
             regressor=regressor,
