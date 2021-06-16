@@ -154,7 +154,7 @@ def analyze_instances_per_case(analyzer: DatasetAnalyzer,
     _, iseg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     props["num_instances"] = count_instances(props, all_classes)
     props["has_classes"] = list(set(props["instances"].values()))
-    props["volume_per_class"], props["region_volume_per_class"] = \
+    props["volume_per_class"], props["region_volume_per_class"], props["instance_ids"] = \
         instance_class_and_region_sizes(case_id, iseg, props, all_classes)
     props["boxes"] = iseg_to_boxes(iseg)
     props["all_ious"], props["class_ious"] = case_ious(props["boxes"], props)
@@ -200,6 +200,7 @@ def instance_class_and_region_sizes(
             corresponding to class) [all_classes, volume]
         Dict[int, List[float]]: volume of each instance (sorted to
             corresponding class) [all_classes, list(region_class_volume)]
+        Sequence[int]: instances ids present in segmentation
     """
     vol_per_voxel = np.prod(props['itk_spacing'])
     instance_classes = {int(key): int(item) for key, item in props["instances"].items()}
@@ -221,7 +222,7 @@ def instance_class_and_region_sizes(
             region_volume_per_class[i_cls].append(instance_vol)
         else:
             region_volume_per_class[i_cls] = [instance_vol]
-    return volume_per_class, region_volume_per_class
+    return volume_per_class, region_volume_per_class, ids
 
 
 def iseg_to_boxes(iseg: np.ndarray) -> np.ndarray:
@@ -279,7 +280,7 @@ def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.
 
         class_ious = OrderedDict()
         case_classes = list(set(map(int, props["instances"].values())))
-        case_instances = sorted(list(map(int, props["instances"].keys())))
+        case_instances = sorted(props["instance_ids"])
 
         for cls in case_classes:
             cls_box_indices = [props["instances"][str(ci)] == cls for ci in case_instances]
