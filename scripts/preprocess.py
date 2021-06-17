@@ -463,7 +463,7 @@ def main():
             if cfg["data"]["test_labels"]:
                 check_data_and_label_splitted(
                     cfg["task"],
-                    test=False,
+                    test=True,
                     labels=True,
                     full_check=full_check,
                 )
