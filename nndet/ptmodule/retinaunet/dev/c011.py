@@ -11,6 +11,8 @@ from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegr
 from nndet.core.boxes.coder import CoderType
 from nndet.arch.blocks.basic import StackedConvBlock2Max
 from nndet.training.ema import EMAWeightsCB
+from nndet.training.learning_rate import LinearWarmupPolyLR
+from nndet.training.optimizer.sam import SAM
 
 from nndet.arch.blocks.basic import (
     MySEBlockExp2,
@@ -36,7 +38,8 @@ from nndet.arch.conv import (
     ConvGroupLReLU,
     Generator
 )
-from pytorch_lightning.utilities.device_dtype_mixin import DeviceDtypeModuleMixin
+from nndet.training.optimizer.utils import get_params_no_wd_on_norm
+import torch
 
 
 @MODULE_REGISTRY.register
@@ -186,7 +189,11 @@ class RetinaUNetC011ResPlain(RetinaUNetC011MySE2):
 
 @MODULE_REGISTRY.register
 class RetinaUNetC011L1EMA(RetinaUNetC011):
+    """
+    Note: This subclasses the wrong class and is actually not computed with L1
+    """
     def configure_callbacks(self):
+        logger.warning("This implementation does not work with Multi-GPU!")
         callbacks = super().configure_callbacks()
         
         callbacks.append(
@@ -198,3 +205,83 @@ class RetinaUNetC011L1EMA(RetinaUNetC011):
             )
         )
         return callbacks
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC011L1SAM(RetinaUNetC011L1):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.automatic_optimization = False
+        logger.warning("This implementation does not work with Multi-GPU!")
+
+    def training_step(self, batch, batch_idx):
+        """
+        Computes a single training step
+        See :class:`BaseRetinaNet` for more information
+        """
+        optimizer = self.optimizers()
+
+        with torch.no_grad():
+            batch = self.pre_trafo(**batch)
+
+        # first step
+        losses, _ = self.model.train_step(
+            images=batch["data"],
+            targets={
+                "target_boxes": batch["boxes"],
+                "target_classes": batch["classes"],
+                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+            },
+            predict=False,
+            batch_num=batch_idx,
+        )
+        loss = sum(losses.values())
+        self.manual_backward(loss)
+        optimizer.first_step(zero_grad=True)
+
+        # second step
+        _losses, _ = self.model.train_step(
+            images=batch["data"],
+            targets={
+                "target_boxes": batch["boxes"],
+                "target_classes": batch["classes"],
+                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+            },
+            predict=False,
+            batch_num=batch_idx,
+        )
+        _loss = sum(_losses.values())
+        self.manual_backward(_loss)
+        optimizer.second_step(zero_grad=True)
+        breakpoint()
+        return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
+
+    def configure_optimizers(self):
+        # configure optimizer
+        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+                    f"weight_decay {self.trainer_cfg['weight_decay']} "
+                    f"SGD SAM with momentum {self.trainer_cfg['sgd_momentum']} and "
+                    f"nesterov {self.trainer_cfg['sgd_nesterov']}")
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+
+        optimizer = SAM(
+            wd_groups,
+            torch.optim.SGD,
+            lr=self.trainer_cfg["initial_lr"],
+            weight_decay=self.trainer_cfg["weight_decay"],
+            momentum=self.trainer_cfg["sgd_momentum"],
+            nesterov=self.trainer_cfg["sgd_nesterov"],
+            rho=self.trainer_cfg["sam_rho"],
+            adaptive=self.trainer_cfg["sam_adaptive"],
+            )
+
+        # configure lr scheduler
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        scheduler = LinearWarmupPolyLR(
+            optimizer=optimizer,
+            warm_iterations=self.trainer_cfg["warm_iterations"],
+            warm_lr=self.trainer_cfg["warm_lr"],
+            poly_gamma=self.trainer_cfg["poly_gamma"],
+            num_iterations=num_iterations
+        )
+        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
