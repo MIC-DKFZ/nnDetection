@@ -20,11 +20,11 @@ import socket
 import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import MLFlowLogger
+from pytorch_lightning.loggers import LightningLoggerBase, MLFlowLogger, TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from loguru import logger
@@ -162,6 +162,44 @@ def init_train_dir(cfg) -> Path:
     return output_dir
 
 
+def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
+    """
+    Instantiate a logger to monitor metrics/losses during training
+
+    Args:
+        cfg: config
+            ``
+            ``
+            ``
+
+    Returns:
+        LightningLoggerBase: Instantiated logger
+    """
+    logger_name = cfg["train"].get("logger", "mlflow")
+    if isinstance(logger_name, str):
+        logger_name = logger_name.lower()
+
+    pl_logger = False
+    if logger_name == "mlflow":
+        pl_logger = MLFlowLogger(
+            experiment_name=cfg["task"],
+            tags={
+                "host": socket.gethostname(),
+                "fold": cfg["exp"]["fold"],
+                "task": cfg["task"],
+                "job_id": os.getenv('LSB_JOBID', 'no_id'),
+                "mlflow.runName": cfg["exp"]["id"],
+            },
+            save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
+        )
+    elif logger_name == "tensorboard":
+        pl_logger = TensorBoardLogger(
+            save_dir="./logging",
+            default_hp_metric=True,
+        )
+    return pl_logger
+
+
 def _train(
     task: str,
     ov: List[str],
@@ -183,22 +221,13 @@ def _train(
     assert cfg.host.parent_results is not None, 'Output dir can not be None'
 
     train_dir = init_train_dir(cfg)
-
-    pl_logger = MLFlowLogger(
-        experiment_name=cfg["task"],
-        tags={
-            "host": socket.gethostname(),
-            "fold": cfg["exp"]["fold"],
-            "task": cfg["task"],
-            "job_id": os.getenv('LSB_JOBID', 'no_id'),
-            "mlflow.runName": cfg["exp"]["id"],
-        },
-        save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
-    )
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}))
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}))
+    pl_logger = get_pl_logger(cfg)
+    if pl_logger:
+        params = {
+            **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
+            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)})
+        }
+        pl_logger.log_hyperparams(params)
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="INFO")

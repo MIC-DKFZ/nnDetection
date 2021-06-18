@@ -10,6 +10,7 @@ exp:
 train:
   mode: "overwrite" # can be either `overwrite` or `resume`
   val_test: True # run testing on validation data to get final training results
+  logger: mlflow # one of None | mlflow | tensorboard
 
 host:
   # DO NOT CHANGE THESE
