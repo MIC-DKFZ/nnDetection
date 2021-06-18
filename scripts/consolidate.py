@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import importlib
 import argparse
 import shutil
 import sys
@@ -170,6 +171,10 @@ def main():
     ov.append("host.parent_results=${env:det_models}")
     if ov is not None:
         cfg.merge_with_dotlist(ov)
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
 
     preprocessed_output_dir = Path(cfg["host"]["preprocessed_output_dir"])
     plan = load_pickle(target_dir / "plan.pkl")

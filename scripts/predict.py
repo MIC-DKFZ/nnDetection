@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import importlib
 import argparse
-from multiprocessing import Value
 import os
 import sys
 from typing import Any, Mapping, Type, TypeVar
@@ -208,6 +208,10 @@ def main():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
     cfg.merge_with_dotlist(overwrites)
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
 
     if check:
         if test_split:
