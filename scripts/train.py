@@ -235,8 +235,13 @@ def _train(
     pl_logger = get_pl_logger(cfg)
     if pl_logger:
         params = {
+            "module": cfg["module"],
+            "predictor": cfg["predictor"],
+            "plan": cfg["plan"],
+            "aug_name": cfg["augment_cfg"]["augmentation"]["name"],
+            "aug_transforms": cfg["augment_cfg"]["augmentation"]["transforms"],
             **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
-            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)})
+            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
         }
         pl_logger.log_hyperparams(params)
 
