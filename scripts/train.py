@@ -168,9 +168,7 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
 
     Args:
         cfg: config
-            ``
-            ``
-            ``
+            'logger': define logger type
 
     Returns:
         LightningLoggerBase: Instantiated logger
@@ -180,7 +178,15 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
         logger_name = logger_name.lower()
 
     pl_logger = False
+    save_dir = os.getenv("det_logging", None)
     if logger_name == "mlflow":
+        if save_dir is not None:
+            save_dir = Path(save_dir)
+            if not save_dir.name == "mlruns":
+                save_dir = save_dir / "mlruns"
+        else:
+            save_dir = os.getenv("MLFLOW_TRACKING_URI", "./mlruns")
+
         pl_logger = MLFlowLogger(
             experiment_name=cfg["task"],
             tags={
@@ -190,11 +196,17 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
                 "job_id": os.getenv('LSB_JOBID', 'no_id'),
                 "mlflow.runName": cfg["exp"]["id"],
             },
-            save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
+            save_dir=save_dir,
         )
     elif logger_name == "tensorboard":
+        if save_dir is not None:
+            save_dir = Path(save_dir) / "tbruns" / cfg["task"]
+        else:
+            save_dir = "./logging"
+
         pl_logger = TensorBoardLogger(
-            save_dir="./logging",
+            save_dir=save_dir,
+            name=f"{cfg['exp']['id']}_fold{cfg['exp']['fold']}",
             default_hp_metric=True,
         )
     return pl_logger

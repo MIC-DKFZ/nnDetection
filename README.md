@@ -56,7 +56,7 @@ When running a training inside the container it is necessary to [increase the sh
     - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
     - `det_num_threads`: [recommended] Number processes to use for augmentation (at least 6, default 12)
     - `det_verbose`: [optional] Can be used to deactivate progress bars (activated by default)
-    - `MLFLOW_TRACKING_URI`: [optional] Specify the logging directory of mlflow. Refer to the [mlflow documentation](https://www.mlflow.org/docs/latest/tracking.html) for more information.
+    - `det_logging`: [optional] Specify the logging directory. nnDetection supports [MLFlow]((https://www.mlflow.org/docs/latest/tracking.html)) or [Tensorboard](https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard). If not set, logs will be saved to current training directory.
 
 Note: nnDetection was developed on Linux => Windows is not supported.
 
