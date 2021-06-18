@@ -17,7 +17,6 @@ limitations under the License.
 from __future__ import annotations
 
 import os
-from time import time
 from typing import Any, Callable, Dict, Optional, Sequence, Hashable, Type, TypeVar
 
 import torch

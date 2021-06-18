@@ -1,7 +1,7 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Optional, Union
 from nndet.utils.tensor import to_device
 
 import torch
@@ -17,7 +17,7 @@ class EMAWeightsCB(Callback):
         beta: float = 0.9998,
         ema_eval: bool = True,
         dirpath: Optional[os.PathLike] = None,
-):
+    ):
         """
         Callback to compute exponential moving average of weights
 
@@ -92,7 +92,7 @@ class EMAWeights:
         module: torch.nn.Module,
         device: Optional[Union[str, torch.device]] = None,
         beta: float = 0.9998,
-):
+    ):
         """
         Shadow model parameters keep track of an exponential moving average of
         the model weights
@@ -118,7 +118,7 @@ class EMAWeights:
         Args:
             module: module with updated weights
         """
-        for (nw, weight), (nu, udpate) in  zip(self.module_state_dict.items(), module.state_dict().items()):
+        for (nw, weight), (nu, udpate) in zip(self.module_state_dict.items(), module.state_dict().items()):
             assert nw == nu
             _update = udpate.detach().clone()
 

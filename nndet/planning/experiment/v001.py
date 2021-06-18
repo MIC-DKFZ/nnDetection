@@ -12,7 +12,6 @@ from nndet.core.boxes.ops_np import box_size_np
 from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 
 
-
 @PLANNER_REGISTRY.register
 class D3V001(AbstractPlanner):
     def plan_experiment(self,
@@ -31,7 +30,7 @@ class D3V001(AbstractPlanner):
             List: identifiers of created plans
         """
         identifiers = []
-        
+
         # create full resolution 3d plan
         mode = "3d"
         plan_3d = self.plan_base(mode=mode)
@@ -39,12 +38,12 @@ class D3V001(AbstractPlanner):
         plan_3d["dataloader_kwargs"] = {}
         plan_3d["data_identifier"] = self.get_data_identifier(mode=mode)
         plan_3d["postprocessing"] = self.determine_postprocessing(mode=mode)
-        
+
         plan_3d = self.plan_base_stage(
             plan_3d,
             model_name=model_name,
             model_cfg=model_cfg,
-            )
+        )
 
         # determine if additional low res model needs to be trained
         plan_3d["trigger_lr1"] = self.trigger_low_res_model(
@@ -66,7 +65,7 @@ class D3V001(AbstractPlanner):
                 plan_3dlr1,
                 model_name=model_name,
                 model_cfg=model_cfg,
-                )
+            )
             identifiers.append(self.save_plan(plan=plan_3dlr1, mode=plan_3dlr1["mode"]))
         return identifiers
 
@@ -108,11 +107,11 @@ class D3V001(AbstractPlanner):
         Result is
         saved into :param:`transpose_forward` and :param:`transpose_backward`
         """
-        spacings = self.data_properties['all_spacings']
-        sizes = self.data_properties['all_sizes']
-        
+        # spacings = self.data_properties['all_spacings']
+        # sizes = self.data_properties['all_sizes']
+
         target_spacing = self.determine_target_spacing(mode=mode)
-        new_sizes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
+        # new_sizes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
 
         dims = len(target_spacing)
         max_spacing_axis = np.argmax(target_spacing)
@@ -137,9 +136,9 @@ class D3V001(AbstractPlanner):
         """
         base_target_spacing = self._target_spacing_base()
         if mode == "3d" or mode == "2d":
-            target_spacing =  base_target_spacing
+            target_spacing = base_target_spacing
         else:
-            if not "lr" in mode:
+            if "lr" not in mode:
                 raise RuntimeError(f"Mode {mode} is not supported for target spacing.")
             downscale = int(mode.split('lr')[-1])
             target_spacing = base_target_spacing * (2 ** downscale)
@@ -158,7 +157,7 @@ class D3V001(AbstractPlanner):
         target = np.percentile(np.vstack(spacings), self.target_spacing_percentile, 0)
 
         target_size = np.percentile(np.vstack(sizes), self.target_spacing_percentile, 0)
-        target_size_mm = np.array(target) * np.array(target_size)
+        # target_size_mm = np.array(target) * np.array(target_size)
         # we need to identify datasets for which a different target spacing could be beneficial. These datasets have
         # the following properties:
         # - one axis which much lower resolution than the others
@@ -198,8 +197,8 @@ class D3V001(AbstractPlanner):
             bool: If True, trigger a low resolution model. If False, current
                 resolution is ok.
         """
-        all_boxes = [case["boxes"] for case_id, case in \
-            self.data_properties["instance_props_per_patient"].items()]
+        all_boxes = [case["boxes"] for case_id, case in
+                     self.data_properties["instance_props_per_patient"].items()]
         all_boxes = concatenate_property_boxes(all_boxes)
         object_size = np.percentile(box_size_np(all_boxes), 99.5, axis=0)
         object_size = object_size[list(transpose_forward)]

@@ -39,7 +39,6 @@ from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.coder import CoderType, BoxCoderND
 from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.ops import box_iou
-from nndet.core.boxes.anchors import AnchorGeneratorType
 
 from nndet.ptmodule.base_module import LightningBaseModule
 
@@ -172,7 +171,7 @@ class RetinaUNetModule(LightningBaseModule):
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
-        
+
         # self.log_dict(losses, prog_bar=True)
 
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}

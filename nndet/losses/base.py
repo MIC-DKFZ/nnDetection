@@ -45,7 +45,7 @@ class Loss(torch.nn.Module):
     @property
     def loss_fp32(self) -> bool:
         return self._loss_fp32
-    
+
     @loss_fp32.setter
     def loss_fp32(self, val: bool):
         self._loss_fp32 = val

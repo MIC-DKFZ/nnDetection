@@ -16,7 +16,6 @@ limitations under the License.
 from typing import Callable, Optional
 
 import torch
-import torch.nn as nn
 from torch.cuda.amp import autocast
 
 from torch import Tensor

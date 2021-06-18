@@ -33,8 +33,7 @@ from omegaconf.omegaconf import OmegaConf
 
 import nndet
 from nndet.utils.config import compose, load_dataset_info
-from nndet.utils.info import log_git, write_requirements_to_file, \
-    create_debug_plan, flatten_mapping
+from nndet.utils.info import log_git, create_debug_plan, flatten_mapping
 from nndet.utils.check import env_guard
 from nndet.utils.analysis import run_analysis_suite
 from nndet.io.datamodule.bg_module import Datamodule

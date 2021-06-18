@@ -545,22 +545,22 @@ class BaseInsaneAug(NoAug):
         tr_transforms.append(
             GaussianNoiseTransform(
                 p_per_sample=self.params.get("p_per_sample_gaussian_noise"),
-                ),
-            )
+            ),
+        )
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
                 different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
                 p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
-                ),
-            )
+            ),
+        )
         tr_transforms.append(
             BrightnessMultiplicativeTransform(
                 p_per_sample=self.params.get("p_per_sample_brightness_mul"),
                 multiplier_range=self.params.get("brightness_mul_multiplier_range"),
-                ),
-            )
+            ),
+        )
 
         if self.params.get("do_additive_brightness"):
             tr_transforms.append(
@@ -570,14 +570,14 @@ class BaseInsaneAug(NoAug):
                     per_channel=self.params.get("additive_brightness_per_channel"),
                     p_per_sample=self.params.get("additive_brightness_p_per_sample"),
                     p_per_channel=self.params.get("additive_brightness_p_per_channel"),
-                    ),
-                )
+                ),
+            )
         tr_transforms.append(
             ContrastAugmentationTransform(
                 contrast_range=self.params.get("contrast_range"),
                 p_per_sample=self.params.get("p_per_sample_contrast"),
-                ),
-            )
+            ),
+        )
 
         if self.params.get("do_sim_low_res"):
             tr_transforms.append(
@@ -589,7 +589,7 @@ class BaseInsaneAug(NoAug):
                     order_downsample=self.params.get("sim_low_res_order_downsample"),
                     order_upsample=self.params.get("sim_low_res_order_upsample"),
                     ignore_axes=ignore_axes,
-                    ),
+                ),
             )
 
         if self.params.get("do_gamma_inverted"):
@@ -600,8 +600,8 @@ class BaseInsaneAug(NoAug):
                     per_channel=True,
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma_inverted"],
-                    ),
-                )  # inverted gamma
+                ),
+            )  # inverted gamma
 
         if self.params.get("do_gamma"):
             tr_transforms.append(
@@ -611,8 +611,8 @@ class BaseInsaneAug(NoAug):
                     per_channel=True,
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma"],
-                    ),
-                )
+                ),
+            )
 
         if self.params.get("do_mirror") or self.params.get("mirror"):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))

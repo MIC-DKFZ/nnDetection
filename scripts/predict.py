@@ -167,9 +167,9 @@ def main():
                               "of a manually created split file."),
                         )
     parser.add_argument('--check',
-                    help="Run check of the test data before predicting",
-                    action='store_true',
-                    )   
+                        help="Run check of the test data before predicting",
+                        action='store_true',
+                        )
     parser.add_argument('-npp', '--num_processes_preprocessing',
                         type=int, default=3, required=False,
                         help="Number of processes to use for resampling.",

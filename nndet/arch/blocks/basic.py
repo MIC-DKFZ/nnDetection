@@ -183,7 +183,7 @@ class StackedConvBlock2Max(StackedBlock):
                     kernel_size=kernel_size,
                     stride=stride,
                     padding=padding,
-                    )
+                )
             ]
         else:
             modules = []
@@ -196,7 +196,7 @@ class StackedConvBlock2Max(StackedBlock):
                 stride=1,
                 padding=padding,
                 **kwargs,
-                ),
+            ),
             conv(
                 in_channels=out_channels,
                 out_channels=out_channels,
@@ -204,7 +204,7 @@ class StackedConvBlock2Max(StackedBlock):
                 stride=1,
                 padding=padding,
                 **kwargs,
-                ),
+            ),
         ]
         return torch.nn.Sequential(*modules)
 
@@ -288,7 +288,7 @@ class StackedResBottleneck(StackedBlock):
             out_channels=out_channels,
             kernel_size=kernel_size, stride=stride,
             padding=padding, **kwargs,
-            )
+        )
 
 
 class MySEBlockExp2(StackedBlock):

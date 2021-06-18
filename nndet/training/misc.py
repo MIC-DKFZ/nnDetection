@@ -43,7 +43,7 @@ class EpochTimerCallback(Callback):
                                   ) -> None:
         self.val_epoch_tic = time.time()
         return super().on_validation_epoch_start(trainer, pl_module)
-    
+
     def on_validation_epoch_end(self,
                                 trainer,
                                 pl_module: LightningModule,

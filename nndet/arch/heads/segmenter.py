@@ -114,14 +114,14 @@ class DiCESegmenter(Segmenter):
             nonlin=torch.nn.Softmax(dim=1),
             loss_fp32=loss_fp32,
             **dice_kwargs,
-            )
+        )
 
         if ce_kwargs is None:
             ce_kwargs = {}
         self.ce_loss = CrossEntropyLoss(
             loss_fp32=loss_fp32,
             **ce_kwargs,
-            )
+        )
 
         self.logits_convert_fn = nn.Softmax(dim=1)
         self.alpha = alpha

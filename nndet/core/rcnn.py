@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple, Dict, Any, Optional, List
+from typing import Tuple, Dict, Any, Optional
 
 import torch
 
@@ -100,7 +100,7 @@ class RCNN(AbstractModel):
 #             batch_num=batch_num,
 #         )
 #         for i in self.num_stages:
-        
+
 #             # do not propagate through proposals
 #             proposals = detach_all(proposals)
 

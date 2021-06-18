@@ -25,7 +25,7 @@ class D3V001AEP(D3V001):
             List: identifiers of created plans
         """
         identifiers = []
-        
+
         # create full resolution 3d plan
         mode = "3d"
         plan_3d = self.plan_base(mode=mode)
@@ -33,12 +33,12 @@ class D3V001AEP(D3V001):
         plan_3d["dataloader_kwargs"] = {}
         plan_3d["data_identifier"] = self.get_data_identifier(mode=mode)
         plan_3d["postprocessing"] = self.determine_postprocessing(mode=mode)
-        
+
         plan_3d = self.plan_base_stage(
             plan_3d,
             model_name=model_name,
             model_cfg=model_cfg,
-            )
+        )
 
         # determine if additional low res model needs to be trained
         plan_3d["trigger_lr1"] = self.trigger_low_res_model(
@@ -61,7 +61,7 @@ class D3V001AEP(D3V001):
                 plan_3dlr1,
                 model_name=model_name,
                 model_cfg=model_cfg,
-                )
+            )
             plan_3dlr1.update(self.determine_num_epochs())
             identifiers.append(self.save_plan(plan=plan_3dlr1, mode=plan_3dlr1["mode"]))
         return identifiers

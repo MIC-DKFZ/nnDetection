@@ -6,7 +6,7 @@ from itertools import repeat
 from multiprocessing import Pool
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Optional, List, TypeVar
+from typing import Dict, List, TypeVar
 
 import numpy as np
 from loguru import logger

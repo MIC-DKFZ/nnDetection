@@ -276,7 +276,7 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
             **kwargs,
-            )
+        )
         self.smoothing = smoothing
         if smoothing > 0:
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
@@ -329,9 +329,9 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
         super().__init__(
             *args,
             **kwargs,
-            )
-        self.loss_weight=loss_weight
-        self.loss_fp32=loss_fp32
+        )
+        self.loss_weight = loss_weight
+        self.loss_fp32 = loss_fp32
         if loss_fp32:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
@@ -368,9 +368,9 @@ class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
         super().__init__(
             *args,
             **kwargs,
-            )
-        self.loss_weight=loss_weight
-        self.loss_fp32=loss_fp32
+        )
+        self.loss_weight = loss_weight
+        self.loss_fp32 = loss_fp32
         if loss_fp32:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 

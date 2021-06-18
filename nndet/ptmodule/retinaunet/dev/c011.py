@@ -1,5 +1,4 @@
 import copy
-from typing import Any
 from loguru import logger
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
@@ -20,7 +19,6 @@ from nndet.arch.blocks.basic import (
     StackedConvBlock2,
     StackedConvBlock3,
     StackedResPlain,
-    StackedResBottleneck,
 )
 from nndet.arch.heads.comb import (
     BoxHeadAll,
@@ -68,7 +66,7 @@ class RetinaUNetC011DualReg(RetinaUNetC011):
 
 @MODULE_REGISTRY.register
 class RetinaUNetC011L1MaxF(RetinaUNetC011L1):
-    block=StackedConvBlock2Max
+    block = StackedConvBlock2Max
 
 
 @MODULE_REGISTRY.register
@@ -157,7 +155,7 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
         if num_blocks is not None:
             i = len(plan_arch["conv_kernels"]) - 1
             _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [{"num_blocks": num_blocks}] * i
-        
+
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
         logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
         encoder = cls.encoder_cls(
@@ -189,16 +187,17 @@ class RetinaUNetC011L1EMA(RetinaUNetC011):
     """
     Note: This subclasses the wrong class and is actually not computed with L1
     """
+
     def configure_callbacks(self):
         logger.warning("This implementation does not work with Multi-GPU!")
         callbacks = super().configure_callbacks()
-        
+
         callbacks.append(
             EMAWeightsCB(
                 device="cpu",
                 beta=self.trainer_cfg["ema_beta"],
                 ema_eval=False,
-                dirpath="./", # FIXME
+                dirpath="./",  # FIXME
             )
         )
         return callbacks
@@ -270,7 +269,7 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
             nesterov=self.trainer_cfg["sgd_nesterov"],
             rho=self.trainer_cfg["sam_rho"],
             adaptive=self.trainer_cfg["sam_adaptive"],
-            )
+        )
 
         # configure lr scheduler
         num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]

@@ -64,7 +64,7 @@ class D2C004(D3V001):
                 plan_2d,
                 model_name=model_name,
                 model_cfg=model_cfg,
-                )
+            )
             plan_2d["do_dummy_2D_data_aug"] = False
             # determine if additional low res model needs to be trained
             # plan_2d["trigger_lr1"] = self.trigger_low_res_model(

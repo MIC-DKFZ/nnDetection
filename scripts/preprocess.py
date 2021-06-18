@@ -239,7 +239,7 @@ def run_planning_and_process(
                 cropped_data_dir=cropped_output_dir / "imagesTr",
                 plan=plan,
                 num_processes=num_processes,
-                )
+            )
             case_ids_failed, result_check = run_check(
                 data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
                 remove=True,
@@ -249,7 +249,7 @@ def run_planning_and_process(
             # delete and rerun corrupted cases
             if not result_check:
                 logger.warning(f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
-                                f"Running preprocessing of those cases without multiprocessing.")
+                               f"Running preprocessing of those cases without multiprocessing.")
                 planner.run_preprocessing(
                     cropped_data_dir=cropped_output_dir / "imagesTr",
                     plan=plan,
