@@ -34,6 +34,7 @@ from nndet.io import save_json
 from nndet.io.transforms.instances import get_bbox_np
 from nndet.io.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
 from nndet.utils.config import compose
+from nndet.utils.check import env_guard
 
 
 def prepare_detection_label(case_id: str,
@@ -102,7 +103,8 @@ def prepare_detection_label(case_id: str,
     sitk.WriteImage(seg_itk, str(label_dir / f"{case_id}_orig.nii.gz"))
 
 
-if __name__ == '__main__':
+@env_guard
+def main():
     """
     This script converts a semantic segmentation dataset into an instance
     segmentation dataset by using connected components on the labels.
@@ -147,7 +149,7 @@ if __name__ == '__main__':
                         action='store_true',
                         )
     parser.add_argument('--num_processes', type=int, default=4, required=False,
-                        help="Number of processes to use for conversion.")
+                        help="Number of processes to use for conversion. Default 4.")
 
     args = parser.parse_args()
     tasks = args.tasks
@@ -211,3 +213,7 @@ if __name__ == '__main__':
                     save_json(ranking, splitted_dir / f"volume_ranking_{postfix}.json")
                 else:
                     logger.info(f"Did not find dir {label_dir} for volume ranking")
+
+
+if __name__ == '__main__':
+    main()
