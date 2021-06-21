@@ -58,7 +58,11 @@ def prepare_detection_label(case_id: str,
     if stuff_classes:
         for new_class, old_class in enumerate(stuff_classes, start=1):
             stuff_seg[seg == old_class] = new_class
-        stuff_seg_itk = copy_meta_data_itk(seg_itk, sitk.GetImageFromArray(stuff_seg))
+        stuff_seg_itk = sitk.GetImageFromArray(stuff_seg)
+        stuff_seg_itk.SetOrigin(seg_itk.GetOrigin())
+        stuff_seg_itk.SetDirection(seg_itk.GetDirection())
+        stuff_seg_itk.SetSpacing(seg_itk.GetSpacing())
+
         sitk.WriteImage(stuff_seg_itk, str(label_dir / f"{case_id}_stuff.nii.gz"))
 
     # prepare things information
@@ -97,7 +101,11 @@ def prepare_detection_label(case_id: str,
     else:
         instances = np.zeros_like(instances_not_filtered)
 
-    final_instances_itk = copy_meta_data_itk(seg_itk, sitk.GetImageFromArray(instances))
+    final_instances_itk = sitk.GetImageFromArray(instances)
+    final_instances_itk.SetOrigin(seg_itk.GetOrigin())
+    final_instances_itk.SetDirection(seg_itk.GetDirection())
+    final_instances_itk.SetSpacing(seg_itk.GetSpacing())
+
     sitk.WriteImage(final_instances_itk, str(label_dir / f"{case_id}.nii.gz"))
     save_json({"instances": final_mapping}, label_dir / f"{case_id}.json")
 
