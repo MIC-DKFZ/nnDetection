@@ -94,7 +94,7 @@ def compute_anchors_for_strides(anchors: torch.Tensor,
     return anchors_with_stride
 
 
-class AnchorGenerator2D(AnchorGenerator):
+class AnchorGenerator2D(torch.nn.Module):
     def __init__(self, sizes: Sequence[Union[int, Sequence[int]]] = (128, 256, 512),
                  aspect_ratios: Sequence[Union[float, Sequence[float]]] = (0.5, 1.0, 2.0),
                  **kwargs):
@@ -109,7 +109,18 @@ class AnchorGenerator2D(AnchorGenerator):
                 height/width, e.g. (0.5, 1, 2). if Seq[Seq] is provided, it should have
                 the same length as sizes
         """
-        super().__init__(sizes=sizes, aspect_ratios=aspect_ratios)
+        super().__init__()
+        if not isinstance(sizes[0], (list, tuple)):
+            sizes = tuple((s,) for s in sizes)
+        if not isinstance(aspect_ratios[0], (list, tuple)):
+            aspect_ratios = (aspect_ratios,) * len(sizes)
+        assert len(sizes) == len(aspect_ratios)
+
+        self.sizes = sizes
+        self.aspect_ratios = aspect_ratios
+        self.cell_anchors = None
+        self._cache = {}
+
         self.num_anchors_per_level: List[int] = None
         if kwargs:
             logger.info(f"Discarding anchor generator kwargs {kwargs}")

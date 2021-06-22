@@ -46,11 +46,9 @@ When running a training inside the container it is necessary to [increase the sh
 ## Source
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
-3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+)
-4. Install [torchvision](https://github.com/pytorch/vision) (make sure to match the versions!)
-5. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
-6. Upgrade hydra to next release: `pip install hydra-core --upgrade --pre`
-7. Set environment variables (more info can be found below):
+3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+) and [torchvision](https://github.com/pytorch/vision)(make sure to match the versions!).
+4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
+5. Set environment variables (more info can be found below):
     - `det_data`: [required] Path to the source directory where all the data will be located
     - `det_models`: [required] Path to directory where all models will be saved
     - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
