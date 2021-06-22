@@ -60,25 +60,6 @@ class EMAWeightsCB(Callback):
         # on_train_batch_end -> update weights
         self.ema.add(pl_module)
 
-    # def on_validation_epoch_start(self,
-    #                               trainer,
-    #                               pl_module: LightningModule,
-    #                               ) -> None:
-    #     # on_validation_epoch_start -> optionally replace with shadowed weights
-    #     if self.ema_eval:
-    #         pass
-    #     return super().on_validation_epoch_start(trainer, pl_module)
-
-    # def on_validation_epoch_end(self,
-    #                             trainer,
-    #                             pl_module: LightningModule,
-    #                             outputs: List[Any],
-    #                             ) -> None:
-    #     # on_validation_epoch_end -> optionally replace with current weights
-    #     if self.ema_eval:
-    #         pass
-    #     return super().on_validation_epoch_end(trainer, pl_module, outputs)
-
     def on_train_end(self, trainer, pl_module: LightningModule) -> None:
         # on_train_end -> save ema weights
         if self.dirpath is not None:

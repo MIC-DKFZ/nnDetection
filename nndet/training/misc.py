@@ -47,9 +47,8 @@ class EpochTimerCallback(Callback):
     def on_validation_epoch_end(self,
                                 trainer,
                                 pl_module: LightningModule,
-                                outputs: List[Any],
                                 ) -> None:
         self.val_epoch_toc = time.time()
         logger.info(f"Val epoch {trainer.current_epoch} took "
                     f"{int(self.val_epoch_toc - self.val_epoch_tic)} s")
-        return super().on_validation_epoch_end(trainer, pl_module, outputs)
+        return super().on_validation_epoch_end(trainer, pl_module)
