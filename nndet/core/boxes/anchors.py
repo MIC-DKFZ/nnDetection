@@ -267,6 +267,15 @@ class AnchorGenerator2D(torch.nn.Module):
         # self._cache.clear()
         return anchors
 
+    def num_anchors_per_location(self) -> List[int]:
+        """
+        Number of anchors per resolution
+
+        Returns:
+            List[int]: number of anchors per positions for each resolution
+        """
+        return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
+
     def get_num_acnhors_per_level(self) -> List[int]:
         """
         Number of anchors per resolution
