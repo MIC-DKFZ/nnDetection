@@ -172,7 +172,7 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
     Returns:
         LightningLoggerBase: Instantiated logger
     """
-    logger_name = cfg["train"].get("logger", "mlflow")
+    logger_name = cfg.get("logger", "mlflow")
     if isinstance(logger_name, str):
         logger_name = logger_name.lower()
 

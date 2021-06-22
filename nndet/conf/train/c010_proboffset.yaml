@@ -34,7 +34,7 @@ trainer_cfg:
   deterministic: False
   benchmark: False
 
-  monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
+  monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
   max_num_epochs: 50 # max number of epochs

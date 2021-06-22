@@ -272,7 +272,7 @@ class RetinaUNetModule(LightningBaseModule):
             mean_val = np.mean(_vals)
             if _key == "loss":
                 logger.info(f"Train loss reached: {mean_val:0.5f}")
-            self.log(f"train_{_key}", mean_val, sync_dist=True)
+            self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
         return super().training_epoch_end(training_step_outputs)
 
     def validation_epoch_end(self, validation_step_outputs):
@@ -289,7 +289,7 @@ class RetinaUNetModule(LightningBaseModule):
             mean_val = np.mean(_vals)
             if _key == "loss":
                 logger.info(f"Val loss reached: {mean_val:0.5f}")
-            self.log(f"val_{_key}", mean_val, sync_dist=True)
+            self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
 
         # process and log metrics
         self.evaluation_end()
@@ -316,7 +316,7 @@ class RetinaUNetModule(LightningBaseModule):
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
         for key, item in metric_scores.items():
-            self.log(f'{key}', item, on_step=None, on_epoch=True, prog_bar=False, logger=True)
+            self.log(f'val/{key}', item, prog_bar=False, logger=True, sync_dist=True)
 
     def configure_optimizers(self):
         """

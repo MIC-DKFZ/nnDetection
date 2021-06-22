@@ -41,7 +41,7 @@ trainer_cfg:
   weights_summary: full # [optional; Default 'full']
 
   save_top_k: 1 # topk model selection [optonal; Default 1]
-  monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
+  monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
   max_num_epochs: 50 # max number of epochs
