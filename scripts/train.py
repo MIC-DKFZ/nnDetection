@@ -186,17 +186,25 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
         else:
             save_dir = os.getenv("MLFLOW_TRACKING_URI", "./mlruns")
 
+        run_name = cfg["exp"]["id"]
+        tags = {
+            "host": socket.gethostname(),
+            "fold": cfg["exp"]["fold"],
+            "task": cfg["task"],
+            "job_id": os.getenv('LSB_JOBID', 'no_id'),
+            "mlflow.runName": run_name,
+        }
         pl_logger = MLFlowLogger(
             experiment_name=cfg["task"],
-            tags={
-                "host": socket.gethostname(),
-                "fold": cfg["exp"]["fold"],
-                "task": cfg["task"],
-                "job_id": os.getenv('LSB_JOBID', 'no_id'),
-                "mlflow.runName": cfg["exp"]["id"],
-            },
+            tags=tags,
             save_dir=save_dir,
         )
+        if (ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
+            exp_id = ml_exp.experiment_id
+            runs = pl_logger._mlflow_client.search_runs(
+                [exp_id], filter_string=f"tag.mlflow.runName=\"{run_name}\"")
+            if len(runs) > 0:
+                pl_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
     elif logger_name == "tensorboard":
         if save_dir is not None:
             save_dir = Path(save_dir) / "tbruns" / cfg["task"]
