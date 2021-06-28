@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from tokenize import PseudoExtras
 
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 from loguru import logger
 
 from nndet.io import get_task, load_json, save_json

@@ -28,7 +28,7 @@ from pytorch_lightning.loggers import MLFlowLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from loguru import logger
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 from omegaconf.omegaconf import OmegaConf
 
 import nndet

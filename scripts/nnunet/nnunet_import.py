@@ -28,7 +28,7 @@ from typing import Union, Sequence, Optional
 
 import numpy as np
 
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 from loguru import logger
 
 from nndet.evaluator.registry import evaluate_box_dir

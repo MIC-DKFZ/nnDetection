@@ -20,7 +20,7 @@ from pathlib import Path
 
 import yaml
 from omegaconf import OmegaConf
-from hydra.experimental import compose as hydra_compose
+from hydra import compose as hydra_compose
 
 from nndet.io.paths import Pathlike, get_task
 

@@ -23,7 +23,7 @@ from pathlib import Path
 
 from loguru import logger
 from omegaconf import OmegaConf
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 
 from nnunet.paths import nnUNet_raw_data
 

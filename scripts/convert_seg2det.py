@@ -24,7 +24,7 @@ from typing import Sequence
 
 import numpy as np
 import SimpleITK as sitk
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 from loguru import logger
 from scipy import ndimage
 from scipy.ndimage import label

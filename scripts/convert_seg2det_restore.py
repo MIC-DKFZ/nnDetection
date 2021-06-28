@@ -18,7 +18,7 @@ import argparse
 import os
 from pathlib import Path
 
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 
 from nndet.utils.config import compose
 

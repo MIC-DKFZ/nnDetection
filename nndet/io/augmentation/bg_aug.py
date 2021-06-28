@@ -18,6 +18,7 @@ from typing import Sequence, List
 from loguru import logger
 
 from nndet.io.augmentation.base import AugmentationSetup, get_patch_size
+from nndet.utils.info import SuppressPrint
 
 from batchgenerators.transforms import (
     DataChannelSelectionTransform,
@@ -38,11 +39,12 @@ from batchgenerators.transforms import (
 from batchgenerators.transforms.color_transforms import BrightnessTransform
 from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
 
-from nnunet.training.data_augmentation.custom_transforms import (
-    Convert3DTo2DTransform,
-    Convert2DTo3DTransform,
-    MaskTransform,
-    )
+with SuppressPrint():
+    from nnunet.training.data_augmentation.custom_transforms import (
+        Convert3DTo2DTransform,
+        Convert2DTo3DTransform,
+        MaskTransform,
+        )
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 
