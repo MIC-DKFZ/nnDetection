@@ -17,6 +17,12 @@ Following nnU-Net’s agenda, in this work we systematize and automate the confi
 The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
 We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
 
+If you use nnDetection please cite our [paper](https://arxiv.org/abs/2106.00817):
+```
+Baumgartner, M., Jaeger, P. F., Isensee, F., & Maier-Hein, K. H. (2021). nnDetection: A Self-configuring Method for Medical Object Detection. arXiv preprint arXiv:2106.00817
+```
+:tada: nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21) :tada:
+
 # Installation
 ## Docker
 The easiest way to get started with nnDetection is the provided is to build a Docker Container with the provided Dockerfile.
@@ -449,12 +455,6 @@ We are planning to provide prebuild wheels in the future but no prebuild wheels 
 Please use the provided Dockerfile or the installation instructions to run nnDetection.
 </details>
 
-# Cite
-If you use nnDetection for your project/research/work please cite the following paper:
-```text
-Coming Soon
-```
-
 # Acknowledgements
 nnDetection combines the information from multiple open source repositores we wish to acknoledge for their awesome work, please check them out!
 
@@ -466,3 +466,6 @@ The Medical Detection Toolkit introduced the first codebase for 3D Object Detect
 
 ## [Torchvision](https://github.com/pytorch/vision)
 nnDetection tried to follow the interfaces of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used based our implementations of some of the core modules of the torchvision implementation.
+
+## Funding
+Part of this work was funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – 410981386 and the Helmholtz Imaging Platform (HIP), a platform of the Helmholtz Incubator on Information and Data Science.
