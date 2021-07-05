@@ -68,7 +68,10 @@ def create_circle_mask_itk(image_itk: sitk.Image,
         assert mask_np.max() == _id
 
     mask_itk = sitk.GetImageFromArray(mask_np)
-    return copy_meta_data_itk(image_itk, mask_itk)
+    mask_itk.SetOrigin(image_itk.GetOrigin())
+    mask_itk.SetDirection(image_itk.GetDirection())
+    mask_itk.SetSpacing(image_itk.GetSpacing())
+    return mask_itk
 
 
 def copy_meta_data_itk(source: sitk.Image, target: sitk.Image) -> sitk.Image:
