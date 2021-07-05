@@ -28,7 +28,7 @@ from itertools import repeat
 from typing import Dict, Sequence, Tuple, List
 from pathlib import Path
 from multiprocessing import Pool
-from hydra.experimental import initialize_config_module
+from hydra import initialize_config_module
 from omegaconf import OmegaConf
 
 from nndet.utils.config import compose

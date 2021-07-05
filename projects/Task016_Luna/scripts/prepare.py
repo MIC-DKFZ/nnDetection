@@ -5,13 +5,11 @@ import traceback
 from collections import defaultdict
 from itertools import repeat
 from multiprocessing.pool import Pool
-from SimpleITK.SimpleITK import ValuedRegionalMaxima
 
 import pandas as pd
 import SimpleITK as sitk
 from pathlib import Path
 
-from nndet.io.prepare import create_test_split
 from loguru import logger
 
 from nndet.io.itk import create_circle_mask_itk

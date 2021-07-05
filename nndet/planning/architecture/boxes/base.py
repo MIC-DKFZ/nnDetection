@@ -9,7 +9,10 @@ from tqdm import tqdm
 from loguru import logger
 from torchvision.models.detection.rpn import AnchorGenerator
 
-from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
+from nndet.utils.info import SuppressPrint
+
+with SuppressPrint():
+    from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
 
 from nndet.io.load import load_pickle
 from nndet.arch.abstract import AbstractModel

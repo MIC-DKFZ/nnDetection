@@ -16,7 +16,10 @@ limitations under the License.
 
 import numpy as np
 
-import nnunet.preprocessing.preprocessing as nn_preprocessing
+from nndet.utils.info import SuppressPrint
+
+with SuppressPrint():
+    import nnunet.preprocessing.preprocessing as nn_preprocessing
 
 
 def resize_segmentation(segmentation, new_shape, order=3, cval=0):
