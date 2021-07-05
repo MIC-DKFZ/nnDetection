@@ -28,7 +28,7 @@ augment_cfg:
 
 trainer_cfg:
   gpus: 1 # number of gpus
-  accelerator: ddp # distributed backend
+  accelerator: # distributed backend
   precision: 16 # mixed precision
   amp_backend: native # mixed precision backend
   amp_level: O1 # when mixed precision backend is APEX use O1
