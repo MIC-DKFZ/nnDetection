@@ -184,21 +184,32 @@ def env():
     import os
     import torch
     import sys
-    print(f"PyTorch Version: {torch.version}")
+    print(f"----- PyTorch Information -----")
+    print(f"PyTorch Version: {torch.version.__version__}")
+    print(f"PyTorch Debug: {torch.version.debug}")
     print(f"PyTorch CUDA: {torch.version.cuda}")
     print(f"PyTorch Backend cudnn: {torch.backends.cudnn.version()}")
     print(f"PyTorch CUDA Arch List: {torch.cuda.get_arch_list()}")
     print(f"PyTorch Current Device Capability: {torch.cuda.get_device_capability()}")
     print(f"PyTorch CUDA available: {torch.cuda.is_available()}")
+    print("\n")
 
+    print(f"----- System Information -----")
     stream = os.popen('nvcc --version')
     output = stream.read()
     print(f"System NVCC: {output}")
     print(f"System Arch List: {os.getenv('TORCH_CUDA_ARCH_LIST', None)}")
     print(f"System OMP_NUM_THREADS: {os.getenv('OMP_NUM_THREADS', None)}")
     print(f"System CUDA_HOME is None: {os.getenv('CUDA_HOME', None) is None}")
-    
+    print(f"System CPU Count: {os.cpu_count()}")
     print(f"Python Version: {sys.version}")
+    print("\n")
+
+    print(f"----- nnDetection Information -----")
+    print(f"det_num_threads {os.getenv('det_num_threads', None)}")
+    print(f"det_data is set {os.getenv('det_data', None) is not None}")
+    print(f"det_models is set {os.getenv('det_models', None) is not None}")
+    print("\n")
 
 
 if __name__ == '__main__':
