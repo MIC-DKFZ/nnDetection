@@ -13,8 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from nndet.io.paths import get_task
+from nndet.utils.check import env_guard
 
 
+@env_guard
 def boxes2nii():
     import os
     import argparse
@@ -112,6 +115,7 @@ def boxes2nii():
         save_json(prediction_meta, save_dir / f"{cid}_boxes.json")
 
 
+@env_guard
 def seg2nii():
     import os
     import argparse
@@ -211,6 +215,42 @@ def env():
     print(f"det_data is set {os.getenv('det_data', None) is not None}")
     print(f"det_models is set {os.getenv('det_models', None) is not None}")
     print("\n")
+
+
+@env_guard
+def create_test_split():
+    import os
+    import sys
+    import argparse
+    from pathlib import Path
+    from loguru import logger
+    from nndet.io.prepare import create_test_split
+    from nndet.utils.config import load_dataset_info
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument('--size', type=float, help="Size of test split", default=0.3)
+
+    args = parser.parse_args()
+    task = args.task
+    test_size = args.size
+
+    task_name = get_task(task, name=True)
+    raw_splitted_dir = Path(os.getenv("det_data")) / task_name / "raw_splitted"
+
+    logger.remove()
+    logger.add(sys.stdout, format="{level} {message}", level="DEBUG")
+    logger.add(raw_splitted_dir.parent / "split.log", level="DEBUG")
+
+    meta = load_dataset_info(raw_splitted_dir)
+
+    create_test_split(
+        raw_splitted_dir,
+        num_modalities=len(meta["modalities"]),
+        test_size=test_size,
+        random_state=0,
+        shuffle=True,
+    )
 
 
 if __name__ == '__main__':
