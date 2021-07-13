@@ -236,13 +236,14 @@ def create_test_split():
     test_size = args.size
 
     task_name = get_task(task, name=True)
-    raw_splitted_dir = Path(os.getenv("det_data")) / task_name / "raw_splitted"
+    task_dir = Path(os.getenv("det_data")) / task_name
+    raw_splitted_dir = task_dir / "raw_splitted"
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="DEBUG")
     logger.add(raw_splitted_dir.parent / "split.log", level="DEBUG")
 
-    meta = load_dataset_info(raw_splitted_dir)
+    meta = load_dataset_info(task_dir)
 
     create_test_split(
         raw_splitted_dir,
