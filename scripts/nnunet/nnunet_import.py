@@ -341,12 +341,15 @@ if __name__ == '__main__':
     save_seg = args.save_seg
     save_iseg = args.save_iseg
 
+    nnunet_dir = nnunet_dirs[0]
     if task is None:
         # select corresponding nnDetection task
-        nnunet_dir = nnunet_dirs[0]
         task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
         if len(task_names) > 1:
             logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
+        if len(task_names) == 0:
+            logger.error(f"Could not derive task name from path please use "
+                         "-t/--task to provide the name via cmd line!")
         logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
         nnunet_task = task_names[-1]
 
