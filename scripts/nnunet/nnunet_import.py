@@ -341,19 +341,20 @@ if __name__ == '__main__':
     save_seg = args.save_seg
     save_iseg = args.save_iseg
 
-    # select corresponding nnDetection task
-    nnunet_dir = nnunet_dirs[0]
-    task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
-    if len(task_names) > 1:
-        logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
-    logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
-    nnunet_task = task_names[-1]
-
     if task is None:
+        # select corresponding nnDetection task
+        nnunet_dir = nnunet_dirs[0]
+        task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
+        if len(task_names) > 1:
+            logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
+        logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
+        nnunet_task = task_names[-1]
+
         logger.info(f"Using nnunet task {nnunet_task} as detection task id")
         task = nnunet_task
     else:
         task = get_task(task, name=True)
+
     task_dir = Path(os.getenv("det_models")) / task
     initialize_config_module(config_module="nndet.conf")
     cfg = compose(task, "config.yaml", overrides=[])
