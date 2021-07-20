@@ -253,6 +253,11 @@ def import_single_case(logits_source: Path,
     instances_target = logits_target_dir / f"{case_name}_instances.pkl"
 
     boxes = {key: res[key] for key in ["pred_boxes", "pred_labels", "pred_scores"]}
+    boxes["original_size_of_raw_data"] = properties_dict["original_size_of_raw_data"]
+    boxes["itk_origin"] = properties_dict["itk_origin"]
+    boxes["itk_direction"] = properties_dict["itk_direction"]
+    boxes["itk_spacing"] = properties_dict["itk_spacing"]
+
     save_pickle(boxes, detection_target)
     if save_iseg:
         instances = {key: res[key] for key in ["pred_instances", "pred_labels", "pred_scores"]}
