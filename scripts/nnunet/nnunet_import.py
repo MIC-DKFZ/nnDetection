@@ -228,18 +228,17 @@ def import_single_case(logits_source: Path,
     properties_file = logits_source.parent / f"{case_name}.pkl"
     probs = np.load(str(logits_source))["softmax"]
 
-    if properties_file.is_file():
-        properties_dict = load_pickle(properties_file)
-        bbox = properties_dict.get('crop_bbox')
-        shape_original_before_cropping = properties_dict.get('original_size_of_raw_data')
+    properties_dict = load_pickle(properties_file)
+    bbox = properties_dict.get('crop_bbox')
+    shape_original_before_cropping = properties_dict.get('original_size_of_raw_data')
 
-        if bbox is not None:
-            tmp = np.zeros((probs.shape[0], *shape_original_before_cropping))
-            for c in range(3):
-                bbox[c][1] = np.min((bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c]))
+    if bbox is not None:
+        tmp = np.zeros((probs.shape[0], *shape_original_before_cropping))
+        for c in range(3):
+            bbox[c][1] = np.min((bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c]))
 
-            tmp[:, bbox[0][0]:bbox[0][1], bbox[1][0]:bbox[1][1], bbox[2][0]:bbox[2][1]] = probs
-            probs = tmp
+        tmp[:, bbox[0][0]:bbox[0][1], bbox[1][0]:bbox[1][1], bbox[2][0]:bbox[2][1]] = probs
+        probs = tmp
 
     res = instance_results_from_seg(probs,
                                     aggregation=aggregation,
@@ -444,6 +443,10 @@ if __name__ == '__main__':
         else:
             for cid in case_ids:
                 copy_and_ensemble_test(cid, nnunet_dirs, nnunet_prediction_dir)
+
+        # copy properties
+        for p in [p for p in nnunet_dir.iterdir() if p.name.endswith(".pkl")]:
+            shutil.copyfile(p, nnunet_prediction_dir / p.name)
 
         postprocessing_settings = load_pickle(nndet_unet_dir / "postprocessing.pkl")
         target_dir = nndet_unet_dir / "test_predictions"
