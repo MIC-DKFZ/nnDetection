@@ -33,6 +33,8 @@ from typing import Union, Optional
 from pathlib import Path
 from git import Repo, InvalidGitRepositoryError
 
+import functools
+import inspect
 
 class SuppressPrint:
     def __enter__(self):
@@ -42,6 +44,60 @@ class SuppressPrint:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
+
+def deprecate(
+    replacement: Optional[str] = None,
+    deprecate: Optional[str] = None,
+    remove: Optional[str] = None,
+    ):
+    """
+    Deprecate functions and classes
+
+    Args:
+        replacement: Optional replacement of old element. if No
+            replacement is provided (None) this will expect that the function
+            will be removed completely.
+        deprecate: Optional version from when element is deprecated.
+        remove: Optional version from when element will be removed.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if inspect.isclass(func):
+                func_name = func.__class__.__name__
+            else:
+                func_name = func.__name__
+
+            time_str = "now" if deprecate is None else deprecate
+
+            s = f"{func_name} is deprecated from {time_str}!"
+
+            if remove is not None:
+                s += f" It will be removed from nnDetection from {remove}"
+            if replacement is not None:
+                s += f" The replacement is {replacement}."
+            else:
+                s += f" There will be no replacement."
+
+            logger.warning(s)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def experimental(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if inspect.isclass(func):
+            func_name = func.__class__.__name__
+        else:
+            func_name = func.__qualname__
+        
+        logger.warning(f"This feature ({func_name}) is experimental! "
+                       "It might not implement all features or is only a simplification!")
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def get_requirements():

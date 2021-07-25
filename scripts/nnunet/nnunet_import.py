@@ -228,18 +228,17 @@ def import_single_case(logits_source: Path,
     properties_file = logits_source.parent / f"{case_name}.pkl"
     probs = np.load(str(logits_source))["softmax"]
 
-    if properties_file.is_file():
-        properties_dict = load_pickle(properties_file)
-        bbox = properties_dict.get('crop_bbox')
-        shape_original_before_cropping = properties_dict.get('original_size_of_raw_data')
+    properties_dict = load_pickle(properties_file)
+    bbox = properties_dict.get('crop_bbox')
+    shape_original_before_cropping = properties_dict.get('original_size_of_raw_data')
 
-        if bbox is not None:
-            tmp = np.zeros((probs.shape[0], *shape_original_before_cropping))
-            for c in range(3):
-                bbox[c][1] = np.min((bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c]))
+    if bbox is not None:
+        tmp = np.zeros((probs.shape[0], *shape_original_before_cropping))
+        for c in range(3):
+            bbox[c][1] = np.min((bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c]))
 
-            tmp[:, bbox[0][0]:bbox[0][1], bbox[1][0]:bbox[1][1], bbox[2][0]:bbox[2][1]] = probs
-            probs = tmp
+        tmp[:, bbox[0][0]:bbox[0][1], bbox[1][0]:bbox[1][1], bbox[2][0]:bbox[2][1]] = probs
+        probs = tmp
 
     res = instance_results_from_seg(probs,
                                     aggregation=aggregation,
@@ -253,6 +252,11 @@ def import_single_case(logits_source: Path,
     instances_target = logits_target_dir / f"{case_name}_instances.pkl"
 
     boxes = {key: res[key] for key in ["pred_boxes", "pred_labels", "pred_scores"]}
+    boxes["original_size_of_raw_data"] = properties_dict["original_size_of_raw_data"]
+    boxes["itk_origin"] = properties_dict["itk_origin"]
+    boxes["itk_direction"] = properties_dict["itk_direction"]
+    boxes["itk_spacing"] = properties_dict["itk_spacing"]
+
     save_pickle(boxes, detection_target)
     if save_iseg:
         instances = {key: res[key] for key in ["pred_instances", "pred_labels", "pred_scores"]}
@@ -341,19 +345,23 @@ if __name__ == '__main__':
     save_seg = args.save_seg
     save_iseg = args.save_iseg
 
-    # select corresponding nnDetection task
     nnunet_dir = nnunet_dirs[0]
-    task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
-    if len(task_names) > 1:
-        logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
-    logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
-    nnunet_task = task_names[-1]
-
     if task is None:
+        # select corresponding nnDetection task
+        task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
+        if len(task_names) > 1:
+            logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
+        if len(task_names) == 0:
+            logger.error(f"Could not derive task name from path please use "
+                         "-t/--task to provide the name via cmd line!")
+        logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
+        nnunet_task = task_names[-1]
+
         logger.info(f"Using nnunet task {nnunet_task} as detection task id")
         task = nnunet_task
     else:
         task = get_task(task, name=True)
+
     task_dir = Path(os.getenv("det_models")) / task
     initialize_config_module(config_module="nndet.conf")
     cfg = compose(task, "config.yaml", overrides=[])
@@ -435,6 +443,10 @@ if __name__ == '__main__':
         else:
             for cid in case_ids:
                 copy_and_ensemble_test(cid, nnunet_dirs, nnunet_prediction_dir)
+
+        # copy properties
+        for p in [p for p in nnunet_dir.iterdir() if p.name.endswith(".pkl")]:
+            shutil.copyfile(p, nnunet_prediction_dir / p.name)
 
         postprocessing_settings = load_pickle(nndet_unet_dir / "postprocessing.pkl")
         target_dir = nndet_unet_dir / "test_predictions"
