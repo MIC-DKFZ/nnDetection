@@ -39,7 +39,7 @@ import SimpleITK as sitk
 
 from nndet.core.boxes import box_iou_np, box_size_np
 from nndet.io.load import load_pickle, save_json
-from nndet.utils.info import maybe_verbose_iterable
+from nndet.utils.info import maybe_verbose_iterable, experimental, deprecate
 
 
 def collect_overview(prediction_dir: Path, gt_dir: Path,
@@ -366,6 +366,7 @@ def plot_sizes_bar(all_pred, all_target, all_boxes, iou, score,
     return fig, ax
 
 
+@experimental
 def run_analysis_suite(prediction_dir: Path, gt_dir: Path, save_dir: Path):
     for iou, score in maybe_verbose_iterable(list(product([0.1, 0.5], [0.1, 0.5]))):
         _save_dir = save_dir / f"iou_{iou}_score_{score}"
@@ -415,6 +416,7 @@ def run_analysis_suite(prediction_dir: Path, gt_dir: Path, save_dir: Path):
         plt.close()
 
 
+@deprecate(deprecate="v0.1", remove="v0.2")
 def convert_box_to_nii_meta(pred_boxes: Tensor,
                             pred_scores: Tensor,
                             pred_labels: Tensor,
