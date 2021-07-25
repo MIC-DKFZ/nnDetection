@@ -201,7 +201,12 @@ def _train(
         {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}))
 
     logger.remove()
-    logger.add(sys.stdout, format="{level} {message}", level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+        )
     log_file = Path(os.getcwd()) / "train.log"
     logger.add(log_file, level="INFO")
     logger.info(f"Log file at {log_file}")
