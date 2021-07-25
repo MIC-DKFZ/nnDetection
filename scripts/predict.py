@@ -63,7 +63,12 @@ def run(cfg: dict,
     prediction_dir = training_dir / "test_predictions"
 
     logger.remove()
-    logger.add(sys.stdout, format="{level} {message}", level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+        )
     logger.add(Path(training_dir) / "inference.log", level="INFO")
 
     if process:

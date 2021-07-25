@@ -22,6 +22,7 @@ from loguru import logger
 
 from nndet.arch.conv import conv_kwargs_helper
 from nndet.utils import to_dtype
+from nndet.utils.info import experimental
 
 
 class BaseUFPN(nn.Module):
@@ -461,6 +462,7 @@ class SmallerUFPN(UFPNModular):
 
 
 class PAUFPN(UFPNModular):
+    @experimental
     def __init__(self,
                  conv: Callable,
                  strides: Sequence[int],

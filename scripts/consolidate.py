@@ -138,7 +138,12 @@ def main():
     target_dir = model_dir / "consolidated"
 
     logger.remove()
-    logger.add(sys.stdout, format="{level} {message}", level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+        )
     logger.add(Path(target_dir) / "consolidate.log", level="DEBUG")
 
     logger.info(f"looking for models in {model_dir}")
