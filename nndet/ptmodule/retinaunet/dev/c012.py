@@ -1,3 +1,11 @@
+from typing import Callable, Hashable
+
+from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.inference.ensembler.detection import (
+    BoxEnsemblerSelectiveFaster,
+    BoxEnsemblerSelective2D,
+    )
+
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001, RetinaUNetCV001Focal
 
@@ -25,6 +33,26 @@ class RetinaUNetC012(RetinaUNetV001):
     head_cls = BoxHeadHNM
     head_regressor_cls = L1Regressor
 
+    @staticmethod
+    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
+        """
+        Get ensembler classes to combine multiple predictions
+        Needs to be overwritten in subclasses!
+        """
+        _lookup = {
+            2: {
+                "boxes": BoxEnsemblerSelective2D,
+                "seg": SegmentationEnsembler,
+            },
+            3: {
+                "boxes": BoxEnsemblerSelectiveFaster,
+                "seg": SegmentationEnsembler,
+            }
+        }
+        if dim == 2:
+            raise NotImplementedError
+        return _lookup[dim][key]
+
 
 @MODULE_REGISTRY.register
 class RetinaUNetC012Focal(RetinaUNetCV001Focal):
@@ -33,3 +61,23 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
 
     head_cls = BoxHeadAll
     head_regressor_cls = L1Regressor
+
+    @staticmethod
+    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
+        """
+        Get ensembler classes to combine multiple predictions
+        Needs to be overwritten in subclasses!
+        """
+        _lookup = {
+            2: {
+                "boxes": BoxEnsemblerSelective2D,
+                "seg": SegmentationEnsembler,
+            },
+            3: {
+                "boxes": BoxEnsemblerSelectiveFaster,
+                "seg": SegmentationEnsembler,
+            }
+        }
+        if dim == 2:
+            raise NotImplementedError
+        return _lookup[dim][key]
