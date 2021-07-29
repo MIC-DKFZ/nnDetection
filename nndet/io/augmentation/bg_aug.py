@@ -181,6 +181,20 @@ class DefaultAug(NoAug):
 @AUGMENTATION_REGISTRY.register
 class BaseMoreAug(NoAug):
     def get_training_transforms(self):
+        """
+        UtilTransforms
+        SpatialTransform
+        GaussianNoiseTransform
+        GaussianBlurTransform
+        BrightnessMultiplicativeTransform
+        [optional] BrightnessTransform
+        ContrastAugmentationTransform
+        [optional] SimulateLowResolutionTransform
+        GammaTransform (inverted)
+        [optional] GammaTransform
+        MirrorTransform
+        UtilTransforms
+        """
         assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -492,6 +506,20 @@ class InsaneAug(NoAug):
 @AUGMENTATION_REGISTRY.register
 class BaseInsaneAug(NoAug):
     def get_training_transforms(self):
+        """
+        UtilTransforms
+        SpatialTransform
+        GaussianNoiseTransform
+        GaussianBlurTransform
+        BrightnessMultiplicativeTransform
+        [optional] BrightnessTransform
+        ContrastAugmentationTransform
+        [optional] SimulateLowResolutionTransform
+        [optional] GammaTransform (inverted)
+        [optional] GammaTransform
+        MirrorTransform
+        UtilTransforms
+        """
         assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -626,3 +654,10 @@ class BaseInsaneAug(NoAug):
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
         return Compose(tr_transforms)
+
+
+@AUGMENTATION_REGISTRY.register
+class AugModular(BaseInsaneAug):
+    """
+    rename
+    """

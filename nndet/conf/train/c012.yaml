@@ -1,6 +1,6 @@
 # @package __global__
 defaults:
-  - augmentation: base_more
+  - augmentation: more_modular
 
 module: RetinaUNetC012
 predictor: BoxPredictorSelective
