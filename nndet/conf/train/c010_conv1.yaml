@@ -2,10 +2,11 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC011AsymFocal
+module: RetinaUNetC010
+predictor: BoxPredictorSelective
 
-plan: D3V001AEP_3d # plan used for training
-planner: D3V001AEP # planner used for preprocessing
+plan: D3V001_3d # plan used for training
+planner: D3V001 # planner used for preprocessing
 
 augment_cfg:
   augmentation: ${augmentation}
@@ -35,6 +36,7 @@ trainer_cfg:
   monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
+  max_num_epochs: 50 # max number of epochs
   num_train_batches_per_epoch: 2500 # number of train batches per epoch
   num_val_batches_per_epoch: 100 # number of val batches per epoch
 
@@ -70,10 +72,8 @@ model_cfg:
     num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
-    reduction: "sum"
-    gamma: 1.
-    alpha: 0.75
-    loss_weight: 0.3
+    reduction: "mean"
+    loss_weight: 1.
     prior_prob: 0.01
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head

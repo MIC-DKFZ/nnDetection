@@ -2,7 +2,8 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC011L1
+module: RetinaUNetC010
+predictor: BoxPredictorSelective
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -68,7 +69,7 @@ model_cfg:
   head_kwargs: {} # keyword arguments to passed to head
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
-    num_convs: 1
+    num_convs: 2
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "mean"
@@ -76,7 +77,7 @@ model_cfg:
     prior_prob: 0.01
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head
-    num_convs: 1
+    num_convs: 2
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "sum"
@@ -95,7 +96,6 @@ model_cfg:
     dice_kwargs:
       batch_dice: True
       smooth_nom: 0.
-    loss_fp32: True
 
   matcher_kwargs: # keyword arguments passed to matcher
     num_candidates: 4
