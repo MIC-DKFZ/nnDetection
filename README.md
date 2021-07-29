@@ -145,6 +145,9 @@ nndet_example --full [--num_processes]
 The `full` problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
 
+## Guides
+Work in progress
+
 ## Experiments
 Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
 We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
