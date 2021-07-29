@@ -2,8 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC010
-predictor: BoxPredictorSelective
+module: RetinaUNetC011L1EMA
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -50,7 +49,9 @@ trainer_cfg:
 
   poly_gamma: 0.9
 
-  swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
+  swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
+  ema_beta: 0.996
+  sweep_ckpt: "ema"
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder
@@ -69,17 +70,15 @@ model_cfg:
   head_kwargs: {} # keyword arguments to passed to head
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
-    num_convs: 2
+    num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
-    gamma: 1.
-    alpha: 0.75
-    reduction: "sum"
-    loss_weight: 0.3
+    reduction: "mean"
+    loss_weight: 1.
     prior_prob: 0.01
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head
-    num_convs: 2
+    num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "sum"

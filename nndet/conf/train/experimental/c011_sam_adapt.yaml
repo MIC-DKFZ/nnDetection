@@ -2,8 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC010
-predictor: BoxPredictorSelective
+module: RetinaUNetC011L1SAM
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -13,7 +12,7 @@ augment_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
-  dataloader: "Transfer3DLoader"
+  dataloader: "DataLoader{}DOffset"
   oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
   dataloader_kwargs: {}
 
@@ -33,7 +32,6 @@ trainer_cfg:
   deterministic: False
   benchmark: False
 
-  # fp16: True # enable fp16 training. Makes sense for supported hardware only!
   monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
@@ -45,6 +43,8 @@ trainer_cfg:
   sgd_momentum: 0.9 # momentum term
   sgd_nesterov: True # nesterov momentum
   weight_decay: 3.e-5 # weight decay for optimizer
+  sam_rho: 0.5
+  sam_adaptive: True
 
   warm_iterations: 4000 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from

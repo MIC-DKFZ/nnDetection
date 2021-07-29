@@ -2,8 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC011L1EMA
-predictor: BoxPredictorSelective
+module: RetinaUNetC010
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -13,7 +12,7 @@ augment_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
-  dataloader: "DataLoader{}DOffset"
+  dataloader: "Transfer3DLoader"
   oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
   dataloader_kwargs: {}
 
@@ -33,6 +32,7 @@ trainer_cfg:
   deterministic: False
   benchmark: False
 
+  # fp16: True # enable fp16 training. Makes sense for supported hardware only!
   monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
@@ -50,9 +50,7 @@ trainer_cfg:
 
   poly_gamma: 0.9
 
-  swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
-  ema_beta: 0.996
-  sweep_ckpt: "ema"
+  swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
 
 model_cfg:
   encoder_kwargs: {} # keyword arguments passed to encoder

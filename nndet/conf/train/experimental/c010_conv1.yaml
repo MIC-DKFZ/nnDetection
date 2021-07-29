@@ -2,8 +2,7 @@
 defaults:
   - augmentation: base_more
 
-module: RetinaUNetC011L1SAM
-predictor: BoxPredictorSelective
+module: RetinaUNetC010
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -44,8 +43,6 @@ trainer_cfg:
   sgd_momentum: 0.9 # momentum term
   sgd_nesterov: True # nesterov momentum
   weight_decay: 3.e-5 # weight decay for optimizer
-  sam_rho: 0.05
-  sam_adaptive: False
 
   warm_iterations: 4000 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from

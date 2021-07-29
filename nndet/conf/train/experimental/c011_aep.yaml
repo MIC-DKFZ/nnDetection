@@ -3,7 +3,6 @@ defaults:
   - augmentation: base_more
 
 module: RetinaUNetC011L1
-predictor: BoxPredictorSelective
 
 plan: D3V001AEP_3d # plan used for training
 planner: D3V001AEP # planner used for preprocessing
