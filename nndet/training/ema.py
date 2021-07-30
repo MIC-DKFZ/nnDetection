@@ -9,8 +9,11 @@ import torch
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import LightningModule
 
+from nndet.utils.info import experimental
+
 
 class EMAWeightsCB(Callback):
+    @experimental
     def __init__(
         self,
         device: Optional[Union[str, torch.device]] = None,
