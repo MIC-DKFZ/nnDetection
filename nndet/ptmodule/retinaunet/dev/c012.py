@@ -61,6 +61,7 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
 
     head_cls = BoxHeadAll
     head_regressor_cls = L1Regressor
+    head_classifier_cls = FocalClassifier
 
     @staticmethod
     def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
