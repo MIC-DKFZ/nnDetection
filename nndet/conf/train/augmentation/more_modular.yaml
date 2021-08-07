@@ -27,7 +27,7 @@ p_per_sample_gaussian_noise: 0.1
 # GaussianBlurTransform
 p_per_sample_gaussian_blur: 0.2
 p_per_channel_gaussian_blur: 0.5
-gaussian_blur_sigma: [0.5, 1.5]
+gaussian_blur_sigma: [0.5, 1.0]
 gaussian_blur_sigma_per_channel: True
 
 # BrightnessMultiplicativeTransform
