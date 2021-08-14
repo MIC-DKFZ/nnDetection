@@ -249,7 +249,6 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
         _loss = sum(_losses.values())
         self.manual_backward(_loss)
         optimizer.second_step(zero_grad=True)
-        breakpoint()
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
     def configure_optimizers(self):
