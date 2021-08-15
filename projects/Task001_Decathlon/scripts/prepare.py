@@ -115,7 +115,7 @@ def main():
         save_json(dataset_info, task_data_dir / "dataset.json")
 
         # prepare data and labels
-        case_ids = get_case_ids_from_dir(source_data_dir, remove_modality=False)
+        case_ids = get_case_ids_from_dir(source_data_dir, remove_modality=True)
         case_ids = sorted([c for c in case_ids if c])
         logger.info(f"Found {len(case_ids)} for preparation.")
 

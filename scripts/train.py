@@ -338,7 +338,7 @@ def _train(
         weights_summary=cfg["trainer_cfg"].get("weights_summary", 'full'),
         plugins=plugins,
         terminate_on_nan=cfg["trainer_cfg"].get("terminate_on_nan", True),
-        move_metrics_to_cpu=True,
+        move_metrics_to_cpu=False,
         **trainer_kwargs
     )
     trainer.fit(module, datamodule=datamodule)
