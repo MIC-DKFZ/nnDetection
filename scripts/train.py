@@ -283,7 +283,7 @@ def _train(
         weights_summary='full',
         plugins=plugins,
         terminate_on_nan=True,  # TODO: make modular
-        move_metrics_to_cpu=True,
+        move_metrics_to_cpu=False,
         **trainer_kwargs
     )
     trainer.fit(module, datamodule=datamodule)

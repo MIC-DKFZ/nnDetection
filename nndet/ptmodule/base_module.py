@@ -104,11 +104,11 @@ class LightningBaseModule(pl.LightningModule):
         """
         return torch.zeros(*self.example_input_array_shape)
 
-    def summarize(self, mode: Optional[str]) -> Optional[ModelSummary]:
+    def summarize(self, *args, **kwargs) -> Optional[ModelSummary]:
         """
         Save model summary as txt
         """
-        summary = super().summarize(mode=mode)
+        summary = super().summarize(*args, **kwargs)
         save_txt(summary, "./network")
         return summary
 
