@@ -1,5 +1,5 @@
 import torch
-from torch.tensor import Tensor
+from torch import Tensor
 from torch.cuda.amp import autocast
 
 from nndet.core.boxes.ops import generalized_box_iou
