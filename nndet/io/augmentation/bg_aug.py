@@ -51,9 +51,10 @@ from nndet.io.augmentation import AUGMENTATION_REGISTRY
 
 class ComposePretty(Compose):
     def __str__(self) -> str:
-        s = ""
+        s = "--- Augmentation ---\n"
         for tr in self.transforms:
             s += f"{tr}\n"
+        s += "---"
         return s
 
 

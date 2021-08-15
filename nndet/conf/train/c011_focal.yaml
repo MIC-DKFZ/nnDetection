@@ -74,8 +74,8 @@ model_cfg:
     norm_channels_per_group: 16
     norm_affine: True
     reduction: "sum"
-    gamma: 1.5
-    alpha: 0.25
+    gamma: 1.5 # non default gamma
+    alpha: 0.25 # non default alpha
     loss_weight: 0.3
     prior_prob: 0.01
 
