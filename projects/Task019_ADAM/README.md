@@ -15,3 +15,7 @@ Please read the information from the homepage carefully and follow the rules and
 
 The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
 
+## Submission
+The submission folder contains the scripts used for our leaderboard submissions.
+Before building the Docker Image the model directory needs to be copied to the the submission folder to be detected by the docker context. Make sure to adapt the name of the nndetection base container to the name you installed it with (/ the current nndetection version).
+Before submitting make sure to run a test prediction on the training set to double check it :)
