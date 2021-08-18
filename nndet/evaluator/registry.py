@@ -77,9 +77,13 @@ def evaluate_box_dir(
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         pred = load_pickle(pred_dir / f"{case_id}_boxes.pkl")
         evaluator.run_online_evaluation(
-            pred_boxes=[pred["pred_boxes"]], pred_classes=[pred["pred_labels"]],
-            pred_scores=[pred["pred_scores"]], gt_boxes=[gt["boxes"]],
-            gt_classes=[gt["classes"]], gt_ignore=None,
+            pred_boxes=[pred["pred_boxes"]],
+            pred_classes=[pred["pred_labels"]],
+            pred_scores=[pred["pred_scores"]],
+            gt_boxes=[gt["boxes"]],
+            gt_classes=[gt["classes"]],
+            gt_ignore=None,
+            case_id=case_id,
         )
     return evaluator.finish_online_evaluation()
 

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable, Sequence, List, Dict
+from typing import Callable, Sequence, List, Dict, Optional
 
 
 __all__ = ["matching_batch"]
@@ -7,10 +7,15 @@ __all__ = ["matching_batch"]
 
 def matching_batch(
     iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    iou_thresholds: Sequence[float], pred_boxes: Sequence[np.ndarray],
-    pred_classes: Sequence[np.ndarray], pred_scores: Sequence[np.ndarray],
-    gt_boxes: Sequence[np.ndarray], gt_classes: Sequence[np.ndarray],
-    gt_ignore: Sequence[Sequence[bool]], max_detections: int = 100,
+    iou_thresholds: Sequence[float],
+    pred_boxes: Sequence[np.ndarray],
+    pred_classes: Sequence[np.ndarray],
+    pred_scores: Sequence[np.ndarray],
+    gt_boxes: Sequence[np.ndarray],
+    gt_classes: Sequence[np.ndarray],
+    gt_ignore: Sequence[Sequence[bool]],
+    max_detections: int = 100,
+    case_id: Optional[str] = None,
 ) -> List[Dict[int, Dict[str, np.ndarray]]]:
     """
     Match boxes of a batch to corresponding ground truth for each category
@@ -33,6 +38,8 @@ def matching_batch(
             (detections which match theses boxes are not counted as false
             positives either); List[[G]], G number of ground truth
         max_detections: maximum number of detections which should be evaluated
+        case_id: optionally provide a case id which will be return to
+            identify the matching result
 
     Returns:
         List[Dict[int, Dict[str, np.ndarray]]]
@@ -54,11 +61,14 @@ def matching_batch(
                 result[c] = _matching_no_gt(
                     iou_thresholds=iou_thresholds,
                     pred_scores=pscores[pred_mask],
-                    max_detections=max_detections)
+                    max_detections=max_detections,
+                    case_id=case_id,
+                    )
             elif not np.any(pred_mask):  # no predictions
                 result[c] = _matching_no_pred(
                     iou_thresholds=iou_thresholds,
                     gt_ignore=gignore[gt_mask],
+                    case_id=case_id,
                 )
             else:  # at least one prediction and one ground truth
                 result[c] = _matching_single_image_single_class(
@@ -69,6 +79,7 @@ def matching_batch(
                     gt_ignore=gignore[gt_mask],
                     max_detections=max_detections,
                     iou_thresholds=iou_thresholds,
+                    case_id=case_id,
                 )
         results.append(result)
     return results
@@ -78,6 +89,7 @@ def _matching_no_gt(
         iou_thresholds: Sequence[float],
         pred_scores: np.ndarray,
         max_detections: int,
+        case_id: Optional[str] = None,
 ):
     """
     Matching result with not ground truth in image
@@ -88,6 +100,8 @@ def _matching_no_gt(
         max_detections: maximum number of allowed detections per image.
             This functions uses this parameter to stay consistent with
             the actual matching function which needs this limit.
+        case_id: optionally provide a case id which will be return to
+            identify the matching result
 
     Returns:
         dict: computed matching
@@ -117,12 +131,14 @@ def _matching_no_gt(
         'dtScores': dt_scores,  # [D] detection scores
         'gtIgnore': np.array([]).reshape(-1),  # [G] indicate whether ground truth should be ignored
         'dtIgnore': dt_ignore,  # [T, D], indicate which detections should be ignored
+        'case_id': case_id,
     }
 
 
 def _matching_no_pred(
         iou_thresholds: Sequence[float],
         gt_ignore: np.ndarray,
+        case_id: Optional[str] = None,
 ):
     """
     Matching result with no predictions
@@ -132,6 +148,8 @@ def _matching_no_pred(
         gt_ignore: specified if which ground truth boxes are not counted as
             true positives (detections which match theses boxes are not
             counted as false positives either); [G], G number of ground truth
+        case_id: optionally provide a case id which will be return to
+            identify the matching result
 
     Returns:
         dict: computed matching
@@ -157,6 +175,7 @@ def _matching_no_pred(
         'dtScores': dt_scores,  # [D] detection scores
         'gtIgnore': gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
         'dtIgnore': dt_ignore,  # [T, D], indicate which detections should be ignored
+        'case_id': case_id,
     }
 
 
@@ -168,6 +187,7 @@ def _matching_single_image_single_class(
         gt_ignore: np.ndarray,
         max_detections: int,
         iou_thresholds: Sequence[float],
+        case_id: Optional[str] = None,
 ) -> Dict[str, np.ndarray]:
     """
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
@@ -184,6 +204,8 @@ def _matching_single_image_single_class(
             true positives (detections which match theses boxes are not
             counted as false positives either); [G], G number of ground truth
         max_detections: maximum number of detections which should be evaluated
+        case_id: optionally provide a case id which will be return to
+            identify the matching result
 
     Returns:
         dict: computed matching
@@ -254,4 +276,5 @@ def _matching_single_image_single_class(
         'dtScores': pred_scores,  # [D] detection scores
         'gtIgnore': gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
         'dtIgnore': dt_ignore,  # [T, D], indicate which detections should be ignored
+        'case_id': case_id,
     }

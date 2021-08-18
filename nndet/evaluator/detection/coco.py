@@ -299,6 +299,12 @@ class COCOMetric(DetectionMetric):
                 # r['dtMatches'] [T, R], where R = sum(all detections)
                 dt_matches = np.concatenate([r['dtMatches'][:, 0:maxDet] for r in results], axis=1)[:, inds]
                 dt_ignores = np.concatenate([r['dtIgnore'][:, 0:maxDet] for r in results], axis=1)[:, inds]
+
+                # case_ids = []
+                # for r in results:
+                #     case_ids.extend([r['case_id']] * min(len(r['dtMatches'][0]), maxDet))
+                # case_ids_sorted = [case_ids[i] for i in inds]
+
                 self.check_number_of_iou(dt_matches, dt_ignores)
                 gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
                 num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
@@ -329,9 +335,12 @@ class COCOMetric(DetectionMetric):
         }
 
 
-def compute_stats_single_threshold(tp: np.ndarray, fp: np.ndarray, dt_scores_sorted: np.ndarray,
-                                   recall_thresholds: Sequence[float], num_gt: int) -> Tuple[
-                                       float, np.ndarray, np.ndarray]:
+def compute_stats_single_threshold(
+    tp: np.ndarray,
+    fp: np.ndarray,
+    dt_scores_sorted: np.ndarray,
+    recall_thresholds: Sequence[float],
+    num_gt: int) -> Tuple[float, np.ndarray, np.ndarray]:
     """
     Compute recall value, precision curve and scores thresholds
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py

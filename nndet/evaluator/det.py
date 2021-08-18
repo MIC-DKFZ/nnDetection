@@ -26,6 +26,7 @@ from nndet.core.boxes import box_iou_np
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
+from nndet.utils.info import experimental
 
 
 __all__ = ["DetectionEvaluator"]
@@ -78,7 +79,9 @@ class DetectionEvaluator(AbstractEvaluator):
                               pred_scores: Sequence[np.ndarray],
                               gt_boxes: Sequence[np.ndarray],
                               gt_classes: Sequence[np.ndarray],
-                              gt_ignore: Sequence[Sequence[bool]] = None) -> Dict:
+                              gt_ignore: Sequence[Sequence[bool]] = None,
+                              case_id: Optional[str] = None,
+                              ) -> Dict:
         """
         Preprocess batch results for final evaluation
 
@@ -94,6 +97,8 @@ class DetectionEvaluator(AbstractEvaluator):
             gt_ignore (Sequence[Sequence[bool]]): specified if which ground truth boxes are not counted as true
                 positives (detections which match theses boxes are not counted as false positives either);
                 List[[G]], G number of ground truth
+            case_id: optionally provide a case id which will be return to
+                identify the matching result
 
         Returns
             dict: empty dict... detection metrics can only be evaluated at the end
@@ -111,6 +116,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_classes=gt_classes,
                 gt_ignore=gt_ignore,
                 max_detections=self.max_detections,
+                case_id=case_id,
             )
         )
         return {}
@@ -231,6 +237,7 @@ class BoxEvaluator(DetectionEvaluator):
 
 
 class CountDifferenceEvaluator(AbstractEvaluator):
+    @experimental
     def __init__(self, min_prob: float = 0.5):
         super().__init__()
         self.min_prob = min_prob
