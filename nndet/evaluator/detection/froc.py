@@ -71,7 +71,9 @@ class FROCMetric(DetectionMetric):
         """
         return self.iou_thresholds
 
-    def compute(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> Tuple[
+    def compute(self,
+                results_list: List[Dict[int, Dict[str, np.ndarray]]],
+                ) -> Tuple[
             Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC
@@ -189,6 +191,8 @@ class FROCMetric(DetectionMetric):
         scores = {f"FROC_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
         curves = {f"FROC_curve_IoU_{key:.2f}": c for key, c in curves.items()}
         curves["FROC_fpi_thresholds"] = self.fpi_thresholds
+        curves["FROC_num_images"] = num_images
+        curves["FROC_num_gt"] = num_gt
         return scores, curves
 
     @staticmethod
@@ -230,8 +234,8 @@ class FROCMetric(DetectionMetric):
         return fps, sens, thresholds
 
     def compute_froc_mul_iou_per_class(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> (
-            Dict[str, float], Dict[str, np.ndarray]):
+        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> Tuple[
+            Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC curve for multiple classes
 
@@ -258,7 +262,7 @@ class FROCMetric(DetectionMetric):
         froc_curves_cls = {}
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
+            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
 
@@ -276,11 +280,11 @@ class FROCMetric(DetectionMetric):
                 {cls_name}_FROC_score_IoU_{key:.2f}: for class specific froc
         """
         # plot normal froc curves
-        selection = select_froc_curves(curves)
+        _, frocs, ious, num_images, num_gt = select_froc_curves(curves)
         fig, ax = get_froc_ax(self.fpi_thresholds)
-        for _, froc, iou in zip(*selection):
+        for froc, iou in zip(frocs, ious):
             ax.plot(self.fpi_thresholds, froc, 'o-', label=f"IoU:{iou:.2f}")
-        ax.set_title("FROC")
+        ax.set_title(f"FROC N_img={num_images} N_gt={num_gt}")
         ax.legend(loc='lower right')
         fig.savefig(self.save_dir / "FROC.png")
         plt.close(fig)
@@ -288,21 +292,28 @@ class FROCMetric(DetectionMetric):
         # plot cls frocs
         selection = select_froc_curves_cls(curves)
         reordered = defaultdict(list)
-        for class_name, (names, frocs, ious) in selection.items():
+        for class_name, (names, frocs, ious, ni, ng) in selection.items():
             for froc, iou in zip(frocs, ious):
-                reordered[iou].append((class_name, froc))
+                reordered[iou].append((class_name, froc, ni, ng))
+
         for iou, frocs in reordered.items():
             fig, ax = get_froc_ax(self.fpi_thresholds)
-            for class_name, froc in frocs:
+            
+            title=f"FROC_cls_IoU_{iou:.2f}"
+            ax_title = title
+            
+            for class_name, froc, ni, ng in frocs:
                 ax.plot(self.fpi_thresholds, froc, 'o-', label=f"{class_name}")
-            title = f"FROC_cls_IoU_{iou:.2f}"
-            ax.set_title(title)
+                ax_title = ax_title + f" N_img_{class_name}={ni} N_gt_{class_name}={ng}"
+            ax.set_title(ax_title)
             ax.legend(loc='lower right')
             fig.savefig(self.save_dir / f"{title.replace('.', '_')}.png")
             plt.close(fig)
 
 
-def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figure, plt.Axes]:
+def get_froc_ax(
+    fpi_values: Optional[Sequence[float]] = None
+    ) -> Tuple[plt.Figure, plt.Axes]:
     """
     Create preconfigured figure and axes object for froc curves
 
@@ -315,6 +326,7 @@ def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figur
     """
     fig, ax = plt.subplots()
     ax.set_xscale("log", base=2)
+    # ax.set_xscale("linear")
 
     if fpi_values is not None:
         ax.set_xlim(min(fpi_values), max(fpi_values))
@@ -329,8 +341,10 @@ def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figur
     return fig, ax
 
 
-def select_froc_curves(curves: Dict[str, np.ndarray], prefix: Optional[str] = None) -> \
-        Tuple[List[str], List[np.ndarray], List[float]]:
+def select_froc_curves(
+    curves: Dict[str, np.ndarray],
+    prefix: Optional[str] = None,
+    ) -> Tuple[List[str], List[np.ndarray], List[float]]:
     """
     Select froc curves
 
@@ -345,16 +359,23 @@ def select_froc_curves(curves: Dict[str, np.ndarray], prefix: Optional[str] = No
     """
     if prefix is None:
         prefix = ""
-    froc_keys = [str(c) for c in curves.keys()
-                 if str(c).startswith(f"{prefix}FROC_") and
-                 not str(c).endswith("_thresholds")]
+    froc_keys = [
+        str(c) for c in curves.keys()
+        if str(c).startswith(f"{prefix}FROC_") and
+            not (str(c).endswith("_thresholds") or
+                 str(c).endswith("_num_images") or
+                 str(c).endswith("_num_gt"))
+        ]
     frocs = [curves[c] for c in froc_keys]
     ious = [float(c.rsplit('_', 1)[1]) for c in froc_keys]
-    return froc_keys, frocs, ious
+    num_images = curves[f"{prefix}FROC_num_images"]
+    num_gt = curves[f"{prefix}FROC_num_gt"]
+    return froc_keys, frocs, ious, num_images, num_gt
 
 
-def select_froc_curves_cls(curves: Dict[str, np.ndarray]) -> \
-        Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
+def select_froc_curves_cls(
+    curves: Dict[str, np.ndarray],
+    ) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
     """
     Select class specific froc curves
 
@@ -368,8 +389,11 @@ def select_froc_curves_cls(curves: Dict[str, np.ndarray]) -> \
             :method:`select_froc_curves_cls`
     """
     all_classes = [str(c).split('_', 1)[0] for c in curves.keys()
-                   if not str(c).startswith("FROC_") and
-                   not str(c).endswith("_thresholds")]
+                   if not (str(c).startswith("FROC_") or
+                           str(c).endswith("_thresholds") or
+                           str(c).endswith("_num_images") or
+                           str(c).endswith("_num_gt"))
+                  ]
     all_classes = list(set(all_classes))
     output = {}
     for cls_name in all_classes:
