@@ -28,8 +28,11 @@ from nndet.evaluator import DetectionMetric
 from sklearn.metrics import roc_curve
 from collections import defaultdict
 
+from nndet.utils.info import experimental
+
 
 class FROCMetric(DetectionMetric):
+    @experimental
     def __init__(self,
                  classes: Sequence[str],
                  iou_thresholds: Sequence[float] = (0.1, 0.5),
@@ -39,6 +42,13 @@ class FROCMetric(DetectionMetric):
                  ):
         """
         Class to compute FROC
+        
+        Multiclass FROC: This implementation performs the FROC over all
+        objects regardless of their class which assigns each object the
+        same "weight".
+        
+        Note this implementation is experimental and might change in the
+        future. Please prefer the AP metric for now.
 
         Args:
             classes: name of each class
@@ -259,7 +269,7 @@ class FROCMetric(DetectionMetric):
         froc_curves_cls = {}
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
+            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
 
