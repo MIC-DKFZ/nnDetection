@@ -65,6 +65,13 @@ class _CaseEvaluator(AbstractEvaluator):
             target_class: target class for case evaluation (internally
                 results are evaluated in a binary case target class vs rest).
                 If None, fall back to fg vs bg
+        
+        Notes:
+            The keys: "N_img", "N_count_{class name}" and
+            "N_count_agg_{class name}" are used internally to save debugging
+            information and should not be used for metrics. See
+            :method:`finish_online_evaluation` for more information on those
+            keys.
         """
         self.results_list = defaultdict(list)
 
@@ -129,11 +136,15 @@ class _CaseEvaluator(AbstractEvaluator):
 
         Returns:
             Dict: results of scalar metrics
+                `N_img`: number of images found for case evaluation
+                `N_count_{class}`: Number of images where this class is present
+                `N_count_agg_{class}`: Number of images of this class after
+                    aggregation to binary classes was performed.
             Dict: results of curve metrics
         """
         # aggregate cases
         gt_classes = self.aggregate_classes()
-        pred_scores, pred_classes = self.aggregate_prdictions()
+        pred_scores, pred_classes = self.aggregate_prdictions()        
 
         # compute metrics
         curve_results = {}
@@ -142,6 +153,7 @@ class _CaseEvaluator(AbstractEvaluator):
         for key, metric in self.class_metrics_curve.items():
             curve_results[key] = metric(gt_classes, pred_classes)
 
+        # scalar metrics
         scalar_results = {}
         for key, metric in self.score_metrics_scalar.items():
             try:
@@ -155,7 +167,51 @@ class _CaseEvaluator(AbstractEvaluator):
             except (ValueError, RuntimeError) as e:
                 logger.warning(f"Metric {key} exited with error {e}; writing nan to result")
                 scalar_results[key] = np.nan
+
+        # add debug information
+        if not "N_img" in curve_results:
+            scalar_results["N_img"] = len(gt_classes)
+        else:
+            raise ValueError("`N_img` is used internally and is not allowed for case metric naming!")
+        
+        class_count_no_agg = self.class_count()
+        for _k, _i in class_count_no_agg.items():
+            _kd = f"N_count_{_k}"
+            if not _kd in scalar_results:
+                scalar_results[_kd] = _i
+            else:
+                raise ValueError(f"{_kd} is used internally and is not allowed for case metric naming!")
+
+        unqiue_classes_agg, class_count_agg = np.unique(gt_classes, return_counts=True)
+        for _c, _c_count in zip(unqiue_classes_agg, class_count_agg):
+            _kc = f"N_count_agg_{_c}"
+            if not _kc in scalar_results:
+                scalar_results[_kc] = _c_count
+            else:
+                raise ValueError(f"{_kc} is used internally and is not allowed for case metric naming!")
+
         return scalar_results, curve_results
+
+    def class_count(self) -> Dict[int, int]:
+        """
+        Count number of unique classes present in each case
+        No aggragtion is performed here.
+
+        Returns:
+            Dict[int, int]: key defined class, item defines the number of
+                cases where this class if present
+        """
+        count_dict = {int(i): 0 for i in range(self.num_classes)}
+        count_dict[-1] = 0
+        for cc in self.results_list["case_classes"]:
+            unique_classes = list(set(cc))
+            
+            if unique_classes:
+                for c in unique_classes:
+                    count_dict[int(c)] += 1
+            else:
+                count_dict[-1] += 1
+        return count_dict
 
     def aggregate_classes(self) -> np.ndarray:
         """

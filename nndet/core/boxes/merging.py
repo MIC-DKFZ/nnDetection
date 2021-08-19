@@ -14,6 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+"""
+This code is highly experimental!
+"""
+
 from abc import ABC, abstractmethod
 from typing import Tuple, Callable, List
 
@@ -21,6 +25,7 @@ import torch
 from torch import Tensor
 
 from nndet.core.boxes.ops import box_iou
+from nndet.utils.info import experimental
 
 
 def weighted_merging(boxes: torch.Tensor, scores: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -41,6 +46,7 @@ def weighted_merging(boxes: torch.Tensor, scores: torch.Tensor) -> Tuple[torch.T
 
 
 class Merger(ABC):
+    @experimental
     def __init__(self,
                  iou_th: float,
                  iou_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
@@ -71,6 +77,7 @@ class Merger(ABC):
 
 
 class GreedyIoUBoxMerger(Merger):
+    @experimental
     def __init__(self,
                  boxes: Tensor,
                  slices: Tensor,
