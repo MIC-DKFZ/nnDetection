@@ -389,6 +389,24 @@ nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
 
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
 
+### Results
+The final model directory will contain multiple subfolders with different information:
+- `sweep`: contain information from the parameter sweeps and are only used for debugging purposes
+- `sweep_predictions`: these contain prediction with additional ensembler state information which are used during the empirical parameter optimization. Since these save the model output in a fairly raw format they are bigger than the predictions seen during normal inference to avoid multiple model prediction runs during the parameter sweeps
+- `[val/test]_predictions`: Contains the prediction of the validation/test set in the restored image space.
+- `val_predictions_preprocessed`: This contains prediction in the preprocessed image space, i.e. the predictions from the resampled and cropped data. they are saved for debugging purposes.
+- `[val/test]_results`: this folder contains the validation/test rsults computed by nnDetection. More information on the metrics can be found below.
+- `val_results_preprocessed`: contains validation results inside the preprocessed image space are saved for debugging purposes
+- `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
+
+The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
+- `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image are allows. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
+- `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
+- `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
+- `AR`: is only added for additional information. Since most AR metrics refer to a single IoU threshold it only reflects the max recall.
+- `FROC_score_IoU_0.10` *experimental*: Experimental FROC score. The implementation is still undergoing additional testing and might be subject to change. Also see the docstring for additional information on the multi class case. Additional featuers might be added in the future.
+- case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
+
 ## nnU-Net for Detection
 Besides nnDetection we also include the scripts to prepare and evaluate nnU-Net in the context of obejct detection.
 Both frameworks need to be configured correctly before running the scripts to assure correctness.
