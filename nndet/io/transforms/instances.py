@@ -91,7 +91,7 @@ class Instances2Boxes(AbstractTransform):
 
 
 def instances_to_boxes(seg: Tensor,
-                       dim: int = None,
+                       dim: int,
                        instances: Optional[Sequence[int]] = None,
                        ) -> Tuple[Tensor, Tensor]:
     """
@@ -108,8 +108,9 @@ def instances_to_boxes(seg: Tensor,
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
         Tensor: tuple with classes for bounding boxes
     """
-    if dim is None:
-        dim = seg.ndim
+    if dim > 3:
+        raise ValueError("Only supports bounding boxes up to three dimensions.")
+
     boxes = []
     _seg = seg.detach()
 
@@ -137,7 +138,7 @@ def instances_to_boxes(seg: Tensor,
 
 def instances_to_boxes_np(
     seg: np.ndarray,
-    dim: int = None,
+    dim: int,
     instances: Optional[Sequence[int]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -154,8 +155,9 @@ def instances_to_boxes_np(
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
         np.ndarray: tuple with classes for bounding boxes
     """
-    if dim is None:
-        dim = seg.ndim
+    if dim > 3:
+        raise ValueError("Only supports bounding boxes up to three dimensions.")
+
     boxes = []
     if instances is None:
         instances = np.unique(seg)
@@ -348,7 +350,7 @@ def get_bbox_np(seg: np.ndarray,
         map_dict = {str(key): str(item) for key, item in map_dict.items()}
 
     result = {}
-    boxes, instance_idx = instances_to_boxes_np(seg[0], **kwargs)
+    boxes, instance_idx = instances_to_boxes_np(seg[0], dim=seg.ndim - 1, **kwargs)
     result["boxes"] = boxes
 
     if map_dict is not None:
