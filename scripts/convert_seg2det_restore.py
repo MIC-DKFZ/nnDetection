@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     for task in tasks:
         cfg = compose(task, "config.yaml", overrides=[])
-        print(cfg.pretty())
+        print(cfg)
 
         splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
         for postfix in ["Tr", "Ts"]:

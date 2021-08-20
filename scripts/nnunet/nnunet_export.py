@@ -92,5 +92,5 @@ if __name__ == '__main__':
 
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
-        print(cfg.pretty)
+        print(cfg)
         run(cfg, target_dir, stuff=stuff)

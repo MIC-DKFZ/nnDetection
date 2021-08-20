@@ -34,7 +34,7 @@ def convert_raw(task, overwrite, ov):
     new_task_name_full = f"Task{task_num}FG_{task_name}"
 
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
-    print(cfg.pretty())
+    print(cfg)
 
     source_splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
     target_splitted_dir = Path(str(source_splitted_dir).replace(task_name_full, new_task_name_full))

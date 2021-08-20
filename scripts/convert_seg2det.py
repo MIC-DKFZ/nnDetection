@@ -170,7 +170,7 @@ def main():
 
     for task in tasks:
         cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
-        print(cfg.pretty())
+        print(cfg)
 
         splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
 
