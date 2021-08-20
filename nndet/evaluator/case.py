@@ -23,12 +23,14 @@ from sklearn.metrics import accuracy_score, average_precision_score, confusion_m
     f1_score, precision_score, recall_score, roc_auc_score
 
 from nndet.evaluator import AbstractEvaluator
+from nndet.utils.info import experimental
 
 
 __all__ = ["CaseEvaluator"]
 
 
 class _CaseEvaluator(AbstractEvaluator):
+    @experimental
     def __init__(self,
                  classes: Sequence[Union[str, int]],
                  score_metrics_scalar: Mapping[str, Callable] = None,
@@ -43,6 +45,9 @@ class _CaseEvaluator(AbstractEvaluator):
         max of the predicted score for each class. Final class prediction
         is computed by an argmax over that scores. The mappings of the
         metrics are later used as the keys of the result dict.
+
+        Note this implementation is experimental and might change in the
+        future.
 
         Args:
             classes: class present in whole dataset

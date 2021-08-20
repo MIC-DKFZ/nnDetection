@@ -120,8 +120,8 @@ def instances_to_boxes(seg: Tensor,
     for _idx in instances:
         instance_idx = (_seg == _idx).nonzero(as_tuple=False)
 
-        _mins = instance_idx[:, -3:].min(dim=0)[0]
-        _maxs = instance_idx[:, -3:].max(dim=0)[0]
+        _mins = instance_idx[:, -dim:].min(dim=0)[0]
+        _maxs = instance_idx[:, -dim:].max(dim=0)[0]
 
         box = [_mins[-dim] - 1, _mins[(-dim) + 1] - 1, _maxs[-dim] + 1, _maxs[(-dim) + 1] + 1]
         if dim > 2:

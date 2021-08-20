@@ -26,11 +26,13 @@ from torch import Tensor
 
 from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.restore import restore_fmap
+from nndet.utils.info import experimental
 
 
 class SegmentationEnsembler(BaseEnsembler):
     ID = "seg"
 
+    @experimental
     def __init__(self,
                  seg_key: str = 'pred_seg',
                  data_key: str = 'data',
