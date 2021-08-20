@@ -100,11 +100,11 @@ def restore_fmap(fmap: np.ndarray,
     spacing_after_resampling = np.asarray(spacing_after_resampling)
     resampled_spacing = spacing_after_resampling[transpose_backward]
 
-    if np.any([i != j for i, j in zip(fmap.shape[1:], size_after_cropping)]):
+    if np.any([i != j for i, j in zip(fmap_transposed.shape[1:], size_after_cropping)]):
         lowres_axis = _get_lowres_axes(original_spacing, resampled_spacing,
                                        do_separate_z=do_separate_z)
         logger.info(f"Resampling: do separate z: {do_separate_z}; lowres axis: {lowres_axis}")
-        fmap_old_spacing = resample_data_or_seg(fmap, size_after_cropping, is_seg=False,
+        fmap_old_spacing = resample_data_or_seg(fmap_transposed, size_after_cropping, is_seg=False,
                                                 axis=lowres_axis, order=interpolation_order,
                                                 do_separate_z=do_separate_z, cval=0,
                                                 order_z=interpolation_order_z)
