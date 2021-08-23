@@ -1407,3 +1407,45 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             boxes, min_size=self.parameters["track_remove_small_boxes"])
         boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
         return boxes, probs, labels
+
+
+class BoxEnsemblerSelectiveFaster(BoxEnsemblerSelective):
+    """
+    Changes default model score threshold to 0.1 which makes
+    sweeps faster
+    """
+    @classmethod
+    def get_default_parameters(cls):
+        """
+        Generate default parameters for instantiation
+
+        Returns:
+            Dict:
+                `model_iou`: IoU for model nms function
+                `model_nms_fn`: function to use for model NMS
+                `model_topk`: number of predictions with the highest
+                    probability to keep
+                `ensemble_iou`: IoU for ensembling the predictions of multiple
+                    models
+                `ensemble_nms_fn`: ensemble predictions from multiple
+                    models
+                `ensemble_nms_topk`: number of predictions with the highest
+                    probability to keep
+                `ensemble_remove_small_boxes`: minimum size of the box
+                `ensemble_score_thresh`: minimum probability
+        """
+        return {
+            # single model
+            "model_iou": 0.1,
+            "model_nms_fn": batched_weighted_nms,
+            "model_score_thresh": 0.1,
+            "model_topk": 1000,
+            "model_detections_per_image": 100,
+
+            # ensemble multiple models
+            "ensemble_iou": 0.5,
+            "ensemble_nms_fn": batched_wbc,
+            "ensemble_topk": 1000,
+            "remove_small_boxes": 1e-2,
+            "ensemble_score_thresh": 0.0,
+        }

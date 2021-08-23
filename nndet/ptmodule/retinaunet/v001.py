@@ -14,12 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from loguru import logger
+
 from nndet.ptmodule.retinaunet.base import RetinaUNetModule
 
 from nndet.core.boxes.matcher import ATSSMatcher
-from nndet.arch.heads.classifier import BCECLassifier
-from nndet.arch.heads.regressor import GIoURegressor, L1Regressor
-from nndet.arch.heads.comb import BoxHeadHNMNative, BoxHeadHNM
+from nndet.core.boxes.coder import CoderType
+from nndet.arch.heads.comb.base import AnchorHeadType
+from nndet.arch.heads.classifier.dense import DenseClassifierType
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
+from nndet.arch.heads.regressor import GIoURegressor
+from nndet.arch.heads.comb import BoxHeadHNMNative, BoxHeadAll
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.arch.conv import ConvInstanceRelu, ConvGroupRelu
 
@@ -39,12 +45,44 @@ class RetinaUNetV001(RetinaUNetModule):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV001L1(RetinaUNetModule):
-    base_conv_cls = ConvInstanceRelu
-    head_conv_cls = ConvGroupRelu
+class RetinaUNetCV001Focal(RetinaUNetV001):
+    """
+    Focal Loss based V001 RetinaUNet
+    (only intended for easy subclassing and not used in nnDetection V0.1)
+    """
+    head_cls = BoxHeadAll
+    head_classifier_cls = FocalClassifier
 
-    head_cls = BoxHeadHNM
-    head_classifier_cls = BCECLassifier
-    head_regressor_cls = L1Regressor
-    matcher_cls = ATSSMatcher
-    segmenter_cls = DiCESegmenterFgBg
+    @classmethod
+    def _build_head(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
+        coder: CoderType,
+    ) -> AnchorHeadType:
+        """
+        Build detection head
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            classifier: classifier instance
+            regressor: regressor instance
+            coder: coder instance to encode boxes
+
+        Returns:
+            HeadType: instantiated head
+        """
+        head_name = cls.head_cls.__name__
+        head_kwargs = model_cfg['head_kwargs']
+
+        logger.info(f"Building:: head {head_name}: {head_kwargs}")
+        head = cls.head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            **head_kwargs,
+        )
+        return head

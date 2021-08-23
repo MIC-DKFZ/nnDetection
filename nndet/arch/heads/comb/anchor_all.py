@@ -11,12 +11,14 @@ from nndet.core.boxes.coder import BoxCoderND
 
 
 class BoxHeadAll(AnchorHead):
-    def __init__(self,
-                 classifier: DenseClassifierType,
-                 regressor: DenseRegressorType,
-                 coder: BoxCoderND,
-                 shared: Optional[torch.nn.Module] = None,
-                 ):
+    def __init__(
+        self,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
+        coder: BoxCoderND,
+        shared: Optional[torch.nn.Module] = None,
+        reg_mode: str = "decode",
+        ):
         """
         Box head with classifier and regression module. Uses all
         foreground anchors for regression an passes all anchors to classifier
@@ -26,12 +28,20 @@ class BoxHeadAll(AnchorHead):
             regressor: regression module
             shared: optional shared module which is applied to before the
                 classifier and regression head
+            reg_mode: define regression mode. One of `decode` | `encode`
+                `decode`: uses the predicted box deltas to decode the 
+                    predicted boxes which are passed to the regression loss
+                    in combination with the matched ground truth boxes
+                `encode`: uses the matched ground truth to encode the
+                    expected box deltas which are passed to the regression loss
+                    in combination with the predicted box deltas
         """
         super().__init__(
             classifier=classifier,
             regressor=regressor,
             coder=coder,
             shared=shared,
+            reg_mode=reg_mode,
         )
         self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
 
@@ -64,24 +74,27 @@ class BoxHeadAll(AnchorHead):
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
-        target_labels = torch.cat(target_labels, dim=0)
         batch_anchors = torch.cat(anchors, dim=0)
-        pred_boxes = self.coder.decode_single(box_deltas, batch_anchors)
+        target_labels = torch.cat(target_labels, dim=0)
         target_boxes = torch.cat(matched_gt_boxes, dim=0)
-
+        
+        reg_pred, reg_target = self.get_reg_by_mode(
+            batch_anchors=batch_anchors,
+            batch_target_boxes=target_boxes,
+            batch_pred_deltas=box_deltas,
+        )
         sampled_inds = torch.where(target_labels >= 0)[0]
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
         losses = {}
         if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
-                pred_boxes[sampled_pos_inds],
-                target_boxes[sampled_pos_inds],
+                reg_pred[sampled_pos_inds],
+                reg_target[sampled_pos_inds],
             ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds],
             target_labels[sampled_inds],
         ) / max(1, sampled_pos_inds.numel())
-        # breakpoint()
         return losses, sampled_pos_inds, None

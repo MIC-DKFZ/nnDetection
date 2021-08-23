@@ -244,7 +244,6 @@ def _train(
     if pl_logger:
         params = {
             "module": cfg["module"],
-            "predictor": cfg["predictor"],
             "plan": cfg["plan"],
             "aug_name": cfg["augment_cfg"]["augmentation"]["name"],
             "aug_transforms": cfg["augment_cfg"]["augmentation"]["transforms"],

@@ -49,6 +49,15 @@ with SuppressPrint():
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 
 
+class ComposePretty(Compose):
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s
+
+
 @AUGMENTATION_REGISTRY.register
 class NoAug(AugmentationSetup):
     def __init__(self, patch_size: Sequence[int], params: dict) -> None:
@@ -90,7 +99,7 @@ class NoAug(AugmentationSetup):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        return ComposePretty(tr_transforms)
 
     def get_validation_transforms(self):
         val_transforms = []
@@ -104,7 +113,7 @@ class NoAug(AugmentationSetup):
         val_transforms.append(RemoveLabelTransform(-1, 0))
         val_transforms.append(RenameTransform('seg', 'target', True))
         val_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(val_transforms)
+        return ComposePretty(val_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
@@ -175,12 +184,26 @@ class DefaultAug(NoAug):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        return ComposePretty(tr_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
 class BaseMoreAug(NoAug):
     def get_training_transforms(self):
+        """
+        UtilTransforms
+        SpatialTransform
+        GaussianNoiseTransform
+        GaussianBlurTransform
+        BrightnessMultiplicativeTransform
+        [optional] BrightnessTransform
+        ContrastAugmentationTransform
+        [optional] SimulateLowResolutionTransform
+        GammaTransform (inverted)
+        [optional] GammaTransform
+        MirrorTransform
+        UtilTransforms
+        """
         assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -270,7 +293,9 @@ class BaseMoreAug(NoAug):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        transforms = ComposePretty(tr_transforms)
+        logger.info(f"Training Transforms: \n{transforms}")
+        return transforms
 
 
 @AUGMENTATION_REGISTRY.register
@@ -377,7 +402,7 @@ class MoreAug(NoAug):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        return ComposePretty(tr_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
@@ -486,12 +511,26 @@ class InsaneAug(NoAug):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        return ComposePretty(tr_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
 class BaseInsaneAug(NoAug):
     def get_training_transforms(self):
+        """
+        UtilTransforms
+        SpatialTransform
+        GaussianNoiseTransform
+        GaussianBlurTransform
+        BrightnessMultiplicativeTransform
+        [optional] BrightnessTransform
+        ContrastAugmentationTransform
+        [optional] SimulateLowResolutionTransform
+        [optional] GammaTransform (inverted)
+        [optional] GammaTransform
+        [optional] MirrorTransform
+        UtilTransforms
+        """
         assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -544,11 +583,15 @@ class BaseInsaneAug(NoAug):
 
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
+        
+        # TODO: do transform param
         tr_transforms.append(
             GaussianNoiseTransform(
                 p_per_sample=self.params.get("p_per_sample_gaussian_noise"),
-            ),
+            ),  # TODO: make noise_variance a config key
         )
+        
+        # TODO: do transform param
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
@@ -557,11 +600,13 @@ class BaseInsaneAug(NoAug):
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
             ),
         )
+        
+        # TODO: do transform param
         tr_transforms.append(
             BrightnessMultiplicativeTransform(
                 p_per_sample=self.params.get("p_per_sample_brightness_mul"),
                 multiplier_range=self.params.get("brightness_mul_multiplier_range"),
-            ),
+            ), # TODO: make per_channel a config key
         )
 
         if self.params.get("do_additive_brightness"):
@@ -574,11 +619,13 @@ class BaseInsaneAug(NoAug):
                     p_per_channel=self.params.get("additive_brightness_p_per_channel"),
                 ),
             )
+            
+        # TODO: do transform param
         tr_transforms.append(
             ContrastAugmentationTransform(
                 contrast_range=self.params.get("contrast_range"),
                 p_per_sample=self.params.get("p_per_sample_contrast"),
-            ),
+            ),  # TODO: make per_channel a config key
         )
 
         if self.params.get("do_sim_low_res"):
@@ -599,7 +646,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=True,
-                    per_channel=True,
+                    per_channel=True, # TODO: make per_channel a config key
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma_inverted"],
                 ),
@@ -610,7 +657,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=False,
-                    per_channel=True,
+                    per_channel=True, # TODO: make per_channel a config key
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma"],
                 ),
@@ -625,4 +672,13 @@ class BaseInsaneAug(NoAug):
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform('seg', 'target', True))
         tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        return Compose(tr_transforms)
+        transforms = ComposePretty(tr_transforms)
+        logger.info(f"Training Transforms: \n{transforms}")
+        return transforms
+
+
+@AUGMENTATION_REGISTRY.register
+class AugModular(BaseInsaneAug):
+    """
+    rename
+    """
