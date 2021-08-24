@@ -94,7 +94,8 @@ def load_final_model(
     )
     state_dict = torch.load(path, map_location="cpu")["state_dict"]
     t = model.load_state_dict(state_dict)
-    logger.info(f"Loaded {path} with {t}")
+    epoch = state_dict.get("epoch")
+    logger.info(f"Loaded {path}  from epoch {epoch} with {t}")
     model.float()
     model.eval()
     return [{"model": model, "rank": 0}]
@@ -136,7 +137,8 @@ def load_all_models(
         )
         state_dict = torch.load(path, map_location="cpu")["state_dict"]
         t = model.load_state_dict(state_dict)
-        logger.info(f"Loaded {path} with {t}")
+        epoch = state_dict.get("epoch")
+        logger.info(f"Loaded {path} from epoch {epoch} with {t}")
         model.float()
         model.eval()
         models.append({"model": model.cpu()})
