@@ -82,3 +82,15 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
         if dim == 2:
             raise NotImplementedError
         return _lookup[dim][key]
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC012Mish(RetinaUNetC012):
+    base_conv_cls = ConvInstanceLReLU
+    head_conv_cls = ConvGroupLReLU
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC012FocalMish(RetinaUNetC012Focal):
+    base_conv_cls = ConvInstanceLReLU
+    head_conv_cls = ConvGroupLReLU

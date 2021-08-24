@@ -14,12 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from loguru import logger
+
 import torch
 import torch.nn as nn
 from typing import Union, Callable, Any, Optional, Tuple, Sequence, Type
 
 from nndet.arch.layers.norm import GroupNorm
-from nndet.arch.layers.activation import Swish, Mish
+from nndet.arch.layers.activation import Swish 
+
+try:
+    from torch.nn import Mish
+    torch_mish = True
+except ImportError:
+    from nndet.arch.layers.activation import Mish
+    torch_mish = False
 
 
 NdParam = Union[int, Tuple[int, int], Tuple[int, int, int]]
@@ -735,6 +744,9 @@ class ConvGroupMish(BaseConvNormAct):
         """
         norm = "Group" if add_norm else None
         act = Mish if add_act else None
+        if not torch_mish:
+            logger.error("Could not import Mish from Torch, update to PyTorch 1.9 or later!"
+                         "The current implementation uses too much memory.")
 
         super().__init__(
             dim=dim,
@@ -884,6 +896,9 @@ class ConvInstanceMish(BaseConvNormAct):
         """
         norm = "Instance" if add_norm else None
         act = Mish if add_act else None
+        if not torch_mish:
+            logger.error("Could not import Mish from Torch, update to PyTorch 1.9 or later!"
+                         "The current implementation uses too much memory.")
 
         super().__init__(
             dim=dim,
