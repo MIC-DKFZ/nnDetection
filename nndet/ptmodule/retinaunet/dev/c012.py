@@ -22,6 +22,8 @@ from nndet.arch.heads.regressor import (
 from nndet.arch.conv import (
     ConvInstanceLReLU,
     ConvGroupLReLU,
+    ConvInstanceMish,
+    ConvGroupMish,
 )
 
 
@@ -86,11 +88,11 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
 
 @MODULE_REGISTRY.register
 class RetinaUNetC012Mish(RetinaUNetC012):
-    base_conv_cls = ConvInstanceLReLU
-    head_conv_cls = ConvGroupLReLU
+    base_conv_cls = ConvInstanceMish
+    head_conv_cls = ConvGroupMish
 
 
 @MODULE_REGISTRY.register
 class RetinaUNetC012FocalMish(RetinaUNetC012Focal):
-    base_conv_cls = ConvInstanceLReLU
-    head_conv_cls = ConvGroupLReLU
+    base_conv_cls = ConvInstanceMish
+    head_conv_cls = ConvGroupMish
