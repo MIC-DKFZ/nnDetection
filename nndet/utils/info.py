@@ -70,7 +70,7 @@ def deprecate(
             s = f"{func_name} is deprecated from {time_str}!"
 
             if remove is not None:
-                s += f" It will be removed from nnDetection from {remove}"
+                s += f" It will be removed from nnDetection {remove}"
             if replacement is not None:
                 s += f" The replacement is {replacement}."
             else:
