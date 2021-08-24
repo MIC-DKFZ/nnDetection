@@ -3,6 +3,7 @@ import pytest
 import torch
 import numpy as np
 from nndet.io.transforms.instances import instances_to_boxes, instances_to_boxes_np
+from batchgenerators.transforms.utility_transforms import ConvertSegToBoundingBoxCoordinates
 
 
 @pytest.fixture
@@ -45,3 +46,11 @@ def test_instance_to_boxes(mask, result):
     boxes, inst = instances_to_boxes(mask, dim=3)
     assert torch.allclose(boxes, exptected_boxes)
     assert torch.allclose(inst, expected_instances)
+
+
+def test_instance_to_boxes_np_bg(mask, result):
+    exptected_boxes, _ = result
+    trafo = ConvertSegToBoundingBoxCoordinates(dim=3, get_rois_from_seg_flag=False)
+    inp = {"seg": mask[None], "class_target": [[1, 1, 1, 1]]}
+    res = trafo(**inp)
+    assert np.allclose(res["bb_target"], exptected_boxes)
