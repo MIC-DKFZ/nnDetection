@@ -9,7 +9,7 @@ nevergrad
 nnunet
 dicom2nifti
 medpy
-SimpleITK<2.1.0
+SimpleITK
 tqdm
 loguru
 hydra-core>=1.1.0
