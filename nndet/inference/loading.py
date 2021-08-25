@@ -96,9 +96,9 @@ def load_final_model(
         trainer_cfg=cfg["trainer_cfg"],
         plan=plan,
     )
-    state_dict = torch.load(path, map_location="cpu")["state_dict"]
-    t = model.load_state_dict(state_dict)
-    epoch = state_dict.get("epoch")
+    checkpoint = torch.load(path, map_location="cpu")
+    t = model.load_state_dict(checkpoint["state_dict"])
+    epoch = checkpoint.get("epoch")
     logger.info(f"Loaded {path}  from epoch {epoch} with {t}")
     model.float()
     model.eval()
@@ -139,9 +139,10 @@ def load_all_models(
             trainer_cfg=cfg["trainer_cfg"],
             plan=plan,
         )
-        state_dict = torch.load(path, map_location="cpu")["state_dict"]
-        t = model.load_state_dict(state_dict)
-        epoch = state_dict.get("epoch")
+
+        checkpoint = torch.load(path, map_location="cpu")
+        t = model.load_state_dict(checkpoint["state_dict"])
+        epoch = checkpoint.get("epoch")
         logger.info(f"Loaded {path} from epoch {epoch} with {t}")
         model.float()
         model.eval()
