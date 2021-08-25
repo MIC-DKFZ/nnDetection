@@ -197,7 +197,8 @@ def _matching_no_pred(
     dt_match = np.array([[]] * len(iou_thresholds))
     dt_ignore = np.array([[]] * len(iou_thresholds))
 
-    gt_match = np.zeros((len(iou_thresholds), len(gt_ignore)))
+    n_gt = 0 if gt_ignore.size == 0 else gt_ignore.shape[0]
+    gt_match = np.zeros((len(iou_thresholds), n_gt))
 
     return {
         'dtMatches': dt_match,  # [T, D], where T = number of thresholds, D = number of detections

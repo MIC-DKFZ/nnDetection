@@ -96,7 +96,8 @@ class DetectionEvaluator(AbstractEvaluator):
             dict: empty dict... detection metrics can only be evaluated at the end
         """
         if gt_ignore is None:
-            gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1) for gt_boxes_img in gt_boxes]
+            n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
+            gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
         self.results_list.extend(matching_batch(
             self.iou_fn, self.iou_thresholds, pred_boxes=pred_boxes, pred_classes=pred_classes,
