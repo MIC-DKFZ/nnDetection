@@ -436,6 +436,11 @@ pre-commit install
 ```
 
 inside the base directoty of nnDetection.
+The pre-commit hooks will be executed every time a new commit is added or manually by running:
+
+```bash
+pre-commit run --all-files
+```
 
 # FAQ
 <details close>

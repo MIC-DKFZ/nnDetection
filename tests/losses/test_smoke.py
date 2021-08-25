@@ -103,7 +103,8 @@ def test_loss_fp32(loss_fn, pred, target):
     loss_fn.loss_fp32 = True
 
     with torch.no_grad():
-        base_val = loss_fn(pred.half(), target.half())
+        with torch.cuda.amp.autocast(enabled=True):
+            base_val = loss_fn(pred.half(), target.half())
 
     assert base_val.dtype == torch.float32
 
@@ -113,16 +114,3 @@ def test_backward(loss_fn, pred, target):
     pred.requires_grad = True
     base_val = loss_fn(pred, target)
     base_val.backward()
-
-
-# Can only be tested on GPU (many half ops are only implemented for GPU)
-# @pytest.mark.parametrize("loss_fn,pred,target", TEST_CASES)
-# def test_loss_fp16(loss_fn, pred, target):
-#     loss_fn.loss_fp32 = False
-
-#     with torch.no_grad():
-#         with torch.cuda.amp.autocast(enabled=True):
-#             base_val = loss_fn(pred.half(), target.half())
-
-#     print(base_val.dtype)
-#     assert base_val.dtype == torch.float16

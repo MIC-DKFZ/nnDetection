@@ -24,7 +24,7 @@ def pred():
     return pred
 
 
-class TestDetectionEvaluator:
+class TestSegmentationEvaluator:
     def test_run_online_evaluation_tp(self, evaluator, pred, target):
         evaluator.run_online_evaluation(pred, target)
         assert len(evaluator.results_list["tp"]) == 1
