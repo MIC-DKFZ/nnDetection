@@ -42,11 +42,11 @@ class FROCMetric(DetectionMetric):
                  ):
         """
         Class to compute FROC
-        
+
         Multiclass FROC: This implementation performs the FROC over all
         objects regardless of their class which assigns each object the
         same "weight".
-        
+
         Note this implementation is experimental and might change in the
         future. Please prefer the AP metric for now.
 
@@ -308,10 +308,10 @@ class FROCMetric(DetectionMetric):
 
         for iou, frocs in reordered.items():
             fig, ax = get_froc_ax(self.fpi_thresholds)
-            
+
             title=f"FROC_cls_IoU_{iou:.2f}"
             ax_title = title
-            
+
             for class_name, froc, ni, ng in frocs:
                 ax.plot(self.fpi_thresholds, froc, 'o-', label=f"{class_name}")
                 ax_title = ax_title + f" N_img_{class_name}={ni} N_gt_{class_name}={ng}"

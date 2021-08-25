@@ -100,7 +100,7 @@ def main():
         dataset_info = {
             "task": task,
             "name": original_meta["name"],
-            
+
             "target_class": None,
             "test_labels": True,
 

@@ -38,11 +38,11 @@ def test_instance_to_boxes_np(mask, result):
 
 def test_instance_to_boxes(mask, result):
     exptected_boxes, expected_instances = result
-    
+
     mask = torch.from_numpy(mask).long()
     exptected_boxes = torch.from_numpy(exptected_boxes).float()
     expected_instances = torch.from_numpy(expected_instances)
-    
+
     boxes, inst = instances_to_boxes(mask, dim=3)
     assert torch.allclose(boxes, exptected_boxes)
     assert torch.allclose(inst, expected_instances)

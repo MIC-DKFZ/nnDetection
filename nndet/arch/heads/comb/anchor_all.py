@@ -29,7 +29,7 @@ class BoxHeadAll(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the 
+                `decode`: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
                 `encode`: uses the matched ground truth to encode the
@@ -77,7 +77,7 @@ class BoxHeadAll(AnchorHead):
         batch_anchors = torch.cat(anchors, dim=0)
         target_labels = torch.cat(target_labels, dim=0)
         target_boxes = torch.cat(matched_gt_boxes, dim=0)
-        
+
         reg_pred, reg_target = self.get_reg_by_mode(
             batch_anchors=batch_anchors,
             batch_target_boxes=target_boxes,

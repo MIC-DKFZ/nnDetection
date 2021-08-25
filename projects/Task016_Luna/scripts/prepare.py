@@ -144,7 +144,7 @@ def main():
 
         "target_class": None,
         "test_labels": False,
-        
+
         "labels": {
             "0": "lesion",
         },

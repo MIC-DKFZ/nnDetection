@@ -33,7 +33,7 @@ class BoxHeadHNM(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the 
+                `decode`: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
                 `encode`: uses the matched ground truth to encode the
@@ -84,7 +84,7 @@ class BoxHeadHNM(AnchorHead):
         losses = {}
         sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
- 
+
         batch_anchors = torch.cat(anchors, dim=0)
         target_labels = torch.cat(target_labels, dim=0)
         target_boxes = torch.cat(matched_gt_boxes, dim=0)

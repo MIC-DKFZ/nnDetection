@@ -102,7 +102,7 @@ def main():
     det_data_dir = Path(os.getenv('det_data'))
     task_data_dir = det_data_dir / "Task012_LIDC"
     source_data_dir = task_data_dir / "raw"
-    
+
     if not (p := source_data_dir / "data_nrrd").is_dir():
         raise ValueError(f"Expted {p} to contain LIDC data")
     if not (p := source_data_dir / 'characteristics.csv').is_file():

@@ -133,7 +133,7 @@ class TestNMS:
         groups = torch.tensor([0, 1, 0])
         boxes_res, scores_res, labels_res, _ = \
             batched_nms(boxes, scores, groups, th)
-        
+
         # no suppression
         assert boxes_res.allclose(boxes)
         assert scores_res.allclose(scores)

@@ -13,7 +13,7 @@ from nndet.ptmodule.retinaunet.dev.c010 import (
     RetinaUNetC010GNMishAll,
     RetinaUNetC010GNMishAllFocal,
     RetinaUNetC010TopK10FGBG,
-    RetinaUNetC010TopK10FGBGMad,   
+    RetinaUNetC010TopK10FGBGMad,
 )
 from nndet.ptmodule.retinaunet.dev.c001_rccn import (
     DummyRCNN

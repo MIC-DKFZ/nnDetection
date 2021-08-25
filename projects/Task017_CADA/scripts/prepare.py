@@ -16,7 +16,7 @@ def run_prep(source_data: Path, source_label: Path,
     shutil.copy(source_data, target_data_dir / f"{case_id}_0000.nii.gz")
     shutil.copy(source_label, target_label_dir / f"{case_id}.nii.gz")  # rename label file to match data
     label_itk = sitk.ReadImage(str(source_label))
-    
+
     label_np = sitk.GetArrayFromImage(label_itk)
     instances = {int(_id + 1): 0 for _id in range(label_np.max())}
     save_json({"instances": instances}, target_label_dir / f"{case_id}")
@@ -26,7 +26,7 @@ def run_prep(source_data: Path, source_label: Path,
 def main():
     det_data_dir = Path(os.getenv('det_data'))
     task_data_dir = det_data_dir / "Task017_CADA"
-    
+
     # setup raw paths
     source_data_dir = task_data_dir / "raw" / "train_dataset"
     if not source_data_dir.is_dir():
@@ -45,10 +45,10 @@ def main():
     meta = {
         "name": "CADA",
         "task": "Task017_CADA",
-        
+
         "target_class": None,
         "test_labels": False,
-        
+
         "labels": {"0": "aneurysm"},
         "modalities": {"0": "CT"},
         "dim": 3,

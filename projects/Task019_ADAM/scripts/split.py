@@ -35,7 +35,7 @@ def main():
         splits[-1]['val'] = test_keys
         print(f"Generated split: {splits[-1]}")
     save_pickle(splits, splits_file)
-   
+
 
 if __name__ == '__main__':
     main()

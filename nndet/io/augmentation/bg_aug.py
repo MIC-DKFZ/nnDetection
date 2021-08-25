@@ -583,14 +583,14 @@ class BaseInsaneAug(NoAug):
 
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
-        
+
         # TODO: do transform param
         tr_transforms.append(
             GaussianNoiseTransform(
                 p_per_sample=self.params.get("p_per_sample_gaussian_noise"),
             ),  # TODO: make noise_variance a config key
         )
-        
+
         # TODO: do transform param
         tr_transforms.append(
             GaussianBlurTransform(
@@ -600,7 +600,7 @@ class BaseInsaneAug(NoAug):
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
             ),
         )
-        
+
         # TODO: do transform param
         tr_transforms.append(
             BrightnessMultiplicativeTransform(
@@ -619,7 +619,7 @@ class BaseInsaneAug(NoAug):
                     p_per_channel=self.params.get("additive_brightness_p_per_channel"),
                 ),
             )
-            
+
         # TODO: do transform param
         tr_transforms.append(
             ContrastAugmentationTransform(

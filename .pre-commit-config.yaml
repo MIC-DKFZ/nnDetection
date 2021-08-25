@@ -11,6 +11,16 @@
 #     -   id: black
 
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: check-json
+    -   id: end-of-file-fixer
+        files: .*\.py
+    -   id: trailing-whitespace
+        files: .*\.py
+
   - repo: local
     hooks:
       - id: pytest-check
@@ -19,3 +29,4 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+        verbose: True

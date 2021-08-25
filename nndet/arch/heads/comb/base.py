@@ -27,7 +27,7 @@ class AnchorHead(BaseHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the 
+                `decode`: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
                 `encode`: uses the matched ground truth to encode the

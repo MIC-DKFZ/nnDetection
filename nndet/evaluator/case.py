@@ -70,7 +70,7 @@ class _CaseEvaluator(AbstractEvaluator):
             target_class: target class for case evaluation (internally
                 results are evaluated in a binary case target class vs rest).
                 If None, fall back to fg vs bg
-        
+
         Notes:
             The keys: "N_img", "N_count_{class name}" and
             "N_count_agg_{class name}" are used internally to save debugging
@@ -149,7 +149,7 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         # aggregate cases
         gt_classes = self.aggregate_classes()
-        pred_scores, pred_classes = self.aggregate_prdictions()        
+        pred_scores, pred_classes = self.aggregate_prdictions()
 
         # compute metrics
         curve_results = {}
@@ -178,7 +178,7 @@ class _CaseEvaluator(AbstractEvaluator):
             scalar_results["N_img"] = len(gt_classes)
         else:
             raise ValueError("`N_img` is used internally and is not allowed for case metric naming!")
-        
+
         class_count_no_agg = self.class_count()
         for _k, _i in class_count_no_agg.items():
             _kd = f"N_count_{_k}"
@@ -210,7 +210,7 @@ class _CaseEvaluator(AbstractEvaluator):
         count_dict[-1] = 0
         for cc in self.results_list["case_classes"]:
             unique_classes = list(set(cc))
-            
+
             if unique_classes:
                 for c in unique_classes:
                     count_dict[int(c)] += 1

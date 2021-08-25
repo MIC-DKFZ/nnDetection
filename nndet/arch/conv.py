@@ -21,7 +21,7 @@ import torch.nn as nn
 from typing import Union, Callable, Any, Optional, Tuple, Sequence, Type
 
 from nndet.arch.layers.norm import GroupNorm
-from nndet.arch.layers.activation import Swish 
+from nndet.arch.layers.activation import Swish
 
 try:
     from torch.nn import Mish

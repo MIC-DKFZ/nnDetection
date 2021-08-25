@@ -89,7 +89,7 @@ def experimental(func):
             func_name = func.__class__.__name__
         else:
             func_name = func.__qualname__
-        
+
         logger.warning(f"This feature ({func_name}) is experimental! "
                        "It might not implement all features or is only a simplification!")
         return func(*args, **kwargs)

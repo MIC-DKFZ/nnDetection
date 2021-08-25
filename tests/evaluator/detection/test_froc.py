@@ -39,7 +39,7 @@ class TestFROC:
     def test_compute(self, mocker: MockerFixture, metric, results_list):
         froc_mul_class_mock = mocker.Mock(return_value=({'froc_score_cls': 0}, {'froc_curve_cls': 1}))
         metric.compute_froc_mul_iou_per_class = froc_mul_class_mock
-        
+
         froc_mul_iou_mock = mocker.Mock(return_value=({'froc_score': 1}, {'froc_curve': 2}))
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
@@ -60,10 +60,10 @@ class TestFROC:
                               'dtScores': np.array([0]),
                               'gtIgnore': np.array([1]),}}] * 3
         froc_score, froc_curve = metric(results_list)
-        
+
         for key, item in froc_score.items():
             assert math.isclose(item, 0)
-        
+
         for key, item in froc_curve.items():
             assert np.isclose(item, 0).all()
 
@@ -77,7 +77,7 @@ class TestFROC:
                               'dtIgnore': np.array([[0]]),
                               'dtScores': np.array([0]),
                               'gtIgnore': np.array([0]),}}] * 3
-        
+
         froc_score, froc_curve = metric(results_list)
         assert {"FROC_score_IoU_0.10": 3.875/6} == froc_score
         assert np.isclose(froc_curve["FROC_curve_IoU_0.10"],
@@ -110,7 +110,7 @@ class TestFROC:
     def test_froc_plotting(self, metric):
         with TemporaryDirectory(dir=os.getcwd()) as _dir:
             vals = np.array([0., 1./4, 1./4, 1./2, 3./4, 1.])
-            
+
             frocs = {f"FROC_curve_IoU_{iou:.2f}": vals + iou / 10 for iou in range(0, 10)}
             frocs[f"mal_FROC_curve_IoU_{0.1:.2f}"] = [0., 1./4, 1./4, 1./2, 3./4, 1.]
             frocs[f"ben_FROC_curve_IoU_{0.1:.2f}"] = [0.1, 1./8, 1./2, 1./2, 3./4, 1.]
@@ -120,7 +120,7 @@ class TestFROC:
             frocs["FROC_num_images"] = 10
             frocs["mal_FROC_num_images"] = 10
             frocs["ben_FROC_num_images"] = 10
-            
+
             frocs["FROC_num_gt"] = 10
             frocs["mal_FROC_num_gt"] = 10
             frocs["ben_FROC_num_gt"] = 10
