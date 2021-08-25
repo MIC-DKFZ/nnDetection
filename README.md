@@ -429,19 +429,13 @@ The installation command could look like this:
 pip install -e .[dev] -v
 ```
 
-nnDetection follows the pep8 standard and uses `flake8` for automated code formatting.
-The following command can be run inside the nnDetection source directory to find problems with the formatting:
+Install pre-commit hooks to automatically run tests and formatting via:
 
 ```bash
-flake8
+pre-commit install
 ```
 
-The unittests can be run via the following command (also from the source directory):
-
-```bash
-pytest
-```
-
+inside the base directoty of nnDetection.
 
 # FAQ
 <details close>
