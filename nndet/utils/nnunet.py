@@ -35,15 +35,16 @@ class Exporter:
     Helper to export datasets to nnunet
     """
 
-    def __init__(self,
-                 data_info: dict,
-                 tr_image_dir: os.PathLike,
-                 label_dir: os.PathLike,
-                 target_dir: os.PathLike,
-                 ts_image_dir: os.PathLike = None,
-                 export_stuff: bool = False,
-                 processes: int = 6,
-                 ):
+    def __init__(
+        self,
+        data_info: dict,
+        tr_image_dir: os.PathLike,
+        label_dir: os.PathLike,
+        target_dir: os.PathLike,
+        ts_image_dir: os.PathLike = None,
+        export_stuff: bool = False,
+        processes: int = 6,
+    ):
         """
         Args:
             data_info: dataset information. See :method:`export_dataset_info`.
@@ -89,7 +90,9 @@ class Exporter:
         """
         Export labels
         """
-        case_ids = get_case_ids_from_dir(self.label_dir, remove_modality=False, pattern="*.json")
+        case_ids = get_case_ids_from_dir(
+            self.label_dir, remove_modality=False, pattern="*.json"
+        )
         label_target_dir = self.target_dir / self.label_dir.stem
         label_target_dir.mkdir(exist_ok=True, parents=True)
         num_classes = len(self.data_info.get("labels", {}))
@@ -105,10 +108,15 @@ class Exporter:
         else:
             logger.info(f"Using pool with {self.processes} processes to export labels")
             with Pool(processes=self.processes) as p:
-                p.starmap(self._export_label, zip(
-                    case_ids, repeat(num_classes), repeat(label_target_dir)))
-        assert len(get_case_ids_from_dir(
-            label_target_dir, remove_modality=False, pattern="*.nii.gz")) == len(case_ids)
+                p.starmap(
+                    self._export_label,
+                    zip(case_ids, repeat(num_classes), repeat(label_target_dir)),
+                )
+        assert len(
+            get_case_ids_from_dir(
+                label_target_dir, remove_modality=False, pattern="*.nii.gz"
+            )
+        ) == len(case_ids)
 
     def _export_label(self, cid: str, num_classes: int, target_dir: Path):
         logger.info(f"Processing {cid}")
@@ -120,16 +128,21 @@ class Exporter:
             logger.error(f"FOUND NAN IN {cid} LABEL")
 
         # instance classes start form 0 which is background in nnUNet
-        seg = instances_to_segmentation_np(instance_seg,
-                                           meta["instances"],
-                                           add_background=True,
-                                           )
+        seg = instances_to_segmentation_np(
+            instance_seg,
+            meta["instances"],
+            add_background=True,
+        )
         if num_classes > 0:
             assert seg.max() <= num_classes, "Wrong class id, something went wrong."
         if instance_seg.max() > 0:
             assert seg.max() > 0, "Instance got lost, something went wrong"
-        assert np.all((instance_seg > 0) == (seg > 0)), "Something wrong with foreground"
-        assert np.all((instance_seg == 0) == (seg == 0)), "Something wrong with background"
+        assert np.all(
+            (instance_seg > 0) == (seg > 0)
+        ), "Something wrong with foreground"
+        assert np.all(
+            (instance_seg == 0) == (seg == 0)
+        ), "Something wrong with background"
 
         if self.export_stuff:
             # map stuff classes to: max(labels) + stuff_cls
@@ -182,19 +195,23 @@ class Exporter:
             # copy stuff classes into nnuent dataset.json
             stuff_classes = {
                 str(int(key) + num_instance_classes): item
-                for key, item in stuff_classes.items() if int(key) > 0
+                for key, item in stuff_classes.items()
+                if int(key) > 0
             }
             dataset_info["labels_stuff"] = stuff_classes
             dataset_info["labels"].update(stuff_classes)
 
         _case_ids = get_case_ids_from_dir(self.label_dir, remove_modality=False)
         case_ids_tr = get_case_ids_from_dir(self.tr_image_dir, remove_modality=True)
-        assert len(set(_case_ids).union(case_ids_tr)) == len(_case_ids), "All training  images need a label"
+        assert len(set(_case_ids).union(case_ids_tr)) == len(
+            _case_ids
+        ), "All training  images need a label"
         dataset_info["numTraining"] = len(case_ids_tr)
 
         dataset_info["training"] = [
             {"image": f"./imagesTr/{cid}.nii.gz", "label": f"./labelsTr/{cid}.nii.gz"}
-            for cid in case_ids_tr]
+            for cid in case_ids_tr
+        ]
 
         if self.ts_image_dir is not None:
             case_ids_ts = get_case_ids_from_dir(self.ts_image_dir, remove_modality=True)

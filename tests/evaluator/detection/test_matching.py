@@ -11,9 +11,9 @@ from nndet.core.boxes import box_iou_np
 class TestMatching:
     def test_box_matching_batch(self, mocker: MockerFixture):
         box_match_single_mock = mocker.patch(
-            'nndet.evaluator.detection.matching._matching_single_image_single_class',
+            "nndet.evaluator.detection.matching._matching_single_image_single_class",
             return_value=0,
-            )
+        )
 
         iou_fn = mocker.Mock(return_value=None)
         iou_tresholds = [0.1, 0.5]
@@ -26,9 +26,16 @@ class TestMatching:
         gt_classes = np.array([[1, 2, 0, 0]])
         gt_ignore = np.array([[0, 1, 0, 0]])
 
-        res = matching_batch(iou_fn, iou_tresholds,
-                             pred_boxes, pred_classes, pred_scores,
-                             gt_boxes, gt_classes, gt_ignore)
+        res = matching_batch(
+            iou_fn,
+            iou_tresholds,
+            pred_boxes,
+            pred_classes,
+            pred_scores,
+            gt_boxes,
+            gt_classes,
+            gt_ignore,
+        )
 
         assert len(res) == 1
         assert {0: 0, 1: 0, 2: 0} == res[0]
@@ -58,12 +65,36 @@ class TestMatching:
     #     self.assertTrue(np.isclose(res['gtMatches'], [[1., 0., 1.]]).all())
 
     def test_integration_box_matching_batch(self):
-        _pd_boxes = [np.array([[0., 0., 10., 10.], [2., 2., 10., 10.], [20., 20., 30., 30.]])]
+        _pd_boxes = [
+            np.array(
+                [
+                    [0.0, 0.0, 10.0, 10.0],
+                    [2.0, 2.0, 10.0, 10.0],
+                    [20.0, 20.0, 30.0, 30.0],
+                ]
+            )
+        ]
         _pd_classes = [np.array([0, 1, 1])]
         _pd_scores = [np.array([0.9, 0.5, 0.6])]
-        _gt_boxes = [np.array([[0., 0., 10., 10.], [2., 2., 10., 10.], [20., 20., 30., 30.],
-                               [30., 30., 40., 40.]])]
+        _gt_boxes = [
+            np.array(
+                [
+                    [0.0, 0.0, 10.0, 10.0],
+                    [2.0, 2.0, 10.0, 10.0],
+                    [20.0, 20.0, 30.0, 30.0],
+                    [30.0, 30.0, 40.0, 40.0],
+                ]
+            )
+        ]
         _gt_classes = [np.array([1, 1, 1, 0])]
         _gt_ignore = [np.array([0, 0, 0, 0])]
-        matching_batch(box_iou_np, [0.1, 0.5, 0.75], _pd_boxes, _pd_classes, _pd_scores,
-                       _gt_boxes, _gt_classes, _gt_ignore)
+        matching_batch(
+            box_iou_np,
+            [0.1, 0.5, 0.75],
+            _pd_boxes,
+            _pd_classes,
+            _pd_scores,
+            _gt_boxes,
+            _gt_classes,
+            _gt_ignore,
+        )

@@ -14,10 +14,11 @@ from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 
 @PLANNER_REGISTRY.register
 class D3V001(AbstractPlanner):
-    def plan_experiment(self,
-                        model_name: str,
-                        model_cfg: Dict,
-                        ) -> List[str]:
+    def plan_experiment(
+        self,
+        model_name: str,
+        model_cfg: Dict,
+    ) -> List[str]:
         """
         Plan the whole experiment (currently only one stage is supported)
         (uses :func:`self.save_plans()` to save the results)
@@ -69,18 +70,21 @@ class D3V001(AbstractPlanner):
             identifiers.append(self.save_plan(plan=plan_3dlr1, mode=plan_3dlr1["mode"]))
         return identifiers
 
-    def create_architecture_planner(self,
-                                    model_name: str,
-                                    model_cfg: dict,
-                                    mode: str,
-                                    ) -> BoxC002:
+    def create_architecture_planner(
+        self,
+        model_name: str,
+        model_cfg: dict,
+        mode: str,
+    ) -> BoxC002:
         """
         Create Architecture planner
         """
         estimator = MemoryEstimatorDetection()
         architecture_planner = BoxC002(
             preprocessed_output_dir=self.preprocessed_output_dir,
-            save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
+            save_dir=self.preprocessed_output_dir
+            / "analysis"
+            / f"{self.__class__.__name__}_{mode}",
             estimator=estimator,
             network_cls=MODULE_REGISTRY.get(model_name),
             model_cfg=model_cfg,
@@ -93,11 +97,11 @@ class D3V001(AbstractPlanner):
         Create Preprocessor
         """
         preprocessor = GenericPreprocessor(
-            norm_scheme_per_modality=plan['normalization_schemes'],
-            use_mask_for_norm=plan['use_mask_for_norm'],
-            transpose_forward=plan['transpose_forward'],
-            intensity_properties=plan['dataset_properties']['intensity_properties'],
-            resample_anisotropy_threshold=plan['resample_anisotropy_threshold'],
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
         )
         return preprocessor
 
@@ -118,8 +122,10 @@ class D3V001(AbstractPlanner):
         remaining_axes = [i for i in list(range(dims)) if i != max_spacing_axis]
         # self.transpose_forward = remaining_axes + [max_spacing_axis] # y, x, z
         self.transpose_forward = [max_spacing_axis] + remaining_axes  # z, y, x
-        self.transpose_backward = [np.argwhere(np.array(
-            self.transpose_forward) == i)[0][0] for i in range(dims)]
+        self.transpose_backward = [
+            np.argwhere(np.array(self.transpose_forward) == i)[0][0]
+            for i in range(dims)
+        ]
 
     def determine_target_spacing(self, mode: str) -> np.ndarray:
         """
@@ -140,7 +146,7 @@ class D3V001(AbstractPlanner):
         else:
             if "lr" not in mode:
                 raise RuntimeError(f"Mode {mode} is not supported for target spacing.")
-            downscale = int(mode.split('lr')[-1])
+            downscale = int(mode.split("lr")[-1])
             target_spacing = base_target_spacing * (2 ** downscale)
         return target_spacing
 
@@ -151,8 +157,8 @@ class D3V001(AbstractPlanner):
         Same as nnUNet v21
         https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunet/experiment_planning/experiment_planner_baseline_3DUNet_v21.py
         """
-        spacings = self.data_properties['all_spacings']
-        sizes = self.data_properties['all_sizes']
+        spacings = self.data_properties["all_spacings"]
+        sizes = self.data_properties["all_sizes"]
 
         target = np.percentile(np.vstack(spacings), self.target_spacing_percentile, 0)
 
@@ -168,8 +174,12 @@ class D3V001(AbstractPlanner):
         other_spacings = [target[i] for i in other_axes]
         other_sizes = [target_size[i] for i in other_axes]
 
-        has_aniso_spacing = target[worst_spacing_axis] > (self.anisotropy_threshold * min(other_spacings))
-        has_aniso_voxels = target_size[worst_spacing_axis] * self.anisotropy_threshold < min(other_sizes)
+        has_aniso_spacing = target[worst_spacing_axis] > (
+            self.anisotropy_threshold * min(other_spacings)
+        )
+        has_aniso_voxels = target_size[
+            worst_spacing_axis
+        ] * self.anisotropy_threshold < min(other_sizes)
         # we don't use the last one for now
         # median_size_in_mm = target[target_size_mm] * RESAMPLING_SEPARATE_Z_ANISOTROPY_THRESHOLD < max(target_size_mm)
 
@@ -178,7 +188,9 @@ class D3V001(AbstractPlanner):
             target_spacing_of_that_axis = np.percentile(spacings_of_that_axis, 10)
             # don't let the spacing of that axis get higher than the other axes
             if target_spacing_of_that_axis < min(other_spacings):
-                target_spacing_of_that_axis = max(min(other_spacings), target_spacing_of_that_axis) + 1e-5
+                target_spacing_of_that_axis = (
+                    max(min(other_spacings), target_spacing_of_that_axis) + 1e-5
+                )
             target[worst_spacing_axis] = target_spacing_of_that_axis
         return target
 
@@ -197,8 +209,12 @@ class D3V001(AbstractPlanner):
             bool: If True, trigger a low resolution model. If False, current
                 resolution is ok.
         """
-        all_boxes = [case["boxes"] for case_id, case in
-                     self.data_properties["instance_props_per_patient"].items()]
+        all_boxes = [
+            case["boxes"]
+            for case_id, case in self.data_properties[
+                "instance_props_per_patient"
+            ].items()
+        ]
         all_boxes = concatenate_property_boxes(all_boxes)
         object_size = np.percentile(box_size_np(all_boxes), 99.5, axis=0)
         object_size = object_size[list(transpose_forward)]

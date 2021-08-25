@@ -15,8 +15,13 @@ class Example:
     properties = {
         "transpose_backward": (0, 1),
         "original_spacing": (1.0, 1.0),
-        "spacing_after_resampling": (1., 1.),
-        "crop_bbox": (0, 10, 0, 10,),
+        "spacing_after_resampling": (1.0, 1.0),
+        "crop_bbox": (
+            0,
+            10,
+            0,
+            10,
+        ),
         "size_after_cropping": [100, 100],
         "original_size_of_raw_data": [100, 100],
         "itk_origin": 0,
@@ -44,8 +49,12 @@ class TestSegmentationEnsembler:
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
-        assert all([a == b for a, b in zip(ensembler.properties["shape"], expected_shape)])
-        assert all([a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))])
+        assert all(
+            [a == b for a, b in zip(ensembler.properties["shape"], expected_shape)]
+        )
+        assert all(
+            [a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))]
+        )
         assert (ensembler.parameters["model_iou"], 0.5)
         assert (ensembler.parameters["ensemble_topk"], 10)
 
@@ -55,7 +64,7 @@ class TestSegmentationEnsembler:
             properties=example.properties,
             parameters={},
         )
-        ensembler.add_model(model_weight=1.)
+        ensembler.add_model(model_weight=1.0)
         ensembler.process_batch(example.result0, example.batch0)
         ensembler.process_batch(example.result1, example.batch1)
 

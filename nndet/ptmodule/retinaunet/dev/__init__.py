@@ -15,9 +15,7 @@ from nndet.ptmodule.retinaunet.dev.c010 import (
     RetinaUNetC010TopK10FGBG,
     RetinaUNetC010TopK10FGBGMad,
 )
-from nndet.ptmodule.retinaunet.dev.c001_rccn import (
-    DummyRCNN
-)
+from nndet.ptmodule.retinaunet.dev.c001_rccn import DummyRCNN
 from nndet.ptmodule.retinaunet.dev.c010_two import (
     RetinaUNetC010Two,
     RetinaUNetC010TwoATSS,

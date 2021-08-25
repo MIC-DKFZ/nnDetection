@@ -21,11 +21,19 @@ import torch.nn as nn
 
 import nndet.arch.layers.norm as an
 
-NORM_TYPES = [nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d,
-              nn.InstanceNorm1d, nn.InstanceNorm2d, nn.InstanceNorm3d,
-              nn.LayerNorm, nn.GroupNorm, nn.SyncBatchNorm, nn.LocalResponseNorm,
-              an.GroupNorm,
-              ]
+NORM_TYPES = [
+    nn.BatchNorm1d,
+    nn.BatchNorm2d,
+    nn.BatchNorm3d,
+    nn.InstanceNorm1d,
+    nn.InstanceNorm2d,
+    nn.InstanceNorm3d,
+    nn.LayerNorm,
+    nn.GroupNorm,
+    nn.SyncBatchNorm,
+    nn.LocalResponseNorm,
+    an.GroupNorm,
+]
 
 
 def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float):
@@ -45,14 +53,22 @@ def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float):
     identify_parameters(model, {"no_wd": NORM_TYPES})
 
     return [
-        {'params': filter(lambda p: not hasattr(p, "no_wd"), model.parameters()), 'weight_decay': weight_decay},
-        {'params': filter(lambda p: hasattr(p, "no_wd"), model.parameters()), 'weight_decay': 0.},
+        {
+            "params": filter(lambda p: not hasattr(p, "no_wd"), model.parameters()),
+            "weight_decay": weight_decay,
+        },
+        {
+            "params": filter(lambda p: hasattr(p, "no_wd"), model.parameters()),
+            "weight_decay": 0.0,
+        },
     ]
 
 
-def identify_parameters(model: torch.nn.Module,
-                        type_mapping: Dict[str, Sequence],
-                        check_param_exist: bool = True):
+def identify_parameters(
+    model: torch.nn.Module,
+    type_mapping: Dict[str, Sequence],
+    check_param_exist: bool = True,
+):
     """
     Add attribute to searched module types (can be used to filter for specific modules in parameter list)
 
@@ -72,9 +88,13 @@ def identify_parameters(model: torch.nn.Module,
                     setattr(param, _name, True)
 
 
-def change_output_layer(model: torch.nn.Module, layer_name: str = "fc",
-                        output_channels: int = 2, layer_type=torch.nn.Linear,
-                        **kwargs) -> None:
+def change_output_layer(
+    model: torch.nn.Module,
+    layer_name: str = "fc",
+    output_channels: int = 2,
+    layer_type=torch.nn.Linear,
+    **kwargs,
+) -> None:
     """
     Change layer of module
 
@@ -91,8 +111,7 @@ def change_output_layer(model: torch.nn.Module, layer_name: str = "fc",
     old_layer = getattr(model, layer_name)
     input_channels = old_layer.in_features
 
-    setattr(model, layer_name,
-            layer_type(input_channels, output_channels, **kwargs))
+    setattr(model, layer_name, layer_type(input_channels, output_channels, **kwargs))
 
 
 def freeze_layers(model: torch.nn.Module) -> None:

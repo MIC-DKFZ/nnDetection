@@ -44,7 +44,7 @@ with SuppressPrint():
         Convert3DTo2DTransform,
         Convert2DTo3DTransform,
         MaskTransform,
-        )
+    )
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 
@@ -76,13 +76,15 @@ class NoAug(AugmentationSetup):
         Compute patch size to extract from volume to avoid augmentation
         artifacts
         """
-        _patch_size = list(get_patch_size(
-            patch_size=self._spatial_transform_patch_size,
-            rot_x=self.params['rotation_x'],
-            rot_y=self.params['rotation_y'],
-            rot_z=self.params['rotation_z'],
-            scale_range=self.params['scale_range'],
-        ))
+        _patch_size = list(
+            get_patch_size(
+                patch_size=self._spatial_transform_patch_size,
+                rot_x=self.params["rotation_x"],
+                rot_y=self.params["rotation_y"],
+                rot_z=self.params["rotation_z"],
+                scale_range=self.params["scale_range"],
+            )
+        )
         if self.dummy_2d:
             _patch_size = [self.patch_size[0]] + _patch_size
         return _patch_size
@@ -90,88 +92,99 @@ class NoAug(AugmentationSetup):
     def get_training_transforms(self):
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
         tr_transforms.append(CenterCropTransform(self.patch_size))
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         return ComposePretty(tr_transforms)
 
     def get_validation_transforms(self):
         val_transforms = []
         if self.params.get("selected_data_channels"):
-            val_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            val_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            val_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            val_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
         val_transforms.append(CenterCropTransform(self.patch_size))
         val_transforms.append(RemoveLabelTransform(-1, 0))
-        val_transforms.append(RenameTransform('seg', 'target', True))
-        val_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        val_transforms.append(RenameTransform("seg", "target", True))
+        val_transforms.append(NumpyToTensor(["data", "target"], "float"))
         return ComposePretty(val_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
 class DefaultAug(NoAug):
     def get_training_transforms(self):
-        assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
+        assert (
+            self.params.get("mirror") is None
+        ), "old version of params, use new keyword do_mirror"
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
 
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
 
         if self.params.get("dummy_2D", False):
             # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
             tr_transforms.append(Convert3DTo2DTransform())
 
-        tr_transforms.append(SpatialTransform(
-            self._spatial_transform_patch_size,
-            patch_center_dist_from_border=None,
-
-            do_elastic_deform=self.params.get("do_elastic"),
-            alpha=self.params.get("elastic_deform_alpha"),
-            sigma=self.params.get("elastic_deform_sigma"),
-
-            do_rotation=self.params.get("do_rotation"),
-            angle_x=self.params.get("rotation_x"),
-            angle_y=self.params.get("rotation_y"),
-            angle_z=self.params.get("rotation_z"),
-
-            do_scale=self.params.get("do_scaling"),
-            scale=self.params.get("scale_range"),
-
-            order_data=self.params.get("order_data"),
-            border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
-            order_seg=self.params.get("order_seg"),
-            border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
-            random_crop=self.params.get("random_crop"),
-
-            p_el_per_sample=self.params.get("p_eldef"),
-            p_scale_per_sample=self.params.get("p_scale"),
-            p_rot_per_sample=self.params.get("p_rot"),
-            independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
-        ))
+        tr_transforms.append(
+            SpatialTransform(
+                self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get(
+                    "independent_scale_factor_for_each_axis"
+                ),
+            )
+        )
 
         if self.params.get("dummy_2D", False):
             tr_transforms.append(Convert2DTo3DTransform())
 
         if self.params.get("do_gamma", False):
             tr_transforms.append(
-                GammaTransform(self.params.get("gamma_range"), False, True,
-                               retain_stats=self.params.get("gamma_retain_stats"),
-                               p_per_sample=self.params["p_gamma"])
+                GammaTransform(
+                    self.params.get("gamma_range"),
+                    False,
+                    True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma"],
+                )
             )
 
         if self.params.get("do_mirror", False):
@@ -179,11 +192,13 @@ class DefaultAug(NoAug):
 
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
+            tr_transforms.append(
+                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+            )
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         return ComposePretty(tr_transforms)
 
 
@@ -204,15 +219,19 @@ class BaseMoreAug(NoAug):
         MirrorTransform
         UtilTransforms
         """
-        assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
+        assert (
+            self.params.get("mirror") is None
+        ), "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -222,35 +241,34 @@ class BaseMoreAug(NoAug):
             pass
             # ignore_axes = None
 
-        tr_transforms.append(SpatialTransform(
-            self._spatial_transform_patch_size,
-            patch_center_dist_from_border=None,
-
-            do_elastic_deform=self.params.get("do_elastic"),
-            alpha=self.params.get("elastic_deform_alpha"),
-            sigma=self.params.get("elastic_deform_sigma"),
-
-            do_rotation=self.params.get("do_rotation"),
-            angle_x=self.params.get("rotation_x"),
-            angle_y=self.params.get("rotation_y"),
-            angle_z=self.params.get("rotation_z"),
-
-            do_scale=self.params.get("do_scaling"),
-            scale=self.params.get("scale_range"),
-
-            order_data=self.params.get("order_data"),
-            border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
-            order_seg=self.params.get("order_seg"),
-            border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
-            random_crop=self.params.get("random_crop"),
-
-            p_el_per_sample=self.params.get("p_eldef"),
-            p_scale_per_sample=self.params.get("p_scale"),
-            p_rot_per_sample=self.params.get("p_rot"),
-            independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
-        ))
+        tr_transforms.append(
+            SpatialTransform(
+                self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get(
+                    "independent_scale_factor_for_each_axis"
+                ),
+            )
+        )
 
         if self.params.get("dummy_2D"):
             tr_transforms.append(Convert2DTo3DTransform())
@@ -258,41 +276,62 @@ class BaseMoreAug(NoAug):
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
-        tr_transforms.append(GaussianBlurTransform((0.5, 1.),
-                                                   different_sigma_per_channel=True,
-                                                   p_per_sample=0.2,
-                                                   p_per_channel=0.5))
-        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25),
-                                                               p_per_sample=0.15))
+        tr_transforms.append(
+            GaussianBlurTransform(
+                (0.5, 1.0),
+                different_sigma_per_channel=True,
+                p_per_sample=0.2,
+                p_per_channel=0.5,
+            )
+        )
+        tr_transforms.append(
+            BrightnessMultiplicativeTransform(
+                multiplier_range=(0.75, 1.25), p_per_sample=0.15
+            )
+        )
         if self.params.get("do_additive_brightness"):
-            tr_transforms.append(BrightnessTransform(
-                self.params.get("additive_brightness_mu"),
-                self.params.get("additive_brightness_sigma"),
-                True,
-                p_per_sample=self.params.get("additive_brightness_p_per_sample"),
-                p_per_channel=self.params.get("additive_brightness_p_per_channel")))
+            tr_transforms.append(
+                BrightnessTransform(
+                    self.params.get("additive_brightness_mu"),
+                    self.params.get("additive_brightness_sigma"),
+                    True,
+                    p_per_sample=self.params.get("additive_brightness_p_per_sample"),
+                    p_per_channel=self.params.get("additive_brightness_p_per_channel"),
+                )
+            )
         tr_transforms.append(ContrastAugmentationTransform(p_per_sample=0.15))
 
-        tr_transforms.append(GammaTransform(
-            self.params.get("gamma_range"), True, True, retain_stats=self.params.get("gamma_retain_stats"),
-            p_per_sample=0.1))  # inverted gamma
-
-        if self.params.get("do_gamma"):
-            tr_transforms.append(GammaTransform(
+        tr_transforms.append(
+            GammaTransform(
                 self.params.get("gamma_range"),
-                False,
+                True,
                 True,
                 retain_stats=self.params.get("gamma_retain_stats"),
-                p_per_sample=self.params["p_gamma"]))
+                p_per_sample=0.1,
+            )
+        )  # inverted gamma
+
+        if self.params.get("do_gamma"):
+            tr_transforms.append(
+                GammaTransform(
+                    self.params.get("gamma_range"),
+                    False,
+                    True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma"],
+                )
+            )
         if self.params.get("do_mirror") or self.params.get("mirror"):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
+            tr_transforms.append(
+                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+            )
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         transforms = ComposePretty(tr_transforms)
         logger.info(f"Training Transforms: \n{transforms}")
         return transforms
@@ -301,16 +340,20 @@ class BaseMoreAug(NoAug):
 @AUGMENTATION_REGISTRY.register
 class MoreAug(NoAug):
     def get_training_transforms(self):
-        assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
+        assert (
+            self.params.get("mirror") is None
+        ), "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -319,35 +362,34 @@ class MoreAug(NoAug):
         else:
             ignore_axes = None
 
-        tr_transforms.append(SpatialTransform(
-            self._spatial_transform_patch_size,
-            patch_center_dist_from_border=None,
-
-            do_elastic_deform=self.params.get("do_elastic"),
-            alpha=self.params.get("elastic_deform_alpha"),
-            sigma=self.params.get("elastic_deform_sigma"),
-
-            do_rotation=self.params.get("do_rotation"),
-            angle_x=self.params.get("rotation_x"),
-            angle_y=self.params.get("rotation_y"),
-            angle_z=self.params.get("rotation_z"),
-
-            do_scale=self.params.get("do_scaling"),
-            scale=self.params.get("scale_range"),
-
-            order_data=self.params.get("order_data"),
-            border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
-            order_seg=self.params.get("order_seg"),
-            border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
-            random_crop=self.params.get("random_crop"),
-
-            p_el_per_sample=self.params.get("p_eldef"),
-            p_scale_per_sample=self.params.get("p_scale"),
-            p_rot_per_sample=self.params.get("p_rot"),
-            independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
-        ))
+        tr_transforms.append(
+            SpatialTransform(
+                self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get(
+                    "independent_scale_factor_for_each_axis"
+                ),
+            )
+        )
 
         if self.params.get("dummy_2D"):
             tr_transforms.append(Convert2DTo3DTransform())
@@ -355,69 +397,92 @@ class MoreAug(NoAug):
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
-        tr_transforms.append(GaussianBlurTransform((0.5, 1.),
-                                                   different_sigma_per_channel=True,
-                                                   p_per_sample=0.2,
-                                                   p_per_channel=0.5))
-        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25),
-                                                               p_per_sample=0.15))
+        tr_transforms.append(
+            GaussianBlurTransform(
+                (0.5, 1.0),
+                different_sigma_per_channel=True,
+                p_per_sample=0.2,
+                p_per_channel=0.5,
+            )
+        )
+        tr_transforms.append(
+            BrightnessMultiplicativeTransform(
+                multiplier_range=(0.75, 1.25), p_per_sample=0.15
+            )
+        )
         if self.params.get("do_additive_brightness"):
-            tr_transforms.append(BrightnessTransform(
-                self.params.get("additive_brightness_mu"),
-                self.params.get("additive_brightness_sigma"),
-                True,
-                p_per_sample=self.params.get("additive_brightness_p_per_sample"),
-                p_per_channel=self.params.get("additive_brightness_p_per_channel")))
+            tr_transforms.append(
+                BrightnessTransform(
+                    self.params.get("additive_brightness_mu"),
+                    self.params.get("additive_brightness_sigma"),
+                    True,
+                    p_per_sample=self.params.get("additive_brightness_p_per_sample"),
+                    p_per_channel=self.params.get("additive_brightness_p_per_channel"),
+                )
+            )
         tr_transforms.append(ContrastAugmentationTransform(p_per_sample=0.15))
-        tr_transforms.append(SimulateLowResolutionTransform(zoom_range=(0.5, 1),
-                                                            per_channel=True,
-                                                            p_per_channel=0.5,
-                                                            order_downsample=0,
-                                                            order_upsample=3,
-                                                            p_per_sample=0.25,
-                                                            ignore_axes=ignore_axes,
-                                                            ))
-        tr_transforms.append(GammaTransform(
-            self.params.get("gamma_range"),
-            True,
-            True,
-            retain_stats=self.params.get("gamma_retain_stats"),
-            p_per_sample=0.1))  # inverted gamma
-
-        if self.params.get("do_gamma"):
-            tr_transforms.append(GammaTransform(
+        tr_transforms.append(
+            SimulateLowResolutionTransform(
+                zoom_range=(0.5, 1),
+                per_channel=True,
+                p_per_channel=0.5,
+                order_downsample=0,
+                order_upsample=3,
+                p_per_sample=0.25,
+                ignore_axes=ignore_axes,
+            )
+        )
+        tr_transforms.append(
+            GammaTransform(
                 self.params.get("gamma_range"),
-                False,
+                True,
                 True,
                 retain_stats=self.params.get("gamma_retain_stats"),
-                p_per_sample=self.params["p_gamma"]))
+                p_per_sample=0.1,
+            )
+        )  # inverted gamma
+
+        if self.params.get("do_gamma"):
+            tr_transforms.append(
+                GammaTransform(
+                    self.params.get("gamma_range"),
+                    False,
+                    True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma"],
+                )
+            )
         if self.params.get("do_mirror") or self.params.get("mirror"):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(MaskTransform(use_mask_for_norm,
-                                               mask_idx_in_seg=0,
-                                               set_outside_to=0))
+            tr_transforms.append(
+                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+            )
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         return ComposePretty(tr_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
 class InsaneAug(NoAug):
     def get_training_transforms(self):
-        assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
+        assert (
+            self.params.get("mirror") is None
+        ), "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -426,35 +491,34 @@ class InsaneAug(NoAug):
         else:
             ignore_axes = None
 
-        tr_transforms.append(SpatialTransform(
-            self._spatial_transform_patch_size,
-            patch_center_dist_from_border=None,
-
-            do_elastic_deform=self.params.get("do_elastic"),
-            alpha=self.params.get("elastic_deform_alpha"),
-            sigma=self.params.get("elastic_deform_sigma"),
-
-            do_rotation=self.params.get("do_rotation"),
-            angle_x=self.params.get("rotation_x"),
-            angle_y=self.params.get("rotation_y"),
-            angle_z=self.params.get("rotation_z"),
-
-            do_scale=self.params.get("do_scaling"),
-            scale=self.params.get("scale_range"),
-
-            order_data=self.params.get("order_data"),
-            border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
-            order_seg=self.params.get("order_seg"),
-            border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
-            random_crop=self.params.get("random_crop"),
-
-            p_el_per_sample=self.params.get("p_eldef"),
-            p_scale_per_sample=self.params.get("p_scale"),
-            p_rot_per_sample=self.params.get("p_rot"),
-            independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
-        ))
+        tr_transforms.append(
+            SpatialTransform(
+                self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get(
+                    "independent_scale_factor_for_each_axis"
+                ),
+            )
+        )
 
         if self.params.get("dummy_2D"):
             tr_transforms.append(Convert2DTo3DTransform())
@@ -462,55 +526,74 @@ class InsaneAug(NoAug):
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
         tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.15))
-        tr_transforms.append(GaussianBlurTransform((0.5, 1.5),
-                                                   different_sigma_per_channel=True,
-                                                   p_per_sample=0.2,
-                                                   p_per_channel=0.5),
-                             )
-        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.3),
-                                                               p_per_sample=0.15))
+        tr_transforms.append(
+            GaussianBlurTransform(
+                (0.5, 1.5),
+                different_sigma_per_channel=True,
+                p_per_sample=0.2,
+                p_per_channel=0.5,
+            ),
+        )
+        tr_transforms.append(
+            BrightnessMultiplicativeTransform(
+                multiplier_range=(0.75, 1.3), p_per_sample=0.15
+            )
+        )
         if self.params.get("do_additive_brightness"):
-            tr_transforms.append(BrightnessTransform(
-                self.params.get("additive_brightness_mu"),
-                self.params.get("additive_brightness_sigma"),
-                True,
-                p_per_sample=self.params.get("additive_brightness_p_per_sample"),
-                p_per_channel=self.params.get("additive_brightness_p_per_channel")))
-        tr_transforms.append(ContrastAugmentationTransform(contrast_range=(0.65, 1.5),
-                                                           p_per_sample=0.15))
-        tr_transforms.append(SimulateLowResolutionTransform(zoom_range=(0.5, 1),
-                                                            per_channel=True,
-                                                            p_per_channel=0.5,
-                                                            order_downsample=0,
-                                                            order_upsample=3,
-                                                            p_per_sample=0.25,
-                                                            ignore_axes=ignore_axes),
-                             )
-        tr_transforms.append(GammaTransform(
-            self.params.get("gamma_range"),
-            True,
-            True,
-            retain_stats=self.params.get("gamma_retain_stats"),
-            p_per_sample=0.15))  # inverted gamma
-
-        if self.params.get("do_gamma"):
-            tr_transforms.append(GammaTransform(
+            tr_transforms.append(
+                BrightnessTransform(
+                    self.params.get("additive_brightness_mu"),
+                    self.params.get("additive_brightness_sigma"),
+                    True,
+                    p_per_sample=self.params.get("additive_brightness_p_per_sample"),
+                    p_per_channel=self.params.get("additive_brightness_p_per_channel"),
+                )
+            )
+        tr_transforms.append(
+            ContrastAugmentationTransform(contrast_range=(0.65, 1.5), p_per_sample=0.15)
+        )
+        tr_transforms.append(
+            SimulateLowResolutionTransform(
+                zoom_range=(0.5, 1),
+                per_channel=True,
+                p_per_channel=0.5,
+                order_downsample=0,
+                order_upsample=3,
+                p_per_sample=0.25,
+                ignore_axes=ignore_axes,
+            ),
+        )
+        tr_transforms.append(
+            GammaTransform(
                 self.params.get("gamma_range"),
-                False,
+                True,
                 True,
                 retain_stats=self.params.get("gamma_retain_stats"),
-                p_per_sample=self.params["p_gamma"]))
+                p_per_sample=0.15,
+            )
+        )  # inverted gamma
+
+        if self.params.get("do_gamma"):
+            tr_transforms.append(
+                GammaTransform(
+                    self.params.get("gamma_range"),
+                    False,
+                    True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma"],
+                )
+            )
         if self.params.get("do_mirror") or self.params.get("mirror"):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(MaskTransform(use_mask_for_norm,
-                                               mask_idx_in_seg=0,
-                                               set_outside_to=0))
+            tr_transforms.append(
+                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+            )
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         return ComposePretty(tr_transforms)
 
 
@@ -531,15 +614,19 @@ class BaseInsaneAug(NoAug):
         [optional] MirrorTransform
         UtilTransforms
         """
-        assert self.params.get('mirror') is None, "old version of params, use new keyword do_mirror"
+        assert (
+            self.params.get("mirror") is None
+        ), "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(DataChannelSelectionTransform(
-                self.params.get("selected_data_channels")))
+            tr_transforms.append(
+                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
+            )
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(SegChannelSelectionTransform(
-                self.params.get("selected_seg_channels")))
+            tr_transforms.append(
+                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
+            )
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -548,35 +635,34 @@ class BaseInsaneAug(NoAug):
         else:
             ignore_axes = None
 
-        tr_transforms.append(SpatialTransform(
-            self._spatial_transform_patch_size,
-            patch_center_dist_from_border=None,
-
-            do_elastic_deform=self.params.get("do_elastic"),
-            alpha=self.params.get("elastic_deform_alpha"),
-            sigma=self.params.get("elastic_deform_sigma"),
-
-            do_rotation=self.params.get("do_rotation"),
-            angle_x=self.params.get("rotation_x"),
-            angle_y=self.params.get("rotation_y"),
-            angle_z=self.params.get("rotation_z"),
-
-            do_scale=self.params.get("do_scaling"),
-            scale=self.params.get("scale_range"),
-
-            order_data=self.params.get("order_data"),
-            border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
-            order_seg=self.params.get("order_seg"),
-            border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
-            random_crop=self.params.get("random_crop"),
-
-            p_el_per_sample=self.params.get("p_eldef"),
-            p_scale_per_sample=self.params.get("p_scale"),
-            p_rot_per_sample=self.params.get("p_rot"),
-            independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
-        ))
+        tr_transforms.append(
+            SpatialTransform(
+                self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get(
+                    "independent_scale_factor_for_each_axis"
+                ),
+            )
+        )
 
         if self.params.get("dummy_2D"):
             tr_transforms.append(Convert2DTo3DTransform())
@@ -595,7 +681,9 @@ class BaseInsaneAug(NoAug):
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
-                different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
+                different_sigma_per_channel=self.params.get(
+                    "gaussian_blur_sigma_per_channel"
+                ),
                 p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
             ),
@@ -606,7 +694,7 @@ class BaseInsaneAug(NoAug):
             BrightnessMultiplicativeTransform(
                 p_per_sample=self.params.get("p_per_sample_brightness_mul"),
                 multiplier_range=self.params.get("brightness_mul_multiplier_range"),
-            ), # TODO: make per_channel a config key
+            ),  # TODO: make per_channel a config key
         )
 
         if self.params.get("do_additive_brightness"):
@@ -646,7 +734,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=True,
-                    per_channel=True, # TODO: make per_channel a config key
+                    per_channel=True,  # TODO: make per_channel a config key
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma_inverted"],
                 ),
@@ -657,7 +745,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=False,
-                    per_channel=True, # TODO: make per_channel a config key
+                    per_channel=True,  # TODO: make per_channel a config key
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma"],
                 ),
@@ -667,11 +755,13 @@ class BaseInsaneAug(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
+            tr_transforms.append(
+                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+            )
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
+        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         transforms = ComposePretty(tr_transforms)
         logger.info(f"Training Transforms: \n{transforms}")
         return transforms

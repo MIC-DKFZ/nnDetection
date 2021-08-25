@@ -55,13 +55,15 @@ from nndet.evaluator import DetectionMetric
 
 
 class COCOMetric(DetectionMetric):
-    def __init__(self,
-                 classes: Sequence[str],
-                 iou_list: Sequence[float] = (0.1, 0.5, 0.75),
-                 iou_range: Sequence[float] = (0.1, 0.5, 0.05),
-                 max_detection: Sequence[int] = (1, 5, 100),
-                 per_class: bool = True,
-                 verbose: bool = True):
+    def __init__(
+        self,
+        classes: Sequence[str],
+        iou_list: Sequence[float] = (0.1, 0.5, 0.75),
+        iou_range: Sequence[float] = (0.1, 0.5, 0.05),
+        max_detection: Sequence[int] = (1, 5, 100),
+        per_class: bool = True,
+        verbose: bool = True,
+    ):
         """
         Class to compute COCO metrics
         Metrics computed:
@@ -81,19 +83,29 @@ class COCOMetric(DetectionMetric):
         self.per_class = per_class
 
         iou_list = np.array(iou_list)
-        _iou_range = np.linspace(iou_range[0], iou_range[1],
-                                 int(np.round((iou_range[1] - iou_range[0]) / iou_range[2])) + 1, endpoint=True)
+        _iou_range = np.linspace(
+            iou_range[0],
+            iou_range[1],
+            int(np.round((iou_range[1] - iou_range[0]) / iou_range[2])) + 1,
+            endpoint=True,
+        )
         self.iou_thresholds = np.union1d(iou_list, _iou_range)
         self.iou_range = iou_range
 
         # get indices of iou values of ious range and ious list for later evaluation
-        self.iou_list_idx = np.nonzero(iou_list[:, np.newaxis] == self.iou_thresholds[np.newaxis])[1]
-        self.iou_range_idx = np.nonzero(_iou_range[:, np.newaxis] == self.iou_thresholds[np.newaxis])[1]
+        self.iou_list_idx = np.nonzero(
+            iou_list[:, np.newaxis] == self.iou_thresholds[np.newaxis]
+        )[1]
+        self.iou_range_idx = np.nonzero(
+            _iou_range[:, np.newaxis] == self.iou_thresholds[np.newaxis]
+        )[1]
 
         assert (self.iou_thresholds[self.iou_list_idx] == iou_list).all()
         assert (self.iou_thresholds[self.iou_range_idx] == _iou_range).all()
 
-        self.recall_thresholds = np.linspace(.0, 1.00, int(np.round((1.00 - .0) / .01)) + 1, endpoint=True)
+        self.recall_thresholds = np.linspace(
+            0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
+        )
         self.max_detections = max_detection
 
     def get_iou_thresholds(self) -> Sequence[float]:
@@ -105,9 +117,10 @@ class COCOMetric(DetectionMetric):
         """
         return self.iou_thresholds
 
-    def compute(self,
-                results_list: List[Dict[int, Dict[str, np.ndarray]]],
-                ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def compute(
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute COCO metrics
 
@@ -127,13 +140,15 @@ class COCOMetric(DetectionMetric):
             Dict[str, np.ndarray]: None
         """
         if self.verbose:
-            logger.info('Start COCO metric computation...')
+            logger.info("Start COCO metric computation...")
             tic = time.time()
 
         dataset_statistics = self.compute_statistics(results_list=results_list)
         if self.verbose:
             toc = time.time()
-            logger.info(f'Statistics for COCO metrics finished (t={(toc - tic):0.2f}s).')
+            logger.info(
+                f"Statistics for COCO metrics finished (t={(toc - tic):0.2f}s)."
+            )
 
         results = {}
         results.update(self.compute_ap(dataset_statistics))
@@ -141,7 +156,7 @@ class COCOMetric(DetectionMetric):
 
         if self.verbose:
             toc = time.time()
-            logger.info(f'COCO metrics computed in t={(toc - tic):0.2f}s.')
+            logger.info(f"COCO metrics computed in t={(toc - tic):0.2f}s.")
         return results, None
 
     def compute_ap(self, dataset_statistics: dict) -> dict:
@@ -161,29 +176,47 @@ class COCOMetric(DetectionMetric):
         """
         results = {}
         if self.iou_range:  # mAP
-            key = (f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                   f"MaxDet_{self.max_detections[-1]}")
-            results[key] = self.select_ap(dataset_statistics, iou_idx=self.iou_range_idx, max_det_idx=-1)
+            key = (
+                f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                f"MaxDet_{self.max_detections[-1]}"
+            )
+            results[key] = self.select_ap(
+                dataset_statistics, iou_idx=self.iou_range_idx, max_det_idx=-1
+            )
 
             if self.per_class:
                 for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                           f"MaxDet_{self.max_detections[-1]}")
-                    results[key] = self.select_ap(dataset_statistics, iou_idx=self.iou_range_idx,
-                                                  cls_idx=cls_idx, max_det_idx=-1)
+                    key = (
+                        f"{cls_str}_"
+                        f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                        f"MaxDet_{self.max_detections[-1]}"
+                    )
+                    results[key] = self.select_ap(
+                        dataset_statistics,
+                        iou_idx=self.iou_range_idx,
+                        cls_idx=cls_idx,
+                        max_det_idx=-1,
+                    )
 
-        for idx in self.iou_list_idx:   # AP@IoU
+        for idx in self.iou_list_idx:  # AP@IoU
             key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
-            results[key] = self.select_ap(dataset_statistics, iou_idx=[idx], max_det_idx=-1)
+            results[key] = self.select_ap(
+                dataset_statistics, iou_idx=[idx], max_det_idx=-1
+            )
 
             if self.per_class:
                 for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"AP_IoU_{self.iou_thresholds[idx]:.2f}_"
-                           f"MaxDet_{self.max_detections[-1]}")
-                    results[key] = self.select_ap(dataset_statistics,
-                                                  iou_idx=[idx], cls_idx=cls_idx, max_det_idx=-1)
+                    key = (
+                        f"{cls_str}_"
+                        f"AP_IoU_{self.iou_thresholds[idx]:.2f}_"
+                        f"MaxDet_{self.max_detections[-1]}"
+                    )
+                    results[key] = self.select_ap(
+                        dataset_statistics,
+                        iou_idx=[idx],
+                        cls_idx=cls_idx,
+                        max_det_idx=-1,
+                    )
         return results
 
     def compute_ar(self, dataset_statistics: dict) -> dict:
@@ -208,28 +241,40 @@ class COCOMetric(DetectionMetric):
 
             if self.per_class:
                 for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                           f"MaxDet_{max_det}")
-                    results[key] = self.select_ar(dataset_statistics,
-                                                  cls_idx=cls_idx, max_det_idx=max_det_idx)
+                    key = (
+                        f"{cls_str}_"
+                        f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                        f"MaxDet_{max_det}"
+                    )
+                    results[key] = self.select_ar(
+                        dataset_statistics, cls_idx=cls_idx, max_det_idx=max_det_idx
+                    )
 
-        for idx in self.iou_list_idx:   # AR@IoU
+        for idx in self.iou_list_idx:  # AR@IoU
             key = f"AR_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
-            results[key] = self.select_ar(dataset_statistics, iou_idx=idx, max_det_idx=-1)
+            results[key] = self.select_ar(
+                dataset_statistics, iou_idx=idx, max_det_idx=-1
+            )
 
             if self.per_class:
                 for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"AR_IoU_{self.iou_thresholds[idx]:.2f}_"
-                           f"MaxDet_{self.max_detections[-1]}")
-                    results[key] = self.select_ar(dataset_statistics, iou_idx=idx,
-                                                  cls_idx=cls_idx, max_det_idx=-1)
+                    key = (
+                        f"{cls_str}_"
+                        f"AR_IoU_{self.iou_thresholds[idx]:.2f}_"
+                        f"MaxDet_{self.max_detections[-1]}"
+                    )
+                    results[key] = self.select_ar(
+                        dataset_statistics, iou_idx=idx, cls_idx=cls_idx, max_det_idx=-1
+                    )
         return results
 
     @staticmethod
-    def select_ap(dataset_statistics: dict, iou_idx: Union[int, List[int]] = None,
-                  cls_idx: Union[int, Sequence[int]] = None, max_det_idx: int = -1) -> np.ndarray:
+    def select_ap(
+        dataset_statistics: dict,
+        iou_idx: Union[int, List[int]] = None,
+        cls_idx: Union[int, Sequence[int]] = None,
+        max_det_idx: int = -1,
+    ) -> np.ndarray:
         """
         Compute average precision
 
@@ -258,9 +303,12 @@ class COCOMetric(DetectionMetric):
         return np.mean(prec)
 
     @staticmethod
-    def select_ar(dataset_statistics: dict, iou_idx: Union[int, Sequence[int]] = None,
-                  cls_idx: Union[int, Sequence[int]] = None,
-                  max_det_idx: int = -1) -> np.ndarray:
+    def select_ar(
+        dataset_statistics: dict,
+        iou_idx: Union[int, Sequence[int]] = None,
+        cls_idx: Union[int, Sequence[int]] = None,
+        max_det_idx: int = -1,
+    ) -> np.ndarray:
         """
         Compute average recall
 
@@ -293,8 +341,9 @@ class COCOMetric(DetectionMetric):
             rec = np.mean(rec[rec > -1])
         return rec
 
-    def compute_statistics(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
-                           ) -> Dict[str, Union[np.ndarray, List]]:
+    def compute_statistics(
+        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+    ) -> Dict[str, Union[np.ndarray, List]]:
         """
         Compute statistics needed for COCO metrics (mAP, AP of individual classes, mAP@IoU_Thresholds, AR)
         Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
@@ -326,27 +375,37 @@ class COCOMetric(DetectionMetric):
         num_max_detections = len(self.max_detections)
 
         # -1 for the precision of absent categories
-        precision = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
+        precision = -np.ones(
+            (num_iou_th, num_recall_th, num_classes, num_max_detections)
+        )
         recall = -np.ones((num_iou_th, num_classes, num_max_detections))
         scores = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
 
         for cls_idx, cls_i in enumerate(self.classes):  # for each class
-            for maxDet_idx, maxDet in enumerate(self.max_detections):  # for each maximum number of detections
+            for maxDet_idx, maxDet in enumerate(
+                self.max_detections
+            ):  # for each maximum number of detections
                 results = [r[cls_idx] for r in results_list if cls_idx in r]
 
                 if len(results) == 0:
-                    logger.warning(f"WARNING, no results found for coco metric for class {cls_i}")
+                    logger.warning(
+                        f"WARNING, no results found for coco metric for class {cls_i}"
+                    )
                     continue
 
-                dt_scores = np.concatenate([r['dtScores'][0:maxDet] for r in results])
+                dt_scores = np.concatenate([r["dtScores"][0:maxDet] for r in results])
                 # different sorting method generates slightly different results.
                 # mergesort is used to be consistent as Matlab implementation.
-                inds = np.argsort(-dt_scores, kind='mergesort')
+                inds = np.argsort(-dt_scores, kind="mergesort")
                 dt_scores_sorted = dt_scores[inds]
 
                 # r['dtMatches'] [T, R], where R = sum(all detections)
-                dt_matches = np.concatenate([r['dtMatches'][:, 0:maxDet] for r in results], axis=1)[:, inds]
-                dt_ignores = np.concatenate([r['dtIgnore'][:, 0:maxDet] for r in results], axis=1)[:, inds]
+                dt_matches = np.concatenate(
+                    [r["dtMatches"][:, 0:maxDet] for r in results], axis=1
+                )[:, inds]
+                dt_ignores = np.concatenate(
+                    [r["dtIgnore"][:, 0:maxDet] for r in results], axis=1
+                )[:, inds]
 
                 # case_ids = []
                 # for r in results:
@@ -354,32 +413,47 @@ class COCOMetric(DetectionMetric):
                 # case_ids_sorted = [case_ids[i] for i in inds]
 
                 self.check_number_of_iou(dt_matches, dt_ignores)
-                gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
-                num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
+                gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
+                num_gt = np.count_nonzero(
+                    gt_ignore == 0
+                )  # number of ground truth boxes (non ignored)
                 if num_gt == 0:
-                    logger.warning(f"WARNING, no gt found for coco metric for class {cls_i}")
+                    logger.warning(
+                        f"WARNING, no gt found for coco metric for class {cls_i}"
+                    )
                     continue
 
                 # ignore cases need to be handled differently for tp and fp
                 tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
-                fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
+                fps = np.logical_and(
+                    np.logical_not(dt_matches), np.logical_not(dt_ignores)
+                )
 
                 tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
                 fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float32)
 
-                for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
+                for th_ind, (tp, fp) in enumerate(
+                    zip(tp_sum, fp_sum)
+                ):  # for each threshold th_ind
                     tp, fp = np.array(tp), np.array(fp)
-                    r, p, s = compute_stats_single_threshold(tp, fp, dt_scores_sorted, self.recall_thresholds, num_gt)
+                    r, p, s = compute_stats_single_threshold(
+                        tp, fp, dt_scores_sorted, self.recall_thresholds, num_gt
+                    )
                     recall[th_ind, cls_idx, maxDet_idx] = r
                     precision[th_ind, :, cls_idx, maxDet_idx] = p
                     # corresponding score thresholds for recall steps
                     scores[th_ind, :, cls_idx, maxDet_idx] = s
 
         return {
-            'counts': [num_iou_th, num_recall_th, num_classes, num_max_detections],  # [4]
-            'recall': recall,  # [num_iou_th, num_classes, num_max_detections]
-            'precision': precision,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            'scores': scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
+            "counts": [
+                num_iou_th,
+                num_recall_th,
+                num_classes,
+                num_max_detections,
+            ],  # [4]
+            "recall": recall,  # [num_iou_th, num_classes, num_max_detections]
+            "precision": precision,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
+            "scores": scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
         }
 
 
@@ -388,7 +462,8 @@ def compute_stats_single_threshold(
     fp: np.ndarray,
     dt_scores_sorted: np.ndarray,
     recall_thresholds: Sequence[float],
-    num_gt: int) -> Tuple[float, np.ndarray, np.ndarray]:
+    num_gt: int,
+) -> Tuple[float, np.ndarray, np.ndarray]:
     """
     Compute recall value, precision curve and scores thresholds
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
@@ -434,7 +509,7 @@ def compute_stats_single_threshold(
             pr[i - 1] = pr[i]
 
     # get indices to nearest given recall threshold (nn interpolation!)
-    inds = np.searchsorted(rc, recall_thresholds, side='left')
+    inds = np.searchsorted(rc, recall_thresholds, side="left")
     try:
         for save_idx, array_index in enumerate(inds):
             precision[save_idx] = pr[array_index]

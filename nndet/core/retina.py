@@ -15,25 +15,26 @@ from nndet.core.boxes.post import post_image_single_class_regression
 
 
 class BaseRetinaNet(AbstractModel):
-    def __init__(self,
-                 dim: int,
-                 # modules
-                 encoder: EncoderType,
-                 decoder: DecoderType,
-                 head: AnchorHeadType,
-                 num_classes: int,
-                 anchor_generator: AnchorGeneratorType,
-                 matcher: box_utils.MatcherType,
-                 decoder_levels: tuple = (2, 3, 4, 5),
-                 # post-processing
-                 score_thresh: float = None,
-                 detections_per_img: int = 100,
-                 topk_candidates: int = 10000,
-                 remove_small_boxes: float = 1e-2,
-                 nms_thresh: float = 0.9,
-                 # optional
-                 segmenter: Optional[SegmenterType] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        # modules
+        encoder: EncoderType,
+        decoder: DecoderType,
+        head: AnchorHeadType,
+        num_classes: int,
+        anchor_generator: AnchorGeneratorType,
+        matcher: box_utils.MatcherType,
+        decoder_levels: tuple = (2, 3, 4, 5),
+        # post-processing
+        score_thresh: float = None,
+        detections_per_img: int = 100,
+        topk_candidates: int = 10000,
+        remove_small_boxes: float = 1e-2,
+        nms_thresh: float = 0.9,
+        # optional
+        segmenter: Optional[SegmenterType] = None,
+    ):
         """
         Base Retina(U)Net
         Can be subclasses to add specific configurations to it
@@ -75,13 +76,15 @@ class BaseRetinaNet(AbstractModel):
 
         self.segmenter = segmenter
 
-    def forward(self,
-                inp: torch.Tensor,
-                ) -> Tuple[Dict[str, torch.Tensor],
-                           List[torch.Tensor],
-                           Dict[str, torch.Tensor],
-                           List[torch.Tensor],
-                           ]:
+    def forward(
+        self,
+        inp: torch.Tensor,
+    ) -> Tuple[
+        Dict[str, torch.Tensor],
+        List[torch.Tensor],
+        Dict[str, torch.Tensor],
+        List[torch.Tensor],
+    ]:
         """
         Compute predicted bounding boxes, scores and segmentations
 
@@ -107,7 +110,9 @@ class BaseRetinaNet(AbstractModel):
         pred_detection = self.head(feature_maps_head)
         anchors = self.anchor_generator(inp, feature_maps_head)
 
-        pred_seg = self.segmenter(features_maps_all) if self.segmenter is not None else None
+        pred_seg = (
+            self.segmenter(features_maps_all) if self.segmenter is not None else None
+        )
         return pred_detection, anchors, pred_seg, features_maps_all
 
     def train_step(
@@ -188,7 +193,8 @@ class BaseRetinaNet(AbstractModel):
 
         losses = {}
         head_losses, pos_idx, neg_idx = self.head.compute_loss(
-            pred_detection, labels, matched_gt_boxes, anchors)
+            pred_detection, labels, matched_gt_boxes, anchors
+        )
         losses.update(head_losses)
 
         if self.segmenter is not None:
@@ -218,10 +224,7 @@ class BaseRetinaNet(AbstractModel):
         """
         See inference_step_with_features for more info
         """
-        prediction, _ = self.inference_step_with_features(
-            images=images,
-            **kwargs
-        )
+        prediction, _ = self.inference_step_with_features(images=images, **kwargs)
         return prediction
 
     def inference_step_with_features(
@@ -255,12 +258,13 @@ class BaseRetinaNet(AbstractModel):
         return prediction, features
 
     @torch.no_grad()
-    def postprocess_for_inference(self,
-                                  images: torch.Tensor,
-                                  pred_detection: Dict[str, torch.Tensor],
-                                  anchors: List[torch.Tensor],
-                                  pred_seg: Dict[str, torch.Tensor],
-                                  ) -> Dict[str, Union[List[Tensor], Tensor]]:
+    def postprocess_for_inference(
+        self,
+        images: torch.Tensor,
+        pred_detection: Dict[str, torch.Tensor],
+        anchors: List[torch.Tensor],
+        pred_seg: Dict[str, torch.Tensor],
+    ) -> Dict[str, Union[List[Tensor], Tensor]]:
         """
         Postprocess predictions for inference
 
@@ -288,7 +292,9 @@ class BaseRetinaNet(AbstractModel):
         prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
 
         if self.segmenter is not None:
-            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
+            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)[
+                "pred_seg"
+            ]
         return prediction
 
     def postprocess_detections(
@@ -317,7 +323,10 @@ class BaseRetinaNet(AbstractModel):
         """
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in anchors]
         pred_detection = self.head.postprocess_for_inference(pred_detection, anchors)
-        pred_boxes, pred_probs = pred_detection["pred_boxes"], pred_detection["pred_probs"]
+        pred_boxes, pred_probs = (
+            pred_detection["pred_boxes"],
+            pred_detection["pred_probs"],
+        )
 
         # split boxes and scores per image
         pred_boxes = pred_boxes.split(boxes_per_image, 0)

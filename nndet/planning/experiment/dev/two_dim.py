@@ -14,11 +14,11 @@ class D2C004(D3V001):
         """
         if "2d" in plan["mode"]:
             preprocessor = Preprocessor2D(
-                norm_scheme_per_modality=plan['normalization_schemes'],
-                use_mask_for_norm=plan['use_mask_for_norm'],
-                transpose_forward=plan['transpose_forward'],
-                intensity_properties=plan['dataset_properties']['intensity_properties'],
-                resample_anisotropy_threshold=plan['resample_anisotropy_threshold'],
+                norm_scheme_per_modality=plan["normalization_schemes"],
+                use_mask_for_norm=plan["use_mask_for_norm"],
+                transpose_forward=plan["transpose_forward"],
+                intensity_properties=plan["dataset_properties"]["intensity_properties"],
+                resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
             )
         else:
             preprocessor = super().create_preprocessor(plan=plan)
@@ -34,10 +34,11 @@ class D2C004(D3V001):
         else:
             super().determine_forward_backward_permutation(mode=mode)
 
-    def plan_experiment(self,
-                        model_name: str,
-                        model_cfg: Dict,
-                        ) -> List[str]:
+    def plan_experiment(
+        self,
+        model_name: str,
+        model_cfg: Dict,
+    ) -> List[str]:
         """
         Plan the whole experiment (currently only one stage is supported)
         (uses :func:`self.save_plans()` to save the results)
@@ -49,7 +50,7 @@ class D2C004(D3V001):
         Returns:
             List: identifiers of created plans
         """
-        if self.data_properties['dim'] == 2:
+        if self.data_properties["dim"] == 2:
             logger.info("Using 2D planning...")
             identifiers = []
             # create full resolution 3d plan

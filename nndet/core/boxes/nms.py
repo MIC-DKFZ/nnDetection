@@ -114,11 +114,11 @@ def _batched_nms(
 
 
 def batched_nms(
-        boxes: Tensor,
-        scores: Tensor,
-        labels: Tensor,
-        iou_thresh: float,
-        weights: Optional[Tensor] = None,
+    boxes: Tensor,
+    scores: Tensor,
+    labels: Tensor,
+    iou_thresh: float,
+    weights: Optional[Tensor] = None,
 ) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor]]:
     """
     Model nms for ensembler (same as batched nms with adjusted signature)
@@ -152,11 +152,11 @@ def batched_nms(
 
 
 def batched_weighted_nms(
-        boxes: Tensor,
-        scores: Tensor,
-        labels: Tensor,
-        iou_thresh: float,
-        weights: Tensor,
+    boxes: Tensor,
+    scores: Tensor,
+    labels: Tensor,
+    iou_thresh: float,
+    weights: Tensor,
 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     """
     Uses scores and weights to compute NMS suppression

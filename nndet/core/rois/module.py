@@ -22,19 +22,20 @@ from nndet.core.boxes.post import post_image_single_class_regression
 
 # TODO: refactor module name
 class RoIModule(torch.nn.Module):
-    def __init__(self,
-                 box_head: RoIHeadType,  # use head without sampler
-                 matcher: MatcherType,
-                 pooler: PoolerType,
-                 sampler: SamplerType,  # NegativeSampler default => random balanced sampling
-                 num_classes: int,
-                 decoder_levels: Sequence[int],
-                 gt_to_proposals: bool = True,
-                 # post-processing
-                 roi_score_thresh: float = None,
-                 roi_detections_per_img: int = 100,
-                 roi_nms_thresh: float = 0.6,
-                 ) -> None:
+    def __init__(
+        self,
+        box_head: RoIHeadType,  # use head without sampler
+        matcher: MatcherType,
+        pooler: PoolerType,
+        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        num_classes: int,
+        decoder_levels: Sequence[int],
+        gt_to_proposals: bool = True,
+        # post-processing
+        roi_score_thresh: float = None,
+        roi_detections_per_img: int = 100,
+        roi_nms_thresh: float = 0.6,
+    ) -> None:
         super().__init__()
         self.box_head = box_head
         self.matcher = matcher
@@ -48,16 +49,24 @@ class RoIModule(torch.nn.Module):
         self.roi_detections_per_img = roi_detections_per_img
         self.roi_nms_thresh = roi_nms_thresh
 
-    def train_step(self,
-                   images: torch.Tensor,
-                   features: List[torch.Tensor],
-                   proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-                   targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-                   predict: bool = False,
-                   ):
+    def train_step(
+        self,
+        images: torch.Tensor,
+        features: List[torch.Tensor],
+        proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
+        targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
+        predict: bool = False,
+    ):
         _features = [features[i] for i in self.decoder_levels]
 
-        losses, prediction, roi_features, inds, pos_inds, neg_inds = self._train_step_boxes(
+        (
+            losses,
+            prediction,
+            roi_features,
+            inds,
+            pos_inds,
+            neg_inds,
+        ) = self._train_step_boxes(
             features=_features,
             proposal_boxes=proposals["pred_boxes"],
             proposal_scores=proposals["pred_scores"],
@@ -100,7 +109,8 @@ class RoIModule(torch.nn.Module):
         pred_detection = self.box_head(roi_features)
 
         losses, _, _ = self.box_head.compute_loss(
-            pred_detection, labels, matched_gt_boxes, proposal_boxes)
+            pred_detection, labels, matched_gt_boxes, proposal_boxes
+        )
 
         prediction = None
         if predict:
@@ -108,13 +118,13 @@ class RoIModule(torch.nn.Module):
         return losses, prediction, roi_features, inds, pos_inds, neg_inds
 
     @torch.no_grad()
-    def inference_step(self,
-                       images: torch.Tensor,
-                       features: List[torch.Tensor],
-                       proposals: Dict[str, Union[torch.Tensor,
-                                                  List[torch.Tensor]]],
-                       **kwargs,
-                       ) -> Dict[str, Any]:
+    def inference_step(
+        self,
+        images: torch.Tensor,
+        features: List[torch.Tensor],
+        proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
+        **kwargs,
+    ) -> Dict[str, Any]:
         _features = [features[i] for i in self.decoder_levels]
         prediction = self._inference_step_boxes(
             images=images,
@@ -123,18 +133,19 @@ class RoIModule(torch.nn.Module):
         )
         return prediction
 
-    def _inference_step_boxes(self,
-                              images: torch.Tensor,
-                              features: List[torch.Tensor],
-                              proposal_boxes: List[torch.Tensor],
-                              ):
+    def _inference_step_boxes(
+        self,
+        images: torch.Tensor,
+        features: List[torch.Tensor],
+        proposal_boxes: List[torch.Tensor],
+    ):
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
         roi_features = self.pooler(
             features=features,
             proposal_boxes=_proposal_boxes,
             batch_idx=batch_idx,
-            image_size=tuple(images.shape[2:])
+            image_size=tuple(images.shape[2:]),
         )  # [P, C, spatial]
 
         pred_detection = self.box_head(roi_features)
@@ -161,8 +172,13 @@ class RoIModule(torch.nn.Module):
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposal_boxes]
 
-        pred_detection = self.box_head.postprocess_for_inference(pred_detection, proposal_boxes)
-        pred_boxes, pred_probs = pred_detection["pred_boxes"], pred_detection["pred_probs"]
+        pred_detection = self.box_head.postprocess_for_inference(
+            pred_detection, proposal_boxes
+        )
+        pred_boxes, pred_probs = (
+            pred_detection["pred_boxes"],
+            pred_detection["pred_probs"],
+        )
 
         # split boxes and scores per image
         pred_boxes = pred_boxes.split(boxes_per_image, 0)
@@ -192,12 +208,13 @@ class RoIModule(torch.nn.Module):
         return all_boxes, all_probs, all_labels
 
     @torch.no_grad()
-    def sample_and_match(self,
-                         proposal_boxes: List[torch.Tensor],
-                         proposal_scores: List[torch.Tensor],
-                         target_boxes: List[torch.Tensor],
-                         target_classes: List[torch.Tensor],
-                         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def sample_and_match(
+        self,
+        proposal_boxes: List[torch.Tensor],
+        proposal_scores: List[torch.Tensor],
+        target_boxes: List[torch.Tensor],
+        target_classes: List[torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Create target labels and sample RoIs for further processing
 
@@ -238,10 +255,11 @@ class RoIModule(torch.nn.Module):
 
         return inds, sampled_pos_inds, sampled_neg_inds, _labels, _matched_gt_boxes
 
-    def add_gt_to_proposals(self,
-                            proposals: List[torch.Tensor],
-                            gt: List[torch.Tensor],
-                            ) -> List[torch.Tensor]:
+    def add_gt_to_proposals(
+        self,
+        proposals: List[torch.Tensor],
+        gt: List[torch.Tensor],
+    ) -> List[torch.Tensor]:
         """
         Add ground truth boxes to proposals.
         This helps training in the early stages when proposals are bad.
@@ -256,23 +274,28 @@ class RoIModule(torch.nn.Module):
             List[torch.Tensor]: proposals with gt boxes
                 List[[N + M, dim * 2]], N + M = new number of proposals
         """
-        return [torch.cat([p, g], dim=0) if g.numel() > 0 else p for p, g in zip(proposals, gt)]
+        return [
+            torch.cat([p, g], dim=0) if g.numel() > 0 else p
+            for p, g in zip(proposals, gt)
+        ]
 
 
-RoIModuleType = TypeVar('RoIModuleType', bound=RoIModule)
+RoIModuleType = TypeVar("RoIModuleType", bound=RoIModule)
 
 
 class CascadeRoIModule(RoIModule):
     """
     add gt [first stage] -> forward all RoIs -> subsample for los
     """
+
     pass
 
 
 class Sequencer(torch.nn.Module):
-    def __init__(self,
-                 roi_heads: List[RoIModuleType],
-                 ) -> None:
+    def __init__(
+        self,
+        roi_heads: List[RoIModuleType],
+    ) -> None:
         """
         Cascade multiple RoI Heads
 

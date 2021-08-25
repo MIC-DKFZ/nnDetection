@@ -25,9 +25,11 @@ from nndet.arch.layers.activation import Swish
 
 try:
     from torch.nn import Mish
+
     torch_mish = True
 except ImportError:
     from nndet.arch.layers.activation import Mish
+
     torch_mish = False
 
 
@@ -61,24 +63,25 @@ class Generator:
 
 
 class BaseConvNormAct(torch.nn.Sequential):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 norm: Optional[Union[Callable[..., Type[nn.Module]], str]],
-                 act: Optional[Union[Callable[..., Type[nn.Module]], str]],
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 norm_kwargs: Optional[dict] = None,
-                 act_inplace: Optional[bool] = None,
-                 act_kwargs: Optional[dict] = None,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        norm: Optional[Union[Callable[..., Type[nn.Module]], str]],
+        act: Optional[Union[Callable[..., Type[nn.Module]], str]],
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        norm_kwargs: Optional[dict] = None,
+        act_inplace: Optional[bool] = None,
+        act_kwargs: Optional[dict] = None,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -121,17 +124,18 @@ class BaseConvNormAct(torch.nn.Sequential):
         # process dynamic values
         bias = bool(norm is None) if bias is None else bias
 
-        conv = nd_conv(dim=dim,
-                       in_channels=in_channels,
-                       out_channels=out_channels,
-                       kernel_size=kernel_size,
-                       stride=stride,
-                       padding=padding,
-                       dilation=dilation,
-                       groups=groups,
-                       bias=bias,
-                       transposed=transposed
-                       )
+        conv = nd_conv(
+            dim=dim,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+            transposed=transposed,
+        )
         self.add_module("conv", conv)
 
         if norm is not None:
@@ -153,24 +157,25 @@ class BaseConvNormAct(torch.nn.Sequential):
 
 
 class ConvInstanceRelu(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -227,24 +232,25 @@ class ConvInstanceRelu(BaseConvNormAct):
 
 
 class ConvInstanceSiLU(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -301,25 +307,26 @@ class ConvInstanceSiLU(BaseConvNormAct):
 
 
 class ConvInstanceLReLU(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 act_negative_slope: float = 1e-2,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        act_negative_slope: float = 1e-2,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -367,9 +374,7 @@ class ConvInstanceLReLU(BaseConvNormAct):
             transposed=transposed,
             norm=norm,
             act=act,
-            act_kwargs={
-                "negative_slope": act_negative_slope
-            },
+            act_kwargs={"negative_slope": act_negative_slope},
             norm_kwargs={
                 "eps": norm_eps,
                 "affine": norm_affine,
@@ -380,25 +385,26 @@ class ConvInstanceLReLU(BaseConvNormAct):
 
 
 class ConvGroupRelu(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 norm_channels_per_group: int = 16,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        norm_channels_per_group: int = 16,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -457,26 +463,27 @@ class ConvGroupRelu(BaseConvNormAct):
 
 
 class ConvGroupLReLU(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_negative_slope: float = 1e-2,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 norm_channels_per_group: int = 16,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_negative_slope: float = 1e-2,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        norm_channels_per_group: int = 16,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -524,9 +531,7 @@ class ConvGroupLReLU(BaseConvNormAct):
             transposed=transposed,
             norm=norm,
             act=act,
-            act_kwargs={
-                "negative_slope": act_negative_slope
-            },
+            act_kwargs={"negative_slope": act_negative_slope},
             norm_kwargs={
                 "eps": norm_eps,
                 "affine": norm_affine,
@@ -538,25 +543,26 @@ class ConvGroupLReLU(BaseConvNormAct):
 
 
 class ConvGroupSiLU(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 norm_channels_per_group: int = 16,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        norm_channels_per_group: int = 16,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -615,25 +621,26 @@ class ConvGroupSiLU(BaseConvNormAct):
 
 
 class ConvGroupSwish(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 norm_channels_per_group: int = 16,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        norm_channels_per_group: int = 16,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -692,25 +699,26 @@ class ConvGroupSwish(BaseConvNormAct):
 
 
 class ConvGroupMish(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 norm_channels_per_group: int = 16,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        norm_channels_per_group: int = 16,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -745,8 +753,10 @@ class ConvGroupMish(BaseConvNormAct):
         norm = "Group" if add_norm else None
         act = Mish if add_act else None
         if not torch_mish:
-            logger.error("Could not import Mish from Torch, update to PyTorch 1.9 or later!"
-                         "The current implementation uses too much memory.")
+            logger.error(
+                "Could not import Mish from Torch, update to PyTorch 1.9 or later!"
+                "The current implementation uses too much memory."
+            )
 
         super().__init__(
             dim=dim,
@@ -772,24 +782,25 @@ class ConvGroupMish(BaseConvNormAct):
 
 
 class ConvInstanceSwish(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -846,24 +857,25 @@ class ConvInstanceSwish(BaseConvNormAct):
 
 
 class ConvInstanceMish(BaseConvNormAct):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, tuple],
-                 stride: Union[int, tuple] = 1,
-                 padding: Union[int, tuple] = 0,
-                 dilation: Union[int, tuple] = 1,
-                 groups: int = 1,
-                 bias: bool = None,
-                 transposed: bool = False,
-                 add_norm: bool = True,
-                 add_act: bool = True,
-                 act_inplace: Optional[bool] = None,
-                 norm_eps: float = 1e-5,
-                 norm_affine: bool = True,
-                 initializer: Callable[[nn.Module], None] = None,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple],
+        stride: Union[int, tuple] = 1,
+        padding: Union[int, tuple] = 0,
+        dilation: Union[int, tuple] = 1,
+        groups: int = 1,
+        bias: bool = None,
+        transposed: bool = False,
+        add_norm: bool = True,
+        add_act: bool = True,
+        act_inplace: Optional[bool] = None,
+        norm_eps: float = 1e-5,
+        norm_affine: bool = True,
+        initializer: Callable[[nn.Module], None] = None,
+    ):
         """
         Baseclass for default ordering:
         conv -> norm -> activation
@@ -897,8 +909,10 @@ class ConvInstanceMish(BaseConvNormAct):
         norm = "Instance" if add_norm else None
         act = Mish if add_act else None
         if not torch_mish:
-            logger.error("Could not import Mish from Torch, update to PyTorch 1.9 or later!"
-                         "The current implementation uses too much memory.")
+            logger.error(
+                "Could not import Mish from Torch, update to PyTorch 1.9 or later!"
+                "The current implementation uses too much memory."
+            )
 
         super().__init__(
             dim=dim,
@@ -922,18 +936,19 @@ class ConvInstanceMish(BaseConvNormAct):
         )
 
 
-def nd_conv(dim: int,
-            in_channels: int,
-            out_channels: int,
-            kernel_size: Union[int, tuple],
-            stride: Union[int, tuple] = 1,
-            padding: Union[int, tuple] = 0,
-            dilation: Union[int, tuple] = 1,
-            groups: int = 1,
-            bias: bool = True,
-            transposed: bool = False,
-            **kwargs,
-            ) -> torch.nn.Module:
+def nd_conv(
+    dim: int,
+    in_channels: int,
+    out_channels: int,
+    kernel_size: Union[int, tuple],
+    stride: Union[int, tuple] = 1,
+    padding: Union[int, tuple] = 0,
+    dilation: Union[int, tuple] = 1,
+    groups: int = 1,
+    bias: bool = True,
+    transposed: bool = False,
+    **kwargs,
+) -> torch.nn.Module:
     """
     Convolution Wrapper to Switch accross dimensions and transposed by a
     single argument
@@ -971,9 +986,17 @@ def nd_conv(dim: int,
 
     conv_cls = getattr(torch.nn, f"Conv{transposed_str}{dim}d")
 
-    return conv_cls(in_channels=in_channels, out_channels=out_channels,
-                    kernel_size=kernel_size, stride=stride, padding=padding,
-                    dilation=dilation, groups=groups, bias=bias, **kwargs)
+    return conv_cls(
+        in_channels=in_channels,
+        out_channels=out_channels,
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=padding,
+        dilation=dilation,
+        groups=groups,
+        bias=bias,
+        **kwargs,
+    )
 
 
 def nd_pool(pooling_type: str, dim: int, *args, **kwargs) -> torch.nn.Module:
@@ -1074,7 +1097,9 @@ def nd_act(act_type: str, dim: int, *args, **kwargs) -> torch.nn.Module:
     return act_cls(*args, **kwargs)
 
 
-def nd_dropout(dim: int, p: float = 0.5, inplace: bool = False, **kwargs) -> torch.nn.Module:
+def nd_dropout(
+    dim: int, p: float = 0.5, inplace: bool = False, **kwargs
+) -> torch.nn.Module:
     """
     Generate 1,2,3 dimensional dropout
 
@@ -1091,8 +1116,9 @@ def nd_dropout(dim: int, p: float = 0.5, inplace: bool = False, **kwargs) -> tor
     return dropout_cls(p=p, inplace=inplace, **kwargs)
 
 
-def compute_padding_for_kernel(kernel_size: Union[int, Sequence[int]]) -> \
-        Union[int, Tuple[int, int], Tuple[int, int, int]]:
+def compute_padding_for_kernel(
+    kernel_size: Union[int, Sequence[int]]
+) -> Union[int, Tuple[int, int], Tuple[int, int, int]]:
     """
     Compute padding such that feature maps keep their size with stride 1
 

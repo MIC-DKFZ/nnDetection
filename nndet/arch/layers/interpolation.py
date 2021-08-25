@@ -64,9 +64,12 @@ class InterpolateToShapes(torch.nn.Module):
             target = target.unsqueeze(dim=1)
             squeeze_result = True
 
-        new_targets = [F.interpolate(
-            target, size=shape, mode=self.mode, align_corners=self.align_corners)
-            for shape in shapes]
+        new_targets = [
+            F.interpolate(
+                target, size=shape, mode=self.mode, align_corners=self.align_corners
+            )
+            for shape in shapes
+        ]
 
         if squeeze_result:
             new_targets = [nt.squeeze(dim=1) for nt in new_targets]
@@ -130,9 +133,12 @@ class InterpolateToShape(InterpolateToShapes):
             target = target.unsqueeze(dim=1)
             squeeze_result = True
 
-        new_targets = [F.interpolate(
-            pred, size=shape, mode=self.mode, align_corners=self.align_corners)
-            for pred in preds]
+        new_targets = [
+            F.interpolate(
+                pred, size=shape, mode=self.mode, align_corners=self.align_corners
+            )
+            for pred in preds
+        ]
 
         if squeeze_result:
             new_targets = [nt.squeeze(dim=1) for nt in new_targets]
@@ -141,9 +147,13 @@ class InterpolateToShape(InterpolateToShapes):
 
 
 class Interpolate(torch.nn.Module):
-    def __init__(self, size: Union[int, Tuple[int]] = None,
-                 scale_factor: Union[float, Tuple[float]] = None,
-                 mode: str = "nearest", align_corners: bool = None):
+    def __init__(
+        self,
+        size: Union[int, Tuple[int]] = None,
+        scale_factor: Union[float, Tuple[float]] = None,
+        mode: str = "nearest",
+        align_corners: bool = None,
+    ):
         """
         nn.Module for interpolation based on functional interpolation from
         pytorch
@@ -177,5 +187,9 @@ class Interpolate(torch.nn.Module):
             Tensor: interpolated tensor
         """
         return F.interpolate(
-            x, size=self.size, scale_factor=self.scale_factor,
-            mode=self.mode, align_corners=self.align_corners)
+            x,
+            size=self.size,
+            scale_factor=self.scale_factor,
+            mode=self.mode,
+            align_corners=self.align_corners,
+        )

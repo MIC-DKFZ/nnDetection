@@ -50,6 +50,7 @@ class RetinaUNetCV001Focal(RetinaUNetV001):
     Focal Loss based V001 RetinaUNet
     (only intended for easy subclassing and not used in nnDetection V0.1)
     """
+
     head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
 
@@ -76,7 +77,7 @@ class RetinaUNetCV001Focal(RetinaUNetV001):
             HeadType: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
 
         logger.info(f"Building:: head {head_name}: {head_kwargs}")
         head = cls.head_cls(

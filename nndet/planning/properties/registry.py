@@ -51,7 +51,7 @@ def medical_segmentation_props(intensity_properties: bool = True):
     if intensity_properties:
         props.append(analyze_intensities)
     else:
-        props.append(lambda x: {'intensity_properties': None})
+        props.append(lambda x: {"intensity_properties": None})
     return props
 
 
@@ -82,5 +82,5 @@ def medical_instance_props(intensity_properties: bool = True):
     if intensity_properties:
         props.append(analyze_intensities)
     else:
-        props.append(lambda x: {'intensity_properties': None})
+        props.append(lambda x: {"intensity_properties": None})
     return props

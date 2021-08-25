@@ -28,13 +28,14 @@ from nndet.io.load import load_pickle, save_pickle
 
 
 class BaseModule(pl.LightningDataModule):
-    def __init__(self,
-                 plan: dict,
-                 augment_cfg: dict,
-                 data_dir: os.PathLike,
-                 fold: int = 0,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        plan: dict,
+        augment_cfg: dict,
+        data_dir: os.PathLike,
+        fold: int = 0,
+        **kwargs,
+    ):
         """
         Baseclass for nnDetection data nodules.
         Overwrite :method:`setup` to customize the bahvior.
@@ -92,8 +93,8 @@ class BaseModule(pl.LightningDataModule):
             logger.warning("USING SAME TRAIN AND VAL SET")
             tr_keys = val_keys = list(self.dataset.keys())
         else:
-            tr_keys = splits[self.fold]['train']
-            val_keys = splits[self.fold]['val']
+            tr_keys = splits[self.fold]["train"]
+            val_keys = splits[self.fold]["val"]
 
         tr_keys.sort()
         val_keys.sort()
@@ -124,6 +125,6 @@ class BaseModule(pl.LightningDataModule):
             test_keys = np.array(all_keys_sorted)[test_idx]
 
             splits.append(OrderedDict())
-            splits[-1]['train'] = train_keys
-            splits[-1]['val'] = test_keys
+            splits[-1]["train"] = train_keys
+            splits[-1]["val"] = test_keys
         save_pickle(splits, splits_file)

@@ -7,9 +7,9 @@ from nndet.core.boxes.ops_np import box_center_np
 
 THRESHOLD = 0.5
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('source', type=Path)
+    parser.add_argument("source", type=Path)
     args = parser.parse_args()
 
     source = args.source
@@ -28,6 +28,8 @@ if __name__ == '__main__':
     with open(source / "result.txt", "a") as f:
         if len(centers) > 0:
             for c in centers[:-1]:
-                f.write(f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}\n")
+                f.write(
+                    f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}\n"
+                )
             c = centers[-1]
             f.write(f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}")

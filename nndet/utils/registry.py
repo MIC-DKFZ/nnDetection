@@ -30,8 +30,8 @@ class Registry:
             target.mkdir(parents=True)
         paths = [e["path"] for e in self.mapping.values()]
         paths = list(set(paths))
-        names = [p.split('nndet')[-1] for p in paths]
-        names = [n.replace(os.sep, '_').rsplit('.', 1)[0] for n in names]
+        names = [p.split("nndet")[-1] for p in paths]
+        names = [n.replace(os.sep, "_").rsplit(".", 1)[0] for n in names]
         names = [f"{n[1:]}.py" for n in names]
         for name, path in zip(names, paths):
             shutil.copy(path, str(target / name))

@@ -33,14 +33,23 @@ from loguru import logger
 from nndet.io.paths import subfiles
 
 
-__all__ = ["load_case_cropped", "load_case_from_list",
-           "load_properties_of_cropped", "npy_dataset",
-           "load_pickle", "load_json", "save_json", "save_pickle",
-           "save_yaml", "load_npz_looped",
-           ]
+__all__ = [
+    "load_case_cropped",
+    "load_case_from_list",
+    "load_properties_of_cropped",
+    "npy_dataset",
+    "load_pickle",
+    "load_json",
+    "save_json",
+    "save_pickle",
+    "save_yaml",
+    "load_npz_looped",
+]
 
 
-def load_case_from_list(data_files, seg_file=None) -> Tuple[np.ndarray, np.ndarray, dict]:
+def load_case_from_list(
+    data_files, seg_file=None
+) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Load data and label of one case from list of paths
 
@@ -101,15 +110,17 @@ def load_properties_of_cropped(path: Path):
     Returns:
         Dict: loaded properties
     """
-    if not path.suffix == '.pkl':
-        path = Path(str(path) + '.pkl')
+    if not path.suffix == ".pkl":
+        path = Path(str(path) + ".pkl")
 
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         properties = pickle.load(f)
     return properties
 
 
-def load_case_cropped(folder: Path, case_id: str) -> Tuple[np.ndarray, np.ndarray, dict]:
+def load_case_cropped(
+    folder: Path, case_id: str
+) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Load single case after cropping
 
@@ -122,24 +133,32 @@ def load_case_cropped(folder: Path, case_id: str) -> Tuple[np.ndarray, np.ndarra
         np.ndarray: segmentation
         dict: additional properties
     """
-    stack = load_npz_looped(os.path.join(folder, case_id) + ".npz",
-                            keys=["data"], num_tries=3,
-                            )["data"]
+    stack = load_npz_looped(
+        os.path.join(folder, case_id) + ".npz",
+        keys=["data"],
+        num_tries=3,
+    )["data"]
     data = stack[:-1]
     seg = stack[-1]
 
     with open(os.path.join(folder, case_id) + ".pkl", "rb") as f:
         props = pickle.load(f)
-    assert data.shape[1:] == seg.shape, (f"Data and segmentation need to have same dim (except first). "
-                                         f"Found data {data.shape} and "
-                                         f"mask {seg.shape} for case {case_id}")
+    assert data.shape[1:] == seg.shape, (
+        f"Data and segmentation need to have same dim (except first). "
+        f"Found data {data.shape} and "
+        f"mask {seg.shape} for case {case_id}"
+    )
     return data.astype(np.float32), seg.astype(np.int32), props
 
 
 @contextmanager
-def npy_dataset(folder: str, processes: int,
-                unpack: bool = True, delete_npy: bool = True,
-                delete_npz: bool = False):
+def npy_dataset(
+    folder: str,
+    processes: int,
+    unpack: bool = True,
+    delete_npy: bool = True,
+    delete_npz: bool = False,
+):
     """
     Automatically unpacks the npz dataset and deletes npy data after completion
 
@@ -159,9 +178,7 @@ def npy_dataset(folder: str, processes: int,
             del_npy(Path(folder))
 
 
-def unpack_dataset(folder: os.PathLike,
-                   processes: int,
-                   delete_npz: bool = False):
+def unpack_dataset(folder: os.PathLike, processes: int, delete_npz: bool = False):
     """
     unpacks all npz files in a folder to npy
     (whatever you want to have unpacked must be saved under key)
@@ -246,7 +263,7 @@ def load_json(path: Path, **kwargs) -> Any:
     """
     if isinstance(path, str):
         path = Path(path)
-    if not(".json" == path.suffix):
+    if not (".json" == path.suffix):
         path = str(path) + ".json"
 
     with open(path, "r") as f:
@@ -266,7 +283,7 @@ def save_json(data: Any, path: os.PathLike, indent: int = 4, **kwargs):
     """
     if isinstance(path, str):
         path = Path(path)
-    if not(".json" == path.suffix):
+    if not (".json" == path.suffix):
         path = Path(str(path) + ".json")
 
     with open(path, "w") as f:
@@ -324,7 +341,7 @@ def save_yaml(data: Any, path: Path, **kwargs):
     """
     if isinstance(path, str):
         path = Path(path)
-    if not(".yaml" == path.suffix):
+    if not (".yaml" == path.suffix):
         path = str(path) + ".yaml"
 
     with open(path, "w") as f:
@@ -342,7 +359,7 @@ def save_txt(data: str, path: Path, **kwargs):
     """
     if isinstance(path, str):
         path = Path(path)
-    if not(".txt" == path.suffix):
+    if not (".txt" == path.suffix):
         path = str(path) + ".txt"
 
     with open(path, "a") as f:
@@ -350,11 +367,11 @@ def save_txt(data: str, path: Path, **kwargs):
 
 
 def load_npz_looped(
-        p: os.PathLike,
-        keys: Sequence[str],
-        *args,
-        num_tries: int = 3,
-        **kwargs,
+    p: os.PathLike,
+    keys: Sequence[str],
+    *args,
+    num_tries: int = 3,
+    **kwargs,
 ) -> Union[np.ndarray, dict]:
     """
     Try | Except loop to load numpy files
@@ -371,7 +388,9 @@ def load_npz_looped(
         dict: loaded data
     """
     if num_tries <= 0:
-        raise ValueError(f"Num tires needs to be larger than 0, found {num_tries} tries.")
+        raise ValueError(
+            f"Num tires needs to be larger than 0, found {num_tries} tries."
+        )
 
     for i in range(num_tries):  # try reading the file 3 times
         try:
@@ -382,5 +401,5 @@ def load_npz_looped(
             if i == num_tries - 1:
                 logger.error(f"Could not unpack {p} with {e}")
                 return None
-            time.sleep(5.)
+            time.sleep(5.0)
     return data

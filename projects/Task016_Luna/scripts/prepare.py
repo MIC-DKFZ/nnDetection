@@ -26,10 +26,10 @@ def create_masks(source: Path, target: Path, df: pd.DataFrame, num_processes: in
             logger.error(f"{subset_dir} is not s valid subset directory!")
             continue
 
-        tmp = list((subset_dir.glob('*.mhd')))
+        tmp = list((subset_dir.glob("*.mhd")))
         files.extend(tmp)
         for t in tmp:
-            split[t.stem.replace('.', '_')] = i
+            split[t.stem.replace(".", "_")] = i
     save_json(split, target.parent.parent / "splits.json")
 
     centers = []
@@ -38,13 +38,15 @@ def create_masks(source: Path, target: Path, df: pd.DataFrame, num_processes: in
         c = []
         r = []
         try:
-            series_df = df.loc[{f.name.rsplit('.', 1)[0]}]
+            series_df = df.loc[{f.name.rsplit(".", 1)[0]}]
         except KeyError:
             pass
         else:
             for _, row in series_df.iterrows():
-                c.append((float(row['coordX']), float(row['coordY']), float(row['coordZ'])))
-                r.append(float(row['diameter_mm']) / 2)
+                c.append(
+                    (float(row["coordX"]), float(row["coordY"]), float(row["coordZ"]))
+                )
+                r.append(float(row["diameter_mm"]) / 2)
         centers.append(c)
         rads.append(r)
 
@@ -61,19 +63,23 @@ def _create_mask(source, target, centers, rads):
         data = sitk.ReadImage(str(source))
         mask = create_circle_mask_itk(data, centers, rads, ndim=3)
         sitk.WriteImage(mask, str(target / f"{source.stem.replace('.', '_')}.nii.gz"))
-        save_json({"instances": {str(k + 1): 0 for k in range(len(centers))}},
-                  target / f"{source.stem.replace('.', '_')}.json")
+        save_json(
+            {"instances": {str(k + 1): 0 for k in range(len(centers))}},
+            target / f"{source.stem.replace('.', '_')}.json",
+        )
     except Exception as e:
         logger.error(f"Case {source.stem} failed with {e} and {traceback.format_exc()}")
 
 
 def create_splits(source, target):
     files = []
-    for p in source.glob('subset*'):
+    for p in source.glob("subset*"):
         path = Path(p)
         if not p.is_dir():
             continue
-        _files = [str(i).rsplit('.', 1)[0] for i in path.iterdir() if i.suffix == ".mhd"]
+        _files = [
+            str(i).rsplit(".", 1)[0] for i in path.iterdir() if i.suffix == ".mhd"
+        ]
         files.append(_files)
     splits = []
     for i in range(len(files)):
@@ -89,13 +95,13 @@ def create_splits(source, target):
 
 
 def convert_data(source: Path, target: Path, num_processes: int):
-    for subset_dir in source.glob('subset*'):
+    for subset_dir in source.glob("subset*"):
         subset_dir = Path(subset_dir)
         if not subset_dir.is_dir():
             continue
 
         with Pool(processes=num_processes) as p:
-            p.starmap(_convert_data, zip(subset_dir.glob('*.mhd'), repeat(target)))
+            p.starmap(_convert_data, zip(subset_dir.glob("*.mhd"), repeat(target)))
 
 
 def _convert_data(f, target):
@@ -110,17 +116,24 @@ def _convert_data(f, target):
 @env_guard
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_processes', type=int, default=4, required=False,
-                        help="Number of processes to use for preparation.")
+    parser.add_argument(
+        "--num_processes",
+        type=int,
+        default=4,
+        required=False,
+        help="Number of processes to use for preparation.",
+    )
     args = parser.parse_args()
     num_processes = args.num_processes
 
-    det_data_dir = Path(os.getenv('det_data'))
+    det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / "Task016_Luna"
     source_data_dir = task_data_dir / "raw"
 
     if not source_data_dir.is_dir():
-        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
+        raise RuntimeError(
+            f"{source_data_dir} should contain the raw data but does not exist."
+        )
     for i in range(10):
         if not (p := source_data_dir / f"subset{i}"):
             raise ValueError(f"Expected {p} to contain Luna data")
@@ -141,10 +154,8 @@ def main():
     meta = {
         "name": "Luna",
         "task": "Task016_Luna",
-
         "target_class": None,
         "test_labels": False,
-
         "labels": {
             "0": "lesion",
         },
@@ -159,7 +170,7 @@ def main():
     csv = source_data_dir / "annotations.csv"
     convert_data(source_data_dir, target_data_dir, num_processes=num_processes)
 
-    df = pd.read_csv(csv, index_col='seriesuid')
+    df = pd.read_csv(csv, index_col="seriesuid")
     create_masks(source_data_dir, target_label_dir, df, num_processes=num_processes)
 
     # generate split
@@ -178,12 +189,15 @@ def main():
         train_ids = []
         for af in all_folds:
             train_ids.extend(original_fold_ids[af])
-        splits.append({
-            "train": train_ids,
-            "val": original_fold_ids[test_fold],
-        })
+        splits.append(
+            {
+                "train": train_ids,
+                "val": original_fold_ids[test_fold],
+            }
+        )
     save_pickle(splits, target_preprocessed_dir / "splits_final.pkl")
     save_json(splits, target_preprocessed_dir / "splits_final.json")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

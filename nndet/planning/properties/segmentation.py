@@ -50,12 +50,16 @@ def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:
     else:
         with open(analyzer.props_per_case_file, "rb") as f:
             props_per_case = pickle.load(f)
-    return {'class_dct': class_dct, 'all_classes': all_classes,
-            'segmentation_props_per_patient': props_per_case}
+    return {
+        "class_dct": class_dct,
+        "all_classes": all_classes,
+        "segmentation_props_per_patient": props_per_case,
+    }
 
 
-def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str,
-                                  all_classes: Sequence[int]) -> Dict:
+def analyze_segmentation_per_case(
+    analyzer: DatasetAnalyzer, case_id: str, all_classes: Sequence[int]
+) -> Dict:
     """
     1) what class is in this training case?
     2) what is the size distribution for each class?
@@ -79,27 +83,35 @@ def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str,
     """
     logger.info(f"Processing segmentation properties of case {case_id}")
     _, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
-    vol_per_voxel = np.prod(props['itk_spacing'])
+    vol_per_voxel = np.prod(props["itk_spacing"])
 
     unique_classes = np.unique(seg)
 
     regions = [list(all_classes)]
     for c in all_classes:
-        regions.append((c, ))
+        regions.append((c,))
     all_in_one_region = check_if_all_in_one_region(seg, regions)
 
     volume_per_class, region_sizes = collect_class_and_region_sizes(
-        seg, all_classes, vol_per_voxel)
+        seg, all_classes, vol_per_voxel
+    )
 
-    return {"has_classes": unique_classes, "only_one_region": all_in_one_region,
-            "volume_per_class": volume_per_class, "region_volume_per_class": region_sizes}
+    return {
+        "has_classes": unique_classes,
+        "only_one_region": all_in_one_region,
+        "volume_per_class": volume_per_class,
+        "region_volume_per_class": region_sizes,
+    }
 
 
 def run_analyze_segmentation(
-    analyzer: DatasetAnalyzer, all_classes: Sequence[int],
+    analyzer: DatasetAnalyzer,
+    all_classes: Sequence[int],
     save: bool = True,
-    analyze_fn: Callable[[DatasetAnalyzer, str, Sequence[int]], Dict] = analyze_segmentation_per_case) \
-        -> Dict[str, Dict]:
+    analyze_fn: Callable[
+        [DatasetAnalyzer, str, Sequence[int]], Dict
+    ] = analyze_segmentation_per_case,
+) -> Dict[str, Dict]:
     """
     Analyze segmentations of all cases in analyzer
 
@@ -118,8 +130,9 @@ def run_analyze_segmentation(
     """
     props_per_case = OrderedDict()
     with Pool(analyzer.num_processes) as p:
-        props = p.starmap(analyze_fn, zip(
-            repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
+        props = p.starmap(
+            analyze_fn, zip(repeat(analyzer), analyzer.case_ids, repeat(all_classes))
+        )
 
         for case_id, prop in zip(analyzer.case_ids, props):
             props_per_case[case_id] = prop
@@ -130,8 +143,9 @@ def run_analyze_segmentation(
     return props_per_case
 
 
-def check_if_all_in_one_region(seg: np.ndarray,
-                               regions: Sequence[Sequence[int]]) -> Dict[Tuple[int], bool]:
+def check_if_all_in_one_region(
+    seg: np.ndarray, regions: Sequence[Sequence[int]]
+) -> Dict[Tuple[int], bool]:
     """
     Check if regions are splited over multiple instances or are all connected
 
@@ -156,8 +170,9 @@ def check_if_all_in_one_region(seg: np.ndarray,
     return res
 
 
-def collect_class_and_region_sizes(seg: np.ndarray, all_classes: Sequence[int],
-                                   vol_per_voxel: float) -> (Dict, Dict[str, Dict]):
+def collect_class_and_region_sizes(
+    seg: np.ndarray, all_classes: Sequence[int], vol_per_voxel: float
+) -> (Dict, Dict[str, Dict]):
     """
     Collect class and region sizes from segmentation
 

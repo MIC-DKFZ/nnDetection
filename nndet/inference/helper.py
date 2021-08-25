@@ -38,7 +38,7 @@ def predict_dir(
     restore: bool = False,
     case_ids: Optional[Sequence[str]] = None,
     save_state: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Predict all preprocessed(!) cases inside a directory
@@ -76,7 +76,7 @@ def predict_dir(
     )
 
     if case_ids is None:
-        case_paths = list(source_dir.glob('*.npz'))
+        case_paths = list(source_dir.glob("*.npz"))
         case_paths = [cp for cp in case_paths if "_gt.npz" not in str(cp)]
     else:
         case_paths = [source_dir / f"{cid}.npz" for cid in case_ids]
@@ -86,26 +86,28 @@ def predict_dir(
         logger.info(f"Predicting case {idx} of {len(case_paths)}.")
         case_id = get_case_id_from_path(str(path), remove_modality=False)
         if path.is_file():
-            case = np.load(str(path), allow_pickle=True)['data']
+            case = np.load(str(path), allow_pickle=True)["data"]
         else:
             case = np.load(str(path)[:-4] + ".npy", allow_pickle=True)
         properties = load_pickle(path.parent / f"{case_id}.pkl")
         properties["transpose_backward"] = plan["transpose_backward"]
 
         if save_state:
-            _ = predictor.predict_case({"data": case},
-                                       properties,
-                                       save_dir=target_dir,
-                                       case_id=case_id,
-                                       restore=restore,
-                                       )
+            _ = predictor.predict_case(
+                {"data": case},
+                properties,
+                save_dir=target_dir,
+                case_id=case_id,
+                restore=restore,
+            )
         else:
-            result = predictor.predict_case({"data": case},
-                                            properties,
-                                            save_dir=None,
-                                            case_id=None,
-                                            restore=restore,
-                                            )
+            result = predictor.predict_case(
+                {"data": case},
+                properties,
+                save_dir=None,
+                case_id=None,
+                restore=restore,
+            )
             for key, item in to_numpy(result).items():
                 save_pickle(item, target_dir / f"{case_id}_{key}.pkl")
     return predictor

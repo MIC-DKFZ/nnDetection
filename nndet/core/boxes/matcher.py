@@ -59,11 +59,12 @@ class Matcher(ABC):
         """
         self.similarity_fn = similarity_fn
 
-    def __call__(self,
-                 boxes: torch.Tensor,
-                 anchors: torch.Tensor,
-                 **kwargs,
-                 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches for a single image
 
@@ -84,21 +85,20 @@ class Matcher(ABC):
             # no ground truth
             num_anchors = anchors.shape[0]
             match_quality_matrix = torch.tensor([]).to(anchors)
-            matches = torch.empty(num_anchors, dtype=torch.int64).fill_(self.BELOW_LOW_THRESHOLD)
+            matches = torch.empty(num_anchors, dtype=torch.int64).fill_(
+                self.BELOW_LOW_THRESHOLD
+            )
             return match_quality_matrix, matches
         else:
             # at least one ground truth
-            return self.compute_matches(
-                boxes=boxes,
-                anchors=anchors,
-                **kwargs
-            )
+            return self.compute_matches(boxes=boxes, anchors=anchors, **kwargs)
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        **kwargs,
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches
 
@@ -121,11 +121,13 @@ class Matcher(ABC):
 
 
 class IoUMatcher(Matcher):
-    def __init__(self,
-                 low_threshold: float,
-                 high_threshold: float,
-                 allow_low_quality_matches: bool,
-                 similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou):
+    def __init__(
+        self,
+        low_threshold: float,
+        high_threshold: float,
+        allow_low_quality_matches: bool,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+    ):
         """
         Compute IoU based matching for a single image
 
@@ -143,11 +145,12 @@ class IoUMatcher(Matcher):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        **kwargs,
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        **kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to given iou thresholds
         Adapted from
@@ -188,7 +191,9 @@ class IoUMatcher(Matcher):
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            matches = self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            matches = self.set_low_quality_matches_(
+                matches, all_matches, match_quality_matrix
+            )
 
         # self._debug_logging(match_quality_matrix, matches, matched_vals,
         #                     below_low_threshold, between_thresholds)
@@ -211,27 +216,39 @@ class IoUMatcher(Matcher):
         return matches
 
     @staticmethod
-    def _debug_logging(match_quality_matrix, matches, matched_vals,
-                       below_low_threshold, between_thresholds):
+    def _debug_logging(
+        match_quality_matrix,
+        matches,
+        matched_vals,
+        below_low_threshold,
+        between_thresholds,
+    ):
         logger.info("########## Matcher ##############")
         logger.info(f"Max IoU: {match_quality_matrix.max()}")
         logger.info(f"Foreground IoUs: {matched_vals[matches > -1]}")
         logger.info(f"Num GT: {match_quality_matrix.shape[0]}")
-        match_bet_min = matched_vals[between_thresholds].min() if \
-            matched_vals[between_thresholds].nelement() > 0 else None
-        match_bet_max = matched_vals[between_thresholds].max() if \
-            matched_vals[between_thresholds].nelement() > 0 else None
+        match_bet_min = (
+            matched_vals[between_thresholds].min()
+            if matched_vals[between_thresholds].nelement() > 0
+            else None
+        )
+        match_bet_max = (
+            matched_vals[between_thresholds].max()
+            if matched_vals[between_thresholds].nelement() > 0
+            else None
+        )
         logger.info(f"Inbetween IoU ranging from {match_bet_min} to {match_bet_max}")
         logger.info(f"Max background IoU: {matched_vals[below_low_threshold].max()}")
         logger.info("#################################")
 
 
 class ATSSMatcher(Matcher):
-    def __init__(self,
-                 num_candidates: int,
-                 similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
-                 center_in_gt: bool = True,
-                 ):
+    def __init__(
+        self,
+        num_candidates: int,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        center_in_gt: bool = True,
+    ):
         """
         Compute matching based on ATSS
         https://arxiv.org/abs/1912.02424
@@ -249,15 +266,18 @@ class ATSSMatcher(Matcher):
         self.num_candidates = num_candidates
         self.min_dist = 0.01
         self.center_in_gt = center_in_gt
-        logger.info(f"Running ATSS Matching with num_candidates={self.num_candidates} "
-                    f"and center_in_gt {self.center_in_gt}.")
+        logger.info(
+            f"Running ATSS Matching with num_candidates={self.num_candidates} "
+            f"and center_in_gt {self.center_in_gt}."
+        )
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        num_anchors_per_level: Sequence[int],
-                        num_anchors_per_loc: int,
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        num_anchors_per_level: Sequence[int],
+        num_anchors_per_loc: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to ATTS for a single image
         Adapted from
@@ -282,7 +302,9 @@ class ATSSMatcher(Matcher):
         num_gt = boxes.shape[0]
         num_anchors = anchors.shape[0]
 
-        distances, boxes_center, anchors_center = box_center_dist(boxes, anchors)  # num_boxes x anchors
+        distances, boxes_center, anchors_center = box_center_dist(
+            boxes, anchors
+        )  # num_boxes x anchors
 
         # select candidates based on center distance
         candidate_idx = []
@@ -291,7 +313,7 @@ class ATSSMatcher(Matcher):
             end_idx = start_idx + apl
 
             topk = min(self.num_candidates * num_anchors_per_loc, apl)
-            _, idx = distances[:, start_idx: end_idx].topk(topk, dim=1, largest=False)
+            _, idx = distances[:, start_idx:end_idx].topk(topk, dim=1, largest=False)
             # idx shape [num_boxes x topk]
             candidate_idx.append(idx + start_idx)
 
@@ -299,21 +321,35 @@ class ATSSMatcher(Matcher):
         # [num_boxes x num_candidates] (index of candidate anchors)
         candidate_idx = torch.cat(candidate_idx, dim=1)
 
-        match_quality_matrix = self.similarity_fn(boxes, anchors)  # [num_boxes x anchors]
-        candidate_ious = match_quality_matrix.gather(1, candidate_idx)  # [num_boxes, n_candidates]
+        match_quality_matrix = self.similarity_fn(
+            boxes, anchors
+        )  # [num_boxes x anchors]
+        candidate_ious = match_quality_matrix.gather(
+            1, candidate_idx
+        )  # [num_boxes, n_candidates]
 
         # compute adaptive iou threshold
         iou_mean_per_gt = candidate_ious.mean(dim=1)  # [num_boxes]
         iou_std_per_gt = candidate_ious.std(dim=1)  # [num_boxes]
         iou_thresh_per_gt = iou_mean_per_gt + iou_std_per_gt  # [num_boxes]
-        is_pos = candidate_ious >= iou_thresh_per_gt[:, None]  # [num_boxes x n_candidates]
+        is_pos = (
+            candidate_ious >= iou_thresh_per_gt[:, None]
+        )  # [num_boxes x n_candidates]
 
-        if self.center_in_gt:  # can discard all candidates in case of very small objects :/
+        if (
+            self.center_in_gt
+        ):  # can discard all candidates in case of very small objects :/
             # center point of selected anchors needs to lie within the ground truth
-            boxes_idx = torch.arange(num_gt, device=boxes.device, dtype=torch.long)[:, None]\
-                .expand_as(candidate_idx).contiguous()  # [num_boxes x n_candidates]
+            boxes_idx = (
+                torch.arange(num_gt, device=boxes.device, dtype=torch.long)[:, None]
+                .expand_as(candidate_idx)
+                .contiguous()
+            )  # [num_boxes x n_candidates]
             is_in_gt = center_in_boxes(
-                anchors_center[candidate_idx.view(-1)], boxes[boxes_idx.view(-1)], eps=self.min_dist)
+                anchors_center[candidate_idx.view(-1)],
+                boxes[boxes_idx.view(-1)],
+                eps=self.min_dist,
+            )
             is_pos = is_pos & is_in_gt.view_as(is_pos)  # [num_boxes x n_candidates]
 
         # in case on anchor is assigned to multiple boxes, use box with highest IoU
@@ -331,4 +367,4 @@ class ATSSMatcher(Matcher):
         return match_quality_matrix, matches
 
 
-MatcherType = TypeVar('MatcherType', bound=Matcher)
+MatcherType = TypeVar("MatcherType", bound=Matcher)

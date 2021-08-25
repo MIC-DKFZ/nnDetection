@@ -13,12 +13,14 @@ from nndet.utils.info import maybe_verbose_iterable
 
 @env_guard
 def main():
-    det_data_dir = Path(os.getenv('det_data'))
+    det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / "Task011_Kits"
     source_data_dir = task_data_dir / "raw"
 
     if not source_data_dir.is_dir():
-        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
+        raise RuntimeError(
+            f"{source_data_dir} should contain the raw data but does not exist."
+        )
 
     splitted_dir = task_data_dir / "raw_splitted"
     target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"
@@ -36,11 +38,13 @@ def main():
         "task": "Task011_Kits",
         "target_class": None,
         "test_labels": True,
-
-        "seg2det_stuff": [1,], # define stuff classes: kidney
-        "seg2det_things": [2,], # define things classes: tumor
-        "min_size": 3.,
-
+        "seg2det_stuff": [
+            1,
+        ],  # define stuff classes: kidney
+        "seg2det_things": [
+            2,
+        ],  # define things classes: tumor
+        "min_size": 3.0,
         "labels": {"0": "lesion"},
         "labels_stuff": {"1": "kidney"},
         "modalities": {"0": "CT"},
@@ -54,17 +58,24 @@ def main():
         logger.info(f"Copy case {c}")
         case_id = int(c.split("_")[-1])
         if case_id < 210:
-            shutil.copy(source_data_dir / c / "imaging.nii.gz", target_data_dir / f"{c}_0000.nii.gz")
-            shutil.copy(source_data_dir / c / "segmentation.nii.gz", target_label_dir / f"{c}.nii.gz")
+            shutil.copy(
+                source_data_dir / c / "imaging.nii.gz",
+                target_data_dir / f"{c}_0000.nii.gz",
+            )
+            shutil.copy(
+                source_data_dir / c / "segmentation.nii.gz",
+                target_label_dir / f"{c}.nii.gz",
+            )
 
     # create an artificial test split
-    create_test_split(splitted_dir=splitted_dir,
-                      num_modalities=1,
-                      test_size=0.3,
-                      random_state=0,
-                      shuffle=True,
-                      )
+    create_test_split(
+        splitted_dir=splitted_dir,
+        num_modalities=1,
+        test_size=0.3,
+        random_state=0,
+        shuffle=True,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -66,7 +66,7 @@ class RetinaUNetC010TwoFocal(RetinaUNetC010LReLU):
         Returns:
             HeadType: instantiated head
         """
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
 
         head = cls.head_cls(
             classifier=classifier,

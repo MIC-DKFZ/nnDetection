@@ -29,8 +29,8 @@ Smoke-Tests cover:
     - basic backward() scenario
 """
 
-BOXES_PRED = torch.Tensor([[0., 0., 1., 1.]])
-BOXES_TARGET = torch.Tensor([[1., 1., 2., 3.]])
+BOXES_PRED = torch.Tensor([[0.0, 0.0, 1.0, 1.0]])
+BOXES_TARGET = torch.Tensor([[1.0, 1.0, 2.0, 3.0]])
 
 
 TEST_CASES = [
@@ -60,7 +60,7 @@ TEST_CASES = [
         torch.ones(10, dtype=torch.float),
     ),
     (
-        SmoothL1Loss(beta=1., reduction="mean"),
+        SmoothL1Loss(beta=1.0, reduction="mean"),
         torch.zeros(10, dtype=torch.float),
         torch.ones(10, dtype=torch.float),
     ),
@@ -91,7 +91,7 @@ TEST_CASES = [
 def test_loss_weight(loss_fn, pred, target):
     with torch.no_grad():
         base_val = loss_fn(pred, target)
-    loss_fn.loss_weight *= 2.
+    loss_fn.loss_weight *= 2.0
 
     with torch.no_grad():
         scaled_val = loss_fn(pred, target)

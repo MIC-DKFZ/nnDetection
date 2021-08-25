@@ -16,12 +16,13 @@ from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
 
 
-def process_case(case_id,
-                 source_images,
-                 source_labels,
-                 target_images,
-                 target_labels,
-                 ):
+def process_case(
+    case_id,
+    source_images,
+    source_labels,
+    target_images,
+    target_labels,
+):
     logger.info(f"Processing case {case_id}")
     maybe_split_4d_nifti(source_images / f"{case_id}.nii.gz", target_images)
     shutil.copy2(source_labels / f"{case_id}.nii.gz", target_labels)
@@ -30,45 +31,62 @@ def process_case(case_id,
 @env_guard
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="One or multiple of: Task003_Liver, Task007_Pancreas, "
-                        "Task008_HepaticVessel, Task010_Colon",
-                        )
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="One or multiple of: Task003_Liver, Task007_Pancreas, "
+        "Task008_HepaticVessel, Task010_Colon",
+    )
     args = parser.parse_args()
     tasks = args.tasks
 
     decathlon_props = {
         "Task003_Liver": {
-            "seg2det_stuff": [1, ],  # liver
-            "seg2det_things": [2, ],  # cancer
-            "min_size": 3.,
+            "seg2det_stuff": [
+                1,
+            ],  # liver
+            "seg2det_things": [
+                2,
+            ],  # cancer
+            "min_size": 3.0,
             "labels": {"0": "cancer"},
             "labels_stuff": {"1": "liver"},
         },
         "Task007_Pancreas": {
-            "seg2det_stuff": [1, ],  # pancreas
-            "seg2det_things": [2, ],
-            "min_size": 3.,
+            "seg2det_stuff": [
+                1,
+            ],  # pancreas
+            "seg2det_things": [
+                2,
+            ],
+            "min_size": 3.0,
             "labels": {"0": "cancer"},
             "labels_stuff": {"1": "pancreas"},
         },
         "Task008_HepaticVessel": {
-            "seg2det_stuff": [1, ],  # vessel
-            "seg2det_things": [2, ],
-            "min_size": 3.,
+            "seg2det_stuff": [
+                1,
+            ],  # vessel
+            "seg2det_things": [
+                2,
+            ],
+            "min_size": 3.0,
             "labels": {"0": "tumour"},
             "labels_stuff": {"1": "vessel"},
         },
         "Task010_Colon": {
             "seg2det_stuff": [],
-            "seg2det_things": [1, ],
-            "min_size": 3.,
+            "seg2det_things": [
+                1,
+            ],
+            "min_size": 3.0,
             "labels": {"0": "cancer"},
             "labels_stuff": {},
         },
     }
 
-    basedir = Path(os.getenv('det_data'))
+    basedir = Path(os.getenv("det_data"))
     for task in tasks:
         task_data_dir = basedir / task
 
@@ -100,10 +118,8 @@ def main():
         dataset_info = {
             "task": task,
             "name": original_meta["name"],
-
             "target_class": None,
             "test_labels": True,
-
             "modalities": original_meta["modality"],
             "dim": 3,
             "info": {
@@ -120,12 +136,13 @@ def main():
         logger.info(f"Found {len(case_ids)} for preparation.")
 
         for cid in maybe_verbose_iterable(case_ids):
-            process_case(cid,
-                         source_data_dir,
-                         source_labels_dir,
-                         target_data_dir,
-                         target_label_dir,
-                         )
+            process_case(
+                cid,
+                source_data_dir,
+                source_labels_dir,
+                target_data_dir,
+                target_label_dir,
+            )
 
         # with Pool(processes=6) as p:
         #     p.starmap(process_case, zip(case_ids,
@@ -136,13 +153,14 @@ def main():
         #                                 ))
 
         # create an artificial test split
-        create_test_split(splitted_dir=splitted_dir,
-                          num_modalities=1,
-                          test_size=0.3,
-                          random_state=0,
-                          shuffle=True,
-                          )
+        create_test_split(
+            splitted_dir=splitted_dir,
+            num_modalities=1,
+            test_size=0.3,
+            random_state=0,
+            shuffle=True,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -39,7 +39,12 @@ from nndet.planning.experiment.utils import create_labels
 from nndet.planning.properties.registry import medical_instance_props
 from nndet.io.load import load_pickle, load_npz_looped
 from nndet.io.prepare import maybe_split_4d_nifti, instances_from_segmentation
-from nndet.io.paths import get_paths_raw_to_split, get_paths_from_splitted_dir, subfiles, get_case_id_from_path
+from nndet.io.paths import (
+    get_paths_raw_to_split,
+    get_paths_from_splitted_dir,
+    subfiles,
+    get_case_id_from_path,
+)
 from nndet.preprocessing import ImageCropper
 from nndet.utils.check import check_dataset_file, check_data_and_label_splitted
 
@@ -68,13 +73,15 @@ def run_splitting_4d(data_dir: Path, output_dir: Path, num_processes: int) -> No
         p.starmap(maybe_split_4d_nifti, zip(source_files, target_folders))
 
 
-def prepare_labels(data_dir: Path,
-                   output_dir: Path,
-                   num_processes: int,
-                   rm_classes: Sequence[int],
-                   ro_classes: Dict[int, int],
-                   subtract_one_from_classes: bool,
-                   instances_from_seg: bool = True):
+def prepare_labels(
+    data_dir: Path,
+    output_dir: Path,
+    num_processes: int,
+    rm_classes: Sequence[int],
+    ro_classes: Dict[int, int],
+    subtract_one_from_classes: bool,
+    instances_from_seg: bool = True,
+):
     """
     Copy labels to splitted dir.
     Optionally, runs connected components and removes classes from
@@ -102,22 +109,36 @@ def prepare_labels(data_dir: Path,
                 labels_output_dir.mkdir(parents=True)
 
             with Pool(processes=num_processes) as p:
-                paths = list(map(Path, subfiles(data_dir / labels_subdir,
-                                                identifier="*.nii.gz", join=True)))
-                paths = [path for path in paths if not path.name.startswith('.')]
-                p.starmap(instances_from_segmentation, zip(
-                    paths, repeat(labels_output_dir), repeat(rm_classes),
-                    repeat(ro_classes), repeat(subtract_one_from_classes)))
+                paths = list(
+                    map(
+                        Path,
+                        subfiles(
+                            data_dir / labels_subdir, identifier="*.nii.gz", join=True
+                        ),
+                    )
+                )
+                paths = [path for path in paths if not path.name.startswith(".")]
+                p.starmap(
+                    instances_from_segmentation,
+                    zip(
+                        paths,
+                        repeat(labels_output_dir),
+                        repeat(rm_classes),
+                        repeat(ro_classes),
+                        repeat(subtract_one_from_classes),
+                    ),
+                )
         else:
             shutil.copytree(data_dir / labels_subdir, labels_output_dir)
 
 
-def run_cropping_and_convert(cropped_output_dir: Path,
-                             splitted_4d_output_dir: Path,
-                             data_info: dict,
-                             overwrite: bool,
-                             num_processes: int,
-                             ):
+def run_cropping_and_convert(
+    cropped_output_dir: Path,
+    splitted_4d_output_dir: Path,
+    data_info: dict,
+    overwrite: bool,
+    num_processes: int,
+):
     """
     First preparation step data:
         - stack data and segementation to a single sample (segmentation is the last channel)
@@ -145,11 +166,12 @@ def run_cropping_and_convert(cropped_output_dir: Path,
     imgcrop = ImageCropper(num_processes, cropped_output_dir)
     imgcrop.run_cropping(case_files, overwrite_existing=overwrite)
 
-    case_ids_failed, result_check = run_check(cropped_output_dir / "imagesTr",
-                                              remove=True,
-                                              processes=num_processes,
-                                              keys=("data",)
-                                              )
+    case_ids_failed, result_check = run_check(
+        cropped_output_dir / "imagesTr",
+        remove=True,
+        processes=num_processes,
+        keys=("data",),
+    )
     if not result_check:
         logger.warning(
             f"Crop check failed: There are corrupted files!!!! {case_ids_failed}"
@@ -157,11 +179,12 @@ def run_cropping_and_convert(cropped_output_dir: Path,
         )
         imgcrop = ImageCropper(0, cropped_output_dir)
         imgcrop.run_cropping(case_files, overwrite_existing=False)
-        case_ids_failed, result_check = run_check(cropped_output_dir / "imagesTr",
-                                                  remove=False,
-                                                  processes=num_processes,
-                                                  keys=("data",)
-                                                  )
+        case_ids_failed, result_check = run_check(
+            cropped_output_dir / "imagesTr",
+            remove=False,
+            processes=num_processes,
+            keys=("data",),
+        )
         if not result_check:
             logger.error(f"Found corrupted files: {case_ids_failed}.")
             raise RuntimeError("Corrupted files")
@@ -169,13 +192,14 @@ def run_cropping_and_convert(cropped_output_dir: Path,
         logger.info("Crop check successful: Loading check completed")
 
 
-def run_dataset_analysis(cropped_output_dir: Path,
-                         preprocessed_output_dir: Path,
-                         data_info: dict,
-                         num_processes: int,
-                         intensity_properties: bool = True,
-                         overwrite: bool = True,
-                         ):
+def run_dataset_analysis(
+    cropped_output_dir: Path,
+    preprocessed_output_dir: Path,
+    data_info: dict,
+    num_processes: int,
+    intensity_properties: bool = True,
+    overwrite: bool = True,
+):
     """
     Analyse dataset
 
@@ -225,9 +249,7 @@ def run_planning_and_process(
         run_preprocessing: Preprocess and check data. Defaults to True.
     """
     planner_cls = PLANNER_REGISTRY.get(planner_name)
-    planner = planner_cls(
-        preprocessed_output_dir=preprocessed_output_dir
-    )
+    planner = planner_cls(preprocessed_output_dir=preprocessed_output_dir)
     plan_identifiers = planner.plan_experiment(
         model_name=model_name,
         model_cfg=model_cfg,
@@ -243,22 +265,26 @@ def run_planning_and_process(
             case_ids_failed, result_check = run_check(
                 data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
                 remove=True,
-                processes=num_processes
+                processes=num_processes,
             )
 
             # delete and rerun corrupted cases
             if not result_check:
-                logger.warning(f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
-                               f"Running preprocessing of those cases without multiprocessing.")
+                logger.warning(
+                    f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
+                    f"Running preprocessing of those cases without multiprocessing."
+                )
                 planner.run_preprocessing(
                     cropped_data_dir=cropped_output_dir / "imagesTr",
                     plan=plan,
                     num_processes=0,
                 )
                 case_ids_failed, result_check = run_check(
-                    data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
+                    data_dir=preprocessed_output_dir
+                    / plan["data_identifier"]
+                    / "imagesTr",
                     remove=False,
-                    processes=0
+                    processes=0,
                 )
                 if not result_check:
                     logger.error(f"Could not fix corrupted files {case_ids_failed}!")
@@ -276,11 +302,12 @@ def run_planning_and_process(
         )
 
 
-def run_check(data_dir: Path,
-              remove: bool = False,
-              processes: int = 8,
-              keys: Sequence[str] = ("data", "seg"),
-              ) -> Tuple[List[str], bool]:
+def run_check(
+    data_dir: Path,
+    remove: bool = False,
+    processes: int = 8,
+    keys: Sequence[str] = ("data", "seg"),
+) -> Tuple[List[str], bool]:
     """
     Check if files from preprocessed dir are loadable
 
@@ -297,26 +324,31 @@ def run_check(data_dir: Path,
     """
     cases_npz = list(data_dir.glob("*.npz"))
     cases_npz.sort()
-    cases_pkl = [case.parent / f"{(case.name).rsplit('.', 1)[0]}.pkl"
-                 for case in cases_npz]
+    cases_pkl = [
+        case.parent / f"{(case.name).rsplit('.', 1)[0]}.pkl" for case in cases_npz
+    ]
 
     if processes == 0:
-        result = [check_case(case_npz, case_pkl, remove=remove)
-                  for case_npz, case_pkl in zip(cases_npz, cases_pkl)]
+        result = [
+            check_case(case_npz, case_pkl, remove=remove)
+            for case_npz, case_pkl in zip(cases_npz, cases_pkl)
+        ]
     else:
         with Pool(processes=processes) as p:
-            result = p.starmap(check_case,
-                               zip(cases_npz, cases_pkl, repeat(remove), repeat(keys)))
+            result = p.starmap(
+                check_case, zip(cases_npz, cases_pkl, repeat(remove), repeat(keys))
+            )
     failed_cases = [fc[0] for fc in result if not fc[1]]
     logger.info(f"Checked {len(result)} cases in {data_dir}")
     return failed_cases, len(failed_cases) == 0
 
 
-def check_case(case_npz: Path,
-               case_pkl: Path = None,
-               remove: bool = False,
-               keys: Sequence[str] = ("data", "seg"),
-               ) -> Tuple[str, bool]:
+def check_case(
+    case_npz: Path,
+    case_pkl: Path = None,
+    remove: bool = False,
+    keys: Sequence[str] = ("data", "seg"),
+) -> Tuple[str, bool]:
     """
     Check if a single cases loadable
 
@@ -343,16 +375,22 @@ def check_case(case_npz: Path,
             instances_properties = properties["instances"].keys()
             props_instances = np.sort(np.array(list(map(int, instances_properties))))
 
-            if (len(seg_instances) != len(props_instances)) or any(seg_instances != props_instances):
-                logger.warning(f"Inconsistent instances {case_npz} from "
-                               f"properties {props_instances} from seg {seg_instances}. "
-                               f"Very small instances can get lost in resampling "
-                               f"but larger instances should not disappear!")
+            if (len(seg_instances) != len(props_instances)) or any(
+                seg_instances != props_instances
+            ):
+                logger.warning(
+                    f"Inconsistent instances {case_npz} from "
+                    f"properties {props_instances} from seg {seg_instances}. "
+                    f"Very small instances can get lost in resampling "
+                    f"but larger instances should not disappear!"
+                )
             for i in seg_instances:
                 if str(i) not in instances_properties:
-                    raise RuntimeError(f"Found instance {seg_instances} in segmentation "
-                                       f"which is not in properties {instances_properties}."
-                                       f"Delete labels manually and rerun prepare label!")
+                    raise RuntimeError(
+                        f"Found instance {seg_instances} in segmentation "
+                        f"which is not in properties {instances_properties}."
+                        f"Delete labels manually and rerun prepare label!"
+                    )
     except Exception as e:
         logger.error(f"Failed to load {case_npz} with {e}")
         logger.error(f"{traceback.format_exc()}")
@@ -364,10 +402,11 @@ def check_case(case_npz: Path,
     return case_id, True
 
 
-def run(cfg,
-        num_processes: int,
-        num_processes_preprocessing: int,
-        ):
+def run(
+    cfg,
+    num_processes: int,
+    num_processes_preprocessing: int,
+):
     """
     Python interface for script
 
@@ -382,22 +421,24 @@ def run(cfg,
 
     if cfg["prep"]["crop"]:
         # crop data to nonzero area
-        run_cropping_and_convert(cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-                                 splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
-                                 data_info=data_info,
-                                 overwrite=cfg["prep"]["overwrite"],
-                                 num_processes=num_processes,
-                                 )
+        run_cropping_and_convert(
+            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
+            splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
+            data_info=data_info,
+            overwrite=cfg["prep"]["overwrite"],
+            num_processes=num_processes,
+        )
 
     if cfg["prep"]["analyze"]:
         # compute statistics over data and segmentation(e.g. physical volume of individual classes)
-        run_dataset_analysis(cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-                             preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
-                             data_info=data_info,
-                             num_processes=num_processes,
-                             intensity_properties=True,
-                             overwrite=cfg["prep"]["overwrite"],
-                             )
+        run_dataset_analysis(
+            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
+            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            data_info=data_info,
+            num_processes=num_processes,
+            intensity_properties=True,
+            overwrite=cfg["prep"]["overwrite"],
+        )
 
     if cfg["prep"]["plan"] or cfg["prep"]["process"]:
         # plan future training
@@ -417,28 +458,47 @@ def run(cfg,
 @env_guard
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="Single or multiple task identifiers to process consecutively",
-                        )
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file", default=[],
-                        required=False)
-    parser.add_argument('--full_check',
-                        help="Run a full check of the data.",
-                        action='store_true',
-                        )
-    parser.add_argument('--no_check',
-                        help="Skip basic check.",
-                        action='store_true',
-                        )
-    parser.add_argument('-np', '--num_processes',
-                        type=int, default=4, required=False,
-                        help="Number of processes to use for croppping.",
-                        )
-    parser.add_argument('-npp', '--num_processes_preprocessing',
-                        type=int, default=3, required=False,
-                        help="Number of processes to use for resampling.",
-                        )
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        default=[],
+        required=False,
+    )
+    parser.add_argument(
+        "--full_check",
+        help="Run a full check of the data.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--no_check",
+        help="Skip basic check.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-np",
+        "--num_processes",
+        type=int,
+        default=4,
+        required=False,
+        help="Number of processes to use for croppping.",
+    )
+    parser.add_argument(
+        "-npp",
+        "--num_processes_preprocessing",
+        type=int,
+        default=3,
+        required=False,
+        help="Number of processes to use for resampling.",
+    )
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
@@ -472,11 +532,12 @@ def main():
     for task in tasks:
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=_ov)
-        run(OmegaConf.to_container(cfg, resolve=True),
+        run(
+            OmegaConf.to_container(cfg, resolve=True),
             num_processes=num_processes,
             num_processes_preprocessing=num_processes_preprocessing,
-            )
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

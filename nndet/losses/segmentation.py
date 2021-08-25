@@ -27,9 +27,11 @@ from nndet.losses.classification import CrossEntropyLoss, BCEWithLogitsLoss
 
 def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):
     shape = data.shape
-    targets = torch.empty(size=(shape[0], num_classes, *shape[1:]), device=data.device)\
-        .fill_(smoothing / num_classes)\
-        .scatter_(1, data.long().unsqueeze(1), 1. - smoothing)
+    targets = (
+        torch.empty(size=(shape[0], num_classes, *shape[1:]), device=data.device)
+        .fill_(smoothing / num_classes)
+        .scatter_(1, data.long().unsqueeze(1), 1.0 - smoothing)
+    )
     return targets
 
 
@@ -70,9 +72,15 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     fn = (1 - net_output) * y_onehot
 
     if mask is not None:
-        tp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1)
-        fp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1)
-        fn = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1)
+        tp = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1
+        )
+        fp = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1
+        )
+        fn = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1
+        )
 
     if square:
         tp = tp ** 2
@@ -122,16 +130,17 @@ def soft_dice(
 
 
 class SoftDiceLoss(Loss):
-    def __init__(self,
-                 nonlin: Callable = None,
-                 batch_dice: bool = False,
-                 do_bg: bool = False,
-                 smooth_nom: float = 1e-5,
-                 smooth_denom: float = 1e-5,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = True,
-                 reduction: str = "mean",
-                 ):
+    def __init__(
+        self,
+        nonlin: Callable = None,
+        batch_dice: bool = False,
+        do_bg: bool = False,
+        smooth_nom: float = 1e-5,
+        smooth_denom: float = 1e-5,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = True,
+        reduction: str = "mean",
+    ):
         """
         Soft dice loss
 
@@ -158,16 +167,19 @@ class SoftDiceLoss(Loss):
         self.nonlin = nonlin
         self.smooth_nom = smooth_nom
         self.smooth_denom = smooth_denom
-        logger.info(f"Running batch dice {self.batch_dice} and "
-                    f"do bg {self.do_bg} in dice loss.")
+        logger.info(
+            f"Running batch dice {self.batch_dice} and "
+            f"do bg {self.do_bg} in dice loss."
+        )
         if self.reduction.lower() == "none":
             raise ValueError(f"SoftDice does not support reduction {reduction}.")
 
-    def forward(self,
-                inp: torch.Tensor,
-                target: torch.Tensor,
-                loss_mask: Optional[torch.Tensor] = None,
-                ):
+    def forward(
+        self,
+        inp: torch.Tensor,
+        target: torch.Tensor,
+        loss_mask: Optional[torch.Tensor] = None,
+    ):
         """
         Compute loss
 
@@ -208,12 +220,13 @@ class SoftDiceLoss(Loss):
 
 
 class TopKLoss(CrossEntropyLoss):
-    def __init__(self,
-                 topk: float,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        topk: float,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Uses topk percent of values to compute CE loss
         (expects pre softmax logits!)
@@ -224,8 +237,10 @@ class TopKLoss(CrossEntropyLoss):
             loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss."
-                             "This will always return the mean!")
+            raise ValueError(
+                "Reduction is not supported in TopKLoss."
+                "This will always return the mean!"
+            )
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
@@ -255,14 +270,15 @@ class TopKLoss(CrossEntropyLoss):
 
 
 class TopKLossSigmoid(BCEWithLogitsLoss):
-    def __init__(self,
-                 num_classes: int,
-                 topk: float,
-                 smoothing: float = 0.0,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        num_classes: int,
+        topk: float,
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Uses topk percent of values to compute BCE loss with one hot
         (support multi class through one hot, expects pre sigmoid logits!)
@@ -275,8 +291,10 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
             loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss."
-                             "This will always return the mean!")
+            raise ValueError(
+                "Reduction is not supported in TopKLoss."
+                "This will always return the mean!"
+            )
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
@@ -304,7 +322,8 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
             Tensor: final loss
         """
         target_one_hot = one_hot_smooth_batch(
-            target, num_classes=self.num_classes + 1, smoothing=self.smoothing)  # [N, C + 1]
+            target, num_classes=self.num_classes + 1, smoothing=self.smoothing
+        )  # [N, C + 1]
         target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
         losses = super().forward(input, target_one_hot.float())
 

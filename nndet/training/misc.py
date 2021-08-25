@@ -20,35 +20,43 @@ class EpochTimerCallback(Callback):
         self.val_epoch_tic = 0
         self.val_epoch_toc = 0
 
-    def on_train_epoch_start(self,
-                             trainer,
-                             pl_module: LightningModule,
-                             ) -> None:
+    def on_train_epoch_start(
+        self,
+        trainer,
+        pl_module: LightningModule,
+    ) -> None:
         self.train_epoch_tic = time.time()
         return super().on_train_epoch_start(trainer, pl_module)
 
-    def on_train_epoch_end(self,
-                           trainer,
-                           pl_module: LightningModule,
-                           outputs: List[Any],
-                           ) -> None:
+    def on_train_epoch_end(
+        self,
+        trainer,
+        pl_module: LightningModule,
+        outputs: List[Any],
+    ) -> None:
         self.train_epoch_toc = time.time()
-        logger.info(f"Train epoch {trainer.current_epoch} took "
-                    f"{int(self.train_epoch_toc - self.train_epoch_tic)} s")
+        logger.info(
+            f"Train epoch {trainer.current_epoch} took "
+            f"{int(self.train_epoch_toc - self.train_epoch_tic)} s"
+        )
         return super().on_train_epoch_end(trainer, pl_module, outputs)
 
-    def on_validation_epoch_start(self,
-                                  trainer,
-                                  pl_module: LightningModule,
-                                  ) -> None:
+    def on_validation_epoch_start(
+        self,
+        trainer,
+        pl_module: LightningModule,
+    ) -> None:
         self.val_epoch_tic = time.time()
         return super().on_validation_epoch_start(trainer, pl_module)
 
-    def on_validation_epoch_end(self,
-                                trainer,
-                                pl_module: LightningModule,
-                                ) -> None:
+    def on_validation_epoch_end(
+        self,
+        trainer,
+        pl_module: LightningModule,
+    ) -> None:
         self.val_epoch_toc = time.time()
-        logger.info(f"Val epoch {trainer.current_epoch} took "
-                    f"{int(self.val_epoch_toc - self.val_epoch_tic)} s")
+        logger.info(
+            f"Val epoch {trainer.current_epoch} took "
+            f"{int(self.val_epoch_toc - self.val_epoch_tic)} s"
+        )
         return super().on_validation_epoch_end(trainer, pl_module)

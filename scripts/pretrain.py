@@ -1,4 +1,3 @@
-
 import os
 import sys
 import socket
@@ -18,8 +17,12 @@ from omegaconf.omegaconf import OmegaConf
 
 import nndet
 from nndet.utils.config import compose
-from nndet.utils.info import log_git, write_requirements_to_file, \
-    create_debug_plan, flatten_mapping
+from nndet.utils.info import (
+    log_git,
+    write_requirements_to_file,
+    create_debug_plan,
+    flatten_mapping,
+)
 from nndet.utils.check import env_guard
 from nndet.io.datamodule.bg_module import Datamodule
 from nndet.io.paths import get_task
@@ -27,11 +30,12 @@ from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.ptmodule import MODULE_REGISTRY
 
 
-def init_train_dir(cfg,
-                   task: str,
-                   id: str,
-                   fold: int,
-                   ) -> Path:
+def init_train_dir(
+    cfg,
+    task: str,
+    id: str,
+    fold: int,
+) -> Path:
     """
     Initialize training directory and make it the current working directory
 
@@ -45,12 +49,16 @@ def init_train_dir(cfg,
 
     if cfg["train"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
-            print(f"Found existing folder {output_dir}, this run will overwrite "
-                  f"the results inside that folder")
+            print(
+                f"Found existing folder {output_dir}, this run will overwrite "
+                f"the results inside that folder"
+            )
         output_dir.mkdir(parents=True, exist_ok=True)
     else:
         if not output_dir.is_dir():
-            raise ValueError(f"{output_dir} is not a valid training dir and thus can not be resumed")
+            raise ValueError(
+                f"{output_dir} is not a valid training dir and thus can not be resumed"
+            )
     os.chdir(str(output_dir))
     return output_dir
 
@@ -61,16 +69,24 @@ def pretrain():
     Training entry
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('pretask', type=str,
-                        help="Pretrain Task id e.g. Task12_LIDC OR 12 OR LIDC",
-                        )
-    parser.add_argument('targettask', type=str,
-                        help="Target Task id e.g. Task12_LIDC OR 12 OR LIDC",
-                        )
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False,
-                        )
+    parser.add_argument(
+        "pretask",
+        type=str,
+        help="Pretrain Task id e.g. Task12_LIDC OR 12 OR LIDC",
+    )
+    parser.add_argument(
+        "targettask",
+        type=str,
+        help="Target Task id e.g. Task12_LIDC OR 12 OR LIDC",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
 
     args = parser.parse_args()
     pretask = args.pretask
@@ -104,8 +120,8 @@ def _pretrain(
     pretask = get_task(pretask, name=True)
     targettask = get_task(targettask, name=True)
 
-    assert cfg.host.parent_data is not None, 'Parent data can not be None'
-    assert cfg.host.parent_results is not None, 'Output dir can not be None'
+    assert cfg.host.parent_data is not None, "Parent data can not be None"
+    assert cfg.host.parent_results is not None, "Output dir can not be None"
 
     train_dir = init_train_dir(cfg, targettask, cfg["exp"]["id"], cfg["exp"]["fold"])
 
@@ -115,15 +131,21 @@ def _pretrain(
             "host": socket.gethostname(),
             "fold": cfg["exp"]["fold"],
             "task": cfg["task"],
-            "job_id": os.getenv('LSB_JOBID', 'no_id'),
+            "job_id": os.getenv("LSB_JOBID", "no_id"),
             "mlflow.runName": cfg["exp"]["id"],
         },
         save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
     )
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}))
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}))
+    pl_logger.log_hyperparams(
+        flatten_mapping(
+            {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}
+        )
+    )
+    pl_logger.log_hyperparams(
+        flatten_mapping(
+            {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}
+        )
+    )
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="INFO")
@@ -143,7 +165,9 @@ def _pretrain(
 
     det_data_path = Path(str(os.getenv("det_data")))
     pre_plan_path = det_data_path / pretask / "preprocessed" / f"{cfg['plan']}.pkl"
-    target_plan_path = det_data_path / targettask / "preprocessed" / f"{cfg['plan']}.pkl"
+    target_plan_path = (
+        det_data_path / targettask / "preprocessed" / f"{cfg['plan']}.pkl"
+    )
 
     pre_plan = load_pickle(pre_plan_path)
     target_plan = load_pickle(target_plan_path)
@@ -159,7 +183,11 @@ def _pretrain(
     pre_plan["anchors"] = target_plan["anchors"]
     save_json(create_debug_plan(pre_plan), "./plan_debug.json")
 
-    data_dir = Path(cfg.host["preprocessed_output_dir"]) / pre_plan["data_identifier"] / "imagesTr"
+    data_dir = (
+        Path(cfg.host["preprocessed_output_dir"])
+        / pre_plan["data_identifier"]
+        / "imagesTr"
+    )
 
     datamodule = Datamodule(
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
@@ -175,34 +203,44 @@ def _pretrain(
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
-        filename='model_best',
+        filename="model_best",
         save_last=True,
         save_top_k=1,
         monitor=cfg["trainer_cfg"]["monitor_key"],
         mode=cfg["trainer_cfg"]["monitor_mode"],
     )
-    checkpoint_cb.CHECKPOINT_NAME_LAST = 'model_last'
+    checkpoint_cb.CHECKPOINT_NAME_LAST = "model_last"
     callbacks.append(checkpoint_cb)
     callbacks.append(LearningRateMonitor(logging_interval="epoch"))
 
     # save configs
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "pre_config.yaml"))
-    OmegaConf.save(cfg, str(Path(os.getcwd()) / "pre_config_resolved.yaml"), resolve=True)
+    OmegaConf.save(
+        cfg, str(Path(os.getcwd()) / "pre_config_resolved.yaml"), resolve=True
+    )
 
-    cfg_target = compose(targettask, "config.yaml", overrides=ov if ov is not None else [])
+    cfg_target = compose(
+        targettask, "config.yaml", overrides=ov if ov is not None else []
+    )
     OmegaConf.save(cfg_target, str(Path(os.getcwd()) / "config.yaml"))
-    OmegaConf.save(cfg_target, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
+    OmegaConf.save(
+        cfg_target, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True
+    )
 
     # save plans
     save_pickle(target_plan, train_dir / "plan.pkl")  # save plan for downstream task
     save_pickle(pre_plan, train_dir / "pre_plan.pkl")  # backup plan
 
-    splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
+    splits = load_pickle(
+        Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file
+    )
     save_pickle(splits, train_dir / "pre_splits.pkl")
 
     trainer_kwargs = {}
     if cfg["train"]["mode"].lower() == "resume":
-        raise NotImplementedError("Resume training not implemented for pretask training.")
+        raise NotImplementedError(
+            "Resume training not implemented for pretask training."
+        )
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
@@ -224,10 +262,10 @@ def _pretrain(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,  # 10,
-        weights_summary='full',
+        weights_summary="full",
         plugins=plugins,
         terminate_on_nan=True,  # TODO: make modular
         move_metrics_to_cpu=True,
-        **trainer_kwargs
+        **trainer_kwargs,
     )
     trainer.fit(module, datamodule=datamodule)

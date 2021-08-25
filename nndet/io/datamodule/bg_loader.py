@@ -30,11 +30,12 @@ from nndet.core.boxes.ops_np import box_size_np
 
 
 class FixedSlimDataLoaderBase(SlimDataLoaderBase):
-    def __init__(self,
-                 *args,
-                 num_batches_per_epoch: int = 2500,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        *args,
+        num_batches_per_epoch: int = 2500,
+        **kwargs,
+    ):
         self.num_batches_per_epoch = num_batches_per_epoch
         super().__init__(*args, **kwargs)
 
@@ -44,17 +45,18 @@ class FixedSlimDataLoaderBase(SlimDataLoaderBase):
 
 @DATALOADER_REGISTRY.register
 class DataLoader3DFast(FixedSlimDataLoaderBase):
-    def __init__(self,
-                 data: Dict,
-                 batch_size: int,
-                 patch_size_generator: Sequence[int],
-                 patch_size_final: Sequence[int],
-                 oversample_foreground_percent: float = 0.5,
-                 memmap_mode: str = "r+",
-                 pad_mode: str = "constant",
-                 pad_kwargs_data: Optional[Dict[str, Any]] = None,
-                 num_batches_per_epoch: int = 2500,
-                 ):
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+    ):
         """
         Basic Dataloder for 3D Data.
         Center of foreground patches is sampled from pre computed bounding
@@ -83,9 +85,11 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
             num_batches_per_epoch=num_batches_per_epoch,
         )
         if len(patch_size_generator) != len(patch_size_final):
-            raise ValueError(f"Final and generator patch size need to have the same length."
-                             f"Found generator {patch_size_generator} and "
-                             f"final {patch_size_final} patch size.")
+            raise ValueError(
+                f"Final and generator patch size need to have the same length."
+                f"Found generator {patch_size_generator} and "
+                f"final {patch_size_final} patch size."
+            )
         self.patch_size_generator = patch_size_generator
         self.patch_size_final = patch_size_final
         self.oversample_foreground_percent = oversample_foreground_percent
@@ -97,7 +101,9 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
 
         # we sample bigger patches and create a center crop during augmentation
         # to cover the boarders of the patient we need to adjust the position
-        self.need_to_pad = (np.array(patch_size_generator) - np.array(patch_size_final)).astype(np.int32)
+        self.need_to_pad = (
+            np.array(patch_size_generator) - np.array(patch_size_final)
+        ).astype(np.int32)
         self.data_shape_batch, self.seg_shape_batch = self.determine_shapes()
         self.cache = self.build_cache()
         self.candidates_key = "boxes_file"
@@ -115,12 +121,12 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
                 Final shape of seg (including batchdim)
         """
         k = list(self._data.keys())[0]
-        if (p := Path(self._data[k]['data_file'])).is_file():
+        if (p := Path(self._data[k]["data_file"])).is_file():
             data = np.load(str(p), self.memmap_mode, allow_pickle=False)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
-        if (p := Path(self._data[k]['seg_file'])).is_file():
+        if (p := Path(self._data[k]["seg_file"])).is_file():
             seg = np.load(str(p), self.memmap_mode, allow_pickle=False)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
@@ -143,8 +149,10 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
         instance_cache = []
 
         logger.info("Building Sampling Cache for Dataloder")
-        for case_id, item in maybe_verbose_iterable(self._data.items(), desc="Sampling Cache"):
-            instances = load_pickle(item['boxes_file'])["instances"]
+        for case_id, item in maybe_verbose_iterable(
+            self._data.items(), desc="Sampling Cache"
+        ):
+            instances = load_pickle(item["boxes_file"])["instances"]
             if instances:
                 for instance_id in instances:
                     instance_cache.append((case_id, instance_id))
@@ -201,11 +209,17 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
+        for batch_idx, (case_id, instance_id) in enumerate(
+            zip(selected_cases, selected_instances)
+        ):
             # print(case_id, instance_id)
-            case_data = np.load(self._data[case_id]['data_file'], self.memmap_mode, allow_pickle=True)
-            case_seg = np.load(self._data[case_id]['seg_file'], self.memmap_mode, allow_pickle=True)
-            properties = load_pickle(self._data[case_id]['properties_file'])
+            case_data = np.load(
+                self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=True
+            )
+            case_seg = np.load(
+                self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=True
+            )
+            properties = load_pickle(self._data[case_id]["properties_file"])
 
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
@@ -227,26 +241,29 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
                     candidates=candidates,
                 )
 
-            data_batch[batch_idx] = save_get_crop(case_data,
-                                                  crop=crop,
-                                                  mode=self.pad_mode,
-                                                  **self.pad_kwargs_data,
-                                                  )[0]
-            seg_batch[batch_idx] = save_get_crop(case_seg,
-                                                 crop=crop,
-                                                 mode='constant',
-                                                 constant_values=-1,
-                                                 )[0]
+            data_batch[batch_idx] = save_get_crop(
+                case_data,
+                crop=crop,
+                mode=self.pad_mode,
+                **self.pad_kwargs_data,
+            )[0]
+            seg_batch[batch_idx] = save_get_crop(
+                case_seg,
+                crop=crop,
+                mode="constant",
+                constant_values=-1,
+            )[0]
             case_ids_batch.append(case_id)
             instances_batch.append(properties.pop("instances"))
             properties_batch.append(properties)
 
-        return {'data': data_batch,
-                'seg': seg_batch,
-                'properties': properties_batch,
-                'instance_mapping': instances_batch,
-                'keys': case_ids_batch,
-                }
+        return {
+            "data": data_batch,
+            "seg": seg_batch,
+            "properties": properties_batch,
+            "instance_mapping": instances_batch,
+            "keys": case_ids_batch,
+        }
 
     def load_candidates(self, case_id: str, fg_crop: bool) -> Union[Dict, None]:
         """
@@ -261,18 +278,19 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
             Union[Dict, None]: dict if fg, None if bg
         """
         if fg_crop:
-            return load_pickle(self._data[case_id]['boxes_file'])
+            return load_pickle(self._data[case_id]["boxes_file"])
         else:
             return None
 
-    def get_fg_crop(self,
-                    case_data: np.ndarray,
-                    case_seg: np.ndarray,
-                    properties: dict,
-                    case_id: str,
-                    instance_id: int,
-                    candidates: Union[Dict, None],
-                    ) -> List[slice]:
+    def get_fg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        instance_id: int,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
         """
         Sample foreground patches from precomputed boxes
 
@@ -292,20 +310,29 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
         box = candidates["boxes"][idx]  # [6]
-        origin0 = np.random.randint(int(box[0]) + 1, int(box[2])) - (self.patch_size_generator[0] // 2)
-        origin1 = np.random.randint(int(box[1]) + 1, int(box[3])) - (self.patch_size_generator[1] // 2)
-        origin2 = np.random.randint(int(box[4]) + 1, int(box[5])) - (self.patch_size_generator[2] // 2)
-        return [slice(origin0, origin0 + self.patch_size_generator[0]),
-                slice(origin1, origin1 + self.patch_size_generator[1]),
-                slice(origin2, origin2 + self.patch_size_generator[2])]
+        origin0 = np.random.randint(int(box[0]) + 1, int(box[2])) - (
+            self.patch_size_generator[0] // 2
+        )
+        origin1 = np.random.randint(int(box[1]) + 1, int(box[3])) - (
+            self.patch_size_generator[1] // 2
+        )
+        origin2 = np.random.randint(int(box[4]) + 1, int(box[5])) - (
+            self.patch_size_generator[2] // 2
+        )
+        return [
+            slice(origin0, origin0 + self.patch_size_generator[0]),
+            slice(origin1, origin1 + self.patch_size_generator[1]),
+            slice(origin2, origin2 + self.patch_size_generator[2]),
+        ]
 
-    def get_bg_crop(self,
-                    case_data: np.ndarray,
-                    case_seg: np.ndarray,
-                    properties: dict,
-                    case_id: str,
-                    candidates: Union[Dict, None],
-                    ) -> List[slice]:
+    def get_bg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
         """
         Extract slices for (random) background crop
 
@@ -323,25 +350,30 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
         data_shape = case_data.shape[1:]
 
         crop = []
-        for ps, ds, _pad in zip(self.patch_size_generator, data_shape, self.need_to_pad):
+        for ps, ds, _pad in zip(
+            self.patch_size_generator, data_shape, self.need_to_pad
+        ):
             pad = _pad
             if pad + ds < ps:
                 pad = ps - ds
-            origin = np.random.randint(-(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1)
+            origin = np.random.randint(
+                -(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1
+            )
             crop.append(slice(origin, origin + ps))
         return crop
 
 
 @DATALOADER_REGISTRY.register
 class DataLoader3DOffset(DataLoader3DFast):
-    def get_fg_crop(self,
-                    case_data: np.ndarray,
-                    case_seg: np.ndarray,
-                    properties: dict,
-                    case_id: str,
-                    instance_id: int,
-                    candidates: Union[Dict, None],
-                    ) -> List[slice]:
+    def get_fg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        instance_id: int,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
         """
         Sample foreground patches from precomputed boxes
 
@@ -366,17 +398,24 @@ class DataLoader3DOffset(DataLoader3DFast):
 
         origins = []
         for i, (ib, ib2) in enumerate([(0, 2), (1, 3), (4, 5)]):
-            if spatial_shape[i] <= self.patch_size_generator[i]:  # patch larger than scan
+            if (
+                spatial_shape[i] <= self.patch_size_generator[i]
+            ):  # patch larger than scan
                 # we center the slice and pad the rest
-                origins.append(- (self.need_to_pad[i] // 2))
-            elif box_size[i] >= self.patch_size_final[i]:  # selected instance is larger than patch
+                origins.append(-(self.need_to_pad[i] // 2))
+            elif (
+                box_size[i] >= self.patch_size_final[i]
+            ):  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
                 center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
                 origins.append(center - (self.patch_size_generator[0] // 2))
             else:  # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
-                lower_bound = np.clip(box[ib] - (self.patch_size_final[i] - box_size[i]),
-                                      a_min=0, a_max=patch_upper_bound)
+                lower_bound = np.clip(
+                    box[ib] - (self.patch_size_final[i] - box_size[i]),
+                    a_min=0,
+                    a_max=patch_upper_bound,
+                )
                 upper_bound = np.clip(box[ib], a_min=0, a_max=patch_upper_bound)
 
                 if lower_bound == upper_bound:
@@ -386,10 +425,11 @@ class DataLoader3DOffset(DataLoader3DFast):
 
                 origins.append(_origin - (self.need_to_pad[i] // 2))
 
-        return [slice(origins[0], origins[0] + self.patch_size_generator[0]),
-                slice(origins[1], origins[1] + self.patch_size_generator[1]),
-                slice(origins[2], origins[2] + self.patch_size_generator[2]),
-                ]
+        return [
+            slice(origins[0], origins[0] + self.patch_size_generator[0]),
+            slice(origins[1], origins[1] + self.patch_size_generator[1]),
+            slice(origins[2], origins[2] + self.patch_size_generator[2]),
+        ]
 
 
 @DATALOADER_REGISTRY.register
@@ -407,10 +447,14 @@ class DataLoader3DBalanced(DataLoader3DOffset):
         fg_cache = defaultdict(list)
 
         logger.info("Building Sampling Cache for Dataloder")
-        for case_id, item in maybe_verbose_iterable(self._data.items(), desc="Sampling Cache"):
-            candidates = load_pickle(item['boxes_file'])
+        for case_id, item in maybe_verbose_iterable(
+            self._data.items(), desc="Sampling Cache"
+        ):
+            candidates = load_pickle(item["boxes_file"])
             if candidates["instances"]:
-                for instance_id, instance_class in zip(candidates["instances"], candidates["labels"]):
+                for instance_id, instance_class in zip(
+                    candidates["instances"], candidates["labels"]
+                ):
                     fg_cache[int(instance_class)].append((case_id, instance_id))
         return {"fg": fg_cache, "case": list(self._data.keys())}
 
@@ -421,7 +465,8 @@ class DataLoader3DBalanced(DataLoader3DOffset):
         Background sampling: We jsut sample a random case
         """
         selected_classes = np.random.choice(
-            list(self.cache["fg"].keys()), self.batch_size, replace=True)
+            list(self.cache["fg"].keys()), self.batch_size, replace=True
+        )
 
         selected_cases = []
         selected_instances = []
@@ -432,7 +477,9 @@ class DataLoader3DBalanced(DataLoader3DOffset):
                 selected_instances.append(-1)
             else:
                 # sample fg / select an instance
-                _i = np.random.choice(range(len(self.cache["fg"][selected_classes[idx]])))
+                _i = np.random.choice(
+                    range(len(self.cache["fg"][selected_classes[idx]]))
+                )
                 _case, _instance_id = self.cache["fg"][selected_classes[idx]][_i]
                 selected_cases.append(_case)
                 selected_instances.append(int(_instance_id))
@@ -474,10 +521,16 @@ class DataLoader2DOffset(DataLoader3DFast):
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
-            case_data = np.load(self._data[case_id]['data_file'], self.memmap_mode, allow_pickle=False)
-            case_seg = np.load(self._data[case_id]['seg_file'], self.memmap_mode, allow_pickle=False)
-            properties = load_pickle(self._data[case_id]['properties_file'])
+        for batch_idx, (case_id, instance_id) in enumerate(
+            zip(selected_cases, selected_instances)
+        ):
+            case_data = np.load(
+                self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=False
+            )
+            case_seg = np.load(
+                self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=False
+            )
+            properties = load_pickle(self._data[case_id]["properties_file"])
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
                 crop = self.get_bg_crop(
@@ -498,35 +551,39 @@ class DataLoader2DOffset(DataLoader3DFast):
                     candidates=candidates,
                 )
 
-            data_batch[batch_idx] = save_get_crop(case_data,
-                                                  crop=crop,
-                                                  mode=self.pad_mode,
-                                                  **self.pad_kwargs_data,
-                                                  )[0][:, 0]
-            seg_batch[batch_idx] = save_get_crop(case_seg,
-                                                 crop=crop,
-                                                 mode='constant',
-                                                 constant_values=-1,
-                                                 )[0][:, 0]
+            data_batch[batch_idx] = save_get_crop(
+                case_data,
+                crop=crop,
+                mode=self.pad_mode,
+                **self.pad_kwargs_data,
+            )[0][:, 0]
+            seg_batch[batch_idx] = save_get_crop(
+                case_seg,
+                crop=crop,
+                mode="constant",
+                constant_values=-1,
+            )[0][:, 0]
             case_ids_batch.append(case_id)
             instances_batch.append(properties.pop("instances"))
             properties_batch.append(properties)
 
-        return {'data': data_batch,
-                'seg': seg_batch,
-                'properties': properties_batch,
-                'instance_mapping': instances_batch,
-                'keys': case_ids_batch,
-                }
+        return {
+            "data": data_batch,
+            "seg": seg_batch,
+            "properties": properties_batch,
+            "instance_mapping": instances_batch,
+            "keys": case_ids_batch,
+        }
 
-    def get_fg_crop(self,
-                    case_data: np.ndarray,
-                    case_seg: np.ndarray,
-                    properties: dict,
-                    case_id: str,
-                    instance_id: int,
-                    candidates: Union[Dict, None],
-                    ) -> List[slice]:
+    def get_fg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        instance_id: int,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
         """
         Sample foreground patches from precomputed boxes
 
@@ -553,17 +610,24 @@ class DataLoader2DOffset(DataLoader3DFast):
 
         origins = []
         for i, (ib, ib2) in enumerate([(1, 3), (4, 5)]):
-            if spatial_shape[i] <= self.patch_size_generator[i]:  # patch larger than scan
+            if (
+                spatial_shape[i] <= self.patch_size_generator[i]
+            ):  # patch larger than scan
                 # we center the slice and pad the rest
-                origins.append(- (self.need_to_pad[i] // 2))
-            elif box_size[i] >= self.patch_size_final[i]:  # selected instance is larger than patch
+                origins.append(-(self.need_to_pad[i] // 2))
+            elif (
+                box_size[i] >= self.patch_size_final[i]
+            ):  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
                 center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
                 origins.append(center - (self.patch_size_generator[0] // 2))
             else:  # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
-                lower_bound = np.clip(box[ib] - (self.patch_size_final[i] - box_size[i]),
-                                      a_min=0, a_max=patch_upper_bound)
+                lower_bound = np.clip(
+                    box[ib] - (self.patch_size_final[i] - box_size[i]),
+                    a_min=0,
+                    a_max=patch_upper_bound,
+                )
                 upper_bound = np.clip(box[ib], a_min=0, a_max=patch_upper_bound)
 
                 if lower_bound == upper_bound:
@@ -573,18 +637,20 @@ class DataLoader2DOffset(DataLoader3DFast):
 
                 origins.append(_origin - (self.need_to_pad[i] // 2))
 
-        return [slice(slice_idx, slice_idx + 1),
-                slice(origins[0], origins[0] + self.patch_size_generator[0]),
-                slice(origins[1], origins[1] + self.patch_size_generator[1]),
-                ]
+        return [
+            slice(slice_idx, slice_idx + 1),
+            slice(origins[0], origins[0] + self.patch_size_generator[0]),
+            slice(origins[1], origins[1] + self.patch_size_generator[1]),
+        ]
 
-    def get_bg_crop(self,
-                    case_data: np.ndarray,
-                    case_seg: np.ndarray,
-                    properties: dict,
-                    case_id: str,
-                    candidates: Union[Dict, None],
-                    ) -> List[slice]:
+    def get_bg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
         """
         Extract slices for (random) background crop
 
@@ -603,11 +669,15 @@ class DataLoader2DOffset(DataLoader3DFast):
 
         slice_idx = np.random.randint(0, case_data.shape[1])
         crop = [slice(slice_idx, slice_idx + 1)]
-        for ps, ds, _pad in zip(self.patch_size_generator, data_shape, self.need_to_pad):
+        for ps, ds, _pad in zip(
+            self.patch_size_generator, data_shape, self.need_to_pad
+        ):
             pad = _pad
             if pad + ds < ps:
                 pad = ps - ds
-            origin = np.random.randint(-(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1)
+            origin = np.random.randint(
+                -(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1
+            )
             crop.append(slice(origin, origin + ps))
         return crop
 
@@ -632,12 +702,12 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
                 Final shape of seg (including batchdim)
         """
         k = list(self._data.keys())[0]
-        if (p := Path(self._data[k]['data_file'])).is_file():
+        if (p := Path(self._data[k]["data_file"])).is_file():
             data = np.load(str(p), self.memmap_mode)  # noqa: F841
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
-        if (p := Path(self._data[k]['seg_file'])).is_file():
+        if (p := Path(self._data[k]["seg_file"])).is_file():
             seg = np.load(str(p), self.memmap_mode)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
@@ -668,10 +738,12 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
-            case_data = np.load(self._data[case_id]['data_file'], self.memmap_mode)
-            case_seg = np.load(self._data[case_id]['seg_file'], self.memmap_mode)
-            properties = load_pickle(self._data[case_id]['properties_file'])
+        for batch_idx, (case_id, instance_id) in enumerate(
+            zip(selected_cases, selected_instances)
+        ):
+            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode)
+            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode)
+            properties = load_pickle(self._data[case_id]["properties_file"])
 
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
@@ -694,23 +766,26 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
                 )
 
             crop_data = [slice(6, 10)] + crop
-            data_batch[batch_idx] = save_get_crop(case_data,
-                                                  crop=crop_data,
-                                                  mode=self.pad_mode,
-                                                  **self.pad_kwargs_data,
-                                                  )[0][:, 0]
-            seg_batch[batch_idx] = save_get_crop(case_seg,
-                                                 crop=crop,
-                                                 mode='constant',
-                                                 constant_values=-1,
-                                                 )[0][:, 0]
+            data_batch[batch_idx] = save_get_crop(
+                case_data,
+                crop=crop_data,
+                mode=self.pad_mode,
+                **self.pad_kwargs_data,
+            )[0][:, 0]
+            seg_batch[batch_idx] = save_get_crop(
+                case_seg,
+                crop=crop,
+                mode="constant",
+                constant_values=-1,
+            )[0][:, 0]
             case_ids_batch.append(case_id)
             instances_batch.append(properties.pop("instances"))
             properties_batch.append(properties)
 
-        return {'data': data_batch,
-                'seg': seg_batch,
-                'properties': properties_batch,
-                'instance_mapping': instances_batch,
-                'keys': case_ids_batch,
-                }
+        return {
+            "data": data_batch,
+            "seg": seg_batch,
+            "properties": properties_batch,
+            "instance_mapping": instances_batch,
+            "keys": case_ids_batch,
+        }

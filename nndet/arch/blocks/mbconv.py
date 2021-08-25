@@ -7,17 +7,18 @@ from nndet.arch.blocks.se import SELayer
 
 
 class MyFusedMBConv(torch.nn.Module):
-    def __init__(self,
-                 conv,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride,
-                 padding,
-                 expansion: int = 2,
-                 reduction: int = 4,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        padding,
+        expansion: int = 2,
+        reduction: int = 4,
+        **kwargs,
+    ):
         super().__init__()
         self.fw = torch.nn.Sequential(
             conv(
@@ -45,8 +46,11 @@ class MyFusedMBConv(torch.nn.Module):
             ),
         )
 
-        stride_prod = (reduce((lambda x, y: x * y), stride)
-                       if isinstance(stride, Sequence) else stride)
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
         if stride_prod > 1:
             self.shortcut = torch.nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),

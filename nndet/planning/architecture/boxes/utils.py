@@ -7,9 +7,9 @@ from torch import Tensor
 from nndet.core.boxes import box_center
 
 
-def comp_num_pool_per_axis(patch_size: Sequence[int],
-                           max_num_pool: int,
-                           min_feature_map_size: int) -> List[int]:
+def comp_num_pool_per_axis(
+    patch_size: Sequence[int], max_num_pool: int, min_feature_map_size: int
+) -> List[int]:
     """
     Computes the maximum number of pooling operations given a minimal feature map size
     and the patch size
@@ -23,7 +23,8 @@ def comp_num_pool_per_axis(patch_size: Sequence[int],
         List[int]: max number of pooling operations per axis
     """
     network_numpool_per_axis = np.floor(
-        [np.log(i / min_feature_map_size) / np.log(2) for i in patch_size]).astype(np.int32)
+        [np.log(i / min_feature_map_size) / np.log(2) for i in patch_size]
+    ).astype(np.int32)
     network_numpool_per_axis = [min(i, max_num_pool) for i in network_numpool_per_axis]
     return network_numpool_per_axis
 
@@ -58,8 +59,10 @@ def pad_shape(shape: Sequence[int], must_be_divisible_by: Sequence[int]) -> np.n
     else:
         assert len(must_be_divisible_by) == len(shape)
 
-    new_shp = [shape[i] + must_be_divisible_by[i] - shape[i] % must_be_divisible_by[i]
-               for i in range(len(shape))]
+    new_shp = [
+        shape[i] + must_be_divisible_by[i] - shape[i] % must_be_divisible_by[i]
+        for i in range(len(shape))
+    ]
 
     for i in range(len(shape)):
         if shape[i] % must_be_divisible_by[i] == 0:
@@ -68,10 +71,11 @@ def pad_shape(shape: Sequence[int], must_be_divisible_by: Sequence[int]) -> np.n
     return new_shp
 
 
-def scale_with_abs_strides(seq: Sequence[float],
-                           strides: Sequence[Union[Sequence[Union[int, float]], Union[int, float]]],
-                           dim_idx: int,
-                           ) -> List[Tuple[float]]:
+def scale_with_abs_strides(
+    seq: Sequence[float],
+    strides: Sequence[Union[Sequence[Union[int, float]], Union[int, float]]],
+    dim_idx: int,
+) -> List[Tuple[float]]:
     """
     Scale values with absolute stride between feature maps
 
@@ -102,7 +106,9 @@ def proxy_num_boxes_in_patch(boxes: Tensor, patch_size: Sequence[int]) -> Tensor
     Returns:
         Tensor: count of boxes which center point is in the range of patch_size / 2
     """
-    patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2  # [1, 1, dims]
+    patch_size = (
+        torch.tensor(patch_size, dtype=torch.float)[None, None] / 2
+    )  # [1, 1, dims]
 
     center = box_center(boxes)  # [N, dims]
     center_dists = (center[None] - center[:, None]).abs()  # [N, N, dims]
@@ -131,4 +137,6 @@ def fixed_anchor_init(dim: int):
 
 
 def concatenate_property_boxes(all_boxes: Sequence[np.ndarray]) -> np.ndarray:
-    return np.concatenate([b for b in all_boxes if not isinstance(b, list) and b.size > 0], axis=0)
+    return np.concatenate(
+        [b for b in all_boxes if not isinstance(b, list) and b.size > 0], axis=0
+    )

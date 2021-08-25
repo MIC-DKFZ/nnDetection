@@ -65,7 +65,10 @@ def generate_image(image_dir, label_dir, idx):
     elif selected_class == 1:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
 
-        inner_slicing = [slice(tp + object_width, tp + selected_size - object_width) for tp in top_left]
+        inner_slicing = [
+            slice(tp + object_width, tp + selected_size - object_width)
+            for tp in top_left
+        ]
         if len(inner_slicing) == 3:
             inner_slicing[0] = slice(0, image_size[0])
         inner_slicing = tuple(inner_slicing)
@@ -87,9 +90,7 @@ def generate_image(image_dir, label_dir, idx):
     data_itk = sitk.GetImageFromArray(data)
     mask_itk = sitk.GetImageFromArray(mask)
     mask_meta = {
-        "instances": {
-            "1": selected_class
-        },
+        "instances": {"1": selected_class},
     }
 
     if modalities > 1:
@@ -115,13 +116,13 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--full',
+        "--full",
         help="Increase size of dataset. "
         "Default sizes train/test 10/10 and full 1000/1000.",
-        action='store_true',
+        action="store_true",
     )
     parser.add_argument(
-        '--num_processes',
+        "--num_processes",
         help="Use multiprocessing to create dataset.",
         type=int,
         default=0,
@@ -182,7 +183,7 @@ def main():
                     repeat(images_tr_dir),
                     repeat(labels_tr_dir),
                     range(num_images_tr),
-                )
+                ),
             )
         with Pool(processes=num_processes) as p:
             p.starmap(
@@ -191,9 +192,9 @@ def main():
                     repeat(images_ts_dir),
                     repeat(labels_ts_dir),
                     range(num_images_tr, num_images_tr + num_images_ts),
-                )
+                ),
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

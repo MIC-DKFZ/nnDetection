@@ -12,10 +12,10 @@ class D3V001FP16I16(D3V001):
         Create Preprocessor
         """
         preprocessor = PreprocessorFP16I16(
-            norm_scheme_per_modality=plan['normalization_schemes'],
-            use_mask_for_norm=plan['use_mask_for_norm'],
-            transpose_forward=plan['transpose_forward'],
-            intensity_properties=plan['dataset_properties']['intensity_properties'],
-            resample_anisotropy_threshold=plan['resample_anisotropy_threshold'],
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
         )
         return preprocessor

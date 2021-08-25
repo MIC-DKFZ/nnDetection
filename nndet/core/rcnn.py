@@ -8,10 +8,11 @@ from nndet.utils.tensor import detach_all
 
 
 class RCNN(AbstractModel):
-    def __init__(self,
-                 rpn: AbstractModel,
-                 roi_module: RoIModule,
-                 ) -> None:
+    def __init__(
+        self,
+        rpn: AbstractModel,
+        roi_module: RoIModule,
+    ) -> None:
         super().__init__()
         self.rpn = rpn
         self.roi_module = roi_module
@@ -54,8 +55,7 @@ class RCNN(AbstractModel):
         **kwargs,
     ) -> Dict[str, Any]:
         proposals, features = self.rpn.inference_step_with_features(
-            images=images,
-            **kwargs
+            images=images, **kwargs
         )
         roi_prediction = self.roi_module.inference_step(
             images=images,

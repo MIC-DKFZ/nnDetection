@@ -4,7 +4,7 @@ from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelectiveFaster,
     BoxEnsemblerSelective2D,
-    )
+)
 
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001, RetinaUNetCV001Focal
@@ -16,9 +16,7 @@ from nndet.arch.heads.comb import (
 from nndet.arch.heads.classifier import (
     FocalClassifier,
 )
-from nndet.arch.heads.regressor import (
-    L1Regressor
-)
+from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.conv import (
     ConvInstanceLReLU,
     ConvGroupLReLU,
@@ -49,7 +47,7 @@ class RetinaUNetC012(RetinaUNetV001):
             3: {
                 "boxes": BoxEnsemblerSelectiveFaster,
                 "seg": SegmentationEnsembler,
-            }
+            },
         }
         if dim == 2:
             raise NotImplementedError
@@ -79,7 +77,7 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
             3: {
                 "boxes": BoxEnsemblerSelectiveFaster,
                 "seg": SegmentationEnsembler,
-            }
+            },
         }
         if dim == 2:
             raise NotImplementedError

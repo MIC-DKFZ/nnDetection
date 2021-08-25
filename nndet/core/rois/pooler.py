@@ -9,21 +9,23 @@ from nndet.core.boxes.ops import box_size, expand_to_boxes, permute_boxes
 
 
 class Pooler(torch.nn.Module):
-    def __init__(self,
-                 output_size: Union[Tuple[int, int], Tuple[int, int, int]],
-                 ):
+    def __init__(
+        self,
+        output_size: Union[Tuple[int, int], Tuple[int, int, int]],
+    ):
         """
         Perform RoI Pooling for multi scale features
         """
         super().__init__()
         self.output_size = output_size
 
-    def forward(self,
-                features: List[torch.Tensor],
-                proposal_boxes: torch.Tensor,
-                batch_idx: torch.Tensor,
-                image_size: Union[Tuple[int, int], Tuple[int, int, int]]
-                ) -> torch.Tensor:
+    def forward(
+        self,
+        features: List[torch.Tensor],
+        proposal_boxes: torch.Tensor,
+        batch_idx: torch.Tensor,
+        image_size: Union[Tuple[int, int], Tuple[int, int, int]],
+    ) -> torch.Tensor:
         """
         Perform multiscale pyramid pooling
 
@@ -41,10 +43,11 @@ class Pooler(torch.nn.Module):
         # TODO: IMPORTANT!!!!!!!!!
         # THIS ONLY WORKS FOR ISOTROPIC POOLING
         # NEED TO GENERALIZE TO NON ISOTROPIC POOLING
-        image_size_tensor = torch.tensor(image_size,
-                                         dtype=proposal_boxes.dtype,
-                                         device=proposal_boxes.device,
-                                         )
+        image_size_tensor = torch.tensor(
+            image_size,
+            dtype=proposal_boxes.dtype,
+            device=proposal_boxes.device,
+        )
         # normalize boes to [0, 1]
         proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
 
@@ -63,7 +66,8 @@ class Pooler(torch.nn.Module):
 
         # TODO: dynamically infer scale, these normlizations are wrong
         proprosals_prepared = torch.cat(
-            [batch_idx[:, None], proposal_boxes], dim=1,
+            [batch_idx[:, None], proposal_boxes],
+            dim=1,
         )
         for idx, fmap in enumerate(features):
             scale = fmap.shape[2] / image_size_tensor[0]
@@ -79,12 +83,12 @@ class Pooler(torch.nn.Module):
 
     @abstractmethod
     @torch.no_grad()
-    def _find_pyramid_level(self,
-                            proposal_boxes_norm: torch.Tensor,
-                            features: List[torch.Tensor],
-                            image_size: Union[Tuple[int, int],
-                                              Tuple[int, int, int]],
-                            ) -> torch.Tensor:
+    def _find_pyramid_level(
+        self,
+        proposal_boxes_norm: torch.Tensor,
+        features: List[torch.Tensor],
+        image_size: Union[Tuple[int, int], Tuple[int, int, int]],
+    ) -> torch.Tensor:
         """
         Assign proposals to pyramid levels for pooling
 
@@ -101,10 +105,11 @@ class Pooler(torch.nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def _pool_features(self,
-                       fmap: torch.Tensor,
-                       proposals: torch.Tensor,
-                       ) -> torch.Tensor:
+    def _pool_features(
+        self,
+        fmap: torch.Tensor,
+        proposals: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Pooling feature for proposals from given feature map
 
@@ -121,12 +126,12 @@ class Pooler(torch.nn.Module):
 
 class RoIAlignNaiveAssign(Pooler):
     @torch.no_grad()
-    def _find_pyramid_level(self,
-                            proposal_boxes_norm: torch.Tensor,
-                            features: List[torch.Tensor],
-                            image_size: Union[Tuple[int, int],
-                                              Tuple[int, int, int]],
-                            ) -> torch.Tensor:
+    def _find_pyramid_level(
+        self,
+        proposal_boxes_norm: torch.Tensor,
+        features: List[torch.Tensor],
+        image_size: Union[Tuple[int, int], Tuple[int, int, int]],
+    ) -> torch.Tensor:
         """
         Assign proposals to pyramid levels for pooling
         Proposals with an image size of
@@ -140,18 +145,21 @@ class RoIAlignNaiveAssign(Pooler):
         if len(image_size) == 2:
             v = torch.log2((normed_size[:, 0] * normed_size[:, 1]).sqrt())
         elif len(image_size) == 3:
-            v = torch.log2((normed_size[:, 0] * normed_size[:, 1] * normed_size[:, 2]) ** (1 / 3))
+            v = torch.log2(
+                (normed_size[:, 0] * normed_size[:, 1] * normed_size[:, 2]) ** (1 / 3)
+            )
         else:
             raise ValueError(f"Image size needs to be 2D or 3d, received {image_size}.")
 
         level = torch.floor(v * len(features)) + len(features)
         return level.clamp_(min=0, max=len(features)).to(dtype=torch.int)
 
-    def _pool_features(self,
-                       fmap: torch.Tensor,
-                       proposals: torch.Tensor,
-                       spatial_scale: float,
-                       ) -> torch.Tensor:
+    def _pool_features(
+        self,
+        fmap: torch.Tensor,
+        proposals: torch.Tensor,
+        spatial_scale: float,
+    ) -> torch.Tensor:
         """
         Pooling feature for proposals from given feature map
         """
@@ -168,4 +176,4 @@ class RoIAlignNaiveAssign(Pooler):
         )
 
 
-PoolerType = TypeVar('PoolerType', bound=Pooler)
+PoolerType = TypeVar("PoolerType", bound=Pooler)

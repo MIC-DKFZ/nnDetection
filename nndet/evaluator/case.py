@@ -19,8 +19,15 @@ from typing import Dict, Sequence, Callable, Tuple, Union, Mapping, Optional
 
 import numpy as np
 from loguru import logger
-from sklearn.metrics import accuracy_score, average_precision_score, confusion_matrix, \
-    f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 
 from nndet.evaluator import AbstractEvaluator
 from nndet.utils.info import experimental
@@ -31,14 +38,15 @@ __all__ = ["CaseEvaluator"]
 
 class _CaseEvaluator(AbstractEvaluator):
     @experimental
-    def __init__(self,
-                 classes: Sequence[Union[str, int]],
-                 score_metrics_scalar: Mapping[str, Callable] = None,
-                 class_metrics_scalar: Mapping[str, Callable] = None,
-                 score_metrics_curve: Mapping[str, Callable] = None,
-                 class_metrics_curve: Mapping[str, Callable] = None,
-                 target_class: Optional[int] = None,
-                 ):
+    def __init__(
+        self,
+        classes: Sequence[Union[str, int]],
+        score_metrics_scalar: Mapping[str, Callable] = None,
+        class_metrics_scalar: Mapping[str, Callable] = None,
+        score_metrics_curve: Mapping[str, Callable] = None,
+        class_metrics_curve: Mapping[str, Callable] = None,
+        target_class: Optional[int] = None,
+    ):
         """
         Compute case level evaluation metrics
         Predictions for individual instances are aggregated by using the
@@ -80,10 +88,18 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         self.results_list = defaultdict(list)
 
-        self.score_metrics_scalar = score_metrics_scalar if score_metrics_scalar is not None else {}
-        self.class_metrics_scalar = class_metrics_scalar if class_metrics_scalar is not None else {}
-        self.score_metrics_curve = score_metrics_curve if score_metrics_curve is not None else {}
-        self.class_metrics_curve = class_metrics_curve if class_metrics_curve is not None else {}
+        self.score_metrics_scalar = (
+            score_metrics_scalar if score_metrics_scalar is not None else {}
+        )
+        self.class_metrics_scalar = (
+            class_metrics_scalar if class_metrics_scalar is not None else {}
+        )
+        self.score_metrics_curve = (
+            score_metrics_curve if score_metrics_curve is not None else {}
+        )
+        self.class_metrics_curve = (
+            class_metrics_curve if class_metrics_curve is not None else {}
+        )
 
         if isinstance(target_class, str):
             raise ValueError("Need integer value of target class not the name!")
@@ -98,11 +114,12 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         self.results_list = defaultdict(list)
 
-    def run_online_evaluation(self,
-                              pred_classes: Sequence[np.ndarray],
-                              pred_scores: Sequence[np.ndarray],
-                              gt_classes: Sequence[np.ndarray],
-                              ) -> Dict:
+    def run_online_evaluation(
+        self,
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+    ) -> Dict:
         """
         Run evaluation on each case (accepts a batch of case resutls
         at once).
@@ -124,9 +141,13 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         case_classes = [np.unique(gtc) for gtc in gt_classes]
         case_scores = []
-        for case_instance_scores, case_instance_classes in zip(pred_scores, pred_classes):
+        for case_instance_scores, case_instance_classes in zip(
+            pred_scores, pred_classes
+        ):
             _scores = np.zeros(self.num_classes)
-            for instance_score, instance_class in zip(case_instance_scores, case_instance_classes):
+            for instance_score, instance_class in zip(
+                case_instance_scores, case_instance_classes
+            ):
                 if _scores[int(instance_class)] < instance_score:
                     _scores[int(instance_class)] = instance_score
             case_scores.append(_scores)
@@ -135,7 +156,9 @@ class _CaseEvaluator(AbstractEvaluator):
         self.results_list["case_scores"].extend(case_scores)
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute final scores and curves of metrics
 
@@ -164,20 +187,26 @@ class _CaseEvaluator(AbstractEvaluator):
             try:
                 scalar_results[key] = metric(gt_classes, pred_scores)
             except (ValueError, RuntimeError) as e:
-                logger.warning(f"Metric {key} exited with error {e}; writing nan to result")
+                logger.warning(
+                    f"Metric {key} exited with error {e}; writing nan to result"
+                )
                 scalar_results[key] = np.nan
         for key, metric in self.class_metrics_scalar.items():
             try:
                 scalar_results[key] = metric(gt_classes, pred_classes)
             except (ValueError, RuntimeError) as e:
-                logger.warning(f"Metric {key} exited with error {e}; writing nan to result")
+                logger.warning(
+                    f"Metric {key} exited with error {e}; writing nan to result"
+                )
                 scalar_results[key] = np.nan
 
         # add debug information
         if not "N_img" in curve_results:
             scalar_results["N_img"] = len(gt_classes)
         else:
-            raise ValueError("`N_img` is used internally and is not allowed for case metric naming!")
+            raise ValueError(
+                "`N_img` is used internally and is not allowed for case metric naming!"
+            )
 
         class_count_no_agg = self.class_count()
         for _k, _i in class_count_no_agg.items():
@@ -185,7 +214,9 @@ class _CaseEvaluator(AbstractEvaluator):
             if not _kd in scalar_results:
                 scalar_results[_kd] = _i
             else:
-                raise ValueError(f"{_kd} is used internally and is not allowed for case metric naming!")
+                raise ValueError(
+                    f"{_kd} is used internally and is not allowed for case metric naming!"
+                )
 
         unqiue_classes_agg, class_count_agg = np.unique(gt_classes, return_counts=True)
         for _c, _c_count in zip(unqiue_classes_agg, class_count_agg):
@@ -193,7 +224,9 @@ class _CaseEvaluator(AbstractEvaluator):
             if not _kc in scalar_results:
                 scalar_results[_kc] = _c_count
             else:
-                raise ValueError(f"{_kc} is used internally and is not allowed for case metric naming!")
+                raise ValueError(
+                    f"{_kc} is used internally and is not allowed for case metric naming!"
+                )
 
         return scalar_results, curve_results
 
@@ -227,10 +260,15 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         if self.target_class is not None:
             gt_classes = np.asarray(
-                [int(self.target_class in cc) for cc in self.results_list["case_classes"]])
+                [
+                    int(self.target_class in cc)
+                    for cc in self.results_list["case_classes"]
+                ]
+            )
         else:
             gt_classes = np.asarray(
-                [1 if len(cc) > 0 else 0 for cc in self.results_list["case_classes"]])
+                [1 if len(cc) > 0 else 0 for cc in self.results_list["case_classes"]]
+            )
         return gt_classes
 
     def aggregate_prdictions(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -241,7 +279,9 @@ class _CaseEvaluator(AbstractEvaluator):
             np.ndarray: predicted scores
             np.ndarray: predicted classes
         """
-        _pred_scores = np.stack(self.results_list["case_scores"], axis=0)  # N, num_classes
+        _pred_scores = np.stack(
+            self.results_list["case_scores"], axis=0
+        )  # N, num_classes
 
         if self.target_class is not None:
             pred_scores = _pred_scores[:, self.target_class]  # N
@@ -257,10 +297,7 @@ class _CaseEvaluator(AbstractEvaluator):
 
 class CaseEvaluator(_CaseEvaluator):
     @classmethod
-    def create(cls,
-               classes: Sequence[str],
-               target_class: int = None
-               ):
+    def create(cls, classes: Sequence[str], target_class: int = None):
         """
         Evaluation on patient level
 
@@ -296,10 +333,11 @@ class CaseEvaluator(_CaseEvaluator):
         class_metrics_curve = {
             "cfm_case": confusion_matrix,
         }
-        return cls(classes=classes,
-                   score_metrics_scalar=score_metrics_scalar,
-                   class_metrics_scalar=class_metrics_scalar,
-                   score_metrics_curve=score_metrics_curve,
-                   class_metrics_curve=class_metrics_curve,
-                   target_class=target_class,
-                   )
+        return cls(
+            classes=classes,
+            score_metrics_scalar=score_metrics_scalar,
+            class_metrics_scalar=class_metrics_scalar,
+            score_metrics_curve=score_metrics_curve,
+            class_metrics_curve=class_metrics_curve,
+            target_class=target_class,
+        )

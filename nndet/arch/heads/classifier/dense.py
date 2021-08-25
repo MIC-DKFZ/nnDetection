@@ -17,17 +17,18 @@ from nndet.losses.classification import (
 
 
 class DenseClassifier(Classifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        **kwargs,
+    ):
         """
         Base class to build classifier heads with typical conv structure
         conv(in, internal) -> num_convs x conv(internal, internal) ->
@@ -82,7 +83,8 @@ class DenseClassifier(Classifier):
                 stride=1,
                 padding=1,
                 **kwargs,
-            ))
+            ),
+        )
         for i in range(self.num_convs):
             _conv_internal.add_module(
                 name=f"c_internal{i}",
@@ -93,7 +95,8 @@ class DenseClassifier(Classifier):
                     stride=1,
                     padding=1,
                     **kwargs,
-                ))
+                ),
+            )
         return _conv_internal
 
     def build_conv_out(self, conv):
@@ -112,11 +115,12 @@ class DenseClassifier(Classifier):
             bias=True,
         )
 
-    def forward(self,
-                x: torch.Tensor,
-                level: int,
-                **kwargs,
-                ) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        level: int,
+        **kwargs,
+    ) -> torch.Tensor:
         """
         Forward input
 
@@ -183,27 +187,28 @@ class DenseClassifier(Classifier):
             logger.info("Init classifier weights: conv default")
 
 
-DenseClassifierType = TypeVar('DenseClassifierType', bound=DenseClassifier)
+DenseClassifierType = TypeVar("DenseClassifierType", bound=DenseClassifier)
 
 
 class BCECLassifier(DenseClassifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 prior_prob: Optional[float] = None,
-                 weight: Optional[Tensor] = None,
-                 reduction: str = "mean",
-                 smoothing: float = 0.0,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        weight: Optional[Tensor] = None,
+        reduction: str = "mean",
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Classifier Head with sigmoid based BCE loss computation and prio
         prob weight init
@@ -254,22 +259,23 @@ class BCECLassifier(DenseClassifier):
 
 
 class CEClassifier(DenseClassifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 prior_prob: Optional[float] = None,
-                 weight: Optional[Tensor] = None,
-                 reduction: str = "mean",
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        weight: Optional[Tensor] = None,
+        reduction: str = "mean",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Classifier Head with sigmoid based BCE loss computation and prio
         prob weight init
@@ -325,27 +331,30 @@ class CEClassifier(DenseClassifier):
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)[:, 1:]  # remove background predictions
+        return self.logits_convert_fn(box_logits)[
+            :, 1:
+        ]  # remove background predictions
 
 
 class FocalClassifier(DenseClassifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 prior_prob: Optional[float] = None,
-                 gamma: float = 2,
-                 alpha: float = -1,
-                 reduction: str = "sum",
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        gamma: float = 2,
+        alpha: float = -1,
+        reduction: str = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Classifier Head with sigmoid based BCE loss computation and
         prio prob weight init
@@ -395,23 +404,24 @@ class FocalClassifier(DenseClassifier):
 
 
 class AsymmetricFocalClassifier(FocalClassifier):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 num_classes: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 prior_prob: Optional[float] = None,
-                 gamma: float = 2,
-                 alpha: float = -1,
-                 reduction: str = "sum",
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        gamma: float = 2,
+        alpha: float = -1,
+        reduction: str = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Classifier Head with sigmoid based BCE loss computation and
         prio prob weight init
@@ -482,7 +492,8 @@ class FullyConntectedBCECLassifier(BCECLassifier):
                 stride=1,
                 padding=1,
                 **kwargs,
-            ))
+            ),
+        )
         for i in range(self.num_convs):
             _conv_internal.add_module(
                 name=f"c_internal{i}",
@@ -493,7 +504,8 @@ class FullyConntectedBCECLassifier(BCECLassifier):
                     stride=1,
                     padding=0,
                     **kwargs,
-                ))
+                ),
+            )
         return _conv_internal
 
     def build_conv_out(self, conv):

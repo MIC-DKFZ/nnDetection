@@ -25,22 +25,26 @@ from nndet.losses.base import reduction_helper, Loss
 from nndet.utils import make_onehot_batch
 
 
-def one_hot_smooth(data,
-                   num_classes: int,
-                   smoothing: float = 0.0,
-                   ):
-    targets = torch.empty(size=(*data.shape, num_classes), device=data.device)\
-        .fill_(smoothing / num_classes)\
-        .scatter_(-1, data.long().unsqueeze(-1), 1. - smoothing)
+def one_hot_smooth(
+    data,
+    num_classes: int,
+    smoothing: float = 0.0,
+):
+    targets = (
+        torch.empty(size=(*data.shape, num_classes), device=data.device)
+        .fill_(smoothing / num_classes)
+        .scatter_(-1, data.long().unsqueeze(-1), 1.0 - smoothing)
+    )
     return targets
 
 
 @torch.jit.script
 def focal_loss_with_logits(
-        logits: torch.Tensor,
-        target: torch.Tensor, gamma: float,
-        alpha: float = -1,
-        reduction: str = "mean",
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    gamma: float,
+    alpha: float = -1,
+    reduction: str = "mean",
 ) -> torch.Tensor:
     """
     Focal loss
@@ -64,23 +68,26 @@ def focal_loss_with_logits(
         :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
     """
     p = torch.sigmoid(logits)
-    focal_term = (1. - (p * target + (1 - p) * (1 - target))).pow(gamma)
-    loss = focal_term * F.binary_cross_entropy_with_logits(logits, target, reduction='none')
+    focal_term = (1.0 - (p * target + (1 - p) * (1 - target))).pow(gamma)
+    loss = focal_term * F.binary_cross_entropy_with_logits(
+        logits, target, reduction="none"
+    )
 
     if alpha >= 0:
-        alpha_t = (alpha * target + (1 - alpha) * (1 - target))
+        alpha_t = alpha * target + (1 - alpha) * (1 - target)
         loss = alpha_t * loss
     return reduction_helper(loss, reduction=reduction)
 
 
 class FocalLossWithLogits(Loss):
-    def __init__(self,
-                 gamma: float = 2,
-                 alpha: float = -1,
-                 loss_fp32: bool = False,
-                 loss_weight: float = 1.,
-                 reduction: str = "sum",
-                 ):
+    def __init__(
+        self,
+        gamma: float = 2,
+        alpha: float = -1,
+        loss_fp32: bool = False,
+        loss_weight: float = 1.0,
+        reduction: str = "sum",
+    ):
         """
         Focal loss with multiple classes (uses one hot encoding and sigmoid)
 
@@ -103,10 +110,11 @@ class FocalLossWithLogits(Loss):
         self.gamma = gamma
         self.alpha = alpha
 
-    def forward(self,
-                logits: torch.Tensor,
-                targets: torch.Tensor,
-                ) -> torch.Tensor:
+    def forward(
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute loss
 
@@ -147,10 +155,11 @@ class FocalLossWithLogits(Loss):
 
 @torch.jit.script
 def asymmetric_focal_loss_with_logits(
-        logits: torch.Tensor,
-        target: torch.Tensor, gamma: float,
-        alpha: float = -1,
-        reduction: str = "mean",
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    gamma: float,
+    alpha: float = -1,
+    reduction: str = "mean",
 ) -> torch.Tensor:
     """
     Asymmetric Focal loss
@@ -175,18 +184,21 @@ def asymmetric_focal_loss_with_logits(
     """
     p = torch.sigmoid(logits)
     focal_term = target + alpha * (p - target).abs().pow(gamma) * (1 - target)
-    loss = focal_term * F.binary_cross_entropy_with_logits(logits, target, reduction='none')
+    loss = focal_term * F.binary_cross_entropy_with_logits(
+        logits, target, reduction="none"
+    )
     return reduction_helper(loss, reduction=reduction)
 
 
 class AsymmetricFocalLossWithLogits(Loss):
-    def __init__(self,
-                 gamma: float = 2,
-                 alpha: float = 1,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 reduction: str = "mean",
-                 ):
+    def __init__(
+        self,
+        gamma: float = 2,
+        alpha: float = 1,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        reduction: str = "mean",
+    ):
         """
         Asymmetric Focal loss
         https://arxiv.org/abs/2008.13367
@@ -211,10 +223,11 @@ class AsymmetricFocalLossWithLogits(Loss):
         self.gamma = gamma
         self.alpha = alpha
 
-    def forward(self,
-                logits: torch.Tensor,
-                targets: torch.Tensor,
-                ) -> torch.Tensor:
+    def forward(
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute loss
 
@@ -254,14 +267,15 @@ class AsymmetricFocalLossWithLogits(Loss):
 
 
 class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
-    def __init__(self,
-                 *args,
-                 num_classes: int,
-                 smoothing: float = 0.0,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        *args,
+        num_classes: int,
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         BCE loss with one hot encoding of targets
 
@@ -282,10 +296,11 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
         self.num_classes = num_classes
 
-    def forward(self,
-                input: Tensor,
-                target: Tensor,
-                ) -> Tensor:
+    def forward(
+        self,
+        input: Tensor,
+        target: Tensor,
+    ) -> Tensor:
         """
         Compute bce loss based on one hot encoding
 
@@ -300,24 +315,30 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
             Tensor: final loss
         """
         target_one_hot = one_hot_smooth(
-            target, num_classes=self.num_classes + 1, smoothing=self.smoothing)  # [N, C + 1]
+            target, num_classes=self.num_classes + 1, smoothing=self.smoothing
+        )  # [N, C + 1]
         target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
 
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target_one_hot.float())
+                loss = self.loss_weight * super().forward(
+                    input.float(), target_one_hot.float()
+                )
         else:
-            loss = self.loss_weight * super().forward(input, target_one_hot.to(dtype=input.dtype))
+            loss = self.loss_weight * super().forward(
+                input, target_one_hot.to(dtype=input.dtype)
+            )
         return loss
 
 
 class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
-    def __init__(self,
-                 *args,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs,
-                 ) -> None:
+    def __init__(
+        self,
+        *args,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ) -> None:
         """
         Same as CE from pytorch
         Targets can be float or long, it is castet to the correct type
@@ -335,10 +356,11 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
         if loss_fp32:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
-    def forward(self,
-                input: Tensor,
-                target: Tensor,
-                ) -> Tensor:
+    def forward(
+        self,
+        input: Tensor,
+        target: Tensor,
+    ) -> Tensor:
         """
         Same as CE from pytorch
         """
@@ -351,12 +373,13 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
 
 
 class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
-    def __init__(self,
-                 *args,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 **kwargs,
-                 ) -> None:
+    def __init__(
+        self,
+        *args,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ) -> None:
         """
         Same as BCE with Logits from pytorch
         Targets can be float or long, it is castet to the correct type
@@ -374,10 +397,11 @@ class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
         if loss_fp32:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
-    def forward(self,
-                input: Tensor,
-                target: Tensor,
-                ) -> Tensor:
+    def forward(
+        self,
+        input: Tensor,
+        target: Tensor,
+    ) -> Tensor:
         """
         Same as BCE with Logits from pytorch
         """

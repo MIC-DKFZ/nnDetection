@@ -32,19 +32,27 @@ def boxes2nii():
     from nndet.utils.info import maybe_verbose_iterable
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('model', type=str, help="model name, e.g. RetinaUNetV0")
-    parser.add_argument('-f', '--fold', type=int, help="fold to sweep.", default=0, required=False)
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False)
-    parser.add_argument('--threshold',
-                        type=float,
-                        help="Minimum probability of predictions",
-                        required=False,
-                        default=0.5,
-                        )
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument(
+        "-f", "--fold", type=int, help="fold to sweep.", default=0, required=False
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Minimum probability of predictions",
+        required=False,
+        default=0.5,
+    )
+    parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
     model = args.model
@@ -63,13 +71,17 @@ def boxes2nii():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = training_dir / "test_predictions" \
-        if test else training_dir / "val_predictions"
-    save_dir = training_dir / "test_predictions_nii" \
-        if test else training_dir / "val_predictions_nii"
+    prediction_dir = (
+        training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    )
+    save_dir = (
+        training_dir / "test_predictions_nii"
+        if test
+        else training_dir / "val_predictions_nii"
+    )
     save_dir.mkdir(exist_ok=True)
 
-    case_ids = [p.stem.rsplit('_', 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
     for cid in maybe_verbose_iterable(case_ids):
         res = load_pickle(prediction_dir / f"{cid}_boxes.pkl")
 
@@ -90,10 +102,13 @@ def boxes2nii():
         labels = labels[idx]
 
         prediction_meta = {}
-        for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
-            mask_slicing = [slice(int(pbox[0]), int(pbox[2])),
-                            slice(int(pbox[1]), int(pbox[3])),
-                            ]
+        for instance_id, (pbox, pscore, plabel) in enumerate(
+            zip(boxes, scores, labels), start=1
+        ):
+            mask_slicing = [
+                slice(int(pbox[0]), int(pbox[2])),
+                slice(int(pbox[1]), int(pbox[3])),
+            ]
             if instance_mask.ndim == 3:
                 mask_slicing.append(slice(int(pbox[4]), int(pbox[5])))
             instance_mask[tuple(mask_slicing)] = instance_id
@@ -101,7 +116,7 @@ def boxes2nii():
             prediction_meta[int(instance_id)] = {
                 "score": float(pscore),
                 "label": int(plabel),
-                "box": list(map(int, pbox))
+                "box": list(map(int, pbox)),
             }
 
         logger.info(f"Created instance mask with {instance_mask.max()} instances.")
@@ -128,13 +143,20 @@ def seg2nii():
     from nndet.utils.info import maybe_verbose_iterable
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('model', type=str, help="model name, e.g. RetinaUNetV0")
-    parser.add_argument('-f', '--fold', type=int, help="fold to sweep.", default=0, required=False)
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False)
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument(
+        "-f", "--fold", type=int, help="fold to sweep.", default=0, required=False
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
+    parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
     model = args.model
@@ -152,13 +174,17 @@ def seg2nii():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = training_dir / "test_predictions" \
-        if test else training_dir / "val_predictions"
-    save_dir = training_dir / "test_predictions_nii" \
-        if test else training_dir / "val_predictions_nii"
+    prediction_dir = (
+        training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    )
+    save_dir = (
+        training_dir / "test_predictions_nii"
+        if test
+        else training_dir / "val_predictions_nii"
+    )
     save_dir.mkdir(exist_ok=True)
 
-    case_ids = [p.stem.rsplit('_', 1)[0] for p in prediction_dir.glob("*_seg.pkl")]
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_seg.pkl")]
     for cid in maybe_verbose_iterable(case_ids):
         res = load_pickle(prediction_dir / f"{cid}_seg.pkl")
 
@@ -177,8 +203,10 @@ def unpack():
     from nndet.io.load import unpack_dataset
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', type=Path, help="Path to folder to unpack")
-    parser.add_argument('num_processes', type=int, help="number of processes to use for unpacking")
+    parser.add_argument("path", type=Path, help="Path to folder to unpack")
+    parser.add_argument(
+        "num_processes", type=int, help="number of processes to use for unpacking"
+    )
     args = parser.parse_args()
     p = args.path
     num_processes = args.num_processes
@@ -189,6 +217,7 @@ def env():
     import os
     import torch
     import sys
+
     print(f"----- PyTorch Information -----")
     print(f"PyTorch Version: {torch.version.__version__}")
     print(f"PyTorch Debug: {torch.version.debug}")
@@ -200,7 +229,7 @@ def env():
     print("\n")
 
     print(f"----- System Information -----")
-    stream = os.popen('nvcc --version')
+    stream = os.popen("nvcc --version")
     output = stream.read()
     print(f"System NVCC: {output}")
     print(f"System Arch List: {os.getenv('TORCH_CUDA_ARCH_LIST', None)}")
@@ -228,8 +257,8 @@ def create_test_split():
     from nndet.utils.config import load_dataset_info
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('--size', type=float, help="Size of test split", default=0.3)
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("--size", type=float, help="Size of test split", default=0.3)
 
     args = parser.parse_args()
     task = args.task
@@ -254,5 +283,5 @@ def create_test_split():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     env()

@@ -41,21 +41,24 @@ class FixedLengthSingleThreadedAugmenter(SingleThreadedAugmenter):
         return len(self.data_loader)
 
 
-def get_augmenter(dataloader,
-                  transform,
-                  num_processes: int,
-                  num_cached_per_queue: int = 2,
-                  multiprocessing: bool = True,
-                  seeds: Optional[List[int]] = None,
-                  pin_memory=True,
-                  **kwargs,
-                  ):
+def get_augmenter(
+    dataloader,
+    transform,
+    num_processes: int,
+    num_cached_per_queue: int = 2,
+    multiprocessing: bool = True,
+    seeds: Optional[List[int]] = None,
+    pin_memory=True,
+    **kwargs,
+):
     """
     Wrapper to switch between multi-threaded and single-threaded augmenter
     """
     if multiprocessing:
-        logger.info(f"Using {num_processes} num_processes "
-                    f"and {num_cached_per_queue} num_cached_per_queue for augmentation.")
+        logger.info(
+            f"Using {num_processes} num_processes "
+            f"and {num_cached_per_queue} num_cached_per_queue for augmentation."
+        )
         loader = FixedLengthMultiThreadedAugmenter(
             data_loader=dataloader,
             transform=transform,
@@ -75,35 +78,37 @@ def get_augmenter(dataloader,
 
 
 import subprocess
+
 # TODO: remove this! do something different
 
 
 def get_allowed_n_proc_DA():
-    hostname = subprocess.getoutput(['hostname'])
-    if hostname in ['hdf19-gpu16', 'hdf19-gpu17', 'e230-AMDworkstation']:
+    hostname = subprocess.getoutput(["hostname"])
+    if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
         return 16
-    if hostname.startswith('hdf19-gpu') or hostname.startswith('e071-gpu'):
+    if hostname.startswith("hdf19-gpu") or hostname.startswith("e071-gpu"):
         return 12
-    elif hostname.startswith('e230-dgx1'):
+    elif hostname.startswith("e230-dgx1"):
         return 10
-    elif hostname.startswith('hdf18-gpu') or hostname.startswith('e132-comp'):
+    elif hostname.startswith("hdf18-gpu") or hostname.startswith("e132-comp"):
         return 16
-    elif hostname.startswith('e230-dgx2'):
+    elif hostname.startswith("e230-dgx2"):
         return 6
-    elif hostname.startswith('e230-dgxa100-'):
+    elif hostname.startswith("e230-dgxa100-"):
         return 32
     else:
-        return int(os.getenv('det_num_threads', 12))
+        return int(os.getenv("det_num_threads", 12))
 
 
 class Datamodule(BaseModule):
-    def __init__(self,
-                 plan: dict,
-                 augment_cfg: dict,
-                 data_dir: os.PathLike,
-                 fold: int = 0,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        plan: dict,
+        augment_cfg: dict,
+        data_dir: os.PathLike,
+        fold: int = 0,
+        **kwargs,
+    ):
         """
         Batchgenerator based datamodule
 
@@ -143,7 +148,7 @@ class Datamodule(BaseModule):
             logger.warning(f"Patch Size Overwrite Found: running patch size {ps}")
             return np.array(ps).astype(np.int32)
         else:
-            return np.array(self.plan['patch_size']).astype(np.int32)
+            return np.array(self.plan["patch_size"]).astype(np.int32)
 
     @property
     def batch_size(self):
@@ -163,7 +168,7 @@ class Datamodule(BaseModule):
         """
         Get dataloader class name
         """
-        return self.augment_cfg['dataloader'].format(self.plan["network_dim"])
+        return self.augment_cfg["dataloader"].format(self.plan["network_dim"])
 
     @property
     def dataloader_kwargs(self):
@@ -171,7 +176,7 @@ class Datamodule(BaseModule):
         Get dataloader kwargs which can be (optionally) overwritten in the
         augmentation config
         """
-        dataloader_kwargs = self.plan.get('dataloader_kwargs', {})
+        dataloader_kwargs = self.plan.get("dataloader_kwargs", {})
         if dl_kwargs := self.augment_cfg.get("dataloader_kwargs", {}):
             logger.warning(f"Dataloader Kwargs Overwrite Found: {dl_kwargs}")
             dataloader_kwargs.update(dl_kwargs)
@@ -191,15 +196,19 @@ class Datamodule(BaseModule):
             logger.info("Using 2D augmentation params")
             overwrites_2d = params.get("2d_overwrites", {})
             params.update(overwrites_2d)
-        elif dim == 3 and self.plan['do_dummy_2D_data_aug']:
+        elif dim == 3 and self.plan["do_dummy_2D_data_aug"]:
             logger.info("Using dummy 2d augmentation params")
             params["dummy_2D"] = True
-            params["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
-            params["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
+            params["elastic_deform_alpha"] = params["2d_overwrites"][
+                "elastic_deform_alpha"
+            ]
+            params["elastic_deform_sigma"] = params["2d_overwrites"][
+                "elastic_deform_sigma"
+            ]
             params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
 
         params["selected_seg_channels"] = [0]
-        params["use_mask_for_norm"] = self.plan['use_mask_for_norm']
+        params["use_mask_for_norm"] = self.plan["use_mask_for_norm"]
         params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
         params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
         params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]
@@ -211,10 +220,14 @@ class Datamodule(BaseModule):
         )
         self.patch_size_generator = self.augmentation.get_patch_size_generator()
 
-        logger.info(f"Augmentation: {params['transforms']} transforms and "
-                    f"{params.get('name', 'no_name')} params ")
-        logger.info(f"Loading network patch size {self.augmentation.patch_size} "
-                    f"and generator patch size {self.patch_size_generator}")
+        logger.info(
+            f"Augmentation: {params['transforms']} transforms and "
+            f"{params.get('name', 'no_name')} params "
+        )
+        logger.info(
+            f"Loading network patch size {self.augmentation.patch_size} "
+            f"and generator patch size {self.patch_size_generator}"
+        )
 
     def train_dataloader(self) -> Iterable:
         """
@@ -232,10 +245,10 @@ class Datamodule(BaseModule):
             patch_size_generator=self.patch_size_generator,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.augment_cfg[
-                "oversample_foreground_percent"],
+                "oversample_foreground_percent"
+            ],
             pad_mode="constant",
-            num_batches_per_epoch=self.augment_cfg[
-                "num_train_batches_per_epoch"],
+            num_batches_per_epoch=self.augment_cfg["num_train_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
 
@@ -244,7 +257,7 @@ class Datamodule(BaseModule):
             transform=self.augmentation.get_training_transforms(),
             # num_processes=min(int(self.augment_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.augment_cfg.get('num_cached_per_thread', 2),
+            num_cached_per_queue=self.augment_cfg.get("num_cached_per_thread", 2),
             multiprocessing=self.augment_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
@@ -268,10 +281,10 @@ class Datamodule(BaseModule):
             patch_size_generator=self.patch_size,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.augment_cfg[
-                "oversample_foreground_percent"],
+                "oversample_foreground_percent"
+            ],
             pad_mode="constant",
-            num_batches_per_epoch=self.augment_cfg[
-                "num_val_batches_per_epoch"],
+            num_batches_per_epoch=self.augment_cfg["num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
 
@@ -280,7 +293,7 @@ class Datamodule(BaseModule):
             transform=self.augmentation.get_validation_transforms(),
             # num_processes=min(int(self.augment_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.augment_cfg.get('num_cached_per_thread', 2),
+            num_cached_per_queue=self.augment_cfg.get("num_cached_per_thread", 2),
             multiprocessing=self.augment_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,

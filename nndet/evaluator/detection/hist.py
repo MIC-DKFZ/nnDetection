@@ -27,10 +27,13 @@ from nndet.evaluator import DetectionMetric
 
 
 class PredictionHistogram(DetectionMetric):
-    def __init__(self,
-                 classes: Sequence[str], save_dir: Path,
-                 iou_thresholds: Sequence[float] = (0.1, 0.5),
-                 bins: int = 50):
+    def __init__(
+        self,
+        classes: Sequence[str],
+        save_dir: Path,
+        iou_thresholds: Sequence[float] = (0.1, 0.5),
+        bins: int = 50,
+    ):
         """
         Class to compute prediction histograms. (Note: this class does not
         provide any scalar metrics)
@@ -56,8 +59,9 @@ class PredictionHistogram(DetectionMetric):
         """
         return self.iou_thresholds
 
-    def compute(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> Tuple[
-            Dict[str, float], Dict[str, Dict[str, Any]]]:
+    def compute(
+        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+    ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Plot class independent and per class histograms. For more info see
         `method``plot_hist`
@@ -68,13 +72,17 @@ class PredictionHistogram(DetectionMetric):
         self.plot_hist(results_list=results_list)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
+            results_by_cls = [
+                {0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r
+            ]
             self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_")
         return {}, {}
 
-    def plot_hist(self, results_list: List[Dict[int, Dict[str, np.ndarray]]],
-                  title_prefix: str = "") -> Tuple[
-            Dict[str, float], Dict[str, Dict[str, Any]]]:
+    def plot_hist(
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        title_prefix: str = "",
+    ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Compute prediction histograms for multiple IoU values
 
@@ -108,13 +116,15 @@ class PredictionHistogram(DetectionMetric):
             return {}, {}
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
-        dt_matches = np.concatenate([r['dtMatches'] for r in results], axis=1)
-        dt_ignores = np.concatenate([r['dtIgnore'] for r in results], axis=1)
-        dt_scores = np.concatenate([r['dtScores'] for r in results])
-        gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
+        dt_matches = np.concatenate([r["dtMatches"] for r in results], axis=1)
+        dt_ignores = np.concatenate([r["dtIgnore"] for r in results], axis=1)
+        dt_scores = np.concatenate([r["dtScores"] for r in results])
+        gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
         self.check_number_of_iou(dt_matches, dt_ignores)
 
-        num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
+        num_gt = np.count_nonzero(
+            gt_ignore == 0
+        )  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning nothing.")
             return {}, {}
@@ -124,12 +134,19 @@ class PredictionHistogram(DetectionMetric):
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
             _ = self.compute_histogram_one_iou(
-                dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix)
+                dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix
+            )
         return {}, {}
 
-    def compute_histogram_one_iou(self, dt_matches: np.ndarray, dt_scores: np.ndarray,
-                                  num_images: int, num_gt: int, iou: float,
-                                  title_prefix: str):
+    def compute_histogram_one_iou(
+        self,
+        dt_matches: np.ndarray,
+        dt_scores: np.ndarray,
+        num_images: int,
+        num_gt: int,
+        iou: float,
+        title_prefix: str,
+    ):
         """
         Plot prediction histogram
 
@@ -153,22 +170,38 @@ class PredictionHistogram(DetectionMetric):
         _dt_scores = np.concatenate([dt_scores, [0] * int(false_negatives)])
 
         plt.figure()
-        plt.yscale('log')
+        plt.yscale("log")
         if 0 in dt_matches:
-            plt.hist(_dt_scores[_dt_matches == 0], bins=self.bins, range=(0., 1.),
-                     alpha=0.3, color='g', label='false pos.')
+            plt.hist(
+                _dt_scores[_dt_matches == 0],
+                bins=self.bins,
+                range=(0.0, 1.0),
+                alpha=0.3,
+                color="g",
+                label="false pos.",
+            )
         if 1 in dt_matches:
-            plt.hist(_dt_scores[_dt_matches == 1], bins=self.bins, range=(0., 1.),
-                     alpha=0.3, color='b', label='true pos. (false neg. @ score=0)')
+            plt.hist(
+                _dt_scores[_dt_matches == 1],
+                bins=self.bins,
+                range=(0.0, 1.0),
+                alpha=0.3,
+                color="b",
+                label="true pos. (false neg. @ score=0)",
+            )
         plt.legend()
-        title = title_prefix + (f"tp:{true_positives} fp:{false_positives} "
-                                f"fn:{false_negatives} pos:{true_positives+false_negatives}")
+        title = title_prefix + (
+            f"tp:{true_positives} fp:{false_positives} "
+            f"fn:{false_negatives} pos:{true_positives+false_negatives}"
+        )
         plt.title(title)
-        plt.xlabel('confidence score')
-        plt.ylabel('log n')
+        plt.xlabel("confidence score")
+        plt.ylabel("log n")
 
         if self.save_dir is not None:
-            save_path = self.save_dir / (f"{title_prefix}pred_hist_IoU@{iou}".replace(".", "_") + ".png")
+            save_path = self.save_dir / (
+                f"{title_prefix}pred_hist_IoU@{iou}".replace(".", "_") + ".png"
+            )
             logger.info(f"Saving {save_path}")
             plt.savefig(save_path)
         plt.close()

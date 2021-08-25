@@ -28,14 +28,8 @@ from nndet.arch.heads.classifier import (
     FocalClassifier,
     AsymmetricFocalClassifier,
 )
-from nndet.arch.heads.regressor import (
-    L1Regressor
-)
-from nndet.arch.conv import (
-    ConvInstanceLReLU,
-    ConvGroupLReLU,
-    Generator
-)
+from nndet.arch.heads.regressor import L1Regressor
+from nndet.arch.conv import ConvInstanceLReLU, ConvGroupLReLU, Generator
 from nndet.training.optimizer.utils import get_params_no_wd_on_norm
 import torch
 
@@ -97,7 +91,7 @@ class RetinaUNetC011Focal(RetinaUNetC011):
             HeadType: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
 
         logger.info(f"Building:: head {head_name}: {head_kwargs}")
         head = cls.head_cls(
@@ -150,14 +144,18 @@ class RetinaUNetC011MySE2(RetinaUNetV001):
         Returns:
             EncoderType: encoder instance
         """
-        _kwargs = copy.deepcopy(model_cfg['encoder_kwargs'])
+        _kwargs = copy.deepcopy(model_cfg["encoder_kwargs"])
         num_blocks = _kwargs.pop("num_blocks", None)
         if num_blocks is not None:
             i = len(plan_arch["conv_kernels"]) - 1
-            _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [{"num_blocks": num_blocks}] * i
+            _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [
+                {"num_blocks": num_blocks}
+            ] * i
 
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
+        logger.info(
+            f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
+        )
         encoder = cls.encoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -226,7 +224,7 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             },
             predict=False,
             batch_num=batch_idx,
@@ -241,7 +239,7 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             },
             predict=False,
             batch_num=batch_idx,
@@ -253,11 +251,15 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
 
     def configure_optimizers(self):
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"SGD SAM with momentum {self.trainer_cfg['sgd_momentum']} and "
-                    f"nesterov {self.trainer_cfg['sgd_nesterov']}")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"SGD SAM with momentum {self.trainer_cfg['sgd_momentum']} and "
+            f"nesterov {self.trainer_cfg['sgd_nesterov']}"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
 
         optimizer = SAM(
             wd_groups,
@@ -271,12 +273,14 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}

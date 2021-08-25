@@ -15,6 +15,7 @@ def inp():
     torch.manual_seed(0)
     return torch.rand(400, 1000)
 
+
 @pytest.fixture
 def target():
     torch.manual_seed(42)
@@ -25,7 +26,7 @@ def test_functional_normal_beta(inp, target):
     inp = torch.tensor([0.2, 1.5])
     target = torch.tensor([0.3, 2.5])
     computed_loss = smooth_l1_loss(inp, target, beta=0.75, reduction="none")
-    expected_loss = torch.tensor([(0.5 * 0.1 ** 2 / 0.75), (1. - 0.5 * 0.75)])
+    expected_loss = torch.tensor([(0.5 * 0.1 ** 2 / 0.75), (1.0 - 0.5 * 0.75)])
     assert math.isclose((computed_loss - expected_loss).sum().item(), 0, abs_tol=1e-8)
 
 
@@ -38,8 +39,8 @@ def test_functional_l1_beta(inp, target):
 def test_giou_loss():
     boxes0_2d = torch.tensor([[0, 0, 2, 2], [0, 0, 2, 2]]).float()
     boxes1_2d = torch.tensor([[1, 1, 3, 3], [1, 1, 3, 3]]).float()
-    loss_fn = GIoULoss(reduction='sum', loss_weight=2.)
+    loss_fn = GIoULoss(reduction="sum", loss_weight=2.0)
 
     computed_loss = loss_fn(boxes0_2d, boxes1_2d)
-    expected_loss = torch.tensor(-((1. / 7.) - (2. / 9.)) * 2 * 2)
+    expected_loss = torch.tensor(-((1.0 / 7.0) - (2.0 / 9.0)) * 2 * 2)
     assert computed_loss.allclose(expected_loss)

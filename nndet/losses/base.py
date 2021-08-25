@@ -19,13 +19,14 @@ from loguru import logger
 
 
 class Loss(torch.nn.Module):
-    def __init__(self,
-                 *args,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 reduction: str = "sum",
-                 **kwargs,
-                 ) -> None:
+    def __init__(
+        self,
+        *args,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        reduction: str = "sum",
+        **kwargs,
+    ) -> None:
         """
         Base class for all nnDetection losses
 
@@ -67,10 +68,10 @@ def reduction_helper(
     Returns:
         Tensor: reduced data
     """
-    if reduction.lower() == 'mean':
+    if reduction.lower() == "mean":
         return torch.mean(data)
-    if reduction.lower() == 'none':
+    if reduction.lower() == "none":
         return data
-    if reduction.lower() == 'sum':
+    if reduction.lower() == "sum":
         return torch.sum(data)
-    raise AttributeError('Reduction parameter unknown.')
+    raise AttributeError("Reduction parameter unknown.")

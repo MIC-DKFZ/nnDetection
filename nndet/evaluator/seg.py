@@ -25,11 +25,12 @@ __all__ = ["SegmentationEvaluator"]
 
 
 class SegmentationEvaluator(AbstractEvaluator):
-    def __init__(self,
-                 per_class: bool = True,
-                 *args,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        per_class: bool = True,
+        *args,
+        **kwargs,
+    ):
         """
         Compute dice score during training
         """
@@ -42,10 +43,11 @@ class SegmentationEvaluator(AbstractEvaluator):
         """
         self.results_list = defaultdict(list)
 
-    def run_online_evaluation(self,
-                              seg_probs: np.ndarray,
-                              target: np.ndarray,
-                              ) -> Dict:
+    def run_online_evaluation(
+        self,
+        seg_probs: np.ndarray,
+        target: np.ndarray,
+    ) -> Dict:
         """
         Run evaluation of one batch and save internal results for later
 
@@ -67,9 +69,15 @@ class SegmentationEvaluator(AbstractEvaluator):
         fp_hard = np.zeros((target.shape[0], num_classes - 1))
         fn_hard = np.zeros((target.shape[0], num_classes - 1))
         for c in range(1, num_classes):
-            tp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
-            fp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target != c).astype(np.float32)).sum(axis=1)
-            fn_hard[:, c - 1] = ((output_seg != c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
+            tp_hard[:, c - 1] = (
+                (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
+            ).sum(axis=1)
+            fp_hard[:, c - 1] = (
+                (output_seg == c).astype(np.float32) * (target != c).astype(np.float32)
+            ).sum(axis=1)
+            fn_hard[:, c - 1] = (
+                (output_seg != c).astype(np.float32) * (target == c).astype(np.float32)
+            ).sum(axis=1)
 
         tp_hard = tp_hard.sum(axis=0)
         fp_hard = fp_hard.sum(axis=0)
@@ -80,7 +88,9 @@ class SegmentationEvaluator(AbstractEvaluator):
         self.results_list["fn"].append(fn_hard)
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Summarize results from batches and compute global dice and global
         dice per class
@@ -97,7 +107,10 @@ class SegmentationEvaluator(AbstractEvaluator):
             fn = np.sum(self.results_list["fn"], 0)
 
             global_dc_per_class = [
-                i for i in [2 * i / (2 * i + j + k) for i, j, k in zip(tp, fp, fn)] if not np.isnan(i)]
+                i
+                for i in [2 * i / (2 * i + j + k) for i, j, k in zip(tp, fp, fn)]
+                if not np.isnan(i)
+            ]
             if self.per_class:
                 for cls_idx, dc in enumerate(global_dc_per_class):
                     results[f"{cls_idx}_seg_dice"] = dc
@@ -105,18 +118,20 @@ class SegmentationEvaluator(AbstractEvaluator):
         return results, None
 
     @classmethod
-    def create(cls,
-               per_class: bool = False,
-               ):
+    def create(
+        cls,
+        per_class: bool = False,
+    ):
         return cls(per_class=per_class)
 
 
 class PerCaseSegmentationEvaluator(AbstractEvaluator):
-    def __init__(self,
-                 classes: Sequence[str],
-                 *args,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        classes: Sequence[str],
+        *args,
+        **kwargs,
+    ):
         """
         Compute dice score per case and average results over dataset
         """
@@ -129,10 +144,11 @@ class PerCaseSegmentationEvaluator(AbstractEvaluator):
         """
         self.results = []
 
-    def run_online_evaluation(self,
-                              seg: np.ndarray,
-                              target: np.ndarray,
-                              ) -> Dict:
+    def run_online_evaluation(
+        self,
+        seg: np.ndarray,
+        target: np.ndarray,
+    ) -> Dict:
         """
         Run evaluation of one batch and save internal results for later
 
@@ -156,16 +172,26 @@ class PerCaseSegmentationEvaluator(AbstractEvaluator):
         fg_present = np.zeros((target.shape[0], num_classes - 1))  # N, FG
 
         for c in range(1, num_classes):
-            tp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
-            fp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target != c).astype(np.float32)).sum(axis=1)
-            fn_hard[:, c - 1] = ((output_seg != c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
+            tp_hard[:, c - 1] = (
+                (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
+            ).sum(axis=1)
+            fp_hard[:, c - 1] = (
+                (output_seg == c).astype(np.float32) * (target != c).astype(np.float32)
+            ).sum(axis=1)
+            fn_hard[:, c - 1] = (
+                (output_seg != c).astype(np.float32) * (target == c).astype(np.float32)
+            ).sum(axis=1)
             fg_present[:, c - 1] = (target == c).any(axis=1).astype(np.int32)
 
-        dice = np.where(fg_present, 2. * tp_hard / (2 * tp_hard + fp_hard + fn_hard), np.nan)  # N, FG
+        dice = np.where(
+            fg_present, 2.0 * tp_hard / (2 * tp_hard + fp_hard + fn_hard), np.nan
+        )  # N, FG
         self.results.append(dice)
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Summarize results from batches and compute global dice and global
         dice per class
@@ -186,7 +212,8 @@ class PerCaseSegmentationEvaluator(AbstractEvaluator):
         return results, None
 
     @classmethod
-    def create(cls,
-               classes: Sequence[str],
-               ):
+    def create(
+        cls,
+        classes: Sequence[str],
+    ):
         return cls(classes=classes)

@@ -3,7 +3,9 @@ import pytest
 import torch
 import numpy as np
 from nndet.io.transforms.instances import instances_to_boxes, instances_to_boxes_np
-from batchgenerators.transforms.utility_transforms import ConvertSegToBoundingBoxCoordinates
+from batchgenerators.transforms.utility_transforms import (
+    ConvertSegToBoundingBoxCoordinates,
+)
 
 
 @pytest.fixture
@@ -13,18 +15,20 @@ def mask():
     mask[2:4, 2:4, 1:3] = 2
     mask[5:7, 2:4, 3:8] = 3
     mask[8:10, 7:9, 2:6] = 4
-    mask = mask[None] # add channel
+    mask = mask[None]  # add channel
     return mask
 
 
 @pytest.fixture
 def result():
-    boxes = np.array([
-        [-1, -1, 1, 1, -1, 1],
-        [1, 1, 4, 4, 0, 3],
-        [4, 1, 7, 4, 2, 8],
-        [7, 6, 10, 9, 1, 6],
-    ])
+    boxes = np.array(
+        [
+            [-1, -1, 1, 1, -1, 1],
+            [1, 1, 4, 4, 0, 3],
+            [4, 1, 7, 4, 2, 8],
+            [7, 6, 10, 9, 1, 6],
+        ]
+    )
     inst = np.array([1, 2, 3, 4])
     return boxes, inst
 

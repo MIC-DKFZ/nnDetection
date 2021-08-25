@@ -30,11 +30,13 @@ from nndet.utils.info import maybe_verbose_iterable
 class BaseEnsembler(ABC):
     ID = "abstract"
 
-    def __init__(self,
-                 properties: Dict[str, Any],
-                 parameters: Dict[str, Any],
-                 device: Optional[Union[torch.device, str]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        properties: Dict[str, Any],
+        parameters: Dict[str, Any],
+        device: Optional[Union[torch.device, str]] = None,
+        **kwargs,
+    ):
         """
         Base class to containerize and ensemble the predictions of a single case.
         Call :method:`process_batch` to add batched predictions of a case
@@ -70,12 +72,13 @@ class BaseEnsembler(ABC):
             raise ValueError(f"Wrong type {type(device)} for device argument.")
 
     @classmethod
-    def from_case(cls,
-                  case: Dict,
-                  properties: Optional[Dict] = None,
-                  parameters: Optional[Dict] = None,
-                  **kwargs,
-                  ):
+    def from_case(
+        cls,
+        case: Dict,
+        properties: Optional[Dict] = None,
+        parameters: Optional[Dict] = None,
+        **kwargs,
+    ):
         """
         Primary way to instantiate this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
@@ -87,10 +90,11 @@ class BaseEnsembler(ABC):
         """
         return cls(properties=properties, parameters=parameters, **kwargs)
 
-    def add_model(self,
-                  name: Optional[str] = None,
-                  model_weight: Optional[float] = None,
-                  ) -> str:
+    def add_model(
+        self,
+        name: Optional[str] = None,
+        model_weight: Optional[float] = None,
+    ) -> str:
         """
         This functions signales the ensembler to add a new model for internal
         processing
@@ -173,11 +177,12 @@ class BaseEnsembler(ABC):
         """
         raise NotImplementedError
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name
@@ -223,8 +228,10 @@ class BaseEnsembler(ABC):
 
     @classmethod
     def get_case_ids(cls, base_dir: PathLike):
-        return [c.stem.rsplit(f"_{cls.ID}", 1)[0]
-                for c in Path(base_dir).glob(f"*_{cls.ID}.pt")]
+        return [
+            c.stem.rsplit(f"_{cls.ID}", 1)[0]
+            for c in Path(base_dir).glob(f"*_{cls.ID}.pt")
+        ]
 
 
 class OverlapMap:
@@ -236,8 +243,9 @@ class OverlapMap:
             data_shape: spatial dimensions of data (
                 no batch dim and no channel dim!)
         """
-        self.overlap_map: torch.Tensor = \
-            torch.zeros(*data_shape, requires_grad=False, dtype=torch.float)
+        self.overlap_map: torch.Tensor = torch.zeros(
+            *data_shape, requires_grad=False, dtype=torch.float
+        )
 
     def add_overlap(self, crop: Sequence[slice]):
         """
@@ -249,7 +257,7 @@ class OverlapMap:
         """
         # discard leading indexes which could be due to batches and channels
         if len(crop) > self.overlap_map.ndim:
-            crop = crop[-self.overlap_map.ndim:]
+            crop = crop[-self.overlap_map.ndim :]
 
         # clip crop to data shape
         slicer = []
@@ -285,9 +293,9 @@ class OverlapMap:
         Returns:
             Tensor: mean number of overlaps per box [N]
         """
-        return torch.tensor(
-            [self.mean_num_overlap_of_box(box) for box in boxes]).to(
-            dtype=torch.float, device=boxes.device)
+        return torch.tensor([self.mean_num_overlap_of_box(box) for box in boxes]).to(
+            dtype=torch.float, device=boxes.device
+        )
 
     def avg(self) -> torch.Tensor:
         """
@@ -303,12 +311,13 @@ class OverlapMap:
         self.overlap_map = float(val)
 
 
-def extract_results(source_dir: PathLike,
-                    target_dir: PathLike,
-                    ensembler_cls: Callable,
-                    restore: bool,
-                    **params,
-                    ) -> None:
+def extract_results(
+    source_dir: PathLike,
+    target_dir: PathLike,
+    ensembler_cls: Callable,
+    restore: bool,
+    **params,
+) -> None:
     """
     Compute case result from ensembler and save it
 
@@ -330,4 +339,4 @@ def extract_results(source_dir: PathLike,
         save_pickle(pred, Path(target_dir) / f"{case_id}_{ensembler_cls.ID}.pkl")
 
 
-BaseEnsemblerType = TypeVar('BaseEnsemblerType', bound=BaseEnsembler)
+BaseEnsemblerType = TypeVar("BaseEnsemblerType", bound=BaseEnsembler)

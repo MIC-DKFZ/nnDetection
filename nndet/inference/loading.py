@@ -79,12 +79,16 @@ def load_final_model(
             `model`: loaded model
             `rank`: rank is always 0
     """
-    assert num_models == 1, f"load_final_model only supports num_models=1, found {num_models}"
+    assert (
+        num_models == 1
+    ), f"load_final_model only supports num_models=1, found {num_models}"
     logger.info(f"Loading {identifier} model")
 
-    model_names = list(source_models.glob('*.ckpt'))
+    model_names = list(source_models.glob("*.ckpt"))
     model_names = [m for m in model_names if identifier in str(m.stem)]
-    assert len(model_names) == 1, f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
+    assert (
+        len(model_names) == 1
+    ), f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
 
     path = model_names[0]
     model = MODULE_REGISTRY[cfg["module"]](
@@ -123,7 +127,7 @@ def load_all_models(
             `model`: loaded model
             `rank`: rank of model
     """
-    model_names = list(source_models.glob('*.ckpt'))
+    model_names = list(source_models.glob("*.ckpt"))
     if not model_names:
         raise RuntimeError(f"Did not find any models in {source_models}")
     logger.info(f"Found {len(model_names)} models to ensemble")
