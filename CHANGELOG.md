@@ -1,4 +1,9 @@
 ## Changelog
+### nnDetection v0.1.3-dev
+- (breaking) Encoder / Decoder Names in Config are now deprecated
+- (breaking) Introduced new model building names: Encoder->Backbone, Decoder->Neck
+- (breaking) PTModules are now composed from mixins which defines tasks and model configuration
+
 ### nnDetection v0.1.2-dev
 - pre-commit CI with pytest and black 606296cfc16e
 - Many additional unittests
