@@ -122,7 +122,9 @@ setup(
             "pytest-cov",
             "pytest-mock",
             "flake8",
-            "autopep8",
+            # "autopep8",
+            "pre-commit",
+            "black==21.7b0",
         ],
     },
     cmdclass={

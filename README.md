@@ -442,6 +442,10 @@ The pre-commit hooks will be executed every time a new commit is added or manual
 pre-commit run --all-files
 ```
 
+Running individual components:
+- unittests with converage: `pytest --cov=nndet` from the base diretory
+- code formatting: `black .` from the base directory
+
 # FAQ
 <details close>
 <summary>GPU requirements</summary>
