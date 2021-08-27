@@ -55,8 +55,8 @@ class TestSegmentationEnsembler:
         assert all(
             [a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))]
         )
-        assert (ensembler.parameters["model_iou"], 0.5)
-        assert (ensembler.parameters["ensemble_topk"], 10)
+        assert ensembler.parameters["model_iou"] == 0.5
+        assert ensembler.parameters["ensemble_topk"] == 10
 
     def test_process_batch(self, example):
         ensembler = SegmentationEnsembler.from_case(
