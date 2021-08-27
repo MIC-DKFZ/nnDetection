@@ -1,22 +1,53 @@
+from abc import ABC, abstractclassmethod, abstractmethod
 import copy
 
 from loguru import logger
 
-from nndet.ptmodule.module import LightningBaseModule
-
-from nndet.core.boxes.coder import CoderType, BoxCoderND
+from nndet.arch.conv import Generator
 from nndet.core.boxes.anchors import get_anchor_generator
 from nndet.core.boxes.ops import box_iou
 
+from nndet.core.boxes.coder import CoderType, BoxCoderND
+from nndet.core.boxes.anchors import AnchorGeneratorType
+from nndet.arch.encoder.abstract import EncoderType
+from nndet.arch.decoder.base import DecoderType
+from nndet.arch.heads.classifier import DenseClassifierType
+from nndet.arch.heads.regressor import DenseRegressorType
+from nndet.arch.heads.comb.base import AnchorHeadType
+from nndet.arch.heads.segmenter import SegmenterType
 
-class BoxModule(LightningBaseModule):
+
+class ModelMixin(ABC):
+    @classmethod
+    @abstractmethod
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        """
+        Create Configurable RetinaUNet
+
+        Args:
+            model_cfg: model configurations.
+                Exact parameters depend on subclass.
+            plan_arch: plan architecture
+                Exact parameters depend on subclass.
+            plan_anchors: parameters for anchors
+                Exact parameters depend on subclass.
+            **kwargs:
+        """
+        raise NotImplementedError
+
+
+class SingleStageMixin(ModelMixin):
     """
     This class provides the template to build a detection model
     """
 
     # define detector cls
-    # For one stage detectors this defines the final class
-    # For two stage detectors this defines the class of the RPN
     detector_cls = ...
 
     backbone_cls = ...  # define class for backbone
@@ -39,7 +70,6 @@ class BoxModule(LightningBaseModule):
         model_cfg: dict,
         plan_arch: dict,
         plan_anchors: dict,
-        log_num_anchors: str = None,
         **kwargs,
     ):
         """
@@ -53,7 +83,7 @@ class BoxModule(LightningBaseModule):
                 `in_channels` (int): number of input channels
                 `classifier_classes` (int): number of classes
                 `seg_classes` (int): number of classes
-                `start_channels` (int): number of start channels in encoder
+                `start_channels` (int): number of start channels in backbone
                 `fpn_channels` (int): number of channels to use for FPN
                 `head_channels` (int): number of channels to use for head
                 `decoder_levels` (int): decoder levels to user for detection
@@ -63,8 +93,6 @@ class BoxModule(LightningBaseModule):
                     `aspect_ratios`: aspect ratios
                     `sizes`: sized for 2d acnhors
                     (`zsizes`: additional z sizes for 3d)
-            log_num_anchors: name of logger to use; if None, no logging
-                will be performed
             **kwargs:
         """
         logger.info(
@@ -125,6 +153,11 @@ class BoxModule(LightningBaseModule):
             regressor=regressor,
             coder=coder,
         )
+        segmenter = cls._build_segmenter(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            neck=neck,
+        )
 
         detections_per_img = plan_arch.get("detections_per_img", 100)
         score_thresh = plan_arch.get("score_thresh", 0)
@@ -156,29 +189,30 @@ class BoxModule(LightningBaseModule):
             topk_candidates=topk_candidates,
             remove_small_boxes=remove_small_boxes,
             nms_thresh=nms_thresh,
+            segmenter=segmenter,
         )
 
     @classmethod
-    def _build_encoder(
+    def _build_backbone(
         cls,
         plan_arch: dict,
         model_cfg: dict,
     ) -> EncoderType:
         """
-        Build encoder network
+        Build backbone network
 
         Args:
             plan_arch: architecture settings
             model_cfg: additional architecture settings
 
         Returns:
-            EncoderType: encoder instance
+            EncoderType: backbone instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
         logger.info(
-            f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
+            f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
         )
-        encoder = cls.encoder_cls(
+        backbone = cls.encoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
             strides=plan_arch["strides"],
@@ -187,41 +221,41 @@ class BoxModule(LightningBaseModule):
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
             max_channels=plan_arch.get("max_channels", 320),
-            **model_cfg["encoder_kwargs"],
+            **model_cfg["backbone_kwargs"],
         )
-        return encoder
+        return backbone
 
     @classmethod
-    def _build_decoder(
+    def _build_neck(
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        encoder: EncoderType,
+        backbone: EncoderType,
     ) -> DecoderType:
         """
-        Build decoder network
+        Build neck network
 
         Args:
             plan_arch: architecture settings
             model_cfg: additional architecture settings
 
         Returns:
-            DecoderType: decoder instance
+            DecoderType: neck instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
         logger.info(
-            f"Building:: decoder {cls.decoder_cls.__name__}: {model_cfg['decoder_kwargs']}"
+            f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
         )
-        decoder = cls.decoder_cls(
+        neck = cls.neck_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
-            strides=encoder.get_strides(),
-            in_channels=encoder.get_channels(),
+            strides=backbone.get_strides(),
+            in_channels=backbone.get_channels(),
             decoder_levels=plan_arch["decoder_levels"],
             fixed_out_channels=plan_arch["fpn_channels"],
-            **model_cfg["decoder_kwargs"],
+            **model_cfg["neck_kwargs"],
         )
-        return decoder
+        return neck
 
     @classmethod
     def _build_head_classifier(
@@ -263,7 +297,7 @@ class BoxModule(LightningBaseModule):
         plan_arch: dict,
         model_cfg: dict,
         anchor_generator: AnchorGeneratorType,
-    ) -> DenseRegressor:
+    ) -> DenseRegressorType:
         """
         Build regression subnetwork for detection head
 
@@ -336,7 +370,7 @@ class BoxModule(LightningBaseModule):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        decoder: DecoderType,
+        neck: DecoderType,
     ) -> SegmenterType:
         """
         Build segmenter head
@@ -344,7 +378,7 @@ class BoxModule(LightningBaseModule):
         Args:
             plan_arch: architecture settings
             model_cfg: additional architecture settings
-            decoder: decoder instance
+            neck: neck instance
 
         Returns:
             SegmenterType: segmenter head
@@ -358,7 +392,7 @@ class BoxModule(LightningBaseModule):
             segmenter = cls.segmenter_cls(
                 conv,
                 seg_classes=plan_arch["seg_classes"],
-                in_channels=decoder.get_channels(),
+                in_channels=neck.get_channels(),
                 decoder_levels=plan_arch["decoder_levels"],
                 **kwargs,
             )

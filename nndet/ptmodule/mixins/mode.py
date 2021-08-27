@@ -17,7 +17,7 @@ from nndet.io.transforms import (
 )
 
 
-class OperationModeMixin(ABC):
+class ModeMixin(ABC):
     """
     This mixin module defines the operation modes of the network.
     It provides the transformation to prepare the ground truth and input
@@ -98,7 +98,7 @@ class OperationModeMixin(ABC):
         return {}
 
 
-class BoxMixin(OperationModeMixin):
+class BoxMixin(ModeMixin):
     def get_pre_transforms(plan: dict) -> List[AbstractTransform]:
         """
         Search for unqiue instances -> Instances to Boxes
@@ -214,7 +214,7 @@ class BoxMixin(OperationModeMixin):
         return metric_scores
 
 
-class SemanticMixin(OperationModeMixin):
+class SemanticMixin(ModeMixin):
     """
     This Mixin onl works with BoxMixin!
     BoxMixin needs to be subclassed last e.g.
@@ -310,5 +310,5 @@ class SemanticMixin(OperationModeMixin):
         return metric_scores
 
 
-class InstanceMixin(OperationModeMixin):
+class InstanceMixin(ModeMixin):
     pass

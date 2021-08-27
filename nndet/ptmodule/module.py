@@ -241,7 +241,7 @@ class LightningBaseModule(pl.LightningModule):
         return self.model.inference_step(batch, **kwargs)
 
     @classmethod
-    def from_config_plan(
+    def from_config_plan(  # FIXME
         cls,
         model_cfg: dict,
         plan_arch: dict,
