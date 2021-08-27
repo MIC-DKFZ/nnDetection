@@ -22,9 +22,14 @@ from nndet.io.transforms.base import AbstractTransform
 
 
 class Mirror(AbstractTransform):
-    def __init__(self, keys: Sequence[str], dims: Sequence[int],
-                 point_keys: Sequence[str] = (), box_keys: Sequence[str] = (),
-                 grad: bool = False):
+    def __init__(
+        self,
+        keys: Sequence[str],
+        dims: Sequence[int],
+        point_keys: Sequence[str] = (),
+        box_keys: Sequence[str] = (),
+        grad: bool = False,
+    ):
         """
         Mirror Transform
 
@@ -99,8 +104,11 @@ def mirror(data: torch.Tensor, dims: Sequence[int]) -> torch.Tensor:
     return data.flip(dims)
 
 
-def mirror_points(points: Sequence[torch.Tensor], dims: Sequence[int],
-                  data_shapes: Sequence[Sequence[int]]) -> List[torch.Tensor]:
+def mirror_points(
+    points: Sequence[torch.Tensor],
+    dims: Sequence[int],
+    data_shapes: Sequence[Sequence[int]],
+) -> List[torch.Tensor]:
     """
     Mirror points along given dimensions
 
@@ -122,8 +130,9 @@ def mirror_points(points: Sequence[torch.Tensor], dims: Sequence[int],
     return points_to_cartesian(transformed)
 
 
-def nd_mirror_matrix(cartesian_dims: int, mirror_dims: Sequence[int],
-                     data_shape: Sequence[int]) -> torch.Tensor:
+def nd_mirror_matrix(
+    cartesian_dims: int, mirror_dims: Sequence[int], data_shape: Sequence[int]
+) -> torch.Tensor:
     """
     Create n dimensional matrix to for mirroring
 
@@ -220,7 +229,8 @@ def points2boxes(points: Tensor) -> Tensor:
     if points.nelement() > 0:
         points0, points1 = points.split(points.shape[0] // 2)
         boxes = torch.zeros(points.shape[0] // 2, points.shape[1] * 2).to(
-            device=points.device, dtype=points.dtype)
+            device=points.device, dtype=points.dtype
+        )
         boxes[:, 0] = torch.min(points0[:, 0], points1[:, 0])
         boxes[:, 1] = torch.min(points0[:, 1], points1[:, 1])
         boxes[:, 2] = torch.max(points0[:, 0], points1[:, 0])

@@ -41,7 +41,9 @@ class EMAWeightsCB(Callback):
         self.beta = beta
         self.ema_eval = ema_eval
         if self.ema_eval:
-            raise NotImplementedError("Evaluation with EMA weights is not implemented yet.")
+            raise NotImplementedError(
+                "Evaluation with EMA weights is not implemented yet."
+            )
         self.dirpath = Path(dirpath) if dirpath is not None else dirpath
 
     def on_train_start(self, trainer, pl_module):
@@ -52,21 +54,25 @@ class EMAWeightsCB(Callback):
             beta=self.beta,
         )
 
-    def on_train_batch_end(self,
-                           trainer,
-                           pl_module,
-                           outputs,
-                           batch,
-                           batch_idx,
-                           dataloader_idx,
-                           ):
+    def on_train_batch_end(
+        self,
+        trainer,
+        pl_module,
+        outputs,
+        batch,
+        batch_idx,
+        dataloader_idx,
+    ):
         # on_train_batch_end -> update weights
         self.ema.add(pl_module)
 
     def on_train_end(self, trainer, pl_module: LightningModule) -> None:
         # on_train_end -> save ema weights
         if self.dirpath is not None:
-            torch.save({"state_dict": self.ema.get_state_dict()}, str(self.dirpath / "model_ema.ckpt"))
+            torch.save(
+                {"state_dict": self.ema.get_state_dict()},
+                str(self.dirpath / "model_ema.ckpt"),
+            )
         return super().on_train_end(trainer, pl_module)
 
 
@@ -91,7 +97,9 @@ class EMAWeights:
         self.device = torch.device(device) if isinstance(device, str) else device
 
         if self.device is not None:
-            self.module_state_dict = to_device(self.module_state_dict, device=self.device, detach=True)
+            self.module_state_dict = to_device(
+                self.module_state_dict, device=self.device, detach=True
+            )
 
         self.beta = beta
 
@@ -102,7 +110,9 @@ class EMAWeights:
         Args:
             module: module with updated weights
         """
-        for (nw, weight), (nu, udpate) in zip(self.module_state_dict.items(), module.state_dict().items()):
+        for (nw, weight), (nu, udpate) in zip(
+            self.module_state_dict.items(), module.state_dict().items()
+        ):
             assert nw == nu
             _update = udpate.detach().clone()
 
@@ -133,7 +143,7 @@ class EMA:
             bias_correction: applies bias correction
         """
         self.beta = beta
-        self.cache: float = 0.
+        self.cache: float = 0.0
 
         self.bias_correction = bias_correction
         self.t = 0
@@ -156,6 +166,6 @@ class EMA:
             float: current EMA
         """
         if self.bias_correction and self.t > 0:
-            return (self.cache / (1 - pow(self.beta, self.t)))
+            return self.cache / (1 - pow(self.beta, self.t))
         else:
             return self.cache

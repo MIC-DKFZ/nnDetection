@@ -12,7 +12,7 @@ def evaluator():
 @pytest.fixture
 def target():
     target = np.ones((1, 30, 10))
-    target[:, 10:] = 2.
+    target[:, 10:] = 2.0
     return target
 
 
@@ -24,15 +24,15 @@ def pred():
     return pred
 
 
-class TestDetectionEvaluator:
+class TestSegmentationEvaluator:
     def test_run_online_evaluation_tp(self, evaluator, pred, target):
         evaluator.run_online_evaluation(pred, target)
         assert len(evaluator.results_list["tp"]) == 1
-        assert np.allclose(evaluator.results_list["tp"][0], np.array([0., 100.]))
+        assert np.allclose(evaluator.results_list["tp"][0], np.array([0.0, 100.0]))
         assert len(evaluator.results_list["fp"]) == 1
-        assert np.allclose(evaluator.results_list["fp"][0], np.array([100., 100.]))
+        assert np.allclose(evaluator.results_list["fp"][0], np.array([100.0, 100.0]))
         assert len(evaluator.results_list["fn"]) == 1
-        assert np.allclose(evaluator.results_list["fn"][0], np.array([100., 100.]))
+        assert np.allclose(evaluator.results_list["fn"][0], np.array([100.0, 100.0]))
 
         evaluator.reset()
         assert not evaluator.results_list
@@ -41,7 +41,7 @@ class TestDetectionEvaluator:
         evaluator.run_online_evaluation(pred, target)
         evaluator.run_online_evaluation(pred, target)
         seg_scores, _ = evaluator.finish_online_evaluation()
-        assert seg_scores["0_seg_dice"] == 0.
+        assert seg_scores["0_seg_dice"] == 0.0
         assert seg_scores["1_seg_dice"] == 0.5
         assert seg_scores["seg_dice"] == 0.25
 

@@ -24,10 +24,15 @@ nndet.training.optimizer.NORM_TYPES to exclude them from weight decay
 
 
 class GroupNorm(nn.GroupNorm):
-    def __init__(self, num_channels: int,
-                 num_groups: Optional[int] = None,
-                 channels_per_group: Optional[int] = None,
-                 eps: float = 1e-05, affine: bool = True, **kwargs) -> None:
+    def __init__(
+        self,
+        num_channels: int,
+        num_groups: Optional[int] = None,
+        channels_per_group: Optional[int] = None,
+        eps: float = 1e-05,
+        affine: bool = True,
+        **kwargs
+    ) -> None:
         """
         PyTorch Group Norm (changed interface, num_channels at first position)
 
@@ -42,9 +47,15 @@ class GroupNorm(nn.GroupNorm):
         """
         if channels_per_group is not None:
             if num_groups is not None:
-                raise ValueError("Can only use `channels_per_group` OR `num_groups` in GroupNorm")
+                raise ValueError(
+                    "Can only use `channels_per_group` OR `num_groups` in GroupNorm"
+                )
             num_groups = num_channels // channels_per_group
 
-        super().__init__(num_channels=num_channels,
-                         num_groups=num_groups,
-                         eps=eps, affine=affine, **kwargs)
+        super().__init__(
+            num_channels=num_channels,
+            num_groups=num_groups,
+            eps=eps,
+            affine=affine,
+            **kwargs
+        )

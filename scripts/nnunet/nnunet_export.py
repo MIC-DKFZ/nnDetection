@@ -41,31 +41,47 @@ def run(cfg, target_dir, stuff: bool):
     else:
         ts_image_dir = None
 
-    _ = Exporter(data_info=OmegaConf.to_container(cfg.data),
-                 tr_image_dir=base_dir / "imagesTr",
-                 ts_image_dir=ts_image_dir,
-                 label_dir=base_dir / "labelsTr",
-                 target_dir=target_dir,
-                 export_stuff=stuff,
-                 ).export()
+    _ = Exporter(
+        data_info=OmegaConf.to_container(cfg.data),
+        tr_image_dir=base_dir / "imagesTr",
+        ts_image_dir=ts_image_dir,
+        label_dir=base_dir / "labelsTr",
+        target_dir=target_dir,
+        export_stuff=stuff,
+    ).export()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="Single or multiple task identifiers to process consecutively",
-                        )
-    parser.add_argument('-nt', '--new_tasks', type=str, nargs='+',
-                        help="Rename the tasks.",
-                        required=False, default=None,
-                        )
-    parser.add_argument("--stuff", action='store_true',
-                        help="Export stuff and things classes."
-                             "The final detection evaluation will be performed on things classes only.")
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False,
-                        )
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
+    parser.add_argument(
+        "-nt",
+        "--new_tasks",
+        type=str,
+        nargs="+",
+        help="Rename the tasks.",
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "--stuff",
+        action="store_true",
+        help="Export stuff and things classes."
+        "The final detection evaluation will be performed on things classes only.",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
 
     args = parser.parse_args()
     tasks = args.tasks
@@ -91,5 +107,5 @@ if __name__ == '__main__':
 
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
-        print(cfg.pretty)
+        print(cfg)
         run(cfg, target_dir, stuff=stuff)

@@ -32,10 +32,11 @@ from git import Repo, InvalidGitRepositoryError
 import functools
 import inspect
 
+
 class SuppressPrint:
     def __enter__(self):
         self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
@@ -46,7 +47,7 @@ def deprecate(
     replacement: Optional[str] = None,
     deprecate: Optional[str] = None,
     remove: Optional[str] = None,
-    ):
+):
     """
     Deprecate functions and classes
 
@@ -57,6 +58,7 @@ def deprecate(
         deprecate: Optional version from when element is deprecated.
         remove: Optional version from when element will be removed.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -70,7 +72,7 @@ def deprecate(
             s = f"{func_name} is deprecated from {time_str}!"
 
             if remove is not None:
-                s += f" It will be removed from nnDetection from {remove}"
+                s += f" It will be removed from nnDetection {remove}"
             if replacement is not None:
                 s += f" The replacement is {replacement}."
             else:
@@ -78,7 +80,9 @@ def deprecate(
 
             logger.warning(s)
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -89,10 +93,13 @@ def experimental(func):
             func_name = func.__class__.__name__
         else:
             func_name = func.__qualname__
-        
-        logger.warning(f"This feature ({func_name}) is experimental! "
-                       "It might not implement all features or is only a simplification!")
+
+        logger.warning(
+            f"This feature ({func_name}) is experimental! "
+            "It might not implement all features or is only a simplification!"
+        )
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -103,7 +110,7 @@ def get_requirements():
     Returns:
         str: list with all requirements
     """
-    command = ['pip', 'list']
+    command = ["pip", "list"]
     result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
     assert not result.stderr, "stderr not empty"
     return result.stdout
@@ -131,6 +138,7 @@ def get_repo_info(path: Union[str, Path]):
     Returns:
         dict: contains the current hash, gitdir and active branch
     """
+
     def find_repo(findpath):
         p = Path(findpath).absolute()
         for p in [p, *p.parents]:
@@ -142,10 +150,13 @@ def get_repo_info(path: Union[str, Path]):
         else:
             raise InvalidGitRepositoryError
         return repo
+
     repo = find_repo(path)
-    return {"hash": repo.head.commit.hexsha,
-            "gitdir": repo.git_dir,
-            "active_branch": repo.active_branch.name}
+    return {
+        "hash": repo.head.commit.hexsha,
+        "gitdir": repo.git_dir,
+        "active_branch": repo.active_branch.name,
+    }
 
 
 def maybe_verbose_iterable(data: Iterable, **kwargs) -> Iterable:
@@ -166,8 +177,7 @@ def maybe_verbose_iterable(data: Iterable, **kwargs) -> Iterable:
         return data
 
 
-def find_name(tdir: Union[str, Path], name: str,
-              postfix: Optional[str] = None) -> Path:
+def find_name(tdir: Union[str, Path], name: str, postfix: Optional[str] = None) -> Path:
     """
     Generates non exisitng names for files and dirs by adding a counter to
     the end
@@ -212,7 +222,9 @@ def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
         git_info = get_repo_info(repo_path)
         return git_info
     except Exception:
-        logger.error("Was not able to read git information, trying to continue without.")
+        logger.error(
+            "Was not able to read git information, trying to continue without."
+        )
         return {}
 
 
@@ -229,11 +241,11 @@ def get_cls_name(obj: Any, package_name: bool = True) -> str:
     """
     cls_name = str(obj.__class__)
     # remove class prefix
-    cls_name = cls_name.split('\'')[1]
+    cls_name = cls_name.split("'")[1]
     # split modules
-    cls_split = cls_name.split('.')
+    cls_split = cls_name.split(".")
     if len(cls_split) > 1:
-        cls_name = cls_split[0] + '.' + cls_split[-1] if package_name else cls_split[-1]
+        cls_name = cls_split[0] + "." + cls_split[-1] if package_name else cls_split[-1]
     else:
         cls_name = cls_split[0]
     return cls_name
@@ -249,12 +261,14 @@ def log_error(fn: Callable) -> Any:
     Returns:
         Any
     """
+
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
             logger.error(str(e))
             raise e
+
     return wrapper
 
 

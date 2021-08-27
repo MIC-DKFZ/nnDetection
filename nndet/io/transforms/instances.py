@@ -24,7 +24,9 @@ from nndet.io.transforms.base import AbstractTransform
 
 
 class FindInstances(AbstractTransform):
-    def __init__(self, instance_key: str, save_key: str = "present_instances", **kwargs):
+    def __init__(
+        self, instance_key: str, save_key: str = "present_instances", **kwargs
+    ):
         super().__init__(grad=False)
         self.instance_key = instance_key
         self.save_key = save_key
@@ -40,10 +42,16 @@ class FindInstances(AbstractTransform):
 
 
 class Instances2Boxes(AbstractTransform):
-    def __init__(self, instance_key: str, map_key: str,
-                 box_key: str, class_key: str, grad: bool = False,
-                 present_instances: Optional[str] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        instance_key: str,
+        map_key: str,
+        box_key: str,
+        class_key: str,
+        grad: bool = False,
+        present_instances: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Convert instance segmentation to bounding boxes
 
@@ -77,12 +85,20 @@ class Instances2Boxes(AbstractTransform):
         data[self.box_key] = []
         data[self.class_key] = []
         for batch_idx, instance_element in enumerate(data[self.instance_key].split(1)):
-            _present_instances = data[self.present_instances][batch_idx] if self.present_instances is not None else None
+            _present_instances = (
+                data[self.present_instances][batch_idx]
+                if self.present_instances is not None
+                else None
+            )
             _boxes, instance_idx = instances_to_boxes(
-                instance_element, instance_element.ndim - 2, instances=_present_instances)
+                instance_element,
+                instance_element.ndim - 2,
+                instances=_present_instances,
+            )
 
             _classes = get_instance_class_from_properties(
-                instance_idx, data[self.map_key][batch_idx])
+                instance_idx, data[self.map_key][batch_idx]
+            )
             _classes = _classes.to(device=_boxes.device)
 
             data[self.box_key].append(_boxes)
@@ -90,10 +106,11 @@ class Instances2Boxes(AbstractTransform):
         return data
 
 
-def instances_to_boxes(seg: Tensor,
-                       dim: int = None,
-                       instances: Optional[Sequence[int]] = None,
-                       ) -> Tuple[Tensor, Tensor]:
+def instances_to_boxes(
+    seg: Tensor,
+    dim: int,
+    instances: Optional[Sequence[int]] = None,
+) -> Tuple[Tensor, Tensor]:
     """
     Convert instance segmentation to bounding boxes (not batched)
 
@@ -108,8 +125,9 @@ def instances_to_boxes(seg: Tensor,
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
         Tensor: tuple with classes for bounding boxes
     """
-    if dim is None:
-        dim = seg.ndim
+    if dim > 3:
+        raise ValueError("Only supports bounding boxes up to three dimensions.")
+
     boxes = []
     _seg = seg.detach()
 
@@ -120,10 +138,15 @@ def instances_to_boxes(seg: Tensor,
     for _idx in instances:
         instance_idx = (_seg == _idx).nonzero(as_tuple=False)
 
-        _mins = instance_idx[:, -3:].min(dim=0)[0]
-        _maxs = instance_idx[:, -3:].max(dim=0)[0]
+        _mins = instance_idx[:, -dim:].min(dim=0)[0]
+        _maxs = instance_idx[:, -dim:].max(dim=0)[0]
 
-        box = [_mins[-dim] - 1, _mins[(-dim) + 1] - 1, _maxs[-dim] + 1, _maxs[(-dim) + 1] + 1]
+        box = [
+            _mins[-dim] - 1,
+            _mins[(-dim) + 1] - 1,
+            _maxs[-dim] + 1,
+            _maxs[(-dim) + 1] + 1,
+        ]
         if dim > 2:
             box = box + [_mins[(-dim) + 2] - 1, _maxs[(-dim) + 2] + 1]
         boxes.append(torch.tensor(box))
@@ -137,7 +160,7 @@ def instances_to_boxes(seg: Tensor,
 
 def instances_to_boxes_np(
     seg: np.ndarray,
-    dim: int = None,
+    dim: int,
     instances: Optional[Sequence[int]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -154,8 +177,9 @@ def instances_to_boxes_np(
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
         np.ndarray: tuple with classes for bounding boxes
     """
-    if dim is None:
-        dim = seg.ndim
+    if dim > 3:
+        raise ValueError("Only supports bounding boxes up to three dimensions.")
+
     boxes = []
     if instances is None:
         instances = np.unique(seg)
@@ -166,7 +190,12 @@ def instances_to_boxes_np(
         _mins = np.min(instance_idx[:, -dim:], axis=0)
         _maxs = np.max(instance_idx[:, -dim:], axis=0)
 
-        box = [_mins[-dim] - 1, _mins[(-dim) + 1] - 1, _maxs[-dim] + 1, _maxs[(-dim) + 1] + 1]
+        box = [
+            _mins[-dim] - 1,
+            _mins[(-dim) + 1] - 1,
+            _maxs[-dim] + 1,
+            _maxs[(-dim) + 1] + 1,
+        ]
         if dim > 2:
             box = box + [_mins[(-dim) + 2] - 1, _maxs[(-dim) + 2] + 1]
         boxes.append(np.array(box))
@@ -179,7 +208,8 @@ def instances_to_boxes_np(
 
 
 def get_instance_class_from_properties(
-        instance_idx: torch.Tensor, map_dict: Dict[str, Union[str, int]]) -> Tensor:
+    instance_idx: torch.Tensor, map_dict: Dict[str, Union[str, int]]
+) -> Tensor:
     """
     Extract instance classes form mapping dict
 
@@ -196,7 +226,8 @@ def get_instance_class_from_properties(
 
 
 def get_instance_class_from_properties_seq(
-        instance_idx: Sequence, map_dict: Dict[str, Union[str, int]]) -> Sequence:
+    instance_idx: Sequence, map_dict: Dict[str, Union[str, int]]
+) -> Sequence:
     """
     Extract instance classes form mapping dict
 
@@ -213,10 +244,15 @@ def get_instance_class_from_properties_seq(
 
 
 class Instances2Segmentation(AbstractTransform):
-    def __init__(self, instance_key: str, map_key: str, seg_key: str = None,
-                 add_background: bool = True, grad: bool = False,
-                 present_instances: Optional[str] = None,
-                 ):
+    def __init__(
+        self,
+        instance_key: str,
+        map_key: str,
+        seg_key: str = None,
+        add_background: bool = True,
+        grad: bool = False,
+        present_instances: Optional[str] = None,
+    ):
         """
         Convert instances to semantic segmentation
 
@@ -248,22 +284,28 @@ class Instances2Segmentation(AbstractTransform):
             dict: processed batch
         """
         semantic = torch.zeros_like(data[self.instance_key])
-        _present_instances = data[self.present_instances] if self.present_instances is not None else None
+        _present_instances = (
+            data[self.present_instances] if self.present_instances is not None else None
+        )
         for batch_idx in range(semantic.shape[0]):
-            instances_to_segmentation(data[self.instance_key][batch_idx],
-                                      data[self.map_key][batch_idx],
-                                      add_background=self.add_background,
-                                      instance_idx=_present_instances[batch_idx],
-                                      out=semantic[batch_idx])
+            instances_to_segmentation(
+                data[self.instance_key][batch_idx],
+                data[self.map_key][batch_idx],
+                add_background=self.add_background,
+                instance_idx=_present_instances[batch_idx],
+                out=semantic[batch_idx],
+            )
         data[self.seg_key] = semantic
         return data
 
 
-def instances_to_segmentation(instances: Tensor,
-                              mapping: Dict[str, Union[str, int]],
-                              add_background: bool = True,
-                              instance_idx: Optional[Sequence[int]] = None,
-                              out: Tensor = None) -> Tensor:
+def instances_to_segmentation(
+    instances: Tensor,
+    mapping: Dict[str, Union[str, int]],
+    add_background: bool = True,
+    instance_idx: Optional[Sequence[int]] = None,
+    out: Tensor = None,
+) -> Tensor:
     """
     Convert instances to semantic segmentation
 
@@ -296,10 +338,12 @@ def instances_to_segmentation(instances: Tensor,
     return out
 
 
-def instances_to_segmentation_np(instances: np.ndarray,
-                                 mapping: Dict[Union[str, int], Union[str, int]],
-                                 add_background: bool = True,
-                                 out: np.ndarray = None) -> np.ndarray:
+def instances_to_segmentation_np(
+    instances: np.ndarray,
+    mapping: Dict[Union[str, int], Union[str, int]],
+    add_background: bool = True,
+    out: np.ndarray = None,
+) -> np.ndarray:
     """
     Convert instances to semantic segmentation
 
@@ -328,10 +372,11 @@ def instances_to_segmentation_np(instances: np.ndarray,
     return out
 
 
-def get_bbox_np(seg: np.ndarray,
-                map_dict: Optional[Dict[Union[str, int], Union[str, int]]] = None,
-                **kwargs,
-                ) -> dict:
+def get_bbox_np(
+    seg: np.ndarray,
+    map_dict: Optional[Dict[Union[str, int], Union[str, int]]] = None,
+    **kwargs,
+) -> dict:
     """
     Get bounding boxes and mapping from instances to classes
 
@@ -348,7 +393,7 @@ def get_bbox_np(seg: np.ndarray,
         map_dict = {str(key): str(item) for key, item in map_dict.items()}
 
     result = {}
-    boxes, instance_idx = instances_to_boxes_np(seg[0], **kwargs)
+    boxes, instance_idx = instances_to_boxes_np(seg[0], dim=seg.ndim - 1, **kwargs)
     result["boxes"] = boxes
 
     if map_dict is not None:

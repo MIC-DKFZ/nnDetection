@@ -69,4 +69,4 @@ class AbstractEncoder(nn.Module):
         raise NotImplementedError
 
 
-EncoderType = TypeVar('EncoderType', bound=AbstractEncoder)
+EncoderType = TypeVar("EncoderType", bound=AbstractEncoder)

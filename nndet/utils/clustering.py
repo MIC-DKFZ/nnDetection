@@ -22,10 +22,11 @@ from typing import Dict, Sequence, Union, Tuple, Optional
 from nndet.io.transforms.instances import get_bbox_np
 
 
-def seg2instances(seg: np.ndarray,
-                  exclude_background: bool = True,
-                  min_num_voxel: int = 0,
-                  ) -> Tuple[np.ndarray, Dict[int, int]]:
+def seg2instances(
+    seg: np.ndarray,
+    exclude_background: bool = True,
+    min_num_voxel: int = 0,
+) -> Tuple[np.ndarray, Dict[int, int]]:
     """
     Use connected components with ones matrix to created instance from segmentation
 
@@ -64,8 +65,12 @@ def seg2instances(seg: np.ndarray,
     return instances, instance_classes
 
 
-def remove_classes(seg: np.ndarray, rm_classes: Sequence[int], classes: Dict[int, int] = None,
-                   background: int = 0) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
+def remove_classes(
+    seg: np.ndarray,
+    rm_classes: Sequence[int],
+    classes: Dict[int, int] = None,
+    background: int = 0,
+) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
     """
     Remove classes from segmentation (also works on instances
     but instance ids may not be consecutive anymore)
@@ -106,11 +111,12 @@ def reorder_classes(seg: np.ndarray, class_mapping: Dict[int, int]) -> np.ndarra
     return seg
 
 
-def compute_score_from_seg(instances: np.ndarray,
-                           instance_classes: Dict[int, int],
-                           probs: np.ndarray,
-                           aggregation: str = "max",
-                           ) -> np.ndarray:
+def compute_score_from_seg(
+    instances: np.ndarray,
+    instance_classes: Dict[int, int],
+    probs: np.ndarray,
+    aggregation: str = "max",
+) -> np.ndarray:
     """
     Combine scores for each instance given an instance mask and instance logits
 
@@ -148,12 +154,13 @@ def compute_score_from_seg(instances: np.ndarray,
     return np.asarray(instance_scores)
 
 
-def instance_results_from_seg(probs: np.ndarray,
-                              aggregation: str,
-                              stuff: Optional[Sequence[int]] = None,
-                              min_num_voxel: int = 0,
-                              min_threshold: Optional[float] = None,
-                              ) -> dict:
+def instance_results_from_seg(
+    probs: np.ndarray,
+    aggregation: str,
+    stuff: Optional[Sequence[int]] = None,
+    min_num_voxel: int = 0,
+    min_threshold: Optional[float] = None,
+) -> dict:
     """
     Compute instance segmentation results from a semantic segmentation
     argmax -> remove stuff classes -> connected components ->
@@ -192,13 +199,17 @@ def instance_results_from_seg(probs: np.ndarray,
     if stuff is not None:
         for s in stuff:
             seg[seg == s] = 0
-    instances, instance_classes = seg2instances(seg,
-                                                exclude_background=True,
-                                                min_num_voxel=min_num_voxel,
-                                                )
-    instance_scores = compute_score_from_seg(instances, instance_classes, probs,
-                                             aggregation=aggregation)
-    instance_classes = {int(key): int(item) - 1 for key, item in instance_classes.items()}
+    instances, instance_classes = seg2instances(
+        seg,
+        exclude_background=True,
+        min_num_voxel=min_num_voxel,
+    )
+    instance_scores = compute_score_from_seg(
+        instances, instance_classes, probs, aggregation=aggregation
+    )
+    instance_classes = {
+        int(key): int(item) - 1 for key, item in instance_classes.items()
+    }
     tmp = get_bbox_np(instances[None], instance_classes)
     instance_boxes = tmp["boxes"]
     instance_classes_seq = tmp["classes"]

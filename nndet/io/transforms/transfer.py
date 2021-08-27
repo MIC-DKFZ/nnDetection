@@ -4,10 +4,11 @@ from nndet.io.transforms.base import AbstractTransform
 
 
 class TransferInputChannel(AbstractTransform):
-    def __init__(self,
-                 out_channels: int,
-                 data_key: str,
-                 ):
+    def __init__(
+        self,
+        out_channels: int,
+        data_key: str,
+    ):
         """
         Create a new output tensor with more channels and save the data
         to a random channel
@@ -22,11 +23,15 @@ class TransferInputChannel(AbstractTransform):
         """
         super().__init__(grad=False)
         if not isinstance(out_channels, int):
-            raise ValueError("Exptected in_channels of type int received "
-                             f"{type(out_channels)} : {out_channels}")
+            raise ValueError(
+                "Exptected in_channels of type int received "
+                f"{type(out_channels)} : {out_channels}"
+            )
         if not isinstance(data_key, str):
-            raise ValueError("Exptected in_channels of type int received "
-                             f"{type(data_key)} : {data_key}")
+            raise ValueError(
+                "Exptected in_channels of type int received "
+                f"{type(data_key)} : {data_key}"
+            )
         self.out_channels = out_channels
         self.data_key = data_key
 

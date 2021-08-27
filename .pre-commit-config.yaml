@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    - id: check-yaml
+    - id: check-json
+    - id: end-of-file-fixer
+      files: .*\.py
+    - id: trailing-whitespace
+      files: .*\.py
+    # - id: name-tests-test
+    # - id: check-docstring-first
+
+  - repo: https://github.com/psf/black
+    rev: 21.7b0
+    hooks:
+    - id: black
+
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-check
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: True

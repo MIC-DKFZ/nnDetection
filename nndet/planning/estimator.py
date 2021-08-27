@@ -34,21 +34,20 @@ I hope to update this soon.
 """
 
 
-def b2mb(x): return x / (2**20)  # noqa: E704
-def mb2b(x): return x * (2**20)  # noqa: E704
+def b2mb(x):
+    return x / (2 ** 20)  # noqa: E704
+
+
+def mb2b(x):
+    return x * (2 ** 20)  # noqa: E704
 
 
 # remove 11mb from target memory to have a little wiggle room
 # (sometimes that amount was blocked on my GPU even though nothing was running)
-ARCHS = {
-    "RTX2080TI": 11523260416 - int(mb2b(11))
-}
+ARCHS = {"RTX2080TI": 11523260416 - int(mb2b(11))}
 
 # this is just an esitmation ... probably depend on the cuda version too
-CUDA_CONTEXT = {
-    "none": 0,
-    "RTX2080TI": int(mb2b(910))
-}
+CUDA_CONTEXT = {"none": 0, "RTX2080TI": int(mb2b(910))}
 
 
 class MemoryEstimator(ABC):
@@ -62,13 +61,15 @@ class MemoryEstimator(ABC):
 
 
 class MemoryEstimatorDetection(MemoryEstimator):
-    def __init__(self,
-                 target_mem: Union[float, str] = "RTX2080TI",
-                 gpu_id: int = 0,
-                 context: Union[float, str] = "RTX2080TI",
-                 offset: int = mb2b(768),
-                 batch_size: int = 1,
-                 mixed_precision: bool = True):
+    def __init__(
+        self,
+        target_mem: Union[float, str] = "RTX2080TI",
+        gpu_id: int = 0,
+        context: Union[float, str] = "RTX2080TI",
+        offset: int = mb2b(768),
+        batch_size: int = 1,
+        mixed_precision: bool = True,
+    ):
         """
         Estimate memory needed for training a specific network
 
@@ -101,28 +102,39 @@ class MemoryEstimatorDetection(MemoryEstimator):
 
     def create_offset_tensor_on_GPU(self) -> torch.Tensor:
         device = f"cuda:{self.gpu_id}"
-        tensor_mem = torch.rand(1, dtype=float, requires_grad=False, device=device).element_size()
-        return torch.rand(math.ceil(self.offset / tensor_mem), dtype=float,
-                          requires_grad=False, device=device)
+        tensor_mem = torch.rand(
+            1, dtype=float, requires_grad=False, device=device
+        ).element_size()
+        return torch.rand(
+            math.ceil(self.offset / tensor_mem),
+            dtype=float,
+            requires_grad=False,
+            device=device,
+        )
 
-    def estimate(self,
-                 min_shape: Sequence[int],
-                 target_shape: Sequence[int],
-                 network: AbstractModel,
-                 optimizer_cls: Callable = torch.optim.Adam,
-                 in_channels: int = None,
-                 num_instances: int = 1,
-                 ) -> Tuple[int, bool]:
+    def estimate(
+        self,
+        min_shape: Sequence[int],
+        target_shape: Sequence[int],
+        network: AbstractModel,
+        optimizer_cls: Callable = torch.optim.Adam,
+        in_channels: int = None,
+        num_instances: int = 1,
+    ) -> Tuple[int, bool]:
         if in_channels is not None:
             min_shape = [in_channels, *min_shape]
             target_shape = [in_channels, *target_shape]
 
         # all_mem - reserved_mem[misc + context] + context
-        available_mem = torch.cuda.get_device_properties(self.gpu_id).total_memory - \
-            smi_memory_allocated(self.gpu_id) + self.context
+        available_mem = (
+            torch.cuda.get_device_properties(self.gpu_id).total_memory
+            - smi_memory_allocated(self.gpu_id)
+            + self.context
+        )
         logger.info(
             f"Found available gpu memory: {available_mem} bytes / {b2mb(available_mem)} mb "
-            f"and estimating for {self.target_mem} bytes / {b2mb(self.target_mem)}")
+            f"and estimating for {self.target_mem} bytes / {b2mb(self.target_mem)}"
+        )
 
         # if available_mem >= self.target_mem:
         res = self._estimate_mem_available(
@@ -144,37 +156,41 @@ class MemoryEstimatorDetection(MemoryEstimator):
         gc.collect()
         return res
 
-    def _estimate_mem_available(self,
-                                min_shape: Sequence[int],
-                                target_shape: Sequence[int],
-                                network: AbstractModel,
-                                optimizer_cls: Callable = torch.optim.Adam,
-                                num_instances: int = 1,
-                                ) -> Tuple[int, bool]:
+    def _estimate_mem_available(
+        self,
+        min_shape: Sequence[int],
+        target_shape: Sequence[int],
+        network: AbstractModel,
+        optimizer_cls: Callable = torch.optim.Adam,
+        num_instances: int = 1,
+    ) -> Tuple[int, bool]:
         logger.info("Estimating in memory.")
-        fixed, dynamic = self.measure(shape=target_shape,
-                                      network=network,
-                                      optimizer_cls=optimizer_cls,
-                                      num_instances=num_instances,
-                                      )
+        fixed, dynamic = self.measure(
+            shape=target_shape,
+            network=network,
+            optimizer_cls=optimizer_cls,
+            num_instances=num_instances,
+        )
         estimated_mem = fixed + dynamic
         return estimated_mem, estimated_mem < self.target_mem
 
-    def _estimate_mem_not_available(self,
-                                    min_shape: Sequence[int],
-                                    target_shape: Sequence[int],
-                                    network: AbstractModel,
-                                    optimizer_cls: Callable = torch.optim.Adam,
-                                    num_instances: int = 1,
-                                    ) -> Tuple[int, bool]:
+    def _estimate_mem_not_available(
+        self,
+        min_shape: Sequence[int],
+        target_shape: Sequence[int],
+        network: AbstractModel,
+        optimizer_cls: Callable = torch.optim.Adam,
+        num_instances: int = 1,
+    ) -> Tuple[int, bool]:
         raise NotImplementedError("!!!!!This needs more refinement!!!!")
         logger.info("Extrapolating memory consumption.")
         assert all([t >= m for t, m in zip(target_shape, min_shape)])
-        fixed_mem, dyn_mem = self.measure(shape=min_shape,
-                                          network=network,
-                                          optimizer_cls=optimizer_cls,
-                                          num_instances=num_instances,
-                                          )
+        fixed_mem, dyn_mem = self.measure(
+            shape=min_shape,
+            network=network,
+            optimizer_cls=optimizer_cls,
+            num_instances=num_instances,
+        )
         ratios = [t / m for t, m in zip(target_shape, min_shape)]
         scale = reduce((lambda x, y: x * y), ratios)
         estimated_dyn_mem = dyn_mem * scale
@@ -183,15 +199,18 @@ class MemoryEstimatorDetection(MemoryEstimator):
             estimated_mem += self.context
         return estimated_mem, estimated_mem < self.target_mem
 
-    def measure(self,
-                shape: Sequence[int],
-                network: AbstractModel,
-                optimizer_cls: Callable = torch.optim.Adam,
-                num_instances: int = 1,
-                ):
+    def measure(
+        self,
+        shape: Sequence[int],
+        network: AbstractModel,
+        optimizer_cls: Callable = torch.optim.Adam,
+        num_instances: int = 1,
+    ):
         device = torch.device("cuda", self.gpu_id)
-        logger.info(f"Estimating on {device} with shape {shape} and "
-                    f"batch size {self.batch_size} and num_instances {num_instances}")
+        logger.info(
+            f"Estimating on {device} with shape {shape} and "
+            f"batch size {self.batch_size} and num_instances {num_instances}"
+        )
         try:
             loss = None
             opt = None
@@ -210,21 +229,37 @@ class MemoryEstimatorDetection(MemoryEstimator):
 
                 block_tensor = self.create_offset_tensor_on_GPU().to(device=device)
                 import time
+
                 time.sleep(1)
 
                 for _ in range(10):
                     opt.zero_grad()
-                    inp = {"images": torch.rand((self.batch_size, *shape), device=device, dtype=torch.float),
-                           "targets": {
-                               "target_boxes": [torch.tensor(
-                                   boxes, device=device, dtype=torch.float).repeat(num_instances, 1)
-                                   for _ in range(self.batch_size)],
-                               "target_classes": [torch.tensor(
-                                   [0] * num_instances, device=device, dtype=torch.float)
-                                   for _ in range(self.batch_size)],
-                               "target_seg": torch.zeros(
-                                   (self.batch_size, *shape[1:]), device=device, dtype=torch.float),
-                    }}
+                    inp = {
+                        "images": torch.rand(
+                            (self.batch_size, *shape), device=device, dtype=torch.float
+                        ),
+                        "targets": {
+                            "target_boxes": [
+                                torch.tensor(
+                                    boxes, device=device, dtype=torch.float
+                                ).repeat(num_instances, 1)
+                                for _ in range(self.batch_size)
+                            ],
+                            "target_classes": [
+                                torch.tensor(
+                                    [0] * num_instances,
+                                    device=device,
+                                    dtype=torch.float,
+                                )
+                                for _ in range(self.batch_size)
+                            ],
+                            "target_seg": torch.zeros(
+                                (self.batch_size, *shape[1:]),
+                                device=device,
+                                dtype=torch.float,
+                            ),
+                        },
+                    }
                     fixed_mem = torch.cuda.memory_reserved()
                     with torch.cuda.amp.autocast():
                         loss_dict, _ = network.train_step(
@@ -241,8 +276,8 @@ class MemoryEstimatorDetection(MemoryEstimator):
         except (RuntimeError,) as e:
             logger.info(f"Caught error (If out of memory error do not worry): {e}")
             empty_mem = 0
-            fixed_mem = float('Inf')
-            dyn_mem = float('Inf')
+            fixed_mem = float("Inf")
+            dyn_mem = float("Inf")
         finally:
             del loss
 
@@ -253,9 +288,11 @@ class MemoryEstimatorDetection(MemoryEstimator):
         network.cpu()
         torch.cuda.empty_cache()
         gc.collect()
-        logger.info(f"Measured: {b2mb(empty_mem)} mb empty, "
-                    f"{b2mb(fixed_mem)} mb fixed, "
-                    f"{b2mb(dyn_mem)} mb dynamic")
+        logger.info(
+            f"Measured: {b2mb(empty_mem)} mb empty, "
+            f"{b2mb(fixed_mem)} mb fixed, "
+            f"{b2mb(dyn_mem)} mb dynamic"
+        )
         return fixed_mem - empty_mem, dyn_mem - fixed_mem
 
 
@@ -263,7 +300,7 @@ def num_gpus():
     """
     Number of GPUs independent of visible devices
     """
-    return str(sp.check_output(["nvidia-smi", "-L"])).count('UUID')
+    return str(sp.check_output(["nvidia-smi", "-L"])).count("UUID")
 
 
 def smi_memory_allocated(gpu_id: int = 0) -> int:
@@ -273,13 +310,16 @@ def smi_memory_allocated(gpu_id: int = 0) -> int:
     Returns:
         int: measured GPU memory in bytes
     """
-    reading = int(sp.check_output(
-        ['nvidia-smi', '--query-gpu=memory.used',
-         '--format=csv,nounits,noheader'], encoding='utf-8').split('\n')[gpu_id])
+    reading = int(
+        sp.check_output(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,nounits,noheader"],
+            encoding="utf-8",
+        ).split("\n")[gpu_id]
+    )
     return mb2b(reading)
 
 
-class Tracemalloc():
+class Tracemalloc:
     def __init__(self, measure_fn):
         super().__init__()
         self.measure_fn = measure_fn

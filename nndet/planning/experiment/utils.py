@@ -37,15 +37,21 @@ def create_label_case(
     boxes_save_path = target_dir / f"{case_id}_boxes_gt.npz"
     seg_save_path = target_dir / f"{case_id}_seg_gt.npz"
 
-    if instances_save_path.is_file() and boxes_save_path.is_file() and seg_save_path.is_file():
+    if (
+        instances_save_path.is_file()
+        and boxes_save_path.is_file()
+        and seg_save_path.is_file()
+    ):
         logger.warning(f"Skipping prepare label {case_id} because it already exists")
     else:
         logger.info(f"Preparing label {case_id}")
         if instances.ndim == dim:
             instances = instances[None]
-        np.savez_compressed(str(instances_save_path),
-                            instances=instances, mapping=mapping,
-                            )
+        np.savez_compressed(
+            str(instances_save_path),
+            instances=instances,
+            mapping=mapping,
+        )
 
         res = get_bbox_np(instances, mapping, dim=dim)
         np.savez_compressed(str(boxes_save_path), **res)
@@ -71,33 +77,37 @@ def create_labels(
     source_dir = Path(source_dir)
     for postfix in ["Tr", "Ts"]:
         if (source_label_dir := source_dir / f"labels{postfix}").is_dir():
-            logger.info(f'Preparing {postfix} evaluation labels')
+            logger.info(f"Preparing {postfix} evaluation labels")
             target_dir = Path(preprocessed_output_dir) / f"labels{postfix}"
             target_dir.mkdir(parents=True, exist_ok=True)
 
-            case_ids = get_case_ids_from_dir(source_label_dir,
-                                             remove_modality=False,
-                                             pattern="*.json",
-                                             )
+            case_ids = get_case_ids_from_dir(
+                source_label_dir,
+                remove_modality=False,
+                pattern="*.json",
+            )
             if num_processes > 0:
                 with Pool(processes=num_processes) as p:
-                    p.starmap(run_create_label,
-                              zip(repeat(source_label_dir),
-                                  case_ids,
-                                  repeat(3),
-                                  repeat(target_dir),
-                                  )
-                              )
+                    p.starmap(
+                        run_create_label,
+                        zip(
+                            repeat(source_label_dir),
+                            case_ids,
+                            repeat(3),
+                            repeat(target_dir),
+                        ),
+                    )
             else:
                 for cid in case_ids:
                     run_create_label(source_label_dir, cid, 3, target_dir)
 
 
-def run_create_label(source_label_dir: Path,
-                     case_id: str,
-                     dim: int,
-                     target_dir: Path,
-                     ):
+def run_create_label(
+    source_label_dir: Path,
+    case_id: str,
+    dim: int,
+    target_dir: Path,
+):
     """
     Helper to run preparation with multiprocessing
 

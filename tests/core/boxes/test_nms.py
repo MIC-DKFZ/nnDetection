@@ -7,7 +7,9 @@ from torchvision.ops.boxes import nms as nms_torchvision
 from nndet.core.boxes.nms import nms, batched_nms, nms_cpu as nms_pytorch
 
 
-def generate_boxes(count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=False, seed=0):
+def generate_boxes(
+    count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=False, seed=0
+):
     """
     generate radnom boxes of format [y1, x1, y2, x2, (z1, z2)]
     :param count: nr of boxes
@@ -24,21 +26,23 @@ def generate_boxes(count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=Fa
             lower_z = np.random.randint(0, d // 2, (count,))
             upper_z = np.random.randint(d // 2, d, (count,))
     else:
-        lower_y = np.random.rand(count) * h / 2.
-        lower_x = np.random.rand(count) * w / 2.
-        upper_y = (np.random.rand(count) + 1.) * h / 2.
-        upper_x = (np.random.rand(count) + 1.) * w / 2.
+        lower_y = np.random.rand(count) * h / 2.0
+        lower_x = np.random.rand(count) * w / 2.0
+        upper_y = (np.random.rand(count) + 1.0) * h / 2.0
+        upper_x = (np.random.rand(count) + 1.0) * w / 2.0
         if dim == 3:
-            lower_z = np.random.rand(count) * d / 2.
-            upper_z = (np.random.rand(count) + 1.) * d / 2.
+            lower_z = np.random.rand(count) * d / 2.0
+            upper_z = (np.random.rand(count) + 1.0) * d / 2.0
 
     if dim == 3:
-        boxes = np.array(list(zip(lower_y, lower_x, upper_y, upper_x, lower_z, upper_z)))
+        boxes = np.array(
+            list(zip(lower_y, lower_x, upper_y, upper_x, lower_z, upper_z))
+        )
         # add an extreme box that tests the boundaries
-        boxes = np.concatenate((boxes, np.array([[0., 0., h, w, 0, d]])))
+        boxes = np.concatenate((boxes, np.array([[0.0, 0.0, h, w, 0, d]])))
     else:
         boxes = np.array(list(zip(lower_y, lower_x, upper_y, upper_x)))
-        boxes = np.concatenate((boxes, np.array([[0., 0., h, w]])))
+        boxes = np.concatenate((boxes, np.array([[0.0, 0.0, h, w]])))
 
     scores = np.random.rand(count + 1)
     if normalize:
@@ -71,8 +75,9 @@ def generate_3d_fixed():
         Tensor: scores [N]
         Tensor: expected keep [M] (for threshold 0.01)
     """
-    boxes = torch.tensor([[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3],
-                          [2, 2, 4, 4, 2, 4]]).float()
+    boxes = torch.tensor(
+        [[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3], [2, 2, 4, 4, 2, 4]]
+    ).float()
     scores = torch.tensor([1, 0.8, 0.6]).float()
     expected = torch.tensor([0, 2])
     return boxes, scores, expected
@@ -88,8 +93,8 @@ class TestNMS:
         boxes, scores, expected = generate_2d_fixed()
         computed_wrapper = nms(boxes, scores, th)
         computed_vision = nms(boxes, scores, th)
-        assert ((computed_wrapper == expected).all())
-        assert ((computed_vision == expected).all())
+        assert (computed_wrapper == expected).all()
+        assert (computed_vision == expected).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     def test_nms_torchvision_2d_gpu(self, th):
@@ -97,27 +102,27 @@ class TestNMS:
         boxes, scores, expected = boxes.cuda(), scores.cuda(), expected.cuda()
         computed_wrapper = nms(boxes, scores, th)
         computed_vision = nms(boxes, scores, th)
-        assert ((computed_wrapper == expected).all())
-        assert ((computed_vision == expected).all())
+        assert (computed_wrapper == expected).all()
+        assert (computed_vision == expected).all()
 
     def test_nms_pytorch_2d_fixed(self, th):
         boxes, scores, expected = generate_2d_fixed()
         computed = nms_pytorch(boxes, scores, th)
-        assert ((computed == expected).all())
+        assert (computed == expected).all()
 
     def test_nms_pytorch_2d_random(self, th):
         np.random.seed(0)
         boxes, scores = generate_boxes(1000)
         computed_vision = nms_torchvision(boxes, scores, th)
         computed_pytorch = nms_pytorch(boxes, scores, th)
-        assert ((computed_vision == computed_pytorch).all())
+        assert (computed_vision == computed_pytorch).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     def test_nms_cuda_3d_fixed(self, th):
         boxes, scores, expected = generate_3d_fixed()
         boxes, scores, expected = boxes.cuda(), scores.cuda(), expected.cuda()
         computed = nms(boxes, scores, th)
-        assert ((computed == expected).all())
+        assert (computed == expected).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     def test_nms_cuda_3d_random(self, th):
@@ -126,14 +131,13 @@ class TestNMS:
         boxes, scores = boxes.cuda(), scores.cuda()
         computed_cuda = nms(boxes, scores, th)
         computed_pytorch = nms_pytorch(boxes, scores, th)
-        assert ((computed_cuda == computed_pytorch).all())
+        assert (computed_cuda == computed_pytorch).all()
 
     def test_batched_nms(self, th):
         boxes, scores, _ = generate_2d_fixed()
         groups = torch.tensor([0, 1, 0])
-        boxes_res, scores_res, labels_res, _ = \
-            batched_nms(boxes, scores, groups, th)
-        
+        boxes_res, scores_res, labels_res, _ = batched_nms(boxes, scores, groups, th)
+
         # no suppression
         assert boxes_res.allclose(boxes)
         assert scores_res.allclose(scores)

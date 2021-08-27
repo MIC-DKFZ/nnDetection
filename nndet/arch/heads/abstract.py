@@ -12,11 +12,12 @@ CONV_TYPES = (nn.Conv2d, nn.Conv3d)
 
 class Classifier(nn.Module):
     @abstractmethod
-    def compute_loss(self,
-                     pred_logits: Tensor,
-                     targets: Tensor,
-                     **kwargs,
-                     ) -> Tensor:
+    def compute_loss(
+        self,
+        pred_logits: Tensor,
+        targets: Tensor,
+        **kwargs,
+    ) -> Tensor:
         """
         Compute classification loss (cross entropy loss)
 
@@ -30,9 +31,10 @@ class Classifier(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def box_logits_to_probs(self,
-                            box_logits: Tensor,
-                            ) -> Tensor:
+    def box_logits_to_probs(
+        self,
+        box_logits: Tensor,
+    ) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
@@ -48,11 +50,12 @@ class Classifier(nn.Module):
 
 class Regressor(nn.Module):
     @abstractmethod
-    def compute_loss(self,
-                     pred_deltas: Tensor,
-                     target_deltas: Tensor,
-                     **kwargs,
-                     ) -> Tensor:
+    def compute_loss(
+        self,
+        pred_deltas: Tensor,
+        target_deltas: Tensor,
+        **kwargs,
+    ) -> Tensor:
         """
         Compute regression loss
 
@@ -76,8 +79,8 @@ class Regressor(nn.Module):
         return False
 
 
-ClassifierType = TypeVar('ClassifierType', bound=Classifier)
-RegressorType = TypeVar('RegressorType', bound=Regressor)
+ClassifierType = TypeVar("ClassifierType", bound=Classifier)
+RegressorType = TypeVar("RegressorType", bound=Regressor)
 
 
 class BaseHead(nn.Module):
@@ -111,9 +114,10 @@ class BaseHead(nn.Module):
         self.coder = coder
 
     @abstractmethod
-    def forward(self,
-                x: List[torch.Tensor],
-                ) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        x: List[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
         """
         Compute forward pass
 
@@ -130,10 +134,12 @@ class BaseHead(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def postprocess_for_inference(self,
-                                  prediction: Dict[str, torch.Tensor],
-                                  *args, **kwargs,
-                                  ) -> Dict[str, torch.Tensor]:
+    def postprocess_for_inference(
+        self,
+        prediction: Dict[str, torch.Tensor],
+        *args,
+        **kwargs,
+    ) -> Dict[str, torch.Tensor]:
         """
         Postprocess predictions for inference
         e.g. convert logits to probs; decode box deltas
@@ -157,4 +163,4 @@ class BaseHead(nn.Module):
         return self.regressor.regress_multi_class
 
 
-HeadType = TypeVar('HeadType', bound=BaseHead)
+HeadType = TypeVar("HeadType", bound=BaseHead)

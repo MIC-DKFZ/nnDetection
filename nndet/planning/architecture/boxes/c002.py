@@ -22,21 +22,22 @@ from nndet.core.boxes import (
 
 
 class BoxC002(BoxC001):
-    def __init__(self,
-                 preprocessed_output_dir: os.PathLike,
-                 save_dir: os.PathLike,
-                 network_cls: Callable,
-                 estimator: MemoryEstimator = MemoryEstimatorDetection(),
-                 model_cfg: dict = None,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        preprocessed_output_dir: os.PathLike,
+        save_dir: os.PathLike,
+        network_cls: Callable,
+        estimator: MemoryEstimator = MemoryEstimatorDetection(),
+        model_cfg: dict = None,
+        **kwargs,
+    ):
         super().__init__(
             preprocessed_output_dir=preprocessed_output_dir,
             save_dir=save_dir,
             network_cls=network_cls,
             estimator=estimator,
             model_cfg=model_cfg,
-            **kwargs
+            **kwargs,
         )
 
     def create_default_settings(self):
@@ -45,10 +46,12 @@ class BoxC002(BoxC001):
         """
         super().create_default_settings()
         self.architecture_kwargs["start_channels"] = 48 if self.dim == 2 else 32
-        self.architecture_kwargs["fpn_channels"] = \
+        self.architecture_kwargs["fpn_channels"] = (
             self.architecture_kwargs["start_channels"] * 4
-        self.architecture_kwargs["head_channels"] = \
-            self.architecture_kwargs["fpn_channels"]
+        )
+        self.architecture_kwargs["head_channels"] = self.architecture_kwargs[
+            "fpn_channels"
+        ]
         self.batch_size = 16 if self.dim == 2 else 4
         self.min_feature_map_size = 8 if self.dim == 2 else 4
         self.num_decoder_level = 5 if self.dim == 2 else 4
@@ -64,42 +67,57 @@ class BoxC002(BoxC001):
             Sequence[Sequence[int]]: anchor initialization
         """
         box_dim = int(boxes.shape[1]) // 2
-        return [(4, 8, 16), ] * box_dim
+        return [
+            (4, 8, 16),
+        ] * box_dim
 
     def process_properties(self, **kwargs):
         """
         Load dataset properties and extract information
         """
         logger.info("Processing dataset properties")
-        self.all_boxes = [case["boxes"] for case_id, case
-                          in self.dataset_properties["instance_props_per_patient"].items()]
-        self.all_spacings = [case["original_spacing"] for case_id, case
-                             in self.dataset_properties["instance_props_per_patient"].items()]
+        self.all_boxes = [
+            case["boxes"]
+            for case_id, case in self.dataset_properties[
+                "instance_props_per_patient"
+            ].items()
+        ]
+        self.all_spacings = [
+            case["original_spacing"]
+            for case_id, case in self.dataset_properties[
+                "instance_props_per_patient"
+            ].items()
+        ]
         self.num_instances_per_case = {
-            case_id: sum(
-                case["num_instances"].values()) for case_id,
-            case in self.dataset_properties["instance_props_per_patient"].items()}
+            case_id: sum(case["num_instances"].values())
+            for case_id, case in self.dataset_properties[
+                "instance_props_per_patient"
+            ].items()
+        }
 
         self.all_ious = self.dataset_properties["all_ious"]
         self.class_ious = self.dataset_properties["class_ious"]
         self.num_instances = self.dataset_properties["num_instances"]
         self.dim = self.dataset_properties["dim"]
 
-        self.architecture_kwargs["classifier_classes"] = \
-            len(self.dataset_properties["class_dct"])
-        self.architecture_kwargs["seg_classes"] = \
-            self.architecture_kwargs["classifier_classes"]
-        self.architecture_kwargs["in_channels"] = \
-            len(self.dataset_properties["modalities"])
-        self.architecture_kwargs["dim"] = \
-            self.dataset_properties["dim"]
+        self.architecture_kwargs["classifier_classes"] = len(
+            self.dataset_properties["class_dct"]
+        )
+        self.architecture_kwargs["seg_classes"] = self.architecture_kwargs[
+            "classifier_classes"
+        ]
+        self.architecture_kwargs["in_channels"] = len(
+            self.dataset_properties["modalities"]
+        )
+        self.architecture_kwargs["dim"] = self.dataset_properties["dim"]
 
-    def plan(self,
-             target_spacing_transposed: Sequence[float],
-             median_shape_transposed: Sequence[float],
-             transpose_forward: Sequence[int],
-             mode: str = '3d',
-             ) -> dict:
+    def plan(
+        self,
+        target_spacing_transposed: Sequence[float],
+        median_shape_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+        mode: str = "3d",
+    ) -> dict:
         """
         Plan network architecture, anchors, patch size and batch size
 
@@ -133,11 +151,12 @@ class BoxC002(BoxC001):
             )
         return res
 
-    def activate_2d_mode(self,
-                         target_spacing_transposed: Sequence[float],
-                         median_shape_transposed: Sequence[float],
-                         transpose_forward: Sequence[int],
-                         ) -> dict:
+    def activate_2d_mode(
+        self,
+        target_spacing_transposed: Sequence[float],
+        median_shape_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+    ) -> dict:
         target_spacing_transposed = target_spacing_transposed[1:]
         median_shape_transposed = median_shape_transposed[1:]
         keep = copy.copy(transpose_forward[1:])
@@ -152,8 +171,10 @@ class BoxC002(BoxC001):
                 keep_box[idx] = 2 * k
                 keep_box[idx + 2] = 2 * k + 1
 
-        self.all_boxes = [b[:, keep_box] if (not isinstance(b, list) and b.shape[1] == 6) else b
-                          for b in self.all_boxes]
+        self.all_boxes = [
+            b[:, keep_box] if (not isinstance(b, list) and b.shape[1] == 6) else b
+            for b in self.all_boxes
+        ]
         self.all_spacings = [c[keep] if len(c) == 3 else c for c in self.all_spacings]
 
         self.dim = 2
@@ -164,12 +185,13 @@ class BoxC002(BoxC001):
             "transpose_forward": transpose_forward,
         }
 
-    def _plan_architecture(self,
-                           target_spacing_transposed: Sequence[float],
-                           target_median_shape_transposed: Sequence[float],
-                           transpose_forward: Sequence[int],
-                           **kwargs,
-                           ) -> Sequence[int]:
+    def _plan_architecture(
+        self,
+        target_spacing_transposed: Sequence[float],
+        target_median_shape_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+        **kwargs,
+    ) -> Sequence[int]:
         """
         Plan patch size and main aspects of the architecture
         Fills entries in :param:`self.architecture_kwargs`:
@@ -186,24 +208,39 @@ class BoxC002(BoxC001):
             Sequence[int]: patch size to use for training
         """
         self.estimator.batch_size = self.batch_size
-        patch_size = np.asarray(self._get_initial_patch_size(
-            target_spacing_transposed, target_median_shape_transposed))
+        patch_size = np.asarray(
+            self._get_initial_patch_size(
+                target_spacing_transposed, target_median_shape_transposed
+            )
+        )
         first_run = True
         while True:
             if first_run:
                 pass
             else:
                 patch_size = self._decrease_patch_size(
-                    patch_size, target_median_shape_transposed, pooling, must_be_divisible_by)  # noqa: F821
-            num_pool_per_axis, pooling, convs, patch_size, must_be_divisible_by = \
-                self.plan_pool_and_conv_pool_late(patch_size, target_spacing_transposed)
+                    patch_size,
+                    target_median_shape_transposed,
+                    pooling,
+                    must_be_divisible_by,
+                )  # noqa: F821
+            (
+                num_pool_per_axis,
+                pooling,
+                convs,
+                patch_size,
+                must_be_divisible_by,
+            ) = self.plan_pool_and_conv_pool_late(patch_size, target_spacing_transposed)
             self.architecture_kwargs["conv_kernels"] = convs
             self.architecture_kwargs["strides"] = pooling
             num_resolutions = len(self.architecture_kwargs["conv_kernels"])
 
-            decoder_levels_start = min(max(1, num_resolutions - self.num_decoder_level), self.min_decoder_level)
-            self.architecture_kwargs["decoder_levels"] = \
-                tuple([i for i in range(decoder_levels_start, num_resolutions)])
+            decoder_levels_start = min(
+                max(1, num_resolutions - self.num_decoder_level), self.min_decoder_level
+            )
+            self.architecture_kwargs["decoder_levels"] = tuple(
+                [i for i in range(decoder_levels_start, num_resolutions)]
+            )
             _, fits_in_mem = self.estimator.estimate(
                 min_shape=must_be_divisible_by,
                 target_shape=patch_size,
@@ -211,7 +248,8 @@ class BoxC002(BoxC001):
                 network=self.network_cls.from_config_plan(
                     model_cfg=self.model_cfg,
                     plan_arch=self.architecture_kwargs,
-                    plan_anchors=self.get_anchors_for_estimation()),
+                    plan_anchors=self.get_anchors_for_estimation(),
+                ),
                 optimizer_cls=torch.optim.Adam,
                 num_instances=self._estimte_num_instances_per_patch(
                     patch_size=patch_size,
@@ -222,17 +260,20 @@ class BoxC002(BoxC001):
             if fits_in_mem:
                 break
             first_run = False
-        logger.info(f"decoder levels: {self.architecture_kwargs['decoder_levels']}; \n"
-                    f"pooling strides: {self.architecture_kwargs['strides']}; \n"
-                    f"kernel sizes: {self.architecture_kwargs['conv_kernels']}; \n"
-                    f"patch size: {patch_size}; \n")
+        logger.info(
+            f"decoder levels: {self.architecture_kwargs['decoder_levels']}; \n"
+            f"pooling strides: {self.architecture_kwargs['strides']}; \n"
+            f"kernel sizes: {self.architecture_kwargs['conv_kernels']}; \n"
+            f"patch size: {patch_size}; \n"
+        )
         return patch_size
 
-    def _estimte_num_instances_per_patch(self,
-                                         patch_size,
-                                         target_spacing_transposed,
-                                         transpose_forward,
-                                         ) -> int:
+    def _estimte_num_instances_per_patch(
+        self,
+        patch_size,
+        target_spacing_transposed,
+        transpose_forward,
+    ) -> int:
         max_instances_per_image = []
         for boxes in self._get_scaled_boxes(
             target_spacing_transposed=target_spacing_transposed,
@@ -240,14 +281,18 @@ class BoxC002(BoxC001):
             cat=False,
         ):
             max_instances_per_image.append(
-                max(proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)).item())
+                max(
+                    proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)
+                ).item()
+            )
         return max(max_instances_per_image)
 
-    def _plan_anchors(self,
-                      target_spacing_transposed: Sequence[float],
-                      transpose_forward: Sequence[int],
-                      **kwargs,
-                      ) -> dict:
+    def _plan_anchors(
+        self,
+        target_spacing_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+        **kwargs,
+    ) -> dict:
         """
         Optimize anchors
         """
@@ -257,31 +302,40 @@ class BoxC002(BoxC001):
         )
 
         boxes_np = self.filter_boxes(boxes_np_full)
-        logger.info(f"Filtered {boxes_np_full.shape[0] - boxes_np.shape[0]} "
-                    f"boxes, {boxes_np.shape[0]} boxes remaining for anchor "
-                    "planning.")
+        logger.info(
+            f"Filtered {boxes_np_full.shape[0] - boxes_np.shape[0]} "
+            f"boxes, {boxes_np.shape[0]} boxes remaining for anchor "
+            "planning."
+        )
         boxes_torch = torch.from_numpy(boxes_np).float()
         boxes_torch = boxes_torch - expand_to_boxes(box_center(boxes_torch))
         anchor_generator = get_anchor_generator(self.dim, s_param=True)
 
         rel_strides = self.architecture_kwargs["strides"]
         filt_rel_strides = [[1] * self.dim, *rel_strides]
-        filt_rel_strides = [filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]]
+        filt_rel_strides = [
+            filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]
+        ]
         strides = np.cumprod(filt_rel_strides, axis=0) / np.asarray(rel_strides[0])
 
-        params = self.find_anchors(boxes_torch, strides.astype(np.int32), anchor_generator)
-        scaled_params = {key: scale_with_abs_strides(item, strides, dim_idx)
-                         for dim_idx, (key, item) in enumerate(params.items())}
+        params = self.find_anchors(
+            boxes_torch, strides.astype(np.int32), anchor_generator
+        )
+        scaled_params = {
+            key: scale_with_abs_strides(item, strides, dim_idx)
+            for dim_idx, (key, item) in enumerate(params.items())
+        }
         logger.info(f"Determined Anchors: {params}; Results in params: {scaled_params}")
         self.anchors = scaled_params
         self.anchors["stride"] = 1
         return self.anchors
 
-    def _get_scaled_boxes(self,
-                          target_spacing_transposed: Sequence[float],
-                          transpose_forward: Sequence[int],
-                          cat: bool = True,
-                          ) -> np.ndarray:
+    def _get_scaled_boxes(
+        self,
+        target_spacing_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+        cat: bool = True,
+    ) -> np.ndarray:
         """
         training is conducted in preprocessed image space and thus
         we need to scale the extracted boxes to compensate for resampling
@@ -290,18 +344,25 @@ class BoxC002(BoxC001):
         for spacing, boxes in zip(self.all_spacings, self.all_boxes):
             if not isinstance(boxes, list) and boxes.size > 0:
                 spacing_transposed = np.asarray(spacing)[transpose_forward]
-                scaling_transposed = spacing_transposed / np.asarray(target_spacing_transposed)
-                boxes_transposed = permute_boxes(np.asarray(boxes), dims=transpose_forward)
-                boxes_np_list.append(boxes_transposed * expand_to_boxes(scaling_transposed))
+                scaling_transposed = spacing_transposed / np.asarray(
+                    target_spacing_transposed
+                )
+                boxes_transposed = permute_boxes(
+                    np.asarray(boxes), dims=transpose_forward
+                )
+                boxes_np_list.append(
+                    boxes_transposed * expand_to_boxes(scaling_transposed)
+                )
         if cat:
             return np.concatenate(boxes_np_list).astype(np.float32)
         else:
             return boxes_np_list
 
     @staticmethod
-    def _get_initial_patch_size(target_spacing_transposed: np.ndarray,
-                                target_median_shape_transposed: Sequence[int],
-                                ) -> List[int]:
+    def _get_initial_patch_size(
+        target_spacing_transposed: np.ndarray,
+        target_median_shape_transposed: Sequence[int],
+    ) -> List[int]:
         """
         Generate initial patch which relies on the spacing of underlying images.
         This is based on the fact that most acquisition protocols are optimized
@@ -325,7 +386,9 @@ class BoxC002(BoxC001):
             lowres_axis = np.argmax(target_spacing_transposed)
             isotropic_axes = list(range(len(target_median_shape_transposed)))
             isotropic_axes.pop(lowres_axis)
-            min_isotropic_axes_shape = min([target_median_shape_transposed[t] for t in isotropic_axes])
+            min_isotropic_axes_shape = min(
+                [target_median_shape_transposed[t] for t in isotropic_axes]
+            )
             lowres_shape = target_median_shape_transposed[lowres_axis]
         else:
             lowres_axis = -1
@@ -338,15 +401,19 @@ class BoxC002(BoxC001):
                 assert lowres_shape is not None
                 initial_patch_size.append(min(input_patch_size[i], lowres_shape))
             else:
-                initial_patch_size.append(min(input_patch_size[i], min_isotropic_axes_shape))
+                initial_patch_size.append(
+                    min(input_patch_size[i], min_isotropic_axes_shape)
+                )
         initial_patch_size = np.round(initial_patch_size).astype(np.int32)
         logger.info(f"Using initial patch size: {initial_patch_size}")
         return initial_patch_size
 
-    def plot_box_distribution(self,
-                              target_spacing_transposed: Sequence[float],
-                              transpose_forward: Sequence[int],
-                              **kwargs):
+    def plot_box_distribution(
+        self,
+        target_spacing_transposed: Sequence[float],
+        transpose_forward: Sequence[int],
+        **kwargs,
+    ):
         """
         Plot histogram with ground truth bounding box distribution for
         all axis
@@ -362,25 +429,32 @@ class BoxC002(BoxC001):
         if plt is not None:
             if isinstance(self.all_boxes, list):
                 _boxes = np.concatenate(
-                    [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0], axis=0)
+                    [
+                        b
+                        for b in self.all_boxes
+                        if not isinstance(b, list) and b.size > 0
+                    ],
+                    axis=0,
+                )
                 dists = box_size_np(_boxes)
             else:
                 dists = box_size_np(self.all_boxes)
 
             if dists.shape[1] == 3:
                 fig = plt.figure()
-                ax = fig.add_subplot(111, projection='3d')
+                ax = fig.add_subplot(111, projection="3d")
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
                 ax.set_title(f"Transpose forward {transpose_forward}")
-                plt.savefig(self.save_dir / 'bbox_sizes_3d_orig.png')
+                plt.savefig(self.save_dir / "bbox_sizes_3d_orig.png")
                 plt.close()
 
-                dists = box_size_np(self._get_scaled_boxes(
-                    target_spacing_transposed, transpose_forward))
+                dists = box_size_np(
+                    self._get_scaled_boxes(target_spacing_transposed, transpose_forward)
+                )
                 fig = plt.figure()
-                ax = fig.add_subplot(111, projection='3d')
+                ax = fig.add_subplot(111, projection="3d")
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
-                plt.savefig(self.save_dir / 'bbox_sizes_3d.png')
+                plt.savefig(self.save_dir / "bbox_sizes_3d.png")
                 plt.close()
             else:
                 fig = plt.figure()
@@ -388,14 +462,15 @@ class BoxC002(BoxC001):
                 ax.scatter(dists[:, 0], dists[:, 1])
                 ax.grid(True)
                 ax.set_title(f"Transpose forward {transpose_forward}")
-                plt.savefig(self.save_dir / 'bbox_sizes_2d_orig.png')
+                plt.savefig(self.save_dir / "bbox_sizes_2d_orig.png")
                 plt.close()
 
-                dists = box_size_np(self._get_scaled_boxes(
-                    target_spacing_transposed, transpose_forward))
+                dists = box_size_np(
+                    self._get_scaled_boxes(target_spacing_transposed, transpose_forward)
+                )
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 ax.scatter(dists[:, 0], dists[:, 1])
                 ax.grid(True)
-                plt.savefig(self.save_dir / 'bbox_sizes_2d.png')
+                plt.savefig(self.save_dir / "bbox_sizes_2d.png")
                 plt.close()

@@ -61,7 +61,10 @@ from nndet.inference.transforms import get_tta_transforms, Inference2D
 from nndet.inference.loading import get_loader_fn
 from nndet.inference.helper import predict_dir
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
-from nndet.inference.ensembler.detection import BoxEnsemblerSelective, BoxEnsemblerSelective2D
+from nndet.inference.ensembler.detection import (
+    BoxEnsemblerSelective,
+    BoxEnsemblerSelective2D,
+)
 
 from nndet.io.transforms import (
     Compose,
@@ -85,12 +88,7 @@ class RetinaUNetModule(LightningBaseModule):
     head_sampler_cls = HardNegativeSamplerBatched
     segmenter_cls = DiCESegmenter
 
-    def __init__(self,
-                 model_cfg: dict,
-                 trainer_cfg: dict,
-                 plan: dict,
-                 **kwargs
-                 ):
+    def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
         """
         RetinaUNet Lightning Module Skeleton
 
@@ -107,7 +105,9 @@ class RetinaUNetModule(LightningBaseModule):
             plan=plan,
         )
 
-        _classes = [f"class{c}" for c in range(plan["architecture"]["classifier_classes"])]
+        _classes = [
+            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
+        ]
         self.box_evaluator = BoxEvaluator.create(
             classes=_classes,
             fast=True,
@@ -132,16 +132,20 @@ class RetinaUNetModule(LightningBaseModule):
                 instance_key="target",
                 map_key="instance_mapping",
                 present_instances="present_instances",
-            )
+            ),
         ]
 
         # transfer learning setup
         # TODO: might move this to base class
         data_channels = self.plan["num_modalities"]  # number of channels of source data
-        network_channels = self.plan["architecture"]["in_channels"]  # number of channels of target data
+        network_channels = self.plan["architecture"][
+            "in_channels"
+        ]  # number of channels of target data
         if network_channels > data_channels:
-            logger.info("Detected Transfer Learning Setup with different soruce "
-                        "and target channels. Adding additional transformation.")
+            logger.info(
+                "Detected Transfer Learning Setup with different soruce "
+                "and target channels. Adding additional transformation."
+            )
             trafos.append(
                 TransferInputChannel(
                     out_channels=network_channels,
@@ -165,7 +169,7 @@ class RetinaUNetModule(LightningBaseModule):
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             },
             predict=False,
             batch_num=batch_idx,
@@ -187,7 +191,7 @@ class RetinaUNetModule(LightningBaseModule):
             targets = {
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             }
             losses, prediction = self.model.train_step(
                 images=batch["data"],
@@ -200,8 +204,10 @@ class RetinaUNetModule(LightningBaseModule):
         # self.log_dict(losses, prog_bar=True)
 
         self.evaluation_step(prediction=prediction, targets=targets)
-        return {"loss": loss.detach().item(),
-                **{key: l.detach().item() for key, l in losses.items()}}
+        return {
+            "loss": loss.detach().item(),
+            **{key: l.detach().item() for key, l in losses.items()},
+        }
 
     def evaluation_step(
         self,
@@ -302,12 +308,13 @@ class RetinaUNetModule(LightningBaseModule):
         """
         metric_scores, _ = self.box_evaluator.finish_online_evaluation()
         self.box_evaluator.reset()
-        logger.info(f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-                    f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-                    f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-                    f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-                    f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-                    )
+        logger.info(
+            f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+        )
 
         seg_scores, _ = self.seg_evaluator.finish_online_evaluation()
         self.seg_evaluator.reset()
@@ -316,7 +323,7 @@ class RetinaUNetModule(LightningBaseModule):
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
         for key, item in metric_scores.items():
-            self.log(f'val/{key}', item, prog_bar=False, logger=True, sync_dist=True)
+            self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
 
     def configure_optimizers(self):
         """
@@ -325,11 +332,15 @@ class RetinaUNetModule(LightningBaseModule):
         schedule
         """
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"SGD with momentum {self.trainer_cfg['sgd_momentum']} and "
-                    f"nesterov {self.trainer_cfg['sgd_nesterov']}")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"SGD with momentum {self.trainer_cfg['sgd_momentum']} and "
+            f"nesterov {self.trainer_cfg['sgd_nesterov']}"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         optimizer = torch.optim.SGD(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -339,24 +350,27 @@ class RetinaUNetModule(LightningBaseModule):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
     @classmethod
-    def from_config_plan(cls,
-                         model_cfg: dict,
-                         plan_arch: dict,
-                         plan_anchors: dict,
-                         log_num_anchors: str = None,
-                         **kwargs,
-                         ):
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        log_num_anchors: str = None,
+        **kwargs,
+    ):
         """
         Create Configurable RetinaUNet
 
@@ -382,21 +396,32 @@ class RetinaUNetModule(LightningBaseModule):
                 will be performed
             **kwargs:
         """
-        logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
-                    f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}")
-        logger.info(f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}")
+        logger.info(
+            f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
+            f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}"
+        )
+        logger.info(
+            f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}"
+        )
         plan_arch.update(model_cfg["plan_arch_overwrites"])
         plan_anchors.update(model_cfg["plan_anchors_overwrites"])
-        logger.info(f"Start channels: {plan_arch['start_channels']}; "
-                    f"head channels: {plan_arch['head_channels']}; "
-                    f"fpn channels: {plan_arch['fpn_channels']}")
+        logger.info(
+            f"Start channels: {plan_arch['start_channels']}; "
+            f"head channels: {plan_arch['head_channels']}; "
+            f"fpn channels: {plan_arch['fpn_channels']}"
+        )
 
         _plan_anchors = copy.deepcopy(plan_anchors)
-        coder = BoxCoderND(weights=(1.,) * (plan_arch["dim"] * 2))
-        s_param = False if ("aspect_ratios" in _plan_anchors) and \
-                           (_plan_anchors["aspect_ratios"] is not None) else True
-        anchor_generator = get_anchor_generator(
-            plan_arch["dim"], s_param=s_param)(**_plan_anchors)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+        s_param = (
+            False
+            if ("aspect_ratios" in _plan_anchors)
+            and (_plan_anchors["aspect_ratios"] is not None)
+            else True
+        )
+        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(
+            **_plan_anchors
+        )
 
         encoder = cls._build_encoder(
             plan_arch=plan_arch,
@@ -427,7 +452,7 @@ class RetinaUNetModule(LightningBaseModule):
             model_cfg=model_cfg,
             classifier=classifier,
             regressor=regressor,
-            coder=coder
+            coder=coder,
         )
         segmenter = cls._build_segmenter(
             plan_arch=plan_arch,
@@ -441,13 +466,14 @@ class RetinaUNetModule(LightningBaseModule):
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
         nms_thresh = plan_arch.get("nms_thresh", 0.6)
 
-        logger.info(f"Model Inference Summary: \n"
-                    f"detections_per_img: {detections_per_img} \n"
-                    f"score_thresh: {score_thresh} \n"
-                    f"topk_candidates: {topk_candidates} \n"
-                    f"remove_small_boxes: {remove_small_boxes} \n"
-                    f"nms_thresh: {nms_thresh}",
-                    )
+        logger.info(
+            f"Model Inference Summary: \n"
+            f"detections_per_img: {detections_per_img} \n"
+            f"score_thresh: {score_thresh} \n"
+            f"topk_candidates: {topk_candidates} \n"
+            f"remove_small_boxes: {remove_small_boxes} \n"
+            f"nms_thresh: {nms_thresh}",
+        )
 
         return BaseRetinaNet(
             dim=plan_arch["dim"],
@@ -484,7 +510,9 @@ class RetinaUNetModule(LightningBaseModule):
             EncoderType: encoder instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
+        logger.info(
+            f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
+        )
         encoder = cls.encoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -494,7 +522,7 @@ class RetinaUNetModule(LightningBaseModule):
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
             max_channels=plan_arch.get("max_channels", 320),
-            **model_cfg['encoder_kwargs'],
+            **model_cfg["encoder_kwargs"],
         )
         return encoder
 
@@ -516,7 +544,9 @@ class RetinaUNetModule(LightningBaseModule):
             DecoderType: decoder instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: decoder {cls.decoder_cls.__name__}: {model_cfg['decoder_kwargs']}")
+        logger.info(
+            f"Building:: decoder {cls.decoder_cls.__name__}: {model_cfg['decoder_kwargs']}"
+        )
         decoder = cls.decoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -524,7 +554,7 @@ class RetinaUNetModule(LightningBaseModule):
             in_channels=encoder.get_channels(),
             decoder_levels=plan_arch["decoder_levels"],
             fixed_out_channels=plan_arch["fpn_channels"],
-            **model_cfg['decoder_kwargs'],
+            **model_cfg["decoder_kwargs"],
         )
         return decoder
 
@@ -548,7 +578,7 @@ class RetinaUNetModule(LightningBaseModule):
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_classifier_cls.__name__
-        kwargs = model_cfg['head_classifier_kwargs']
+        kwargs = model_cfg["head_classifier_kwargs"]
 
         logger.info(f"Building:: classifier {name}: {kwargs}")
         classifier = cls.head_classifier_cls(
@@ -582,7 +612,7 @@ class RetinaUNetModule(LightningBaseModule):
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_regressor_cls.__name__
-        kwargs = model_cfg['head_regressor_kwargs']
+        kwargs = model_cfg["head_regressor_kwargs"]
 
         logger.info(f"Building:: regressor {name}: {kwargs}")
         regressor = cls.head_regressor_cls(
@@ -618,12 +648,14 @@ class RetinaUNetModule(LightningBaseModule):
             HeadType: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
         sampler_name = cls.head_sampler_cls.__name__
-        sampler_kwargs = model_cfg['head_sampler_kwargs']
+        sampler_kwargs = model_cfg["head_sampler_kwargs"]
 
-        logger.info(f"Building:: head {head_name}: {head_kwargs} "
-                    f"sampler {sampler_name}: {sampler_kwargs}")
+        logger.info(
+            f"Building:: head {head_name}: {head_kwargs} "
+            f"sampler {sampler_name}: {sampler_kwargs}"
+        )
         sampler = cls.head_sampler_cls(**sampler_kwargs)
         head = cls.head_cls(
             classifier=classifier,
@@ -654,7 +686,7 @@ class RetinaUNetModule(LightningBaseModule):
         """
         if cls.segmenter_cls is not None:
             name = cls.segmenter_cls.__name__
-            kwargs = model_cfg['segmenter_kwargs']
+            kwargs = model_cfg["segmenter_kwargs"]
             conv = Generator(cls.base_conv_cls, plan_arch["dim"])
 
             logger.info(f"Building:: segmenter {name} {kwargs}")
@@ -683,20 +715,21 @@ class RetinaUNetModule(LightningBaseModule):
             3: {
                 "boxes": BoxEnsemblerSelective,
                 "seg": SegmentationEnsembler,
-            }
+            },
         }
         if dim == 2:
             raise NotImplementedError
         return _lookup[dim][key]
 
     @classmethod
-    def get_predictor(cls,
-                      plan: Dict,
-                      models: Sequence[RetinaUNetModule],
-                      num_tta_transforms: int = None,
-                      do_seg: bool = False,
-                      **kwargs,
-                      ) -> Predictor:
+    def get_predictor(
+        cls,
+        plan: Dict,
+        models: Sequence[RetinaUNetModule],
+        num_tta_transforms: int = None,
+        do_seg: bool = False,
+        **kwargs,
+    ) -> Predictor:
         # process plan
         crop_size = plan["patch_size"]
         batch_size = plan["batch_size"]
@@ -706,14 +739,19 @@ class RetinaUNetModule(LightningBaseModule):
             num_tta_transforms = 8 if plan["network_dim"] == 3 else 4
 
         # setup
-        tta_transforms, tta_inverse_transforms = \
-            get_tta_transforms(num_tta_transforms, True)
-        logger.info(f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo).")
+        tta_transforms, tta_inverse_transforms = get_tta_transforms(
+            num_tta_transforms, True
+        )
+        logger.info(
+            f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
+        )
 
-        ensembler = {"boxes": partial(
-            cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"]).from_case,
-            parameters=inferene_plan,
-        )}
+        ensembler = {
+            "boxes": partial(
+                cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"]).from_case,
+                parameters=inferene_plan,
+            )
+        }
         if do_seg:
             ensembler["seg"] = partial(
                 cls.get_ensembler_cls(key="seg", dim=plan["network_dim"]).from_case,
@@ -732,14 +770,15 @@ class RetinaUNetModule(LightningBaseModule):
             predictor.pre_transform = Inference2D(["data"])
         return predictor
 
-    def sweep(self,
-              cfg: dict,
-              save_dir: os.PathLike,
-              train_data_dir: os.PathLike,
-              case_ids: Sequence[str],
-              run_prediction: bool = True,
-              **kwargs,
-              ) -> Dict[str, Any]:
+    def sweep(
+        self,
+        cfg: dict,
+        save_dir: os.PathLike,
+        train_data_dir: os.PathLike,
+        case_ids: Sequence[str],
+        run_prediction: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """
         Sweep detection parameters to find the best predictions
 
@@ -788,7 +827,9 @@ class RetinaUNetModule(LightningBaseModule):
             )
 
         logger.info("Start parameter sweep...")
-        ensembler_cls = self.get_ensembler_cls(key="boxes", dim=self.plan["network_dim"])
+        ensembler_cls = self.get_ensembler_cls(
+            key="boxes", dim=self.plan["network_dim"]
+        )
         sweeper = BoxSweeper(
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=prediction_dir,

@@ -43,4 +43,4 @@ class ArchitecturePlanner(ABC):
         return self.__class__.__name__
 
 
-ArchitecturePlannerType = TypeVar('ArchitecturePlannerType', bound=ArchitecturePlanner)
+ArchitecturePlannerType = TypeVar("ArchitecturePlannerType", bound=ArchitecturePlanner)

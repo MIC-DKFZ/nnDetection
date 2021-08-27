@@ -27,7 +27,7 @@ class AnchorHead(BaseHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the 
+                `decode`: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
                 `encode`: uses the matched ground truth to encode the
@@ -42,12 +42,15 @@ class AnchorHead(BaseHead):
         )
         self.reg_mode = reg_mode.lower()
         if not self.reg_mode in ["encode", "decode"]:
-            raise ValueError(f"Reg mode {self.reg_mode} is not supported. "
-                             "Only one of 'encode' or 'decode' are supported.")
+            raise ValueError(
+                f"Reg mode {self.reg_mode} is not supported. "
+                "Only one of 'encode' or 'decode' are supported."
+            )
 
-    def forward(self,
-                fmaps: List[torch.Tensor],
-                ) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        fmaps: List[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
         """
         Forward feature maps through head modules
 
@@ -83,10 +86,11 @@ class AnchorHead(BaseHead):
         box_logits = torch.cat(logits, dim=1).flatten(0, -2)
         return {"box_deltas": box_deltas, "box_logits": box_logits}
 
-    def postprocess_for_inference(self,
-                                  prediction: Dict[str, torch.Tensor],
-                                  anchors: List[torch.Tensor],
-                                  ) -> Dict[str, torch.Tensor]:
+    def postprocess_for_inference(
+        self,
+        prediction: Dict[str, torch.Tensor],
+        anchors: List[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
         """
         Postprocess predictions for inference e.g. ocnvert logits to probs
 
@@ -98,10 +102,8 @@ class AnchorHead(BaseHead):
             List[torch.Tensor]: anchors per image
         """
         postprocess_predictions = {
-            "pred_boxes": self.coder.decode(
-                prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(
-                prediction["box_logits"]),
+            "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
+            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
 
@@ -135,12 +137,13 @@ class AnchorHead(BaseHead):
             raise RuntimeError("Wrong mode.")
 
     @abstractmethod
-    def compute_loss(self,
-                     prediction: Dict[str, torch.Tensor],
-                     target_labels: List[torch.Tensor],
-                     matched_gt_boxes: List[torch.Tensor],
-                     anchors: List[torch.Tensor],
-                     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
+    def compute_loss(
+        self,
+        prediction: Dict[str, torch.Tensor],
+        target_labels: List[torch.Tensor],
+        matched_gt_boxes: List[torch.Tensor],
+        anchors: List[torch.Tensor],
+    ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         """
         Compute regression and classification loss
         N anchors over all images; M anchors per image => sum(M) = N
@@ -168,9 +171,10 @@ class AnchorHead(BaseHead):
 
 
 class RoIHead(BaseHead):
-    def forward(self,
-                fmaps: torch.Tensor,
-                ) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        fmaps: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
         """
         Forward feature maps through RoI head modules
 
@@ -202,10 +206,11 @@ class RoIHead(BaseHead):
             "box_logits": box_logits,
         }
 
-    def postprocess_for_inference(self,
-                                  prediction: Dict[str, torch.Tensor],
-                                  anchors: List[torch.Tensor],
-                                  ) -> Dict[str, torch.Tensor]:
+    def postprocess_for_inference(
+        self,
+        prediction: Dict[str, torch.Tensor],
+        anchors: List[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
         """
         Postprocess predictions for inference e.g. ocnvert logits to probs
 
@@ -223,12 +228,13 @@ class RoIHead(BaseHead):
         return postprocess_predictions
 
     @abstractmethod
-    def compute_loss(self,
-                     prediction: Dict[str, torch.Tensor],
-                     target_labels: torch.Tensor,
-                     matched_gt_boxes: torch.Tensor,
-                     proposal_boxes: torch.Tensor,
-                     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
+    def compute_loss(
+        self,
+        prediction: Dict[str, torch.Tensor],
+        target_labels: torch.Tensor,
+        matched_gt_boxes: torch.Tensor,
+        proposal_boxes: torch.Tensor,
+    ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         """
         Compute regression and classification loss
 
@@ -251,5 +257,5 @@ class RoIHead(BaseHead):
         raise NotImplementedError
 
 
-AnchorHeadType = TypeVar('AnchorHeadType', bound=AnchorHead)
-RoIHeadType = TypeVar('RoIHeadType', bound=RoIHead)
+AnchorHeadType = TypeVar("AnchorHeadType", bound=AnchorHead)
+RoIHeadType = TypeVar("RoIHeadType", bound=RoIHead)

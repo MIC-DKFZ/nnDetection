@@ -2,8 +2,12 @@ import pytest
 import numpy as np
 import torch
 
-from nndet.io.patching import center_crop_object_mask, \
-    center_crop_object_seg, save_get_crop, create_grid
+from nndet.io.patching import (
+    center_crop_object_mask,
+    center_crop_object_seg,
+    save_get_crop,
+    create_grid,
+)
 from nndet.io.transforms.instances import instances_to_boxes
 
 
@@ -78,40 +82,40 @@ def test_center_crop_object_seg_errors(seg):
 
 def test_create_grid_fixed():
     # test fixed mode
-    crops = create_grid(40, (60, 60), 20, mode='fixed')
-    assert ((slice(0, 40), slice(0, 40)) in crops)
-    assert ((slice(20, 60), slice(0, 40)) in crops)
-    assert ((slice(0, 40), slice(20, 60)) in crops)
-    assert ((slice(20, 60), slice(20, 60)) in crops)
+    crops = create_grid(40, (60, 60), 20, mode="fixed")
+    assert (slice(0, 40), slice(0, 40)) in crops
+    assert (slice(20, 60), slice(0, 40)) in crops
+    assert (slice(0, 40), slice(20, 60)) in crops
+    assert (slice(20, 60), slice(20, 60)) in crops
     assert len(crops) == 4
 
 
 def test_create_grid_fixed_psize_dsize():
-    crops = create_grid(40, (40, 40), 20, mode='fixed')
-    assert ((slice(0, 40), slice(0, 40)) in crops)
+    crops = create_grid(40, (40, 40), 20, mode="fixed")
+    assert (slice(0, 40), slice(0, 40)) in crops
     assert len(crops) == 1
 
 
 def test_create_grid_symmetric():
-    crops = create_grid((40, 40), (50, 50), (20, 20), mode='symmetric')
-    assert ((slice(-15, 25), slice(-15, 25)) in crops)
-    assert ((slice(-15, 25), slice(5, 45)) in crops)
-    assert ((slice(-15, 25), slice(25, 65)) in crops)
+    crops = create_grid((40, 40), (50, 50), (20, 20), mode="symmetric")
+    assert (slice(-15, 25), slice(-15, 25)) in crops
+    assert (slice(-15, 25), slice(5, 45)) in crops
+    assert (slice(-15, 25), slice(25, 65)) in crops
 
-    assert ((slice(5, 45), slice(-15, 25)) in crops)
-    assert ((slice(5, 45), slice(5, 45)) in crops)
-    assert ((slice(5, 45), slice(25, 65)) in crops)
+    assert (slice(5, 45), slice(-15, 25)) in crops
+    assert (slice(5, 45), slice(5, 45)) in crops
+    assert (slice(5, 45), slice(25, 65)) in crops
 
-    assert ((slice(25, 65), slice(-15, 25)) in crops)
-    assert ((slice(25, 65), slice(5, 45)) in crops)
-    assert ((slice(25, 65), slice(25, 65)) in crops)
+    assert (slice(25, 65), slice(-15, 25)) in crops
+    assert (slice(25, 65), slice(5, 45)) in crops
+    assert (slice(25, 65), slice(25, 65)) in crops
 
     assert len(crops) == 9
 
 
 def test_create_grid_synmmetric_psize_dsize():
-    crops = create_grid((60, 40), (40, 40), 20, mode='symmetric')
-    assert ((slice(-10, 50), slice(0, 40)) in crops)
+    crops = create_grid((60, 40), (40, 40), 20, mode="symmetric")
+    assert (slice(-10, 50), slice(0, 40)) in crops
     assert len(crops) == 1
 
 
@@ -131,22 +135,26 @@ def test_save_get_borders():
     top_left = (slice(-10, 10), slice(-10, 10))
     top_left_gt = np.zeros((20, 20)) + 2
     top_left_gt[10:, 10:] = 0
-    _check_save_get(mask, top_left, top_left_gt, mode='constant', constant_values=2)
+    _check_save_get(mask, top_left, top_left_gt, mode="constant", constant_values=2)
 
     top_right = (slice(-10, 10), slice(10, 30))
     top_right_gt = np.zeros((20, 20)) + 2
     top_right_gt[10:, :10] = 0
-    _check_save_get(mask, top_right, top_right_gt, mode='constant', constant_values=2)
+    _check_save_get(mask, top_right, top_right_gt, mode="constant", constant_values=2)
 
     bottom_left = (slice(10, 30), slice(-10, 10))
     bottom_left_gt = np.zeros((20, 20)) + 2
     bottom_left_gt[:10, 10:] = 0
-    _check_save_get(mask, bottom_left, bottom_left_gt, mode='constant', constant_values=2)
+    _check_save_get(
+        mask, bottom_left, bottom_left_gt, mode="constant", constant_values=2
+    )
 
     bottom_right = (slice(10, 30), slice(10, 30))
     bottom_right_gt = np.zeros((20, 20)) + 2
     bottom_right_gt[:10, :10] = 0
-    _check_save_get(mask, bottom_right, bottom_right_gt, mode='constant', constant_values=2)
+    _check_save_get(
+        mask, bottom_right, bottom_right_gt, mode="constant", constant_values=2
+    )
 
 
 def test_save_get_mode_shift():
@@ -155,7 +163,7 @@ def test_save_get_mode_shift():
     gt = np.zeros((20, 20))
     gt[15:, 15:] = 1
     crop = (slice(10, 30), slice(-10, 10))
-    _check_save_get(mask, crop, gt, mode='shift')
+    _check_save_get(mask, crop, gt, mode="shift")
 
 
 def test_save_get_extra_dim_compension():
@@ -164,46 +172,50 @@ def test_save_get_extra_dim_compension():
     gt = np.zeros((1, 20, 20))
     gt[0, 15:, 15:] = 1
     crop = (slice(10, 30), slice(10, 30))
-    _check_save_get(mask, crop, gt, mode='shift')
+    _check_save_get(mask, crop, gt, mode="shift")
 
 
 def test_save_get_errors():
     with pytest.raises(RuntimeError):
-        save_get_crop(np.zeros((10, 10)),
-                      (slice(0, 20), slice(0, 5)), mode='shift')
+        save_get_crop(np.zeros((10, 10)), (slice(0, 20), slice(0, 5)), mode="shift")
 
     with pytest.raises(RuntimeError):
-        save_get_crop(np.zeros((10, 10)),
-                      (slice(0, 5), slice(-10, 5)), mode='shift')
+        save_get_crop(np.zeros((10, 10)), (slice(0, 5), slice(-10, 5)), mode="shift")
 
     with pytest.raises(TypeError):
-        save_get_crop(np.zeros((10, 10)),
-                      (slice(0, 5), slice(-10, 5), slice(-10, 5)),
-                      mode='shift')
+        save_get_crop(
+            np.zeros((10, 10)),
+            (slice(0, 5), slice(-10, 5), slice(-10, 5)),
+            mode="shift",
+        )
 
 
 def test_save_get_origin_shifted():
     data = np.random.random((3, 10, 10, 10))
-    crop, origin, _ = save_get_crop(data, crop=(slice(-2, 1), slice(-3, 1), slice(1, 4)))
+    crop, origin, _ = save_get_crop(
+        data, crop=(slice(-2, 1), slice(-3, 1), slice(1, 4))
+    )
     assert all([a == b for a, b in zip(origin, [0, 0, 1])])
 
 
 def test_save_get_origin_pad():
     data = np.random.random((3, 10, 10, 10))
-    crop, origin, _ = save_get_crop(data,
-                                    crop=(slice(-2, 1), slice(-3, 1), slice(1, 4)),
-                                    mode='constant',
-                                    )
+    crop, origin, _ = save_get_crop(
+        data,
+        crop=(slice(-2, 1), slice(-3, 1), slice(1, 4)),
+        mode="constant",
+    )
     assert all([a == b for a, b in zip(origin, [-2, -3, 1])])
 
 
 def test_integration_origin_bounding_box_offset():
     data = np.zeros((1, 3, 10, 10, 10))
     data[..., 1:4, 1:4, 1:4] = 1
-    crop, origin, _ = save_get_crop(data,
-                                    crop=(slice(-2, 5), slice(-2, 5), slice(-2, 5)),
-                                    mode='constant',
-                                    )
+    crop, origin, _ = save_get_crop(
+        data,
+        crop=(slice(-2, 5), slice(-2, 5), slice(-2, 5)),
+        mode="constant",
+    )
     expected_bbox = instances_to_boxes(torch.from_numpy(data), 3)[0]
     predicted_box = instances_to_boxes(torch.from_numpy(crop), 3)[0]
     offset = torch.Tensor(origin)

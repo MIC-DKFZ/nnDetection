@@ -35,7 +35,11 @@ def box_area_3d(boxes: Tensor) -> Tensor:
     Returns:
         area (Union[Tensor, ndarray]): area for each box [N]
     """
-    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 5] - boxes[:, 4])
+    return (
+        (boxes[:, 2] - boxes[:, 0])
+        * (boxes[:, 3] - boxes[:, 1])
+        * (boxes[:, 5] - boxes[:, 4])
+    )
 
 
 def box_area_2d(boxes: Tensor) -> Tensor:
@@ -128,7 +132,9 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tenso
         return generalized_box_iou_3d(boxes1.float(), boxes2.float(), eps=eps)
 
 
-def box_iou_union_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Tensor, Tensor]:
+def box_iou_union_3d(
+    boxes1: Tensor, boxes2: Tensor, eps: float = 0
+) -> Tuple[Tensor, Tensor]:
     """
     Return intersection-over-union (Jaccard index) and  of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
@@ -154,8 +160,10 @@ def box_iou_union_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Te
     z1 = torch.max(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
     z2 = torch.min(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
-    inter = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N, M]
-    union = (vol1[:, None] + vol2 - inter)
+    inter = (
+        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
+    ) + eps  # [N, M]
+    union = vol1[:, None] + vol2 - inter
     return inter / union, union
 
 
@@ -181,11 +189,15 @@ def generalized_box_iou_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
     z1 = torch.min(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
     z2 = torch.max(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
-    vol = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N, M]
+    vol = (
+        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
+    ) + eps  # [N, M]
     return iou - (vol - union) / vol
 
 
-def box_iou_union_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Tensor, Tensor]:
+def box_iou_union_2d(
+    boxes1: Tensor, boxes2: Tensor, eps: float = 0
+) -> Tuple[Tensor, Tensor]:
     """
     Return intersection-over-union (Jaccard index) and  of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
@@ -210,7 +222,7 @@ def box_iou_union_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tuple[Te
     y2 = torch.min(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
 
     inter = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0)) + eps  # [N, M]
-    union = (area1[:, None] + area2 - inter)
+    union = area1[:, None] + area2 - inter
     return inter / union, union
 
 
@@ -253,14 +265,19 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
         keep = (ws >= min_size) & (hs >= min_size)
     else:
-        ws, hs, ds = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1], boxes[:, 5] - boxes[:, 4]
+        ws, hs, ds = (
+            boxes[:, 2] - boxes[:, 0],
+            boxes[:, 3] - boxes[:, 1],
+            boxes[:, 5] - boxes[:, 4],
+        )
         keep = (ws >= min_size) & (hs >= min_size) & (ds >= min_size)
     keep = torch.where(keep)[0]
     return keep
 
 
-def box_center_dist(boxes1: Tensor, boxes2: Tensor, euclidean: bool = True) -> \
-        Tuple[Tensor, Tensor, Tensor]:
+def box_center_dist(
+    boxes1: Tensor, boxes2: Tensor, euclidean: bool = True
+) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Distance of center points between two sets of boxes
 
@@ -321,15 +338,16 @@ def box_center(boxes: Tensor) -> Tensor:
     Returns:
         Tensor: center points [N, dims]
     """
-    centers = [(boxes[:, 2] + boxes[:, 0]) / 2., (boxes[:, 3] + boxes[:, 1]) / 2.]
+    centers = [(boxes[:, 2] + boxes[:, 0]) / 2.0, (boxes[:, 3] + boxes[:, 1]) / 2.0]
     if boxes.shape[1] == 6:
-        centers.append((boxes[:, 5] + boxes[:, 4]) / 2.)
+        centers.append((boxes[:, 5] + boxes[:, 4]) / 2.0)
     return torch.stack(centers, dim=1)
 
 
-def permute_boxes(boxes: Union[Tensor, ndarray],
-                  dims: Sequence[int] = None,
-                  ) -> Union[Tensor, ndarray]:
+def permute_boxes(
+    boxes: Union[Tensor, ndarray],
+    dims: Sequence[int] = None,
+) -> Union[Tensor, ndarray]:
     """
     Change ordering of axis of boxes
 
@@ -344,14 +362,20 @@ def permute_boxes(boxes: Union[Tensor, ndarray],
     if dims is None:
         dims = list(range(boxes.shape[1] // 2))[::-1]
     if 2 * len(dims) != boxes.shape[1]:
-        raise TypeError(f"Need same number of dimensions, found dims {dims} "
-                        f"but boxes with shape {boxes.shape}")
+        raise TypeError(
+            f"Need same number of dimensions, found dims {dims} "
+            f"but boxes with shape {boxes.shape}"
+        )
 
     indexing = [[0, 2], [1, 3]]
     if boxes.shape[1] == 6:
         indexing.append([4, 5])
-    new_axis = [indexing[dims[0]][0], indexing[dims[1]][0],
-                indexing[dims[0]][1], indexing[dims[1]][1]]
+    new_axis = [
+        indexing[dims[0]][0],
+        indexing[dims[1]][0],
+        indexing[dims[0]][1],
+        indexing[dims[1]][1],
+    ]
     for d in dims[2:]:
         new_axis.extend(indexing[d])
     return boxes[:, new_axis]
@@ -368,7 +392,9 @@ def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
         Tensor: expanded tensors
     """
     idx = [0, 1, 0, 1]
-    if (len(data.shape) == 1 and data.shape[0] == 3) or (len(data.shape) == 2 and data.shape[1] == 3):
+    if (len(data.shape) == 1 and data.shape[0] == 3) or (
+        len(data.shape) == 2 and data.shape[1] == 3
+    ):
         idx.extend((2, 2))
     if len(data.shape) == 1:
         data = data[None]
@@ -407,10 +433,12 @@ def extend_and_cat_boxes(boxes: List[Tensor]) -> Tensor:
     """
     extended_boxes = []
     for i, b in enumerate(boxes):
-        extended_boxes.append(torch.cat(
-            [torch.full((b.shape[0], 1), i, dtype=b.dtype, device=b.device), b],
-            dim=1,
-        ))
+        extended_boxes.append(
+            torch.cat(
+                [torch.full((b.shape[0], 1), i, dtype=b.dtype, device=b.device), b],
+                dim=1,
+            )
+        )
     return torch.cat(extended_boxes, dim=0)
 
 

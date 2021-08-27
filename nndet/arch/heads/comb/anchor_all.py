@@ -18,7 +18,7 @@ class BoxHeadAll(AnchorHead):
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: str = "decode",
-        ):
+    ):
         """
         Box head with classifier and regression module. Uses all
         foreground anchors for regression an passes all anchors to classifier
@@ -29,7 +29,7 @@ class BoxHeadAll(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the 
+                `decode`: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
                 `encode`: uses the matched ground truth to encode the
@@ -43,14 +43,17 @@ class BoxHeadAll(AnchorHead):
             shared=shared,
             reg_mode=reg_mode,
         )
-        self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
+        self.logger = (
+            None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
+        )
 
-    def compute_loss(self,
-                     prediction: Dict[str, Tensor],
-                     target_labels: List[Tensor],
-                     matched_gt_boxes: List[Tensor],
-                     anchors: List[Tensor],
-                     ) -> Tuple[Dict[str, Tensor], torch.Tensor, Optional[torch.Tensor]]:
+    def compute_loss(
+        self,
+        prediction: Dict[str, Tensor],
+        target_labels: List[Tensor],
+        matched_gt_boxes: List[Tensor],
+        anchors: List[Tensor],
+    ) -> Tuple[Dict[str, Tensor], torch.Tensor, Optional[torch.Tensor]]:
         """
         Compute regression and classification loss
         N anchors over all images; M anchors per image => sum(M) = N
@@ -77,7 +80,7 @@ class BoxHeadAll(AnchorHead):
         batch_anchors = torch.cat(anchors, dim=0)
         target_labels = torch.cat(target_labels, dim=0)
         target_boxes = torch.cat(matched_gt_boxes, dim=0)
-        
+
         reg_pred, reg_target = self.get_reg_by_mode(
             batch_anchors=batch_anchors,
             batch_target_boxes=target_boxes,
@@ -88,13 +91,19 @@ class BoxHeadAll(AnchorHead):
 
         losses = {}
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = self.regressor.compute_loss(
-                reg_pred[sampled_pos_inds],
-                reg_target[sampled_pos_inds],
-            ) / max(1, sampled_pos_inds.numel())
+            losses["reg"] = (
+                self.regressor.compute_loss(
+                    reg_pred[sampled_pos_inds],
+                    reg_target[sampled_pos_inds],
+                )
+                / max(1, sampled_pos_inds.numel())
+            )
 
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds],
-            target_labels[sampled_inds],
-        ) / max(1, sampled_pos_inds.numel())
+        losses["cls"] = (
+            self.classifier.compute_loss(
+                box_logits[sampled_inds],
+                target_labels[sampled_inds],
+            )
+            / max(1, sampled_pos_inds.numel())
+        )
         return losses, sampled_pos_inds, None

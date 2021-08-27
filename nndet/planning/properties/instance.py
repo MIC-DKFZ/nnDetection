@@ -48,18 +48,20 @@ def analyze_instances(analyzer: DatasetAnalyzer) -> dict:
         with open(analyzer.props_per_case_file, "rb") as f:
             props_per_case = pickle.load(f)
 
-    output = {'class_dct': class_dct,
-              'all_classes': all_classes,
-              'instance_props_per_patient': props_per_case
-              }
+    output = {
+        "class_dct": class_dct,
+        "all_classes": all_classes,
+        "instance_props_per_patient": props_per_case,
+    }
     output.update(analyze_instances_data_set(props_per_case))
     return output
 
 
-def run_analyze_instances(analyzer: DatasetAnalyzer,
-                          all_classes: Sequence[int],
-                          save: bool = True,
-                          ):
+def run_analyze_instances(
+    analyzer: DatasetAnalyzer,
+    all_classes: Sequence[int],
+    save: bool = True,
+):
     """
     Analyze all instance segmentation from data set
 
@@ -74,8 +76,10 @@ def run_analyze_instances(analyzer: DatasetAnalyzer,
     """
     props_per_case = OrderedDict()
     with Pool(analyzer.num_processes) as p:
-        props = p.starmap(analyze_instances_per_case, zip(
-            repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
+        props = p.starmap(
+            analyze_instances_per_case,
+            zip(repeat(analyzer), analyzer.case_ids, repeat(all_classes)),
+        )
 
     # props = [analyze_instances_per_case(analyzer, cid, all_classes) for cid in analyzer.case_ids]
 
@@ -119,15 +123,17 @@ def analyze_instances_data_set(props_per_case: OrderedDict) -> dict:
     for cls in class_ious.keys():
         class_ious[cls] = np.concatenate(class_ious[cls])
     data_props["class_ious"] = class_ious
-    data_props["all_ious"] = np.concatenate([case_props["all_ious"].flatten()
-                                             for _, case_props in props_per_case.items()])
+    data_props["all_ious"] = np.concatenate(
+        [case_props["all_ious"].flatten() for _, case_props in props_per_case.items()]
+    )
     return data_props
 
 
-def analyze_instances_per_case(analyzer: DatasetAnalyzer,
-                               case_id: str,
-                               all_classes: Sequence[int],
-                               ):
+def analyze_instances_per_case(
+    analyzer: DatasetAnalyzer,
+    case_id: str,
+    all_classes: Sequence[int],
+):
     """
     Analyze a single case
 
@@ -154,8 +160,11 @@ def analyze_instances_per_case(analyzer: DatasetAnalyzer,
     _, iseg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     props["num_instances"] = count_instances(props, all_classes)
     props["has_classes"] = list(set(props["instances"].values()))
-    props["volume_per_class"], props["region_volume_per_class"], props["instance_ids"] = \
-        instance_class_and_region_sizes(case_id, iseg, props, all_classes)
+    (
+        props["volume_per_class"],
+        props["region_volume_per_class"],
+        props["instance_ids"],
+    ) = instance_class_and_region_sizes(case_id, iseg, props, all_classes)
     props["boxes"] = iseg_to_boxes(iseg)
     props["all_ious"], props["class_ious"] = case_ious(props["boxes"], props)
     return props
@@ -178,12 +187,11 @@ def count_instances(props: dict, all_classes: Sequence[int]) -> Dict[int, int]:
 
 
 def instance_class_and_region_sizes(
-        case_id: str,
-        iseg: np.ndarray,
-        props: dict,
-        all_classes: Sequence[int],
-) -> Tuple[
-        Dict[int, float], Dict[int, List[float]]]:
+    case_id: str,
+    iseg: np.ndarray,
+    props: dict,
+    all_classes: Sequence[int],
+) -> Tuple[Dict[int, float], Dict[int, List[float]]]:
     """
     Compute physical volume of all instances
     Classes which are not present in case are 0 or an empty list.
@@ -202,7 +210,7 @@ def instance_class_and_region_sizes(
             corresponding class) [all_classes, list(region_class_volume)]
         Sequence[int]: instances ids present in segmentation
     """
-    vol_per_voxel = np.prod(props['itk_spacing'])
+    vol_per_voxel = np.prod(props["itk_spacing"])
     instance_classes = {int(key): int(item) for key, item in props["instances"].items()}
 
     volume_per_class = OrderedDict(zip(all_classes, [0] * len(all_classes)))
@@ -211,8 +219,10 @@ def instance_class_and_region_sizes(
     ids = np.unique(iseg)
     ids = ids[ids > 0]
     if len(ids) != len(list(instance_classes.keys())):
-        logger.warning(f"Instance lost. Found {instance_classes} in "
-                       f"properties but {ids} in seg of {case_id}.")
+        logger.warning(
+            f"Instance lost. Found {instance_classes} in "
+            f"properties but {ids} in seg of {case_id}."
+        )
     volumer_per_instance = {c: np.sum(iseg == c) * vol_per_voxel for c in ids}
 
     for instance_id, instance_vol in volumer_per_instance.items():
@@ -245,13 +255,16 @@ def iseg_to_boxes(iseg: np.ndarray) -> np.ndarray:
     ids = ids[ids > 0]
     for instance_id in ids:
         instance_idx = np.argwhere(iseg == instance_id)
-        coord_list = [np.min(instance_idx[:, 0]) - 1,
-                      np.min(instance_idx[:, 1]) - 1,
-                      np.max(instance_idx[:, 0]) + 1,
-                      np.max(instance_idx[:, 1]) + 1]
+        coord_list = [
+            np.min(instance_idx[:, 0]) - 1,
+            np.min(instance_idx[:, 1]) - 1,
+            np.max(instance_idx[:, 0]) + 1,
+            np.max(instance_idx[:, 1]) + 1,
+        ]
         if instance_idx.shape[1] == 3:
-            coord_list.extend([np.min(instance_idx[:, 2]) - 1,
-                               np.max(instance_idx[:, 2]) + 1])
+            coord_list.extend(
+                [np.min(instance_idx[:, 2]) - 1, np.max(instance_idx[:, 2]) + 1]
+            )
         boxes.append(coord_list)
 
     if boxes:
@@ -260,7 +273,9 @@ def iseg_to_boxes(iseg: np.ndarray) -> np.ndarray:
         return []
 
 
-def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.ndarray]]:
+def case_ious(
+    boxes: np.ndarray, props: dict
+) -> Tuple[np.ndarray, Dict[int, np.ndarray]]:
     """
     Compute IoU values for a single case (Evaluated both settings: all
     bounding boxes and bounding boxes corresponding to a specific class)
@@ -283,7 +298,9 @@ def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.
         case_instances = sorted(props["instance_ids"])
 
         for cls in case_classes:
-            cls_box_indices = [props["instances"][str(ci)] == cls for ci in case_instances]
+            cls_box_indices = [
+                props["instances"][str(ci)] == cls for ci in case_instances
+            ]
             class_ious[cls] = compute_each_iou(boxes[cls_box_indices])
     else:
         all_ious = np.array([])

@@ -31,12 +31,7 @@ from nndet.training.misc import EpochTimerCallback
 
 
 class LightningBaseModule(pl.LightningModule):
-    def __init__(self,
-                 model_cfg: dict,
-                 trainer_cfg: dict,
-                 plan: dict,
-                 **kwargs
-                 ):
+    def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
         """
         Provides a base module which is used inside of nnDetection.
         All lightning modules of nnDetection should be derifed from this!
@@ -60,7 +55,9 @@ class LightningBaseModule(pl.LightningModule):
         )
 
         self.example_input_array_shape = (
-            1, plan["architecture"]["in_channels"], *plan["patch_size"],
+            1,
+            plan["architecture"]["in_channels"],
+            *plan["patch_size"],
         )
 
     @property
@@ -100,11 +97,11 @@ class LightningBaseModule(pl.LightningModule):
         """
         return torch.zeros(*self.example_input_array_shape)
 
-    def summarize(self, mode: Optional[str]) -> Optional[ModelSummary]:
+    def summarize(self, *args, **kwargs) -> Optional[ModelSummary]:
         """
         Save model summary as txt
         """
-        summary = super().summarize(mode=mode)
+        summary = super().summarize(*args, **kwargs)
         save_txt(summary, "./network")
         return summary
 
@@ -115,13 +112,14 @@ class LightningBaseModule(pl.LightningModule):
         return self.model.inference_step(batch, **kwargs)
 
     @classmethod
-    def from_config_plan(cls,
-                         model_cfg: dict,
-                         plan_arch: dict,
-                         plan_anchors: dict,
-                         log_num_anchors: str = None,
-                         **kwargs,
-                         ):
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        log_num_anchors: str = None,
+        **kwargs,
+    ):
         """
         Used to generate the model
         """
@@ -136,25 +134,27 @@ class LightningBaseModule(pl.LightningModule):
         raise NotImplementedError
 
     @classmethod
-    def get_predictor(cls,
-                      plan: Dict,
-                      models: Sequence[LightningBaseModule],
-                      num_tta_transforms: int = None,
-                      **kwargs
-                      ) -> Type[Predictor]:
+    def get_predictor(
+        cls,
+        plan: Dict,
+        models: Sequence[LightningBaseModule],
+        num_tta_transforms: int = None,
+        **kwargs,
+    ) -> Type[Predictor]:
         """
         Get predictor
         Needs to be overwritten in subclasses!
         """
         raise NotImplementedError
 
-    def sweep(self,
-              cfg: dict,
-              save_dir: os.PathLike,
-              train_data_dir: os.PathLike,
-              case_ids: Sequence[str],
-              run_prediction: bool = True,
-              ) -> Dict[str, Any]:
+    def sweep(
+        self,
+        cfg: dict,
+        save_dir: os.PathLike,
+        train_data_dir: os.PathLike,
+        case_ids: Sequence[str],
+        run_prediction: bool = True,
+    ) -> Dict[str, Any]:
         """
         Sweep parameters to find the best predictions
         Needs to be overwritten in subclasses!
@@ -179,12 +179,14 @@ class LightningBaseModule(pl.LightningModule):
             callbacks.append(
                 SWACycleLinear(
                     swa_epoch_start=self.train_epochs,
-                    cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
-                    cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
-                    num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
+                    cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.0,
+                    cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.0,
+                    num_iterations_per_epoch=self.trainer_cfg[
+                        "num_train_batches_per_epoch"
+                    ],
                 )
             )
         return callbacks
 
 
-LightningBaseModuleType = TypeVar('LightningBaseModuleType', bound=LightningBaseModule)
+LightningBaseModuleType = TypeVar("LightningBaseModuleType", bound=LightningBaseModule)

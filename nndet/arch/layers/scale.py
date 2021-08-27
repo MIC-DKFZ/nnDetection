@@ -19,7 +19,7 @@ import torch.nn as nn
 
 
 class Scale(nn.Module):
-    def __init__(self, scale: float = 1.):
+    def __init__(self, scale: float = 1.0):
         """
         Layer to create a learnable scaling of feature maps
 

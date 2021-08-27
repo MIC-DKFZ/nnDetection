@@ -21,7 +21,7 @@ from nndet.arch.conv import (
     ConvInstanceSiLU,
     ConvGroupSiLU,
     ConvInstanceLReLU,
-    ConvGroupLReLU
+    ConvGroupLReLU,
 )
 
 from nndet.training.optimizer import get_params_no_wd_on_norm
@@ -66,12 +66,14 @@ class RetinaUNetC010Focal(RetinaUNetC010):
             HeadType: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
         sampler_name = cls.head_sampler_cls.__name__
-        sampler_kwargs = model_cfg['head_sampler_kwargs']
+        sampler_kwargs = model_cfg["head_sampler_kwargs"]
 
-        logger.info(f"Building:: head {head_name}: {head_kwargs} "
-                    f"sampler {sampler_name}: {sampler_kwargs}")
+        logger.info(
+            f"Building:: head {head_name}: {head_kwargs} "
+            f"sampler {sampler_name}: {sampler_kwargs}"
+        )
         head = cls.head_cls(
             classifier=classifier,
             regressor=regressor,
@@ -135,16 +137,22 @@ class RetinaUNetC010LK(RetinaUNetC010):
         try:
             import torch_optimizer as optim
         except ImportError:
-            raise ImportError("torch_optimizer needs to be installed to run this module."
-                              "Please refer to https://github.com/jettify/pytorch-optimizer"
-                              "to install it")
+            raise ImportError(
+                "torch_optimizer needs to be installed to run this module."
+                "Please refer to https://github.com/jettify/pytorch-optimizer"
+                "to install it"
+            )
 
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"SGD Lookahead with momentum {self.trainer_cfg['sgd_momentum']} and "
-                    f"nesterov {self.trainer_cfg['sgd_nesterov']}")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"SGD Lookahead with momentum {self.trainer_cfg['sgd_momentum']} and "
+            f"nesterov {self.trainer_cfg['sgd_nesterov']}"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         _optimizer = torch.optim.SGD(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -159,25 +167,31 @@ class RetinaUNetC010LK(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
 
 @MODULE_REGISTRY.register
 class RetinaUNetC010AdamW(RetinaUNetC010):
     def configure_optimizers(self):
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"AdamW")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"AdamW"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         optimizer = torch.optim.AdamW(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -185,15 +199,17 @@ class RetinaUNetC010AdamW(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
 
 @MODULE_REGISTRY.register
@@ -202,15 +218,21 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
         try:
             import torch_optimizer as optim
         except ImportError:
-            raise ImportError("torch_optimizer needs to be installed to run this module."
-                              "Please refer to https://github.com/jettify/pytorch-optimizer"
-                              "to install it")
+            raise ImportError(
+                "torch_optimizer needs to be installed to run this module."
+                "Please refer to https://github.com/jettify/pytorch-optimizer"
+                "to install it"
+            )
 
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"RAdam")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"RAdam"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         optimizer = optim.RAdam(
             wd_groups,
             lr=self.trainer_cfg["initial_lr"],
@@ -218,15 +240,17 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
 
 @MODULE_REGISTRY.register
@@ -235,15 +259,21 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
         try:
             import torch_optimizer as optim
         except ImportError:
-            raise ImportError("torch_optimizer needs to be installed to run this module."
-                              "Please refer to https://github.com/jettify/pytorch-optimizer"
-                              "to install it")
+            raise ImportError(
+                "torch_optimizer needs to be installed to run this module."
+                "Please refer to https://github.com/jettify/pytorch-optimizer"
+                "to install it"
+            )
 
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"Ranger")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"Ranger"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         optimizer = optim.Ranger(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -251,15 +281,17 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
 
 @MODULE_REGISTRY.register
@@ -268,15 +300,21 @@ class RetinaUNetC010Madgrad(RetinaUNetC010):
         try:
             from madgrad import MADGRAD
         except ImportError:
-            raise ImportError("madgrad needs to be installed to run this module."
-                              "Please refer to https://github.com/facebookresearch/madgrad"
-                              "to install it")
+            raise ImportError(
+                "madgrad needs to be installed to run this module."
+                "Please refer to https://github.com/facebookresearch/madgrad"
+                "to install it"
+            )
 
         # configure optimizer
-        logger.info(f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
-                    f"weight_decay {self.trainer_cfg['weight_decay']} "
-                    f"MADGRAD with momentum {self.trainer_cfg['momentum']}")
-        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg['weight_decay'])
+        logger.info(
+            f"Running: initial_lr {self.trainer_cfg['initial_lr']} "
+            f"weight_decay {self.trainer_cfg['weight_decay']} "
+            f"MADGRAD with momentum {self.trainer_cfg['momentum']}"
+        )
+        wd_groups = get_params_no_wd_on_norm(
+            self, weight_decay=self.trainer_cfg["weight_decay"]
+        )
         optimizer = MADGRAD(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -285,15 +323,17 @@ class RetinaUNetC010Madgrad(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        num_iterations = (
+            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
+        )
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
             warm_lr=self.trainer_cfg["warm_lr"],
             poly_gamma=self.trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations
+            num_iterations=num_iterations,
         )
-        return [optimizer], {'scheduler': scheduler, 'interval': 'step'}
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
 
 
 @MODULE_REGISTRY.register

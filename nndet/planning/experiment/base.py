@@ -22,9 +22,10 @@ from nndet.planning.experiment.utils import run_create_label_preprocessed
 
 
 class AbstractPlanner(ABC):
-    def __init__(self,
-                 preprocessed_output_dir: os.PathLike,
-                 ):
+    def __init__(
+        self,
+        preprocessed_output_dir: os.PathLike,
+    ):
         """
         Base class for experiment planning
 
@@ -45,10 +46,11 @@ class AbstractPlanner(ABC):
         self.data_properties = self.load_data_properties()
 
     @abstractmethod
-    def plan_experiment(self,
-                        model_name: str,
-                        model_cfg: Dict,
-                        ) -> List[str]:
+    def plan_experiment(
+        self,
+        model_name: str,
+        model_cfg: Dict,
+    ) -> List[str]:
         """
         Plan the whole experiment
 
@@ -62,11 +64,12 @@ class AbstractPlanner(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_architecture_planner(self,
-                                    model_name: str,
-                                    model_cfg: dict,
-                                    mode: str,
-                                    ) -> ArchitecturePlannerType:
+    def create_architecture_planner(
+        self,
+        model_name: str,
+        model_cfg: dict,
+        mode: str,
+    ) -> ArchitecturePlannerType:
         """
         Create Architecture planner
 
@@ -121,8 +124,12 @@ class AbstractPlanner(ABC):
         Returns:
             dict: loaded properties
         """
-        data_properties_path = self.preprocessed_output_dir / "properties" / "dataset_properties.pkl"
-        assert data_properties_path.is_file(), "data properties need to exist. Run data analysis first"
+        data_properties_path = (
+            self.preprocessed_output_dir / "properties" / "dataset_properties.pkl"
+        )
+        assert (
+            data_properties_path.is_file()
+        ), "data properties need to exist. Run data analysis first"
         data_properties = load_pickle(data_properties_path)
         return data_properties
 
@@ -160,8 +167,12 @@ class AbstractPlanner(ABC):
                 `transpose_backward`: transpose back order
                 `list_of_npz_files`: files used to preprocessing
         """
-        use_nonzero_mask_for_normalization = self.determine_whether_to_use_mask_for_norm()
-        logger.info(f"Are we using the nonzero maks for normalization? {use_nonzero_mask_for_normalization}")
+        use_nonzero_mask_for_normalization = (
+            self.determine_whether_to_use_mask_for_norm()
+        )
+        logger.info(
+            f"Are we using the nonzero maks for normalization? {use_nonzero_mask_for_normalization}"
+        )
         target_spacing = self.determine_target_spacing(mode=mode)
         logger.info(f"Base target spacing is {target_spacing}")
         self.determine_forward_backward_permutation(mode=mode)
@@ -169,29 +180,30 @@ class AbstractPlanner(ABC):
         logger.info(f"Normalization schemes {normalization_schemes}")
 
         plan = {
-            'mode': mode,
-            'target_spacing': target_spacing,
-            'normalization_schemes': normalization_schemes,
-            'use_mask_for_norm': use_nonzero_mask_for_normalization,
-            'anisotropy_threshold': self.anisotropy_threshold,
-            'resample_anisotropy_threshold': self.resample_anisotropy_threshold,
-            'target_spacing_percentile': self.target_spacing_percentile,
-            'dim': self.data_properties['dim'],
-            "num_modalities": len(list(self.data_properties['modalities'].keys())),
-            "all_classes": self.data_properties['all_classes'],
-            "num_classes": len(self.data_properties['all_classes']),
-            'transpose_forward': self.transpose_forward,
-            'transpose_backward': self.transpose_backward,
-            'dataset_properties': self.data_properties,
+            "mode": mode,
+            "target_spacing": target_spacing,
+            "normalization_schemes": normalization_schemes,
+            "use_mask_for_norm": use_nonzero_mask_for_normalization,
+            "anisotropy_threshold": self.anisotropy_threshold,
+            "resample_anisotropy_threshold": self.resample_anisotropy_threshold,
+            "target_spacing_percentile": self.target_spacing_percentile,
+            "dim": self.data_properties["dim"],
+            "num_modalities": len(list(self.data_properties["modalities"].keys())),
+            "all_classes": self.data_properties["all_classes"],
+            "num_classes": len(self.data_properties["all_classes"]),
+            "transpose_forward": self.transpose_forward,
+            "transpose_backward": self.transpose_backward,
+            "dataset_properties": self.data_properties,
             "planner_id": self.__class__.__name__,
         }
         return plan
 
-    def plan_base_stage(self,
-                        base_plan: Dict,
-                        model_name: str,
-                        model_cfg: dict,
-                        ):
+    def plan_base_stage(
+        self,
+        base_plan: Dict,
+        model_name: str,
+        model_cfg: dict,
+    ):
         """
         Plan the first stage of training
 
@@ -210,11 +222,13 @@ class AbstractPlanner(ABC):
                 `median_shape_transposed`
                 `do_dummy_2D_data_aug`
         """
-        target_spacing = base_plan['target_spacing']
-        spacings = self.data_properties['all_spacings']
-        sizes = self.data_properties['all_sizes']
+        target_spacing = base_plan["target_spacing"]
+        spacings = self.data_properties["all_spacings"]
+        sizes = self.data_properties["all_sizes"]
 
-        new_shapes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
+        new_shapes = [
+            np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)
+        ]
         median_shape = np.median(np.vstack(new_shapes), 0)
         logger.info(f"The median shape of the dataset is {median_shape}")
         max_shape = np.max(np.vstack(new_shapes), 0)
@@ -224,7 +238,9 @@ class AbstractPlanner(ABC):
 
         target_spacing_transposed = np.array(target_spacing)[self.transpose_forward]
         median_shape_transposed = np.array(median_shape)[self.transpose_forward]
-        logger.info(f"The transposed median shape of the dataset is {median_shape_transposed}")
+        logger.info(
+            f"The transposed median shape of the dataset is {median_shape_transposed}"
+        )
 
         architecture_planner = self.create_architecture_planner(
             model_name=model_name,
@@ -239,7 +255,9 @@ class AbstractPlanner(ABC):
         )
 
         patch_size = architecture_plan["patch_size"]
-        do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) > self.anisotropy_threshold
+        do_dummy_2d_data_aug = (
+            max(patch_size) / min(patch_size)
+        ) > self.anisotropy_threshold
 
         base_plan.update(architecture_plan)
         base_plan["target_spacing_transposed"] = target_spacing_transposed
@@ -272,7 +290,7 @@ class AbstractPlanner(ABC):
                 either `CT` or `nonCT`
         """
         schemes = OrderedDict()
-        modalities = self.data_properties['modalities']
+        modalities = self.data_properties["modalities"]
         num_modalities = len(list(modalities.keys()))
 
         for i in range(num_modalities):
@@ -294,7 +312,7 @@ class AbstractPlanner(ABC):
         # only use the nonzero mask for normalization of the cropping based on it resulted in a decrease in
         # image size (this is an indication that the data is something like brats/isles and then we want to
         # normalize in the brain region only)
-        modalities = self.data_properties['modalities']
+        modalities = self.data_properties["modalities"]
         num_modalities = len(list(modalities.keys()))
         use_mask_for_norm = OrderedDict()
 
@@ -302,9 +320,11 @@ class AbstractPlanner(ABC):
             if "CT" in modalities[i]:
                 use_mask_for_norm[i] = False
             else:
-                all_size_reductions = list(self.data_properties["size_reductions"].values())
+                all_size_reductions = list(
+                    self.data_properties["size_reductions"].values()
+                )
 
-                if np.median(all_size_reductions) < 3 / 4.:
+                if np.median(all_size_reductions) < 3 / 4.0:
                     logger.info("using nonzero mask for normalization")
                     use_mask_for_norm[i] = True
                 else:
@@ -331,10 +351,10 @@ class AbstractPlanner(ABC):
         return identifier
 
     def run_preprocessing(
-            self,
-            cropped_data_dir: os.PathLike,
-            plan: dict,
-            num_processes: int,
+        self,
+        cropped_data_dir: os.PathLike,
+        plan: dict,
+        num_processes: int,
     ):
         """
         Runs data preprocessing
@@ -353,7 +373,8 @@ class AbstractPlanner(ABC):
             num_processes=num_processes,
         )
         self.create_labels_tr_preprocessed(
-            preprocessed_plan_dir=self.preprocessed_output_dir / plan["data_identifier"],
+            preprocessed_plan_dir=self.preprocessed_output_dir
+            / plan["data_identifier"],
             dim=3,
             num_processes=num_processes,
         )
@@ -377,31 +398,35 @@ class AbstractPlanner(ABC):
         target_dir = preprocessed_plan_dir / "labelsTr"
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        case_ids = get_case_ids_from_dir(source_dir,
-                                         remove_modality=False,
-                                         pattern="*.npz",
-                                         )
-        logger.info('Preparing preprocessed evaluation labels')
+        case_ids = get_case_ids_from_dir(
+            source_dir,
+            remove_modality=False,
+            pattern="*.npz",
+        )
+        logger.info("Preparing preprocessed evaluation labels")
         if num_processes > 0:
             with Pool(processes=num_processes) as p:
-                p.starmap(run_create_label_preprocessed,
-                          zip(repeat(source_dir),
-                              case_ids,
-                              repeat(dim),
-                              repeat(target_dir),
-                              )
-                          )
+                p.starmap(
+                    run_create_label_preprocessed,
+                    zip(
+                        repeat(source_dir),
+                        case_ids,
+                        repeat(dim),
+                        repeat(target_dir),
+                    ),
+                )
         else:
             for cid in case_ids:
                 run_create_label_preprocessed(source_dir, cid, dim, target_dir)
 
     @classmethod
-    def run_preprocessing_test(cls,
-                               preprocessed_output_dir: os.PathLike,
-                               splitted_4d_output_dir: os.PathLike,
-                               plan: dict,
-                               num_processes: int = 0,
-                               ):
+    def run_preprocessing_test(
+        cls,
+        preprocessed_output_dir: os.PathLike,
+        splitted_4d_output_dir: os.PathLike,
+        plan: dict,
+        num_processes: int = 0,
+    ):
         """
         Run preprocessing of test data
 
@@ -413,7 +438,9 @@ class AbstractPlanner(ABC):
         logger.info("Running preprocessing of test cases")
         splitted_4d_output_dir = Path(splitted_4d_output_dir)
 
-        target_dir = Path(preprocessed_output_dir) / plan["data_identifier"] / "imagesTs"
+        target_dir = (
+            Path(preprocessed_output_dir) / plan["data_identifier"] / "imagesTs"
+        )
         target_dir.mkdir(parents=True, exist_ok=True)
 
         cases_processed = get_case_ids_from_dir(
@@ -429,21 +456,25 @@ class AbstractPlanner(ABC):
             remove_ids=cases_processed,
         )
 
-        logger.info(f"Found {len(cases)} cases for preprocssing in {splitted_4d_output_dir} "
-                    f"and {len(cases_processed)} alrady processed cases.")
+        logger.info(
+            f"Found {len(cases)} cases for preprocssing in {splitted_4d_output_dir} "
+            f"and {len(cases_processed)} alrady processed cases."
+        )
         preprocessor = cls.create_preprocessor(plan=plan)
 
         if num_processes > 0:
             with Pool(processes=num_processes) as p:
-                p.starmap(preprocessor.run_test,
-                          zip(cases,
-                              repeat(plan["target_spacing"]),
-                              repeat(target_dir),
-                              )
-                          )
+                p.starmap(
+                    preprocessor.run_test,
+                    zip(
+                        cases,
+                        repeat(plan["target_spacing"]),
+                        repeat(target_dir),
+                    ),
+                )
         else:
             for c in cases:
                 preprocessor.run_test(c, plan["target_spacing"], target_dir)
 
 
-PlannerType = TypeVar('PlannerType', bound=AbstractPlanner)
+PlannerType = TypeVar("PlannerType", bound=AbstractPlanner)

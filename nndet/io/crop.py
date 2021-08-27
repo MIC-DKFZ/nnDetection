@@ -38,8 +38,9 @@ def create_nonzero_mask(data: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: binary mask on nonzero regions [X, Y, Z]
     """
-    assert len(data.shape) == 4 or len(data.shape) == 3, \
-        "data must have shape (C, X, Y, Z) or shape (C, X, Y)"
+    assert (
+        len(data.shape) == 4 or len(data.shape) == 3
+    ), "data must have shape (C, X, Y, Z) or shape (C, X, Y)"
     nonzero_mask = np.max(data != 0, axis=0)
     nonzero_mask = binary_fill_holes(nonzero_mask.astype(bool))
     return nonzero_mask
@@ -162,8 +163,13 @@ class ImageCropper(object):
         if self.output_dir is not None and not self.output_dir.is_dir():
             self.output_dir.mkdir()
 
-    def run_cropping(self, case_files: List[List[Path]], overwrite_existing: bool = False,
-                     output_dir: Path = None, copy_gt_data: bool = True):
+    def run_cropping(
+        self,
+        case_files: List[List[Path]],
+        overwrite_existing: bool = False,
+        output_dir: Path = None,
+        copy_gt_data: bool = True,
+    ):
         """
         Crops data to non zero region and saves them into output_dir
         Optional: also copies ground truth data
@@ -209,7 +215,9 @@ class ImageCropper(object):
         """
         return self.process_data(*args)
 
-    def process_data(self, case: List[Path], case_id: str, overwrite_existing: bool = False):
+    def process_data(
+        self, case: List[Path], case_id: str, overwrite_existing: bool = False
+    ):
         """
         Extract nonzero region from all cases and create a single array where segmentation
         is located in the last channel and save as npz (saved in key `data`)
@@ -227,14 +235,18 @@ class ImageCropper(object):
             pkl_exists = (self.output_dir / f"{case_id}.pkl").is_file()
 
             if (not npz_exists and not pkl_exists) or overwrite_existing:
-                data, seg, properties = self.load_crop_from_list_of_files(case[:-1], case[-1])
+                data, seg, properties = self.load_crop_from_list_of_files(
+                    case[:-1], case[-1]
+                )
 
                 all_data = np.vstack((data, seg))
                 np.savez_compressed(self.output_dir / f"{case_id}.npz", data=all_data)
-                with open(self.output_dir / f"{case_id}.pkl", 'wb') as f:
+                with open(self.output_dir / f"{case_id}.pkl", "wb") as f:
                     pickle.dump(properties, f)
             else:
-                logger.warning(f"Case {case_id} already exists and overwrite is deactivated")
+                logger.warning(
+                    f"Case {case_id} already exists and overwrite is deactivated"
+                )
         except Exception as e:
             logger.info(f"exception in: {case_id}: {e}")
             raise e
@@ -291,7 +303,7 @@ class ImageCropper(object):
         #             f"spacing {np.array(properties['original_spacing'])}")
 
         properties["crop_bbox"] = bbox
-        properties['classes'] = np.unique(seg)
+        properties["classes"] = np.unique(seg)
         seg[seg < -1] = 0
         properties["size_after_cropping"] = data[0].shape
         return data, seg, properties

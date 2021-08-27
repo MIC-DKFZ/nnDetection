@@ -63,17 +63,22 @@ class BaseSWA(StochasticWeightAveraging):
         self.update_statistics = update_statistics
         logger.info(f"Initialize SWA with swa epoch start {self.swa_start}")
 
-    def pl_module_contains_batch_norm(self, pl_module: 'pl.LightningModule'):  # noqa: F821
+    def pl_module_contains_batch_norm(
+        self, pl_module: "pl.LightningModule"
+    ):  # noqa: F821
         if self.update_statistics:
-            raise NotImplementedError("Updating the statistis of the "
-                                      "normalization layer is not suported yet.")
+            raise NotImplementedError(
+                "Updating the statistis of the "
+                "normalization layer is not suported yet."
+            )
         else:
             return self.update_statistics
 
-    def on_train_epoch_start(self,
-                             trainer: 'pl.Trainer',  # noqa: F821
-                             pl_module: 'pl.LightningModule',  # noqa: F821
-                             ):
+    def on_train_epoch_start(
+        self,
+        trainer: "pl.Trainer",  # noqa: F821
+        pl_module: "pl.LightningModule",  # noqa: F821
+    ):
         """
         Repalce current lr scheduler with SWA scheduler
         """
@@ -81,7 +86,9 @@ class BaseSWA(StochasticWeightAveraging):
             optimizer = trainer.optimizers[0]
 
             # move average model to request device.
-            self._average_model = self._average_model.to(self._device or pl_module.device)
+            self._average_model = self._average_model.to(
+                self._device or pl_module.device
+            )
 
             _scheduler = self.get_swa_scheduler(optimizer)
             self._swa_scheduler = _get_default_scheduler_config()
@@ -91,7 +98,9 @@ class BaseSWA(StochasticWeightAveraging):
 
             if trainer.lr_schedulers:
                 lr_scheduler = trainer.lr_schedulers[0]["scheduler"]
-                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}")
+                rank_zero_warn(
+                    f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}"
+                )
                 trainer.lr_schedulers[0] = self._swa_scheduler
             else:
                 trainer.lr_schedulers.append(self._swa_scheduler)
@@ -99,7 +108,9 @@ class BaseSWA(StochasticWeightAveraging):
             self.n_averaged = torch.tensor(0, dtype=torch.long, device=pl_module.device)
 
         if self.swa_start <= trainer.current_epoch <= self.swa_end:
-            self.update_parameters(self._average_model, pl_module, self.n_averaged, self.avg_fn)
+            self.update_parameters(
+                self._average_model, pl_module, self.n_averaged, self.avg_fn
+            )
 
         if trainer.current_epoch == self.swa_end + 1:
             raise NotImplementedError("This should never happen (yet)")
@@ -121,15 +132,16 @@ class BaseSWA(StochasticWeightAveraging):
 
 
 class SWACycleLinear(BaseSWA):
-    def __init__(self,
-                 swa_epoch_start: int,
-                 cycle_initial_lr: float,
-                 cycle_final_lr: float,
-                 num_iterations_per_epoch: int,
-                 avg_fn: Optional[_AVG_FN] = None,
-                 device: Optional[Union[torch.device, str]] = torch.device("cpu"),
-                 update_statistics: Optional[bool] = None,
-                 ):
+    def __init__(
+        self,
+        swa_epoch_start: int,
+        cycle_initial_lr: float,
+        cycle_final_lr: float,
+        num_iterations_per_epoch: int,
+        avg_fn: Optional[_AVG_FN] = None,
+        device: Optional[Union[torch.device, str]] = torch.device("cpu"),
+        update_statistics: Optional[bool] = None,
+    ):
         """
         SWA based on :class:`CycleLinear`
 

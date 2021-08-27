@@ -17,8 +17,13 @@ class Example:
     properties = {
         "transpose_backward": (0, 1),
         "original_spacing": (1.0, 1.0),
-        "spacing_after_resampling": (1., 1.),
-        "crop_bbox": (0, 10, 0, 10,),
+        "spacing_after_resampling": (1.0, 1.0),
+        "crop_bbox": (
+            0,
+            10,
+            0,
+            10,
+        ),
         "original_size_of_raw_data": [100, 100],
         "itk_origin": 0,
         "itk_spacing": 1,
@@ -31,7 +36,7 @@ class Example:
     }
     result0 = {
         "pred_boxes": [torch.tensor([[0, 0, 1, 1]]).float()],
-        "pred_scores": [torch.tensor([1.])],
+        "pred_scores": [torch.tensor([1.0])],
         "pred_labels": [torch.tensor([1])],
     }
     batch1 = copy.deepcopy(batch0)
@@ -49,12 +54,16 @@ class TestDetectionEnsembler:
         ensembler = BoxEnsembler.from_case(
             case=example.case,
             properties=example.properties,
-            parameters={"model_iou": 0.5, "ensemble_topk": 10}
+            parameters={"model_iou": 0.5, "ensemble_topk": 10},
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
-        assert all([a == b for a, b in zip(ensembler.properties["shape"], expected_shape)])
-        assert all([a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))])
+        assert all(
+            [a == b for a, b in zip(ensembler.properties["shape"], expected_shape)]
+        )
+        assert all(
+            [a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))]
+        )
         assert ensembler.parameters["model_iou"] == 0.5
         assert ensembler.parameters["ensemble_topk"] == 10
 
@@ -77,21 +86,28 @@ class TestDetectionEnsembler:
             properties=example.properties,
             parameters={},
         )
-        ensembler.add_model("model_test0", 1.)
+        ensembler.add_model("model_test0", 1.0)
         ensembler.process_batch(example.result0, example.batch0)
         ensembler.process_batch(example.result1, example.batch1)
-        ensembler.add_model("model_test1", 1.)
+        ensembler.add_model("model_test1", 1.0)
         ensembler.process_batch(example.result0, example.batch0)
 
-        expected_boxes0 = [torch.tensor([[0, 0, 1, 1]]).float(),
-                           torch.tensor([[5, 5, 6, 6]]).float(),
-                           ]
-        expected_boxes1 = [torch.tensor([[0, 0, 1, 1]]).float(), ]
+        expected_boxes0 = [
+            torch.tensor([[0, 0, 1, 1]]).float(),
+            torch.tensor([[5, 5, 6, 6]]).float(),
+        ]
+        expected_boxes1 = [
+            torch.tensor([[0, 0, 1, 1]]).float(),
+        ]
 
-        for exp_box, ens_box in zip(expected_boxes0, ensembler.model_results["model_test0"]["boxes"]):
-            assert (exp_box.allclose(ens_box))
-        for exp_box, ens_box in zip(expected_boxes1, ensembler.model_results["model_test1"]["boxes"]):
-            assert (exp_box.allclose(ens_box))
+        for exp_box, ens_box in zip(
+            expected_boxes0, ensembler.model_results["model_test0"]["boxes"]
+        ):
+            assert exp_box.allclose(ens_box)
+        for exp_box, ens_box in zip(
+            expected_boxes1, ensembler.model_results["model_test1"]["boxes"]
+        ):
+            assert exp_box.allclose(ens_box)
 
     def test_get_box_in_tile_weight(self, example):
         ensembler = BoxEnsembler.from_case(
@@ -101,9 +117,9 @@ class TestDetectionEnsembler:
         )
 
         tile_size = (10, 10)
-        box_centers = torch.tensor([[5., 5.], [5., 5.]])
+        box_centers = torch.tensor([[5.0, 5.0], [5.0, 5.0]])
         pred_weight = ensembler._get_box_in_tile_weight(box_centers, tile_size)
-        expected_weight = torch.tensor([1., 1.])
+        expected_weight = torch.tensor([1.0, 1.0])
         assert pred_weight.allclose(expected_weight)
 
     def test_apply_offsets_to_boxes(self, example):
@@ -113,12 +129,16 @@ class TestDetectionEnsembler:
             parameters={},
         )
 
-        boxes = [torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
-                 torch.tensor([[0, 0, 1, 1, 0, 1]]).float()]
+        boxes = [
+            torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
+            torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
+        ]
         offsets = [[0, 0, 0], [1, 2, 3]]
         res = ensembler._apply_offsets_to_boxes(boxes, offsets)
-        expected = [torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
-                    torch.tensor([[1, 2, 2, 3, 3, 4]]).float()]
+        expected = [
+            torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
+            torch.tensor([[1, 2, 2, 3, 3, 4]]).float(),
+        ]
         for r, e in zip(res, expected):
             assert r.allclose(e)
 
@@ -151,7 +171,7 @@ class TestDetectionEnsembler:
 
         expected_boxes = torch.tensor([[0, 0, 1, 1], [5, 5, 6, 6]]).float()
         expected_scores = torch.tensor([0.5, 0.5])
-        expected_labels = torch.tensor([1., 1.])
-        assert (res["pred_boxes"].allclose(expected_boxes))
-        assert (res["pred_scores"].allclose(expected_scores))
-        assert (res["pred_labels"].allclose(expected_labels))
+        expected_labels = torch.tensor([1.0, 1.0])
+        assert res["pred_boxes"].allclose(expected_boxes)
+        assert res["pred_scores"].allclose(expected_scores)
+        assert res["pred_labels"].allclose(expected_labels)

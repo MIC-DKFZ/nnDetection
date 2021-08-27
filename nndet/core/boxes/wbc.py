@@ -24,12 +24,12 @@ from nndet.core.boxes.nms import nms
 
 
 def batched_wbc_nms_no_label(
-        boxes: Tensor,
-        scores: Tensor,
-        labels: Tensor,
-        weights: Tensor,
-        iou_thresh: float,
-        n_exp_preds: Tensor,
+    boxes: Tensor,
+    scores: Tensor,
+    labels: Tensor,
+    weights: Tensor,
+    iou_thresh: float,
+    n_exp_preds: Tensor,
 ) -> Tuple[Tensor, Tensor, Tensor, None]:
     """
     Applies WBC and postprocesses with class agnostic NMS
@@ -55,7 +55,9 @@ def batched_wbc_nms_no_label(
         None: make returns consistent across functions
     """
     boxes, scores, labels = batched_wbc(
-        boxes, scores, labels,
+        boxes,
+        scores,
+        labels,
         weights=weights,
         n_exp_preds=n_exp_preds,
         iou_thresh=iou_thresh,
@@ -72,7 +74,7 @@ def batched_wbc(
     iou_thresh: float,
     n_exp_preds: Tensor,
     use_area: bool = False,
-    missing_weight: float = 1.,
+    missing_weight: float = 1.0,
 ) -> Tuple[Tensor, Tensor, Tensor, None]:
     """
     Computed weighted box clustering per class
@@ -107,29 +109,33 @@ def batched_wbc(
         _weights = weights[_labels_mask]
         _n_exp_preds = n_exp_preds[_labels_mask]
 
-        b, s = wbc(_boxes, _scores,
-                   weights=_weights,
-                   n_exp_preds=_n_exp_preds,
-                   iou_thresh=iou_thresh,
-                   use_area=use_area,
-                   missing_weight=missing_weight,
-                   )
+        b, s = wbc(
+            _boxes,
+            _scores,
+            weights=_weights,
+            n_exp_preds=_n_exp_preds,
+            iou_thresh=iou_thresh,
+            use_area=use_area,
+            missing_weight=missing_weight,
+        )
 
         clustered_boxes.append(b)
         clustered_scores.append(s)
         clustered_labels.append(torch.empty_like(s).fill_(label))
     if clustered_boxes:
-        return (torch.cat(clustered_boxes, dim=0),
-                torch.cat(clustered_scores, dim=0),
-                torch.cat(clustered_labels, dim=0),
-                None,
-                )
+        return (
+            torch.cat(clustered_boxes, dim=0),
+            torch.cat(clustered_scores, dim=0),
+            torch.cat(clustered_labels, dim=0),
+            None,
+        )
     else:
-        return (torch.tensor([]).view(-1, boxes.shape[1]),
-                torch.tensor([]).view(-1),
-                torch.tensor([]).view(-1),
-                None,
-                )
+        return (
+            torch.tensor([]).view(-1, boxes.shape[1]),
+            torch.tensor([]).view(-1),
+            torch.tensor([]).view(-1),
+            None,
+        )
 
 
 def wbc(
@@ -139,7 +145,7 @@ def wbc(
     n_exp_preds: Tensor,
     iou_thresh: float,
     use_area: bool = True,
-    missing_weight: float = 1.,
+    missing_weight: float = 1.0,
 ) -> Tuple[Tensor, Tensor]:
     """
     Weighted box clustering
@@ -172,7 +178,9 @@ def wbc(
     while idx_pool.nelement() > 0:
         # build cluster
         highest_scoring_id = idx_pool[0]
-        matches = torch.where(ious[highest_scoring_id][idx_pool] > iou_thresh)[0].flatten()
+        matches = torch.where(ious[highest_scoring_id][idx_pool] > iou_thresh)[
+            0
+        ].flatten()
         box_idx = idx_pool[matches]
 
         # compute new scores
@@ -190,12 +198,16 @@ def wbc(
         new_scores.append(new_score)
 
         # get all elements that were not matched and discard all others.
-        non_matches = torch.where(ious[highest_scoring_id][idx_pool] <= iou_thresh)[0].flatten()
+        non_matches = torch.where(ious[highest_scoring_id][idx_pool] <= iou_thresh)[
+            0
+        ].flatten()
         idx_pool = idx_pool[non_matches]
     if new_boxes:
         return torch.stack(new_boxes, dim=0), torch.cat(new_scores, dim=0)
     else:
-        return torch.tensor([]).view(-1, boxes.shape[1]).to(boxes), torch.tensor([]).view(-1).to(scores)
+        return torch.tensor([]).view(-1, boxes.shape[1]).to(boxes), torch.tensor(
+            []
+        ).view(-1).to(scores)
 
 
 def compute_cluster_consolidation(
@@ -227,12 +239,18 @@ def compute_cluster_consolidation(
     match_score_weights = ious * weights
     match_scores = match_score_weights * scores
 
-    n_missing_preds = torch.max(torch.tensor([0.], device=n_expected.device),
-                                (n_expected - n_found).float())
-    denom = match_score_weights.sum() + n_missing_preds * match_score_weights.mean() * missing_weight
+    n_missing_preds = torch.max(
+        torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float()
+    )
+    denom = (
+        match_score_weights.sum()
+        + n_missing_preds * match_score_weights.mean() * missing_weight
+    )
     consolidated_score = match_scores.sum() / denom
 
-    consolidated_boxes = (boxes * match_scores.reshape(-1, 1)).sum(dim=0) / match_scores.sum()
+    consolidated_boxes = (boxes * match_scores.reshape(-1, 1)).sum(
+        dim=0
+    ) / match_scores.sum()
     return consolidated_boxes, consolidated_score
 
 
@@ -267,11 +285,16 @@ def compute_cluster_consolidation2(
 
     boxes = boxes[topk_idx]
     scores = scores[topk_idx]
-    n_missing_preds = torch.max(torch.tensor([0.], device=n_expected.device),
-                                (n_expected - n_found).float())
+    n_missing_preds = torch.max(
+        torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float()
+    )
 
     # weigh predictions with high ious higher, penalty term for missing predictions
-    consolidated_score = scores.mean() * (1 - missing_weight * n_missing_preds / n_expected)
-    consolidated_boxes = (boxes * topk_weighted_scores.reshape(-1, 1)).sum(dim=0) / topk_weighted_scores.sum()
+    consolidated_score = scores.mean() * (
+        1 - missing_weight * n_missing_preds / n_expected
+    )
+    consolidated_boxes = (boxes * topk_weighted_scores.reshape(-1, 1)).sum(
+        dim=0
+    ) / topk_weighted_scores.sum()
 
     return consolidated_boxes, consolidated_score

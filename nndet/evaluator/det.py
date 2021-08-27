@@ -26,18 +26,20 @@ from nndet.core.boxes import box_iou_np
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
+from nndet.utils.info import experimental
 
 
 __all__ = ["DetectionEvaluator"]
 
 
 class DetectionEvaluator(AbstractEvaluator):
-    def __init__(self,
-                 metrics: Sequence[DetectionMetric],
-                 iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
-                 max_detections: int = 100,
-                 match_fn: Callable = matching_batch,
-                 ):
+    def __init__(
+        self,
+        metrics: Sequence[DetectionMetric],
+        iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
+        max_detections: int = 100,
+        match_fn: Callable = matching_batch,
+    ):
         """
         Class for evaluate detection metrics
 
@@ -69,16 +71,21 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Find indices of iou thresholds for each metric
         """
-        return [[self.iou_thresholds.index(th) for th in m.get_iou_thresholds()]
-                for m in self.metrics]
+        return [
+            [self.iou_thresholds.index(th) for th in m.get_iou_thresholds()]
+            for m in self.metrics
+        ]
 
-    def run_online_evaluation(self,
-                              pred_boxes: Sequence[np.ndarray],
-                              pred_classes: Sequence[np.ndarray],
-                              pred_scores: Sequence[np.ndarray],
-                              gt_boxes: Sequence[np.ndarray],
-                              gt_classes: Sequence[np.ndarray],
-                              gt_ignore: Sequence[Sequence[bool]] = None) -> Dict:
+    def run_online_evaluation(
+        self,
+        pred_boxes: Sequence[np.ndarray],
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_boxes: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+        gt_ignore: Sequence[Sequence[bool]] = None,
+        case_id: Optional[str] = None,
+    ) -> Dict:
         """
         Preprocess batch results for final evaluation
 
@@ -94,16 +101,23 @@ class DetectionEvaluator(AbstractEvaluator):
             gt_ignore (Sequence[Sequence[bool]]): specified if which ground truth boxes are not counted as true
                 positives (detections which match theses boxes are not counted as false positives either);
                 List[[G]], G number of ground truth
+            case_id: optionally provide a case id which will be return to
+                identify the matching result
 
         Returns
             dict: empty dict... detection metrics can only be evaluated at the end
         """
         if gt_ignore is None:
-            gt_ignore = [np.zeros(gt_boxes_img.shape[0]).reshape(-1) for gt_boxes_img in gt_boxes]
+            n = [
+                0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0]
+                for gt_boxes_img in gt_boxes
+            ]
+            gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
         self.results_list.extend(
             self.match_fn(
-                self.iou_fn, self.iou_thresholds,
+                self.iou_fn,
+                self.iou_thresholds,
                 pred_boxes=pred_boxes,
                 pred_classes=pred_classes,
                 pred_scores=pred_scores,
@@ -111,11 +125,14 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_classes=gt_classes,
                 gt_ignore=gt_ignore,
                 max_detections=self.max_detections,
+                case_id=case_id,
             )
         )
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Accumulate results of individual batches and compute final metrics
 
@@ -139,8 +156,11 @@ class DetectionEvaluator(AbstractEvaluator):
         return metric_scores, metric_curves
 
     @staticmethod
-    def iou_filter(image_dict: Dict[int, Dict[str, np.ndarray]], iou_idx: List[int],
-                   filter_keys: Sequence[str] = ('dtMatches', 'gtMatches', 'dtIgnore')):
+    def iou_filter(
+        image_dict: Dict[int, Dict[str, np.ndarray]],
+        iou_idx: List[int],
+        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
+    ):
         """
         This functions can be used to filter specific IoU values from the results
         to make sure that the correct IoUs are passed to metric
@@ -162,8 +182,10 @@ class DetectionEvaluator(AbstractEvaluator):
         iou_idx = list(iou_idx)
         filtered = {}
         for cls_key, cls_item in image_dict.items():
-            filtered[cls_key] = {key: item[iou_idx] if key in filter_keys else item
-                                 for key, item in cls_item.items()}
+            filtered[cls_key] = {
+                key: item[iou_idx] if key in filter_keys else item
+                for key, item in cls_item.items()
+            }
         return filtered
 
     def reset(self):
@@ -175,12 +197,13 @@ class DetectionEvaluator(AbstractEvaluator):
 
 class BoxEvaluator(DetectionEvaluator):
     @classmethod
-    def create(cls,
-               classes: Sequence[str],
-               fast: bool = True,
-               verbose: bool = False,
-               save_dir: Optional[Path] = None,
-               ):
+    def create(
+        cls,
+        classes: Sequence[str],
+        fast: bool = True,
+        verbose: bool = False,
+        save_dir: Optional[Path] = None,
+    ):
         """
         Create an box evaluator object
 
@@ -202,35 +225,39 @@ class BoxEvaluator(DetectionEvaluator):
 
         metrics = []
         metrics.append(
-            FROCMetric(classes,
-                       iou_thresholds=iou_thresholds,
-                       fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
-                       per_class=per_class,
-                       verbose=verbose,
-                       save_dir=None if fast else save_dir
-                       )
+            FROCMetric(
+                classes,
+                iou_thresholds=iou_thresholds,
+                fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
+                per_class=per_class,
+                verbose=verbose,
+                save_dir=None if fast else save_dir,
+            )
         )
         metrics.append(
-            COCOMetric(classes,
-                       iou_list=iou_thresholds,
-                       iou_range=iou_range,
-                       max_detection=(100, ),
-                       per_class=per_class,
-                       verbose=verbose,
-                       )
+            COCOMetric(
+                classes,
+                iou_list=iou_thresholds,
+                iou_range=iou_range,
+                max_detection=(100,),
+                per_class=per_class,
+                verbose=verbose,
+            )
         )
 
         if not fast:
             metrics.append(
-                PredictionHistogram(classes=classes,
-                                    save_dir=save_dir,
-                                    iou_thresholds=(0.1, 0.5),
-                                    )
+                PredictionHistogram(
+                    classes=classes,
+                    save_dir=save_dir,
+                    iou_thresholds=(0.1, 0.5),
+                )
             )
         return cls(metrics=tuple(metrics), iou_fn=iou_fn)
 
 
 class CountDifferenceEvaluator(AbstractEvaluator):
+    @experimental
     def __init__(self, min_prob: float = 0.5):
         super().__init__()
         self.min_prob = min_prob
@@ -238,10 +265,11 @@ class CountDifferenceEvaluator(AbstractEvaluator):
         self.num_gt = []
         self.num_pred = []
 
-    def run_online_evaluation(self,
-                              pred_scores: Sequence[np.ndarray],
-                              gt_classes: Sequence[np.ndarray],
-                              ) -> Dict:
+    def run_online_evaluation(
+        self,
+        pred_scores: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+    ) -> Dict:
         """
         Preprocess batch results for final evaluation
 
@@ -263,7 +291,9 @@ class CountDifferenceEvaluator(AbstractEvaluator):
             self.num_gt.append(len(g))
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Accumulate results of individual batches and compute final metrics
 

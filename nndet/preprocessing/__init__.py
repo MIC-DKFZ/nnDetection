@@ -3,4 +3,4 @@ from nndet.preprocessing.preprocessor import (
     PreprocessorType,
     AbstractPreprocessor,
     GenericPreprocessor,
-    )
+)

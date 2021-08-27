@@ -26,16 +26,19 @@ from torch import Tensor
 
 from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.restore import restore_fmap
+from nndet.utils.info import experimental
 
 
 class SegmentationEnsembler(BaseEnsembler):
     ID = "seg"
 
-    def __init__(self,
-                 seg_key: str = 'pred_seg',
-                 data_key: str = 'data',
-                 **kwargs,
-                 ):
+    @experimental
+    def __init__(
+        self,
+        seg_key: str = "pred_seg",
+        data_key: str = "data",
+        **kwargs,
+    ):
         """
         Ensemble segmentation predictions from tta and model ensembling
 
@@ -57,14 +60,15 @@ class SegmentationEnsembler(BaseEnsembler):
         self.cache_crop_weight: Dict[Tuple, torch.Tensor] = {}
 
     @classmethod
-    def from_case(cls,
-                  case: Dict,
-                  properties: Dict,
-                  parameters: Optional[Dict] = None,
-                  seg_key: str = 'pred_seg',
-                  data_key: str = 'data',
-                  **kwargs,
-                  ):
+    def from_case(
+        cls,
+        case: Dict,
+        properties: Dict,
+        parameters: Optional[Dict] = None,
+        seg_key: str = "pred_seg",
+        data_key: str = "data",
+        **kwargs,
+    ):
         """
         Primary way to instantiate this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
@@ -107,10 +111,11 @@ class SegmentationEnsembler(BaseEnsembler):
             **kwargs,
         )
 
-    def add_model(self,
-                  name: Optional[str] = None,
-                  model_weight: Optional[float] = None,
-                  ) -> str:
+    def add_model(
+        self,
+        name: Optional[str] = None,
+        model_weight: Optional[float] = None,
+    ) -> str:
         """
         This functions signales the ensembler to add a new model for internal
         processing
@@ -160,11 +165,16 @@ class SegmentationEnsembler(BaseEnsembler):
         crops = batch["crop"]
 
         weight = self.get_weighting(tuple(seg_batch.shape[2:])).to(seg_batch)
-        seg_batch = seg_batch * weight[None].to(seg_batch) * self.model_weights[self.model_current]
+        seg_batch = (
+            seg_batch
+            * weight[None].to(seg_batch)
+            * self.model_weights[self.model_current]
+        )
 
         if self.model_results is None:
             self.model_results = torch.zeros(
-                (int(seg_batch.shape[1]), *self.properties["shape"])).to(seg_batch)
+                (int(seg_batch.shape[1]), *self.properties["shape"])
+            ).to(seg_batch)
 
         for seg, crop in zip(seg_batch, zip(*crops)):
             _weight = weight.clone()
@@ -183,7 +193,7 @@ class SegmentationEnsembler(BaseEnsembler):
             Sequence[slice]: crop in case to save segmentation
         """
         if len(crop) > self.model_results.ndim - 1:
-            crop = crop[-(self.model_results.ndim - 1):]
+            crop = crop[-(self.model_results.ndim - 1) :]
 
         crop_slicer = []
         case_slicer = []
@@ -192,7 +202,9 @@ class SegmentationEnsembler(BaseEnsembler):
             case_stop = min(self.model_results.shape[dim + 1], c.stop)
 
             diff_stop = c.stop - self.model_results.shape[dim + 1]
-            crop_start = max(0, 0 - (c.start - 0))  # 0 added for completeness of pattern
+            crop_start = max(
+                0, 0 - (c.start - 0)
+            )  # 0 added for completeness of pattern
             crop_stop = min(seg.shape[dim + 1], seg.shape[dim + 1] - diff_stop)
 
             crop_slicer.append(slice(crop_start, crop_stop, c.step))
@@ -212,18 +224,22 @@ class SegmentationEnsembler(BaseEnsembler):
         """
         if crop_size not in self.cache_crop_weight:
             if self.parameters["use_gaussian"]:
-                logger.info(f"Creating new gaussian weight matrix for crop size {crop_size}")
+                logger.info(
+                    f"Creating new gaussian weight matrix for crop size {crop_size}"
+                )
                 tmp = np.zeros(crop_size)
                 center_coords = [i // 2 for i in crop_size]
                 sigmas = [i // 8 for i in crop_size]
                 tmp[tuple(center_coords)] = 1
-                tmp_smooth = gaussian_filter(tmp, sigmas, 0, mode='constant', cval=0)
+                tmp_smooth = gaussian_filter(tmp, sigmas, 0, mode="constant", cval=0)
                 tmp_smooth = tmp_smooth / tmp_smooth.max() * 1
                 weighting = tmp_smooth + 1e-8
                 self.cache_crop_weight[crop_size] = torch.from_numpy(weighting).float()
             else:
                 logger.info(f"Creating new weight matrix for crop size {crop_size}")
-                self.cache_crop_weight[crop_size] = torch.ones(crop_size, dtype=torch.float)
+                self.cache_crop_weight[crop_size] = torch.ones(
+                    crop_size, dtype=torch.float
+                )
 
         return self.cache_crop_weight[crop_size]
 
@@ -244,7 +260,9 @@ class SegmentationEnsembler(BaseEnsembler):
             transpose_backward=self.properties["transpose_backward"],
             original_spacing=self.properties["original_spacing"],
             spacing_after_resampling=self.properties["spacing_after_resampling"],
-            original_size_before_cropping=self.properties["original_size_before_cropping"],
+            original_size_before_cropping=self.properties[
+                "original_size_before_cropping"
+            ],
             size_after_cropping=self.properties["size_after_cropping"],
             crop_bbox=self.properties["crop_bbox"],
             interpolation_order=1,
@@ -255,9 +273,7 @@ class SegmentationEnsembler(BaseEnsembler):
         return logit_maps
 
     @torch.no_grad()
-    def get_case_result(self,
-                        restore: bool = False, **kwargs
-                        ) -> Dict[str, Tensor]:
+    def get_case_result(self, restore: bool = False, **kwargs) -> Dict[str, Tensor]:
         """
         Get final result for case after ensembling and TTA
 
@@ -288,11 +304,12 @@ class SegmentationEnsembler(BaseEnsembler):
             "itk_direction": self.properties["itk_direction"],
         }
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name

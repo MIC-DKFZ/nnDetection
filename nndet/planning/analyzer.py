@@ -26,13 +26,14 @@ from nndet.io.paths import get_case_ids_from_dir
 
 
 class DatasetAnalyzer:
-    def __init__(self,
-                 cropped_output_dir: PathLike,
-                 preprocessed_output_dir: PathLike,
-                 data_info: dict,
-                 num_processes: int,
-                 overwrite: bool = True,
-                 ):
+    def __init__(
+        self,
+        cropped_output_dir: PathLike,
+        preprocessed_output_dir: PathLike,
+        data_info: dict,
+        num_processes: int,
+        overwrite: bool = True,
+    ):
         """
         Class to analyse a dataset
         :func:`analyze_dataset` saves result into `dataset_properties.pkl`
@@ -57,14 +58,20 @@ class DatasetAnalyzer:
         self.sizes = self.spacings = None
         self.data_info = data_info
 
-        self.case_ids = sorted(get_case_ids_from_dir(
-            self.cropped_output_dir / "imagesTr", pattern="*.npz", remove_modality=False))
+        self.case_ids = sorted(
+            get_case_ids_from_dir(
+                self.cropped_output_dir / "imagesTr",
+                pattern="*.npz",
+                remove_modality=False,
+            )
+        )
         self.props_per_case_file = self.save_dir / "props_per_case.pkl"
         self.intensity_properties_file = self.save_dir / "intensity_properties.pkl"
 
-    def analyze_dataset(self,
-                        properties: Sequence[Callable[[DatasetAnalyzer], Dict]],
-                        ) -> Dict:
+    def analyze_dataset(
+        self,
+        properties: Sequence[Callable[[DatasetAnalyzer], Dict]],
+    ) -> Dict:
         """
         Analyze dataset
         Result is also saved in cropped_output_dir as `dataset_properties.pkl`

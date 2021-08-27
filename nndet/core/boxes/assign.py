@@ -35,10 +35,14 @@ def assign_targets_to_anchors(
     """
     labels = []
     matched_gt_boxes = []
-    for anchors_per_image, gt_boxes, gt_classes in zip(anchors, target_boxes, target_classes):
+    for anchors_per_image, gt_boxes, gt_classes in zip(
+        anchors, target_boxes, target_classes
+    ):
         # indices of ground truth box for each proposal
         match_quality_matrix, matched_idxs = proposal_matcher(
-            gt_boxes, anchors_per_image, **kwargs,
+            gt_boxes,
+            anchors_per_image,
+            **kwargs,
         )
 
         # get the targets corresponding GT for each proposal
@@ -50,7 +54,9 @@ def assign_targets_to_anchors(
 
             # Positive (negative indices can be ignored because they are overwritten in the next step)
             # this influences how background class is handled in the input!!!! (here +1 for background)
-            labels_per_image = gt_classes[matched_idxs.clamp(min=0)].to(dtype=anchors_per_image.dtype)
+            labels_per_image = gt_classes[matched_idxs.clamp(min=0)].to(
+                dtype=anchors_per_image.dtype
+            )
             labels_per_image = labels_per_image + 1
         else:
             num_anchors_per_image = anchors_per_image.shape[0]

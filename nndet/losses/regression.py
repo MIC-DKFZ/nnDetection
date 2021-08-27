@@ -1,5 +1,5 @@
 import torch
-from torch.tensor import Tensor
+from torch import Tensor
 from torch.cuda.amp import autocast
 
 from nndet.core.boxes.ops import generalized_box_iou
@@ -7,12 +7,13 @@ from nndet.losses.base import reduction_helper, Loss
 
 
 class SmoothL1Loss(Loss):
-    def __init__(self,
-                 beta: float,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 reduction: str = "none",
-                 ):
+    def __init__(
+        self,
+        beta: float,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        reduction: str = "none",
+    ):
         """
         Module wrapper for functional
 
@@ -36,10 +37,11 @@ class SmoothL1Loss(Loss):
         )
         self.beta = beta
 
-    def forward(self,
-                inp: torch.Tensor,
-                target: torch.Tensor,
-                ) -> torch.Tensor:
+    def forward(
+        self,
+        inp: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute loss
 
@@ -117,7 +119,7 @@ def smooth_l1_loss(
         implement Smooth L1 loss, nor does it implement Huber loss. It implements
         the special case of both in which they are equal (beta=1).
         See: https://pytorch.org/docs/stable/nn.html#torch.nn.SmoothL1Loss.
-     """
+    """
     if beta < 1e-5:
         # if beta == 0, then torch.where will result in nan gradients when
         # the chain rule is applied due to pytorch implementation details
@@ -133,12 +135,13 @@ def smooth_l1_loss(
 
 
 class GIoULoss(Loss):
-    def __init__(self,
-                 eps: float = 1e-7,
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = True,
-                 reduction: str = "none",
-                 ):
+    def __init__(
+        self,
+        eps: float = 1e-7,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = True,
+        reduction: str = "none",
+    ):
         """
         Generalized IoU Loss
         `Generalized Intersection over Union: A Metric and A Loss for Bounding
@@ -167,7 +170,9 @@ class GIoULoss(Loss):
         )
         self.eps = eps
 
-    def forward(self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor
+    ) -> torch.Tensor:
         """
         Compute generalized iou loss
 
@@ -179,7 +184,9 @@ class GIoULoss(Loss):
             Tensor: loss
         """
         loss = reduction_helper(
-            torch.diag(generalized_box_iou(pred_boxes, target_boxes, eps=self.eps),
-                       diagonal=0),
-            reduction=self.reduction)
+            torch.diag(
+                generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0
+            ),
+            reduction=self.reduction,
+        )
         return self.loss_weight * -1 * loss

@@ -8,7 +8,7 @@ from nndet.utils.tensor import (
 )
 from nndet.utils.info import (
     maybe_verbose_iterable,
-    find_name, 
+    find_name,
     log_git,
     get_cls_name,
     log_error,

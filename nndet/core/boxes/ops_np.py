@@ -34,7 +34,11 @@ def box_area_3d_np(boxes: np.ndarray) -> np.ndarray:
     See Also:
         `nndet.core.boxes.ops.box_area_3d`
     """
-    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 5] - boxes[:, 4])
+    return (
+        (boxes[:, 2] - boxes[:, 0])
+        * (boxes[:, 3] - boxes[:, 1])
+        * (boxes[:, 5] - boxes[:, 4])
+    )
 
 
 def box_area_2d_np(boxes: np.ndarray) -> np.ndarray:
@@ -89,7 +93,9 @@ def box_iou_2d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     x2 = np.minimum(boxes1[:, None, 2], boxes2[:, 2])  # [N, M]
     y2 = np.minimum(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
 
-    inter = np.clip((x2 - x1), a_min=0, a_max=None) * np.clip((y2 - y1), a_min=0, a_max=None)  # [N, M]
+    inter = np.clip((x2 - x1), a_min=0, a_max=None) * np.clip(
+        (y2 - y1), a_min=0, a_max=None
+    )  # [N, M]
     return inter / (area1[:, None] + area2 - inter)
 
 
@@ -116,8 +122,11 @@ def box_iou_3d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     z1 = np.maximum(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
     z2 = np.minimum(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
-    inter = np.clip((x2 - x1), a_min=0, a_max=None) * np.clip((y2 - y1), a_min=0, a_max=None) * \
-        np.clip((z2 - z1), a_min=0, a_max=None)  # [N, M]
+    inter = (
+        np.clip((x2 - x1), a_min=0, a_max=None)
+        * np.clip((y2 - y1), a_min=0, a_max=None)
+        * np.clip((z2 - z1), a_min=0, a_max=None)
+    )  # [N, M]
     return inter / (area1[:, None] + area2 - inter)
 
 
@@ -149,7 +158,7 @@ def box_center_np(boxes: np.ndarray) -> np.ndarray:
     Returns:
         Tensor: center points [N, dims]
     """
-    centers = [(boxes[:, 2] + boxes[:, 0]) / 2., (boxes[:, 3] + boxes[:, 1]) / 2.]
+    centers = [(boxes[:, 2] + boxes[:, 0]) / 2.0, (boxes[:, 3] + boxes[:, 1]) / 2.0]
     if boxes.shape[1] == 6:
-        centers.append((boxes[:, 5] + boxes[:, 4]) / 2.)
+        centers.append((boxes[:, 5] + boxes[:, 4]) / 2.0)
     return np.stack(centers, axis=1)

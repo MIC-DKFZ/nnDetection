@@ -15,17 +15,18 @@ from nndet.losses import (
 
 
 class DenseRegressor(Regressor):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 learn_scale: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
         """
         Base class to build regressor heads with typical conv structure
         conv(in, internal) -> num_convs x conv(internal, internal) ->
@@ -79,7 +80,8 @@ class DenseRegressor(Regressor):
                 stride=1,
                 padding=1,
                 **kwargs,
-            ))
+            ),
+        )
         for i in range(self.num_convs):
             _conv_internal.add_module(
                 name=f"c_internal{i}",
@@ -90,7 +92,8 @@ class DenseRegressor(Regressor):
                     stride=1,
                     padding=1,
                     **kwargs,
-                ))
+                ),
+            )
         return _conv_internal
 
     def build_conv_out(self, conv):
@@ -138,11 +141,12 @@ class DenseRegressor(Regressor):
         bb_logits = bb_logits.view(x.size()[0], -1, self.dim * 2)
         return bb_logits
 
-    def compute_loss(self,
-                     pred_deltas: Tensor,
-                     target_deltas: Tensor,
-                     **kwargs,
-                     ) -> Tensor:
+    def compute_loss(
+        self,
+        pred_deltas: Tensor,
+        target_deltas: Tensor,
+        **kwargs,
+    ) -> Tensor:
         """
         Compute regression loss (l1 loss)
 
@@ -167,25 +171,26 @@ class DenseRegressor(Regressor):
                     torch.nn.init.constant_(layer.bias, 0)
 
 
-DenseRegressorType = TypeVar('DenseRegressorType', bound=DenseRegressor)
+DenseRegressorType = TypeVar("DenseRegressorType", bound=DenseRegressor)
 
 
 class L1Regressor(DenseRegressor):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 beta: float = 1.,
-                 reduction: Optional[str] = "sum",
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 learn_scale: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        beta: float = 1.0,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
         """
         Build regressor heads with typical conv structure and smooth L1 loss
         conv(in, internal) -> num_convs x conv(internal, internal) ->
@@ -219,7 +224,7 @@ class L1Regressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
-            **kwargs
+            **kwargs,
         )
         self.loss = SmoothL1Loss(
             beta=beta,
@@ -230,20 +235,21 @@ class L1Regressor(DenseRegressor):
 
 
 class GIoURegressor(DenseRegressor):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 reduction: Optional[str] = "sum",
-                 loss_weight: float = 1.,
-                 loss_fp32: bool = False,
-                 learn_scale: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
         """
         Build regressor heads with typical conv structure and generalized
         IoU loss
@@ -277,7 +283,7 @@ class GIoURegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
-            **kwargs
+            **kwargs,
         )
         self.loss = GIoULoss(
             reduction=reduction,
@@ -287,22 +293,23 @@ class GIoURegressor(DenseRegressor):
 
 
 class DualRegressor(DenseRegressor):
-    def __init__(self,
-                 conv,
-                 in_channels: int,
-                 internal_channels: int,
-                 anchors_per_pos: int,
-                 num_levels: int,
-                 num_convs: int = 3,
-                 add_norm: bool = True,
-                 reduction: Optional[str] = "sum",
-                 beta: float = 1.,
-                 loss_weight_l1: float = 5.,
-                 loss_weight_giou: float = 2.,
-                 loss_fp32: bool = False,
-                 learn_scale: bool = False,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        reduction: Optional[str] = "sum",
+        beta: float = 1.0,
+        loss_weight_l1: float = 5.0,
+        loss_weight_giou: float = 2.0,
+        loss_fp32: bool = False,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
         """
         Build regressor heads with typical conv structure and GIoU and L1
         loss function: loss_weight * [(1-alpha) * L1 + alpha * GIoU]
@@ -340,7 +347,7 @@ class DualRegressor(DenseRegressor):
             add_norm=add_norm,
             learn_scale=learn_scale,
             loss_fp32=loss_fp32,
-            **kwargs
+            **kwargs,
         )
         self.loss_weight_l1 = loss_weight_l1
         self.loss_weight_giou = loss_weight_giou
@@ -354,13 +361,14 @@ class DualRegressor(DenseRegressor):
             loss_fp32=loss_fp32,
         )
 
-    def compute_loss(self,
-                     pred_deltas: Tensor,
-                     target_deltas: Tensor,
-                     pred_boxes: Tensor,
-                     target_boxes: Tensor,
-                     **kwargs,
-                     ) -> Tensor:
+    def compute_loss(
+        self,
+        pred_deltas: Tensor,
+        target_deltas: Tensor,
+        pred_boxes: Tensor,
+        target_boxes: Tensor,
+        **kwargs,
+    ) -> Tensor:
         """
         Compute regression loss (l1 loss)
 

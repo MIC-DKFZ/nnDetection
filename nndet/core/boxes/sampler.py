@@ -24,10 +24,11 @@ from torchvision.models.detection._utils import BalancedPositiveNegativeSampler
 
 
 class AbstractSampler(ABC):
-    def __call__(self,
-                 target_labels: List[Tensor],
-                 fg_probs: Union[List[Tensor], Tensor],
-                 ):
+    def __call__(
+        self,
+        target_labels: List[Tensor],
+        fg_probs: Union[List[Tensor], Tensor],
+    ):
         """
         Select positive and negative anchors
 
@@ -45,10 +46,11 @@ class AbstractSampler(ABC):
 
 
 class NegativeSampler(BalancedPositiveNegativeSampler, AbstractSampler):
-    def __call__(self,
-                 target_labels: List[Tensor],
-                 fg_probs: Union[List[Tensor], Tensor],
-                 ):
+    def __call__(
+        self,
+        target_labels: List[Tensor],
+        fg_probs: Union[List[Tensor], Tensor],
+    ):
         """
         Randomly sample negatives and positives until batch_size_per_img
         is reached
@@ -59,9 +61,10 @@ class NegativeSampler(BalancedPositiveNegativeSampler, AbstractSampler):
 
 
 class HardNegativeSamplerMixin(ABC):
-    def __init__(self,
-                 pool_size: float = 10,
-                 ):
+    def __init__(
+        self,
+        pool_size: float = 10,
+    ):
         """
         Create a pool from the highest scoring false positives and sample
         defined number of negatives from it
@@ -72,12 +75,13 @@ class HardNegativeSamplerMixin(ABC):
         """
         self.pool_size = pool_size
 
-    def select_negatives(self,
-                         negative: Tensor,
-                         num_neg: int,
-                         img_labels: Tensor,
-                         img_fg_probs: Tensor,
-                         ):
+    def select_negatives(
+        self,
+        negative: Tensor,
+        num_neg: int,
+        img_labels: Tensor,
+        img_fg_probs: Tensor,
+    ):
         """
         Select negative anchors
 
@@ -111,12 +115,13 @@ class HardNegativeSamplerMixin(ABC):
 
 
 class HardNegativeSampler(HardNegativeSamplerMixin):
-    def __init__(self,
-                 batch_size_per_image: int,
-                 positive_fraction: float,
-                 min_neg: int = 0,
-                 pool_size: float = 10,
-                 ):
+    def __init__(
+        self,
+        batch_size_per_image: int,
+        positive_fraction: float,
+        min_neg: int = 0,
+        pool_size: float = 10,
+    ):
         """
         Created a pool from the highest scoring false positives and sample
         defined number of negatives from it
@@ -132,10 +137,11 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self,
-                 target_labels: List[Tensor],
-                 fg_probs: Union[List[Tensor], Tensor],
-                 ):
+    def __call__(
+        self,
+        target_labels: List[Tensor],
+        fg_probs: Union[List[Tensor], Tensor],
+    ):
         """
         Select hard negatives from list anchors per image
 
@@ -150,7 +156,9 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
             List[Tensor]: binary mask for negative anchors, List[[A]]
         """
         if isinstance(fg_probs, Tensor):
-            anchors_per_image = [anchors_in_image.shape[0] for anchors_in_image in target_labels]
+            anchors_per_image = [
+                anchors_in_image.shape[0] for anchors_in_image in target_labels
+            ]
             fg_probs = fg_probs.split(anchors_per_image, 0)
 
         pos_idx = []
@@ -161,19 +169,22 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
 
             num_pos = self.get_num_pos(positive)
             pos_idx_per_image_mask = self.select_positives(
-                positive, num_pos, img_labels, img_fg_probs)
+                positive, num_pos, img_labels, img_fg_probs
+            )
             pos_idx.append(pos_idx_per_image_mask)
 
             num_neg = self.get_num_neg(negative, num_pos)
             neg_idx_per_image_mask = self.select_negatives(
-                negative, num_neg, img_labels, img_fg_probs)
+                negative, num_neg, img_labels, img_fg_probs
+            )
             neg_idx.append(neg_idx_per_image_mask)
 
         return pos_idx, neg_idx
 
-    def get_num_pos(self,
-                    positive: torch.Tensor,
-                    ) -> int:
+    def get_num_pos(
+        self,
+        positive: torch.Tensor,
+    ) -> int:
         """
         Number of positive samples to draw
 
@@ -189,10 +200,11 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
         num_pos = min(positive.numel(), num_pos)
         return num_pos
 
-    def get_num_neg(self,
-                    negative: torch.Tensor,
-                    num_pos: int,
-                    ) -> int:
+    def get_num_neg(
+        self,
+        negative: torch.Tensor,
+        num_pos: int,
+    ) -> int:
         """
         Sample enough negatives to fill up :param:`self.batch_size_per_image`
 
@@ -204,17 +216,18 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
             int: number of negative samples
         """
         # always assume at least one pos anchor was sampled
-        num_neg = int(max(1, num_pos) * abs(1 - 1. / float(self.positive_fraction)))
+        num_neg = int(max(1, num_pos) * abs(1 - 1.0 / float(self.positive_fraction)))
         # protect against not enough negative examples and sample at least one neg if possible
         num_neg = min(negative.numel(), max(num_neg, self.min_neg))
         return num_neg
 
-    def select_positives(self,
-                         positive: Tensor,
-                         num_pos: int,
-                         img_labels: Tensor,
-                         img_fg_probs: Tensor,
-                         ):
+    def select_positives(
+        self,
+        positive: Tensor,
+        num_pos: int,
+        img_labels: Tensor,
+        img_fg_probs: Tensor,
+    ):
         """
         Select positive anchors
 
@@ -249,12 +262,13 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
         to get the number of anchors per image
     """
 
-    def __init__(self,
-                 batch_size_per_image: int,
-                 positive_fraction: float,
-                 min_neg: int = 0,
-                 pool_size: float = 10,
-                 ):
+    def __init__(
+        self,
+        batch_size_per_image: int,
+        positive_fraction: float,
+        min_neg: int = 0,
+        pool_size: float = 10,
+    ):
         """
         Args:
             batch_size_per_image: number of elements to be selected per image
@@ -262,18 +276,20 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
             pool_size: hard negatives are sampled from a pool of size:
                 batch_size_per_image * (1 - positive_fraction) * pool_size
         """
-        super().__init__(min_neg=min_neg,
-                         batch_size_per_image=batch_size_per_image,
-                         positive_fraction=positive_fraction,
-                         pool_size=pool_size,
-                         )
+        super().__init__(
+            min_neg=min_neg,
+            batch_size_per_image=batch_size_per_image,
+            positive_fraction=positive_fraction,
+            pool_size=pool_size,
+        )
         self._batch_size_per_image = batch_size_per_image
         logger.info("Sampling hard negatives on a per batch basis")
 
-    def __call__(self,
-                 target_labels: List[Tensor],
-                 fg_probs: Union[List[Tensor], Tensor],
-                 ):
+    def __call__(
+        self,
+        target_labels: List[Tensor],
+        fg_probs: Union[List[Tensor], Tensor],
+    ):
         """
         Select hard negatives from list anchors per image
 
@@ -300,11 +316,13 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
 
         num_pos = self.get_num_pos(positive)
         pos_idx = self.select_positives(
-            positive, num_pos, target_labels_batch, fg_probs)
+            positive, num_pos, target_labels_batch, fg_probs
+        )
 
         num_neg = self.get_num_neg(negative, num_pos)
         neg_idx = self.select_negatives(
-            negative, num_neg, target_labels_batch, fg_probs)
+            negative, num_neg, target_labels_batch, fg_probs
+        )
 
         # Comb Head with sampling concatenates masks after sampling so do not split them here
         # anchors_per_image = [anchors_in_image.shape[0] for anchors_in_image in target_labels]
@@ -313,10 +331,11 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
 
 
 class BalancedHardNegativeSampler(HardNegativeSampler):
-    def get_num_neg(self,
-                    negative: torch.Tensor,
-                    num_pos: int,
-                    ) -> int:
+    def get_num_neg(
+        self,
+        negative: torch.Tensor,
+        num_pos: int,
+    ) -> int:
         """
         Sample same number of negatives as positives but at least one
 
@@ -333,10 +352,11 @@ class BalancedHardNegativeSampler(HardNegativeSampler):
 
 
 class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
-    def __init__(self,
-                 negative_ratio: float = 1,
-                 pool_size: float = 10,
-                 ):
+    def __init__(
+        self,
+        negative_ratio: float = 1,
+        pool_size: float = 10,
+    ):
         """
         Use all positive anchors for loss and sample corresponding number
         of hard negatives
@@ -350,10 +370,11 @@ class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
         super().__init__(pool_size=pool_size)
         self.negative_ratio = negative_ratio
 
-    def __call__(self,
-                 target_labels: List[Tensor],
-                 fg_probs: Union[Tensor, List[Tensor]],
-                 ):
+    def __call__(
+        self,
+        target_labels: List[Tensor],
+        fg_probs: Union[Tensor, List[Tensor]],
+    ):
         """
         Select hard negatives from list anchors per image
 
@@ -368,7 +389,9 @@ class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
             List[Tensor]: binary mask for negative anchors, List[[A]]
         """
         if isinstance(fg_probs, Tensor):
-            anchors_per_image = [anchors_in_image.shape[0] for anchors_in_image in target_labels]
+            anchors_per_image = [
+                anchors_in_image.shape[0] for anchors_in_image in target_labels
+            ]
             fg_probs = fg_probs.split(anchors_per_image, 0)
 
         pos_idx = []
@@ -384,10 +407,11 @@ class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
             # protect against not enough negative examples and sample at least one neg if possible
             num_neg = min(negative.numel(), max(num_neg, 1))
             neg_idx_per_image_mask = self.select_negatives(
-                negative, num_neg, img_labels, img_fg_probs)
+                negative, num_neg, img_labels, img_fg_probs
+            )
             neg_idx.append(neg_idx_per_image_mask)
 
         return pos_idx, neg_idx
 
 
-SamplerType = TypeVar('SamplerType', bound=AbstractSampler)
+SamplerType = TypeVar("SamplerType", bound=AbstractSampler)

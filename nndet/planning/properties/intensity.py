@@ -60,13 +60,14 @@ def analyze_intensities(analyzer: DatasetAnalyzer) -> dict:
     if analyzer.overwrite or not analyzer.intensity_properties_file.is_file():
         results = run_collect_intensity_properties(analyzer, num_modalities)
     else:
-        with open(analyzer.intensity_properties_file, 'rb') as f:
+        with open(analyzer.intensity_properties_file, "rb") as f:
             results = pickle.load(f)
-    return {'intensity_properties': results}
+    return {"intensity_properties": results}
 
 
-def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
-                                     num_modalities: int, save: bool = True) -> Dict[int, Dict]:
+def run_collect_intensity_properties(
+    analyzer: DatasetAnalyzer, num_modalities: int, save: bool = True
+) -> Dict[int, Dict]:
     """
     Collect intensity properties over forground from whole dataset
 
@@ -86,8 +87,10 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
             logger.info(f"Processing intensity values of modality {mod_id}")
             results[mod_id] = OrderedDict()
 
-            voxels = p.starmap(get_voxels_in_foreground,
-                               zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)))
+            voxels = p.starmap(
+                get_voxels_in_foreground,
+                zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)),
+            )
 
             local_props = p.map(compute_stats, voxels)
             props_per_case = OrderedDict()
@@ -97,17 +100,18 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
             all_voxels = []
             for iv in voxels:
                 all_voxels += iv
-            results[mod_id]['local_props'] = props_per_case
+            results[mod_id]["local_props"] = props_per_case
             results[mod_id].update(compute_stats(all_voxels))
 
     if save:
-        with open(analyzer.intensity_properties_file, 'wb') as f:
+        with open(analyzer.intensity_properties_file, "wb") as f:
             pickle.dump(results, f)
     return results
 
 
-def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str,
-                             modality_id: int, subsample: int = 10) -> list:
+def get_voxels_in_foreground(
+    analyzer: DatasetAnalyzer, case_id: str, modality_id: int, subsample: int = 10
+) -> list:
     """
     Get voxels from foreground
 
@@ -123,7 +127,9 @@ def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str,
     data, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     modality = data[modality_id]
     mask = seg > 0
-    voxels = list(modality[mask.astype(bool)][::subsample])  # no need to take every voxel
+    voxels = list(
+        modality[mask.astype(bool)][::subsample]
+    )  # no need to take every voxel
     return voxels
 
 
@@ -139,9 +145,15 @@ def compute_stats(voxels: Union[Sequence, np.ndarray]):
             `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
     """
     if len(voxels) == 0:
-        stats = {"median": np.nan, "mean": np.nan, "std": np.nan, "min": np.nan,
-                 "max": np.nan, "percentile_99_5": np.nan, "percentile_00_5": np.nan,
-                 }
+        stats = {
+            "median": np.nan,
+            "mean": np.nan,
+            "std": np.nan,
+            "min": np.nan,
+            "max": np.nan,
+            "percentile_99_5": np.nan,
+            "percentile_00_5": np.nan,
+        }
     else:
         stats = {
             "median": np.median(voxels),

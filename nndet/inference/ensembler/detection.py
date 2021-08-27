@@ -41,15 +41,17 @@ from nndet.core.boxes.merging import (
 class BoxEnsembler(BaseEnsembler):
     ID = "boxes"
 
-    def __init__(self,
-                 properties: Dict[str, Any],
-                 parameters: Dict[str, Any],
-                 box_key: str = 'pred_boxes',
-                 score_key: str = 'pred_scores',
-                 label_key: str = 'pred_labels',
-                 data_key: str = 'data',
-                 device: Optional[Union[torch.device, str]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        properties: Dict[str, Any],
+        parameters: Dict[str, Any],
+        box_key: str = "pred_boxes",
+        score_key: str = "pred_scores",
+        label_key: str = "pred_labels",
+        data_key: str = "data",
+        device: Optional[Union[torch.device, str]] = None,
+        **kwargs,
+    ):
         """
         Ensemble bounding box detections from tta and multiple models
 
@@ -77,17 +79,18 @@ class BoxEnsembler(BaseEnsembler):
         self.overlap_map = OverlapMap(tuple(self.properties["shape"]))
 
     @classmethod
-    def from_case(cls,
-                  case: Dict,
-                  properties: Dict,
-                  parameters: Optional[Dict] = None,
-                  box_key: str = 'pred_boxes',
-                  score_key: str = 'pred_scores',
-                  label_key: str = 'pred_labels',
-                  data_key: str = 'data',
-                  device: Optional[Union[torch.device, str]] = None,
-                  **kwargs,
-                  ):
+    def from_case(
+        cls,
+        case: Dict,
+        properties: Dict,
+        parameters: Optional[Dict] = None,
+        box_key: str = "pred_boxes",
+        score_key: str = "pred_scores",
+        label_key: str = "pred_labels",
+        data_key: str = "data",
+        device: Optional[Union[torch.device, str]] = None,
+        **kwargs,
+    ):
         """
         Primary way to instantiate this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
@@ -158,7 +161,6 @@ class BoxEnsembler(BaseEnsembler):
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
-
             # ensemble multiple models
             "ensemble_iou": 0.5,
             "ensemble_nms_fn": batched_wbc,
@@ -167,14 +169,14 @@ class BoxEnsembler(BaseEnsembler):
             "ensemble_score_thresh": 0.0,
         }
 
-    def postprocess_image(self,
-                          boxes: torch.Tensor,
-                          probs: torch.Tensor,
-                          labels: torch.Tensor,
-                          weights: torch.Tensor,
-                          shape: Optional[Tuple[int]] = None
-                          ) -> Tuple[torch.Tensor, torch.Tensor,
-                                     torch.Tensor, torch.Tensor]:
+    def postprocess_image(
+        self,
+        boxes: torch.Tensor,
+        probs: torch.Tensor,
+        labels: torch.Tensor,
+        weights: torch.Tensor,
+        shape: Optional[Tuple[int]] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Postprocessing of a single image
         select topk predictions -> score threshold -> clipping -> \
@@ -193,36 +195,44 @@ class BoxEnsembler(BaseEnsembler):
             torch.Tensor: postprocessed weights
         """
         p_sorted, idx_sorted = probs.sort(descending=True)
-        idx_sorted = idx_sorted[:self.parameters["model_topk"]]
-        p_sorted = p_sorted[:self.parameters["model_topk"]]
+        idx_sorted = idx_sorted[: self.parameters["model_topk"]]
+        p_sorted = p_sorted[: self.parameters["model_topk"]]
         keep_idxs = p_sorted > self.parameters["model_score_thresh"]
         idx_sorted = idx_sorted[keep_idxs]
 
-        b, p, l, w = boxes[idx_sorted], probs[idx_sorted], labels[idx_sorted], weights[idx_sorted]
+        b, p, l, w = (
+            boxes[idx_sorted],
+            probs[idx_sorted],
+            labels[idx_sorted],
+            weights[idx_sorted],
+        )
 
         b = clip_boxes_to_image(b, shape)
         # After clipping we could have boxes with volume 0 which we definitely
         # need to remove because of the IoU computation
-        keep = remove_small_boxes(
-            b, min_size=self.parameters["remove_small_boxes"])
+        keep = remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
         b, p, l, w = b[keep], p[keep], l[keep], w[keep]
 
         _boxes, _probs, _labels, _weights = self.parameters["model_nms_fn"](
-            boxes=b, scores=p, labels=l, weights=w,
+            boxes=b,
+            scores=p,
+            labels=l,
+            weights=w,
             iou_thresh=self.parameters["model_iou"],
         )
 
         # predictions are sorted
-        _boxes = _boxes[:self.parameters.get("model_detections_per_image", 1000)]
-        _probs = _probs[:self.parameters.get("model_detections_per_image", 1000)]
-        _labels = _labels[:self.parameters.get("model_detections_per_image", 1000)]
-        _weights = _weights[:self.parameters.get("model_detections_per_image", 1000)]
+        _boxes = _boxes[: self.parameters.get("model_detections_per_image", 1000)]
+        _probs = _probs[: self.parameters.get("model_detections_per_image", 1000)]
+        _labels = _labels[: self.parameters.get("model_detections_per_image", 1000)]
+        _weights = _weights[: self.parameters.get("model_detections_per_image", 1000)]
         return _boxes, _probs, _labels, _weights
 
     @staticmethod
-    def _apply_offsets_to_boxes(boxes: List[Tensor],
-                                tile_offset: Sequence[Sequence[int]],
-                                ) -> List[Tensor]:
+    def _apply_offsets_to_boxes(
+        boxes: List[Tensor],
+        tile_offset: Sequence[Sequence[int]],
+    ) -> List[Tensor]:
         """
         Apply offset to bounding boxes to position them correctly inside
         the whole case
@@ -277,11 +287,12 @@ class BoxEnsembler(BaseEnsembler):
         boxes = torch.from_numpy(boxes_np).to(dtype=_old_dtype)
         return boxes
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name
@@ -316,14 +327,13 @@ class BoxEnsembler(BaseEnsembler):
             score_key=ckp["score_key"],
             label_key=ckp["label_key"],
             data_key=ckp["data_key"],
-            **kwargs
+            **kwargs,
         )
         t._load(ckp)
         return t
 
     @classmethod
-    def sweep_parameters(cls) -> Tuple[Dict[str, Any],
-                                       Dict[str, Sequence[Any]]]:
+    def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
         # iou_threshs = np.linspace(0.0, 0.8, 9)
         iou_threshs = np.linspace(0.0, 0.5, 6)
         iou_threshs[0] = 1e-5
@@ -365,7 +375,9 @@ class BoxEnsembler(BaseEnsembler):
         boxes = []
         scores = []
         labels = []
-        for b, s, l in zip(result[self.box_key], result[self.score_key], result[self.label_key]):
+        for b, s, l in zip(
+            result[self.box_key], result[self.score_key], result[self.label_key]
+        ):
             _boxes, _scores, _labels, _ = self.postprocess_image(
                 boxes=b.float(),
                 probs=s.float(),
@@ -377,8 +389,10 @@ class BoxEnsembler(BaseEnsembler):
             scores.append(_scores.cpu())
             labels.append(_labels.cpu())
 
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-                   for img_boxes in boxes]
+        centers = [
+            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -396,9 +410,10 @@ class BoxEnsembler(BaseEnsembler):
             self.overlap_map.add_overlap(crop)
 
     @staticmethod
-    def _get_box_in_tile_weight(box_centers: Tensor,
-                                tile_size: Sequence[int],
-                                ) -> Tensor:
+    def _get_box_in_tile_weight(
+        box_centers: Tensor,
+        tile_size: Sequence[int],
+    ) -> Tensor:
         """
         Assign boxes at the corners of tiles a lower weight (weight
         is drawn form a scaled normal distribution)
@@ -414,19 +429,26 @@ class BoxEnsembler(BaseEnsembler):
             all_weights = []
             centers_np = box_centers.detach().cpu().numpy()
             for center_np in centers_np:
-                weight = np.mean([
-                    norm.pdf(bc, loc=ps, scale=ps * 0.8) * np.sqrt(2 * np.pi) * ps * 0.8
-                    for bc, ps in zip(center_np, np.array(tile_size) / 2)])
+                weight = np.mean(
+                    [
+                        norm.pdf(bc, loc=ps, scale=ps * 0.8)
+                        * np.sqrt(2 * np.pi)
+                        * ps
+                        * 0.8
+                        for bc, ps in zip(center_np, np.array(tile_size) / 2)
+                    ]
+                )
                 all_weights.append([weight])
             return torch.from_numpy(np.concatenate(all_weights)).to(box_centers)
         else:
             return Tensor([]).to(box_centers)
 
     @torch.no_grad()
-    def get_case_result(self,
-                        restore: bool = False,
-                        names: Optional[Sequence[Hashable]] = None,
-                        ) -> Dict[str, Tensor]:
+    def get_case_result(
+        self,
+        restore: bool = False,
+        names: Optional[Sequence[Hashable]] = None,
+    ) -> Dict[str, Tensor]:
         """
         Process all the batches and models and create the final prediction
 
@@ -459,7 +481,9 @@ class BoxEnsembler(BaseEnsembler):
             weights.append(_weights)
 
         boxes, probs, labels = self.process_ensemble(
-            boxes=boxes, probs=probs, labels=labels,
+            boxes=boxes,
+            probs=probs,
+            labels=labels,
             weights=weights,
         )
 
@@ -477,8 +501,7 @@ class BoxEnsembler(BaseEnsembler):
             "itk_direction": self.properties["itk_direction"],
         }
 
-    def process_model(self, name: Hashable) ->\
-            Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def process_model(self, name: Hashable) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
         Process the output of a single model on the whole scan
         topk candidates -> nms
@@ -499,9 +522,13 @@ class BoxEnsembler(BaseEnsembler):
         weights = cat(self.model_results[name]["weights"], dim=0)
         return boxes, probs, labels, weights
 
-    def process_ensemble(self, boxes: List[Tensor], probs: List[Tensor],
-                         labels: List[Tensor], weights: List[Tensor],
-                         ) -> Tuple[Tensor, Tensor, Tensor]:
+    def process_ensemble(
+        self,
+        boxes: List[Tensor],
+        probs: List[Tensor],
+        labels: List[Tensor],
+        weights: List[Tensor],
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Ensemble predictions from multiple models
 
@@ -523,7 +550,7 @@ class BoxEnsembler(BaseEnsembler):
         weights = cat(weights, dim=0)
 
         _, idx = probs.sort(descending=True)
-        idx = idx[:self.parameters["ensemble_topk"]]
+        idx = idx[: self.parameters["ensemble_topk"]]
         boxes = boxes[idx]
         probs = probs[idx]
         labels = labels[idx]
@@ -536,10 +563,12 @@ class BoxEnsembler(BaseEnsembler):
             _kwargs = {}
 
         boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
-            boxes, probs, labels,
+            boxes,
+            probs,
+            labels,
             weights=weights,
             iou_thresh=self.parameters["model_iou"],
-            **_kwargs
+            **_kwargs,
         )
 
         keep = probs > self.parameters["ensemble_score_thresh"]
@@ -553,10 +582,12 @@ class BoxEnsemblerLW(BoxEnsembler):
     """
     Uses different computation for box weight, much faster than box ensembler.
     """
+
     @staticmethod
-    def _get_box_in_tile_weight(box_centers: Tensor,
-                                tile_size: Sequence[int],
-                                ) -> Tensor:
+    def _get_box_in_tile_weight(
+        box_centers: Tensor,
+        tile_size: Sequence[int],
+    ) -> Tensor:
         """
         Assign boxes near the corner a lower weight.
         The middle has a plateau with weight one, starting from patchsize / 2
@@ -571,7 +602,7 @@ class BoxEnsemblerLW(BoxEnsembler):
         """
         plateau_length = 0.5  # adjust width of plateau and min weight
         if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
+            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
 
             max_dist = tile_center.norm(p=2)  # [1]
             boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
@@ -624,7 +655,6 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             "model_score_thresh": 0.1,
             "model_topk": 1000,
             "model_detections_per_image": 1000,
-
             # ensemble multiple models
             "ensemble_iou": 0.5,
             "ensemble_nms_fn": batched_wbc,
@@ -634,11 +664,10 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         }
 
     @classmethod
-    def sweep_parameters(cls) -> Tuple[Dict[str, Any],
-                                       Dict[str, Sequence[Any]]]:
+    def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
         iou_threshs = np.linspace(0.0, 0.5, 6)
         iou_threshs[0] = 1e-5
-        small_boxes_thresh = [1e-2] + np.linspace(2., 7., 6).tolist()
+        small_boxes_thresh = [1e-2] + np.linspace(2.0, 7.0, 6).tolist()
 
         param_sweep = {
             # single model
@@ -669,16 +698,20 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
                 `crop`: Sequence[slice] original crop from data
         """
         if self.reduced_cache:
-            logger.warning("Ensembler was already reduced, need to rerun reduce_cache "
-                           "later and restore overlap map with proxy mean.")
+            logger.warning(
+                "Ensembler was already reduced, need to rerun reduce_cache "
+                "later and restore overlap map with proxy mean."
+            )
             self.overlap_map.restore_mean(self.overlap_map_mean)
             self.reduced_cache = False
 
         boxes = [r.half().cpu() for r in result[self.box_key]]
         scores = [r.half().cpu() for r in result[self.score_key]]
         labels = [r.half().cpu() for r in result[self.label_key]]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-                   for img_boxes in boxes]
+        centers = [
+            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -699,9 +732,10 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             self.overlap_map.add_overlap(crop)
 
     @staticmethod
-    def _get_box_in_tile_weight(box_centers: Tensor,
-                                tile_size: Sequence[int],
-                                ) -> Tensor:
+    def _get_box_in_tile_weight(
+        box_centers: Tensor,
+        tile_size: Sequence[int],
+    ) -> Tensor:
         """
         Assign boxes near the corner a lower weight.
         The middle has a plateau with weight one, starting from patchsize / 2
@@ -716,18 +750,22 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         """
         plateau_length = 0.5  # adjust width of plateau and min weight
         if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
+            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
 
             max_dist = tile_center.norm(p=2)  # [1]
             boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
-            weight = -(boxes_dist / max_dist - plateau_length).float().clamp_(min=0).half() + 1
+            weight = (
+                -(boxes_dist / max_dist - plateau_length).float().clamp_(min=0).half()
+                + 1
+            )
             return weight
         else:
             return Tensor([]).to(box_centers).half()
 
-    def process_model(self,
-                      name: Hashable,
-                      ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def process_model(
+        self,
+        name: Hashable,
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
         Process the output of a single model on the whole scan
         topk candidates -> nms
@@ -765,12 +803,13 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
                 model_weights.append(_w)
         return cat(model_boxes), cat(model_probs), cat(model_labels), cat(model_weights)
 
-    def process_ensemble(self,
-                         boxes: List[Tensor],
-                         probs: List[Tensor],
-                         labels: List[Tensor],
-                         weights: List[Tensor],
-                         ) -> Tuple[Tensor, Tensor, Tensor]:
+    def process_ensemble(
+        self,
+        boxes: List[Tensor],
+        probs: List[Tensor],
+        labels: List[Tensor],
+        weights: List[Tensor],
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Ensemble predictions from multiple models
 
@@ -792,7 +831,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         weights = cat(weights, dim=0)
 
         _, idx = probs.sort(descending=True)
-        idx = idx[:self.parameters["ensemble_topk"]]
+        idx = idx[: self.parameters["ensemble_topk"]]
         boxes = boxes[idx]
         probs = probs[idx]
         labels = labels[idx]
@@ -805,10 +844,12 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             _kwargs = {}
 
         boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
-            boxes, probs, labels,
+            boxes,
+            probs,
+            labels,
             weights=weights,
             iou_thresh=self.parameters["model_iou"],
-            **_kwargs
+            **_kwargs,
         )
 
         keep = probs > self.parameters["ensemble_score_thresh"]
@@ -818,10 +859,11 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         return boxes.cpu(), probs.cpu(), labels.cpu()
 
     @torch.no_grad()
-    def get_case_result(self,
-                        restore: bool = False,
-                        names: Optional[Sequence[Hashable]] = None,
-                        ) -> Dict[str, Tensor]:
+    def get_case_result(
+        self,
+        restore: bool = False,
+        names: Optional[Sequence[Hashable]] = None,
+    ) -> Dict[str, Tensor]:
         """
         Process all the batches and models and create the final prediction
 
@@ -845,11 +887,12 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         self.reduce_cache()
         return super().get_case_result(restore=restore, names=names)
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name. Before saving the state, the cache will
@@ -888,7 +931,9 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             self.overlap_map_mean = self.overlap_map.avg()
 
             for model in self.model_results.keys():
-                batch_idx = self.build_batch_indices(self.model_results[model]["scores"])
+                batch_idx = self.build_batch_indices(
+                    self.model_results[model]["scores"]
+                )
 
                 boxes = cat(self.model_results[model]["boxes"])
                 probs = cat(self.model_results[model]["scores"])
@@ -897,15 +942,27 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
 
                 if len(probs) > self.num_reduced_cache:
                     _, idx_sorted = probs.sort(descending=True)
-                    idx_sorted = idx_sorted[:self.num_reduced_cache]
-                    batch_idx_keep = [[b for b in bix if b in idx_sorted] for bix in batch_idx]
+                    idx_sorted = idx_sorted[: self.num_reduced_cache]
+                    batch_idx_keep = [
+                        [b for b in bix if b in idx_sorted] for bix in batch_idx
+                    ]
 
-                    assert len(batch_idx_keep) == len(self.model_results[model]["scores"])
+                    assert len(batch_idx_keep) == len(
+                        self.model_results[model]["scores"]
+                    )
 
-                    self.model_results[model]["boxes"] = [boxes[i] for i in batch_idx_keep]
-                    self.model_results[model]["scores"] = [probs[i] for i in batch_idx_keep]
-                    self.model_results[model]["labels"] = [labels[i] for i in batch_idx_keep]
-                    self.model_results[model]["weights"] = [weights[i] for i in batch_idx_keep]
+                    self.model_results[model]["boxes"] = [
+                        boxes[i] for i in batch_idx_keep
+                    ]
+                    self.model_results[model]["scores"] = [
+                        probs[i] for i in batch_idx_keep
+                    ]
+                    self.model_results[model]["labels"] = [
+                        labels[i] for i in batch_idx_keep
+                    ]
+                    self.model_results[model]["weights"] = [
+                        weights[i] for i in batch_idx_keep
+                    ]
 
     @staticmethod
     def build_batch_indices(b: Sequence[Tensor]) -> List[List[int]]:
@@ -922,16 +979,17 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
 
 
 class BoxEnsemblerSelective(BoxEnsembler):
-    def __init__(self,
-                 properties: Dict[str, Any],
-                 parameters: Dict[str, Any],
-                 box_key: str = 'pred_boxes',
-                 score_key: str = 'pred_scores',
-                 label_key: str = 'pred_labels',
-                 data_key: str = 'data',
-                 device: Optional[Union[torch.device, str]] = None,
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        properties: Dict[str, Any],
+        parameters: Dict[str, Any],
+        box_key: str = "pred_boxes",
+        score_key: str = "pred_scores",
+        label_key: str = "pred_labels",
+        data_key: str = "data",
+        device: Optional[Union[torch.device, str]] = None,
+        **kwargs,
+    ):
         """
         Ensemble bounding box detections from tta and multiple models
         This uses a different ensembling strategy which is faster and allows
@@ -986,7 +1044,6 @@ class BoxEnsemblerSelective(BoxEnsembler):
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
-
             # ensemble multiple models
             "ensemble_iou": 0.5,
             "ensemble_nms_fn": batched_wbc,
@@ -996,12 +1053,11 @@ class BoxEnsemblerSelective(BoxEnsembler):
         }
 
     @classmethod
-    def sweep_parameters(cls) -> Tuple[Dict[str, Any],
-                                       Dict[str, Sequence[Any]]]:
+    def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
         # iou_threshs = np.linspace(0.0, 0.8, 9)
         iou_threshs = np.linspace(0.0, 0.5, 6)
         iou_threshs[0] = 1e-5
-        small_boxes_thresh = [1e-2] + np.linspace(2., 7., 6).tolist()
+        small_boxes_thresh = [1e-2] + np.linspace(2.0, 7.0, 6).tolist()
 
         param_sweep = {
             # single model
@@ -1038,8 +1094,10 @@ class BoxEnsemblerSelective(BoxEnsembler):
         boxes = [r.float().cpu() for r in result[self.box_key]]
         scores = [r.float().cpu() for r in result[self.score_key]]
         labels = [r.float().cpu() for r in result[self.label_key]]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-                   for img_boxes in boxes]
+        centers = [
+            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -1056,9 +1114,10 @@ class BoxEnsemblerSelective(BoxEnsembler):
         #     list(zip(*batch["crop"])))
 
     @staticmethod
-    def _get_box_in_tile_weight(box_centers: Tensor,
-                                tile_size: Sequence[int],
-                                ) -> Tensor:
+    def _get_box_in_tile_weight(
+        box_centers: Tensor,
+        tile_size: Sequence[int],
+    ) -> Tensor:
         """
         Assign boxes near the corner a lower weight.
         The midle has a plateau with weight one, starting from patchsize / 2
@@ -1073,7 +1132,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         """
         plateau_length = 0.5  # adjust width of plateau and min weight
         if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.  # [dims]
+            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
 
             max_dist = tile_center.norm(p=2)  # [1]
             boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
@@ -1082,8 +1141,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         else:
             return Tensor([]).to(box_centers)
 
-    def process_model(self, name: Hashable) ->\
-            Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def process_model(self, name: Hashable) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
         Process the output of a single model on the whole scan
         topk candidates -> nms
@@ -1111,9 +1169,13 @@ class BoxEnsemblerSelective(BoxEnsembler):
             shape=tuple(self.properties["shape"]),
         )
 
-    def process_ensemble(self, boxes: List[Tensor], probs: List[Tensor],
-                         labels: List[Tensor], weights: List[Tensor],
-                         ) -> Tuple[Tensor, Tensor, Tensor]:
+    def process_ensemble(
+        self,
+        boxes: List[Tensor],
+        probs: List[Tensor],
+        labels: List[Tensor],
+        weights: List[Tensor],
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         Ensemble predictions from multiple models
 
@@ -1136,7 +1198,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         weights = cat(weights, dim=0)
 
         _, idx = probs.sort(descending=True)
-        idx = idx[:self.parameters["ensemble_topk"]]
+        idx = idx[: self.parameters["ensemble_topk"]]
         boxes = boxes[idx]
         probs = probs[idx]
         labels = labels[idx]
@@ -1149,10 +1211,12 @@ class BoxEnsemblerSelective(BoxEnsembler):
             _kwargs = {}
 
         boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
-            boxes, probs, labels,
+            boxes,
+            probs,
+            labels,
             weights=weights,
             iou_thresh=self.parameters["model_iou"],
-            **_kwargs
+            **_kwargs,
         )
 
         keep = probs > self.parameters["ensemble_score_thresh"]
@@ -1161,11 +1225,12 @@ class BoxEnsemblerSelective(BoxEnsembler):
         labels = labels[keep]
         return boxes.cpu(), probs.cpu(), labels.cpu()
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name.
@@ -1188,7 +1253,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
 
             if len(probs) > self.parameters["model_topk"]:
                 _, idx_sorted = probs.sort(descending=True)
-                idx_sorted = idx_sorted[:self.parameters["model_topk"]]
+                idx_sorted = idx_sorted[: self.parameters["model_topk"]]
                 self.model_results[model]["boxes"] = boxes[idx_sorted]
                 self.model_results[model]["scores"] = probs[idx_sorted]
                 self.model_results[model]["labels"] = labels[idx_sorted]
@@ -1203,6 +1268,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
     Can be used to process 2d predictions of a 3d volume.
     """
+
     @classmethod
     def get_default_parameters(cls):
         """
@@ -1236,8 +1302,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         return params
 
     @classmethod
-    def sweep_parameters(cls) -> Tuple[Dict[str, Any],
-                                       Dict[str, Sequence[Any]]]:
+    def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
         iou_threshs = np.linspace(0.0, 0.5, 6)
         iou_threshs[0] = 1e-5
         track_ious = np.linspace(0.3, 0.8, 6)
@@ -1251,7 +1316,6 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             ],
             # ensemble multiple models
             "ensemble_iou": iou_threshs,
-
             "track_iou": track_ious,
             "track_neighbor_slices": [1, 2, 3, 4],
             "track_merger_cls": [
@@ -1293,8 +1357,10 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
         # process 2d boxes
         tile_size = batch[self.data_key].shape[2:]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-                   for img_boxes in boxes]
+        centers = [
+            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -1305,16 +1371,21 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         boxes_3d = []
         for boxes_image, idx in zip(boxes, slice_idx):
             if boxes_image.numel() > 0:
-                idx_tensor = torch.tensor([[float(idx), float(idx) + 1.]])
-                idx_tensor_expanded = idx_tensor.to(boxes_image).expand(boxes_image.shape[0], -1)
-                _boxes_3d = torch.stack([
-                    idx_tensor_expanded[:, 0],
-                    boxes_image[:, 0],
-                    idx_tensor_expanded[:, 1],
-                    boxes_image[:, 2],
-                    boxes_image[:, 1],
-                    boxes_image[:, 3],
-                ], dim=1)
+                idx_tensor = torch.tensor([[float(idx), float(idx) + 1.0]])
+                idx_tensor_expanded = idx_tensor.to(boxes_image).expand(
+                    boxes_image.shape[0], -1
+                )
+                _boxes_3d = torch.stack(
+                    [
+                        idx_tensor_expanded[:, 0],
+                        boxes_image[:, 0],
+                        idx_tensor_expanded[:, 1],
+                        boxes_image[:, 2],
+                        boxes_image[:, 1],
+                        boxes_image[:, 3],
+                    ],
+                    dim=1,
+                )
             else:
                 _boxes_3d = boxes_image.view(-1, 6)
             boxes_3d.append(_boxes_3d)
@@ -1325,10 +1396,11 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         self.model_results[self.model_current]["weights"].extend(weights)
 
     @torch.no_grad()
-    def get_case_result(self,
-                        restore: bool = False,
-                        names: Optional[Sequence[Hashable]] = None,
-                        ) -> Dict[str, Tensor]:
+    def get_case_result(
+        self,
+        restore: bool = False,
+        names: Optional[Sequence[Hashable]] = None,
+    ) -> Dict[str, Tensor]:
         """
         Process all the batches and models and create the final prediction
 
@@ -1357,7 +1429,9 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             weights.append(_weights)
 
         boxes, probs, labels = self.process_ensemble(
-            boxes=boxes, probs=probs, labels=labels,
+            boxes=boxes,
+            probs=probs,
+            labels=labels,
             weights=weights,
         )
 
@@ -1404,7 +1478,8 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         boxes[:, 0] = boxes[:, 0] - 1
 
         keep = remove_small_boxes(
-            boxes, min_size=self.parameters["track_remove_small_boxes"])
+            boxes, min_size=self.parameters["track_remove_small_boxes"]
+        )
         boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
         return boxes, probs, labels
 
@@ -1414,6 +1489,7 @@ class BoxEnsemblerSelectiveFaster(BoxEnsemblerSelective):
     Changes default model score threshold to 0.1 which makes
     sweeps faster
     """
+
     @classmethod
     def get_default_parameters(cls):
         """
@@ -1441,7 +1517,6 @@ class BoxEnsemblerSelectiveFaster(BoxEnsemblerSelective):
             "model_score_thresh": 0.1,
             "model_topk": 1000,
             "model_detections_per_image": 100,
-
             # ensemble multiple models
             "ensemble_iou": 0.5,
             "ensemble_nms_fn": batched_wbc,

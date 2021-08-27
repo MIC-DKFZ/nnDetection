@@ -26,22 +26,23 @@ from nndet.utils.info import experimental
 
 
 class BaseUFPN(nn.Module):
-    def __init__(self,
-                 conv: Callable,
-                 strides: Sequence[int],
-                 in_channels: Sequence[int],
-                 conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
-                 decoder_levels: Union[Sequence[int], None],
-                 fixed_out_channels: int,
-                 min_out_channels: int = 8,
-                 upsampling_mode: str = 'nearest',
-                 num_lateral: int = 1,
-                 norm_lateral: bool = False,
-                 activation_lateral: bool = False,
-                 num_out: int = 1,
-                 norm_out: bool = False,
-                 activation_out: bool = False,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        strides: Sequence[int],
+        in_channels: Sequence[int],
+        conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
+        decoder_levels: Union[Sequence[int], None],
+        fixed_out_channels: int,
+        min_out_channels: int = 8,
+        upsampling_mode: str = "nearest",
+        num_lateral: int = 1,
+        norm_lateral: bool = False,
+        activation_lateral: bool = False,
+        num_out: int = 1,
+        norm_out: bool = False,
+        activation_out: bool = False,
+    ):
         """
         Base class for UFPN like builds
         Just overwrite `compute_output_channels` to generate different
@@ -68,7 +69,9 @@ class BaseUFPN(nn.Module):
         """
         super().__init__()
         if len(strides) != len(in_channels):
-            raise ValueError("Strides must contain same number of elements as channels.")
+            raise ValueError(
+                "Strides must contain same number of elements as channels."
+            )
         if not len(in_channels) > 0:
             raise ValueError(f"Found unplausible channels {in_channels}")
         self.dim: int = conv.dim
@@ -78,10 +81,16 @@ class BaseUFPN(nn.Module):
 
         # decoder and lateral convolutions
         self.strides = self.compute_stride_ratios(strides)
-        self.conv_kernels, self.conv_paddings = self.determine_kernels_and_padding(conv_kernels)
+        self.conv_kernels, self.conv_paddings = self.determine_kernels_and_padding(
+            conv_kernels
+        )
         self.conv_settings = {
-            "lateral": {"norm": norm_lateral, "activation": activation_lateral, "num": num_lateral},
-            "out": {"norm": norm_out, "activation": activation_out, "num": num_out}
+            "lateral": {
+                "norm": norm_lateral,
+                "activation": activation_lateral,
+                "num": num_lateral,
+            },
+            "out": {"norm": norm_out, "activation": activation_out, "num": num_out},
         }
 
         # upsampling layers
@@ -94,13 +103,22 @@ class BaseUFPN(nn.Module):
         self.out_channels = self.compute_output_channels()
 
         self.lateral = nn.ModuleDict(
-            {f"P{level}": self.get_lateral(conv, level) for level in range(self.num_level)}
+            {
+                f"P{level}": self.get_lateral(conv, level)
+                for level in range(self.num_level)
+            }
         )
         self.out = nn.ModuleDict(
-            {f"P{level}": self.get_conv(conv, level, "out") for level in range(self.num_level)}
+            {
+                f"P{level}": self.get_conv(conv, level, "out")
+                for level in range(self.num_level)
+            }
         )
         self.up = nn.ModuleDict(
-            {f"P{level}": self.get_up(conv, level) for level in range(1, self.num_level)}
+            {
+                f"P{level}": self.get_up(conv, level)
+                for level in range(1, self.num_level)
+            }
         )
 
     def forward_lateral(self, inp_seq: Sequence[torch.Tensor]) -> List[torch.Tensor]:
@@ -138,14 +156,20 @@ class BaseUFPN(nn.Module):
         Returns:
             List: compute strides between intermediate feature levels
         """
-        strides = [stride if isinstance(stride, Sequence) else (stride, ) * self.dim for stride in strides]
+        strides = [
+            stride if isinstance(stride, Sequence) else (stride,) * self.dim
+            for stride in strides
+        ]
         stride_ratios = []
         for i in range(1, len(strides)):
-            stride_ratios.append(tuple(s1 / s0 for s1, s0 in zip(strides[i], strides[i - 1])))
+            stride_ratios.append(
+                tuple(s1 / s0 for s1, s0 in zip(strides[i], strides[i - 1]))
+            )
         return stride_ratios
 
-    def determine_kernels_and_padding(self, conv_kernels: Union[Sequence[Union[Sequence[int], int]], int]) -> \
-            Tuple[List, List]:
+    def determine_kernels_and_padding(
+        self, conv_kernels: Union[Sequence[Union[Sequence[int], int]], int]
+    ) -> Tuple[List, List]:
         """
         Unify conv kernel input
 
@@ -164,9 +188,11 @@ class BaseUFPN(nn.Module):
             _conv_kernels = []
             _conv_paddings = []
             if not len(conv_kernels) == num_levels:
-                raise ValueError(f"If conv kernels is not an integer it needs to be define the "
-                                 f"kernel size for every level. Only found {len(conv_kernels)} "
-                                 f"kernels und {num_levels} levels")
+                raise ValueError(
+                    f"If conv kernels is not an integer it needs to be define the "
+                    f"kernel size for every level. Only found {len(conv_kernels)} "
+                    f"kernels und {num_levels} levels"
+                )
             for ck in conv_kernels:
                 if isinstance(ck, int):
                     ck = [ck] * self.dim
@@ -174,7 +200,9 @@ class BaseUFPN(nn.Module):
                 _conv_kernels.append(tuple(ck))
                 _conv_paddings.append(tuple(padding))
         else:
-            raise ValueError(f"{conv_kernels} is not a valid value of conv kernels in FPN")
+            raise ValueError(
+                f"{conv_kernels} is not a valid value of conv kernels in FPN"
+            )
         assert len(_conv_kernels) == num_levels
         assert len(_conv_paddings) == num_levels
         return _conv_kernels, _conv_paddings
@@ -192,7 +220,9 @@ class BaseUFPN(nn.Module):
             ouput_levels = list(range(self.num_level))
             # filter for levels above decoder levels
             ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
-            assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
+            assert max(ouput_levels) < min(
+                self.decoder_levels
+            ), "Can not decrease channels below decoder level"
             for ol in ouput_levels[::-1]:
                 oc = max(self.min_out_channels, out_channels[ol + 1] // 2)
                 out_channels[ol] = oc
@@ -230,21 +260,24 @@ class BaseUFPN(nn.Module):
 
         return torch.nn.Sequential(
             *[
-                conv(_in_channels[i],
-                     self.out_channels[level],
-                     kernel_size=1,
-                     padding=0,
-                     stride=1,
-                     **self._get_kwargs("lateral"),
-                     )
-                for i in range(num)]
+                conv(
+                    _in_channels[i],
+                    self.out_channels[level],
+                    kernel_size=1,
+                    padding=0,
+                    stride=1,
+                    **self._get_kwargs("lateral"),
+                )
+                for i in range(num)
+            ]
         )
 
-    def get_conv(self,
-                 conv: Callable,
-                 level: int,
-                 name: str,
-                 ) -> nn.Module:
+    def get_conv(
+        self,
+        conv: Callable,
+        level: int,
+        name: str,
+    ) -> nn.Module:
         """
         Build a convolution inside the fpn
 
@@ -259,14 +292,16 @@ class BaseUFPN(nn.Module):
         """
         return torch.nn.Sequential(
             *[
-                conv(self.out_channels[level],
-                     self.out_channels[level],
-                     kernel_size=self.conv_kernels[level],
-                     padding=self.conv_paddings[level],
-                     stride=1,
-                     **self._get_kwargs(name),
-                     )
-                for i in range(self.conv_settings[name]["num"])]
+                conv(
+                    self.out_channels[level],
+                    self.out_channels[level],
+                    kernel_size=self.conv_kernels[level],
+                    padding=self.conv_paddings[level],
+                    stride=1,
+                    **self._get_kwargs(name),
+                )
+                for i in range(self.conv_settings[name]["num"])
+            ]
         )
 
     def get_up(self, conv: Callable, level: int):
@@ -280,26 +315,31 @@ class BaseUFPN(nn.Module):
         Returns:
             nn.Module: generated convolution
         """
-        if self.upsampling_mode.lower() == 'transpose':
-            up = conv(self.out_channels[level],
-                      self.out_channels[level - 1],
-                      kernel_size=self.strides[level - 1],
-                      stride=self.strides[level - 1],
-                      transposed=True,
-                      add_norm=False,
-                      add_act=False,
-                      )
+        if self.upsampling_mode.lower() == "transpose":
+            up = conv(
+                self.out_channels[level],
+                self.out_channels[level - 1],
+                kernel_size=self.strides[level - 1],
+                stride=self.strides[level - 1],
+                transposed=True,
+                add_norm=False,
+                add_act=False,
+            )
         else:
-            up = torch.nn.Upsample(mode=self.upsampling_mode,
-                                   scale_factor=self.strides[level - 1],
-                                   )
+            up = torch.nn.Upsample(
+                mode=self.upsampling_mode,
+                scale_factor=self.strides[level - 1],
+            )
             if not (self.out_channels[level] == self.out_channels[level - 1]):
-                _conv = conv(self.out_channels[level],
-                             self.out_channels[level - 1],
-                             kernel_size=1, stride=1, padding=0,
-                             add_norm=False,
-                             add_act=False,
-                             )
+                _conv = conv(
+                    self.out_channels[level],
+                    self.out_channels[level - 1],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                    add_norm=False,
+                    add_act=False,
+                )
                 up = torch.nn.Sequential(up, _conv)
         return up
 
@@ -314,25 +354,26 @@ class BaseUFPN(nn.Module):
 
 
 class UFPNModular(BaseUFPN):
-    def __init__(self,
-                 conv: Callable,
-                 strides: Sequence[int],
-                 in_channels: Sequence[int],
-                 conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
-                 decoder_levels: Union[Sequence[int], None],
-                 fixed_out_channels: int,
-                 min_out_channels: int = 8,
-                 upsampling_mode: str = 'nearest',
-                 num_lateral: int = 1,
-                 norm_lateral: bool = False,
-                 activation_lateral: bool = False,
-                 num_out: int = 1,
-                 norm_out: bool = False,
-                 activation_out: bool = False,
-                 num_fusion: int = 0,
-                 norm_fusion: bool = False,
-                 activation_fusion: bool = False,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        strides: Sequence[int],
+        in_channels: Sequence[int],
+        conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
+        decoder_levels: Union[Sequence[int], None],
+        fixed_out_channels: int,
+        min_out_channels: int = 8,
+        upsampling_mode: str = "nearest",
+        num_lateral: int = 1,
+        norm_lateral: bool = False,
+        activation_lateral: bool = False,
+        num_out: int = 1,
+        norm_out: bool = False,
+        activation_out: bool = False,
+        num_fusion: int = 0,
+        norm_fusion: bool = False,
+        activation_fusion: bool = False,
+    ):
         """
         Base class for UFPN like builds
         Just overwrite `compute_output_channels` to generate different
@@ -363,29 +404,40 @@ class UFPNModular(BaseUFPN):
             norm_fusion:  en-/disable normalization in fusion convolutions
             activation_fusion:  en-/disable non linearity in fusion convolutions
         """
-        super().__init__(conv=conv, strides=strides, in_channels=in_channels,
-                         conv_kernels=conv_kernels, decoder_levels=decoder_levels,
-                         fixed_out_channels=fixed_out_channels,
-                         min_out_channels=min_out_channels,
-                         upsampling_mode=upsampling_mode,
-                         num_lateral=num_lateral,
-                         norm_lateral=norm_lateral,
-                         activation_lateral=activation_lateral,
-                         num_out=num_out,
-                         norm_out=norm_out,
-                         activation_out=activation_out,
-                         )
+        super().__init__(
+            conv=conv,
+            strides=strides,
+            in_channels=in_channels,
+            conv_kernels=conv_kernels,
+            decoder_levels=decoder_levels,
+            fixed_out_channels=fixed_out_channels,
+            min_out_channels=min_out_channels,
+            upsampling_mode=upsampling_mode,
+            num_lateral=num_lateral,
+            norm_lateral=norm_lateral,
+            activation_lateral=activation_lateral,
+            num_out=num_out,
+            norm_out=norm_out,
+            activation_out=activation_out,
+        )
         self.num_fusion = num_fusion
         self.conv_settings["fusion"] = {
-            "norm": norm_fusion, "activation": activation_fusion, "num": num_fusion,
+            "norm": norm_fusion,
+            "activation": activation_fusion,
+            "num": num_fusion,
         }
         self.conv_settings["out"] = {
-            "norm": norm_fusion, "activation": activation_fusion, "num": num_fusion,
+            "norm": norm_fusion,
+            "activation": activation_fusion,
+            "num": num_fusion,
         }
 
         if self.num_fusion > 0:
             self.fusion_bottom_up = nn.ModuleDict(
-                {f"P{level}": self.get_conv(conv, level, "fusion") for level in range(self.num_level - 1)}
+                {
+                    f"P{level}": self.get_conv(conv, level, "fusion")
+                    for level in range(self.num_level - 1)
+                }
             )
 
     def forward(self, inp_seq: Sequence[torch.Tensor]) -> List[torch.Tensor]:
@@ -431,7 +483,9 @@ class SmallUFPN(UFPNModular):
             ouput_levels = list(range(self.num_level))
             # filter for levels above decoder levels
             ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
-            assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
+            assert max(ouput_levels) < min(
+                self.decoder_levels
+            ), "Can not decrease channels below decoder level"
             for idx, ol in enumerate(ouput_levels[::-1]):
                 div = 4 if idx == 0 else 2
                 oc = max(self.min_out_channels, out_channels[ol + 1] // div)
@@ -453,7 +507,9 @@ class SmallerUFPN(UFPNModular):
             ouput_levels = list(range(self.num_level))
             # filter for levels above decoder levels
             ouput_levels = [ol for ol in ouput_levels if ol < min(self.decoder_levels)]
-            assert max(ouput_levels) < min(self.decoder_levels), "Can not decrease channels below decoder level"
+            assert max(ouput_levels) < min(
+                self.decoder_levels
+            ), "Can not decrease channels below decoder level"
             for idx, ol in enumerate(ouput_levels[::-1]):
                 div = 8 if idx == 0 else 2
                 oc = max(self.min_out_channels, out_channels[ol + 1] // div)
@@ -463,25 +519,26 @@ class SmallerUFPN(UFPNModular):
 
 class PAUFPN(UFPNModular):
     @experimental
-    def __init__(self,
-                 conv: Callable,
-                 strides: Sequence[int],
-                 in_channels: Sequence[int],
-                 conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
-                 decoder_levels: Union[Sequence[int], None],
-                 fixed_out_channels: int,
-                 min_out_channels: int = 8,
-                 upsampling_mode: str = 'nearest',
-                 num_lateral: int = 1,
-                 norm_lateral: bool = False,
-                 activation_lateral: bool = False,
-                 num_out: int = 1,
-                 norm_out: bool = False,
-                 activation_out: bool = False,
-                 num_fusion: int = 1,
-                 norm_fusion: bool = False,
-                 activation_fusion: bool = False,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        strides: Sequence[int],
+        in_channels: Sequence[int],
+        conv_kernels: Union[Sequence[Union[Sequence[int], int]], int],
+        decoder_levels: Union[Sequence[int], None],
+        fixed_out_channels: int,
+        min_out_channels: int = 8,
+        upsampling_mode: str = "nearest",
+        num_lateral: int = 1,
+        norm_lateral: bool = False,
+        activation_lateral: bool = False,
+        num_out: int = 1,
+        norm_out: bool = False,
+        activation_out: bool = False,
+        num_fusion: int = 1,
+        norm_fusion: bool = False,
+        activation_fusion: bool = False,
+    ):
         """
         Base class for UFPN like builds
         Just overwrite `compute_output_channels` to generate different
@@ -512,41 +569,58 @@ class PAUFPN(UFPNModular):
             norm_fusion:  en-/disable normalization in fusion convolutions
             activation_fusion:  en-/disable non linearity in fusion convolutions
         """
-        super().__init__(conv=conv, strides=strides, in_channels=in_channels,
-                         conv_kernels=conv_kernels, decoder_levels=decoder_levels,
-                         fixed_out_channels=fixed_out_channels,
-                         min_out_channels=min_out_channels,
-                         upsampling_mode=upsampling_mode,
-                         num_lateral=num_lateral,
-                         norm_lateral=norm_lateral,
-                         activation_lateral=activation_lateral,
+        super().__init__(
+            conv=conv,
+            strides=strides,
+            in_channels=in_channels,
+            conv_kernels=conv_kernels,
+            decoder_levels=decoder_levels,
+            fixed_out_channels=fixed_out_channels,
+            min_out_channels=min_out_channels,
+            upsampling_mode=upsampling_mode,
+            num_lateral=num_lateral,
+            norm_lateral=norm_lateral,
+            activation_lateral=activation_lateral,
+            # fpn out convs are not lateral connections towards pa layers
+            num_out=num_lateral,
+            norm_out=norm_lateral,
+            activation_out=activation_lateral,
+            num_fusion=num_fusion,
+            norm_fusion=norm_fusion,
+            activation_fusion=activation_fusion,
+        )
 
-                         # fpn out convs are not lateral connections towards pa layers
-                         num_out=num_lateral,
-                         norm_out=norm_lateral,
-                         activation_out=activation_lateral,
-
-                         num_fusion=num_fusion,
-                         norm_fusion=norm_fusion,
-                         activation_fusion=activation_fusion,
-                         )
-
-        self.conv_settings["pa_out"] = {"norm": norm_out, "activation": activation_out, "num": num_out}
+        self.conv_settings["pa_out"] = {
+            "norm": norm_out,
+            "activation": activation_out,
+            "num": num_out,
+        }
 
         if self.num_fusion > 0:
             self.fusion_top_down = nn.ModuleDict(
-                {f"N{level}": self.get_conv(conv, level, "fusion") for level in range(1, self.num_level)}
+                {
+                    f"N{level}": self.get_conv(conv, level, "fusion")
+                    for level in range(1, self.num_level)
+                }
             )
         self.down = nn.ModuleDict(
-            {f"N{level}": self.get_down(conv, level) for level in range(self.num_level - 1)},
+            {
+                f"N{level}": self.get_down(conv, level)
+                for level in range(self.num_level - 1)
+            },
         )
         self.pa_out = nn.ModuleDict(
-            {f"N{level}": self.get_conv(conv, level, "pa_out") for level in range(self.num_level)}
+            {
+                f"N{level}": self.get_conv(conv, level, "pa_out")
+                for level in range(self.num_level)
+            }
         )
 
-        logger.info(f"Building PAUFPN with lateral_kwargs {self._get_kwargs('lateral')}, "
-                    f"fusion kwargs {self._get_kwargs('fusion')} and "
-                    f"out_kwargs {self._get_kwargs('out')}")
+        logger.info(
+            f"Building PAUFPN with lateral_kwargs {self._get_kwargs('lateral')}, "
+            f"fusion kwargs {self._get_kwargs('fusion')} and "
+            f"out_kwargs {self._get_kwargs('out')}"
+        )
 
     def get_down(self, conv: Callable, level: int) -> nn.Module:
         """
@@ -559,14 +633,15 @@ class PAUFPN(UFPNModular):
         Returns:
             nn.Module: generated convolution
         """
-        return conv(self.out_channels[level],
-                    self.out_channels[level + 1],
-                    kernel_size=self.conv_kernels[level],
-                    padding=self.conv_paddings[level],
-                    stride=self.strides[level],
-                    add_norm=False,
-                    add_act=False,
-                    )
+        return conv(
+            self.out_channels[level],
+            self.out_channels[level + 1],
+            kernel_size=self.conv_kernels[level],
+            padding=self.conv_paddings[level],
+            stride=self.strides[level],
+            add_norm=False,
+            add_act=False,
+        )
 
     def forward_out(self, inp_seq: Sequence[torch.Tensor]) -> List[torch.Tensor]:
         """
@@ -622,4 +697,4 @@ class PAUFPN(UFPNModular):
         return self.forward_out(out_list)
 
 
-DecoderType = TypeVar('DecoderType', bound=BaseUFPN)
+DecoderType = TypeVar("DecoderType", bound=BaseUFPN)

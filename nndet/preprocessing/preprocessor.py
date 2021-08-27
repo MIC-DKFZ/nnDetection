@@ -42,14 +42,15 @@ class AbstractPreprocessor(ABC):
             setattr(self, key, item)
 
     @abstractmethod
-    def run(self,
-            target_spacings: Sequence[Sequence[float]],
-            identifiers: Sequence[str],
-            cropped_data_dir: Path,
-            preprocessed_output_dir: Path,
-            num_processes: int,
-            force_separate_z=None,
-            ):
+    def run(
+        self,
+        target_spacings: Sequence[Sequence[float]],
+        identifiers: Sequence[str],
+        cropped_data_dir: Path,
+        preprocessed_output_dir: Path,
+        num_processes: int,
+        force_separate_z=None,
+    ):
         """
         Run preprocessing
 
@@ -64,11 +65,12 @@ class AbstractPreprocessor(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def run_test(self,
-                 data_files,
-                 target_spacing,
-                 target_dir: PathLike,
-                 ) -> None:
+    def run_test(
+        self,
+        data_files,
+        target_spacing,
+        target_dir: PathLike,
+    ) -> None:
         """
         Preprocess and save test data
 
@@ -80,12 +82,13 @@ class AbstractPreprocessor(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def preprocess_test_case(self,
-                             data_files,
-                             target_spacing,
-                             seg_file=None,
-                             force_separate_z=None,
-                             ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def preprocess_test_case(
+        self,
+        data_files,
+        target_spacing,
+        seg_file=None,
+        force_separate_z=None,
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Preprocess a test file
 
@@ -106,13 +109,14 @@ class AbstractPreprocessor(ABC):
 class GenericPreprocessor:
     DATA_ID = "Generic"
 
-    def __init__(self,
-                 norm_scheme_per_modality: Dict[int, str],
-                 use_mask_for_norm: Dict[int, bool],
-                 transpose_forward: Sequence[int],
-                 intensity_properties: Dict[int, Dict] = None,
-                 resample_anisotropy_threshold: float = 3.,
-                 ):
+    def __init__(
+        self,
+        norm_scheme_per_modality: Dict[int, str],
+        use_mask_for_norm: Dict[int, bool],
+        transpose_forward: Sequence[int],
+        intensity_properties: Dict[int, Dict] = None,
+        resample_anisotropy_threshold: float = 3.0,
+    ):
         """
         Preprocess data
 
@@ -144,14 +148,15 @@ class GenericPreprocessor:
             "raw": self.no_norm,
         }
 
-    def run(self,
-            target_spacings: Sequence[Sequence[float]],
-            identifiers: Sequence[str],
-            cropped_data_dir: Path,
-            preprocessed_output_dir: Path,
-            num_processes: Union[int, Sequence[int]],
-            overwrite: bool = False,
-            ):
+    def run(
+        self,
+        target_spacings: Sequence[Sequence[float]],
+        identifiers: Sequence[str],
+        cropped_data_dir: Path,
+        preprocessed_output_dir: Path,
+        num_processes: Union[int, Sequence[int]],
+        overwrite: bool = False,
+    ):
         """
         Run preprocessing
 
@@ -170,18 +175,28 @@ class GenericPreprocessor:
             num_processes=num_processes,
         )
 
-        for identifier, spacing, nump in zip(identifiers, target_spacings, num_processes):
+        for identifier, spacing, nump in zip(
+            identifiers, target_spacings, num_processes
+        ):
             logger.info(f"+++ Preprocessing {identifier} +++")
             output_dir_stage = preprocessed_output_dir / identifier / "imagesTr"
             output_dir_stage.mkdir(parents=True, exist_ok=True)
 
             if not overwrite:
                 case_ids_npz_present = get_case_ids_from_dir(
-                    output_dir_stage, remove_modality=False, pattern="*.npz")
+                    output_dir_stage, remove_modality=False, pattern="*.npz"
+                )
                 case_ids_pkl_present = get_case_ids_from_dir(
-                    output_dir_stage, remove_modality=False, pattern="*.pkl")
-                case_ids_present = list(set.intersection(set(case_ids_npz_present), set(case_ids_pkl_present)))
-                logger.info(f"Skipping case ids which are already present {case_ids_present}")
+                    output_dir_stage, remove_modality=False, pattern="*.pkl"
+                )
+                case_ids_present = list(
+                    set.intersection(
+                        set(case_ids_npz_present), set(case_ids_pkl_present)
+                    )
+                )
+                logger.info(
+                    f"Skipping case ids which are already present {case_ids_present}"
+                )
                 _case_ids = list(filter(lambda x: x not in case_ids_present, case_ids))
             else:
                 _case_ids = case_ids
@@ -192,19 +207,23 @@ class GenericPreprocessor:
                     self.run_process(spacing, _cid, output_dir_stage, cropped_data_dir)
             else:
                 with Pool(processes=nump) as p:
-                    p.starmap(self.run_process,
-                              zip(repeat(spacing),
-                                  _case_ids,
-                                  repeat(output_dir_stage),
-                                  repeat(cropped_data_dir),
-                                  ))
+                    p.starmap(
+                        self.run_process,
+                        zip(
+                            repeat(spacing),
+                            _case_ids,
+                            repeat(output_dir_stage),
+                            repeat(cropped_data_dir),
+                        ),
+                    )
 
-    def initialize_run(self,
-                       target_spacings: Sequence[Sequence[float]],
-                       cropped_data_dir: Path,
-                       preprocessed_output_dir: Path,
-                       num_processes: int,
-                       ) -> Tuple[List[str], List[int]]:
+    def initialize_run(
+        self,
+        target_spacings: Sequence[Sequence[float]],
+        cropped_data_dir: Path,
+        preprocessed_output_dir: Path,
+        num_processes: int,
+    ) -> Tuple[List[str], List[int]]:
         """
         Prepare preprocessing run
 
@@ -225,7 +244,9 @@ class GenericPreprocessor:
             if modality in self.norm_schemes:
                 logger.info(f"Found normalization scheme for {modality}")
             else:
-                logger.info(f"No normalization scheme for {modality} using zero mean unit std.")
+                logger.info(
+                    f"No normalization scheme for {modality} using zero mean unit std."
+                )
         preprocessed_output_dir.mkdir(parents=True, exist_ok=True)
 
         num_stages = len(target_spacings)
@@ -234,15 +255,17 @@ class GenericPreprocessor:
         assert len(num_processes) == num_stages
 
         case_ids = get_case_ids_from_dir(
-            cropped_data_dir, pattern="*.npz", remove_modality=False)
+            cropped_data_dir, pattern="*.npz", remove_modality=False
+        )
         return case_ids, num_processes
 
-    def run_process(self,
-                    target_spacing: Sequence[float],
-                    case_id: str,
-                    output_dir_stage: Path,
-                    cropped_data_dir: Path,
-                    ) -> None:
+    def run_process(
+        self,
+        target_spacing: Sequence[float],
+        case_id: str,
+        output_dir_stage: Path,
+        cropped_data_dir: Path,
+    ) -> None:
         """
         Process a single case
         Result is saved into :param:`output_dir_stage`
@@ -257,7 +280,8 @@ class GenericPreprocessor:
         seg = seg[None]
 
         data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg)
+            data, target_spacing, properties, seg
+        )
         properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
 
         data = data.astype(np.float32)
@@ -270,20 +294,22 @@ class GenericPreprocessor:
         )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(str(output_dir_stage / f"{case_id}.npz"),
-                            data=data,
-                            seg=seg,
-                            )
+        np.savez_compressed(
+            str(output_dir_stage / f"{case_id}.npz"),
+            data=data,
+            seg=seg,
+        )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
 
-    def apply_process(self,
-                      data: np.ndarray,
-                      target_spacing: Sequence[float],
-                      properties: dict,
-                      seg: np.ndarray = None,
-                      ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def apply_process(
+        self,
+        data: np.ndarray,
+        target_spacing: Sequence[float],
+        properties: dict,
+        seg: np.ndarray = None,
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Applies all preprocessing steps to data and segmentation
 
@@ -299,10 +325,10 @@ class GenericPreprocessor:
             dict: updated properties
         """
         data, seg, original_spacing, target_spacing, before = self.transpose(
-            data, seg, properties["original_spacing"], target_spacing)
+            data, seg, properties["original_spacing"], target_spacing
+        )
 
-        data, seg, after = self.resample(
-            data, seg, original_spacing, target_spacing)
+        data, seg, after = self.resample(data, seg, original_spacing, target_spacing)
 
         # logger.info(f"\nBefore: {before} \nAfter: {after}\n")
 
@@ -315,12 +341,13 @@ class GenericPreprocessor:
         data = self.normalize(data, seg)
         return data, seg, properties
 
-    def transpose(self,
-                  data: np.ndarray,
-                  seg: np.ndarray,
-                  original_spacing: Sequence[float],
-                  target_spacing: Sequence[float]) -> Tuple[
-            np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
+    def transpose(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        original_spacing: Sequence[float],
+        target_spacing: Sequence[float],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
         """
         Transpose data, segmentation and spacings
 
@@ -351,12 +378,13 @@ class GenericPreprocessor:
 
         return data, seg, _original_spacing, _target_spacing, before
 
-    def resample(self,
-                 data: np.ndarray,
-                 seg: np.ndarray,
-                 original_spacing: Sequence[float],
-                 target_spacing: Sequence[float],
-                 ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def resample(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        original_spacing: Sequence[float],
+        target_spacing: Sequence[float],
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Resample data and segmentation to new spacing
 
@@ -376,17 +404,18 @@ class GenericPreprocessor:
         original_spacing = np.array(original_spacing)
         target_spacing = np.array(target_spacing)
         data[np.isnan(data)] = 0
-        data, seg = resample_patient(data,
-                                     seg,
-                                     original_spacing,
-                                     target_spacing,
-                                     order_data=3,
-                                     order_seg=0,
-                                     force_separate_z=False,
-                                     order_z_data=9999,
-                                     order_z_seg=9999,
-                                     separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
-                                     )
+        data, seg = resample_patient(
+            data,
+            seg,
+            original_spacing,
+            target_spacing,
+            order_data=3,
+            order_seg=0,
+            force_separate_z=False,
+            order_z_data=9999,
+            order_z_seg=9999,
+            separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
+        )
 
         after = {
             "spacing": target_spacing,
@@ -405,10 +434,12 @@ class GenericPreprocessor:
         Returns:
             np.ndarray: normalized data
         """
-        assert len(self.norm_scheme_per_modality) == len(data), \
-            "norm_scheme_per_modality must have as many entries as data has modalities"
-        assert len(self.use_mask_for_norm) == len(data), \
-            "use_mask_for_norm must have as many entries as data has modalities"
+        assert len(self.norm_scheme_per_modality) == len(
+            data
+        ), "norm_scheme_per_modality must have as many entries as data has modalities"
+        assert len(self.use_mask_for_norm) == len(
+            data
+        ), "use_mask_for_norm must have as many entries as data has modalities"
 
         for c in range(len(data)):
             scheme = self.norm_scheme_per_modality[c]
@@ -416,12 +447,13 @@ class GenericPreprocessor:
             data = scheme_fn(data, seg, c, self.use_mask_for_norm)
         return data
 
-    def normalize_ct(self,
-                     data: np.ndarray,
-                     seg: np.ndarray,
-                     modality: int,
-                     use_nonzero_mask: Dict[int, bool],
-                     ) -> np.ndarray:
+    def normalize_ct(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         clip to lb and ub from train data foreground and use foreground mn and sd from training data
         (This uses the foreground mean and std!)
@@ -435,20 +467,26 @@ class GenericPreprocessor:
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert self.intensity_properties is not None, \
-            "ERROR: if there is a CT then we need intensity properties"
-        mean_intensity = self.intensity_properties[modality]['mean']
-        std_intensity = self.intensity_properties[modality]['std']
-        lower_bound = self.intensity_properties[modality]['percentile_00_5']
-        upper_bound = self.intensity_properties[modality]['percentile_99_5']
+        assert (
+            self.intensity_properties is not None
+        ), "ERROR: if there is a CT then we need intensity properties"
+        mean_intensity = self.intensity_properties[modality]["mean"]
+        std_intensity = self.intensity_properties[modality]["std"]
+        lower_bound = self.intensity_properties[modality]["percentile_00_5"]
+        upper_bound = self.intensity_properties[modality]["percentile_99_5"]
         data[modality] = np.clip(data[modality], lower_bound, upper_bound)
         data[modality] = (data[modality] - mean_intensity) / std_intensity
         if use_nonzero_mask[modality]:
             data[modality][seg[-1] < 0] = 0
         return data
 
-    def normalize_ct2(self, data: np.ndarray, seg: np.ndarray, modality: int,
-                      use_nonzero_mask: Dict[int, bool]) -> np.ndarray:
+    def normalize_ct2(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         clip to lb and ub from train data foreground, use mn and sd from each case for normalization
         (This uses mean and std from whole case!)
@@ -462,10 +500,11 @@ class GenericPreprocessor:
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert self.intensity_properties is not None, \
-            "ERROR: if there is a CT then we need intensity properties"
-        lower_bound = self.intensity_properties[modality]['percentile_00_5']
-        upper_bound = self.intensity_properties[modality]['percentile_99_5']
+        assert (
+            self.intensity_properties is not None
+        ), "ERROR: if there is a CT then we need intensity properties"
+        lower_bound = self.intensity_properties[modality]["percentile_00_5"]
+        upper_bound = self.intensity_properties[modality]["percentile_99_5"]
         mask = (data[modality] > lower_bound) & (data[modality] < upper_bound)
         data[modality] = np.clip(data[modality], lower_bound, upper_bound)
         mn = data[modality][mask].mean()
@@ -475,12 +514,13 @@ class GenericPreprocessor:
             data[modality][seg[-1] < 0] = 0
         return data
 
-    def normalize_ct3(self,
-                      data: np.ndarray,
-                      seg: np.ndarray,
-                      modality: int,
-                      use_nonzero_mask: Dict[int, bool],
-                      ) -> np.ndarray:
+    def normalize_ct3(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         clip to lb and ub from train data foreground and use foreground mn
         and sd from training data (This uses the foreground mean and std!)
@@ -497,14 +537,23 @@ class GenericPreprocessor:
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert self.intensity_properties is not None, \
-            "ERROR: if there is a CT then we need intensity properties"
-        mean_intensity = np.mean([k["mean"] for k in self.intensity_properties.values()])
+        assert (
+            self.intensity_properties is not None
+        ), "ERROR: if there is a CT then we need intensity properties"
+        mean_intensity = np.mean(
+            [k["mean"] for k in self.intensity_properties.values()]
+        )
         # the intensity values are not independent but we do not have enough information here
-        std_intensity = np.sqrt(np.sum([k["std"] ** 2 for k in self.intensity_properties.values()]))
+        std_intensity = np.sqrt(
+            np.sum([k["std"] ** 2 for k in self.intensity_properties.values()])
+        )
 
-        lower_bound = np.mean([k["percentile_00_5"] for k in self.intensity_properties.values()])
-        upper_bound = np.mean([k["percentile_99_5"] for k in self.intensity_properties.values()])
+        lower_bound = np.mean(
+            [k["percentile_00_5"] for k in self.intensity_properties.values()]
+        )
+        upper_bound = np.mean(
+            [k["percentile_99_5"] for k in self.intensity_properties.values()]
+        )
 
         data[modality] = np.clip(data[modality], lower_bound, upper_bound)
         data[modality] = (data[modality] - mean_intensity) / std_intensity
@@ -512,8 +561,13 @@ class GenericPreprocessor:
             data[modality][seg[-1] < 0] = 0
         return data
 
-    def normalize_other(self, data: np.ndarray, seg: np.ndarray, modality: int,
-                        use_nonzero_mask: Dict[int, bool]) -> np.ndarray:
+    def normalize_other(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         Zero mean and unit std
 
@@ -530,13 +584,19 @@ class GenericPreprocessor:
             mask = seg[-1] >= 0
         else:
             mask = np.ones(seg.shape[1:], dtype=bool)
-        data[modality][mask] = (data[modality][mask] - data[modality][mask].mean()) / \
-                               (data[modality][mask].std() + 1e-8)
+        data[modality][mask] = (data[modality][mask] - data[modality][mask].mean()) / (
+            data[modality][mask].std() + 1e-8
+        )
         data[modality][mask == 0] = 0
         return data
 
-    def no_norm(self, data: np.ndarray, seg: np.ndarray, modality: int,
-                use_nonzero_mask: Dict[int, bool]) -> np.ndarray:
+    def no_norm(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         No normalization only masking
 
@@ -581,7 +641,9 @@ class GenericPreprocessor:
         instances_props = properties["instances"]
         labels = [int(instances_props[str(i)]) for i in instances]
 
-        assert (len(boxes) == len(instances)) or ((boxes.size == 0) and (len(instances) == 0))
+        assert (len(boxes) == len(instances)) or (
+            (boxes.size == 0) and (len(instances) == 0)
+        )
         assert len(labels) == len(instances)
         return {
             "boxes": boxes,
@@ -589,11 +651,12 @@ class GenericPreprocessor:
             "labels": labels,
         }
 
-    def run_test(self,
-                 data_files,
-                 target_spacing,
-                 target_dir: PathLike,
-                 ) -> None:
+    def run_test(
+        self,
+        data_files,
+        target_spacing,
+        target_dir: PathLike,
+    ) -> None:
         """
         Preprocess and save test data
 
@@ -611,11 +674,12 @@ class GenericPreprocessor:
         np.savez_compressed(str(target_dir / f"{case_id}.npz"), data=data)
         save_pickle(properties, target_dir / f"{case_id}")
 
-    def preprocess_test_case(self,
-                             data_files,
-                             target_spacing,
-                             seg_file=None,
-                             ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def preprocess_test_case(
+        self,
+        data_files,
+        target_spacing,
+        seg_file=None,
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Preprocess a test file
 
@@ -630,7 +694,8 @@ class GenericPreprocessor:
             dict: updated properties
         """
         data, seg, properties = ImageCropper.load_crop_from_list_of_files(
-            data_files, seg_file)
+            data_files, seg_file
+        )
         data, seg, properties = self.apply_process(
             data=data,
             target_spacing=target_spacing,
@@ -645,12 +710,13 @@ class Preprocessor2D(GenericPreprocessor):
     Do not resample along the z direction
     """
 
-    def resample(self,
-                 data: np.ndarray,
-                 seg: np.ndarray,
-                 original_spacing: Sequence[float],
-                 target_spacing: Sequence[float],
-                 ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def resample(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        original_spacing: Sequence[float],
+        target_spacing: Sequence[float],
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Resample data and segmentation to new spacing
 
@@ -674,17 +740,18 @@ class Preprocessor2D(GenericPreprocessor):
         # prevent resampling along the z direction
         target_spacing[0] = original_spacing[0]
 
-        data, seg = resample_patient(data,
-                                     seg,
-                                     original_spacing,
-                                     target_spacing,
-                                     order_data=3,
-                                     order_seg=0,
-                                     force_separate_z=False,
-                                     order_z_data=9999,
-                                     order_z_seg=9999,
-                                     separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
-                                     )
+        data, seg = resample_patient(
+            data,
+            seg,
+            original_spacing,
+            target_spacing,
+            order_data=3,
+            order_seg=0,
+            force_separate_z=False,
+            order_z_data=9999,
+            order_z_seg=9999,
+            separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
+        )
 
         after = {
             "spacing": target_spacing,
@@ -694,12 +761,13 @@ class Preprocessor2D(GenericPreprocessor):
 
 
 class PreprocessorNoResampling(GenericPreprocessor):
-    def resample(self,
-                 data: np.ndarray,
-                 seg: np.ndarray,
-                 original_spacing: Sequence[float],
-                 target_spacing: Sequence[float],
-                 ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def resample(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        original_spacing: Sequence[float],
+        target_spacing: Sequence[float],
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         Do not resample
 
@@ -731,12 +799,13 @@ class PreprocessorRibFrac(PreprocessorNoResampling):
     No resampling + bone window
     """
 
-    def normalize_ct(self,
-                     data: np.ndarray,
-                     seg: np.ndarray,
-                     modality: int,
-                     use_nonzero_mask: Dict[int, bool],
-                     ) -> np.ndarray:
+    def normalize_ct(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: Dict[int, bool],
+    ) -> np.ndarray:
         """
         clip to lb and ub from train data foreground and use foreground mn and sd from training data
         (This uses the foreground mean and std!)
@@ -750,8 +819,8 @@ class PreprocessorRibFrac(PreprocessorNoResampling):
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        lower_bound = 450. - (1100. / 2.)
-        upper_bound = 450. + (1100. / 2.)
+        lower_bound = 450.0 - (1100.0 / 2.0)
+        upper_bound = 450.0 + (1100.0 / 2.0)
         data[modality] = np.clip(data[modality], lower_bound, upper_bound)
         data[modality] = data[modality] - data[modality].min()  # (0, X)
         data[modality] = data[modality] / data[modality].max()  # (0, 1)
@@ -760,12 +829,13 @@ class PreprocessorRibFrac(PreprocessorNoResampling):
 
 
 class PreprocessorFP16I16(GenericPreprocessor):
-    def run_process(self,
-                    target_spacing: Sequence[float],
-                    case_id: str,
-                    output_dir_stage: Path,
-                    cropped_data_dir: Path,
-                    ) -> None:
+    def run_process(
+        self,
+        target_spacing: Sequence[float],
+        case_id: str,
+        output_dir_stage: Path,
+        cropped_data_dir: Path,
+    ) -> None:
         """
         Process a single case
         Result is saved into :param:`output_dir_stage`
@@ -780,7 +850,8 @@ class PreprocessorFP16I16(GenericPreprocessor):
         seg = seg[None]
 
         data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg)
+            data, target_spacing, properties, seg
+        )
         properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
 
         data = data.astype(np.float16)  # use float16 instead of float32
@@ -793,13 +864,14 @@ class PreprocessorFP16I16(GenericPreprocessor):
         )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(str(output_dir_stage / f"{case_id}.npz"),
-                            data=data,
-                            seg=seg,
-                            )
+        np.savez_compressed(
+            str(output_dir_stage / f"{case_id}.npz"),
+            data=data,
+            seg=seg,
+        )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
 
 
-PreprocessorType = TypeVar('PreprocessorType', bound=AbstractPreprocessor)
+PreprocessorType = TypeVar("PreprocessorType", bound=AbstractPreprocessor)

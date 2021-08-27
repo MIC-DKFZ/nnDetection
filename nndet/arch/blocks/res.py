@@ -29,15 +29,16 @@ from nndet.arch.conv import NdParam
 
 
 class ResPlain(nn.Module):
-    def __init__(self,
-                 conv: Callable,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: NdParam,
-                 stride: NdParam,
-                 padding: NdParam,
-                 attention: Optional[nn.Module] = None,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: NdParam,
+        stride: NdParam,
+        padding: NdParam,
+        attention: Optional[nn.Module] = None,
+    ):
         """
         Build a plan residual block
         Zero init norm according to https://arxiv.org/abs/1706.02677
@@ -53,21 +54,32 @@ class ResPlain(nn.Module):
             attention: additional attention layer applied after convolutions
         """
         super().__init__()
-        logger.warning("ResidualBlock uses normal relu! This might not be "
-                       "desired if conv uses a different non linearity")
+        logger.warning(
+            "ResidualBlock uses normal relu! This might not be "
+            "desired if conv uses a different non linearity"
+        )
 
-        self.conv1 = conv(in_channels, out_channels, kernel_size=kernel_size,
-                          padding=padding, stride=stride)
-        self.conv2 = conv(out_channels,
-                          out_channels,
-                          kernel_size=kernel_size,
-                          padding=padding,
-                          add_act=False,
-                          )
+        self.conv1 = conv(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        )
+        self.conv2 = conv(
+            out_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            add_act=False,
+        )
         self.relu = nn.ReLU(inplace=True)
 
-        stride_prod = (reduce((lambda x, y: x * y), stride)
-                       if isinstance(stride, Sequence) else stride)
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
@@ -110,16 +122,17 @@ class ResPlain(nn.Module):
 
 
 class ResBottleneck(nn.Module):
-    def __init__(self,
-                 conv: Callable,
-                 in_channels: int,
-                 internal_channels: int,
-                 kernel_size: NdParam,
-                 stride: NdParam,
-                 padding: NdParam,
-                 expansion: int = 1,
-                 attention: Optional[nn.Module] = None,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        in_channels: int,
+        internal_channels: int,
+        kernel_size: NdParam,
+        stride: NdParam,
+        padding: NdParam,
+        expansion: int = 1,
+        attention: Optional[nn.Module] = None,
+    ):
         """
         Build a bottleneck residual block
         Zero init norm according to https://arxiv.org/abs/1706.02677
@@ -142,24 +155,42 @@ class ResBottleneck(nn.Module):
             attention: additional attention layer applied after convolutions
         """
         super().__init__()
-        logger.warning("ResidualBlock uses normal relu! This might not be "
-                       "desired if conv uses a different non linearity")
+        logger.warning(
+            "ResidualBlock uses normal relu! This might not be "
+            "desired if conv uses a different non linearity"
+        )
 
         out_channels = internal_channels * expansion
-        self.conv1 = conv(in_channels, internal_channels,
-                          kernel_size=1, padding=0, stride=1,
-                          )
-        self.conv2 = conv(internal_channels, internal_channels,
-                          kernel_size=kernel_size, padding=padding, stride=stride,
-                          )
-        self.conv3 = conv(internal_channels, out_channels,
-                          kernel_size=1, padding=0, add_act=False, stride=1,
-                          )
+        self.conv1 = conv(
+            in_channels,
+            internal_channels,
+            kernel_size=1,
+            padding=0,
+            stride=1,
+        )
+        self.conv2 = conv(
+            internal_channels,
+            internal_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        )
+        self.conv3 = conv(
+            internal_channels,
+            out_channels,
+            kernel_size=1,
+            padding=0,
+            add_act=False,
+            stride=1,
+        )
         self.relu = nn.ReLU(inplace=True)
 
         # downsampling path
-        stride_prod = (reduce((lambda x, y: x * y), stride)
-                       if isinstance(stride, Sequence) else stride)
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),

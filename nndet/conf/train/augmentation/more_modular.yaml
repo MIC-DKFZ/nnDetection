@@ -5,10 +5,11 @@ transforms_kwargs: {}
 selected_data_channels:
 selected_seg_channels:
 
+# Spatial Transformation
 do_elastic: False
-p_eldef: 0.0 # low prob, need to save compute
-elastic_deform_alpha: [0., 1300.]
-elastic_deform_sigma: [9., 15.]
+p_eldef: 0.2 # low prob, need to save compute
+elastic_deform_alpha: [0., 900.]
+elastic_deform_sigma: [9., 13.]
 
 do_scaling: True
 p_scale: 0.2
@@ -27,7 +28,7 @@ p_per_sample_gaussian_noise: 0.1
 # GaussianBlurTransform
 p_per_sample_gaussian_blur: 0.2
 p_per_channel_gaussian_blur: 0.5
-gaussian_blur_sigma: [0.5, 1.5]
+gaussian_blur_sigma: [0.5, 1.0]
 gaussian_blur_sigma_per_channel: True
 
 # BrightnessMultiplicativeTransform

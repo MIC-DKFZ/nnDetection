@@ -55,11 +55,12 @@ class Swish(torch.nn.Module):
 
 
 @torch.jit.script
-def mish(x: torch.Tensor,
-         inplace: bool = False,
-         beta: float = 1,
-         threshold: float = 20,
-         ) -> torch.Tensor:
+def mish(
+    x: torch.Tensor,
+    inplace: bool = False,
+    beta: float = 1,
+    threshold: float = 20,
+) -> torch.Tensor:
     """
     Apples mish function as described in
     https://www.bmvc2020-conference.com/assets/papers/0928.pdf
@@ -76,11 +77,12 @@ def mish(x: torch.Tensor,
 
 
 class Mish(torch.nn.Module):
-    def __init__(self,
-                 inplace: bool = False,
-                 beta: float = 1,
-                 threshold: float = 20,
-                 ):
+    def __init__(
+        self,
+        inplace: bool = False,
+        beta: float = 1,
+        threshold: float = 20,
+    ):
         """
         Apples mish function as described in
         https://www.bmvc2020-conference.com/assets/papers/0928.pdf
@@ -100,8 +102,9 @@ class Mish(torch.nn.Module):
         self.threshold = threshold
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return mish(x,
-                    inplace=self.inplace,
-                    beta=self.beta,
-                    threshold=self.threshold,
-                    )
+        return mish(
+            x,
+            inplace=self.inplace,
+            beta=self.beta,
+            threshold=self.threshold,
+        )
