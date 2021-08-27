@@ -13,34 +13,35 @@ class BoxModule(LightningBaseModule):
     """
     This class provides the template to build a detection model
     """
-    
+
     # define detector cls
     # For one stage detectors this defines the final class
     # For two stage detectors this defines the class of the RPN
     detector_cls = ...
 
-    backbone_cls = ... # define class for backbone
-    backbone_conv_cls = ... # conv class used for backbone
-    backbone_block = ... # define central building block of backbone
+    backbone_cls = ...  # define class for backbone
+    backbone_conv_cls = ...  # conv class used for backbone
+    backbone_block = ...  # define central building block of backbone
 
-    neck_cls = ... # define class for neck
-    neck_conv_cls = ... # conv class used for neck
-    
-    head_cls = ... # define class for head
-    head_conv_cls = ... # conv class used for head
-    head_classifier_cls = ... # define class for head classifier
-    head_regressor_cls = ... # define class for head regressor
+    neck_cls = ...  # define class for neck
+    neck_conv_cls = ...  # conv class used for neck
 
-    matcher_cls = ... # define class to match anchors to ground truth
+    head_cls = ...  # define class for head
+    head_conv_cls = ...  # conv class used for head
+    head_classifier_cls = ...  # define class for head classifier
+    head_regressor_cls = ...  # define class for head regressor
+
+    matcher_cls = ...  # define class to match anchors to ground truth
 
     @classmethod
-    def from_config_plan(cls,
-                         model_cfg: dict,
-                         plan_arch: dict,
-                         plan_anchors: dict,
-                         log_num_anchors: str = None,
-                         **kwargs,
-                         ):
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        log_num_anchors: str = None,
+        **kwargs,
+    ):
         """
         Create Configurable RetinaUNet
 
@@ -66,21 +67,32 @@ class BoxModule(LightningBaseModule):
                 will be performed
             **kwargs:
         """
-        logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
-                    f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}")
-        logger.info(f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}")
+        logger.info(
+            f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
+            f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}"
+        )
+        logger.info(
+            f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}"
+        )
         plan_arch.update(model_cfg["plan_arch_overwrites"])
         plan_anchors.update(model_cfg["plan_anchors_overwrites"])
-        logger.info(f"Start channels: {plan_arch['start_channels']}; "
-                    f"head channels: {plan_arch['head_channels']}; "
-                    f"fpn channels: {plan_arch['fpn_channels']}")
+        logger.info(
+            f"Start channels: {plan_arch['start_channels']}; "
+            f"head channels: {plan_arch['head_channels']}; "
+            f"fpn channels: {plan_arch['fpn_channels']}"
+        )
 
         _plan_anchors = copy.deepcopy(plan_anchors)
-        coder = BoxCoderND(weights=(1.,) * (plan_arch["dim"] * 2))
-        s_param = False if ("aspect_ratios" in _plan_anchors) and \
-                           (_plan_anchors["aspect_ratios"] is not None) else True
-        anchor_generator = get_anchor_generator(
-            plan_arch["dim"], s_param=s_param)(**_plan_anchors)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+        s_param = (
+            False
+            if ("aspect_ratios" in _plan_anchors)
+            and (_plan_anchors["aspect_ratios"] is not None)
+            else True
+        )
+        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(
+            **_plan_anchors
+        )
 
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
@@ -111,7 +123,7 @@ class BoxModule(LightningBaseModule):
             model_cfg=model_cfg,
             classifier=classifier,
             regressor=regressor,
-            coder=coder
+            coder=coder,
         )
 
         detections_per_img = plan_arch.get("detections_per_img", 100)
@@ -120,13 +132,14 @@ class BoxModule(LightningBaseModule):
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
         nms_thresh = plan_arch.get("nms_thresh", 0.6)
 
-        logger.info(f"Model Inference Summary: \n"
-                    f"detections_per_img: {detections_per_img} \n"
-                    f"score_thresh: {score_thresh} \n"
-                    f"topk_candidates: {topk_candidates} \n"
-                    f"remove_small_boxes: {remove_small_boxes} \n"
-                    f"nms_thresh: {nms_thresh}",
-                    )
+        logger.info(
+            f"Model Inference Summary: \n"
+            f"detections_per_img: {detections_per_img} \n"
+            f"score_thresh: {score_thresh} \n"
+            f"topk_candidates: {topk_candidates} \n"
+            f"remove_small_boxes: {remove_small_boxes} \n"
+            f"nms_thresh: {nms_thresh}",
+        )
 
         return cls.detector_cls(
             dim=plan_arch["dim"],
@@ -162,7 +175,9 @@ class BoxModule(LightningBaseModule):
             EncoderType: encoder instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} ")
+        logger.info(
+            f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
+        )
         encoder = cls.encoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -172,7 +187,7 @@ class BoxModule(LightningBaseModule):
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
             max_channels=plan_arch.get("max_channels", 320),
-            **model_cfg['encoder_kwargs'],
+            **model_cfg["encoder_kwargs"],
         )
         return encoder
 
@@ -194,7 +209,9 @@ class BoxModule(LightningBaseModule):
             DecoderType: decoder instance
         """
         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: decoder {cls.decoder_cls.__name__}: {model_cfg['decoder_kwargs']}")
+        logger.info(
+            f"Building:: decoder {cls.decoder_cls.__name__}: {model_cfg['decoder_kwargs']}"
+        )
         decoder = cls.decoder_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -202,7 +219,7 @@ class BoxModule(LightningBaseModule):
             in_channels=encoder.get_channels(),
             decoder_levels=plan_arch["decoder_levels"],
             fixed_out_channels=plan_arch["fpn_channels"],
-            **model_cfg['decoder_kwargs'],
+            **model_cfg["decoder_kwargs"],
         )
         return decoder
 
@@ -226,7 +243,7 @@ class BoxModule(LightningBaseModule):
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_classifier_cls.__name__
-        kwargs = model_cfg['head_classifier_kwargs']
+        kwargs = model_cfg["head_classifier_kwargs"]
 
         logger.info(f"Building:: classifier {name}: {kwargs}")
         classifier = cls.head_classifier_cls(
@@ -260,7 +277,7 @@ class BoxModule(LightningBaseModule):
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_regressor_cls.__name__
-        kwargs = model_cfg['head_regressor_kwargs']
+        kwargs = model_cfg["head_regressor_kwargs"]
 
         logger.info(f"Building:: regressor {name}: {kwargs}")
         regressor = cls.head_regressor_cls(
@@ -296,12 +313,14 @@ class BoxModule(LightningBaseModule):
             HeadType: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg['head_kwargs']
+        head_kwargs = model_cfg["head_kwargs"]
         sampler_name = cls.head_sampler_cls.__name__
-        sampler_kwargs = model_cfg['head_sampler_kwargs']
+        sampler_kwargs = model_cfg["head_sampler_kwargs"]
 
-        logger.info(f"Building:: head {head_name}: {head_kwargs} "
-                    f"sampler {sampler_name}: {sampler_kwargs}")
+        logger.info(
+            f"Building:: head {head_name}: {head_kwargs} "
+            f"sampler {sampler_name}: {sampler_kwargs}"
+        )
         sampler = cls.head_sampler_cls(**sampler_kwargs)
         head = cls.head_cls(
             classifier=classifier,
@@ -332,7 +351,7 @@ class BoxModule(LightningBaseModule):
         """
         if cls.segmenter_cls is not None:
             name = cls.segmenter_cls.__name__
-            kwargs = model_cfg['segmenter_kwargs']
+            kwargs = model_cfg["segmenter_kwargs"]
             conv = Generator(cls.base_conv_cls, plan_arch["dim"])
 
             logger.info(f"Building:: segmenter {name} {kwargs}")

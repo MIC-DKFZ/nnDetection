@@ -38,12 +38,7 @@ from nndet.io.transforms import (
 
 
 class LightningBaseModule(pl.LightningModule):
-    def __init__(self,
-                 model_cfg: dict,
-                 trainer_cfg: dict,
-                 plan: dict,
-                 **kwargs
-                 ):
+    def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
         """
         Provides a base module which is used inside of nnDetection.
         All lightning modules of nnDetection should be derifed from this!
@@ -62,7 +57,9 @@ class LightningBaseModule(pl.LightningModule):
 
         # determine shape for network visualisation
         self.example_input_array_shape = (
-            1, plan["architecture"]["in_channels"], *plan["patch_size"],
+            1,
+            plan["architecture"]["in_channels"],
+            *plan["patch_size"],
         )
 
         # initialize model
@@ -77,10 +74,14 @@ class LightningBaseModule(pl.LightningModule):
 
         # handle transfer learning
         data_channels = self.plan["num_modalities"]  # number of channels of source data
-        network_channels = self.plan["architecture"]["in_channels"]  # number of channels of target data
+        network_channels = self.plan["architecture"][
+            "in_channels"
+        ]  # number of channels of target data
         if network_channels > data_channels:
-            logger.info("Detected Transfer Learning Setup with different soruce "
-                        "and target channels. Adding additional transformation.")
+            logger.info(
+                "Detected Transfer Learning Setup with different soruce "
+                "and target channels. Adding additional transformation."
+            )
             trafos.append(
                 TransferInputChannel(
                     out_channels=network_channels,
@@ -97,7 +98,7 @@ class LightningBaseModule(pl.LightningModule):
         the input through the network which does not include
         detection spcific postprocessing!
         """
-        return self.model.inference_step(x) # FIXME
+        return self.model.inference_step(x)  # FIXME
         # return self.model(x)
 
     def training_step(self, batch, batch_idx):
@@ -108,12 +109,12 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
-        losses, _ = self.model.train_step( # FIXME
+        losses, _ = self.model.train_step(  # FIXME
             images=batch["data"],
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             },
             predict=False,
             batch_num=batch_idx,
@@ -135,9 +136,9 @@ class LightningBaseModule(pl.LightningModule):
             targets = {
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                "target_seg": batch["target"][:, 0],  # Remove channel dimension
             }
-            losses, prediction = self.model.train_step( # FIXME
+            losses, prediction = self.model.train_step(  # FIXME
                 images=batch["data"],
                 targets=targets,
                 predict=True,
@@ -149,8 +150,10 @@ class LightningBaseModule(pl.LightningModule):
 
         super().evaluation_step(prediction=prediction, targets=targets)
 
-        return {"loss": loss.detach().item(),
-                **{key: l.detach().item() for key, l in losses.items()}}
+        return {
+            "loss": loss.detach().item(),
+            **{key: l.detach().item() for key, l in losses.items()},
+        }
 
     def training_epoch_end(self, training_step_outputs):
         """
@@ -192,7 +195,7 @@ class LightningBaseModule(pl.LightningModule):
         metric_scores = super().evaluation_end()
 
         for key, item in metric_scores.items():
-            self.log(f'val/{key}', item, prog_bar=False, logger=True, sync_dist=True)
+            self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
 
         return super().validation_epoch_end(validation_step_outputs)
 
@@ -238,13 +241,14 @@ class LightningBaseModule(pl.LightningModule):
         return self.model.inference_step(batch, **kwargs)
 
     @classmethod
-    def from_config_plan(cls,
-                         model_cfg: dict,
-                         plan_arch: dict,
-                         plan_anchors: dict,
-                         log_num_anchors: str = None,
-                         **kwargs,
-                         ):
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        log_num_anchors: str = None,
+        **kwargs,
+    ):
         """
         Used to generate the model
         """
@@ -259,25 +263,27 @@ class LightningBaseModule(pl.LightningModule):
         raise NotImplementedError
 
     @classmethod
-    def get_predictor(cls,
-                      plan: Dict,
-                      models: Sequence[LightningBaseModule],
-                      num_tta_transforms: int = None,
-                      **kwargs
-                      ) -> Type[Predictor]:
+    def get_predictor(
+        cls,
+        plan: Dict,
+        models: Sequence[LightningBaseModule],
+        num_tta_transforms: int = None,
+        **kwargs,
+    ) -> Type[Predictor]:
         """
         Get predictor
         Needs to be overwritten in subclasses!
         """
         raise NotImplementedError
 
-    def sweep(self,
-              cfg: dict,
-              save_dir: os.PathLike,
-              train_data_dir: os.PathLike,
-              case_ids: Sequence[str],
-              run_prediction: bool = True,
-              ) -> Dict[str, Any]:
+    def sweep(
+        self,
+        cfg: dict,
+        save_dir: os.PathLike,
+        train_data_dir: os.PathLike,
+        case_ids: Sequence[str],
+        run_prediction: bool = True,
+    ) -> Dict[str, Any]:
         """
         Sweep parameters to find the best predictions
         Needs to be overwritten in subclasses!
@@ -302,12 +308,14 @@ class LightningBaseModule(pl.LightningModule):
             callbacks.append(
                 SWACycleLinear(
                     swa_epoch_start=self.train_epochs,
-                    cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.,
-                    cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.,
-                    num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
+                    cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.0,
+                    cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.0,
+                    num_iterations_per_epoch=self.trainer_cfg[
+                        "num_train_batches_per_epoch"
+                    ],
                 )
             )
         return callbacks
 
 
-LightningBaseModuleType = TypeVar('LightningBaseModuleType', bound=LightningBaseModule)
+LightningBaseModuleType = TypeVar("LightningBaseModuleType", bound=LightningBaseModule)

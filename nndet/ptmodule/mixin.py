@@ -23,7 +23,8 @@ class OperationModeMixin(ABC):
     It provides the transformation to prepare the ground truth and input
     for the networks and defines the evaluations to perforn.
     """
-    evaluators: Dict = {} # needs to be overwritten in subclass
+
+    evaluators: Dict = {}  # needs to be overwritten in subclass
 
     @abstractmethod
     def get_pre_transforms() -> List[AbstractTransform]:
@@ -70,20 +71,20 @@ class OperationModeMixin(ABC):
         Notes:
             make sure to call the super classes here!
         """
-        pass # end parent calls
-    
+        pass  # end parent calls
+
     def evaluation_end(self) -> Dict[str, float]:
         """
         Compute validation metrics of epoch
-        
+
         ```
         General pipeline should look something like this:
         # collect other scores
         scores = super().evaluation_end()
-        
+
         # compute own scores
         own_scores = ...
-        
+
         # add own scores
         metric_scores.update(own_scores)
         ```
@@ -101,7 +102,7 @@ class BoxMixin(OperationModeMixin):
     def get_pre_transforms(plan: dict) -> List[AbstractTransform]:
         """
         Search for unqiue instances -> Instances to Boxes
-        
+
         Returns:
             List[AbstractTransform]: return a list of transformations
 
@@ -135,9 +136,13 @@ class BoxMixin(OperationModeMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "boxes" in evaluators:
-            raise RuntimeError("Found BoxEvaluator in evaluators, can not register a second one!")
-        
-        _classes = [f"class{c}" for c in range(plan["architecture"]["classifier_classes"])]
+            raise RuntimeError(
+                "Found BoxEvaluator in evaluators, can not register a second one!"
+            )
+
+        _classes = [
+            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
+        ]
         evaluators["boxes"] = BoxEvaluator.create(
             classes=_classes,
             fast=True,
@@ -194,17 +199,18 @@ class BoxMixin(OperationModeMixin):
         # compute own scores
         box_scores, _ = self.evaluators["boxes"].finish_online_evaluation()
         self.evaluators["boxes"].reset()
-        
+
         # add own scores
         metric_scores.update(box_scores)
 
         # [optional] log own scores
-        logger.info(f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+        logger.info(
+            f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
             f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
             f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
             f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
             f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-            )
+        )
         return metric_scores
 
 
@@ -217,13 +223,14 @@ class SemanticMixin(OperationModeMixin):
     Args:
         OperationModeMixin ([type]): [description]
     """
+
     def get_pre_transforms(plan: dict) -> List[AbstractTransform]:
         """
         Search for unqiue instances -> Instances to Boxes
-        
+
         Returns:
             List[AbstractTransform]: return a list of transformations
-        
+
         Notes:
             make sure to call the super classes here!
         """
@@ -240,14 +247,16 @@ class SemanticMixin(OperationModeMixin):
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
         Initialize BoxEvaluator
-        
+
         Notes:
             make sure to call the super classes here!
         """
         evaluators = super().evaluation_init(plan=plan)
         if "semantic" in evaluators:
-            raise RuntimeError("Found BoxEvaluator in evaluators, can not register a second one!")
-        
+            raise RuntimeError(
+                "Found BoxEvaluator in evaluators, can not register a second one!"
+            )
+
         evaluators["semantic"] = SegmentationEvaluator.create()
         return evaluators
 
@@ -264,7 +273,7 @@ class SemanticMixin(OperationModeMixin):
                 Exact keys depend on the module class
             targets: dict with ground truth.
                 Exact keys depend on the module class.
-        
+
         Notes:
             make sure to call the super classes here!
         """
@@ -280,8 +289,8 @@ class SemanticMixin(OperationModeMixin):
 
     def evaluation_end(self) -> Dict[str, float]:
         """
-        Compute validation metrics of epoch        
-        
+        Compute validation metrics of epoch
+
         Notes:
             make sure to call the super classes here!
         """
@@ -291,10 +300,10 @@ class SemanticMixin(OperationModeMixin):
         # compute own scores
         seg_scores, _ = self.evaluators["semantic"].finish_online_evaluation()
         self.evaluators["semantic"].reset()
-        
+
         # add own scores
         metric_scores.update(seg_scores)
-        
+
         # [optional] log own scores
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
