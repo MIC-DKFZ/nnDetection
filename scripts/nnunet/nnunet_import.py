@@ -33,7 +33,7 @@ from loguru import logger
 
 from nndet.evaluator.registry import evaluate_box_dir
 from nndet.io import load_pickle, save_pickle, get_task, load_json
-from nndet.utils.clustering import instance_results_from_seg
+from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
 
 
@@ -200,10 +200,12 @@ def import_dir(
         stuff=stuff,
     )
 
-    # for s in maybe_verbose_iterable(source):
-    #     _fn(s, target_dir)
-    with Pool(processes=num_workers) as p:
-        p.starmap(_fn, zip(source, repeat(target_dir)))
+    if num_workers > 0:
+        with Pool(processes=num_workers) as p:
+            p.starmap(_fn, zip(source, repeat(target_dir)))
+    else:
+        for s in maybe_verbose_iterable(source):
+            _fn(s, target_dir)
 
 
 def import_single_case(
@@ -255,7 +257,7 @@ def import_single_case(
         ] = probs
         probs = tmp
 
-    res = instance_results_from_seg(
+    res = softmax_to_instances(
         probs,
         aggregation=aggregation,
         min_num_voxel=min_num_voxel,

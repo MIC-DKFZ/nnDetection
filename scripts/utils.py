@@ -19,6 +19,9 @@ from nndet.utils.check import env_guard
 
 @env_guard
 def boxes2nii():
+    """
+    Only for visualisation purposes.
+    """
     import os
     import argparse
     from pathlib import Path
@@ -106,11 +109,11 @@ def boxes2nii():
             zip(boxes, scores, labels), start=1
         ):
             mask_slicing = [
-                slice(int(pbox[0]), int(pbox[2])),
-                slice(int(pbox[1]), int(pbox[3])),
+                slice(int(pbox[0]) + 1, int(pbox[2])),
+                slice(int(pbox[1]) + 1, int(pbox[3])),
             ]
             if instance_mask.ndim == 3:
-                mask_slicing.append(slice(int(pbox[4]), int(pbox[5])))
+                mask_slicing.append(slice(int(pbox[4]) + 1, int(pbox[5])))
             instance_mask[tuple(mask_slicing)] = instance_id
 
             prediction_meta[int(instance_id)] = {
@@ -132,6 +135,9 @@ def boxes2nii():
 
 @env_guard
 def seg2nii():
+    """
+    Only for visualisation purposes.
+    """
     import os
     import argparse
     from pathlib import Path
