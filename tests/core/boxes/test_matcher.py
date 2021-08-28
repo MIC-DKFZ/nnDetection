@@ -1,5 +1,4 @@
 import pytest
-
 import torch
 
 from nndet.core.boxes.matcher import ATSSMatcher

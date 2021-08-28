@@ -15,37 +15,38 @@ limitations under the License.
 """
 
 import argparse
-import shutil
-import os
 import copy
+import os
+import shutil
 import sys
 import traceback
+from itertools import repeat
+from multiprocessing import Pool
+from pathlib import Path
+from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
-
-from loguru import logger
-from itertools import repeat
-from typing import Dict, Sequence, Tuple, List
-from pathlib import Path
-from multiprocessing import Pool
 from hydra import initialize_config_module
+from loguru import logger
 from omegaconf import OmegaConf
 
-from nndet.utils.config import compose
-from nndet.utils.check import env_guard
-from nndet.planning import DatasetAnalyzer
-from nndet.planning import PLANNER_REGISTRY
+from nndet.io.load import load_npz_looped, load_pickle
+from nndet.io.paths import (
+    get_case_id_from_path,
+    get_paths_from_splitted_dir,
+    get_paths_raw_to_split,
+    subfiles,
+)
+from nndet.planning import PLANNER_REGISTRY, DatasetAnalyzer
 from nndet.planning.experiment.utils import create_labels
 from nndet.planning.properties.registry import medical_instance_props
-from nndet.io.load import load_pickle, load_npz_looped
-from nndet.io.paths import (
-    get_paths_raw_to_split,
-    get_paths_from_splitted_dir,
-    subfiles,
-    get_case_id_from_path,
-)
 from nndet.preprocessing import ImageCropper
-from nndet.utils.check import check_dataset_file, check_data_and_label_splitted
+from nndet.utils.check import (
+    check_data_and_label_splitted,
+    check_dataset_file,
+    env_guard,
+)
+from nndet.utils.config import compose
 
 
 def run_cropping_and_convert(

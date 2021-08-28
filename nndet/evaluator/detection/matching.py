@@ -46,9 +46,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import numpy as np
-from typing import Callable, Sequence, List, Dict, Optional
+from typing import Callable, Dict, List, Optional, Sequence
 
+import numpy as np
 
 __all__ = ["matching_batch"]
 

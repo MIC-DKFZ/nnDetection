@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from collections import defaultdict
-from typing import Dict, Sequence, Callable, Tuple, Union, Mapping, Optional
+from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
@@ -31,7 +31,6 @@ from sklearn.metrics import (
 
 from nndet.evaluator import AbstractEvaluator
 from nndet.utils.info import experimental
-
 
 __all__ = ["CaseEvaluator"]
 

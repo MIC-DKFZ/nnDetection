@@ -16,18 +16,15 @@ limitations under the License.
 
 import os
 import shutil
-import numpy as np
-import SimpleITK as sitk
-
 from pathlib import Path
 from typing import List, Sequence
 
+import numpy as np
+import SimpleITK as sitk
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
-from nndet.io.paths import Pathlike
-from nndet.io.paths import get_case_ids_from_dir
-
+from nndet.io.paths import Pathlike, get_case_ids_from_dir
 
 __all__ = ["maybe_split_4d_nifti"]
 

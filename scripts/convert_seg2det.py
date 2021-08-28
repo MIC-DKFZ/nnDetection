@@ -30,11 +30,11 @@ from tqdm import tqdm
 
 from nndet.core.boxes import box_size_np
 from nndet.io import save_json
-from nndet.io.transforms.instances import get_bbox_np
 from nndet.io.itk import load_sitk, load_sitk_as_array
-from nndet.utils.config import compose
+from nndet.io.transforms.instances import get_bbox_np
 from nndet.utils.check import env_guard
 from nndet.utils.clustering import seg_to_instances
+from nndet.utils.config import compose
 
 
 def prepare_detection_label(

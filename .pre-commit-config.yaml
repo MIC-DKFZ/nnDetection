@@ -23,6 +23,7 @@ repos:
     hooks:
       - id: isort
         name: Import Handling
+        args: ["--profile", "black"]
 
   - repo: local
     hooks:

@@ -1,14 +1,14 @@
-import pytest
 import copy
-from pathlib import Path
-
-import torch
 import os
+from dataclasses import dataclass
+from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import Mock, patch
+
+import pytest
+import torch
 
 from nndet.inference.ensembler import BoxEnsembler
-from unittest.mock import Mock, patch
-from dataclasses import dataclass
 
 
 @dataclass

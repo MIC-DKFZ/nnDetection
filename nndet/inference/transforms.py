@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Sequence, Tuple
+
 from loguru import logger
-from typing import List, Tuple, Sequence
 
 from nndet.io.transforms import Mirror, NoOp
-
 from nndet.io.transforms.base import AbstractTransform
 
 

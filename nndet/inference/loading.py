@@ -17,7 +17,7 @@ limitations under the License.
 import os
 from functools import partial
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import torch
 from loguru import logger

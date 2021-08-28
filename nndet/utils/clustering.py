@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import numpy as np
+from typing import Dict, Optional, Sequence, Tuple, Union
 
+import numpy as np
 from scipy.ndimage import label
-from typing import Dict, Sequence, Union, Tuple, Optional
 
 from nndet.io.transforms.instances import get_bbox_np
 

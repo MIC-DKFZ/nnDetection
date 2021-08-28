@@ -1,10 +1,9 @@
+import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-import numpy as np
-
-from nndet.evaluator.det import DetectionEvaluator
 import nndet.evaluator.detection.matching as matching
+from nndet.evaluator.det import DetectionEvaluator
 
 
 class DummyMetric:

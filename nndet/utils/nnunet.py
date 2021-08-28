@@ -18,14 +18,14 @@ import os
 import shutil
 from itertools import repeat
 from multiprocessing import Pool
-
-import SimpleITK as sitk
-import numpy as np
-from loguru import logger
 from pathlib import Path
 
+import numpy as np
+import SimpleITK as sitk
+from loguru import logger
+
 from nndet.io.itk import load_sitk_as_array
-from nndet.io.load import save_json, load_json
+from nndet.io.load import load_json, save_json
 from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.transforms.instances import instances_to_segmentation_np
 

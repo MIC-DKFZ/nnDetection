@@ -1,6 +1,7 @@
+import math
+
 import pytest
 import torch
-import math
 
 from nndet.core.boxes import *
 

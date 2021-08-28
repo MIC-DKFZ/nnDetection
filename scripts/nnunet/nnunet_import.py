@@ -15,27 +15,24 @@ limitations under the License.
 """
 
 import argparse
-from nndet.io.load import save_json
 import os
-import sys
 import shutil
+import sys
 from functools import partial
 from itertools import repeat
 from multiprocessing import Pool
-
 from pathlib import Path, PurePath
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import numpy as np
-
 from hydra import initialize_config_module
 from loguru import logger
 
 from nndet.evaluator.registry import evaluate_box_dir
-from nndet.io import load_pickle, save_pickle, get_task, load_json
+from nndet.io import get_task, load_json, load_pickle, save_pickle
+from nndet.io.load import save_json
 from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
-
 
 TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 

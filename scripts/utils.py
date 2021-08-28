@@ -22,15 +22,15 @@ def boxes2nii():
     """
     Only for visualisation purposes.
     """
-    import os
     import argparse
+    import os
     from pathlib import Path
 
     import numpy as np
     import SimpleITK as sitk
     from loguru import logger
 
-    from nndet.io import save_json, load_pickle
+    from nndet.io import load_pickle, save_json
     from nndet.io.paths import get_task, get_training_dir
     from nndet.utils.info import maybe_verbose_iterable
 
@@ -138,8 +138,8 @@ def seg2nii():
     """
     Only for visualisation purposes.
     """
-    import os
     import argparse
+    import os
     from pathlib import Path
 
     import SimpleITK as sitk
@@ -221,8 +221,9 @@ def unpack():
 
 def env():
     import os
-    import torch
     import sys
+
+    import torch
 
     print(f"----- PyTorch Information -----")
     print(f"PyTorch Version: {torch.version.__version__}")
@@ -254,11 +255,13 @@ def env():
 
 @env_guard
 def create_test_split():
+    import argparse
     import os
     import sys
-    import argparse
     from pathlib import Path
+
     from loguru import logger
+
     from nndet.io.prepare import create_test_split
     from nndet.utils.config import load_dataset_info
 

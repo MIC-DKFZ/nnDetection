@@ -1,14 +1,14 @@
-from setuptools import setup, find_packages
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
 
 import torch
+from setuptools import find_packages, setup
 from torch.utils.cpp_extension import (
+    CUDA_HOME,
     BuildExtension,
     CppExtension,
     CUDAExtension,
-    CUDA_HOME,
 )
 
 

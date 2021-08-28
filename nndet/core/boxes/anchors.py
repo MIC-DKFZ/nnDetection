@@ -33,12 +33,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
-import torch
-from typing import Sequence, List, Tuple, TypeVar, Union
-from torchvision.models.detection.rpn import AnchorGenerator
-from loguru import logger
 from itertools import product
+from typing import List, Sequence, Tuple, TypeVar, Union
 
+import torch
+from loguru import logger
+from torchvision.models.detection.rpn import AnchorGenerator
 
 AnchorGeneratorType = TypeVar("AnchorGeneratorType", bound=AnchorGenerator)
 

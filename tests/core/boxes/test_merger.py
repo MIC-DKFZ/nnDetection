@@ -1,11 +1,7 @@
 import pytest
-
 import torch
 
-from nndet.core.boxes.merging import (
-    GreedyIoUBoxMerger,
-    VoteLabelGreedyIoUBoxMerger,
-)
+from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
 
 
 @pytest.fixture

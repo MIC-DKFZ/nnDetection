@@ -1,24 +1,24 @@
-import os
 import copy
-from typing import Callable, Sequence, List
+import os
+from typing import Callable, List, Sequence
 
-import torch
 import numpy as np
+import torch
 from loguru import logger
 
-from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
+from nndet.core.boxes import (
+    box_center,
+    box_size_np,
+    expand_to_boxes,
+    get_anchor_generator,
+    permute_boxes,
+)
 from nndet.planning.architecture.boxes.base import BoxC001
 from nndet.planning.architecture.boxes.utils import (
     proxy_num_boxes_in_patch,
     scale_with_abs_strides,
 )
-from nndet.core.boxes import (
-    get_anchor_generator,
-    expand_to_boxes,
-    box_center,
-    box_size_np,
-    permute_boxes,
-)
+from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
 
 
 class BoxC002(BoxC001):
@@ -420,8 +420,8 @@ class BoxC002(BoxC001):
         """
         super().plot_box_distribution()
         try:
-            from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
             import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
         except ImportError:
             logger.error("Failed to import matplotlib continue anyway.")
             plt = None

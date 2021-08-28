@@ -1,16 +1,16 @@
 import os
 import shutil
-from typing import Sequence, Dict, Optional
+from pathlib import Path
+from typing import Dict, Optional, Sequence
 
 import SimpleITK as sitk
-from pathlib import Path
 from loguru import logger
 
 from nndet.io import save_json
 from nndet.io.prepare import instances_from_segmentation
 from nndet.utils.check import env_guard
+from nndet.utils.clustering import remove_classes, reorder_classes, seg_to_instances
 from nndet.utils.info import maybe_verbose_iterable
-from nndet.utils.clustering import seg_to_instances, remove_classes, reorder_classes
 
 
 def instances_from_segmentation(

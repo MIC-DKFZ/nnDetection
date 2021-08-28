@@ -15,12 +15,12 @@ limitations under the License.
 """
 
 from nndet.planning.properties import (
-    get_sizes_and_spacings_after_cropping,
-    get_size_reduction_by_cropping,
-    get_modalities,
-    analyze_segmentations,
-    analyze_intensities,
     analyze_instances,
+    analyze_intensities,
+    analyze_segmentations,
+    get_modalities,
+    get_size_reduction_by_cropping,
+    get_sizes_and_spacings_after_cropping,
 )
 
 

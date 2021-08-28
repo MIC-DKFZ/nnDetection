@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pandas as pd
 import SimpleITK as sitk
-from nndet.io.prepare import create_test_split
 from loguru import logger
 
-from nndet.utils.check import env_guard
 from nndet.io import save_json, save_yaml
-from nndet.io.itk import load_sitk, load_sitk_as_array, copy_meta_data_itk
+from nndet.io.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
+from nndet.io.prepare import create_test_split
+from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
 
 

@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import numpy as np
-
+from collections import OrderedDict, defaultdict
 from typing import Dict, List
-from collections import defaultdict, OrderedDict
+
+import numpy as np
 
 from nndet.io.load import load_properties_of_cropped
 from nndet.planning.analyzer import DatasetAnalyzer

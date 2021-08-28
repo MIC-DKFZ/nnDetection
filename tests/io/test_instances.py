@@ -1,11 +1,11 @@
-import pytest
-
-import torch
 import numpy as np
-from nndet.io.transforms.instances import instances_to_boxes, instances_to_boxes_np
+import pytest
+import torch
 from batchgenerators.transforms.utility_transforms import (
     ConvertSegToBoundingBoxCoordinates,
 )
+
+from nndet.io.transforms.instances import instances_to_boxes, instances_to_boxes_np
 
 
 @pytest.fixture

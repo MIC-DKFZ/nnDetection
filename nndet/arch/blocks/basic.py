@@ -14,17 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from functools import reduce
 from abc import abstractmethod
-from typing import Sequence, Callable, Union, Tuple
+from functools import reduce
+from typing import Callable, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
 
-
 from nndet.arch.blocks.mbconv import MyFusedMBConv
+from nndet.arch.blocks.res import ResBottleneck, ResPlain
 from nndet.arch.conv import NdParam, nd_pool
-from nndet.arch.blocks.res import ResPlain, ResBottleneck
 
 
 class AbstractBlock(nn.Module):

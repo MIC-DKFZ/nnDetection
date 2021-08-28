@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TypeVar, Optional, List, Dict
+from typing import Dict, List, Optional, TypeVar
 
 import torch
 import torch.nn as nn

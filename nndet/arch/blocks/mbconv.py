@@ -1,9 +1,10 @@
 from functools import reduce
 from typing import Sequence
-from nndet.arch.conv import nd_pool
+
 import torch
 
 from nndet.arch.blocks.se import SELayer
+from nndet.arch.conv import nd_pool
 
 
 class MyFusedMBConv(torch.nn.Module):

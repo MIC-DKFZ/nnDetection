@@ -16,10 +16,10 @@ limitations under the License.
 
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Sequence, Any
+from typing import Any, Dict, Optional, Sequence, Tuple
 
-import torch
 import numpy as np
+import torch
 from loguru import logger
 from scipy.ndimage import gaussian_filter
 from torch import Tensor

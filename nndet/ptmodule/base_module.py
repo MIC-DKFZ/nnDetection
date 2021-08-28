@@ -17,17 +17,17 @@ limitations under the License.
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Dict, Optional, Sequence, Hashable, Type, TypeVar
+from typing import Any, Callable, Dict, Hashable, Optional, Sequence, Type, TypeVar
 
-import torch
 import pytorch_lightning as pl
-from pytorch_lightning.core.memory import ModelSummary
+import torch
 from loguru import logger
+from pytorch_lightning.core.memory import ModelSummary
 
-from nndet.io.load import save_txt
 from nndet.inference.predictor import Predictor
-from nndet.training.swa import SWACycleLinear
+from nndet.io.load import save_txt
 from nndet.training.misc import EpochTimerCallback
+from nndet.training.swa import SWACycleLinear
 
 
 class LightningBaseModule(pl.LightningModule):

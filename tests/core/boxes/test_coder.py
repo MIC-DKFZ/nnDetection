@@ -1,7 +1,8 @@
-import pytest
 import math
 
+import pytest
 import torch
+
 from nndet.core.boxes import BoxCoderND
 
 

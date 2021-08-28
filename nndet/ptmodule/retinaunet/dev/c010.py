@@ -1,36 +1,32 @@
 import torch
 from loguru import logger
 
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
-from nndet.ptmodule import MODULE_REGISTRY
-
-from nndet.arch.decoder.base import SmallUFPN, SmallerUFPN
-from nndet.arch.heads.comb import BoxHeadAll
+from nndet.arch.conv import (
+    ConvGroupLReLU,
+    ConvGroupMish,
+    ConvGroupRelu,
+    ConvGroupSiLU,
+    ConvGroupSwish,
+    ConvInstanceLReLU,
+    ConvInstanceMish,
+    ConvInstanceSiLU,
+    ConvInstanceSwish,
+)
+from nndet.arch.decoder.base import SmallerUFPN, SmallUFPN
 from nndet.arch.heads.classifier import (
-    FocalClassifier,
     AsymmetricFocalClassifier,
+    DenseClassifierType,
+    FocalClassifier,
     FullyConntectedBCECLassifier,
 )
-from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
-from nndet.arch.conv import (
-    ConvGroupRelu,
-    ConvInstanceMish,
-    ConvInstanceSwish,
-    ConvGroupMish,
-    ConvGroupSwish,
-    ConvInstanceSiLU,
-    ConvGroupSiLU,
-    ConvInstanceLReLU,
-    ConvGroupLReLU,
-)
-
-from nndet.training.optimizer import get_params_no_wd_on_norm
-from nndet.training.learning_rate import LinearWarmupPolyLR
-
-from nndet.arch.heads.classifier import DenseClassifierType
+from nndet.arch.heads.comb import AnchorHeadType, BoxHeadAll
 from nndet.arch.heads.regressor import DenseRegressorType
-from nndet.arch.heads.comb import AnchorHeadType
+from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.core.boxes.coder import CoderType
+from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
+from nndet.training.learning_rate import LinearWarmupPolyLR
+from nndet.training.optimizer import get_params_no_wd_on_norm
 
 
 @MODULE_REGISTRY.register

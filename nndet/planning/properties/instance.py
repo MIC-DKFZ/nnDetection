@@ -15,18 +15,17 @@ limitations under the License.
 """
 
 import pickle
-import numpy as np
-
-from loguru import logger
 from collections import OrderedDict, defaultdict
-from multiprocessing.pool import Pool
 from itertools import repeat
-from typing import Dict, Sequence, List, Tuple
+from multiprocessing.pool import Pool
+from typing import Dict, List, Sequence, Tuple
 
+import numpy as np
+from loguru import logger
 
+from nndet.core.boxes import box_iou_np
 from nndet.io.load import load_case_cropped
 from nndet.planning import DatasetAnalyzer
-from nndet.core.boxes import box_iou_np
 
 
 def analyze_instances(analyzer: DatasetAnalyzer) -> dict:

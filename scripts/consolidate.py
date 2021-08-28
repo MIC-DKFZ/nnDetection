@@ -14,23 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import importlib
 import argparse
+import importlib
+import os
 import shutil
 import sys
-import os
 from pathlib import Path
 from typing import Sequence
 
 from loguru import logger
-from nndet.utils.check import env_guard
 from omegaconf import OmegaConf
 
-from nndet.ptmodule import MODULE_REGISTRY
-from nndet.inference.sweeper import BoxSweeper
-from nndet.inference.loading import get_latest_model
 from nndet.inference.ensembler.base import extract_results
+from nndet.inference.loading import get_latest_model
+from nndet.inference.sweeper import BoxSweeper
 from nndet.io import get_task, load_pickle, save_pickle
+from nndet.ptmodule import MODULE_REGISTRY
+from nndet.utils.check import env_guard
 
 
 def consolidate_models(source_dirs: Sequence[Path], target_dir: Path, ckpt: str):

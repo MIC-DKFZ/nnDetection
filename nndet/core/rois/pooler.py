@@ -1,8 +1,7 @@
 from abc import abstractmethod
-from typing import TypeVar, List, Union, Tuple
+from typing import List, Tuple, TypeVar, Union
 
 import torch
-
 from torchvision.ops.roi_align import roi_align as _roi_align
 
 from nndet.core.boxes.ops import box_size, expand_to_boxes, permute_boxes

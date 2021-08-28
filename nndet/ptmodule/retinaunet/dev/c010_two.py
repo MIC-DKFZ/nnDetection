@@ -5,8 +5,8 @@ from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMNative
 from nndet.arch.heads.regressor.dense_single import GIoURegressor
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
-from nndet.ptmodule.retinaunet.dev.c010 import RetinaUNetC010LReLU
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.retinaunet.dev.c010 import RetinaUNetC010LReLU
 
 
 @MODULE_REGISTRY.register

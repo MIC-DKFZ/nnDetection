@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import torch.nn as nn
 from typing import Optional
+
+import torch.nn as nn
 
 """
 Note: register new normalization layers in

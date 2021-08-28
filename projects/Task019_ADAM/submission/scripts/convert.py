@@ -1,9 +1,8 @@
 import argparse
-
 from pathlib import Path
 
-from nndet.io import load_pickle
 from nndet.core.boxes.ops_np import box_center_np
+from nndet.io import load_pickle
 
 THRESHOLD = 0.5
 

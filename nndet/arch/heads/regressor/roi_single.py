@@ -1,7 +1,7 @@
 import torch
 
-from nndet.arch.heads.abstract import Regressor
 from nndet.arch.conv import nd_pool
+from nndet.arch.heads.abstract import Regressor
 
 
 class RoIRegressorConv(Regressor):

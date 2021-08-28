@@ -17,15 +17,14 @@ limitations under the License.
 """
 Don't use these. Next nnDetection Version will introduce better/fixed implementations.
 """
+from functools import reduce
+from typing import Callable, Optional, Sequence
+
 import torch
 import torch.nn as nn
-
-from typing import Sequence, Callable, Optional
-from functools import reduce
 from loguru import logger
 
-from nndet.arch.conv import nd_pool
-from nndet.arch.conv import NdParam
+from nndet.arch.conv import NdParam, nd_pool
 
 
 class ResPlain(nn.Module):

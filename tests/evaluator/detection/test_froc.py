@@ -1,14 +1,12 @@
-import pytest
-from pytest_mock import MockerFixture
-
-import os
 import math
-
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import call
 
 import numpy as np
+import pytest
+from pytest_mock import MockerFixture
 
 from nndet.evaluator.detection import FROCMetric
 

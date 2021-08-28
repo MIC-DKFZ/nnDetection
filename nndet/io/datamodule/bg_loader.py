@@ -14,19 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from loguru import logger
 from batchgenerators.dataloading import SlimDataLoaderBase
+from loguru import logger
 
+from nndet.core.boxes.ops_np import box_size_np
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.load import load_pickle
 from nndet.io.patching import save_get_crop
 from nndet.utils.info import maybe_verbose_iterable
-from nndet.core.boxes.ops_np import box_size_np
 
 
 class FixedSlimDataLoaderBase(SlimDataLoaderBase):

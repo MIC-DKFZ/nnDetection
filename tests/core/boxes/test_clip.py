@@ -1,6 +1,6 @@
 import pytest
-
 import torch
+
 from nndet.core.boxes.clip import clip_boxes_to_image_
 
 

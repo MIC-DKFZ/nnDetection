@@ -15,19 +15,17 @@ limitations under the License.
 """
 
 import time
-import numpy as np
-
-from loguru import logger
-from typing import Sequence, List, Dict, Optional, Union, Tuple
+from collections import defaultdict
 from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
+from loguru import logger
 from matplotlib.ticker import FuncFormatter
+from sklearn.metrics import roc_curve
 
 from nndet.evaluator import DetectionMetric
-from sklearn.metrics import roc_curve
-from collections import defaultdict
-
 from nndet.utils.info import experimental
 
 

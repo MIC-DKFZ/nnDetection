@@ -14,14 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import numpy as np
-
 from pathlib import Path
-from loguru import logger
-from typing import Sequence, List, Dict, Any, Tuple
-
+from typing import Any, Dict, List, Sequence, Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
+from loguru import logger
 
 from nndet.evaluator import DetectionMetric
 

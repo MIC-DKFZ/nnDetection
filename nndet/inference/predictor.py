@@ -14,33 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import time
 import collections
-import numpy as np
-
-import torch
-from torch.utils.data import DataLoader
-from loguru import logger
+import time
+from pathlib import Path
 from typing import (
+    Any,
+    Callable,
+    Dict,
     Hashable,
     List,
-    Sequence,
-    Dict,
-    Union,
-    Any,
     Optional,
-    Callable,
+    Sequence,
     TypeVar,
+    Union,
 )
-from pathlib import Path
 
-from nndet.io.load import save_pickle
+import numpy as np
+import torch
+from loguru import logger
+from torch.utils.data import DataLoader
+
 from nndet.arch.abstract import AbstractModel
+from nndet.io.load import save_pickle
+from nndet.io.patching import create_grid, save_get_crop
 from nndet.io.transforms import NoOp
 from nndet.io.transforms.base import AbstractTransform
-from nndet.io.patching import save_get_crop, create_grid
-from nndet.utils import to_device, maybe_verbose_iterable
-
+from nndet.utils import maybe_verbose_iterable, to_device
 
 torch_device = Union[torch.device, str]
 

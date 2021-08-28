@@ -15,16 +15,16 @@ limitations under the License.
 """
 
 import os
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
 from loguru import logger
 from sklearn.model_selection import KFold
 
-from nndet.io.utils import load_dataset_id
 from nndet.io.load import load_pickle, save_pickle
+from nndet.io.utils import load_dataset_id
 
 
 class BaseModule(pl.LightningDataModule):

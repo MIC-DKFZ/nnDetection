@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Sequence, Tuple, Union, Optional
+from typing import Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
 
-from nndet.core.boxes.ops import permute_boxes, expand_to_boxes
+from nndet.core.boxes.ops import expand_to_boxes, permute_boxes
 from nndet.preprocessing.resampling import (
-    resample_data_or_seg,
     get_do_separate_z,
     get_lowres_axis,
+    resample_data_or_seg,
 )
 
 

@@ -1,15 +1,14 @@
+import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-import numpy as np
-
+from nndet.core.boxes import box_iou_np
 from nndet.evaluator.detection.matching import (
-    matching_batch,
-    _matching_single_image_single_class,
     _matching_no_gt,
     _matching_no_pred,
+    _matching_single_image_single_class,
+    matching_batch,
 )
-from nndet.core.boxes import box_iou_np
 
 
 @pytest.fixture

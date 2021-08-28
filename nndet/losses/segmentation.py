@@ -16,13 +16,12 @@ limitations under the License.
 from typing import Callable, Optional
 
 import torch
+from loguru import logger
+from torch import Tensor
 from torch.cuda.amp import autocast
 
-from torch import Tensor
-from loguru import logger
-
 from nndet.losses.base import Loss, reduction_helper
-from nndet.losses.classification import CrossEntropyLoss, BCEWithLogitsLoss
+from nndet.losses.classification import BCEWithLogitsLoss, CrossEntropyLoss
 
 
 def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):

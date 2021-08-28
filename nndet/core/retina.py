@@ -1,14 +1,14 @@
-from typing import List, Tuple, Dict, Any, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
 
 from nndet.arch.abstract import AbstractModel
-from nndet.core import boxes as box_utils
-from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.decoder.base import DecoderType
-from nndet.arch.heads.segmenter import SegmenterType
+from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.heads.comb import AnchorHeadType
+from nndet.arch.heads.segmenter import SegmenterType
+from nndet.core import boxes as box_utils
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression

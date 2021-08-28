@@ -21,26 +21,26 @@ this scriptish functions to run it in my default pipeline
 """
 
 import pickle
+from collections import defaultdict
 from itertools import product
 from pathlib import Path
-from typing import Sequence, Optional, Tuple
-from collections import defaultdict
-from loguru import logger
+from typing import Optional, Sequence, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from loguru import logger
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
-import matplotlib.pyplot as plt
 
 plt.style.use("seaborn-deep")
+import SimpleITK as sitk
 from sklearn.metrics import confusion_matrix
 from torch import Tensor
-import SimpleITK as sitk
 
 from nndet.core.boxes import box_iou_np, box_size_np
 from nndet.io.load import load_pickle, save_json
-from nndet.utils.info import maybe_verbose_iterable, experimental, deprecate
+from nndet.utils.info import deprecate, experimental, maybe_verbose_iterable
 
 
 def collect_overview(

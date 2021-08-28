@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import torch
-
-from torch import Tensor
 from typing import Tuple
 
-from nndet.core.boxes.ops import box_iou, box_area
+import torch
+from torch import Tensor
+
 from nndet.core.boxes.nms import nms
+from nndet.core.boxes.ops import box_area, box_iou
 
 
 def batched_wbc_nms_no_label(

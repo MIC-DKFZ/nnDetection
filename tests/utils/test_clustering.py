@@ -1,10 +1,10 @@
-import pytest
 import numpy as np
+import pytest
 
 from nndet.utils.clustering import (
+    compute_score_from_seg,
     seg_to_instances,
     seg_to_instances_voted,
-    compute_score_from_seg,
     softmax_to_instances,
 )
 

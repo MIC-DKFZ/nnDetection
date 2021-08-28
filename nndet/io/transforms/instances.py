@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import torch
-import numpy as np
+from typing import Dict, Optional, Sequence, Tuple, Union
 
+import numpy as np
+import torch
 from torch import Tensor
-from typing import Dict, Union, Sequence, Tuple, Optional
 
 from nndet.io.transforms.base import AbstractTransform
 

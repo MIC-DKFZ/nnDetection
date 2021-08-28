@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 from sklearn.model_selection import GroupKFold
 
-from nndet.utils.check import env_guard
 from nndet.io import get_case_ids_from_dir, save_pickle
+from nndet.utils.check import env_guard
 
 
 @env_guard

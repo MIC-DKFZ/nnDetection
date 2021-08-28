@@ -14,30 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Sequence, List
+from typing import List, Sequence
+
+from batchgenerators.transforms import (
+    BrightnessMultiplicativeTransform,
+    CenterCropTransform,
+    Compose,
+    ContrastAugmentationTransform,
+    DataChannelSelectionTransform,
+    GammaTransform,
+    GaussianBlurTransform,
+    GaussianNoiseTransform,
+    MirrorTransform,
+    NumpyToTensor,
+    RenameTransform,
+    SegChannelSelectionTransform,
+    SimulateLowResolutionTransform,
+    SpatialTransform,
+)
+from batchgenerators.transforms.color_transforms import BrightnessTransform
+from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
 from loguru import logger
 
 from nndet.io.augmentation.base import AugmentationSetup, get_patch_size
 from nndet.utils.info import SuppressPrint
-
-from batchgenerators.transforms import (
-    DataChannelSelectionTransform,
-    SegChannelSelectionTransform,
-    SpatialTransform,
-    GammaTransform,
-    MirrorTransform,
-    Compose,
-    BrightnessMultiplicativeTransform,
-    ContrastAugmentationTransform,
-    GaussianNoiseTransform,
-    GaussianBlurTransform,
-    SimulateLowResolutionTransform,
-    RenameTransform,
-    NumpyToTensor,
-    CenterCropTransform,
-)
-from batchgenerators.transforms.color_transforms import BrightnessTransform
-from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
 
 with SuppressPrint():
     from nnunet.training.data_augmentation.custom_transforms import (

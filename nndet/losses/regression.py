@@ -3,7 +3,7 @@ from torch import Tensor
 from torch.cuda.amp import autocast
 
 from nndet.core.boxes.ops import generalized_box_iou
-from nndet.losses.base import reduction_helper, Loss
+from nndet.losses.base import Loss, reduction_helper
 
 
 class SmoothL1Loss(Loss):

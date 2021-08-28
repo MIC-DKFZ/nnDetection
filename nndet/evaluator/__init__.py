@@ -1,1 +1,1 @@
-from nndet.evaluator.abstract import AbstractMetric, AbstractEvaluator, DetectionMetric
+from nndet.evaluator.abstract import AbstractEvaluator, AbstractMetric, DetectionMetric

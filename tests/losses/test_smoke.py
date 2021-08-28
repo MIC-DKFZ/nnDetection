@@ -2,22 +2,14 @@ import pytest
 import torch
 
 from nndet.losses.classification import (
-    FocalLossWithLogits,
     AsymmetricFocalLossWithLogits,
-    CrossEntropyLoss,
     BCEWithLogitsLoss,
     BCEWithLogitsLossOneHot,
+    CrossEntropyLoss,
+    FocalLossWithLogits,
 )
-from nndet.losses.regression import (
-    SmoothL1Loss,
-    GIoULoss,
-)
-from nndet.losses.segmentation import (
-    SoftDiceLoss,
-    TopKLoss,
-    TopKLossSigmoid,
-)
-
+from nndet.losses.regression import GIoULoss, SmoothL1Loss
+from nndet.losses.segmentation import SoftDiceLoss, TopKLoss, TopKLossSigmoid
 
 """
 Add all nnDetection Losses to this list

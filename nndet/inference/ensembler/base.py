@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from os import PathLike
-from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union, TypeVar
+from os import PathLike
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import torch
 
 from nndet.io.load import save_pickle
-from nndet.utils.tensor import to_numpy
 from nndet.utils.info import maybe_verbose_iterable
+from nndet.utils.tensor import to_numpy
 
 
 class BaseEnsembler(ABC):

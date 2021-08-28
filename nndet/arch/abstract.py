@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Dict, Tuple, Any, Optional, List, Union
+from abc import abstractmethod
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from abc import abstractmethod
-
 from torch import Tensor
 
 

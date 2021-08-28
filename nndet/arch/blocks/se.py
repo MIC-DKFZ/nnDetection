@@ -21,8 +21,7 @@ Don't use these. Next nnDetection Version will introduce better/fixed implementa
 import torch
 import torch.nn as nn
 
-
-from nndet.arch.conv import nd_pool, nd_conv
+from nndet.arch.conv import nd_conv, nd_pool
 
 
 class SELayer(nn.Module):
