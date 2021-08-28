@@ -219,11 +219,11 @@ class BoxC002(BoxC001):
                 pass
             else:
                 patch_size = self._decrease_patch_size(
-                    patch_size,
-                    target_median_shape_transposed,
-                    pooling,
-                    must_be_divisible_by,
-                )  # noqa: F821
+                    patch_size,  # noqa: F821
+                    target_median_shape_transposed,  # noqa: F821
+                    pooling,  # noqa: F821
+                    must_be_divisible_by,  # noqa: F821
+                )
             (
                 num_pool_per_axis,
                 pooling,

@@ -152,7 +152,6 @@ def main():
         nargs="+",
         help="Single or multiple task identifiers to process consecutively",
     )
-    parser.add_argument("--overwrite", action="store_true")
     parser.add_argument(
         "-o",
         "--overwrites",
@@ -177,7 +176,6 @@ def main():
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
-    overwrite = args.overwrite
     do_volume_ranking = args.volume_ranking
     num_processes = args.num_processes
     initialize_config_module(config_module="nndet.conf")

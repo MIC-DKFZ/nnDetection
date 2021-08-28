@@ -225,7 +225,7 @@ def env():
 
     import torch
 
-    print(f"----- PyTorch Information -----")
+    print("----- PyTorch Information -----")
     print(f"PyTorch Version: {torch.version.__version__}")
     print(f"PyTorch Debug: {torch.version.debug}")
     print(f"PyTorch CUDA: {torch.version.cuda}")
@@ -235,7 +235,7 @@ def env():
     print(f"PyTorch CUDA available: {torch.cuda.is_available()}")
     print("\n")
 
-    print(f"----- System Information -----")
+    print("----- System Information -----")
     stream = os.popen("nvcc --version")
     output = stream.read()
     print(f"System NVCC: {output}")
@@ -246,7 +246,7 @@ def env():
     print(f"Python Version: {sys.version}")
     print("\n")
 
-    print(f"----- nnDetection Information -----")
+    print("----- nnDetection Information -----")
     print(f"det_num_threads {os.getenv('det_num_threads', None)}")
     print(f"det_data is set {os.getenv('det_data', None) is not None}")
     print(f"det_models is set {os.getenv('det_models', None) is not None}")

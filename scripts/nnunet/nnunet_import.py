@@ -33,6 +33,7 @@ from nndet.io import get_task, load_json, load_pickle, save_pickle
 from nndet.io.load import save_json
 from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
+from nndet.utils.info import maybe_verbose_iterable
 
 TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 
@@ -405,7 +406,7 @@ if __name__ == "__main__":
             )
         if len(task_names) == 0:
             logger.error(
-                f"Could not derive task name from path please use "
+                "Could not derive task name from path please use "
                 "-t/--task to provide the name via cmd line!"
             )
         logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")

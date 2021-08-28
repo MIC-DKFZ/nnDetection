@@ -200,7 +200,7 @@ class _CaseEvaluator(AbstractEvaluator):
                 scalar_results[key] = np.nan
 
         # add debug information
-        if not "N_img" in curve_results:
+        if "N_img" not in curve_results:
             scalar_results["N_img"] = len(gt_classes)
         else:
             raise ValueError(
@@ -210,7 +210,7 @@ class _CaseEvaluator(AbstractEvaluator):
         class_count_no_agg = self.class_count()
         for _k, _i in class_count_no_agg.items():
             _kd = f"N_count_{_k}"
-            if not _kd in scalar_results:
+            if _kd not in scalar_results:
                 scalar_results[_kd] = _i
             else:
                 raise ValueError(
@@ -220,7 +220,7 @@ class _CaseEvaluator(AbstractEvaluator):
         unqiue_classes_agg, class_count_agg = np.unique(gt_classes, return_counts=True)
         for _c, _c_count in zip(unqiue_classes_agg, class_count_agg):
             _kc = f"N_count_agg_{_c}"
-            if not _kc in scalar_results:
+            if _kc not in scalar_results:
                 scalar_results[_kc] = _c_count
             else:
                 raise ValueError(
