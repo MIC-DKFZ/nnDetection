@@ -26,16 +26,15 @@ import numpy as np
 import SimpleITK as sitk
 from hydra import initialize_config_module
 from loguru import logger
-from scipy import ndimage
-from scipy.ndimage import label
 from tqdm import tqdm
 
 from nndet.core.boxes import box_size_np
-from nndet.io import get_case_ids_from_dir, load_json, save_json
+from nndet.io import save_json
 from nndet.io.transforms.instances import get_bbox_np
-from nndet.io.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
+from nndet.io.itk import load_sitk, load_sitk_as_array
 from nndet.utils.config import compose
 from nndet.utils.check import env_guard
+from nndet.utils.clustering import seg_to_instances
 
 
 def prepare_detection_label(case_id: str,
@@ -66,11 +65,10 @@ def prepare_detection_label(case_id: str,
         sitk.WriteImage(stuff_seg_itk, str(label_dir / f"{case_id}_stuff.nii.gz"))
 
     # prepare things information
-    structure = np.ones([3] * seg.ndim)
     things_seg = np.copy(seg)
     things_seg[stuff_seg > 0] = 0  # remove all stuff classes from segmentation
 
-    instances_not_filtered, _ = label(things_seg, structure=structure)
+    instances_not_filtered, instances_not_filtered_classes = seg_to_instances(things_seg)
     final_mapping = {}
     if instances_not_filtered.max() > 0:
         boxes = get_bbox_np(instances_not_filtered[None])["boxes"]
@@ -92,11 +90,8 @@ def prepare_detection_label(case_id: str,
 
             if all(bsize_world[isotopic_axis] > min_size) and (instance_vol > min_vol):
                 instances[instance_mask] = start_id
-
-                single_idx = np.argwhere(instance_mask)[0]
-                semantic_class = int(seg[tuple(single_idx)])
+                semantic_class = instances_not_filtered_classes[int(iid)]
                 final_mapping[start_id] = things_classes.index(semantic_class)
-
                 start_id += 1
     else:
         instances = np.zeros_like(instances_not_filtered)
@@ -128,9 +123,12 @@ def main():
     ============================================================================  
     Needs additional information from dataset.json/.yaml:
         `seg2det_stuff`: these are classes which are interpreted semantically
+            (stuff classes are experimental and will probably changed in
+             the future)
         `seg2det_things`: these are classes which are interpreted as instances
          Both entries should be lists with the indices of the respective
          classes where the position will determine its new class
+         (currently only one classes is supported here)
          e.g.
             `seg2det_stuff`: [2,] -> remap class 2 from semantic segmentation
                 to new stuff class 1 (stuff classes start at one)

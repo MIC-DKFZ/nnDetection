@@ -1,11 +1,89 @@
 import os
 import shutil
+from typing import Sequence, Dict, Optional
+
+import SimpleITK as sitk
 from pathlib import Path
+from loguru import logger
 
 from nndet.io import save_json
 from nndet.io.prepare import instances_from_segmentation
 from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
+from nndet.utils.clustering import seg_to_instances, remove_classes, reorder_classes
+
+
+def instances_from_segmentation(
+    source_file: Path, output_folder: Path,
+    rm_classes: Sequence[int] = None,
+    ro_classes: Dict[int, int] = None,
+    subtract_one_of_classes: bool = True,
+    fg_vs_bg: bool = False,
+    file_name: Optional[str] = None
+    ):
+    """
+    1. Optionally removes classes from the segmentation (
+    e.g. organ segmentation's which are not useful for detection)
+
+    2. Optionally reorders the segmentation indices
+
+    3. Converts semantic segmentation to instance segmentation's via
+    connected components
+
+    Args:
+        source_file: path to semantic segmentation file
+        output_folder: folder where processed file will be saved
+        rm_classes: classes to remove from semantic segmentation
+        ro_classes: reorder classes before instances are generated
+        subtract_one_of_classes: subtracts one from the classes
+            in the instance mapping (detection networks assume
+            that classes start from 0)
+        fg_vs_bg: map all foreground classes to a single class to run
+            foreground vs background detection task.
+        file_name: name of saved file (without file type!)
+    """
+    if subtract_one_of_classes and fg_vs_bg:
+        logger.info("subtract_one_of_classes will be ignored because fg_vs_bg is "
+                    "active and all foreground classes ill be mapped to 0")
+
+    seg_itk = sitk.ReadImage(str(source_file))
+    seg_npy = sitk.GetArrayFromImage(seg_itk)
+
+    if rm_classes is not None:
+        seg_npy = remove_classes(seg_npy, rm_classes)
+
+    if ro_classes is not None:
+        seg_npy = reorder_classes(seg_npy, ro_classes)
+
+    instances, instance_classes = seg_to_instances(seg_npy)
+    if fg_vs_bg:
+        num_instances_check = len(instance_classes)
+        seg_npy[seg_npy > 0] = 1
+        instances, instance_classes = seg_to_instances(seg_npy)
+        num_instances = len(instance_classes)
+        if num_instances != num_instances_check:
+            logger.warning(f"Lost instance: Found {num_instances} instances before "
+                           f"fg_vs_bg but {num_instances_check} instances after it")
+
+    if subtract_one_of_classes:
+        for key in instance_classes.keys():
+            instance_classes[key] -= 1
+
+    if fg_vs_bg:
+        for key in instance_classes.keys():
+            instance_classes[key] = 0
+
+    seg_itk_new = sitk.GetImageFromArray(instances)
+    seg_itk_new.SetSpacing(seg_itk.GetSpacing())
+    seg_itk_new.SetOrigin(seg_itk.GetOrigin())
+    seg_itk_new.SetDirection(seg_itk.GetDirection())
+
+    if file_name is None:
+        suffix_length = sum(map(len, source_file.suffixes))
+        file_name = source_file.name[:-suffix_length]
+
+    save_json({"instances": instance_classes}, output_folder / f"{file_name}.json")
+    sitk.WriteImage(seg_itk_new, str(output_folder / f"{file_name}.nii.gz"))
 
 
 def run_prep_fg_v_bg(

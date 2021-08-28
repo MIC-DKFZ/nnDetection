@@ -28,7 +28,6 @@ from typing import Sequence, Union
 from nndet.io.itk import load_sitk_as_array, load_sitk
 from nndet.io.load import save_json, load_json
 from nndet.io.paths import get_case_ids_from_dir
-from nndet.io.prepare import sitk_copy_metadata
 from nndet.io.transforms.instances import instances_to_segmentation_np
 
 Pathlike = Union[str, Path]

@@ -33,7 +33,7 @@ from loguru import logger
 
 from nndet.evaluator.registry import evaluate_box_dir
 from nndet.io import load_pickle, save_pickle, get_task, load_json
-from nndet.utils.clustering import instance_results_from_seg
+from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
 from nndet.utils.info import maybe_verbose_iterable
 
@@ -194,10 +194,12 @@ def import_dir(
                   stuff=stuff,
                   )
 
-    # for s in maybe_verbose_iterable(source):
-    #     _fn(s, target_dir)
-    with Pool(processes=num_workers) as p:
-        p.starmap(_fn, zip(source, repeat(target_dir)))
+    if num_workers > 0:
+        with Pool(processes=num_workers) as p:
+            p.starmap(_fn, zip(source, repeat(target_dir)))
+    else:
+        for s in maybe_verbose_iterable(source):
+            _fn(s, target_dir)
 
 
 def import_single_case(logits_source: Path,
@@ -240,12 +242,12 @@ def import_single_case(logits_source: Path,
         tmp[:, bbox[0][0]:bbox[0][1], bbox[1][0]:bbox[1][1], bbox[2][0]:bbox[2][1]] = probs
         probs = tmp
 
-    res = instance_results_from_seg(probs,
-                                    aggregation=aggregation,
-                                    min_num_voxel=min_num_voxel,
-                                    min_threshold=min_threshold,
-                                    stuff=stuff,
-                                    )
+    res = softmax_to_instances(probs,
+                               aggregation=aggregation,
+                               min_num_voxel=min_num_voxel,
+                               min_threshold=min_threshold,
+                               stuff=stuff,
+                               )
 
     detection_target = logits_target_dir / f"{case_name}_boxes.pkl"
     segmentation_target = logits_target_dir / f"{case_name}_segmentation.pkl"
