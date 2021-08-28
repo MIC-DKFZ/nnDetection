@@ -1,6 +1,6 @@
-import pytest
 from dataclasses import dataclass
 
+import pytest
 import torch
 
 from nndet.core.boxes.wbc import batched_wbc

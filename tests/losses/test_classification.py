@@ -1,11 +1,8 @@
 import pytest
-
 import torch
 import torch.nn.functional as F
 
-from nndet.losses.classification import (
-    one_hot_smooth,
-)
+from nndet.losses.classification import one_hot_smooth
 
 
 def test_one_hot_smooth():

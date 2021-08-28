@@ -15,12 +15,11 @@ limitations under the License.
 """
 
 import math
-from typing import List, Union, Sequence
-
-from torch.optim.lr_scheduler import _LRScheduler
-from torch.optim.optimizer import Optimizer
+from typing import List, Sequence, Union
 
 from loguru import logger
+from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.optimizer import Optimizer
 
 
 def linear_warm_up(

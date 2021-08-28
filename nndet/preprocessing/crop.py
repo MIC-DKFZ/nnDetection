@@ -14,18 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import shutil
 import pickle
-import numpy as np
-
-from loguru import logger
+import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path
-from typing import List, Tuple, Sequence
+from typing import List, Sequence, Tuple
+
+import numpy as np
+from loguru import logger
 from scipy.ndimage import binary_fill_holes
 
-from nndet.io.paths import get_case_id_from_path
 from nndet.io.load import load_case_from_list
+from nndet.io.paths import get_case_id_from_path
 
 
 def create_nonzero_mask(data: np.ndarray) -> np.ndarray:

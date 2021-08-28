@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Callable, List, Sequence, Tuple, TypeVar, Union
+
 import torch
 import torch.nn as nn
-from typing import Sequence, List, Tuple, Union, Callable, TypeVar
-
 from loguru import logger
 
 from nndet.arch.conv import conv_kwargs_helper

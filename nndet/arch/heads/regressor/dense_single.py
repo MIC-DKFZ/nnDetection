@@ -2,16 +2,12 @@ from typing import Optional, TypeVar
 
 import torch
 import torch.nn as nn
+from loguru import logger
 from torch import Tensor
 
-from loguru import logger
-
-from nndet.arch.heads.abstract import Regressor, CONV_TYPES
+from nndet.arch.heads.abstract import CONV_TYPES, Regressor
 from nndet.arch.layers.scale import Scale
-from nndet.losses import (
-    SmoothL1Loss,
-    GIoULoss,
-)
+from nndet.losses import GIoULoss, SmoothL1Loss
 
 
 class DenseRegressor(Regressor):

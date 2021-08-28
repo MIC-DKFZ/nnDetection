@@ -14,43 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
-import sys
-import socket
 import argparse
-from pathlib import Path
+import os
+import socket
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import List, Union
 
-import torch
 import pytorch_lightning as pl
+import torch
+from hydra import initialize_config_module
+from loguru import logger
+from omegaconf.omegaconf import OmegaConf
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import (
     LightningLoggerBase,
     MLFlowLogger,
     TensorBoardLogger,
 )
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-
-from loguru import logger
-from hydra import initialize_config_module
-from omegaconf.omegaconf import OmegaConf
 
 import nndet
-from nndet.utils.config import compose, load_dataset_info
-from nndet.utils.info import log_git, create_debug_plan, flatten_mapping
-from nndet.utils.check import env_guard
-from nndet.utils.analysis import run_analysis_suite
-from nndet.io.datamodule.bg_module import Datamodule
-from nndet.io.paths import get_task, get_training_dir
-from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.evaluator.registry import (
-    save_metric_output,
     evaluate_box_dir,
     evaluate_case_dir,
     evaluate_seg_dir,
+    save_metric_output,
 )
 from nndet.inference.ensembler.base import extract_results
+from nndet.io.datamodule.bg_module import Datamodule
+from nndet.io.load import load_pickle, save_json, save_pickle
+from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.utils.analysis import run_analysis_suite
+from nndet.utils.check import env_guard
+from nndet.utils.config import compose, load_dataset_info
+from nndet.utils.info import create_debug_plan, flatten_mapping, log_git
 
 
 @env_guard

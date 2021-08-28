@@ -15,17 +15,17 @@ limitations under the License.
 """
 
 import pickle
-import numpy as np
-
-from loguru import logger
-from itertools import repeat
 from collections import OrderedDict
-from skimage.morphology import label
+from itertools import repeat
 from multiprocessing import Pool
-from typing import Dict, Sequence, Tuple, Callable
+from typing import Callable, Dict, Sequence, Tuple
 
-from nndet.planning.analyzer import DatasetAnalyzer
+import numpy as np
+from loguru import logger
+from skimage.morphology import label
+
 from nndet.io.load import load_case_cropped
+from nndet.planning.analyzer import DatasetAnalyzer
 
 
 def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:

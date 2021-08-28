@@ -16,20 +16,18 @@ limitations under the License.
 
 from loguru import logger
 
-from nndet.ptmodule.retinaunet.base import RetinaUNetModule
-
-from nndet.core.boxes.matcher import ATSSMatcher
-from nndet.core.boxes.coder import CoderType
-from nndet.arch.heads.comb.base import AnchorHeadType
-from nndet.arch.heads.classifier.dense import DenseClassifierType
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
+from nndet.arch.heads.classifier.dense import DenseClassifierType
+from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNMNative
+from nndet.arch.heads.comb.base import AnchorHeadType
 from nndet.arch.heads.regressor import GIoURegressor
-from nndet.arch.heads.comb import BoxHeadHNMNative, BoxHeadAll
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
-from nndet.arch.conv import ConvInstanceRelu, ConvGroupRelu
-
+from nndet.core.boxes.coder import CoderType
+from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.retinaunet.base import RetinaUNetModule
 
 
 @MODULE_REGISTRY.register

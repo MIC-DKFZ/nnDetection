@@ -15,19 +15,15 @@ limitations under the License.
 """
 
 import os
-from typing import Iterable, Optional, List, Sequence, Type
+from typing import Iterable, List, Optional, Sequence, Type
 
 import numpy as np
+from batchgenerators.dataloading import MultiThreadedAugmenter, SingleThreadedAugmenter
 from loguru import logger
 
-from batchgenerators.dataloading import (
-    MultiThreadedAugmenter,
-    SingleThreadedAugmenter,
-)
-
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
-from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.augmentation.base import AugmentationSetup
+from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.base import BaseModule
 
 

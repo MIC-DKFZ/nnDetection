@@ -1,7 +1,7 @@
 from nndet.arch.layers.interpolation import (
     Interpolate,
-    InterpolateToShapes,
     InterpolateToShape,
+    InterpolateToShapes,
     MaxPoolToShapes,
 )
 from nndet.arch.layers.norm import GroupNorm

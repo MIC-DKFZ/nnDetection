@@ -1,17 +1,16 @@
 import argparse
 import os
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
+from nndet.core.boxes.ops_np import box_center_np
 from nndet.io.itk import load_sitk
 from nndet.io.load import load_pickle
-from nndet.core.boxes.ops_np import box_center_np
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -1,9 +1,9 @@
-import pytest
 import copy
 import os
 from dataclasses import dataclass
 from tempfile import TemporaryDirectory
 
+import pytest
 import torch
 
 from nndet.inference.ensembler import SegmentationEnsembler

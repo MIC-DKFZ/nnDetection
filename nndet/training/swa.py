@@ -15,18 +15,16 @@ limitations under the License.
 """
 
 from abc import abstractmethod
-from typing import Optional, Union, Callable
-
-from loguru import logger
+from typing import Callable, Optional, Union
 
 import torch
-from torch.optim.lr_scheduler import _LRScheduler
+from loguru import logger
 from pytorch_lightning.callbacks import StochasticWeightAveraging
 from pytorch_lightning.trainer.optimizers import _get_default_scheduler_config
 from pytorch_lightning.utilities import rank_zero_warn
+from torch.optim.lr_scheduler import _LRScheduler
 
 from nndet.training.learning_rate import CycleLinear
-
 
 _AVG_FN = Callable[[torch.Tensor, torch.Tensor, torch.LongTensor], torch.FloatTensor]
 

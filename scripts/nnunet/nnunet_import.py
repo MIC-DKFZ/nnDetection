@@ -15,27 +15,24 @@ limitations under the License.
 """
 
 import argparse
-from nndet.io.load import save_json
 import os
-import sys
 import shutil
+import sys
 from functools import partial
 from itertools import repeat
 from multiprocessing import Pool
-
 from pathlib import Path, PurePath
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import numpy as np
-
 from hydra import initialize_config_module
 from loguru import logger
 
 from nndet.evaluator.registry import evaluate_box_dir
-from nndet.io import load_pickle, save_pickle, get_task, load_json
-from nndet.utils.clustering import instance_results_from_seg
+from nndet.io import get_task, load_json, load_pickle, save_pickle
+from nndet.io.load import save_json
+from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
-
 
 TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 
@@ -200,10 +197,12 @@ def import_dir(
         stuff=stuff,
     )
 
-    # for s in maybe_verbose_iterable(source):
-    #     _fn(s, target_dir)
-    with Pool(processes=num_workers) as p:
-        p.starmap(_fn, zip(source, repeat(target_dir)))
+    if num_workers > 0:
+        with Pool(processes=num_workers) as p:
+            p.starmap(_fn, zip(source, repeat(target_dir)))
+    else:
+        for s in maybe_verbose_iterable(source):
+            _fn(s, target_dir)
 
 
 def import_single_case(
@@ -255,7 +254,7 @@ def import_single_case(
         ] = probs
         probs = tmp
 
-    res = instance_results_from_seg(
+    res = softmax_to_instances(
         probs,
         aggregation=aggregation,
         min_num_voxel=min_num_voxel,

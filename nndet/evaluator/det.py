@@ -14,20 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
 from functools import partial
-from typing import Optional, Sequence, Callable, Dict, List, Tuple
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
-from nndet.evaluator.detection.matching import matching_batch
 from nndet.core.boxes import box_iou_np
+from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
+from nndet.evaluator.detection.matching import matching_batch
 from nndet.utils.info import experimental
-
 
 __all__ = ["DetectionEvaluator"]
 

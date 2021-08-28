@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+
 import torch
 import torch.nn as nn
-
-from typing import Dict, List, Union, Sequence, Optional, Tuple, TypeVar
 
 from nndet.arch.conv import compute_padding_for_kernel
 from nndet.arch.layers.interpolation import InterpolateToShapes

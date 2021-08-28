@@ -2,14 +2,13 @@ import copy
 import os
 from pathlib import Path
 from typing import Optional, Union
-from nndet.utils.tensor import to_device
 
 import torch
-
-from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import LightningModule
+from pytorch_lightning.callbacks import Callback
 
 from nndet.utils.info import experimental
+from nndet.utils.tensor import to_device
 
 
 class EMAWeightsCB(Callback):

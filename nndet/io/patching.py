@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import typing
 import itertools
+import typing
+
 import numpy as np
-
-from loguru import logger
-
-from skimage.measure import regionprops
 import SimpleITK as sitk
+from loguru import logger
+from skimage.measure import regionprops
 
 
 def center_crop_object_mask(

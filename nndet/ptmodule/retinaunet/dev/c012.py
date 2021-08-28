@@ -1,28 +1,21 @@
 from typing import Callable, Hashable
 
-from nndet.inference.ensembler.segmentation import SegmentationEnsembler
-from nndet.inference.ensembler.detection import (
-    BoxEnsemblerSelectiveFaster,
-    BoxEnsemblerSelective2D,
-)
-
-from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001, RetinaUNetCV001Focal
-
-from nndet.arch.heads.comb import (
-    BoxHeadAll,
-    BoxHeadHNM,
-)
-from nndet.arch.heads.classifier import (
-    FocalClassifier,
-)
-from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.conv import (
-    ConvInstanceLReLU,
     ConvGroupLReLU,
-    ConvInstanceMish,
     ConvGroupMish,
+    ConvInstanceLReLU,
+    ConvInstanceMish,
 )
+from nndet.arch.heads.classifier import FocalClassifier
+from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.arch.heads.regressor import L1Regressor
+from nndet.inference.ensembler.detection import (
+    BoxEnsemblerSelective2D,
+    BoxEnsemblerSelectiveFaster,
+)
+from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.retinaunet.v001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 
 @MODULE_REGISTRY.register

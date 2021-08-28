@@ -1,19 +1,16 @@
 import os
-
-import numpy as np
-from pathlib import Path
-from loguru import logger
 from itertools import repeat
 from multiprocessing import Pool
+from pathlib import Path
 from typing import Dict
+
+import numpy as np
+from loguru import logger
 
 from nndet.io.itk import load_sitk_as_array
 from nndet.io.load import load_json, load_pickle
 from nndet.io.paths import get_case_ids_from_dir
-from nndet.io.transforms.instances import (
-    get_bbox_np,
-    instances_to_segmentation_np,
-)
+from nndet.io.transforms.instances import get_bbox_np, instances_to_segmentation_np
 
 
 def create_label_case(

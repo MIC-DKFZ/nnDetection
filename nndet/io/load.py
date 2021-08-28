@@ -14,24 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 import os
 import pickle
-import json
-import yaml
 import time
+from collections import OrderedDict
 from contextlib import contextmanager
 from itertools import repeat
 from multiprocessing.pool import Pool
-from collections import OrderedDict
 from pathlib import Path
-from typing import Sequence, Any, Tuple, Union
+from typing import Any, Sequence, Tuple, Union
 
 import numpy as np
 import SimpleITK as sitk
+import yaml
 from loguru import logger
 
 from nndet.io.paths import subfiles
-
 
 __all__ = [
     "load_case_cropped",

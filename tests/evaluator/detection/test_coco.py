@@ -1,9 +1,8 @@
 import math
 
+import numpy as np
 import pytest
 from pytest_mock import MockerFixture
-
-import numpy as np
 
 from nndet.evaluator.detection.coco import COCOMetric, compute_stats_single_threshold
 

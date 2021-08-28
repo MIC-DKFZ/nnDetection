@@ -1,10 +1,10 @@
+import numpy as np
 import pytest
 import torch
-import numpy as np
-
 from torchvision.ops.boxes import nms as nms_torchvision
 
-from nndet.core.boxes.nms import nms, batched_nms, nms_cpu as nms_pytorch
+from nndet.core.boxes.nms import batched_nms, nms
+from nndet.core.boxes.nms import nms_cpu as nms_pytorch
 
 
 def generate_boxes(

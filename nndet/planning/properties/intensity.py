@@ -15,16 +15,16 @@ limitations under the License.
 """
 
 import pickle
-import numpy as np
-
-from loguru import logger
+from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
-from collections import OrderedDict
-from typing import Union, Sequence, Dict
+from typing import Dict, Sequence, Union
 
-from nndet.planning.analyzer import DatasetAnalyzer
+import numpy as np
+from loguru import logger
+
 from nndet.io.load import load_case_cropped
+from nndet.planning.analyzer import DatasetAnalyzer
 
 
 def get_modalities(analyzer: DatasetAnalyzer) -> dict:

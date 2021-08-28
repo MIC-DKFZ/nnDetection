@@ -1,37 +1,31 @@
 import copy
-from loguru import logger
-from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
-from nndet.ptmodule import MODULE_REGISTRY
-from nndet.arch.heads.comb.base import AnchorHeadType
-from nndet.arch.heads.classifier.dense import DenseClassifierType
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
-from nndet.core.boxes.coder import CoderType
-from nndet.arch.blocks.basic import StackedConvBlock2Max
-from nndet.training.ema import EMAWeightsCB
-from nndet.training.learning_rate import LinearWarmupPolyLR
-from nndet.training.optimizer.sam import SAM
+import torch
+from loguru import logger
 
 from nndet.arch.blocks.basic import (
     MySEBlockExp2,
     MySEBlockExp4,
     StackedConvBlock2,
+    StackedConvBlock2Max,
     StackedConvBlock3,
     StackedResPlain,
 )
-from nndet.arch.heads.comb import (
-    BoxHeadAll,
-    BoxHeadHNM,
-)
-from nndet.arch.heads.classifier import (
-    FocalClassifier,
-    AsymmetricFocalClassifier,
-)
+from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU, Generator
+from nndet.arch.heads.classifier import AsymmetricFocalClassifier, FocalClassifier
+from nndet.arch.heads.classifier.dense import DenseClassifierType
+from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
+from nndet.arch.heads.comb.base import AnchorHeadType
 from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.conv import ConvInstanceLReLU, ConvGroupLReLU, Generator
+from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
+from nndet.core.boxes.coder import CoderType
+from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
+from nndet.training.ema import EMAWeightsCB
+from nndet.training.learning_rate import LinearWarmupPolyLR
+from nndet.training.optimizer.sam import SAM
 from nndet.training.optimizer.utils import get_params_no_wd_on_norm
-import torch
 
 
 @MODULE_REGISTRY.register

@@ -1,12 +1,11 @@
-import pytest
 from typing import Sequence
 
+import pytest
 import torch
+from torchvision.models.detection.image_list import ImageList
+from torchvision.models.detection.rpn import AnchorGenerator
 
 from nndet.core.boxes import get_anchor_generator
-
-from torchvision.models.detection.rpn import AnchorGenerator
-from torchvision.models.detection.image_list import ImageList
 
 
 @pytest.fixture

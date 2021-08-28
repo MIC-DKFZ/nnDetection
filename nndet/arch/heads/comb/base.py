@@ -1,10 +1,10 @@
 from abc import abstractmethod
-from typing import TypeVar, Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple, TypeVar
 
 import torch
 
-from nndet.core.boxes import BoxCoderND
 from nndet.arch.heads.abstract import BaseHead, ClassifierType, RegressorType
+from nndet.core.boxes import BoxCoderND
 
 
 class AnchorHead(BaseHead):

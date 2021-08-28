@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from abc import abstractmethod
+from typing import Dict, List, TypeVar, Union
+
 import torch
 import torch.nn as nn
-from typing import List, Dict, Union, TypeVar
-from abc import abstractmethod
-
 
 __all__ = ["AbstractEncoder"]
 

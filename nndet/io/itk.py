@@ -14,14 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from itertools import product
 from pathlib import Path
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 import SimpleITK as sitk
-from itertools import product
-
-
-from typing import Sequence, Union, Tuple
 
 
 def create_circle_mask_itk(

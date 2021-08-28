@@ -2,7 +2,6 @@ import time
 from typing import Any, List
 
 from loguru import logger
-
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import Callback
 

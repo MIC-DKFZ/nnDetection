@@ -15,121 +15,38 @@ limitations under the License.
 """
 
 import argparse
-import shutil
-import os
 import copy
+import os
+import shutil
 import sys
 import traceback
+from itertools import repeat
+from multiprocessing import Pool
+from pathlib import Path
+from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
-
-from loguru import logger
-from itertools import repeat
-from typing import Dict, Sequence, Tuple, List
-from pathlib import Path
-from multiprocessing import Pool
 from hydra import initialize_config_module
+from loguru import logger
 from omegaconf import OmegaConf
 
-from nndet.utils.config import compose
-from nndet.utils.check import env_guard
-from nndet.planning import DatasetAnalyzer
-from nndet.planning import PLANNER_REGISTRY
+from nndet.io.load import load_npz_looped, load_pickle
+from nndet.io.paths import (
+    get_case_id_from_path,
+    get_paths_from_splitted_dir,
+    get_paths_raw_to_split,
+    subfiles,
+)
+from nndet.planning import PLANNER_REGISTRY, DatasetAnalyzer
 from nndet.planning.experiment.utils import create_labels
 from nndet.planning.properties.registry import medical_instance_props
-from nndet.io.load import load_pickle, load_npz_looped
-from nndet.io.prepare import maybe_split_4d_nifti, instances_from_segmentation
-from nndet.io.paths import (
-    get_paths_raw_to_split,
-    get_paths_from_splitted_dir,
-    subfiles,
-    get_case_id_from_path,
-)
 from nndet.preprocessing import ImageCropper
-from nndet.utils.check import check_dataset_file, check_data_and_label_splitted
-
-
-def run_splitting_4d(data_dir: Path, output_dir: Path, num_processes: int) -> None:
-    """
-    Due to historical reasons this framework uses 3D niftis instead of 4D niftis
-    This function splits present 4D niftis into 3D niftis per channel
-
-    Args:
-        data_dir (str): top directory where data is located
-        output_dir (str): output directory for splitted data
-        num_processes (int): number of processes to use to split data
-        rm_classes: classes to remove from segmentation
-        ro_classes: reorder classes in segmentation
-        subtract_one_from_classes: subtract one from all classes in mapping
-        instances_from_seg: converts semantic segmentations to instance
-            segmentations via connected components
-    """
-    if output_dir.is_dir():
-        shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True)
-
-    source_files, target_folders = get_paths_raw_to_split(data_dir, output_dir)
-    with Pool(processes=num_processes) as p:
-        p.starmap(maybe_split_4d_nifti, zip(source_files, target_folders))
-
-
-def prepare_labels(
-    data_dir: Path,
-    output_dir: Path,
-    num_processes: int,
-    rm_classes: Sequence[int],
-    ro_classes: Dict[int, int],
-    subtract_one_from_classes: bool,
-    instances_from_seg: bool = True,
-):
-    """
-    Copy labels to splitted dir.
-    Optionally, runs connected components and removes classes from
-    semantic segmentations
-
-    Args:
-        data_dir: path to task base dir
-        output_dir: base dir of prepared labels
-        num_processes: number of processes to use
-        rm_classes: remove specific classes from semantic segmentation.
-            Can only be used with `instances_from_seg`
-        ro_classes: reorder classes in semantic segmentation for
-            connected components. Can only be used with `instances_from_seg`
-        subtract_one_from_classes: class indices for detection start from 0.
-            Subtracts 1 from classes extracted from segmentation
-        instances_from_seg: Run connected components. Defaults to True.
-    """
-    for labels_subdir in ("labelsTr", "labelsTs"):
-        if not (data_dir / labels_subdir).is_dir():
-            continue
-        labels_output_dir = output_dir / labels_subdir
-
-        if instances_from_seg:
-            if not labels_output_dir.is_dir():
-                labels_output_dir.mkdir(parents=True)
-
-            with Pool(processes=num_processes) as p:
-                paths = list(
-                    map(
-                        Path,
-                        subfiles(
-                            data_dir / labels_subdir, identifier="*.nii.gz", join=True
-                        ),
-                    )
-                )
-                paths = [path for path in paths if not path.name.startswith(".")]
-                p.starmap(
-                    instances_from_segmentation,
-                    zip(
-                        paths,
-                        repeat(labels_output_dir),
-                        repeat(rm_classes),
-                        repeat(ro_classes),
-                        repeat(subtract_one_from_classes),
-                    ),
-                )
-        else:
-            shutil.copytree(data_dir / labels_subdir, labels_output_dir)
+from nndet.utils.check import (
+    check_data_and_label_splitted,
+    check_dataset_file,
+    env_guard,
+)
+from nndet.utils.config import compose
 
 
 def run_cropping_and_convert(

@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import torch
-
-from loguru import logger
 from abc import ABC
-from typing import List, Union, TypeVar
+from typing import List, TypeVar, Union
+
+import torch
+from loguru import logger
 from torch import Tensor
 from torchvision.models.detection._utils import BalancedPositiveNegativeSampler
 

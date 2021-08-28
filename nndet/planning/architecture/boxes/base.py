@@ -1,37 +1,37 @@
 import os
-from pathlib import Path
 from abc import abstractmethod
-from typing import Type, Dict, Sequence, List, Callable, Tuple
+from pathlib import Path
+from typing import Callable, Dict, List, Sequence, Tuple, Type
 
-import torch
 import numpy as np
-from tqdm import tqdm
+import torch
 from loguru import logger
 from torchvision.models.detection.rpn import AnchorGenerator
+from tqdm import tqdm
 
 from nndet.utils.info import SuppressPrint
 
 with SuppressPrint():
     from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
 
-from nndet.io.load import load_pickle
 from nndet.arch.abstract import AbstractModel
-from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
-from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.core.boxes import (
-    get_anchor_generator,
-    expand_to_boxes,
+    box_area_np,
     box_center,
-    compute_anchors_for_strides,
     box_iou,
     box_size_np,
-    box_area_np,
+    compute_anchors_for_strides,
+    expand_to_boxes,
+    get_anchor_generator,
     permute_boxes,
 )
+from nndet.io.load import load_pickle
+from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.architecture.boxes.utils import (
     fixed_anchor_init,
     scale_with_abs_strides,
 )
+from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
 
 
 class BaseBoxesPlanner(ArchitecturePlanner):

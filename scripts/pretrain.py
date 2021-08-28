@@ -1,33 +1,32 @@
-import os
-import sys
-import socket
 import argparse
-from pathlib import Path
+import os
+import socket
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
-import torch
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import MLFlowLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-
-from loguru import logger
+import torch
 from hydra.experimental import initialize_config_module
+from loguru import logger
 from omegaconf.omegaconf import OmegaConf
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.loggers import MLFlowLogger
 
 import nndet
+from nndet.io.datamodule.bg_module import Datamodule
+from nndet.io.load import load_pickle, save_json, save_pickle
+from nndet.io.paths import get_task
+from nndet.ptmodule import MODULE_REGISTRY
+from nndet.utils.check import env_guard
 from nndet.utils.config import compose
 from nndet.utils.info import (
-    log_git,
-    write_requirements_to_file,
     create_debug_plan,
     flatten_mapping,
+    log_git,
+    write_requirements_to_file,
 )
-from nndet.utils.check import env_guard
-from nndet.io.datamodule.bg_module import Datamodule
-from nndet.io.paths import get_task
-from nndet.io.load import load_pickle, save_json, save_pickle
-from nndet.ptmodule import MODULE_REGISTRY
 
 
 def init_train_dir(

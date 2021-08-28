@@ -1,10 +1,9 @@
-from typing import Optional, Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import torch
 from torch import Tensor
 
 from nndet.arch.heads.comb.base import RoIHead
-
 from nndet.core.boxes.coder import BoxCoderND
 
 

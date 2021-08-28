@@ -38,9 +38,8 @@ from __future__ import division
 from typing import Sequence, TypeVar
 
 import torch
-from torch.jit.annotations import List, Tuple
 from torch import Tensor
-
+from torch.jit.annotations import List, Tuple
 from torchvision.models.detection._utils import BoxCoder
 
 

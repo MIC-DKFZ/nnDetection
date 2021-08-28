@@ -15,12 +15,11 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from os import PathLike
 
 import pickle
-
+from os import PathLike
 from pathlib import Path
-from typing import Dict, Sequence, Callable
+from typing import Callable, Dict, Sequence
 
 from nndet.io.paths import get_case_ids_from_dir
 

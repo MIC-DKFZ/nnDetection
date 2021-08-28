@@ -15,18 +15,18 @@ limitations under the License.
 """
 
 import os
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-import time
-from typing import Callable, Tuple, Dict, Sequence, Any, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
 
 import numpy as np
 from loguru import logger
 
-from nndet.io.load import save_json
-from nndet.utils.info import maybe_verbose_iterable
-from nndet.utils import to_numpy
 from nndet.evaluator.registry import BoxEvaluator
+from nndet.io.load import save_json
+from nndet.utils import to_numpy
+from nndet.utils.info import maybe_verbose_iterable
 
 
 class Sweeper(ABC):

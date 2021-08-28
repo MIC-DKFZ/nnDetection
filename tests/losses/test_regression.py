@@ -1,13 +1,9 @@
-import pytest
-
 import math
 
+import pytest
 import torch
 
-from nndet.losses.regression import (
-    smooth_l1_loss,
-    GIoULoss,
-)
+from nndet.losses.regression import GIoULoss, smooth_l1_loss
 
 
 @pytest.fixture

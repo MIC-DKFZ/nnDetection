@@ -16,12 +16,11 @@ limitations under the License.
 
 import torch
 import torch.nn.functional as F
+from loguru import logger
+from torch import Tensor
 from torch.cuda.amp import autocast
 
-from torch import Tensor
-from loguru import logger
-
-from nndet.losses.base import reduction_helper, Loss
+from nndet.losses.base import Loss, reduction_helper
 from nndet.utils import make_onehot_batch
 
 

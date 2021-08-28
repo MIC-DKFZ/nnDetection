@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+
 import torch
 import torch.nn as nn
-from typing import Callable, Tuple, Sequence, Union, List, Optional
 
-from nndet.arch.encoder.abstract import AbstractEncoder
 from nndet.arch.blocks.basic import AbstractBlock
-
+from nndet.arch.encoder.abstract import AbstractEncoder
 
 __all__ = ["Encoder"]
 

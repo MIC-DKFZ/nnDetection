@@ -1,5 +1,4 @@
 import pytest
-
 import torch
 from torchvision.ops.roi_align import roi_align as _roi_align
 

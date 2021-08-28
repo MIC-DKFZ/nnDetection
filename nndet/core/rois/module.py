@@ -6,18 +6,17 @@
 #     predict features
 #     compute loss
 # """
-from typing import TypeVar, List, Dict, Union, Tuple, Sequence, Any
+from typing import Any, Dict, List, Sequence, Tuple, TypeVar, Union
 
 import torch
 
 from nndet.arch.heads.comb import RoIHeadType
 from nndet.core.boxes import MatcherType
-from nndet.core.rois.pooler import PoolerType
-from nndet.core.boxes.sampler import SamplerType
-
-from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.assign import assign_targets_to_anchors
+from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.post import post_image_single_class_regression
+from nndet.core.boxes.sampler import SamplerType
+from nndet.core.rois.pooler import PoolerType
 
 
 # TODO: refactor module name

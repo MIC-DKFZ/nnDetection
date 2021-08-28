@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Tuple, Union
+
 import torch
 import torch.nn.functional as F
-
-from typing import Union, Tuple, List
 from torch import Tensor
-
 
 __all__ = ["InterpolateToShapes", "InterpolateToShape", "Interpolate"]
 

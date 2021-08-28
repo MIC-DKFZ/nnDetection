@@ -3,16 +3,15 @@ from typing import Optional, TypeVar
 
 import torch
 import torch.nn as nn
+from loguru import logger
 from torch import Tensor
 
-from loguru import logger
-
-from nndet.arch.heads.abstract import Classifier, CONV_TYPES
+from nndet.arch.heads.abstract import CONV_TYPES, Classifier
 from nndet.losses.classification import (
     AsymmetricFocalLossWithLogits,
-    FocalLossWithLogits,
     BCEWithLogitsLossOneHot,
     CrossEntropyLoss,
+    FocalLossWithLogits,
 )
 
 

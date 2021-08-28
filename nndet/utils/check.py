@@ -2,13 +2,13 @@ import functools
 import os
 import warnings
 from pathlib import Path
-from typing import List, Sequence, Optional
+from typing import List, Optional, Sequence
 
 import numpy as np
 import SimpleITK as sitk
 
 from nndet.io import load_json, load_sitk
-from nndet.io.paths import get_task, get_paths_from_splitted_dir
+from nndet.io.paths import get_paths_from_splitted_dir, get_task
 from nndet.utils.config import load_dataset_info
 from nndet.utils.info import maybe_verbose_iterable
 

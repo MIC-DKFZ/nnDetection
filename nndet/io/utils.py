@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import os
+from collections import OrderedDict
+from pathlib import Path
 from typing import List
 
 from loguru import logger
-from collections import OrderedDict
-from pathlib import Path
 
-from nndet.io.paths import get_case_ids_from_dir, get_case_id_from_path
+from nndet.io.paths import get_case_id_from_path, get_case_ids_from_dir
 
 
 def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:

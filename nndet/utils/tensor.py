@@ -1,13 +1,11 @@
-from collections import defaultdict
-
-import torch
 import re
-import numpy as np
-from torch import Tensor
+from collections import abc, defaultdict
+from typing import Any, Callable, List, Mapping, Sequence, Union
 
-from collections import abc
+import numpy as np
+import torch
+from torch import Tensor
 from torch._six import string_classes
-from typing import Sequence, Union, Any, Mapping, Callable, List
 
 np_str_obj_array_pattern = re.compile(r"[SaUO]")
 

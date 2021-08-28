@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from loguru import logger
+from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union
 
 import torch
 import torch.nn as nn
-from typing import Union, Callable, Any, Optional, Tuple, Sequence, Type
+from loguru import logger
 
-from nndet.arch.layers.norm import GroupNorm
 from nndet.arch.layers.activation import Swish
+from nndet.arch.layers.norm import GroupNorm
 
 try:
     from torch.nn import Mish

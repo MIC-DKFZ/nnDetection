@@ -47,9 +47,10 @@ limitations under the License.
 """
 
 import time
+from typing import Dict, List, Sequence, Tuple, Union
+
 import numpy as np
 from loguru import logger
-from typing import Sequence, List, Dict, Union, Tuple
 
 from nndet.evaluator import DetectionMetric
 

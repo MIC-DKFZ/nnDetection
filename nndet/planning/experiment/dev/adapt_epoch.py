@@ -3,8 +3,8 @@ from typing import Dict, List
 
 from loguru import logger
 
-from nndet.planning.experiment.v001 import D3V001
 from nndet.planning.experiment import PLANNER_REGISTRY
+from nndet.planning.experiment.v001 import D3V001
 
 
 @PLANNER_REGISTRY.register

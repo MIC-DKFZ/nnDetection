@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import numpy as np
-from typing import Dict, Sequence, Tuple
 from collections import defaultdict
+from typing import Dict, Sequence, Tuple
+
+import numpy as np
 
 from nndet.evaluator import AbstractEvaluator
-
 
 __all__ = ["SegmentationEvaluator"]
 

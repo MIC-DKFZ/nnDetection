@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Sequence
+
 import torch
 from torch import Tensor
-from typing import Sequence, List
 
 from nndet.io.transforms.base import AbstractTransform
 

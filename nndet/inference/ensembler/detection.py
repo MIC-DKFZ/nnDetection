@@ -16,26 +16,21 @@ limitations under the License.
 
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Hashable, Union
+from typing import Any, Dict, Hashable, List, Optional, Sequence, Tuple, Union
 
-import torch
 import numpy as np
+import torch
+from loguru import logger
 from scipy.stats import norm
 from torch import Tensor
 
-from loguru import logger
-
-from nndet.core.boxes.nms import batched_weighted_nms, batched_nms
-from nndet.core.boxes.wbc import batched_wbc
 from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
+from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
+from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
+from nndet.core.boxes.wbc import batched_wbc
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.restore import restore_detection
 from nndet.utils.tensor import cat, to_device
-
-from nndet.core.boxes.merging import (
-    GreedyIoUBoxMerger,
-    VoteLabelGreedyIoUBoxMerger,
-)
 
 
 class BoxEnsembler(BaseEnsembler):
