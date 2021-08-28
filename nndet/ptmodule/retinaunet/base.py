@@ -17,30 +17,23 @@ limitations under the License.
 from __future__ import annotations
 
 import os
-from collections import defaultdict
 from functools import partial
+from pathlib import Path
 from typing import Any, Callable, Dict, Hashable, Sequence
 
-import numpy as np
 import torch
 from loguru import logger
 
 from nndet.arch.blocks.basic import StackedConvBlock2
-from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu, Generator
-from nndet.arch.decoder.base import DecoderType, UFPNModular
-from nndet.arch.encoder.abstract import EncoderType
+from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
-from nndet.arch.heads.classifier import CEClassifier, DenseClassifierType
-from nndet.arch.heads.comb import AnchorHeadType, BoxHeadHNM
-from nndet.arch.heads.regressor import DenseRegressorType, L1Regressor
-from nndet.arch.heads.regressor.dense_single import DenseRegressor
-from nndet.arch.heads.segmenter import DiCESegmenter, SegmenterType
-from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
-from nndet.core.boxes.coder import BoxCoderND, CoderType
+from nndet.arch.heads.classifier import CEClassifier
+from nndet.arch.heads.comb import BoxHeadHNM
+from nndet.arch.heads.regressor import L1Regressor
+from nndet.arch.heads.segmenter import DiCESegmenter
 from nndet.core.boxes.matcher import IoUMatcher
-from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
-from nndet.core.retina import BaseRetinaNet
 from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.inference.ensembler.detection import (
@@ -65,7 +58,6 @@ from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer import get_params_no_wd_on_norm
-from nndet.utils.tensor import to_numpy
 
 
 class RetinaUNetModule(LightningBaseModule, BoxMixin, SemanticMixin, SingleStageMixin):

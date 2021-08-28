@@ -1,20 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List
 
 from loguru import logger
-
-from nndet.utils.tensor import to_numpy
 
 from nndet.evaluator import AbstractEvaluator
 from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
-
 from nndet.io.transforms import (
     AbstractTransform,
+    FindInstances,
     Instances2Boxes,
     Instances2Segmentation,
-    FindInstances,
 )
+from nndet.utils.tensor import to_numpy
 
 
 class ModeMixin(ABC):

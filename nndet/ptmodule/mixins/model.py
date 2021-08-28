@@ -1,20 +1,18 @@
-from abc import ABC, abstractclassmethod, abstractmethod
 import copy
+from abc import ABC, abstractmethod
 
 from loguru import logger
 
 from nndet.arch.conv import Generator
-from nndet.core.boxes.anchors import get_anchor_generator
-from nndet.core.boxes.ops import box_iou
-
-from nndet.core.boxes.coder import CoderType, BoxCoderND
-from nndet.core.boxes.anchors import AnchorGeneratorType
-from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.decoder.base import DecoderType
+from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.heads.classifier import DenseClassifierType
-from nndet.arch.heads.regressor import DenseRegressorType
 from nndet.arch.heads.comb.base import AnchorHeadType
+from nndet.arch.heads.regressor import DenseRegressorType
 from nndet.arch.heads.segmenter import SegmenterType
+from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
+from nndet.core.boxes.coder import BoxCoderND, CoderType
+from nndet.core.boxes.ops import box_iou
 
 
 class ModelMixin(ABC):

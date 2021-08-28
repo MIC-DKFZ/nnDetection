@@ -16,63 +16,56 @@ limitations under the License.
 
 from __future__ import annotations
 
-import os
 import copy
+import os
 from collections import defaultdict
-from pathlib import Path
 from functools import partial
-from typing import Callable, Hashable, Sequence, Dict, Any
-from nndet.arch.heads.regressor.dense_single import DenseRegressor
+from pathlib import Path
+from typing import Any, Callable, Dict, Hashable, Sequence
 
-import torch
 import numpy as np
+import torch
 from loguru import logger
 
-from nndet.utils.tensor import to_numpy
-from nndet.evaluator.det import BoxEvaluator
-from nndet.evaluator.seg import SegmentationEvaluator
-
-from nndet.core.retina import BaseRetinaNet
-from nndet.core.boxes.matcher import IoUMatcher
-from nndet.core.boxes.sampler import HardNegativeSamplerBatched
-from nndet.core.boxes.anchors import AnchorGeneratorType
-from nndet.core.boxes.coder import CoderType, BoxCoderND
-from nndet.core.boxes.anchors import get_anchor_generator
-from nndet.core.boxes.ops import box_iou
-
-from nndet.ptmodule.base_module import LightningBaseModule
-
-from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 from nndet.arch.blocks.basic import StackedConvBlock2
+from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu, Generator
+from nndet.arch.decoder.base import DecoderType, UFPNModular
 from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.encoder.modular import Encoder
-from nndet.arch.decoder.base import DecoderType, UFPNModular
-from nndet.arch.heads.classifier import DenseClassifierType, CEClassifier
-from nndet.arch.heads.regressor import DenseRegressorType, L1Regressor
+from nndet.arch.heads.classifier import CEClassifier, DenseClassifierType
 from nndet.arch.heads.comb import AnchorHeadType, BoxHeadHNM
-from nndet.arch.heads.segmenter import SegmenterType, DiCESegmenter
-
-from nndet.training.optimizer import get_params_no_wd_on_norm
-from nndet.training.learning_rate import LinearWarmupPolyLR
-
-from nndet.inference.predictor import Predictor
-from nndet.inference.sweeper import BoxSweeper
-from nndet.inference.transforms import get_tta_transforms, Inference2D
-from nndet.inference.loading import get_loader_fn
-from nndet.inference.helper import predict_dir
-from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.arch.heads.regressor import DenseRegressorType, L1Regressor
+from nndet.arch.heads.regressor.dense_single import DenseRegressor
+from nndet.arch.heads.segmenter import DiCESegmenter, SegmenterType
+from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
+from nndet.core.boxes.coder import BoxCoderND, CoderType
+from nndet.core.boxes.matcher import IoUMatcher
+from nndet.core.boxes.ops import box_iou
+from nndet.core.boxes.sampler import HardNegativeSamplerBatched
+from nndet.core.retina import BaseRetinaNet
+from nndet.evaluator.det import BoxEvaluator
+from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelective,
     BoxEnsemblerSelective2D,
 )
-
+from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.inference.helper import predict_dir
+from nndet.inference.loading import get_loader_fn
+from nndet.inference.predictor import Predictor
+from nndet.inference.sweeper import BoxSweeper
+from nndet.inference.transforms import Inference2D, get_tta_transforms
 from nndet.io.transforms import (
     Compose,
+    FindInstances,
     Instances2Boxes,
     Instances2Segmentation,
-    FindInstances,
     TransferInputChannel,
 )
+from nndet.ptmodule.base_module import LightningBaseModule
+from nndet.training.learning_rate import LinearWarmupPolyLR
+from nndet.training.optimizer import get_params_no_wd_on_norm
+from nndet.utils.tensor import to_numpy
 
 
 class RetinaUNetModule(LightningBaseModule):
