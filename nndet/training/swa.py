@@ -62,8 +62,8 @@ class BaseSWA(StochasticWeightAveraging):
         logger.info(f"Initialize SWA with swa epoch start {self.swa_start}")
 
     def pl_module_contains_batch_norm(
-        self, pl_module: "pl.LightningModule"
-    ):  # noqa: F821
+        self, pl_module: "pl.LightningModule"  # noqa: F821
+    ):
         if self.update_statistics:
             raise NotImplementedError(
                 "Updating the statistis of the "

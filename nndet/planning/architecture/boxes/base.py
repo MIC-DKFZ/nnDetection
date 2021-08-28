@@ -576,9 +576,9 @@ class BoxC001(BaseBoxesPlanner):
                 patch_size = self._decrease_patch_size(
                     patch_size,
                     target_median_shape_transposed,
-                    pooling,
-                    must_be_divisible_by,
-                )  # noqa: F821
+                    pooling,  # noqa: F821
+                    must_be_divisible_by,  # noqa: F821
+                )
             (
                 num_pool_per_axis,
                 pooling,

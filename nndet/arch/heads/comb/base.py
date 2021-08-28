@@ -41,7 +41,7 @@ class AnchorHead(BaseHead):
             coder=coder,
         )
         self.reg_mode = reg_mode.lower()
-        if not self.reg_mode in ["encode", "decode"]:
+        if self.reg_mode not in ["encode", "decode"]:
             raise ValueError(
                 f"Reg mode {self.reg_mode} is not supported. "
                 "Only one of 'encode' or 'decode' are supported."

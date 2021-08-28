@@ -74,7 +74,7 @@ def deprecate(
             if replacement is not None:
                 s += f" The replacement is {replacement}."
             else:
-                s += f" There will be no replacement."
+                s += " There will be no replacement."
 
             logger.warning(s)
             return func(*args, **kwargs)
