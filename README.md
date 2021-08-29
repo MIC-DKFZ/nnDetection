@@ -5,7 +5,6 @@
 ![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
 ![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
-![license](https://img.shields.io/badge/License-Apache%202.0-red.svg)
 
 </div>
 
