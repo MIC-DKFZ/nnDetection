@@ -1,16 +1,14 @@
 import os
 import sys
 import traceback
-from itertools import repeat
-from multiprocessing import Pool
 from pathlib import Path
 
 import pandas as pd
 import SimpleITK as sitk
 from loguru import logger
 
-from nndet.io import save_json, save_yaml
-from nndet.io.itk import copy_meta_data_itk, load_sitk, load_sitk_as_array
+from nndet.io import save_json
+from nndet.io.itk import load_sitk, load_sitk_as_array
 from nndet.io.prepare import create_test_split
 from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
@@ -107,7 +105,9 @@ def prepare_case(
             mask[_mask > 0] = idx
 
         mask_final = sitk.GetImageFromArray(mask)
-        copy_meta_data_itk(t2_data_itk, mask_final)
+        mask_final.SetOrigin(t2_data_itk.GetOrigin())
+        mask_final.SetDirection(t2_data_itk.GetDirection())
+        mask_final.SetSpacing(t2_data_itk.GetSpacing())
 
         df_case = df_labels.loc[df_labels["ProxID"] == case_id]
         instances = {}
