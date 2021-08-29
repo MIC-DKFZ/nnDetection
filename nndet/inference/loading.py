@@ -22,8 +22,6 @@ from typing import Optional, Sequence
 import torch
 from loguru import logger
 
-from nndet.ptmodule import MODULE_REGISTRY
-
 
 def get_loader_fn(mode: str, **kwargs):
     if mode.lower() == "all":
@@ -79,6 +77,8 @@ def load_final_model(
             `model`: loaded model
             `rank`: rank is always 0
     """
+    from nndet.ptmodule import MODULE_REGISTRY
+
     assert (
         num_models == 1
     ), f"load_final_model only supports num_models=1, found {num_models}"
@@ -127,6 +127,8 @@ def load_all_models(
             `model`: loaded model
             `rank`: rank of model
     """
+    from nndet.ptmodule import MODULE_REGISTRY
+
     model_names = list(source_models.glob("*.ckpt"))
     if not model_names:
         raise RuntimeError(f"Did not find any models in {source_models}")
