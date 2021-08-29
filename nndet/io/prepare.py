@@ -19,18 +19,16 @@ import numpy as np
 import SimpleITK as sitk
 
 from pathlib import Path
-from typing import Dict, List, Sequence, Optional
+from typing import List, Sequence
 
-from nndet.io.paths import Pathlike
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
+from nndet.io.paths import Pathlike
 from nndet.io.paths import get_case_ids_from_dir
-from nndet.io.load import save_json
-from nndet.utils.clustering import seg2instances, remove_classes, reorder_classes
 
 
-__all__ = ["maybe_split_4d_nifti", "instances_from_segmentation", "sitk_copy_metadata"]
+__all__ = ["maybe_split_4d_nifti"]
 
 
 def maybe_split_4d_nifti(source_file: Path, output_folder: Path):
@@ -112,99 +110,6 @@ def create_itk_image_spatial_props(
     data_itk.SetOrigin(origin)
     data_itk.SetDirection(direction)
     return data_itk
-
-
-def sitk_copy_metadata(img_source: sitk.Image, img_target: sitk.Image) -> sitk.Image:
-    """
-    Copy metadata (spacing, origin, direction) from source to target image
-
-    Args
-        img_source: source image
-        img_target: target image
-
-    Returns:
-        SimpleITK.Image: target image with copied metadata
-    """ 
-    raise RuntimeError("Deprecated")
-    spacing = img_source.GetSpacing()
-    img_target.SetSpacing(spacing)
-
-    origin = img_source.GetOrigin()
-    img_target.SetOrigin(origin)
-
-    direction = img_source.GetDirection()
-    img_target.SetDirection(direction)
-    return img_target
-
-
-def instances_from_segmentation(source_file: Path, output_folder: Path,
-                                rm_classes: Sequence[int] = None,
-                                ro_classes: Dict[int, int] = None,
-                                subtract_one_of_classes: bool = True,
-                                fg_vs_bg: bool = False,
-                                file_name: Optional[str] = None
-                                ):
-    """
-    1. Optionally removes classes from the segmentation (
-    e.g. organ segmentation's which are not useful for detection)
-
-    2. Optionally reorders the segmentation indices
-
-    3. Converts semantic segmentation to instance segmentation's via
-    connected components
-
-    Args:
-        source_file: path to semantic segmentation file
-        output_folder: folder where processed file will be saved
-        rm_classes: classes to remove from semantic segmentation
-        ro_classes: reorder classes before instances are generated
-        subtract_one_of_classes: subtracts one from the classes
-            in the instance mapping (detection networks assume
-            that classes start from 0)
-        fg_vs_bg: map all foreground classes to a single class to run
-            foreground vs background detection task.
-        file_name: name of saved file (without file type!)
-    """
-    if subtract_one_of_classes and fg_vs_bg:
-        logger.info("subtract_one_of_classes will be ignored because fg_vs_bg is "
-                    "active and all foreground classes ill be mapped to 0")
-
-    seg_itk = sitk.ReadImage(str(source_file))
-    seg_npy = sitk.GetArrayFromImage(seg_itk)
-
-    if rm_classes is not None:
-        seg_npy = remove_classes(seg_npy, rm_classes)
-
-    if ro_classes is not None:
-        seg_npy = reorder_classes(seg_npy, ro_classes)
-
-    instances, instance_classes = seg2instances(seg_npy)
-    if fg_vs_bg:
-        num_instances_check = len(instance_classes)
-        seg_npy[seg_npy > 0] = 1
-        instances, instance_classes = seg2instances(seg_npy)
-        num_instances = len(instance_classes)
-        if num_instances != num_instances_check:
-            logger.warning(f"Lost instance: Found {num_instances} instances before "
-                           f"fg_vs_bg but {num_instances_check} instances after it")
-
-    if subtract_one_of_classes:
-        for key in instance_classes.keys():
-            instance_classes[key] -= 1
-
-    if fg_vs_bg:
-        for key in instance_classes.keys():
-            instance_classes[key] = 0
-
-    seg_itk_new = sitk.GetImageFromArray(instances)
-    seg_itk_new = sitk_copy_metadata(seg_itk, seg_itk_new)
-
-    if file_name is None:
-        suffix_length = sum(map(len, source_file.suffixes))
-        file_name = source_file.name[:-suffix_length]
-
-    save_json({"instances": instance_classes}, output_folder / f"{file_name}.json")
-    sitk.WriteImage(seg_itk_new, str(output_folder / f"{file_name}.nii.gz"))
 
 
 def create_test_split(splitted_dir: Pathlike,

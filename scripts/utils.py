@@ -15,6 +15,9 @@ limitations under the License.
 """
 
 def boxes2nii():
+    """
+    Only for visualisation purposes.
+    """
     import os
     import argparse
     from pathlib import Path
@@ -87,11 +90,11 @@ def boxes2nii():
 
         prediction_meta = {}
         for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
-            mask_slicing = [slice(int(pbox[0]), int(pbox[2])),
-                            slice(int(pbox[1]), int(pbox[3])),
+            mask_slicing = [slice(int(pbox[0]) + 1, int(pbox[2])),
+                            slice(int(pbox[1]) + 1, int(pbox[3])),
                             ]
             if instance_mask.ndim == 3:
-                mask_slicing.append(slice(int(pbox[4]), int(pbox[5])))
+                mask_slicing.append(slice(int(pbox[4]) + 1, int(pbox[5])))
             instance_mask[tuple(mask_slicing)] = instance_id
 
             prediction_meta[int(instance_id)] = {
@@ -112,6 +115,9 @@ def boxes2nii():
 
 
 def seg2nii():
+    """
+    Only for visualisation purposes.
+    """
     import os
     import argparse
     from pathlib import Path

@@ -15,10 +15,10 @@
 | Model       | LIDC                 | RibFrac  | CADA     | Kits19   |
 |:-----------:|:--------------------:|:--------:|:--------:|:--------:|
 | nnDetection | 0.605                | 0.765    | 0.924    | 0.923    |
-| nnUNetPlus  | 0.385<sup>*</sup>    | 0.700    | 0.955    | 0.935    |
-| nnUNetBasic | 0.346<sup>*</sup>    | 0.667    | 0.930    | 0.908    |
+| nnUNetPlus  | 0.439<sup>*</sup>    | 0.700    | 0.955    | 0.935    |
+| nnUNetBasic | 0.411<sup>*</sup>    | 0.667    | 0.930    | 0.908    |
 
-<sup>*</sup> results with corrected numerical values in softdice loss. Out of the box results: nnUNetPlus 0.304 and nnUNetBasic 0.232
+<sup>*</sup> results with corrected numerical values in softdice loss and improved multi-class import.
 
 &nbsp;
 
@@ -26,22 +26,25 @@
 
 5 Fold Cross Validation
 
-| Model       | ADAM     | ProstateX  | Pancreas | Hepatic Vessel   | Colon | Liver |
-|:-----------:|:--------:|:----------:|:--------:|:----------------:|:-----:|:-----:|
-| nnDetection | 0.780    | 0.300      | 0.766    | 0.727            | 0.662 | 0.628 |
-| nnUNetPlus  | 0.720    | 0.197      | 0.721    | 0.721            | 0.579 | 0.678 |
-| nnUNetBasic | 0.657    | 0.204      | 0.691    | 0.699            | 0.509 | 0.567 |
+| Model       | ADAM     | ProstateX              | Pancreas | Hepatic Vessel   | Colon | Liver |
+|:-----------:|:--------:|:----------------------:|:--------:|:----------------:|:-----:|:-----:|
+| nnDetection | 0.780    | 0.300                  | 0.766    | 0.727            | 0.662 | 0.628 |
+| nnUNetPlus  | 0.720    | 0.220<sup>*</sup>      | 0.721    | 0.721            | 0.579 | 0.678 |
+| nnUNetBasic | 0.657    | 0.202<sup>*</sup>      | 0.691    | 0.699            | 0.509 | 0.567 |
+
+<sup>*</sup>improved multi-class import
 
 &nbsp;
 
 Test Split
 
-| Model       | ProstateX  | Pancreas | Hepatic Vessel   | Colon | Liver |
-|:-----------:|:----------:|:--------:|:----------------:|:-----:|:-----:|
-| nnDetection | 0.221      | 0.791    | 0.664            | 0.696 | 0.790 |
-| nnUNetPlus  | 0.078      | 0.704    | 0.684            | 0.731 | 0.760 |
+| Model       | ProstateX              | Pancreas | Hepatic Vessel   | Colon | Liver |
+|:-----------:|:----------------------:|:--------:|:----------------:|:-----:|:-----:|
+| nnDetection | 0.221                  | 0.791    | 0.664            | 0.696 | 0.790 |
+| nnUNetPlus  | 0.123<sup>*</sup>      | 0.704    | 0.684            | 0.731 | 0.760 |
 
 ADAM Results are listed under Benchmarks
+<sup>*</sup>improved multi-class import
 
 &nbsp;
 

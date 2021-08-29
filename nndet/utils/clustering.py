@@ -22,17 +22,16 @@ from typing import Dict, Sequence, Union, Tuple, Optional
 from nndet.io.transforms.instances import get_bbox_np
 
 
-def seg2instances(seg: np.ndarray,
-                  exclude_background: bool = True,
-                  min_num_voxel: int = 0,
-                  ) -> Tuple[np.ndarray, Dict[int, int]]:
+def seg_to_instances(
+    seg: np.ndarray,
+    min_num_voxel: int = 0,
+    ) -> Tuple[np.ndarray, Dict[int, int]]:
     """
-    Use connected components with ones matrix to created instance from segmentation
+    Use connected components with ones matrix to created
+    instances from segmentation
 
     Args:
         seg: semantic segmentation [spatial dims]
-        exclude_background: skips background class for the mapping
-            from instances to classes
         min_num_voxel: minimum number of voxels of an instance
 
     Returns:
@@ -40,32 +39,89 @@ def seg2instances(seg: np.ndarray,
         Dict[int, int]: mapping from instances to classes
     """
     structure = np.ones([3] * seg.ndim)
-    instances_temp, _ = label(seg, structure=structure)
+    
+    unique_classes = np.unique(seg)
+    unique_classes = unique_classes[unique_classes > 0]
 
-    instance_ids = np.unique(instances_temp)
-    if exclude_background:
+    instances = np.zeros_like(seg)
+    instance_classes = {}
+
+    i = 1
+    for uc in unique_classes:
+        binary_class_mask = (seg == uc)
+        instances_temp, _ = label(binary_class_mask, structure=structure)
+
+        instance_ids = np.unique(instances_temp)
         instance_ids = instance_ids[instance_ids > 0]
 
+        for iid in instance_ids:
+            instance_binary_mask = instances_temp == iid
+            
+            if min_num_voxel > 0:
+                if instance_binary_mask.sum() < min_num_voxel:  # remove small instances
+                    continue
+
+            instances[instance_binary_mask] = i  # save instance to final mask
+            instance_classes[int(i)] = uc
+            i = i + 1  # bump instance index
+    return instances, instance_classes
+
+
+def seg_to_instances_voted(
+    seg: np.ndarray,
+    min_num_voxel: int = 0,
+    ) -> Tuple[np.ndarray, Dict[int, int]]:
+    """
+    Conntected component analysis is performed on foreground
+    (independent of exact class) and the final class
+    is determined via majority voting.
+
+    Args:
+        seg: semantic segmentation [spatial dims]
+        min_num_voxel: minimum number of voxels of an instance
+
+    Returns:
+        np.ndarray: instance segmentation
+        Dict[int, int]: mapping from instances to classes
+    """
+    structure = np.ones([3] * seg.ndim)
+
+    binary_fg_mask = (seg > 0).astype(int)
+    instances_temp, _ = label(binary_fg_mask, structure=structure)
+
+    instance_ids = np.unique(instances_temp)
+    instance_ids = instance_ids[instance_ids > 0]
+
+    instances = np.zeros_like(seg)
     instance_classes = {}
-    instances = np.zeros_like(instances_temp)
+
     i = 1
     for iid in instance_ids:
         instance_binary_mask = instances_temp == iid
-
+        
         if min_num_voxel > 0:
             if instance_binary_mask.sum() < min_num_voxel:  # remove small instances
                 continue
 
         instances[instance_binary_mask] = i  # save instance to final mask
-        single_idx = np.argwhere(instance_binary_mask)[0]  # select semantic class
-        semantic_class = int(seg[tuple(single_idx)])
-        instance_classes[int(i)] = semantic_class  # save class
+        cls_id, cls_count = np.unique(
+            seg[instance_binary_mask], return_counts=True) # count classes in region
+        majority_voted_class = cls_id[np.argmax(cls_count)] # select class with most votes
+
+        assert 0 not in cls_id
+        assert majority_voted_class > 0
+
+        instance_classes[int(i)] = majority_voted_class
         i = i + 1  # bump instance index
     return instances, instance_classes
 
 
-def remove_classes(seg: np.ndarray, rm_classes: Sequence[int], classes: Dict[int, int] = None,
-                   background: int = 0) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
+def remove_classes(
+    seg: np.ndarray,
+    rm_classes: Sequence[int],
+    classes: Dict[int, int] = None,
+    background: int = 0,
+    ) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
     """
     Remove classes from segmentation (also works on instances
     but instance ids may not be consecutive anymore)
@@ -90,7 +146,10 @@ def remove_classes(seg: np.ndarray, rm_classes: Sequence[int], classes: Dict[int
         return seg, classes
 
 
-def reorder_classes(seg: np.ndarray, class_mapping: Dict[int, int]) -> np.ndarray:
+def reorder_classes(
+    seg: np.ndarray,
+    class_mapping: Dict[int, int],
+    ) -> np.ndarray:
     """
     Reorders classes in segmentation
 
@@ -106,11 +165,12 @@ def reorder_classes(seg: np.ndarray, class_mapping: Dict[int, int]) -> np.ndarra
     return seg
 
 
-def compute_score_from_seg(instances: np.ndarray,
-                           instance_classes: Dict[int, int],
-                           probs: np.ndarray,
-                           aggregation: str = "max",
-                           ) -> np.ndarray:
+def compute_score_from_seg(
+    instances: np.ndarray,
+    instance_classes: Dict[int, int],
+    probs: np.ndarray,
+    aggregation: str = "max",
+    ) -> np.ndarray:
     """
     Combine scores for each instance given an instance mask and instance logits
 
@@ -148,12 +208,13 @@ def compute_score_from_seg(instances: np.ndarray,
     return np.asarray(instance_scores)
 
 
-def instance_results_from_seg(probs: np.ndarray,
-                              aggregation: str,
-                              stuff: Optional[Sequence[int]] = None,
-                              min_num_voxel: int = 0,
-                              min_threshold: Optional[float] = None,
-                              ) -> dict:
+def softmax_to_instances(
+    probs: np.ndarray,
+    aggregation: str,
+    stuff: Optional[Sequence[int]] = None,
+    min_num_voxel: int = 0,
+    min_threshold: Optional[float] = None,
+    ) -> dict:
     """
     Compute instance segmentation results from a semantic segmentation
     argmax -> remove stuff classes -> connected components ->
@@ -178,12 +239,16 @@ def instance_results_from_seg(probs: np.ndarray,
             `pred_labels`: predicted class for each instance/box
             `pred_scores`: predicted score for each instance/box
     """
+    if probs.shape[0] < 2:
+        raise ValueError("softmax_to_instances only works for softmax probabilities")
+
     if min_threshold is not None:
         if probs.shape[0] > 2:
-            fg_argmax = np.argmax(probs, axis=0)
-            fg_mask = np.max(probs[1:], axis=0) > min_threshold
+            cluster_map = np.max(probs[1:], axis=0) > min_threshold
+            class_map = np.argmax(probs[1:], axis=0) + 1
+
             seg = np.zeros_like(probs[0])
-            seg[fg_mask] = fg_argmax[fg_mask]
+            seg[cluster_map] = class_map[cluster_map]
         else:
             seg = probs[1] > min_threshold
     else:
@@ -192,12 +257,12 @@ def instance_results_from_seg(probs: np.ndarray,
     if stuff is not None:
         for s in stuff:
             seg[seg == s] = 0
-    instances, instance_classes = seg2instances(seg,
-                                                exclude_background=True,
-                                                min_num_voxel=min_num_voxel,
-                                                )
-    instance_scores = compute_score_from_seg(instances, instance_classes, probs,
-                                             aggregation=aggregation)
+
+    instances, instance_classes = seg_to_instances_voted(seg, min_num_voxel=min_num_voxel)
+
+    instance_scores = compute_score_from_seg(
+        instances, instance_classes, probs, aggregation=aggregation,
+        )
     instance_classes = {int(key): int(item) - 1 for key, item in instance_classes.items()}
     tmp = get_bbox_np(instances[None], instance_classes)
     instance_boxes = tmp["boxes"]
