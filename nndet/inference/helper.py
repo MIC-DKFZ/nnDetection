@@ -20,7 +20,6 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 from loguru import logger
 
-from nndet.inference.loading import load_final_model
 from nndet.io.load import load_pickle, save_pickle
 from nndet.io.paths import get_case_id_from_path
 from nndet.utils.tensor import to_numpy
@@ -32,7 +31,7 @@ def predict_dir(
     cfg: dict,
     plan: dict,
     source_models: Path,
-    model_fn: Callable[[Path, dict, dict, int], Sequence[dict]] = load_final_model,
+    model_fn: Callable[[Path, dict, dict, int], Sequence[dict]],
     num_models: int = None,
     num_tta_transforms: int = None,
     restore: bool = False,
