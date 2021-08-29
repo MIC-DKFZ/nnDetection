@@ -11,8 +11,8 @@ from nndet.io.prepare import create_test_split
 from loguru import logger
 
 from nndet.utils.check import env_guard
-from nndet.io import save_json, save_yaml
-from nndet.io.itk import load_sitk, load_sitk_as_array, copy_meta_data_itk
+from nndet.io import save_json
+from nndet.io.itk import load_sitk, load_sitk_as_array
 from nndet.utils.info import maybe_verbose_iterable
 
 
@@ -99,7 +99,9 @@ def prepare_case(case_id,
             mask[_mask > 0] = idx
 
         mask_final = sitk.GetImageFromArray(mask)
-        copy_meta_data_itk(t2_data_itk, mask_final)
+        mask_final.SetOrigin(t2_data_itk.GetOrigin())
+        mask_final.SetDirection(t2_data_itk.GetDirection())
+        mask_final.SetSpacing(t2_data_itk.GetSpacing())
 
         df_case = df_labels.loc[df_labels['ProxID'] == case_id]
         instances = {}

@@ -74,26 +74,6 @@ def create_circle_mask_itk(image_itk: sitk.Image,
     return mask_itk
 
 
-def copy_meta_data_itk(source: sitk.Image, target: sitk.Image) -> sitk.Image:
-    """
-    Copy meta data between files
-
-    Args:
-        source: source file
-        target: target file
-
-    Returns:
-        sitk.Image: target file with copied meta data
-    """
-    # for i in source.GetMetaDataKeys():
-    #     target.SetMetaData(i, source.GetMetaData(i))
-    raise NotImplementedError("Does not work!")
-    target.SetOrigin(source.GetOrigin())
-    target.SetDirection(source.GetDirection())
-    target.SetSpacing(source.GetSpacing())
-    return target
-
-
 def load_sitk(path: Union[Path, str], **kwargs) -> sitk.Image:
     """
     Functional interface to load image with sitk
