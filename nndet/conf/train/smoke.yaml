@@ -33,7 +33,6 @@ trainer_cfg:
   deterministic: False
   benchmark: False
 
-  # fp16: True # enable fp16 training. Makes sense for supported hardware only!
   monitor_key: "mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
