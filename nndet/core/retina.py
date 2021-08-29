@@ -19,8 +19,8 @@ class BaseRetinaNet(AbstractModel):
         self,
         dim: int,
         # modules
-        encoder: EncoderType,
-        decoder: DecoderType,
+        backbone: EncoderType,
+        neck: DecoderType,
         head: AnchorHeadType,
         num_classes: int,
         anchor_generator: AnchorGeneratorType,
@@ -41,8 +41,8 @@ class BaseRetinaNet(AbstractModel):
 
         Args:
             dim: number of spatial dimensions
-            encoder: encoder module
-            decoder: decoder module
+            backbone: encoder module
+            neck: decoder module
             head: head module
             num_classes: number of foreground classes
             anchor_generator: generate anchors
@@ -60,8 +60,8 @@ class BaseRetinaNet(AbstractModel):
         self.dim = dim
         self.decoder_levels = decoder_levels
 
-        self.encoder = encoder
-        self.decoder = decoder
+        self.backbone = backbone
+        self.neck = neck
         self.head = head
         self.num_foreground_classes = num_classes
 
@@ -104,7 +104,7 @@ class BaseRetinaNet(AbstractModel):
                     `seg_logits`: segmentation logits
             List[torch.Tensor]: feature maps from decoder
         """
-        features_maps_all = self.decoder(self.encoder(inp))
+        features_maps_all = self.neck(self.backbone(inp))
         feature_maps_head = [features_maps_all[i] for i in self.decoder_levels]
 
         pred_detection = self.head(feature_maps_head)

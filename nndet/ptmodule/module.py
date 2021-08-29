@@ -16,16 +16,14 @@ limitations under the License.
 
 from __future__ import annotations
 
-import os
 from collections import defaultdict
-from typing import Any, Callable, Dict, Hashable, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
 import pytorch_lightning as pl
 import torch
 from loguru import logger
 from pytorch_lightning.core.memory import ModelSummary
 
-from nndet.inference.predictor import Predictor
 from nndet.io.load import save_txt
 from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.training.misc import EpochTimerCallback
@@ -85,6 +83,11 @@ class LightningBaseModule(pl.LightningModule):
             )
 
         self.pre_trafo = Compose(trafos)
+        logger.info(f"Lightningmodule running pre transforms \n: {self.pre_trafo}")
+
+        # initialize evaluation
+        self.evaluators = self.evaluation_init(plan=plan)
+        logger.info(f"Lightningmodule running evaluators: {self.evaluators}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -133,7 +136,7 @@ class LightningBaseModule(pl.LightningModule):
                 "target_classes": batch["classes"],
                 "target_seg": batch["target"][:, 0],  # Remove channel dimension
             }
-            losses, prediction = self.model.train_step(  # FIXME
+            losses, predictions = self.model.train_step(  # FIXME
                 images=batch["data"],
                 targets=targets,
                 predict=True,
@@ -143,7 +146,7 @@ class LightningBaseModule(pl.LightningModule):
 
         # self.log_dict(losses, prog_bar=True)
 
-        super().evaluation_step(prediction=prediction, targets=targets)
+        super().evaluation_step(predictions=predictions, targets=targets)
 
         return {
             "loss": loss.detach().item(),
@@ -221,11 +224,11 @@ class LightningBaseModule(pl.LightningModule):
         """
         return torch.zeros(*self.example_input_array_shape)
 
-    def summarize(self, mode: Optional[str]) -> Optional[ModelSummary]:
+    def summarize(self, *args, **kwargs) -> Optional[ModelSummary]:
         """
         Save model summary as txt
         """
-        summary = super().summarize(mode=mode)
+        summary = super().summarize(*args, **kwargs)
         save_txt(summary, "./network")
         return summary
 
@@ -235,64 +238,64 @@ class LightningBaseModule(pl.LightningModule):
         """
         return self.model.inference_step(batch, **kwargs)
 
-    @classmethod
-    def from_config_plan(  # FIXME
-        cls,
-        model_cfg: dict,
-        plan_arch: dict,
-        plan_anchors: dict,
-        log_num_anchors: str = None,
-        **kwargs,
-    ):
-        """
-        Used to generate the model
-        """
-        raise NotImplementedError
+    # @classmethod
+    # def from_config_plan(  # FIXME
+    #     cls,
+    #     model_cfg: dict,
+    #     plan_arch: dict,
+    #     plan_anchors: dict,
+    #     log_num_anchors: str = None,
+    #     **kwargs,
+    # ):
+    #     """
+    #     Used to generate the model
+    #     """
+    #     raise NotImplementedError
 
-    @staticmethod
-    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
-        """
-        Get ensembler classes to combine multiple predictions
-        Needs to be overwritten in subclasses!
-        """
-        raise NotImplementedError
+    # @staticmethod
+    # def get_ensembler_cls(key: Hashable, dim: int) -> Callable: # TODO
+    #     """
+    #     Get ensembler classes to combine multiple predictions
+    #     Needs to be overwritten in subclasses!
+    #     """
+    #     raise NotImplementedError
 
-    @classmethod
-    def get_predictor(
-        cls,
-        plan: Dict,
-        models: Sequence[LightningBaseModule],
-        num_tta_transforms: int = None,
-        **kwargs,
-    ) -> Type[Predictor]:
-        """
-        Get predictor
-        Needs to be overwritten in subclasses!
-        """
-        raise NotImplementedError
+    # @classmethod
+    # def get_predictor(
+    #     cls,
+    #     plan: Dict,
+    #     models: Sequence[LightningBaseModule],
+    #     num_tta_transforms: int = None,
+    #     **kwargs,
+    # ) -> Type[Predictor]: # TODO
+    #     """
+    #     Get predictor
+    #     Needs to be overwritten in subclasses!
+    #     """
+    #     raise NotImplementedError
 
-    def sweep(
-        self,
-        cfg: dict,
-        save_dir: os.PathLike,
-        train_data_dir: os.PathLike,
-        case_ids: Sequence[str],
-        run_prediction: bool = True,
-    ) -> Dict[str, Any]:
-        """
-        Sweep parameters to find the best predictions
-        Needs to be overwritten in subclasses!
+    # def sweep(
+    #     self,
+    #     cfg: dict,
+    #     save_dir: os.PathLike,
+    #     train_data_dir: os.PathLike,
+    #     case_ids: Sequence[str],
+    #     run_prediction: bool = True,
+    # ) -> Dict[str, Any]:  # TODO
+    #     """
+    #     Sweep parameters to find the best predictions
+    #     Needs to be overwritten in subclasses!
 
-        Args:
-            cfg: config used for training
-            save_dir: save dir used for training
-            train_data_dir: directory where preprocessed training/validation
-                data is located
-            case_ids: case identifies to prepare and predict
-            run_prediction: predict cases
-            **kwargs: keyword arguments passed to predict function
-        """
-        raise NotImplementedError
+    #     Args:
+    #         cfg: config used for training
+    #         save_dir: save dir used for training
+    #         train_data_dir: directory where preprocessed training/validation
+    #             data is located
+    #         case_ids: case identifies to prepare and predict
+    #         run_prediction: predict cases
+    #         **kwargs: keyword arguments passed to predict function
+    #     """
+    #     raise NotImplementedError
 
     def configure_callbacks(self):
         callbacks = super().configure_callbacks()

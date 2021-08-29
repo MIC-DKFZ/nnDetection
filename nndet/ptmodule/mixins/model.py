@@ -59,8 +59,12 @@ class SingleStageMixin(ModelMixin):
     head_conv_cls = ...  # conv class used for head
     head_classifier_cls = ...  # define class for head classifier
     head_regressor_cls = ...  # define class for head regressor
+    # [optional] sampler class for negative mining
+    # if None: no sampler will be given to the head
+    head_sampler_cls = None
 
     matcher_cls = ...  # define class to match anchors to ground truth
+    segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     @classmethod
     def from_config_plan(
@@ -151,11 +155,6 @@ class SingleStageMixin(ModelMixin):
             regressor=regressor,
             coder=coder,
         )
-        segmenter = cls._build_segmenter(
-            plan_arch=plan_arch,
-            model_cfg=model_cfg,
-            neck=neck,
-        )
 
         detections_per_img = plan_arch.get("detections_per_img", 100)
         score_thresh = plan_arch.get("score_thresh", 0)
@@ -172,6 +171,15 @@ class SingleStageMixin(ModelMixin):
             f"nms_thresh: {nms_thresh}",
         )
 
+        # optional modules
+        detector_kwargs = {}
+        if cls.has_segmenter():
+            detector_kwargs["segmenter"] = cls._build_segmenter(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                neck=neck,
+            )
+
         return cls.detector_cls(
             dim=plan_arch["dim"],
             backbone=backbone,
@@ -187,7 +195,7 @@ class SingleStageMixin(ModelMixin):
             topk_candidates=topk_candidates,
             remove_small_boxes=remove_small_boxes,
             nms_thresh=nms_thresh,
-            segmenter=segmenter,
+            **detector_kwargs,
         )
 
     @classmethod
@@ -206,15 +214,15 @@ class SingleStageMixin(ModelMixin):
         Returns:
             EncoderType: backbone instance
         """
-        conv = Generator(cls.base_conv_cls, plan_arch["dim"])
+        conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
         logger.info(
             f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
         )
-        backbone = cls.encoder_cls(
+        backbone = cls.backbone_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
             strides=plan_arch["strides"],
-            block_cls=cls.block,
+            block_cls=cls.backbone_block,
             in_channels=plan_arch["in_channels"],
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
@@ -240,7 +248,7 @@ class SingleStageMixin(ModelMixin):
         Returns:
             DecoderType: neck instance
         """
-        conv = Generator(cls.base_conv_cls, plan_arch["dim"])
+        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
         logger.info(
             f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
         )
@@ -346,22 +354,42 @@ class SingleStageMixin(ModelMixin):
         """
         head_name = cls.head_cls.__name__
         head_kwargs = model_cfg["head_kwargs"]
-        sampler_name = cls.head_sampler_cls.__name__
-        sampler_kwargs = model_cfg["head_sampler_kwargs"]
 
-        logger.info(
-            f"Building:: head {head_name}: {head_kwargs} "
-            f"sampler {sampler_name}: {sampler_kwargs}"
-        )
-        sampler = cls.head_sampler_cls(**sampler_kwargs)
+        logger.info(f"Building:: head {head_name}: {head_kwargs} ")
+
+        # optional sampler
+        if cls.has_sampler:
+            head_kwargs["sampler"] = cls._build_sampler(
+                plan_arch=plan_arch, model_cfg=model_cfg
+            )
+
         head = cls.head_cls(
             classifier=classifier,
             regressor=regressor,
             coder=coder,
-            sampler=sampler,
             **head_kwargs,
         )
         return head
+
+    @classmethod
+    def has_sampler(cls):
+        return cls.head_sampler_cls is not None
+
+    @classmethod
+    def _build_sampler(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        sampler_name = cls.head_sampler_cls.__name__
+        sampler_kwargs = model_cfg["head_sampler_kwargs"]
+
+        logger.info(f"Building:: sampler {sampler_name}: {sampler_kwargs}")
+        return cls.head_sampler_cls(**sampler_kwargs)
+
+    @classmethod
+    def has_segmenter(cls):
+        return cls.segmenter_cls is not None
 
     @classmethod
     def _build_segmenter(
@@ -381,19 +409,16 @@ class SingleStageMixin(ModelMixin):
         Returns:
             SegmenterType: segmenter head
         """
-        if cls.segmenter_cls is not None:
-            name = cls.segmenter_cls.__name__
-            kwargs = model_cfg["segmenter_kwargs"]
-            conv = Generator(cls.base_conv_cls, plan_arch["dim"])
+        name = cls.segmenter_cls.__name__
+        kwargs = model_cfg["segmenter_kwargs"]
+        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
 
-            logger.info(f"Building:: segmenter {name} {kwargs}")
-            segmenter = cls.segmenter_cls(
-                conv,
-                seg_classes=plan_arch["seg_classes"],
-                in_channels=neck.get_channels(),
-                decoder_levels=plan_arch["decoder_levels"],
-                **kwargs,
-            )
-        else:
-            segmenter = None
+        logger.info(f"Building:: segmenter {name} {kwargs}")
+        segmenter = cls.segmenter_cls(
+            conv,
+            seg_classes=plan_arch["seg_classes"],
+            in_channels=neck.get_channels(),
+            decoder_levels=plan_arch["decoder_levels"],
+            **kwargs,
+        )
         return segmenter

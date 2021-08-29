@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, List
 
 from loguru import logger
@@ -24,8 +24,7 @@ class ModeMixin(ABC):
 
     evaluators: Dict = {}  # needs to be overwritten in subclass
 
-    @abstractmethod
-    def get_pre_transforms() -> List[AbstractTransform]:
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Perform a sequence of transformations to the intput before passing it
         to the network. These transforamtions need to support pytorch tensors
@@ -40,7 +39,7 @@ class ModeMixin(ABC):
         Notes:
             make sure to call the super classes here!
         """
-        raise NotImplementedError
+        return []
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
@@ -54,14 +53,14 @@ class ModeMixin(ABC):
 
     def evaluation_step(
         self,
-        prediction: dict,
+        predictions: dict,
         targets: dict,
     ) -> None:
         """
         Evaluate a validation batch
 
         Args:
-            prediction: dict with predictions.
+            predictions: dict with predictions.
                 Exact keys depend on the module class
             targets: dict with ground truth.
                 Exact keys depend on the module class.
@@ -97,7 +96,7 @@ class ModeMixin(ABC):
 
 
 class BoxMixin(ModeMixin):
-    def get_pre_transforms(plan: dict) -> List[AbstractTransform]:
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Search for unqiue instances -> Instances to Boxes
 
@@ -150,14 +149,14 @@ class BoxMixin(ModeMixin):
 
     def evaluation_step(
         self,
-        prediction: dict,
+        predictions: dict,
         targets: dict,
     ) -> None:
         """
         Evaluate a validation batch with metrics
 
         Args:
-            prediction: dict with predictions.
+            predictions: dict with predictions.
                 Exact keys depend on the module class
             targets: dict with ground truth.
                 Exact keys depend on the module class.
@@ -165,11 +164,11 @@ class BoxMixin(ModeMixin):
         Notes:
             make sure to call the super classes here!
         """
-        super().evaluation_step(prediction=prediction, targets=targets)
+        super().evaluation_step(predictions=predictions, targets=targets)
 
-        pred_boxes = to_numpy(prediction["pred_boxes"])
-        pred_classes = to_numpy(prediction["pred_labels"])
-        pred_scores = to_numpy(prediction["pred_scores"])
+        pred_boxes = to_numpy(predictions["pred_boxes"])
+        pred_classes = to_numpy(predictions["pred_labels"])
+        pred_scores = to_numpy(predictions["pred_scores"])
 
         gt_boxes = to_numpy(targets["target_boxes"])
         gt_classes = to_numpy(targets["target_classes"])
@@ -222,7 +221,7 @@ class SemanticMixin(ModeMixin):
         OperationModeMixin ([type]): [description]
     """
 
-    def get_pre_transforms(plan: dict) -> List[AbstractTransform]:
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Search for unqiue instances -> Instances to Boxes
 
@@ -260,14 +259,14 @@ class SemanticMixin(ModeMixin):
 
     def evaluation_step(
         self,
-        prediction: dict,
+        predictions: dict,
         targets: dict,
     ) -> None:
         """
         Evaluate a validation batch with metrics
 
         Args:
-            prediction: dict with predictions.
+            predictions: dict with predictions.
                 Exact keys depend on the module class
             targets: dict with ground truth.
                 Exact keys depend on the module class.
@@ -275,9 +274,9 @@ class SemanticMixin(ModeMixin):
         Notes:
             make sure to call the super classes here!
         """
-        super().evaluation_step(prediction=prediction, targets=targets)
+        super().evaluation_step(predictions=predictions, targets=targets)
 
-        pred_seg = to_numpy(prediction["pred_seg"])
+        pred_seg = to_numpy(predictions["pred_seg"])
         gt_seg = to_numpy(targets["target_seg"])
 
         self.evaluators["semantic"].run_online_evaluation(

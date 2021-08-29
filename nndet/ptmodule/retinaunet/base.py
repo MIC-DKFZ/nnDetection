@@ -34,8 +34,7 @@ from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.heads.segmenter import DiCESegmenter
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
-from nndet.evaluator.det import BoxEvaluator
-from nndet.evaluator.seg import SegmentationEvaluator
+from nndet.core.retina import BaseRetinaNet
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelective,
     BoxEnsemblerSelective2D,
@@ -46,13 +45,6 @@ from nndet.inference.loading import get_loader_fn
 from nndet.inference.predictor import Predictor
 from nndet.inference.sweeper import BoxSweeper
 from nndet.inference.transforms import Inference2D, get_tta_transforms
-from nndet.io.transforms import (
-    Compose,
-    FindInstances,
-    Instances2Boxes,
-    Instances2Segmentation,
-    TransferInputChannel,
-)
 from nndet.ptmodule.mixins.mode import BoxMixin, SemanticMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -60,19 +52,27 @@ from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer import get_params_no_wd_on_norm
 
 
-class RetinaUNetModule(LightningBaseModule, BoxMixin, SemanticMixin, SingleStageMixin):
-    # FIXME
-    base_conv_cls = ConvInstanceRelu
-    head_conv_cls = ConvGroupRelu
-    block = StackedConvBlock2
-    encoder_cls = Encoder
-    decoder_cls = UFPNModular
-    matcher_cls = IoUMatcher
-    head_cls = BoxHeadHNM
-    head_classifier_cls = CEClassifier
-    head_regressor_cls = L1Regressor
+class RetinaUNetModule(LightningBaseModule, SemanticMixin, BoxMixin, SingleStageMixin):
+    # define detector cls
+    detector_cls = BaseRetinaNet
+
+    backbone_cls = Encoder  # define class for backbone
+    backbone_conv_cls = ConvInstanceRelu  # conv class used for backbone
+    backbone_block = StackedConvBlock2  # define central building block of backbone
+
+    neck_cls = UFPNModular  # define class for neck
+    neck_conv_cls = ConvInstanceRelu  # conv class used for neck
+
+    head_cls = BoxHeadHNM  # define class for head
+    head_conv_cls = ConvGroupRelu  # conv class used for head
+    head_classifier_cls = CEClassifier  # define class for head classifier
+    head_regressor_cls = L1Regressor  # define class for head regressor
+    # [optional] sampler class for negative mining
+    # if None: no sampler will be given to the head
     head_sampler_cls = HardNegativeSamplerBatched
-    segmenter_cls = DiCESegmenter
+
+    matcher_cls = IoUMatcher  # define class to match anchors to ground truth
+    segmenter_cls = DiCESegmenter  # [optional] segmentation head as in RetinaUNet
 
     def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
         """
@@ -86,61 +86,11 @@ class RetinaUNetModule(LightningBaseModule, BoxMixin, SemanticMixin, SingleStage
                 stage
         """
         super().__init__(
-            model_cfg=model_cfg,
-            trainer_cfg=trainer_cfg,
-            plan=plan,
+            model_cfg=model_cfg, trainer_cfg=trainer_cfg, plan=plan, kwargs=kwargs
         )
-
-        _classes = [
-            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
-        ]
-        self.box_evaluator = BoxEvaluator.create(
-            classes=_classes,
-            fast=True,
-            save_dir=None,
+        self.eval_score_key = (
+            "mAP_IoU_0.10_0.50_0.05_MaxDet_100"  # TODO: make this configurable
         )
-        self.seg_evaluator = SegmentationEvaluator.create()
-
-        # box transformations
-        trafos = [
-            FindInstances(
-                instance_key="target",
-                save_key="present_instances",
-            ),
-            Instances2Boxes(
-                instance_key="target",
-                map_key="instance_mapping",
-                box_key="boxes",
-                class_key="classes",
-                present_instances="present_instances",
-            ),
-            Instances2Segmentation(
-                instance_key="target",
-                map_key="instance_mapping",
-                present_instances="present_instances",
-            ),
-        ]
-
-        # transfer learning setup
-        # TODO: might move this to base class
-        data_channels = self.plan["num_modalities"]  # number of channels of source data
-        network_channels = self.plan["architecture"][
-            "in_channels"
-        ]  # number of channels of target data
-        if network_channels > data_channels:
-            logger.info(
-                "Detected Transfer Learning Setup with different soruce "
-                "and target channels. Adding additional transformation."
-            )
-            trafos.append(
-                TransferInputChannel(
-                    out_channels=network_channels,
-                    data_key="data",
-                )
-            )
-
-        self.pre_trafo = Compose(trafos)
-        self.eval_score_key = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
 
     def configure_optimizers(self):
         """
