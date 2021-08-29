@@ -345,6 +345,10 @@ class Predictor:
         inp = [transformed[key] for key in self.model_keys]
         with torch.cuda.amp.autocast():
             result = model.inference_step(*inp, batch_num=batch_num)
+
+        # inverse transformation (_data_shapes need for mirror)
+        if "_data_shapes" in transformed:
+            result["_data_shapes"] = transformed["_data_shapes"]
         result = inverse_transform(**result)
 
         if not self.ensemble_on_device:

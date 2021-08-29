@@ -44,6 +44,14 @@ class Mirror(AbstractTransform):
             box_keys: keys where boxes are located; following format
                 needs to be used (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
             grad: enable gradient computation inside transformation
+
+        Warnings:
+            This transformation will add an additional key "_data_shapes" to
+            the dictonary in order to provide the correct inversion of boxes
+            without requiring data/seg. Do not use this key inside the
+            dictionary and make sure to restore the original shape
+            (when the forward trafo was called) of the data before invoking
+            the inversion!
         """
         super().__init__(grad=grad)
         self.dims = dims
@@ -64,8 +72,12 @@ class Mirror(AbstractTransform):
         for key in self.keys:
             data[key] = mirror(data[key], self.dims)
 
-        data_shape = data[self.keys[0]].shape
-        data_shapes = [tuple(data_shape[2:])] * data_shape[0]
+        if "_data_shapes" in data:
+            data_shapes = data["_data_shapes"]
+        else:
+            data_shape = data[self.keys[0]].shape
+            data_shapes = [tuple(data_shape[2:])] * data_shape[0]
+            data["_data_shapes"] = data_shapes
 
         for key in self.box_keys:
             points = [boxes2points(b) for b in data[key]]
