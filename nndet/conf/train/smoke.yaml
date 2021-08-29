@@ -39,7 +39,7 @@ trainer_cfg:
 
   max_num_epochs: 3 # max number of epochs
   # num_train_batches_per_epoch: 500 # number of train batches per epoch
-  num_train_batches_per_epoch: 20 # number of train batches per epoch
+  num_train_batches_per_epoch: 250 # number of train batches per epoch
   num_val_batches_per_epoch: 30 # number of val batches per epoch
 
   # max_num_epochs: 5 # max number of epochs
@@ -61,8 +61,8 @@ trainer_cfg:
   weights_summary: "full"
 
 model_cfg:
-  encoder_kwargs: {} # keyword arguments passed to encoder
-  decoder_kwargs: # keyword arguments passed to decoder
+  backbone_kwargs: {} # keyword arguments passed to encoder
+  neck_kwargs: # keyword arguments passed to decoder
     min_out_channels: 8
     upsampling_mode: "transpose"
 

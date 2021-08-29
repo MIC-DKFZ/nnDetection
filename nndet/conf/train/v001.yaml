@@ -62,8 +62,8 @@ trainer_cfg:
   # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
 
 model_cfg:
-  encoder_kwargs: {} # keyword arguments passed to encoder
-  decoder_kwargs: # keyword arguments passed to decoder
+  backbone_kwargs: {} # keyword arguments passed to encoder
+  neck_kwargs: # keyword arguments passed to decoder
     min_out_channels: 8
     upsampling_mode: "transpose"
 
