@@ -39,7 +39,9 @@ def get_tta_transforms(
     transforms = [NoOp()]
     inverse_transforms = [NoOp()]
     mirror_keys = ["data"]
-    pred_mirror_keys = ["pred_seg"] if seg else ["pred_seg"]
+    pred_mirror_keys = (
+        ["pred_seg"] if seg else []
+    )  # TODO: mirror without relying on segmentation map
     boxes_mirror_keys = ["pred_boxes"]
 
     if num_tta_transforms >= 4:

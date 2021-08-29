@@ -26,11 +26,10 @@ from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier import CEClassifier
 from nndet.arch.heads.comb import BoxHeadHNM
 from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.heads.segmenter import DiCESegmenter
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.retina import BaseRetinaNet
-from nndet.ptmodule.mixins.mode import BoxMixin, SemanticMixin
+from nndet.ptmodule.mixins.mode import BoxMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -38,8 +37,8 @@ from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer import get_params_no_wd_on_norm
 
 
-class RetinaUNetModule(
-    LightningBaseModule, SemanticMixin, BoxMixin, SingleStageMixin, BoxPredictionMixin
+class RetinaNetModule(
+    LightningBaseModule, BoxMixin, SingleStageMixin, BoxPredictionMixin
 ):
     # define detector cls
     detector_cls = BaseRetinaNet
@@ -60,7 +59,7 @@ class RetinaUNetModule(
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = IoUMatcher  # define class to match anchors to ground truth
-    segmenter_cls = DiCESegmenter  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
         """

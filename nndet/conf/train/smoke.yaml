@@ -39,7 +39,7 @@ trainer_cfg:
 
   max_num_epochs: 3 # max number of epochs
   # num_train_batches_per_epoch: 500 # number of train batches per epoch
-  num_train_batches_per_epoch: 250 # number of train batches per epoch
+  num_train_batches_per_epoch: 20 # number of train batches per epoch
   num_val_batches_per_epoch: 30 # number of val batches per epoch
 
   # max_num_epochs: 5 # max number of epochs
