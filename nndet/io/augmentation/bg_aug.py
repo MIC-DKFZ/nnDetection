@@ -20,24 +20,36 @@ from loguru import logger
 from nndet.io.augmentation.base import AugmentationSetup, get_patch_size
 from nndet.utils.info import SuppressPrint
 
-from batchgenerators.transforms import (
+from batchgenerators.transforms.abstract_transforms import Compose
+from batchgenerators.transforms.spatial_transforms import (
+    SpatialTransform,
+    MirrorTransform,
+)
+from batchgenerators.transforms.resample_transforms import (
+    SimulateLowResolutionTransform,
+)
+from batchgenerators.transforms.crop_and_pad_transforms import (
+    CenterCropTransform,
+)
+from batchgenerators.transforms.color_transforms import (
+    GammaTransform,
+    BrightnessMultiplicativeTransform,
+    BrightnessTransform,
+    ContrastAugmentationTransform,
+)
+from batchgenerators.transforms.noise_transforms import (
+    GaussianBlurTransform,
+    GaussianNoiseTransform,
+)
+from batchgenerators.transforms.channel_selection_transforms import (
     DataChannelSelectionTransform,
     SegChannelSelectionTransform,
-    SpatialTransform,
-    GammaTransform,
-    MirrorTransform,
-    Compose,
-    BrightnessMultiplicativeTransform,
-    ContrastAugmentationTransform,
-    GaussianNoiseTransform,
-    GaussianBlurTransform,
-    SimulateLowResolutionTransform,
+)
+from batchgenerators.transforms.utility_transforms import (
+    RemoveLabelTransform,
     RenameTransform,
     NumpyToTensor,
-    CenterCropTransform,
     )
-from batchgenerators.transforms.color_transforms import BrightnessTransform
-from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
 
 with SuppressPrint():
     from nnunet.training.data_augmentation.custom_transforms import (

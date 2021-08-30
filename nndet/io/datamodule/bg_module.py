@@ -20,10 +20,8 @@ from typing import Iterable, Optional, List, Sequence, Type
 import numpy as np
 from loguru import logger
 
-from batchgenerators.dataloading import (
-    MultiThreadedAugmenter,
-    SingleThreadedAugmenter,
-    )
+from batchgenerators.dataloading.single_threaded_augmenter import SingleThreadedAugmenter
+from batchgenerators.dataloading.multi_threaded_augmenter import MultiThreadedAugmenter
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 from nndet.io.datamodule import DATALOADER_REGISTRY

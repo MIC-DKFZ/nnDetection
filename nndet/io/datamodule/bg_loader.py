@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
-from batchgenerators.dataloading import SlimDataLoaderBase
+from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.load import load_pickle
