@@ -16,8 +16,8 @@ limitations under the License.
 
 from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNMNative
-from nndet.arch.heads.regressor import GIoURegressor
+from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.arch.heads.regressor import L1Regressor
 from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinanet.base import RetinaNetModule
@@ -29,16 +29,16 @@ class RetinaNetC001(RetinaNetModule):
     neck_conv_cls = ConvInstanceRelu
     head_conv_cls = ConvGroupRelu
 
-    head_cls = BoxHeadHNMNative
+    head_cls = BoxHeadHNM
     head_classifier_cls = BCECLassifier
-    head_regressor_cls = GIoURegressor
+    head_regressor_cls = L1Regressor
     matcher_cls = ATSSMatcher
 
 
 @MODULE_REGISTRY.register
 class RetinaNetC001Focal(RetinaNetModule):
     """
-    Focal Loss based V001 RetinaUNet
+    Focal Loss based V001 RetinaNet
     (only intended for easy subclassing and not used in nnDetection V0.1)
     """
 

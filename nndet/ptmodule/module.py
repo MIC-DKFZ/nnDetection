@@ -89,6 +89,13 @@ class LightningBaseModule(pl.LightningModule):
         self.evaluators = self.evaluation_init(plan=plan)
         logger.info(f"Lightningmodule running evaluators: {self.evaluators}")
 
+        # define key for sweeping
+        if self.trainer_cfg["monitor_key"].startswith("val/"):
+            self.eval_score_key = str(self.trainer_cfg["monitor_key"]).split("/", 1)[1]
+        else:
+            self.eval_score_key = self.trainer_cfg
+        logger.info(f"Using {self.eval_score_key} for sweeping.")
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Used to generate summary

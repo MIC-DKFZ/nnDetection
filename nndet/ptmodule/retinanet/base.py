@@ -75,9 +75,6 @@ class RetinaNetModule(
         super().__init__(
             model_cfg=model_cfg, trainer_cfg=trainer_cfg, plan=plan, kwargs=kwargs
         )
-        self.eval_score_key = (
-            "mAP_IoU_0.10_0.50_0.05_MaxDet_100"  # TODO: make this configurable
-        )
 
     def configure_optimizers(self):
         """
