@@ -279,11 +279,12 @@ def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.
 
         class_ious = OrderedDict()
         case_classes = list(set(map(int, props["instances"].values())))
+        # boxes are sorted by instance id
         case_instances = sorted(list(map(int, props["instances"].keys())))
 
-        for cls in case_classes:
-            cls_box_indices = [props["instances"][str(ci)] == cls for ci in case_instances]
-            class_ious[cls] = compute_each_iou(boxes[cls_box_indices])
+        for _c in case_classes:
+            cls_box_indices = [int(props["instances"][str(ci)]) == _c for ci in case_instances]
+            class_ious[_c] = compute_each_iou(boxes[cls_box_indices])
     else:
         all_ious = np.array([])
         class_ious = {}
