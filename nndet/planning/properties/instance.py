@@ -294,13 +294,14 @@ def case_ious(
 
         class_ious = OrderedDict()
         case_classes = list(set(map(int, props["instances"].values())))
-        case_instances = sorted(props["instance_ids"])
+        # boxes are sorted by instance id
+        case_instances = sorted(list(map(int, props["instance_ids"])))
 
-        for cls in case_classes:
+        for _c in case_classes:
             cls_box_indices = [
-                props["instances"][str(ci)] == cls for ci in case_instances
+                int(props["instances"][str(ci)]) == _c for ci in case_instances
             ]
-            class_ious[cls] = compute_each_iou(boxes[cls_box_indices])
+            class_ious[_c] = compute_each_iou(boxes[cls_box_indices])
     else:
         all_ious = np.array([])
         class_ious = {}
