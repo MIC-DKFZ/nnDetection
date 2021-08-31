@@ -82,12 +82,19 @@ def _check_key_missing(cfg: dict, key: str, ktype=None):
 def check_dataset_file(task_name: str):
     """
     Run a sequence of checks to confirm correct format of dataset information
+    This wraps `_check_dataset_file` for easy unittesting
 
     Args:
         task_name: task identifier to check info for
     """
-    print("Start dataset info check.")
     cfg = load_dataset_info(get_task(task_name))
+    return _check_dataset_file(cfg)
+
+
+def _check_dataset_file(cfg: dict):
+    """
+    Same as `check_dataset_file`
+    """
     _check_key_missing(cfg, "task", ktype=str)
     _check_key_missing(cfg, "dim", ktype=int)
     _check_key_missing(cfg, "labels", ktype=dict)
@@ -111,6 +118,7 @@ def check_dataset_file(task_name: str):
                 "Expected name of type string in dataset "
                 f"info labels but found {type(item)} : {item}"
             )
+
     found_classes = sorted(list(map(int, cfg["labels"].keys())))
     for ic, idx in enumerate(found_classes):
         if ic != idx:
@@ -133,7 +141,7 @@ def check_dataset_file(task_name: str):
             )
 
     found_mods = sorted(list(map(int, cfg["modalities"].keys())))
-    for ic, idx in enumerate(found_classes):
+    for ic, idx in enumerate(found_mods):
         if ic != idx:
             raise ValueError(
                 "Found wrong order of modalities in dataset info."
@@ -142,7 +150,9 @@ def check_dataset_file(task_name: str):
 
     # check target class
     target_class = cfg.get("target_class", None)
-    if target_class is not None and not isinstance(target_class, int):
+    if target_class is not None and (
+        not isinstance(target_class, int) or target_class not in found_classes
+    ):
         raise ValueError(
             "If target class is defined, it needs to be an integer, "
             f"found {type(target_class)} : {target_class}"
@@ -183,6 +193,7 @@ def check_data_and_label_splitted(
         labels=labels,
         test=test,
     )
+    all_classes = list(cfg["labels"].keys())
 
     for case_paths in maybe_verbose_iterable(splitted_paths):
         # check all files exist
@@ -203,24 +214,7 @@ def check_data_and_label_splitted(
                     "mask info path but it does not exist."
                 )
             mask_info = load_json(mask_info_path)
-
-            _type_check_instances_json(mask_info, mask_info_path)
-
-            # check presence / absence of instances in json and mask
-            if mask_info["instances"]:
-                mask_info_instances = list(map(int, mask_info["instances"].keys()))
-
-                if j := not min(mask_info_instances) == 1:
-                    raise ValueError(
-                        f"Instance IDs need to start at 1, found {j} in {mask_info_path}"
-                    )
-
-                for i in range(1, len(mask_info_instances) + 1):
-                    if i not in mask_info_instances:
-                        raise ValueError(
-                            f"Exptected {i} to be an Instance ID in "
-                            f"{mask_info_path} but only found {mask_info_instances}"
-                        )
+            _check_instances_json(mask_info, mask_info_path, all_classes)
         else:
             mask_info_path = None
 
@@ -229,7 +223,9 @@ def check_data_and_label_splitted(
     print("Data and label check complete.")
 
 
-def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]):
+def _check_instances_json(
+    mask_info: Dict, mask_info_path: Union[str, Path], all_classes: Sequence[str]
+):
     """
     Check types of json files
 
@@ -237,6 +233,7 @@ def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]
         mask_info: contains information loaded from the label json file.
             Specifically the `instances` key is checked for a "str":"int" type
         mask_info_path: path to json file where information was loaded from
+        all_classes: number string ids of present classes
 
     Raises:
         ValueError: raised if instance ids are not typed as str
@@ -254,6 +251,27 @@ def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]
                 f"Instance classes needs to be an int, found {type(item_instance_cls)} "
                 f"of instance {key_instance_id} in {mask_info_path}"
             )
+        if str(item_instance_cls) not in all_classes:
+            raise ValueError(
+                f"Found instance class which is not in dataset file , "
+                f"found {item_instance_cls} but dataset file only contains {all_classes}"
+            )
+
+        # check presence / absence of instances in json and mask
+        if mask_info["instances"]:
+            mask_info_instances = list(map(int, mask_info["instances"].keys()))
+
+            if j := not min(mask_info_instances) == 1:
+                raise ValueError(
+                    f"Instance IDs need to start at 1, found {j} in {mask_info_path}"
+                )
+
+            for i in range(1, len(mask_info_instances) + 1):
+                if i not in mask_info_instances:
+                    raise ValueError(
+                        f"Exptected {i} to be an Instance ID in "
+                        f"{mask_info_path} but only found {mask_info_instances}"
+                    )
 
 
 def _full_check(
@@ -319,6 +337,10 @@ def _check_itk_params(
         if not (
             np.asarray(img_seq[0].GetDimension()) == np.asarray(img.GetDimension())
         ).all():
+            raise ValueError(
+                f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
+            )
+        if not (np.asarray(img_seq[0].GetSize()) == np.asarray(img.GetSize())).all():
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
             )
