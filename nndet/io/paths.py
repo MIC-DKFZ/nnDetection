@@ -106,6 +106,7 @@ def get_paths_from_splitted_dir(
         training_ids = [t for t in training_ids if t not in remove_ids]
 
     all_cases = []
+    training_ids.sort()
     for case_id in training_ids:
         case_paths = []
 
