@@ -2,7 +2,7 @@ import functools
 import os
 import warnings
 from pathlib import Path
-from typing import List, Sequence, Optional
+from typing import Dict, List, Sequence, Optional, Union
 
 import numpy as np
 import SimpleITK as sitk
@@ -90,10 +90,10 @@ def check_dataset_file(task_name: str):
 
     # check labels
     for key, item in cfg["labels"].items():
-        if not isinstance(key, (str, int)):
+        if not isinstance(key, str):
             raise ValueError("Expected key of type string in dataset "
                              f"info labels but found {type(key)} : {key}")
-        if not isinstance(item, (str, int)):
+        if not isinstance(item, str):
             raise ValueError("Expected name of type string in dataset "
                              f"info labels but found {type(item)} : {item}")
     found_classes = sorted(list(map(int, cfg["labels"].keys())))
@@ -104,10 +104,10 @@ def check_dataset_file(task_name: str):
 
     # check modalities
     for key, item in cfg["modalities"].items():
-        if not isinstance(key, (str, int)):
+        if not isinstance(key, str):
             raise ValueError("Expected key of type string in dataset "
                              f"info labels but found {type(key)} : {key}")
-        if not isinstance(item, (str, int)):
+        if not isinstance(item, str):
             raise ValueError("Expected name of type string in dataset "
                              f"info labels but found {type(item)} : {item}")
     found_mods = sorted(list(map(int, cfg["modalities"].keys())))
@@ -115,7 +115,7 @@ def check_dataset_file(task_name: str):
         if ic != idx:
             raise ValueError("Found wrong order of modalities in dataset info."
                              f"Found {found_mods} but expected {list(range(len(found_mods)))}")
-    
+
     # check target class
     target_class = cfg.get("target_class", None)
     if target_class is not None and not isinstance(target_class, int):
@@ -148,7 +148,7 @@ def check_data_and_label_splitted(
         ValueError: instances in label info file need to start at 1
         ValueError: instances in label info file need to be consecutive
     """
-    print("Start data and label check.")
+    print(f"Start data and label check: test={test}")
     cfg = load_dataset_info(get_task(task_name))
 
     splitted_paths = get_paths_from_splitted_dir(
@@ -173,6 +173,10 @@ def check_data_and_label_splitted(
                 raise ValueError(f"Expected {mask_info_path} to be a raw splitted "
                                 "mask info path but it does not exist.")
             mask_info = load_json(mask_info_path)
+
+            _type_check_instances_json(mask_info, mask_info_path)
+
+            # check presence / absence of instances in json and mask
             if mask_info["instances"]:
                 mask_info_instances = list(map(int, mask_info["instances"].keys()))
 
@@ -189,6 +193,29 @@ def check_data_and_label_splitted(
         if full_check:
             _full_check(case_paths, mask_info_path)
     print("Data and label check complete.")
+
+
+def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]):
+    """
+    Check types of json files
+
+    Args:
+        mask_info: contains information loaded from the label json file.
+            Specifically the `instances` key is checked for a "str":"int" type
+        mask_info_path: path to json file where information was loaded from
+
+    Raises:
+        ValueError: raised if instance ids are not typed as str
+        ValueError: raised if instance classes are not typed as int
+    """
+    # type check instances key
+    for key_instance_id, item_instance_cls in mask_info["instances"].items():
+        if not isinstance(key_instance_id, str):
+            raise ValueError(f"Instance ids need to be a str, found {type(key_instance_id)} "
+                                f"of instance {key_instance_id} in {mask_info_path}")
+        if not isinstance(item_instance_cls, int):
+            raise ValueError(f"Instance classes needs to be an int, found {type(item_instance_cls)} "
+                                f"of instance {key_instance_id} in {mask_info_path}")
 
 
 def _full_check(
