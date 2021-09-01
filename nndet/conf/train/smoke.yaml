@@ -138,4 +138,3 @@ model_cfg:
 
 debug:
   num_cases_val: 2 # only predict two cases for validation results
-

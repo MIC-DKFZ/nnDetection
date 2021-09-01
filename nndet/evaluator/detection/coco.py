@@ -389,8 +389,8 @@ class COCOMetric(DetectionMetric):
                 results = [r[cls_idx] for r in results_list if cls_idx in r]
 
                 if len(results) == 0:
-                    logger.warning(
-                        f"WARNING, no results found for coco metric for class {cls_i}"
+                    logger.error(
+                        f"No results found for coco metric for class {cls_i} can not compute AP"
                     )
                     continue
 
@@ -419,8 +419,8 @@ class COCOMetric(DetectionMetric):
                     gt_ignore == 0
                 )  # number of ground truth boxes (non ignored)
                 if num_gt == 0:
-                    logger.warning(
-                        f"WARNING, no gt found for coco metric for class {cls_i}"
+                    logger.error(
+                        f"No gt found for coco metric for class {cls_i} can not compute AP"
                     )
                     continue
 
