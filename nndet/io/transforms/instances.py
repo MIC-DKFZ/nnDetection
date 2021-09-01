@@ -123,7 +123,8 @@ def instances_to_boxes(
     Returns
         Tensor: bounding boxes
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
-        Tensor: tuple with classes for bounding boxes
+        Tensor: if `instances` is None: sorted instance indices
+            Otherwise will pass through instances
     """
     if dim > 3:
         raise ValueError("Only supports bounding boxes up to three dimensions.")
@@ -175,7 +176,8 @@ def instances_to_boxes_np(
     Returns
         np.ndarray: bounding boxes
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
-        np.ndarray: tuple with classes for bounding boxes
+        np.ndarray: if `instances` is None: sorted instance indices
+            Otherwise will pass through instances
     """
     if dim > 3:
         raise ValueError("Only supports bounding boxes up to three dimensions.")
@@ -208,7 +210,7 @@ def instances_to_boxes_np(
 
 
 def get_instance_class_from_properties(
-    instance_idx: torch.Tensor, map_dict: Dict[str, Union[str, int]]
+    instance_idx: torch.Tensor, map_dict: Dict[Union[str, int], Union[str, int]]
 ) -> Tensor:
     """
     Extract instance classes form mapping dict
@@ -220,14 +222,14 @@ def get_instance_class_from_properties(
     Returns:
         Tensor: extracted instance classes
     """
-    instance_idx, _ = instance_idx.sort()
-    classes = [int(map_dict[str(int(idx.detach().item()))]) for idx in instance_idx]
+    _map_dict = {int(k): int(i) for k, i in map_dict.items()}
+    classes = [int(_map_dict[int(idx.detach().item())]) for idx in instance_idx]
     return torch.tensor(classes, device=instance_idx.device)
 
 
 def get_instance_class_from_properties_seq(
-    instance_idx: Sequence, map_dict: Dict[str, Union[str, int]]
-) -> Sequence:
+    instance_idx: Sequence[int], map_dict: Dict[Union[str, int], Union[str, int]]
+) -> Sequence[int]:
     """
     Extract instance classes form mapping dict
 
@@ -238,8 +240,8 @@ def get_instance_class_from_properties_seq(
     Returns:
         Sequence[int]: extracted instance classes
     """
-    instance_idx = sorted(instance_idx)
-    classes = [int(map_dict[str(int(idx))]) for idx in instance_idx]
+    _map_dict = {int(k): int(i) for k, i in map_dict.items()}
+    classes = [int(_map_dict[int(idx)]) for idx in instance_idx]
     return classes
 
 
@@ -370,33 +372,3 @@ def instances_to_segmentation_np(
             _cls += 1
         out[instances == instance_id] = _cls
     return out
-
-
-def get_bbox_np(
-    seg: np.ndarray,
-    map_dict: Optional[Dict[Union[str, int], Union[str, int]]] = None,
-    **kwargs,
-) -> dict:
-    """
-    Get bounding boxes and mapping from instances to classes
-
-    Args:
-        seg: instance segmentation [1, dims]
-        mapping: define mapping from instance ids to classes
-
-    Returns:
-        dict: extracted boxes and classes
-            `boxes` (np.ndarray): bounding boxes [N, dims * 2]
-            `classes` (np.ndarray): classes (in same order as boxes) [N]
-    """
-    if map_dict is not None:
-        map_dict = {str(key): str(item) for key, item in map_dict.items()}
-
-    result = {}
-    boxes, instance_idx = instances_to_boxes_np(seg[0], dim=seg.ndim - 1, **kwargs)
-    result["boxes"] = boxes
-
-    if map_dict is not None:
-        box_classes = get_instance_class_from_properties_seq(instance_idx, map_dict)
-        result["classes"] = np.array(box_classes)
-    return result

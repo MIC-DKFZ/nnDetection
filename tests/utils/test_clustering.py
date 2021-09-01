@@ -107,7 +107,8 @@ def test_compute_score_from_seg():
     probs[(2, *cl2)] = 2.0
     probs[(1, *cl1)] = 3.0
 
-    scores = compute_score_from_seg(mask, mask_classes, probs, "mean")
+    scores_dict = compute_score_from_seg(mask, mask_classes, probs, "mean")
+    scores = list(scores_dict.values())
     assert np.allclose(scores, [1.0, 2.0, 3.0])
 
 
