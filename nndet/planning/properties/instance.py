@@ -25,6 +25,7 @@ from loguru import logger
 
 from nndet.core.boxes import box_iou_np
 from nndet.io.load import load_case_cropped
+from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.planning import DatasetAnalyzer
 
 
@@ -164,7 +165,7 @@ def analyze_instances_per_case(
         props["region_volume_per_class"],
         props["instance_ids"],
     ) = instance_class_and_region_sizes(case_id, iseg, props, all_classes)
-    props["boxes"] = iseg_to_boxes(iseg)
+    props["boxes"] = instances_to_boxes_np(seg=iseg, dim=iseg.ndim)[0]
     props["all_ious"], props["class_ious"] = case_ious(props["boxes"], props)
     return props
 
@@ -234,44 +235,6 @@ def instance_class_and_region_sizes(
     return volume_per_class, region_volume_per_class, ids
 
 
-def iseg_to_boxes(iseg: np.ndarray) -> np.ndarray:
-    """
-    Convert instance segmentations to bounding boxes
-
-    Args:
-        iseg: instance segmentation [dims] (NO channel dim)
-
-    Returns:
-        (np.ndarray): bounding boxes (x1, y1, x2, y2, (z1, z2))[N, dims * 2]
-            (order of boxes corresponds to instance ids)
-
-    Notes:
-        Please refer to `nndet.io.transforms.instances` for the function
-        and don't use this one.
-    """
-    boxes = []
-    ids = np.unique(iseg)
-    ids = ids[ids > 0]
-    for instance_id in ids:
-        instance_idx = np.argwhere(iseg == instance_id)
-        coord_list = [
-            np.min(instance_idx[:, 0]) - 1,
-            np.min(instance_idx[:, 1]) - 1,
-            np.max(instance_idx[:, 0]) + 1,
-            np.max(instance_idx[:, 1]) + 1,
-        ]
-        if instance_idx.shape[1] == 3:
-            coord_list.extend(
-                [np.min(instance_idx[:, 2]) - 1, np.max(instance_idx[:, 2]) + 1]
-            )
-        boxes.append(coord_list)
-
-    if boxes:
-        return np.stack(boxes)
-    else:
-        return []
-
-
 def case_ious(
     boxes: np.ndarray, props: dict
 ) -> Tuple[np.ndarray, Dict[int, np.ndarray]]:
@@ -289,7 +252,7 @@ def case_ious(
         Dict[int, np.ndarray]: IoU values of bounding boxes which correspond
             to a specific class
     """
-    if not isinstance(boxes, list):
+    if not isinstance(boxes, list) and boxes.size > 0:  # check for empty boxes
         all_ious = compute_each_iou(boxes)
 
         class_ious = OrderedDict()

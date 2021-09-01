@@ -136,7 +136,7 @@ def load_case_cropped(
 
     Returns:
         np.ndarray: data
-        np.ndarray: segmentation
+        np.ndarray: segmentation (no channel dim)
         dict: additional properties
     """
     stack = load_npz_looped(
