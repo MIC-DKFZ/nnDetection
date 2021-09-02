@@ -39,7 +39,7 @@ trainer_cfg:
   num_train_batches_per_epoch: 2500 # number of train batches per epoch
   num_val_batches_per_epoch: 100 # number of val batches per epoch
 
-  initial_lr: 0.001 # initial learning rate to start with
+  initial_lr: 0.0003 # initial learning rate to start with
   weight_decay: 3.e-5 # weight decay for optimizer
   swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
 
