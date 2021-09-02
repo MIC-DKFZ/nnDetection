@@ -451,5 +451,52 @@ def main():
         )
 
 
+@env_guard
+def main_prep_labels():
+    """
+    Prepare (non preprocessed) labels
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        default=[],
+        required=False,
+    )
+    parser.add_argument(
+        "-np",
+        "--num_processes",
+        type=int,
+        default=4,
+        required=False,
+        help="Number of processes to use for croppping.",
+    )
+
+    args = parser.parse_args()
+    tasks = args.tasks
+    ov = args.overwrites
+    num_processes = args.num_processes
+
+    initialize_config_module(config_module="nndet.conf")
+    for task in tasks:
+        _ov = copy.deepcopy(ov) if ov is not None else []
+        cfg = compose(task, "config.yaml", overrides=_ov)
+
+        create_labels(
+            source_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
+            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            num_processes=num_processes,
+        )
+
+
 if __name__ == "__main__":
     main()

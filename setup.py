@@ -135,6 +135,7 @@ setup(
         "console_scripts": [
             "nndet_example = scripts.generate_example:main",
             "nndet_prep = scripts.preprocess:main",
+            "nndet_prep_labels = scripts.preprocess:main_prep_labels",
             "nndet_cls2fg = scripts.convert_cls2fg:main",
             "nndet_seg2det = scripts.convert_seg2det:main",
             "nndet_train = scripts.train:train",
