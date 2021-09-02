@@ -296,11 +296,25 @@ def _full_check(
     img_itk_seq = [load_sitk(cp) for cp in case_paths]
     _check_itk_params(img_itk_seq, case_paths)
 
+    for _img, _path in zip(img_itk_seq, case_paths):
+        if _img.GetDimension() != 3:
+            raise ValueError(
+                f"Expected three dimensions in {_path} but found {_img.GetDimension()}"
+            )
+
     if mask_info_path is not None:
         mask_itk = img_itk_seq[-1]
         mask_info = load_json(mask_info_path)
         info_instances = list(map(int, mask_info["instances"].keys()))
-        mask_instances = np.unique(sitk.GetArrayViewFromImage(mask_itk))
+        mask_np = sitk.GetArrayViewFromImage(mask_itk)
+
+        if mask_np.ndim != 3:
+            raise ValueError(
+                "Expected mask to have three dimensions but found "
+                f"{mask_np.ndim} dimensions in {mask_info_path}"
+            )
+
+        mask_instances = np.unique(mask_np)
         mask_instances = mask_instances[mask_instances > 0]
 
         for mi in mask_instances:
