@@ -1,12 +1,12 @@
 pytorch_lightning>=1.3.1,<=1.4.2
+batchgenerators==0.21
+nnunet==1.6.6
 scipy
 scikit-learn
 scikit-image>=0.14
-batchgenerators>=0.19.4
 pandas>=0.8.1
 PyYAML>=5.1, !=5.4.*
 nevergrad
-nnunet
 dicom2nifti
 medpy
 SimpleITK<2.1.0
