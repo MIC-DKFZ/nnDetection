@@ -22,17 +22,6 @@ with SuppressPrint():
     import nnunet.preprocessing.preprocessing as nn_preprocessing
 
 
-def resize_segmentation(segmentation, new_shape, order=3, cval=0):
-    """
-    Resizes a segmentation map. Supports all orders (see skimage documentation). Will transform segmentation map to one
-    hot encoding which is resized and transformed back to a segmentation map.
-    This prevents interpolation artifacts ([0, 0, 2] -> [0, 1, 2])
-    """
-    return nn_preprocessing.resize_segmentation(
-        segmentation=segmentation, new_shape=new_shape, order=order, cval=cval
-    )
-
-
 def get_do_separate_z(spacing, anisotropy_threshold: float = 3):
     return nn_preprocessing.get_do_separate_z(
         spacing=spacing, anisotropy_threshold=anisotropy_threshold
@@ -70,7 +59,7 @@ def resample_patient(
 
 
 def resample_data_or_seg(
-    data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, cval=0, order_z=0
+    data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, order_z=0
 ) -> np.ndarray:
     """
     Resample data or segmentation
@@ -82,7 +71,6 @@ def resample_data_or_seg(
         axis: anisotropic axis, different resampling order used here
         order: order of resampling along the isotropic axis
         do_separate_z: Different resampling along z dimensions
-        cval: //
         order_z: if separate z resampling is done then this is the order for resampling in z
 
     Returns:
@@ -95,6 +83,5 @@ def resample_data_or_seg(
         axis=axis,
         order=order,
         do_separate_z=do_separate_z,
-        cval=cval,
         order_z=order_z,
     )

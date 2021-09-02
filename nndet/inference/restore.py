@@ -120,7 +120,6 @@ def restore_fmap(
             axis=lowres_axis,
             order=interpolation_order,
             do_separate_z=do_separate_z,
-            cval=0,
             order_z=interpolation_order_z,
         )
     else:
