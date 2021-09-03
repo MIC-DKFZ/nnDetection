@@ -92,6 +92,12 @@ class RetinaUNetC012FocalMish(RetinaUNetC012Focal):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC012FocalGpMish(RetinaUNetC012Focal):
+    base_conv_cls = ConvGroupMish
+    head_conv_cls = ConvGroupMish
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC012Ranger21(RetinaUNetC012):
     def configure_optimizers(self):
         from ranger21 import Ranger21
