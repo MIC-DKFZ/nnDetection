@@ -49,19 +49,19 @@ def generate_image(image_dir, label_dir, idx):
 
     logger.info(f"Generating case_{idx}")
     selected_size = np.random.randint(object_size[0], object_size[1])
-    selected_class = np.random.randint(0, 2)
+    selected_class = np.random.randint(0, 3)
 
     data = np.random.rand(*image_size)
     mask = np.zeros_like(data)
 
     top_left = [np.random.randint(0, image_size[i] - selected_size) for i in range(dim)]
 
-    if selected_class == 0:
+    if selected_class == 1:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
         data[slicing] = data[slicing] + 0.4
         data = data.clip(0, 1)
         mask[slicing] = 1
-    elif selected_class == 1:
+    elif selected_class == 2:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
 
         inner_slicing = [
@@ -79,6 +79,8 @@ def generate_image(image_dir, label_dir, idx):
         data[object_mask] = data[object_mask] + 0.4
         data = data.clip(0, 1)
         mask[object_mask] = 1
+    elif selected_class == 0:
+        pass  # no object in case
     else:
         raise NotImplementedError
 
@@ -88,9 +90,9 @@ def generate_image(image_dir, label_dir, idx):
 
     data_itk = sitk.GetImageFromArray(data)
     mask_itk = sitk.GetImageFromArray(mask)
-    mask_meta = {
-        "instances": {"1": selected_class},
-    }
+
+    instances_meta = {"1": selected_class - 1} if selected_class > 0 else {}
+    mask_meta = {"instances": instances_meta}
 
     if modalities > 1:
         sc = np.random.randint(0, modalities)
@@ -131,7 +133,7 @@ def main():
     full = args.full
     num_processes = args.num_processes
 
-    num_images_tr = 1000 if full else 10
+    num_images_tr = 1000 if full else 20
     num_images_ts = 1000 if full else 10
 
     meta = {

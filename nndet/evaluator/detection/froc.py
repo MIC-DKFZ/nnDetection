@@ -60,6 +60,10 @@ class FROCMetric(DetectionMetric):
                 the mean of the computed sens values at these positions)
             per_class: additional FROC curves are computed per class
             verbose: log time needed for evaluation
+
+        Notes:
+            c_FROC_num_images should stay constant across all classes since the
+            number of images doesn't change across the data set.
         """
         self.classes = classes
         self.iou_thresholds = iou_thresholds
@@ -167,7 +171,12 @@ class FROCMetric(DetectionMetric):
             logger.warning("WARNING, no results found for froc computation")
             return (
                 {"froc_score": 0},
-                {"froc_curve": np.zeros(len(self.fpi_thresholds))},
+                {
+                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
+                    "FROC_fpi_thresholds": self.fpi_thresholds,
+                    "FROC_num_images": num_images,
+                    "FROC_num_gt": 0,
+                },
             )
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
@@ -185,7 +194,12 @@ class FROCMetric(DetectionMetric):
             logger.error("No ground truth found! Returning 0 in FROC.")
             return (
                 {"froc_score": 0},
-                {"froc_curve": np.zeros(len(self.fpi_thresholds))},
+                {
+                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
+                    "FROC_fpi_thresholds": self.fpi_thresholds,
+                    "FROC_num_images": num_images,
+                    "FROC_num_gt": num_gt,
+                },
             )
 
         # keep shape in case of 1 threshold

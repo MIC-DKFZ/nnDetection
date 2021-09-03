@@ -135,6 +135,7 @@ setup(
         "console_scripts": [
             "nndet_example = scripts.generate_example:main",
             "nndet_prep = scripts.preprocess:main",
+            "nndet_prep_labels = scripts.preprocess:main_prep_labels",
             "nndet_cls2fg = scripts.convert_cls2fg:main",
             "nndet_seg2det = scripts.convert_seg2det:main",
             "nndet_train = scripts.train:train",
@@ -147,6 +148,7 @@ setup(
             "nndet_seg2nii = scripts.utils:seg2nii",
             "nndet_unpack = scripts.utils:unpack",
             "nndet_env = scripts.utils:env",
+            "nndet_print_reg = scripts.utils:print_reg",
             "nndet_test_split = scripts.utils:create_test_split",
         ]
     },

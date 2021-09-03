@@ -7,7 +7,8 @@ from nndet.core.boxes.ops_np import box_size_np
 from nndet.planning.architecture.boxes import BoxC002
 from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 from nndet.planning.estimator import MemoryEstimatorDetection
-from nndet.planning.experiment import PLANNER_REGISTRY, AbstractPlanner
+from nndet.planning.experiment import PLANNER_REGISTRY
+from nndet.planning.experiment.base import AbstractPlanner
 from nndet.preprocessing.preprocessor import GenericPreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
 

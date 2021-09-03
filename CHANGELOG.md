@@ -3,6 +3,8 @@
 - (breaking) Encoder / Decoder Names in Config are now deprecated
 - (breaking) Introduced new model building names: Encoder->Backbone, Decoder->Neck
 - (breaking) PTModules are now composed from mixins which defines tasks and model configuration
+- `nndet_eval` won't run evluation on preprocessed data by default and now needs a flag 3c980c39f929
+- New entrypoints: `nndet_prep_labels`, `nndet_print_reg` 333b98ce5a44 , 777174d7eca3
 
 ### nnDetection v0.1.2-dev
 - pre-commit CI with pytest and black 606296cfc16e
@@ -17,7 +19,7 @@
 - Additional Augmentation Modules 8aa92556d4a4
 
 ### nnDetection v0.1.1-dev
-/
+- transfer learning setup
 
 ### nnDetection v0.1
 release

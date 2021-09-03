@@ -229,13 +229,17 @@ def main():
             key="boxes", dim=plan["network_dim"]
         )  # TODO: make this configurable
 
+        if cfg["trainer_cfg"].startswith("val/"):
+            target_metric = str(cfg["trainer_cfg"]).split("/", 1)[1]
+        else:
+            target_metric = cfg["trainer_cfg"]
+        logger.info(f"Sweep for metric: {target_metric}")
+
         sweeper = BoxSweeper(
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=target_dir / "sweep_predictions",
             gt_dir=gt_dir,
-            target_metric=cfg["trainer_cfg"].get(
-                "eval_score_key", "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
-            ),
+            target_metric=target_metric,
             ensembler_cls=ensembler_cls,
             save_dir=target_dir / "sweep",
         )

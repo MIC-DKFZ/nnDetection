@@ -10,7 +10,12 @@ class Registry:
         self.mapping = {}
 
     def __getitem__(self, key):
-        return self.mapping[key]["fn"]
+        if key in self.mapping:
+            return self.mapping[key]["fn"]
+        else:
+            raise KeyError(
+                f"Key {key} in not registered in registry with keys: {list(self.mapping.keys())}"
+            )
 
     def register(self, fn: Callable):
         self._register(fn.__name__, fn, inspect.getfile(fn))
@@ -24,6 +29,12 @@ class Registry:
 
     def get(self, name: str):
         return self.mapping[name]["fn"]
+
+    def __str__(self) -> str:
+        s = "--- Registry ---\n"
+        for k, i in self.mapping.items():
+            s += f"{k}: {i['fn']}\n"
+        return s
 
     def copy_registered(self, target: Path):
         if not target.is_dir():

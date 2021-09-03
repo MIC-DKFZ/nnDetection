@@ -5,5 +5,5 @@ from nndet.utils.registry import Registry
 
 PLANNER_REGISTRY: Mapping[str, Type[PlannerType]] = Registry()
 
-from nndet.planning.experiment.dev import *
+from nndet.planning.experiment.dev import D2C004, D3V001AEP, D3V001FP16I16
 from nndet.planning.experiment.v001 import D3V001

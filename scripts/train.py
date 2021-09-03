@@ -134,6 +134,11 @@ def evaluate():
     parser.add_argument(
         "--analyze_boxes", help="Run Box Evaluation", action="store_true"
     )
+    parser.add_argument(
+        "--eval_preprocessed",
+        help="Additionally run evaluation on preprocessed data",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     model = args.model
@@ -148,6 +153,8 @@ def evaluate():
 
     do_analyze_boxes = args.analyze_boxes
 
+    eval_preprocessed = args.eval_preprocessed
+
     _evaluate(
         task=task,
         model=model,
@@ -158,6 +165,7 @@ def evaluate():
         do_seg_eval=do_seg_eval,
         do_instances_eval=do_instances_eval,
         do_analyze_boxes=do_analyze_boxes,
+        eval_preprocessed=eval_preprocessed,
     )
 
 
@@ -512,6 +520,7 @@ def _evaluate(
     do_seg_eval: bool = False,
     do_instances_eval: bool = False,
     do_analyze_boxes: bool = False,
+    eval_preprocessed: bool = False,
 ):
     """
     This entrypoint runs the evaluation
@@ -538,7 +547,14 @@ def _evaluate(
 
     prefix = "test" if test else "val"
 
-    modes = [True] if test else [True, False]
+    modes = [True]
+    if not test and eval_preprocessed:
+        modes.append(False)
+    if test and eval_preprocessed:
+        logger.warning(
+            "Evaluation of preprocessed data only supported on validation data."
+        )
+
     for restore in modes:
         if restore:
             pred_dir_name = f"{prefix}_predictions"

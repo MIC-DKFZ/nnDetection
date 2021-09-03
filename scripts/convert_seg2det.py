@@ -31,7 +31,7 @@ from tqdm import tqdm
 from nndet.core.boxes import box_size_np
 from nndet.io import save_json
 from nndet.io.itk import load_sitk, load_sitk_as_array
-from nndet.io.transforms.instances import get_bbox_np
+from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.utils.check import env_guard
 from nndet.utils.clustering import seg_to_instances
 from nndet.utils.config import compose
@@ -74,11 +74,10 @@ def prepare_detection_label(
     )
     final_mapping = {}
     if instances_not_filtered.max() > 0:
-        boxes = get_bbox_np(instances_not_filtered[None])["boxes"]
+        boxes, instance_ids = instances_to_boxes_np(
+            seg=instances_not_filtered, dim=instances_not_filtered.ndim
+        )
         box_sizes = box_size_np(boxes)
-
-        instance_ids = np.unique(instances_not_filtered)
-        instance_ids = instance_ids[instance_ids > 0]
 
         assert len(instance_ids) == len(boxes)
         isotopic_axis = list(range(seg.ndim))

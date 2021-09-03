@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from batchgenerators.dataloading import SlimDataLoaderBase
+from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 from loguru import logger
 
 from nndet.core.boxes.ops_np import box_size_np

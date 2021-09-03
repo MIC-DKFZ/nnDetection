@@ -72,6 +72,21 @@ class TestFROC:
         for key, item in froc_score.items():
             assert math.isclose(item, 0)
 
+        # no class
+        froc_curve.pop("FROC_fpi_thresholds")
+        assert froc_curve.pop("FROC_num_images") == 3
+        assert froc_curve.pop("FROC_num_gt") == 0
+
+        # benign
+        froc_curve.pop("benign_FROC_fpi_thresholds")
+        assert froc_curve.pop("benign_FROC_num_images") == 3
+        assert froc_curve.pop("benign_FROC_num_gt") == 0
+
+        # malignant
+        froc_curve.pop("malignant_FROC_fpi_thresholds")
+        assert froc_curve.pop("malignant_FROC_num_images") == 3
+        assert froc_curve.pop("malignant_FROC_num_gt") == 0
+
         for key, item in froc_curve.items():
             assert np.isclose(item, 0).all()
 

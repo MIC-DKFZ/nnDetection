@@ -16,24 +16,34 @@ limitations under the License.
 
 from typing import List, Sequence
 
-from batchgenerators.transforms import (
-    BrightnessMultiplicativeTransform,
-    CenterCropTransform,
-    Compose,
-    ContrastAugmentationTransform,
+from batchgenerators.transforms.abstract_transforms import Compose
+from batchgenerators.transforms.channel_selection_transforms import (
     DataChannelSelectionTransform,
+    SegChannelSelectionTransform,
+)
+from batchgenerators.transforms.color_transforms import (
+    BrightnessMultiplicativeTransform,
+    BrightnessTransform,
+    ContrastAugmentationTransform,
     GammaTransform,
+)
+from batchgenerators.transforms.crop_and_pad_transforms import CenterCropTransform
+from batchgenerators.transforms.noise_transforms import (
     GaussianBlurTransform,
     GaussianNoiseTransform,
-    MirrorTransform,
-    NumpyToTensor,
-    RenameTransform,
-    SegChannelSelectionTransform,
+)
+from batchgenerators.transforms.resample_transforms import (
     SimulateLowResolutionTransform,
+)
+from batchgenerators.transforms.spatial_transforms import (
+    MirrorTransform,
     SpatialTransform,
 )
-from batchgenerators.transforms.color_transforms import BrightnessTransform
-from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
+from batchgenerators.transforms.utility_transforms import (
+    NumpyToTensor,
+    RemoveLabelTransform,
+    RenameTransform,
+)
 from loguru import logger
 
 from nndet.io.augmentation.base import AugmentationSetup, get_patch_size

@@ -10,7 +10,11 @@ from loguru import logger
 from nndet.io.itk import load_sitk_as_array
 from nndet.io.load import load_json, load_pickle
 from nndet.io.paths import get_case_ids_from_dir
-from nndet.io.transforms.instances import get_bbox_np, instances_to_segmentation_np
+from nndet.io.transforms.instances import (
+    get_instance_class_from_properties_seq,
+    instances_to_boxes_np,
+    instances_to_segmentation_np,
+)
 
 
 def create_label_case(
@@ -42,15 +46,22 @@ def create_label_case(
         logger.warning(f"Skipping prepare label {case_id} because it already exists")
     else:
         logger.info(f"Preparing label {case_id}")
+
         if instances.ndim == dim:
             instances = instances[None]
+        assert instances.ndim == (dim + 1)
+
         np.savez_compressed(
             str(instances_save_path),
             instances=instances,
             mapping=mapping,
         )
 
-        res = get_bbox_np(instances, mapping, dim=dim)
+        boxes, instance_idx = instances_to_boxes_np(seg=instances, dim=dim)
+        box_classes = get_instance_class_from_properties_seq(
+            instance_idx=instance_idx, map_dict=mapping
+        )
+        res = {"boxes": boxes, "classes": box_classes}
         np.savez_compressed(str(boxes_save_path), **res)
 
         seg = instances_to_segmentation_np(instances, mapping)
@@ -116,10 +127,13 @@ def run_create_label(
     """
     instances = load_sitk_as_array(source_label_dir / f"{case_id}.nii.gz")[0]
     properties = load_json(source_label_dir / f"{case_id}.json")
+
     if instances.ndim == dim:
         instances = instances[None]
     instances = instances.astype(np.int32)
+
     mapping = {int(key): int(item) for key, item in properties["instances"].items()}
+
     create_label_case(
         target_dir=target_dir,
         case_id=case_id,
@@ -146,7 +160,9 @@ def run_create_label_preprocessed(
     """
     instances = np.load(str(source_dir / f"{case_id}.npz"), mmap_mode="r")["seg"]
     properties = load_pickle(source_dir / f"{case_id}.pkl")
+
     mapping = {int(key): int(item) for key, item in properties["instances"].items()}
+
     create_label_case(
         target_dir=target_dir,
         case_id=case_id,

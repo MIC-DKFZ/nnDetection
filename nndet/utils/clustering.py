@@ -19,7 +19,10 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import numpy as np
 from scipy.ndimage import label
 
-from nndet.io.transforms.instances import get_bbox_np
+from nndet.io.transforms.instances import (
+    get_instance_class_from_properties_seq,
+    instances_to_boxes_np,
+)
 
 
 def seg_to_instances(
@@ -173,7 +176,7 @@ def compute_score_from_seg(
     instance_classes: Dict[int, int],
     probs: np.ndarray,
     aggregation: str = "max",
-) -> np.ndarray:
+) -> Dict[int, float]:
     """
     Combine scores for each instance given an instance mask and instance logits
 
@@ -191,7 +194,7 @@ def compute_score_from_seg(
     """
     instance_classes = {int(key): int(item) for key, item in instance_classes.items()}
     instance_ids = list(instance_classes.keys())
-    instance_scores = []
+    instance_scores = {}
     for iid in instance_ids:
         ic = instance_classes[iid]
         instance_mask = instances == iid
@@ -207,8 +210,8 @@ def compute_score_from_seg(
             _score = np.percentile(instance_probs, 95)
         else:
             raise ValueError(f"Aggregation {aggregation} is not aggregation")
-        instance_scores.append(_score)
-    return np.asarray(instance_scores)
+        instance_scores[int(iid)] = _score
+    return instance_scores
 
 
 def softmax_to_instances(
@@ -274,13 +277,17 @@ def softmax_to_instances(
     instance_classes = {
         int(key): int(item) - 1 for key, item in instance_classes.items()
     }
-    tmp = get_bbox_np(instances[None], instance_classes)
-    instance_boxes = tmp["boxes"]
-    instance_classes_seq = tmp["classes"]
+
+    instance_boxes, instance_idx = instances_to_boxes_np(seg=instances, dim=seg.ndim)
+    instance_classes_seq = get_instance_class_from_properties_seq(
+        instance_idx=instance_idx,
+        map_dict=instance_classes,
+    )
+    instance_scores_seq = np.array([instance_scores[int(i)] for i in instance_idx])
 
     return {
         "pred_instances": instances,
         "pred_boxes": instance_boxes,
         "pred_labels": instance_classes_seq,
-        "pred_scores": instance_scores,
+        "pred_scores": instance_scores_seq,
     }

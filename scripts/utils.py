@@ -253,6 +253,43 @@ def env():
     print("\n")
 
 
+def print_reg():
+    """
+    Helper function to print registry entries of nnDetection
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "registry", type=str, help="Name of registry, e.g. augmentation"
+    )
+
+    args = parser.parse_args()
+    registry_name = args.registry
+    registry_name = registry_name.lower()
+
+    if registry_name == "augmentation":
+        from nndet.io.augmentation import AUGMENTATION_REGISTRY
+
+        registry = AUGMENTATION_REGISTRY
+    elif registry_name == "dataloader":
+        from nndet.io.datamodule import DATALOADER_REGISTRY
+
+        registry = DATALOADER_REGISTRY
+    elif registry_name == "planner":
+        from nndet.planning import PLANNER_REGISTRY
+
+        registry = PLANNER_REGISTRY
+    elif registry_name == "module":
+        from nndet.ptmodule import MODULE_REGISTRY
+
+        registry = MODULE_REGISTRY
+    else:
+        raise ValueError(f"Did not find registry for {registry_name}")
+
+    print(registry)
+
+
 @env_guard
 def create_test_split():
     import argparse

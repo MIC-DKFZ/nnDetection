@@ -91,8 +91,15 @@ def load_case_from_list(
 
         seg_props_file = f"{str(seg_file).split('.')[0]}.json"
         if os.path.isfile(seg_props_file):
-            with open(seg_props_file, "r") as f:
-                properties.update(json.load(f))
+            properties_json = load_json(seg_props_file)
+
+            # cast instances to correct type
+            properties_json["instances"] = {
+                str(key): int(item)
+                for key, item in properties_json["instances"].items()
+            }
+
+            properties.update(properties_json)
     else:
         seg_npy = None
     return data_npy.astype(np.float32), seg_npy, properties
@@ -129,7 +136,7 @@ def load_case_cropped(
 
     Returns:
         np.ndarray: data
-        np.ndarray: segmentation
+        np.ndarray: segmentation (no channel dim)
         dict: additional properties
     """
     stack = load_npz_looped(

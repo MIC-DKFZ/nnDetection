@@ -18,7 +18,10 @@ import os
 from typing import Iterable, List, Optional, Sequence, Type
 
 import numpy as np
-from batchgenerators.dataloading import MultiThreadedAugmenter, SingleThreadedAugmenter
+from batchgenerators.dataloading.multi_threaded_augmenter import MultiThreadedAugmenter
+from batchgenerators.dataloading.single_threaded_augmenter import (
+    SingleThreadedAugmenter,
+)
 from loguru import logger
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
