@@ -229,10 +229,10 @@ def main():
             key="boxes", dim=plan["network_dim"]
         )  # TODO: make this configurable
 
-        if cfg["trainer_cfg"].startswith("val/"):
-            target_metric = str(cfg["trainer_cfg"]).split("/", 1)[1]
+        if cfg["trainer_cfg"]["monitor_key"].startswith("val/"):
+            target_metric = str(cfg["trainer_cfg"]["monitor_key"]).split("/", 1)[1]
         else:
-            target_metric = cfg["trainer_cfg"]
+            target_metric = cfg["trainer_cfg"]["monitor_key"]
         logger.info(f"Sweep for metric: {target_metric}")
 
         sweeper = BoxSweeper(
