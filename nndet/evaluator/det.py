@@ -38,20 +38,25 @@ class DetectionEvaluator(AbstractEvaluator):
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
+        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
     ):
         """
         Class for evaluate detection metrics
 
         Args:
-            metrics (Sequence[DetectionMetric]: detection metrics to evaluate
-            iou_fn (Callable[[np.ndarray, np.ndarray], np.ndarray]): compute overlap for each pair
-            max_detections (int): number of maximum detections per image (reduces computation)
+            metrics: detection metrics to evaluate
+            iou_fn: compute overlap for each pair
+            max_detections: number of maximum detections per image
+                (reduces computation)
+            filter_keys: define keys which need to be filtered by the IoU value
         """
         self.iou_fn = iou_fn
         self.match_fn = match_fn
 
         self.max_detections = max_detections
         self.metrics = metrics
+        self.filter_keys = filter_keys
+
         self.results_list = []  # store results of each image
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
@@ -142,7 +147,11 @@ class DetectionEvaluator(AbstractEvaluator):
         metric_scores = {}
         metric_curves = {}
         for metric_idx, metric in enumerate(self.metrics):
-            _filter = partial(self.iou_filter, iou_idx=self.iou_mapping[metric_idx])
+            _filter = partial(
+                self.iou_filter,
+                iou_idx=self.iou_mapping[metric_idx],
+                filter_keys=self.filter_keys,
+            )
             iou_filtered_results = list(map(_filter, self.results_list))
 
             score, curve = metric(iou_filtered_results)
@@ -158,25 +167,21 @@ class DetectionEvaluator(AbstractEvaluator):
     def iou_filter(
         image_dict: Dict[int, Dict[str, np.ndarray]],
         iou_idx: List[int],
-        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
+        filter_keys: Sequence[str],
     ):
         """
         This functions can be used to filter specific IoU values from the results
         to make sure that the correct IoUs are passed to metric
 
-        Parameters
-        ----------
-        image_dict : dict
-            dictionary containin :param:`filter_keys` which contains IoUs in the first dimension
-        iou_idx : List[int]
-            indices of IoU values to filter from keys
-        filter_keys : tuple, optional
-            keys to filter, by default ('dtMatches', 'gtMatches', 'dtIgnore')
+        Args:
+            image_dict: dictionary containin :param:`filter_keys`
+                which contains IoUs in the first dimension
+            iou_idx: indices of IoU values to filter from keys
+            filter_keys: keys to filter, by default
+                ('dtMatches', 'gtMatches', 'dtIgnore')
 
         Returns
-        -------
-        dict
-            filtered dictionary
+            dict: filtered dictionary
         """
         iou_idx = list(iou_idx)
         filtered = {}
