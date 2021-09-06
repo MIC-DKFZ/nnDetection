@@ -8,7 +8,7 @@ import numpy as np
 from loguru import logger
 
 from nndet.io.itk import load_sitk_as_array
-from nndet.io.load import load_json, load_pickle
+from nndet.io.load import load_json, load_pickle, save_pickle
 from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.transforms.instances import (
     get_instance_class_from_properties_seq,
@@ -23,6 +23,7 @@ def create_label_case(
     instances: np.ndarray,
     mapping: Dict[int, int],
     dim: int,
+    properties: Dict,
 ) -> None:
     """
     Crete labels for evaluation and analysis purposes
@@ -33,10 +34,12 @@ def create_label_case(
         instances: instance segmentation
         mapping: map each instance id to a class (classes start from 0)
         dim: spatial dimensions
+        properties: pass through properties
     """
     instances_save_path = target_dir / f"{case_id}_instances_gt.npz"
     boxes_save_path = target_dir / f"{case_id}_boxes_gt.npz"
     seg_save_path = target_dir / f"{case_id}_seg_gt.npz"
+    properties_save_path = target_dir / f"{case_id}.pkl"
 
     if (
         instances_save_path.is_file()
@@ -61,11 +64,13 @@ def create_label_case(
         box_classes = get_instance_class_from_properties_seq(
             instance_idx=instance_idx, map_dict=mapping
         )
-        res = {"boxes": boxes, "classes": box_classes}
+        res = {"boxes": boxes, "classes": box_classes, "instance_idx": instance_idx}
         np.savez_compressed(str(boxes_save_path), **res)
 
         seg = instances_to_segmentation_np(instances, mapping)
         np.savez_compressed(str(seg_save_path), seg=seg)
+
+        save_pickle(properties, properties_save_path)
 
 
 def create_labels(
@@ -140,6 +145,7 @@ def run_create_label(
         instances=instances,
         mapping=mapping,
         dim=dim,
+        properties=properties,
     )
 
 
@@ -169,4 +175,5 @@ def run_create_label_preprocessed(
         instances=instances,
         mapping=mapping,
         dim=dim,
+        properties=properties,
     )
