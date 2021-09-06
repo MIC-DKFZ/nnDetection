@@ -1,29 +1,58 @@
 from abc import abstractmethod
-from typing import List, Tuple, TypeVar, Union
+from typing import List, Optional, Tuple, TypeVar, Union
 
 import torch
-from torchvision.ops.roi_align import roi_align as _roi_align
+from torch import Tensor
 
 from nndet.core.boxes.ops import box_size, expand_to_boxes, permute_boxes
 
+NDSIZE = Union[Tuple[int, int], Tuple[int, int, int]]
 
+
+from torchvision.ops.roi_align import roi_align as _roi_align
+
+
+def roi_align(
+    input,
+    boxes,
+    output_size,
+    spatial_scale: float = 1.0,
+    sampling_ratio: int = -1,
+    aligned: bool = False,
+):
+    # TODO: replace with own ROI Align and remove permute!
+    # TODO: wirte own ROI Align with general scaling parameter?
+    boxes[:, 1:] = permute_boxes(boxes[:, 1:], dims=[1, 0])
+    return _roi_align(
+        input=input,
+        boxes=boxes,
+        output_size=output_size,
+        spatial_scale=spatial_scale,
+        sampling_ratio=sampling_ratio,
+        aligned=aligned,
+    )
+
+
+# TODO: docs with feature output size instead of simple output size
 class Pooler(torch.nn.Module):
     def __init__(
         self,
-        output_size: Union[Tuple[int, int], Tuple[int, int, int]],
+        feature_output_size: NDSIZE,
+        mask_output_size: Optional[NDSIZE] = None,
     ):
         """
         Perform RoI Pooling for multi scale features
         """
         super().__init__()
-        self.output_size = output_size
+        self.feature_output_size = feature_output_size
+        self.mask_output_size = mask_output_size
 
     def forward(
         self,
         features: List[torch.Tensor],
         proposal_boxes: torch.Tensor,
         batch_idx: torch.Tensor,
-        image_size: Union[Tuple[int, int], Tuple[int, int, int]],
+        image_size: NDSIZE,
     ) -> torch.Tensor:
         """
         Perform multiscale pyramid pooling
@@ -50,34 +79,49 @@ class Pooler(torch.nn.Module):
         # normalize boes to [0, 1]
         proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
 
-        proposal_levels = self._find_pyramid_level(
-            proposal_boxes_norm=proposal_boxes_norm,
-            features=features,
-            image_size=image_size,
-        )
-
-        # TODO: need to check dtype due to autocast stuff
-        output = torch.zeros(
-            [proposal_boxes_norm.shape[0], features[0].shape[1], *self.output_size],
-            dtype=features[0].dtype,
-            device=features[0].device,
-        )
-
         # TODO: dynamically infer scale, these normlizations are wrong
         proprosals_prepared = torch.cat(
             [batch_idx[:, None], proposal_boxes],
             dim=1,
         )
-        for idx, fmap in enumerate(features):
-            scale = fmap.shape[2] / image_size_tensor[0]
-            idx = torch.where(proposal_levels == idx)[0]
-            if idx.numel() > 0:
-                # breakpoint()
-                output[idx] = self._pool_features(
-                    fmap=fmap,
-                    proposals=proprosals_prepared[idx],
-                    spatial_scale=scale,
-                )
+
+        if len(features) == 1:
+            scale = (
+                features[0].shape[2] / image_size_tensor[0]
+            )  # TODO: move this to a fn?
+            output = self._pool_features(
+                fmap=features[0],
+                proposals=proprosals_prepared,
+                spatial_scale=scale,
+            )
+        else:  # determine level dynamically
+            proposal_levels = self._find_pyramid_level(
+                proposal_boxes_norm=proposal_boxes_norm,
+                features=features,
+                image_size=image_size,
+            )
+
+            # TODO: need to check dtype due to autocast stuff
+            output = torch.zeros(
+                [
+                    proposal_boxes_norm.shape[0],
+                    features[0].shape[1],
+                    *self.feature_output_size,
+                ],
+                dtype=features[0].dtype,
+                device=features[0].device,
+            )
+
+            for idx, fmap in enumerate(features):
+                scale = fmap.shape[2] / image_size_tensor[0]  # TODO: move this to a fn?
+                idx = torch.where(proposal_levels == idx)[0]
+                if idx.numel() > 0:
+                    # breakpoint()
+                    output[idx] = self._pool_features(
+                        fmap=fmap,
+                        proposals=proprosals_prepared[idx],
+                        spatial_scale=scale,
+                    )
         return output
 
     @abstractmethod
@@ -122,6 +166,30 @@ class Pooler(torch.nn.Module):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    @torch.no_grad()
+    def pool_masks(
+        self,
+        binary_masks: List[Tensor],
+        proposal_boxes: List[Tensor],
+        matched_gt_idx: List[Tensor],
+    ) -> List[Tensor]:
+        """
+        Pooling masks for given matched gt boxes
+
+        Args:
+            masks: binary segmentation masks [C, sdims]; C=number of instances
+            proposal_boxes: proposal boxes to pool
+                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            matched_gt_idx: index of matched ground truth box. The n-th
+                box needs to correspond to the n-th channel inside the
+                binary segmentation mask
+
+        Returns:
+            Tensor: pooled masks [N, output_size]
+        """
+        raise NotImplementedError
+
 
 class RoIAlignNaiveAssign(Pooler):
     @torch.no_grad()
@@ -162,17 +230,55 @@ class RoIAlignNaiveAssign(Pooler):
         """
         Pooling feature for proposals from given feature map
         """
-        # TODO: replace with own ROI Align and remove permute!
-        # TODO: wirte own ROI Align with general scaling parameter?
-        proposals[:, 1:] = permute_boxes(proposals[:, 1:], dims=[1, 0])
-        return _roi_align(
+        return roi_align(
             input=fmap,
             boxes=proposals,
-            output_size=self.output_size,
+            output_size=self.feature_output_size,
             spatial_scale=spatial_scale,
             aligned=True,
             sampling_ratio=2,
         )
+
+    @torch.no_grad()
+    def pool_masks(
+        self,
+        binary_masks: List[Tensor],
+        proposal_boxes: List[Tensor],
+        matched_gt_idx: List[Tensor],
+    ) -> List[Tensor]:
+        """
+        Pooling masks for given matched gt boxes
+
+        Args:
+            binary_masks: binary segmentation masks [C, sdims]; C=number of instances
+            proposal_boxes: proposal boxes to pool
+                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            matched_gt_idx: index of matched ground truth box. The n-th
+                box needs to correspond to the n-th channel inside the
+                binary segmentation mask
+
+        Returns:
+            Tensor: pooled masks [N, output_size]
+        """
+        output_size = (
+            self.feature_output_size
+            if self.mask_output_size is None
+            else self.mask_output_size
+        )
+
+        pooled_masks = []
+        for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
+            p_boxes_prepared = torch.cat([m_idx[:, None], p_boxes], dim=1)
+            pooled_masks.append(
+                roi_align(
+                    input=m[:, None],
+                    boxes=p_boxes_prepared,
+                    output_size=output_size,
+                    spatial_scale=1.0,
+                    aligned=True,
+                )[:, 0]
+            )
+        return pooled_masks
 
 
 PoolerType = TypeVar("PoolerType", bound=Pooler)

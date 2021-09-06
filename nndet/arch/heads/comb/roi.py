@@ -65,6 +65,6 @@ class RoIBoxHead(RoIHead):
                 box_logits[sampled_inds],
                 target_labels[sampled_inds].long(),
             )
-            / max(1, sampled_pos_inds.numel())
+            / max(1, sampled_inds.numel())
         )
         return losses, sampled_pos_inds, None
