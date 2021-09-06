@@ -422,3 +422,232 @@ class SingleStageMixin(ModelMixin):
             **kwargs,
         )
         return segmenter
+
+
+class TwoStageMixin(SingleStageMixin):
+    # Use `detector_cls` to set RPN module class
+    full_detector_cls = ...  # Two stage detector class RCNN
+
+    # RoI classes
+    roi_module_cls = ...  # RoIModule
+    roi_head_cls = ...  # RoIBoxHead
+    roi_classifier_cls = ...  # RoIClassifierTwoMLP
+    roi_regressor_cls = ...  # RoIRegressorConv
+
+    roi_matcher_cls = ...  # IoUMatcher
+    roi_sampler_cls = ...  # BalancedHardNegativeSampler
+    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
+
+    # optional mask branches
+    roi_masker_cls = None  # BCESingleMasker
+    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+
+    @classmethod
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        # build RPN
+        rpn = super().from_config_plan(
+            model_cfg=model_cfg,
+            plan_arch=plan_arch,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+
+        #####
+        # Build RoI Module
+        #####
+        # TODO: FIXME
+        from nndet.arch.conv import ConvInstanceRelu
+
+        box_feature_size = (7, 7, 7)
+        mask_feature_size = (14, 14, 14)
+        mask_gt_size = (28, 28, 28)
+        conv = Generator(ConvInstanceRelu, 3)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+
+        # RoI Head
+        classifier = cls.roi_classifier_cls(
+            conv=conv,
+            output_size=box_feature_size,
+            in_channels=plan_arch["fpn_channels"],
+            internal_channels=plan_arch["fpn_channels"],
+            num_classes=plan_arch["classifier_classes"],
+        )
+
+        regressor = cls.roi_regressor_cls(
+            conv=conv,
+            in_channels=plan_arch["fpn_channels"],
+            internal_channels=plan_arch["fpn_channels"],
+        )
+
+        roi_head = cls.roi_head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+        )
+
+        # mask branch
+        masker = cls.roi_masker_cls(
+            conv,
+            in_channels=plan_arch["fpn_channels"],
+            internal_channels=plan_arch["fpn_channels"],
+            num_convs=3,
+            add_norm=False,
+        )
+        mask_pooler = cls.roi_mask_pooler_cls(
+            feature_output_size=mask_feature_size,
+            mask_output_size=mask_gt_size,
+        )
+
+        # RoI Module
+        matcher = cls.roi_matcher_cls(
+            low_threshold=0.4,
+            high_threshold=0.5,
+            allow_low_quality_matches=False,
+        )
+        box_pooler = cls.roi_box_pooler_cls(feature_output_size=box_feature_size)
+        sampler = cls.roi_sampler_cls(
+            batch_size_per_image=32,
+            positive_fraction=0.5,
+        )
+
+        roi_module = cls.roi_module_cls(
+            box_head=roi_head,
+            matcher=matcher,
+            box_pooler=box_pooler,
+            sampler=sampler,
+            num_classes=plan_arch["classifier_classes"],
+            decoder_levels=plan_arch["decoder_levels"],
+            gt_to_proposals=True,
+            # mask heads
+            mask_head=masker,
+            mask_pooler=mask_pooler,
+        )
+
+        return cls.full_detector_cls(
+            rpn=rpn,
+            roi_module=roi_module,
+        )
+
+
+class MultiStageMixin(SingleStageMixin):
+    # Use `detector_cls` to set RPN module class
+    full_detector_cls = ...  # Two stage detector class RCNN
+
+    # RoI classes
+    roi_module_cls = ...  # RoIModule
+    roi_head_cls = ...  # RoIBoxHead
+    roi_classifier_cls = ...  # RoIClassifierTwoMLP
+    roi_regressor_cls = ...  # RoIRegressorConv
+
+    roi_matcher_cls = ...  # IoUMatcher
+    roi_sampler_cls = ...  # BalancedHardNegativeSampler
+    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
+
+    # optional mask branches
+    roi_masker_cls = None  # BCESingleMasker
+    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+
+    @classmethod
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        # build RPN
+        rpn = super().from_config_plan(
+            model_cfg=model_cfg,
+            plan_arch=plan_arch,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+
+        #####
+        # Build RoI Module
+        #####
+        # TODO: FIXME
+        from nndet.arch.conv import ConvInstanceRelu
+
+        box_feature_size = (7, 7, 7)
+        mask_feature_size = (14, 14, 14)
+        mask_gt_size = (28, 28, 28)
+        conv = Generator(ConvInstanceRelu, 3)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+
+        roi_heads = []
+        matchers = []
+        maskers = []
+        for i in range(3):
+            # Box Head
+            classifier = cls.roi_classifier_cls(
+                conv=conv,
+                output_size=box_feature_size,
+                in_channels=plan_arch["fpn_channels"],
+                internal_channels=plan_arch["fpn_channels"],
+                num_classes=plan_arch["classifier_classes"],
+            )
+            regressor = cls.roi_regressor_cls(
+                conv=conv,
+                in_channels=plan_arch["fpn_channels"],
+                internal_channels=plan_arch["fpn_channels"],
+            )
+            roi_head = cls.roi_head_cls(
+                classifier=classifier,
+                regressor=regressor,
+                coder=coder,
+            )
+            roi_heads.append(roi_head)
+
+            # Matcher
+            matcher = cls.roi_matcher_cls(
+                low_threshold=0.4 + i * 0.1,
+                high_threshold=0.5 + i * 0.1,
+                allow_low_quality_matches=False,
+            )
+            matchers.append(matcher)
+
+            # Mask Branch
+            masker = cls.roi_masker_cls(
+                conv,
+                in_channels=plan_arch["fpn_channels"],
+                internal_channels=plan_arch["fpn_channels"],
+                num_convs=3,
+                add_norm=False,
+            )
+            maskers.append(masker)
+
+        # RoI Module
+        box_pooler = cls.roi_box_pooler_cls(feature_output_size=box_feature_size)
+        mask_pooler = cls.roi_mask_pooler_cls(
+            feature_output_size=mask_feature_size,
+            mask_output_size=mask_gt_size,
+        )
+        sampler = cls.roi_sampler_cls(
+            batch_size_per_image=32,
+            positive_fraction=0.5,
+        )
+
+        roi_module = cls.roi_module_cls(
+            box_head=roi_heads,
+            matcher=matchers,
+            box_pooler=box_pooler,
+            sampler=sampler,
+            num_classes=plan_arch["classifier_classes"],
+            decoder_levels=plan_arch["decoder_levels"],
+            gt_to_proposals=True,
+            # mask heads
+            mask_head=maskers,
+            mask_pooler=mask_pooler,
+        )
+
+        return cls.full_detector_cls(
+            rpn=rpn,
+            roi_module=roi_module,
+        )

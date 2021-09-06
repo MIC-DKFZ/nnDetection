@@ -236,6 +236,7 @@ class SemanticMixin(ModeMixin):
             Instances2Segmentation(
                 instance_key="target",
                 map_key="instance_mapping",
+                seg_key="target_seg",
                 present_instances="present_instances",
             )
         )

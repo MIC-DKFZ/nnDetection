@@ -230,14 +230,18 @@ class RoIAlignNaiveAssign(Pooler):
         """
         Pooling feature for proposals from given feature map
         """
-        return roi_align(
-            input=fmap,
-            boxes=proposals,
-            output_size=self.feature_output_size,
-            spatial_scale=spatial_scale,
-            aligned=True,
-            sampling_ratio=2,
-        )
+        # FIXME: temp for testing
+        return torch.zeros(
+            proposals.shape[0], fmap.shape[1], *self.feature_output_size
+        ).to(fmap)
+        # return roi_align(
+        #     input=fmap,
+        #     boxes=proposals,
+        #     output_size=self.feature_output_size,
+        #     spatial_scale=spatial_scale,
+        #     aligned=True,
+        #     sampling_ratio=2,
+        # )
 
     @torch.no_grad()
     def pool_masks(
@@ -269,14 +273,18 @@ class RoIAlignNaiveAssign(Pooler):
         pooled_masks = []
         for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
             p_boxes_prepared = torch.cat([m_idx[:, None], p_boxes], dim=1)
+            # pooled_masks.append(
+            #     roi_align(
+            #         input=m[:, None],
+            #         boxes=p_boxes_prepared,
+            #         output_size=output_size,
+            #         spatial_scale=1.0,
+            #         aligned=True,
+            #     )[:, 0]
+            # )
+            # FIXME: temp for testing
             pooled_masks.append(
-                roi_align(
-                    input=m[:, None],
-                    boxes=p_boxes_prepared,
-                    output_size=output_size,
-                    spatial_scale=1.0,
-                    aligned=True,
-                )[:, 0]
+                torch.zeros(p_boxes_prepared.shape[0], 1, *output_size).to(m)[:, 0]
             )
         return pooled_masks
 

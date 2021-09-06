@@ -177,7 +177,7 @@ class BaseRetinaNet(AbstractModel):
 
         target_boxes: List[Tensor] = targets["target_boxes"]
         target_classes: List[Tensor] = targets["target_classes"]
-        target_seg: Tensor = targets["target_seg"]
+        target_seg: Tensor = targets.get("target_seg", None)
 
         pred_detection, anchors, pred_seg, features = self(images)
 
@@ -198,6 +198,7 @@ class BaseRetinaNet(AbstractModel):
         losses.update(head_losses)
 
         if self.segmenter is not None:
+            assert target_seg is not None, "FIXME"  # FIXME: better handling here
             losses.update(self.segmenter.compute_loss(pred_seg, target_seg))
 
         if predict:
