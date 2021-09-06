@@ -350,6 +350,7 @@ def get_bbox_np(seg: np.ndarray,
     result = {}
     boxes, instance_idx = instances_to_boxes_np(seg[0], **kwargs)
     result["boxes"] = boxes
+    result["instance_idx"] = instance_idx
 
     if map_dict is not None:
         box_classes = get_instance_class_from_properties_seq(instance_idx, map_dict)
