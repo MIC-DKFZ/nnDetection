@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from typing import Dict
 
 from nndet.io.itk import load_sitk_as_array
-from nndet.io.load import load_json, load_pickle
+from nndet.io.load import load_json, load_pickle, save_pickle
 from nndet.io.paths import get_case_ids_from_dir
 from nndet.io.transforms.instances import (
     get_bbox_np,
@@ -23,6 +23,7 @@ def create_label_case(
     instances: np.ndarray,
     mapping: Dict[int, int],
     dim: int,
+    properties: Dict,
     ) -> None:
     """
     Crete labels for evaluation and analysis purposes
@@ -33,11 +34,13 @@ def create_label_case(
         instances: instance segmentation
         mapping: map each instance id to a class (classes start from 0)
         dim: spatial dimensions
+        properties: pass through properties
     """
     instances_save_path = target_dir / f"{case_id}_instances_gt.npz"
     boxes_save_path = target_dir / f"{case_id}_boxes_gt.npz"
     seg_save_path = target_dir / f"{case_id}_seg_gt.npz"
-    
+    properties_save_path = target_dir / f"{case_id}.pkl"
+
     if instances_save_path.is_file() and boxes_save_path.is_file() and seg_save_path.is_file():
         logger.warning(f"Skipping prepare label {case_id} because it already exists")
     else:
@@ -53,6 +56,8 @@ def create_label_case(
 
         seg = instances_to_segmentation_np(instances, mapping)
         np.savez_compressed(str(seg_save_path), seg=seg)
+        
+        save_pickle(properties, properties_save_path)
 
 
 def create_labels(
@@ -120,6 +125,7 @@ def run_create_label(source_label_dir: Path,
         instances=instances,
         mapping=mapping,
         dim=dim,
+        properties=properties,
     )
 
 
@@ -147,4 +153,5 @@ def run_create_label_preprocessed(
         instances=instances,
         mapping=mapping,
         dim=dim,
+        properties=properties,
     )
