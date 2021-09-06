@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from abc import ABC
-from typing import List, TypeVar, Union
+from typing import List, Tuple, TypeVar, Union
 
 import torch
 from loguru import logger
@@ -28,7 +28,7 @@ class AbstractSampler(ABC):
         self,
         target_labels: List[Tensor],
         fg_probs: Union[List[Tensor], Tensor],
-    ):
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Select positive and negative anchors
 
@@ -50,7 +50,7 @@ class NegativeSampler(BalancedPositiveNegativeSampler, AbstractSampler):
         self,
         target_labels: List[Tensor],
         fg_probs: Union[List[Tensor], Tensor],
-    ):
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Randomly sample negatives and positives until batch_size_per_img
         is reached
@@ -141,7 +141,7 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
         self,
         target_labels: List[Tensor],
         fg_probs: Union[List[Tensor], Tensor],
-    ):
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Select hard negatives from list anchors per image
 
@@ -289,7 +289,7 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
         self,
         target_labels: List[Tensor],
         fg_probs: Union[List[Tensor], Tensor],
-    ):
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Select hard negatives from list anchors per image
 
@@ -309,6 +309,7 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
         batch_size = len(target_labels)
         self.batch_size_per_image = self._batch_size_per_image * batch_size
 
+        num_anchors_per_image = [int(t.shape[0]) for t in target_labels]
         target_labels_batch = torch.cat(target_labels, dim=0)
 
         positive = torch.where(target_labels_batch >= 1)[0]
@@ -324,10 +325,10 @@ class HardNegativeSamplerBatched(HardNegativeSampler):
             negative, num_neg, target_labels_batch, fg_probs
         )
 
-        # Comb Head with sampling concatenates masks after sampling so do not split them here
-        # anchors_per_image = [anchors_in_image.shape[0] for anchors_in_image in target_labels]
-        # return pos_idx.split(anchors_per_image, 0), neg_idx.split(anchors_per_image, 0)
-        return [pos_idx], [neg_idx]
+        return (
+            list(pos_idx.split(num_anchors_per_image)),
+            list(neg_idx.split(num_anchors_per_image)),
+        )
 
 
 class BalancedHardNegativeSampler(HardNegativeSampler):
@@ -374,7 +375,7 @@ class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
         self,
         target_labels: List[Tensor],
         fg_probs: Union[Tensor, List[Tensor]],
-    ):
+    ) -> Tuple[List[Tensor], List[Tensor]]:
         """
         Select hard negatives from list anchors per image
 
