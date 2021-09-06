@@ -64,7 +64,7 @@ def create_label_case(
         box_classes = get_instance_class_from_properties_seq(
             instance_idx=instance_idx, map_dict=mapping
         )
-        res = {"boxes": boxes, "classes": box_classes}
+        res = {"boxes": boxes, "classes": box_classes, "instance_idx": instance_idx}
         np.savez_compressed(str(boxes_save_path), **res)
 
         seg = instances_to_segmentation_np(instances, mapping)
