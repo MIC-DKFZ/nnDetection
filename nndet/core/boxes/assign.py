@@ -11,7 +11,7 @@ def assign_targets_to_anchors(
     target_boxes: List[torch.Tensor],
     target_classes: List[torch.Tensor],
     **kwargs,
-) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
     """
     Compute labels and matched ground truth for each anchor
     Adapted from torchvision https://github.com/pytorch/vision
@@ -32,9 +32,13 @@ def assign_targets_to_anchors(
             -1: between) List[[N]], N=number of anchors per image
         List[torch.Tensor]: matched gt box List[[N, dim *  2]],
             N=number of anchors per image
+        List[Tensor]: vector which contains the matched box index for all
+            anchors (if background `BELOW_LOW_THRESHOLD` is used
+            and if it should be ignored `BETWEEN_THRESHOLDS` is used) [N]
     """
     labels = []
     matched_gt_boxes = []
+    matched_idx_list = []
     for anchors_per_image, gt_boxes, gt_classes in zip(
         anchors, target_boxes, target_classes
     ):
@@ -50,11 +54,12 @@ def assign_targets_to_anchors(
         # GT in the image, and matched_idxs can be -2, which goes
         # out of bounds
         if match_quality_matrix.numel() > 0:
-            matched_gt_boxes_per_image = gt_boxes[matched_idxs.clamp(min=0)]
+            matched_idxs_clamp = matched_idxs.clamp(min=0)
+            matched_gt_boxes_per_image = gt_boxes[matched_idxs_clamp]
 
             # Positive (negative indices can be ignored because they are overwritten in the next step)
             # this influences how background class is handled in the input!!!! (here +1 for background)
-            labels_per_image = gt_classes[matched_idxs.clamp(min=0)].to(
+            labels_per_image = gt_classes[matched_idxs_clamp].to(
                 dtype=anchors_per_image.dtype
             )
             labels_per_image = labels_per_image + 1
@@ -74,4 +79,5 @@ def assign_targets_to_anchors(
 
         labels.append(labels_per_image)
         matched_gt_boxes.append(matched_gt_boxes_per_image)
-    return labels, matched_gt_boxes
+        matched_idx_list.append(matched_idxs)
+    return labels, matched_gt_boxes, matched_idx_list

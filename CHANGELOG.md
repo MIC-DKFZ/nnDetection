@@ -1,5 +1,6 @@
 ## Changelog
 ### nnDetection v0.1.3-dev
+- (breaking) Assign targets to anchors now also returns matched idx 
 - (breaking) HardNegativeSamplerBatched now return List[Tensor] instead of Tensor like any other sampler
 - (breaking) Encoder / Decoder Names in Config are now deprecated
 - (breaking) Introduced new model building names: Encoder->Backbone, Decoder->Neck
