@@ -2,6 +2,7 @@ from typing import Tuple, Union
 
 import torch
 
+from nndet.arch.conv import nd_pool
 from nndet.arch.heads.abstract import Classifier
 
 
@@ -17,54 +18,56 @@ class RoIClassifierTwoMLP(Classifier):
         super().__init__()
         self.dim = conv.dim
 
-        self.fc = torch.nn.Sequential(
-            *[
-                torch.nn.Linear(
-                    in_channels * output_size[0] * output_size[1],
-                    internal_channels,
-                ),
-                torch.nn.ReLU(),
-                torch.nn.Linear(
-                    internal_channels,
-                    internal_channels,
-                ),
-                torch.nn.ReLU(),
-                torch.nn.Linear(
-                    internal_channels,
-                    num_classes + 1,
-                ),
-            ]
-        )
-        # self.conv_internal = torch.nn.Sequential(
+        # self.fc = torch.nn.Sequential(
         #     *[
-        #         conv(in_channels,
-        #              internal_channels,
-        #              kernel_size=3,
-        #              stride=1,
-        #              padding=1,
-        #             ),
-        #         conv(internal_channels,
-        #              internal_channels,
-        #              kernel_size=3,
-        #              stride=1,
-        #              padding=1,
-        #             ),
-        #         nd_pool("AdaptiveAvg", self.dim, 1),
+        #         torch.nn.Linear(
+        #             in_channels * output_size[0] * output_size[1], # TODO: 2d only
+        #             internal_channels,
+        #         ),
+        #         torch.nn.ReLU(),
+        #         torch.nn.Linear(
+        #             internal_channels,
+        #             internal_channels,
+        #         ),
+        #         torch.nn.ReLU(),
+        #         torch.nn.Linear(
+        #             internal_channels,
+        #             num_classes + 1,
+        #         ),
         #     ]
         # )
-        # self.fc = torch.nn.Linear(
-        #     internal_channels,
-        #     num_classes + 1,
-        # )
+        self.conv_internal = torch.nn.Sequential(
+            *[
+                conv(
+                    in_channels,
+                    internal_channels,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                ),
+                conv(
+                    internal_channels,
+                    internal_channels,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                ),
+                nd_pool("AdaptiveAvg", self.dim, 1),
+            ]
+        )
+        self.fc = torch.nn.Linear(
+            internal_channels,
+            num_classes + 1,
+        )
         self.loss = torch.nn.CrossEntropyLoss(
             reduction="sum",
         )
 
     def forward(self, features):
-        # x = self.conv_internal(features) # N, C, spatial -> N, C, 1
-        # return self.fc(x.view(x.shape[0], -1))
+        x = self.conv_internal(features)  # N, C, spatial -> N, C, 1
+        return self.fc(x.view(x.shape[0], -1))
 
-        return self.fc(features.view(features.shape[0], -1))
+        # return self.fc(features.view(features.shape[0], -1))
 
     def compute_loss(
         self,
@@ -82,7 +85,6 @@ class RoIClassifierTwoMLP(Classifier):
         Returns:
             Tensor: classification loss
         """
-        # print(torch.sigmoid(pred_logits.detach()[::2]), targets[::2])
         return self.loss(pred_logits, targets)
 
     def box_logits_to_probs(

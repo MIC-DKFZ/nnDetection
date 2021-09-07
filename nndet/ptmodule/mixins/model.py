@@ -584,7 +584,7 @@ class MultiStageMixin(SingleStageMixin):
         roi_heads = []
         matchers = []
         maskers = []
-        for i in range(3):
+        for i in range(2):
             # Box Head
             classifier = cls.roi_classifier_cls(
                 conv=conv,

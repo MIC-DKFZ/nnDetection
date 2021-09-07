@@ -4,33 +4,10 @@ from typing import List, Optional, Tuple, TypeVar, Union
 import torch
 from torch import Tensor
 
-from nndet.core.boxes.ops import box_size, expand_to_boxes, permute_boxes
+from nndet.core.boxes.ops import box_size, expand_to_boxes
+from nndet.core.rois.roi_align import roi_align
 
 NDSIZE = Union[Tuple[int, int], Tuple[int, int, int]]
-
-
-from torchvision.ops.roi_align import roi_align as _roi_align
-
-
-def roi_align(
-    input,
-    boxes,
-    output_size,
-    spatial_scale: float = 1.0,
-    sampling_ratio: int = -1,
-    aligned: bool = False,
-):
-    # TODO: replace with own ROI Align and remove permute!
-    # TODO: wirte own ROI Align with general scaling parameter?
-    boxes[:, 1:] = permute_boxes(boxes[:, 1:], dims=[1, 0])
-    return _roi_align(
-        input=input,
-        boxes=boxes,
-        output_size=output_size,
-        spatial_scale=spatial_scale,
-        sampling_ratio=sampling_ratio,
-        aligned=aligned,
-    )
 
 
 # TODO: docs with feature output size instead of simple output size
@@ -86,13 +63,14 @@ class Pooler(torch.nn.Module):
         )
 
         if len(features) == 1:
-            scale = (
-                features[0].shape[2] / image_size_tensor[0]
-            )  # TODO: move this to a fn?
+            spatial_scale = tuple(
+                features[0].shape[i + 2] / image_size_tensor[i]
+                for i in range(len(image_size_tensor))
+            )
             output = self._pool_features(
                 fmap=features[0],
                 proposals=proprosals_prepared,
-                spatial_scale=scale,
+                spatial_scale=spatial_scale,
             )
         else:  # determine level dynamically
             proposal_levels = self._find_pyramid_level(
@@ -113,14 +91,16 @@ class Pooler(torch.nn.Module):
             )
 
             for idx, fmap in enumerate(features):
-                scale = fmap.shape[2] / image_size_tensor[0]  # TODO: move this to a fn?
+                spatial_scale = tuple(
+                    features[0].shape[i + 2] / image_size_tensor[i]
+                    for i in range(len(image_size_tensor))
+                )
                 idx = torch.where(proposal_levels == idx)[0]
                 if idx.numel() > 0:
-                    # breakpoint()
                     output[idx] = self._pool_features(
                         fmap=fmap,
                         proposals=proprosals_prepared[idx],
-                        spatial_scale=scale,
+                        spatial_scale=spatial_scale,
                     )
         return output
 
@@ -225,23 +205,19 @@ class RoIAlignNaiveAssign(Pooler):
         self,
         fmap: torch.Tensor,
         proposals: torch.Tensor,
-        spatial_scale: float,
+        spatial_scale: Union[float, Tuple[float]],
     ) -> torch.Tensor:
         """
         Pooling feature for proposals from given feature map
         """
-        # FIXME: temp for testing
-        return torch.zeros(
-            proposals.shape[0], fmap.shape[1], *self.feature_output_size
-        ).to(fmap)
-        # return roi_align(
-        #     input=fmap,
-        #     boxes=proposals,
-        #     output_size=self.feature_output_size,
-        #     spatial_scale=spatial_scale,
-        #     aligned=True,
-        #     sampling_ratio=2,
-        # )
+        return roi_align(
+            input=fmap,
+            boxes=proposals,
+            output_size=self.feature_output_size,
+            spatial_scale=spatial_scale,
+            aligned=True,
+            sampling_ratio=2,
+        )
 
     @torch.no_grad()
     def pool_masks(
@@ -273,18 +249,14 @@ class RoIAlignNaiveAssign(Pooler):
         pooled_masks = []
         for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
             p_boxes_prepared = torch.cat([m_idx[:, None], p_boxes], dim=1)
-            # pooled_masks.append(
-            #     roi_align(
-            #         input=m[:, None],
-            #         boxes=p_boxes_prepared,
-            #         output_size=output_size,
-            #         spatial_scale=1.0,
-            #         aligned=True,
-            #     )[:, 0]
-            # )
-            # FIXME: temp for testing
             pooled_masks.append(
-                torch.zeros(p_boxes_prepared.shape[0], 1, *output_size).to(m)[:, 0]
+                roi_align(
+                    input=m[:, None],
+                    boxes=p_boxes_prepared,
+                    output_size=output_size,
+                    spatial_scale=1.0,
+                    aligned=True,
+                )[:, 0]
             )
         return pooled_masks
 

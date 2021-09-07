@@ -11,7 +11,7 @@ from nndet.arch.heads.classifier.roi import RoIClassifierTwoMLP
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
-from nndet.arch.heads.regressor.dense_single import GIoURegressor
+from nndet.arch.heads.regressor.dense_single import GIoURegressor, L1Regressor
 from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
@@ -51,7 +51,7 @@ class BoxRCNN(
     head_cls = BoxHeadHNM  # define class for head
     head_conv_cls = ConvGroupRelu  # conv class used for head
     head_classifier_cls = CEClassifier  # define class for head classifier
-    head_regressor_cls = GIoURegressor  # define class for head regressor
+    head_regressor_cls = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls = HardNegativeSamplerBatched
