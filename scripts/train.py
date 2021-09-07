@@ -72,15 +72,23 @@ def train():
         help="Run empirical parameter optimization",
         action="store_true",
     )
+    parser.add_argument(
+        "--no_summary",
+        help="Turn of model summary for clearner output",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     task = args.task
     ov = args.overwrites
     do_sweep = args.sweep
+    no_summary = args.no_summary
+
     _train(
         task=task,
         ov=ov,
         do_sweep=do_sweep,
+        no_summary=no_summary,
     )
 
 
@@ -262,6 +270,7 @@ def _train(
     task: str,
     ov: List[str],
     do_sweep: bool,
+    no_summary: bool = False,
 ):
     """
     Run training
@@ -367,6 +376,11 @@ def _train(
     plugins = cfg["trainer_cfg"].get("plugins", None)
     logger.info(f"Using {plugins} plugins for training")
 
+    if no_summary:
+        weights_summary = None
+    else:
+        weights_summary = cfg["trainer_cfg"].get("weights_summary", "full")
+
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
         accelerator=cfg["trainer_cfg"]["accelerator"],
@@ -381,7 +395,7 @@ def _train(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
-        weights_summary=cfg["trainer_cfg"].get("weights_summary", "full"),
+        weights_summary=weights_summary,
         plugins=plugins,
         terminate_on_nan=cfg["trainer_cfg"].get("terminate_on_nan", True),
         move_metrics_to_cpu=False,
