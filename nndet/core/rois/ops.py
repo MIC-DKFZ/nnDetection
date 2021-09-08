@@ -2,6 +2,8 @@ from typing import List, Optional, Sequence, Union
 
 import torch
 
+from nndet.utils.tensor import cat
+
 
 def create_binary_masks(
     mask: torch.Tensor,
@@ -20,16 +22,21 @@ def create_binary_masks(
     """
     masks = []
     for i, m in enumerate(mask.split(split_size=1, dim=0)):
-        _m = m[0]
-        if num_instances is not None:
-            ni = num_instances[i]
-        else:
-            ni = m.max()
-        masks.append(
-            torch.zeros(size=(int(ni) + 1, *_m.shape), device=_m.device).scatter_(
-                0, _m.long().unsqueeze(0), 1.0
-            )[1:]
-        )
+        # FIXME
+        unique_ids = m.unique()
+        masks.append(cat([(m == ui).to(m) for ui in unique_ids], dim=0)[1:])
+
+        # _m = m[0]  # remove channel dims
+        # if num_instances is not None:
+        #     ni = num_instances[i]
+        # else:
+        #     ni = m.max()
+        # print(f"max: {_m.max()} unique: {_m.unique()} num_instances: {num_instances}")
+        # masks.append(
+        #     torch.zeros(size=(int(ni) + 1, *_m.shape), device=_m.device).scatter_(
+        #         0, _m.long().unsqueeze(0), 1.0
+        #     )[1:]
+        # )
     return masks
 
 
