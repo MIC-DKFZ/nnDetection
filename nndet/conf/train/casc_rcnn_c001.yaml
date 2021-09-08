@@ -2,7 +2,7 @@
 defaults:
   - augmentation: more_modular
 
-module: BoxRCNN
+module: BoxCascadeRCNN
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -104,6 +104,7 @@ model_cfg:
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors
 
+  roi_cascade_stages: 3 # number of cascading stages for cascade RCNN
   roi_pooling:
     roi_box_size: [4, 4, 4] # overwrite roi size for box branch
     roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
@@ -116,9 +117,20 @@ model_cfg:
     num_convs: 3
     add_norm: False
 
-  roi_matcher_kwargs:
+  # matcher for each stage
+  roi_matcher_kwargs_s0:
+    low_threshold: 0.3
+    high_threshold: 0.4
+    allow_low_quality_matches: False
+
+  roi_matcher_kwargs_s1:
     low_threshold: 0.4
     high_threshold: 0.5
+    allow_low_quality_matches: False
+
+  roi_matcher_kwargs_s2:
+    low_threshold: 0.5
+    high_threshold: 0.6
     allow_low_quality_matches: False
 
   roi_sampler_kwargs:
@@ -127,3 +139,4 @@ model_cfg:
 
   roi_module_kwargs:
     gt_to_proposals: True
+    loss_weight_stage: [1., 1., 1.]

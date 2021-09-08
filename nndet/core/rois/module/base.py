@@ -351,6 +351,7 @@ class BaseRoIModule(torch.nn.Module):
         # TODO: move cat and index to inference step
 
     # TODO: code duplication :/
+    @torch.no_grad()
     def postprocess_detections(
         self,
         pred_detection: Dict[str, torch.Tensor],
@@ -373,10 +374,10 @@ class BaseRoIModule(torch.nn.Module):
         pred_probs = pred_probs.split(boxes_per_image, 0)
 
         all_boxes, all_probs, all_labels = [], [], []
-        # iterate over images
+
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
             if not self.box_head[stage].regress_multi_class:
-                boxes, probs, labels = post_image_single_class_regression(
+                _boxes, _probs, _labels = post_image_single_class_regression(
                     boxes=boxes,
                     probs=probs,
                     num_foreground_classes=self.num_foreground_classes,
@@ -390,9 +391,9 @@ class BaseRoIModule(torch.nn.Module):
             else:
                 raise NotImplementedError
 
-            all_boxes.append(boxes)
-            all_probs.append(probs)
-            all_labels.append(labels)
+            all_boxes.append(_boxes)
+            all_probs.append(_probs)
+            all_labels.append(_labels)
         return all_boxes, all_probs, all_labels
 
 

@@ -337,7 +337,7 @@ class BaseRetinaNet(AbstractModel):
         # iterate over images
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
             if not self.head.regress_multi_class:
-                boxes, probs, labels = post_image_single_class_regression(
+                _boxes, _probs, _labels = post_image_single_class_regression(
                     boxes=boxes,
                     probs=probs,
                     num_foreground_classes=self.num_foreground_classes,
@@ -351,9 +351,9 @@ class BaseRetinaNet(AbstractModel):
             else:
                 raise NotImplementedError
 
-            all_boxes.append(boxes)
-            all_probs.append(probs)
-            all_labels.append(labels)
+            all_boxes.append(_boxes)
+            all_probs.append(_probs)
+            all_labels.append(_labels)
         return all_boxes, all_probs, all_labels
 
     # @torch.no_grad()
