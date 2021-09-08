@@ -3,7 +3,12 @@
 import torch
 
 from nndet.arch.blocks.basic import StackedConvBlock2
-from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.arch.conv import (
+    ConvGroupLReLU,
+    ConvGroupRelu,
+    ConvInstanceLReLU,
+    ConvInstanceRelu,
+)
 from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier.dense import CEClassifier
@@ -42,14 +47,14 @@ class BoxRCNN(
     detector_cls = BaseRetinaNet
 
     backbone_cls = Encoder  # define class for backbone
-    backbone_conv_cls = ConvInstanceRelu  # conv class used for backbone
+    backbone_conv_cls = ConvInstanceLReLU  # conv class used for backbone
     backbone_block = StackedConvBlock2  # define central building block of backbone
 
     neck_cls = UFPNModular  # define class for neck
-    neck_conv_cls = ConvInstanceRelu  # conv class used for neck
+    neck_conv_cls = ConvInstanceLReLU  # conv class used for neck
 
     head_cls = BoxHeadHNM  # define class for head
-    head_conv_cls = ConvGroupRelu  # conv class used for head
+    head_conv_cls = ConvGroupLReLU  # conv class used for head
     head_classifier_cls = CEClassifier  # define class for head classifier
     head_regressor_cls = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
@@ -63,6 +68,7 @@ class BoxRCNN(
     full_detector_cls = RCNN  # Two stage detector class RCNN
 
     # RoI classes
+    roi_conv_cls = ConvGroupLReLU
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
     roi_classifier_cls = RoIClassifierTwoMLP  # RoIClassifierTwoMLP

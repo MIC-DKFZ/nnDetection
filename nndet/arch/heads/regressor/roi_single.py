@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import torch
 
 from nndet.arch.conv import nd_pool
@@ -10,6 +12,7 @@ class RoIRegressorConv(Regressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        output_size: Sequence[int],
     ):
         super().__init__()
         self.dim = conv.dim
