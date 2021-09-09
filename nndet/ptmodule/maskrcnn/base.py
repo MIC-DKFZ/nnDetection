@@ -105,12 +105,12 @@ class BoxRCNN(
         )
         loss = sum(losses.values())
 
-        self.log_dict(
-            {f"train_loss_step/{k}": i for k, i in losses.items()},
-            prog_bar=True,
-            logger=True,
-            on_step=True,
-        )
+        # self.log_dict(
+        #     {f"train_loss_step/{k}": i for k, i in losses.items()},
+        #     prog_bar=True,
+        #     logger=True,
+        #     on_step=True,
+        # )
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
     def validation_step(self, batch, batch_idx):
@@ -208,12 +208,12 @@ class BoxCascadeRCNN(
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
-        self.log_dict(
-            {f"train_loss_step/{k}": i for k, i in losses.items()},
-            prog_bar=True,
-            logger=True,
-            on_step=True,
-        )
+        # self.log_dict(
+        #     {f"train_loss_step/{k}": i for k, i in losses.items()},
+        #     prog_bar=True,
+        #     logger=True,
+        #     on_step=True,
+        # )
         return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
     def validation_step(self, batch, batch_idx):
