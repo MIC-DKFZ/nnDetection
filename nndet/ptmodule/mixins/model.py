@@ -426,6 +426,24 @@ class SingleStageMixin(ModelMixin):
 
 
 class RoIBuildMixin:
+    # Use `detector_cls` to set RPN module class
+    full_detector_cls = ...  # Two stage detector class RCNN
+
+    # RoI classes
+    roi_conv_cls = ...
+    roi_module_cls = ...  # RoIModule
+    roi_head_cls = ...  # RoIBoxHead
+    roi_classifier_cls = ...  # RoIClassifierTwoMLP
+    roi_regressor_cls = ...  # RoIRegressorConv
+
+    roi_matcher_cls = ...  # IoUMatcher
+    roi_sampler_cls = ...  # BalancedHardNegativeSampler
+    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
+
+    # optional mask branches
+    roi_masker_cls = None  # BCESingleMasker
+    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+
     @staticmethod
     def get_roi_box_size(
         plan_arch: dict,
@@ -471,7 +489,7 @@ class RoIBuildMixin:
 
         classifier = cls.roi_classifier_cls(
             conv=conv,
-            output_size=cls.get_roi_box_size(plan_arch, model_cfg),
+            input_size=cls.get_roi_box_size(plan_arch, model_cfg),
             in_channels=plan_arch["fpn_channels"],
             internal_channels=plan_arch["fpn_channels"],
             num_classes=plan_arch["classifier_classes"],
@@ -492,7 +510,7 @@ class RoIBuildMixin:
 
         regressor = cls.roi_regressor_cls(
             conv=conv,
-            output_size=cls.get_roi_box_size(plan_arch, model_cfg),
+            input_size=cls.get_roi_box_size(plan_arch, model_cfg),
             in_channels=plan_arch["fpn_channels"],
             internal_channels=plan_arch["fpn_channels"],
             **kwargs,
@@ -629,24 +647,6 @@ class RoIBuildMixin:
 
 
 class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
-    # Use `detector_cls` to set RPN module class
-    full_detector_cls = ...  # Two stage detector class RCNN
-
-    # RoI classes
-    roi_conv_cls = ...
-    roi_module_cls = ...  # RoIModule
-    roi_head_cls = ...  # RoIBoxHead
-    roi_classifier_cls = ...  # RoIClassifierTwoMLP
-    roi_regressor_cls = ...  # RoIRegressorConv
-
-    roi_matcher_cls = ...  # IoUMatcher
-    roi_sampler_cls = ...  # BalancedHardNegativeSampler
-    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
-
-    # optional mask branches
-    roi_masker_cls = None  # BCESingleMasker
-    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
-
     @classmethod
     def from_config_plan(
         cls,
@@ -731,24 +731,6 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
 
 
 class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
-    # Use `detector_cls` to set RPN module class
-    full_detector_cls = ...  # Two stage detector class RCNN
-
-    # RoI classes
-    roi_conv_cls = ...
-    roi_module_cls = ...  # RoIModule
-    roi_head_cls = ...  # RoIBoxHead
-    roi_classifier_cls = ...  # RoIClassifierTwoMLP
-    roi_regressor_cls = ...  # RoIRegressorConv
-
-    roi_matcher_cls = ...  # IoUMatcher
-    roi_sampler_cls = ...  # BalancedHardNegativeSampler
-    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
-
-    # optional mask branches
-    roi_masker_cls = None  # BCESingleMasker
-    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
-
     @classmethod
     def from_config_plan(
         cls,

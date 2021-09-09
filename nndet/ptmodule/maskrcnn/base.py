@@ -7,12 +7,12 @@ from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier.dense import CEClassifier
-from nndet.arch.heads.classifier.roi import RoIClassifierTwoMLP
+from nndet.arch.heads.classifier.roi import CEConvRoIClassifier
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
-from nndet.arch.heads.regressor.dense_single import L1Regressor
-from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
+from nndet.arch.heads.regressor.dense import L1Regressor
+from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
@@ -64,12 +64,13 @@ class BoxRCNN(
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
+    # TODO: update docs below
     # RoI classes
     roi_conv_cls = ConvGroupLReLU
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
-    roi_classifier_cls = RoIClassifierTwoMLP  # RoIClassifierTwoMLP
-    roi_regressor_cls = RoIRegressorConv  # RoIRegressorConv
+    roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
@@ -176,8 +177,8 @@ class BoxCascadeRCNN(
     roi_conv_cls = ConvGroupLReLU
     roi_module_cls = CascadeRoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
-    roi_classifier_cls = RoIClassifierTwoMLP  # RoIClassifierTwoMLP
-    roi_regressor_cls = RoIRegressorConv  # RoIRegressorConv
+    roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler

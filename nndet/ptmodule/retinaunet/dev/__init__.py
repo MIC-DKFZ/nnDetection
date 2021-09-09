@@ -1,4 +1,3 @@
-from nndet.ptmodule.retinaunet.dev.c001_rccn import DummyRCNN
 from nndet.ptmodule.retinaunet.dev.c010 import (
     RetinaUNetC010,
     RetinaUNetC010AsymFocal,

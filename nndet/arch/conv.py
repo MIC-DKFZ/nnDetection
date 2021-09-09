@@ -62,6 +62,15 @@ class Generator:
         return self.conv_cls(self.dim, *args, **kwargs)
 
 
+class RoIConv1x1View(torch.nn.Module):
+    def __init__(self, dim: int):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x.view(x.shape[0], -1, *[1] * self.dim)
+
+
 class BaseConvNormAct(torch.nn.Sequential):
     def __init__(
         self,

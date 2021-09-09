@@ -1,4 +1,4 @@
-from nndet.arch.heads.regressor.dense_single import (
+from nndet.arch.heads.regressor.dense import (
     DenseRegressor,
     DenseRegressorType,
     GIoURegressor,

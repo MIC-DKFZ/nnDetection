@@ -3,12 +3,12 @@ from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier.dense import BCECLassifier
-from nndet.arch.heads.classifier.roi import RoIClassifierTwoMLP
+from nndet.arch.heads.classifier.roi import CEConvRoIClassifier, CEFCRoIClassifier
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
-from nndet.arch.heads.regressor.dense_single import L1Regressor
-from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
+from nndet.arch.heads.regressor.dense import L1Regressor
+from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
@@ -25,6 +25,7 @@ from nndet.ptmodule.maskrcnn.base import BoxRCNN
 
 @MODULE_REGISTRY.register
 class RetinaRCNNC001(BoxRCNN):
+    # TODO: update docs
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
     # define detector cls
@@ -52,8 +53,8 @@ class RetinaRCNNC001(BoxRCNN):
     roi_conv_cls = ConvGroupLReLU
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
-    roi_classifier_cls = RoIClassifierTwoMLP  # RoIClassifierTwoMLP
-    roi_regressor_cls = RoIRegressorConv  # RoIRegressorConv
+    roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
@@ -62,3 +63,9 @@ class RetinaRCNNC001(BoxRCNN):
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+
+
+@MODULE_REGISTRY.register
+class RetinaRCNNC001FC(BoxRCNN):
+    roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv

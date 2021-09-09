@@ -6,18 +6,17 @@ import torch
 from torch import Tensor
 
 from nndet.arch.conv import RoIConv1x1View, nd_pool
-from nndet.arch.heads.abstract import Classifier
-from nndet.losses.classification import BCEWithLogitsLossOneHot, CrossEntropyLoss
+from nndet.arch.heads.abstract import Regressor
+from nndet.losses import GIoULoss, SmoothL1Loss
 
 
-class RoIClassifier(Classifier):
+class RoIRegressor(Regressor):
     def __init__(
         self,
         conv,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
-        num_classes: int,
         num_convs: int = 1,
         add_norm: bool = True,
         **kwargs,
@@ -25,7 +24,6 @@ class RoIClassifier(Classifier):
         super().__init__()
         self.dim = conv.dim
         self.num_convs = num_convs
-        self.num_classes = num_classes
 
         self.in_channels = in_channels
         self.internal_channels = internal_channels
@@ -37,7 +35,6 @@ class RoIClassifier(Classifier):
         self.module_out = self._build_module_out(conv=conv)
 
         self.loss: Optional[torch.nn.Module] = None
-        self.logits_convert_fn: Optional[torch.nn.Module] = None
         self.init_weights()
 
     @abstractmethod
@@ -47,7 +44,7 @@ class RoIClassifier(Classifier):
     def _build_module_out(self, conv):
         return conv(
             self.internal_channels,
-            self.num_classes,
+            self.dim * 2,
             kernel_size=1,
             stride=1,
             padding=0,
@@ -63,35 +60,26 @@ class RoIClassifier(Classifier):
         x = self.module_out(self.module_internal(features))
         return x.view(x.shape[0], -1)  # [N, C, 1] -> [N, C]
 
-    def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
+    def compute_loss(
+        self,
+        pred_deltas: Tensor,
+        target_deltas: Tensor,
+        **kwargs,
+    ) -> Tensor:
         """
-        Base classifier with cross entropy loss (in general hard negative
-        example mining should be done before this)
+        Compute regression loss (l1 loss)
 
         Args:
-            pred_logits (Tensor): predicted logits
-            targets (Tensor): classification targets
+            pred_deltas: predicted bounding box deltas [N,  dim * 2]
+            target_deltas: target bounding box deltas [N,  dim * 2]
 
         Returns:
-            Tensor: classification loss
+            Tensor: loss
         """
-        return self.loss(pred_logits, targets, **kwargs)
-
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
-        """
-        Convert bounding box logits to probabilities
-
-        Args:
-            box_logits (Tensor): bounding box logits [N, C]
-                N = number of anchors, C=number of foreground classes
-
-        Returns:
-            Tensor: probabilities
-        """
-        return self.logits_convert_fn(box_logits)
+        return self.loss(pred_deltas, target_deltas, **kwargs)
 
 
-class ConvRoIClassifier(RoIClassifier):
+class ConvRoIRegressor(RoIRegressor):
     def _build_module_internal(self, conv, **kwargs):
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
@@ -124,7 +112,7 @@ class ConvRoIClassifier(RoIClassifier):
         return _conv_internal
 
 
-class FCRoIClassifier(RoIClassifier):
+class FCRoIRegressor(RoIRegressor):
     def _build_module_internal(self, conv, **kwargs):
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
@@ -158,175 +146,125 @@ class FCRoIClassifier(RoIClassifier):
         return _conv_internal
 
 
-class BCEConvRoIClassifier(ConvRoIClassifier):
+class L1ConvRoIRegressor(ConvRoIRegressor):
     def __init__(
         self,
         conv,
-        input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
-        num_classes: int,
+        input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
-        weight: Optional[Tensor] = None,
-        reduction: str = "sum",
-        smoothing: float = 0.0,
+        beta: float = 1.0,
+        reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         super().__init__(
             conv=conv,
-            input_size=input_size,
             in_channels=in_channels,
+            internal_channels=internal_channels,
+            input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes,
             **kwargs,
         )
-        self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
-            weight=weight,
+        self.loss = SmoothL1Loss(
+            beta=beta,
             reduction=reduction,
-            smoothing=smoothing,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
-        self.logits_convert_fn = torch.nn.Sigmoid()
 
 
-class BCEFCRoIClassifier(FCRoIClassifier):
+class GIoUConvRoIRegressor(ConvRoIRegressor):
     def __init__(
         self,
         conv,
-        input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
-        num_classes: int,
+        input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
-        weight: Optional[Tensor] = None,
-        reduction: str = "sum",
-        smoothing: float = 0.0,
+        reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         super().__init__(
             conv=conv,
-            input_size=input_size,
             in_channels=in_channels,
+            internal_channels=internal_channels,
+            input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes,
             **kwargs,
         )
-        self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
-            weight=weight,
+        self.loss = GIoULoss(
             reduction=reduction,
-            smoothing=smoothing,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
-        self.logits_convert_fn = torch.nn.Sigmoid()
 
 
-class CEConvRoIClassifier(ConvRoIClassifier):
+class L1FCRoIRegressor(FCRoIRegressor):
     def __init__(
         self,
         conv,
-        input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
-        num_classes: int,
+        input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
-        weight: Optional[Tensor] = None,
-        reduction: str = "sum",
+        beta: float = 1.0,
+        reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         super().__init__(
             conv=conv,
-            input_size=input_size,
             in_channels=in_channels,
+            internal_channels=internal_channels,
+            input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes + 1,  # add one channel for background
             **kwargs,
         )
-        self.loss = CrossEntropyLoss(
-            weight=weight,
+        self.loss = SmoothL1Loss(
+            beta=beta,
             reduction=reduction,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
-        self.logits_convert_fn = torch.nn.Softmax(dim=1)
-
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
-        """
-        Convert bounding box logits to probabilities
-
-        Args:
-            box_logits (Tensor): bounding box logits [N, C], C=number of classes
-
-        Returns:
-            Tensor: probabilities
-        """
-        return self.logits_convert_fn(box_logits)[
-            :, 1:
-        ]  # remove background predictions
 
 
-class CEFCRoIClassifier(FCRoIClassifier):
+class GIoUFCRoIRegressor(FCRoIRegressor):
     def __init__(
         self,
         conv,
-        input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
-        num_classes: int,
+        input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
-        weight: Optional[Tensor] = None,
-        reduction: str = "sum",
+        reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         super().__init__(
             conv=conv,
-            input_size=input_size,
             in_channels=in_channels,
+            internal_channels=internal_channels,
+            input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes + 1,  # add one channel for background
             **kwargs,
         )
-        self.loss = CrossEntropyLoss(
-            weight=weight,
+        self.loss = GIoULoss(
             reduction=reduction,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
-        self.logits_convert_fn = torch.nn.Softmax(dim=1)
-
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
-        """
-        Convert bounding box logits to probabilities
-
-        Args:
-            box_logits (Tensor): bounding box logits [N, C], C=number of classes
-
-        Returns:
-            Tensor: probabilities
-        """
-        return self.logits_convert_fn(box_logits)[
-            :, 1:
-        ]  # remove background predictions

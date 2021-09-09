@@ -108,8 +108,12 @@ model_cfg:
     roi_box_size: [4, 4, 4] # overwrite roi size for box branch
     roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
 
-  roi_classifier_kwargs: {} # keyword arguments passed to RoI classifier
-  roi_regressor_kwargs: {} # keyword arguments passed to RoI regressor
+  roi_classifier_kwargs: # keyword arguments passed to RoI classifier
+    num_convs: 1
+    add_norm: True
+  roi_regressor_kwargs: # keyword arguments passed to RoI regressor
+    num_convs: 1
+    add_norm: True
   roi_head_kwargs: {}
 
   roi_masker_kwargs:
