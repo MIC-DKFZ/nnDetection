@@ -230,7 +230,7 @@ class BaseRoIModule(torch.nn.Module):
             proposal_matcher=self.matcher[0],
             anchors=proposals["pred_boxes"],
             target_boxes=targets["target_boxes"],
-            target_classes=targets["target_classes"],
+            target_classes=targets["target_roi_classes"],
         )  # List([N]), List([N, dims * 2]), List([N])
 
         # sample proposals and gt
@@ -284,7 +284,7 @@ class BaseRoIModule(torch.nn.Module):
                     [proposals["pred_boxes"][i], targets["target_boxes"][i]], dim=0
                 )
 
-                tc = targets["target_classes"][i]
+                tc = targets["target_roi_classes"][i]
                 proposals["pred_labels"][i] = cat(
                     [proposals["pred_labels"][i], tc], dim=0
                 )

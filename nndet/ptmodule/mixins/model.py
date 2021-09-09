@@ -441,6 +441,24 @@ class RoIBuildMixin:
         return model_cfg["roi_pooling"]["roi_mask_size"]
 
     @classmethod
+    def _build_rpn(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["classifier_classes"] = 1
+        rpn = super().from_config_plan(
+            model_cfg=model_cfg,
+            plan_arch=_plan_arch,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+        return rpn
+
+    @classmethod
     def _build_roi_classifier(
         cls,
         plan_arch: dict,
@@ -638,9 +656,9 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         **kwargs,
     ):
         # build RPN
-        rpn = super().from_config_plan(
-            model_cfg=model_cfg,
+        rpn = cls._build_rpn(
             plan_arch=plan_arch,
+            model_cfg=model_cfg,
             plan_anchors=plan_anchors,
             **kwargs,
         )

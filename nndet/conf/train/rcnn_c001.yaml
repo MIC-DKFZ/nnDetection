@@ -36,7 +36,7 @@ trainer_cfg:
   monitor_mode: "max" # metric operation mode "min" or "max"
 
   max_num_epochs: 50 # max number of epochs
-  num_train_batches_per_epoch: 250 # number of train batches per epoch
+  num_train_batches_per_epoch: 2500 # number of train batches per epoch
   num_val_batches_per_epoch: 100 # number of val batches per epoch
 
   initial_lr: 0.01 # initial learning rate to start with

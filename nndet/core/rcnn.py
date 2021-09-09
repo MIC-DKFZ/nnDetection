@@ -26,13 +26,22 @@ class RCNN(AbstractModel):
         """
         #TODO
         """
-        # print(targets["target_boxes"])
+        # copy target classes
+        targets["target_roi_classes"] = [
+            trc.detach().clone() for trc in targets["target_classes"]
+        ]
+        # map original targets to fg vs bg for RPN
+        targets["target_classes"] = [
+            torch.zeros_like(trc) for trc in targets["target_classes"]
+        ]
+
         losses, proposals, features = self.rpn.train_step_with_features(
             images=images,
             targets=targets,
             predict=True,
             batch_num=batch_num,
         )
+        targets.pop("target_classes")  # remove targets to avoid accidental class mixup
         roi_losses, roi_prediction = self.roi_module.train_step(
             images=images,
             features=features,
