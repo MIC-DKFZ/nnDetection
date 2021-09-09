@@ -117,8 +117,8 @@ model_cfg:
     add_norm: False
 
   roi_matcher_kwargs:
-    low_threshold: 0.4
-    high_threshold: 0.5
+    low_threshold: 0.2
+    high_threshold: 0.3
     allow_low_quality_matches: False
 
   roi_sampler_kwargs:

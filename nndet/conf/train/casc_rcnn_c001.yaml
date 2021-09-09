@@ -119,18 +119,18 @@ model_cfg:
 
   # matcher for each stage
   roi_matcher_kwargs_s0:
+    low_threshold: 0.2
+    high_threshold: 0.3
+    allow_low_quality_matches: False
+
+  roi_matcher_kwargs_s1:
     low_threshold: 0.3
     high_threshold: 0.4
     allow_low_quality_matches: False
 
-  roi_matcher_kwargs_s1:
+  roi_matcher_kwargs_s2:
     low_threshold: 0.4
     high_threshold: 0.5
-    allow_low_quality_matches: False
-
-  roi_matcher_kwargs_s2:
-    low_threshold: 0.5
-    high_threshold: 0.6
     allow_low_quality_matches: False
 
   roi_sampler_kwargs:
