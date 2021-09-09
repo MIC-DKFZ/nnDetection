@@ -26,17 +26,19 @@ from nndet.arch.heads.regressor import L1Regressor
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.retina import BaseRetinaNet
-from nndet.ptmodule.mixins.mode import BoxMixin
+from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prepare import BoxPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
 class RetinaNetModule(
     SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
-    BoxMixin,  # Boundig Box Evaluation
+    BoxPrepareMixin,  # prepare batch for box training
+    BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):

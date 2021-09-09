@@ -2,7 +2,7 @@ defaults:
     - train: c011
     - prep: process
 
-logger: mlflow # one of None | mlflow | tensorboard
+logger: tensorboard # one of None | mlflow | tensorboard
 
 exp:
   tag: ""

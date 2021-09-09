@@ -23,10 +23,11 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule, RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.mode import BoxMixin
+from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
 from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
@@ -34,7 +35,9 @@ from nndet.ptmodule.module import LightningBaseModule
 class BoxRCNN(
     SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
-    BoxMixin,  # Boundig Box Evaluation
+    SemanticPrepareMixin,  # prepare batch for semantic segmentation training
+    BoxPrepareMixin,  # prepare batch for box training
+    BoxEvalMixin,  # Boundig Box Evaluation
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
@@ -84,19 +87,24 @@ class BoxRCNN(
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
+        kwargs = {}
+        if "target_seg" in batch:
+            kwargs["target_seg"] = batch["target_seg"][:, 0]  # Remove channel dimension
+
         losses, _ = self.model.train_step(
             images=batch["data"],
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                # "target_seg": batch["target_seg"][:, 0],  # Remove channel dimension
                 "target_masks": batch["target"][:, 0],  # Remove channel dimension
                 "target_num_instances": [len(i) for i in batch["present_instances"]],
+                **kwargs,
             },
             predict=False,
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
+
         self.log_dict(
             {f"train_loss_step/{k}": i for k, i in losses.items()},
             prog_bar=True,
@@ -108,10 +116,17 @@ class BoxRCNN(
     def validation_step(self, batch, batch_idx):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
+
+            kwargs = {}
+            if "target_seg" in batch:
+                kwargs["target_seg"] = (
+                    batch["target_seg"][:, 0],
+                )  # Remove channel dimension
+
             targets = {
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                # "target_seg": batch['target'][:, 0]  # Remove channel dimension
+                **kwargs,
             }
             predictions = self.model.inference_step(
                 images=batch["data"],
@@ -128,7 +143,9 @@ class BoxRCNN(
 class BoxCascadeRCNN(
     SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
-    BoxMixin,  # Boundig Box Evaluation
+    SemanticPrepareMixin,  # prepare batch for semantic segmentation training
+    BoxPrepareMixin,  # prepare batch for box training
+    BoxEvalMixin,  # Boundig Box Evaluation
     MultiStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
