@@ -5,8 +5,8 @@ from typing import Optional, Sequence
 import torch
 from torch import Tensor
 
-from nndet.arch.conv import RoIConv1x1View, nd_pool
-from nndet.arch.heads.abstract import Regressor
+from nndet.arch.conv import nd_pool
+from nndet.arch.heads.abstract import Regressor, RoIConv1x1View
 from nndet.losses import GIoULoss, SmoothL1Loss
 
 

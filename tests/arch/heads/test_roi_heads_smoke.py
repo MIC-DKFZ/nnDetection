@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from nndet.arch.conv import ConvInstanceRelu, Generator
+from nndet.arch.heads.abstract import RoIConv1x1View
 from nndet.arch.heads.classifier.roi import (
     BCEConvRoIClassifier,
     BCEFCRoIClassifier,
@@ -28,11 +29,13 @@ EXAMPLE_CONFIG = {
 }
 
 TEST_CASES = [
+    # RoI Util
+    (RoIConv1x1View(3), INPUT_SIZE_TENSOR, (10, 1024, 1, 1, 1)),
     # RoI Regressor Tests
     (L1ConvRoIRegressor(**EXAMPLE_CONFIG), INPUT_SIZE_TENSOR, (10, 6)),
     (L1FCRoIRegressor(**EXAMPLE_CONFIG), INPUT_SIZE_TENSOR, (10, 6)),
     (GIoUConvRoIRegressor(**EXAMPLE_CONFIG), INPUT_SIZE_TENSOR, (10, 6)),
-    (GIoUConvRoIRegressor(**EXAMPLE_CONFIG), INPUT_SIZE_TENSOR, (10, 6)),
+    (GIoUFCRoIRegressor(**EXAMPLE_CONFIG), INPUT_SIZE_TENSOR, (10, 6)),
     # RoI Classifier Tests
     (BCEConvRoIClassifier(**EXAMPLE_CONFIG, num_classes=1), INPUT_SIZE_TENSOR, (10, 1)),
     (BCEFCRoIClassifier(**EXAMPLE_CONFIG, num_classes=1), INPUT_SIZE_TENSOR, (10, 1)),
