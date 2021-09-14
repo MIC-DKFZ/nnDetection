@@ -120,7 +120,7 @@ model_cfg:
   roi_head_kwargs: {}
 
   roi_masker_kwargs:
-    num_convs: 3
+    num_convs: 1
     add_norm: False
 
   # matcher for each stage
