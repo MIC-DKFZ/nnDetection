@@ -104,6 +104,8 @@ model_cfg:
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors
 
+  rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
+
   roi_cascade_stages: 3 # number of cascading stages for cascade RCNN
   roi_pooling:
     roi_box_size: [4, 4, 4] # overwrite roi size for box branch

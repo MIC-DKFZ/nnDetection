@@ -466,8 +466,12 @@ class RoIBuildMixin:
         plan_anchors: dict,
         **kwargs,
     ):
-        _plan_arch = copy.deepcopy(plan_arch)
-        _plan_arch["classifier_classes"] = 1
+        if model_cfg["rpn_class_agnostic"]:
+            _plan_arch = copy.deepcopy(plan_arch)
+            _plan_arch["classifier_classes"] = 1
+        else:
+            logger.info("Running class sensitive RPN module!")
+            _plan_arch = plan_arch
         rpn = super().from_config_plan(
             model_cfg=model_cfg,
             plan_arch=_plan_arch,
