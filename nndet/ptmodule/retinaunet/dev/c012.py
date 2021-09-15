@@ -55,6 +55,7 @@ class RetinaUNetC012Focal(RetinaUNetCV001Focal):
     head_conv_cls = ConvGroupLReLU
 
     head_cls = BoxHeadAll
+    head_sampler_cls = None
     head_regressor_cls = L1Regressor
     head_classifier_cls = FocalClassifier
 
