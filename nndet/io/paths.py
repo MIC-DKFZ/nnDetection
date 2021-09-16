@@ -171,7 +171,7 @@ def get_case_id_from_file(file_name: str, remove_modality: bool = True) -> str:
     Returns:
         str: name of file without ending
     """
-    file_name = file_name.split('.')[0]
+    file_name = file_name.rsplit('.', 2)[0]
     if remove_modality:
         file_name = file_name[:-5]
     return file_name
