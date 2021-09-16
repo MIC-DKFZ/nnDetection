@@ -21,7 +21,6 @@ import numpy as np
 from loguru import logger
 
 from nndet.io.load import load_pickle, save_pickle
-from nndet.io.paths import get_case_id_from_path
 from nndet.utils.tensor import to_numpy
 
 
@@ -83,7 +82,7 @@ def predict_dir(
 
     for idx, path in enumerate(case_paths, start=1):
         logger.info(f"Predicting case {idx} of {len(case_paths)}.")
-        case_id = get_case_id_from_path(str(path), remove_modality=False)
+        case_id = path.stem
         if path.is_file():
             case = np.load(str(path), allow_pickle=True)["data"]
         else:
