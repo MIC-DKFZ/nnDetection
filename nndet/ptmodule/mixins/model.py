@@ -358,7 +358,7 @@ class SingleStageMixin(ModelMixin):
         logger.info(f"Building:: head {head_name}: {head_kwargs} ")
 
         # optional sampler
-        if cls.has_sampler:
+        if cls.has_sampler():
             head_kwargs["sampler"] = cls._build_sampler(
                 plan_arch=plan_arch, model_cfg=model_cfg
             )
