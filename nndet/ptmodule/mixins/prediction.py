@@ -83,8 +83,6 @@ class BoxPredictionMixin(PredictionMixin):
                 "seg": SegmentationEnsembler,
             },
         }
-        if dim == 2:
-            raise NotImplementedError
         return _lookup[dim][key]
 
     @classmethod
