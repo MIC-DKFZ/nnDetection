@@ -4,7 +4,11 @@ from loguru import logger
 
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-from nndet.preprocessing.preprocessor import GenericPreprocessor, Preprocessor2D
+from nndet.preprocessing.preprocessor import (
+    GenericPreprocessor,
+    Preprocessor2D,
+    Preprocessor2DRGB01,
+)
 
 
 @PLANNER_REGISTRY.register
@@ -77,13 +81,28 @@ class D2C004(D3V001):
             identifiers.append(self.save_plan(plan=plan_2d, mode=mode))
             return identifiers
         else:
-            return super().plan_experiment(
-                model_name=model_name,
-                model_cfg=model_cfg,
-            )
+            raise RuntimeError("Don't use 2d preprocessor for 3d data.")
+            # return super().plan_experiment(
+            #     model_name=model_name,
+            #     model_cfg=model_cfg,
+            # )
 
-    def get_data_identifier(self, mode: str):
+
+@PLANNER_REGISTRY.register
+class RGB01C001(D2C004):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> GenericPreprocessor:
         """
-        Use D3V001 preprocessed data
+        Create Preprocessor
         """
-        return f"D3V001_{mode}"
+        if "2d" in plan["mode"]:
+            preprocessor = Preprocessor2DRGB01(
+                norm_scheme_per_modality=plan["normalization_schemes"],
+                use_mask_for_norm=plan["use_mask_for_norm"],
+                transpose_forward=plan["transpose_forward"],
+                intensity_properties=plan["dataset_properties"]["intensity_properties"],
+                resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+            )
+        else:
+            preprocessor = super().create_preprocessor(plan=plan)
+        return preprocessor

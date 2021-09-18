@@ -4,8 +4,8 @@ defaults:
 
 module: RetinaUNetC013
 
-plan: D2C004_2d # plan used for training
-planner: D2C004 # planner used for preprocessing
+plan: RGB01C001_2d # plan used for training
+planner: RGB01C001 # planner used for preprocessing
 
 augment_cfg:
   augmentation: ${augmentation}

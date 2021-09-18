@@ -54,7 +54,7 @@ class BoxC002(BoxC001):
         ]
         self.batch_size = 16 if self.dim == 2 else 4
         self.min_feature_map_size = 8 if self.dim == 2 else 4
-        self.num_decoder_level = 5 if self.dim == 2 else 4
+        self.num_decoder_level = 4 if self.dim == 2 else 4
 
     def get_anchor_init(self, boxes: torch.Tensor) -> Sequence[Sequence[int]]:
         """

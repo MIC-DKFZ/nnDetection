@@ -760,6 +760,21 @@ class Preprocessor2D(GenericPreprocessor):
         return data, seg, after
 
 
+class Preprocessor2DRGB01(GenericPreprocessor):
+    def normalize(self, data: np.ndarray, seg: np.ndarray) -> np.ndarray:
+        """
+        Normalize data by dividing by 255 to normalize to 0,1 range
+
+        Args:
+            data: input data
+            seg: input data
+
+        Returns:
+            np.ndarray: normalized data
+        """
+        return data / 255
+
+
 class PreprocessorNoResampling(GenericPreprocessor):
     def resample(
         self,
