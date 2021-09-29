@@ -45,7 +45,7 @@ class _CaseEvaluator(AbstractEvaluator):
         score_metrics_curve: Mapping[str, Callable] = None,
         class_metrics_curve: Mapping[str, Callable] = None,
         target_class: Optional[int] = None,
-        thresholds: Tuple[float] = (0.1, 0.2, 0.3, 0.4, 0.5),
+        thresholds: Tuple[float] = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95),
     ):
         """
         Compute case level evaluation metrics
