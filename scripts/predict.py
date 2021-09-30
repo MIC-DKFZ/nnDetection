@@ -35,7 +35,8 @@ from nndet.utils.check import check_data_and_label_splitted, env_guard
 def run(
     cfg: dict,
     training_dir: Path,
-    process: bool = True,
+    run_process: bool = True,
+    run_predict: bool = True,
     num_models: int = None,
     num_tta_transforms: int = None,
     test_split: bool = False,
@@ -47,7 +48,8 @@ def run(
     Args:
         cfg: configurations
         training_dir: path to model directory
-        process: preprocess test data
+        run_process: preprocess test data
+        run_predict: run prediction on preprocessed test data
         num_models: number of models to use for ensemble; if None all Models
             are used
         num_tta_transforms: number of tta transformation; if None the maximum
@@ -71,7 +73,7 @@ def run(
     )
     logger.add(Path(training_dir) / "inference.log", level="INFO")
 
-    if process:
+    if run_process:
         planner_cls = PLANNER_REGISTRY.get(plan["planner_id"])
         planner_cls.run_preprocessing_test(
             preprocessed_output_dir=preprocessed_output_dir,
@@ -80,27 +82,28 @@ def run(
             num_processes=num_processes,
         )
 
-    prediction_dir.mkdir(parents=True, exist_ok=True)
-    if test_split:
-        source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTr"
-        case_ids = load_pickle(training_dir / "splits.pkl")[0]["test"]
-    else:
-        source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTs"
-        case_ids = None
+    if run_predict:
+        prediction_dir.mkdir(parents=True, exist_ok=True)
+        if test_split:
+            source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTr"
+            case_ids = load_pickle(training_dir / "splits.pkl")[0]["test"]
+        else:
+            source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTs"
+            case_ids = None
 
-    predict_dir(
-        source_dir=source_dir,
-        target_dir=prediction_dir,
-        cfg=cfg,
-        plan=plan,
-        source_models=training_dir,
-        num_models=num_models,
-        num_tta_transforms=num_tta_transforms,
-        model_fn=load_all_models,
-        restore=True,
-        case_ids=case_ids,
-        **cfg.get("inference_kwargs", {}),
-    )
+        predict_dir(
+            source_dir=source_dir,
+            target_dir=prediction_dir,
+            cfg=cfg,
+            plan=plan,
+            source_models=training_dir,
+            num_models=num_models,
+            num_tta_transforms=num_tta_transforms,
+            model_fn=load_all_models,
+            restore=True,
+            case_ids=case_ids,
+            **cfg.get("inference_kwargs", {}),
+        )
 
 
 def set_arg(cfg: Mapping, key: str, val: Any, force_args: bool) -> Mapping:
@@ -183,7 +186,10 @@ def main():
         ),
     )
     parser.add_argument(
-        "--no_preprocess", action="store_false", help="Preprocess test data"
+        "--no_preprocess", action="store_false", help="Skip preprocessing of test data"
+    )
+    parser.add_argument(
+        "--no_predict", action="store_false", help="Skip prediction of test data"
     )
     parser.add_argument(
         "--force_args",
@@ -236,11 +242,22 @@ def main():
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
-    process = args.no_preprocess
-    if test_split and process:
+    run_process = args.no_preprocess
+    run_predict = args.no_predict
+
+    if not run_process and not run_predict:
+        raise ValueError("no_preprocess and no_predict were set => nothing to run")
+
+    if test_split and run_process:
         raise ValueError(
             "When using the test split option raw data is not "
             "supported. Need to add --no_preprocess flag!"
+        )
+    if test_split and fold != -1:
+        raise ValueError(
+            "Test split on individual folds it not poible by "
+            "default since the best and last model would be used "
+            "which might be unexpected."
         )
 
     cfg = OmegaConf.load(str(training_dir / "config.yaml"))
@@ -270,7 +287,8 @@ def main():
     run(
         OmegaConf.to_container(cfg, resolve=True),
         training_dir,
-        process=process,
+        run_process=run_process,
+        run_predict=run_predict,
         num_models=num_models,
         num_tta_transforms=num_tta_transforms,
         test_split=test_split,
