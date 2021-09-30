@@ -245,7 +245,12 @@ class Predictor:
                     "Path size is bigger than whole case, padding case to match patch size"
                 )
                 tile = {
-                    key: save_get_crop(case[key], crop, mode="symmetric")[0]
+                    key: save_get_crop(
+                        case[key],
+                        crop,
+                        mode="constant",
+                        constant_values=0,
+                    )[0]
                     for key in self.tile_keys
                 }
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
