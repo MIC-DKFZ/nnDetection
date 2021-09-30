@@ -240,7 +240,7 @@ class Predictor:
                     case[self.tile_keys[0]], crop, mode=self.save_get_mode
                 )
             except RuntimeError:
-                # fallback to symmetric
+                # fallback to padding
                 logger.warning(
                     "Path size is bigger than whole case, padding case to match patch size"
                 )
@@ -249,7 +249,10 @@ class Predictor:
                     for key in self.tile_keys
                 }
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
-                    case[self.tile_keys[0]], crop, mode="symmetric"
+                    case[self.tile_keys[0]],
+                    crop,
+                    mode="constant",
+                    constant_values=0,
                 )
 
             if update_remaining:

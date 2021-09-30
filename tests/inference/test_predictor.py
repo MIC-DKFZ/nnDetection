@@ -183,3 +183,79 @@
 #         # self.assertTrue(pred_boxes.allclose(torch.tensor([[1., 1., 4., 4.]]).to(pred_boxes)))
 #         assert (pred_scores.allclose(torch.tensor([1.]).to(pred_scores)))
 #         assert (pred_labels.allclose(torch.tensor([1.]).to(pred_labels)))
+
+
+from typing import Tuple
+
+import numpy as np
+import pytest
+import torch
+
+from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.inference.predictor import Predictor
+
+
+@pytest.fixture
+def properties_simple():
+    return {
+        "transpose_backward": [0, 1, 2],
+        "original_spacing": [1.0, 1.0, 1.0],
+        "spacing_after_resampling": [1.0, 1.0, 1.0],
+        "crop_bbox": None,
+        "size_after_cropping": None,
+        "original_size_of_raw_data": None,
+        "itk_origin": None,
+        "itk_spacing": None,
+        "itk_direction": None,
+    }
+
+
+class DummySegModel(torch.nn.Module):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: [N, C, dims]
+        # return: [N, classes, dims]
+        print(x)
+        return x.max(dim=1, keepdim=True)[0] > 0
+
+    def inference_step(self, images, *args, **kwargs):
+        return {"pred_seg": self(images) * 1.0}
+
+
+SEG_SMOKE_SHAPES = [
+    ((1, 256, 256, 256), (128, 128, 128)),
+    ((1, 32, 256, 256), (128, 128, 128)),
+    ((1, 256, 32, 256), (128, 128, 128)),
+    ((1, 256, 256, 32), (128, 128, 128)),
+    ((1, 32, 32, 32), (128, 128, 128)),
+    ((1, 32, 32, 32), (32, 32, 32)),
+]
+
+
+class TestPredictorSegmentationEnsembler:
+    @pytest.mark.parametrize("shape,crop_size", SEG_SMOKE_SHAPES)
+    def test_integration_segmentation(
+        self,
+        properties_simple: dict,
+        shape: Tuple,
+        crop_size: Tuple,
+    ):
+        data = np.zeros(shape)
+        idx = (..., *[slice(0, s // 2) for s in shape])
+        data[idx] = 1
+
+        case = {"data": data}
+        predictor = Predictor(
+            ensembler={"seg": SegmentationEnsembler.from_case},
+            models=[DummySegModel()],
+            crop_size=crop_size,
+            device="cpu",
+        )
+        prediction = predictor.predict_case(case=case, properties=properties_simple)
+
+        assert "seg" in prediction
+        assert "pred_seg" in prediction["seg"]
+        assert not prediction["seg"]["restore"]
+        assert np.allclose(data, prediction["seg"]["pred_seg"])
+
+
+# TODO: update doc string save_get

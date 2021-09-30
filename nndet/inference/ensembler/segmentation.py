@@ -201,11 +201,13 @@ class SegmentationEnsembler(BaseEnsembler):
             case_start = max(0, c.start)
             case_stop = min(self.model_results.shape[dim + 1], c.stop)
 
-            diff_stop = c.stop - self.model_results.shape[dim + 1]
             crop_start = max(
                 0, 0 - (c.start - 0)
             )  # 0 added for completeness of pattern
-            crop_stop = min(seg.shape[dim + 1], seg.shape[dim + 1] - diff_stop)
+            crop_stop = min(
+                seg.shape[dim + 1],
+                seg.shape[dim + 1] - (c.stop - self.model_results.shape[dim + 1]),
+            )
 
             crop_slicer.append(slice(crop_start, crop_stop, c.step))
             case_slicer.append(slice(case_start, case_stop, c.step))
