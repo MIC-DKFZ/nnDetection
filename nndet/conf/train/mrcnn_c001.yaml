@@ -2,7 +2,7 @@
 defaults:
   - augmentation: more_modular
 
-module: RetinaRCNNC001
+module: MaskRCNNC001
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
@@ -70,7 +70,7 @@ model_cfg:
 
   head_sampler_kwargs: # keyword arguments passed to sampler
     batch_size_per_image: 32 # number of anchors sampled per image
-    positive_fraction: 0.5 # defines ratio between positive and negative anchors
+    positive_fraction: 0.33 # defines ratio between positive and negative anchors
     # hard negatives are sampled from a pool of size:
     # batch_size_per_image * (1 - positive_fraction) * pool_size
     pool_size: 20

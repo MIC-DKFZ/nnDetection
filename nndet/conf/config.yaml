@@ -1,5 +1,5 @@
 defaults:
-    - train: c011
+    - train: v001
     - prep: process
 
 logger: mlflow # one of None | mlflow | tensorboard

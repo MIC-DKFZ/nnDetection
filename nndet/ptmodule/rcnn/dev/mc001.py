@@ -20,11 +20,11 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.maskrcnn.base import BoxRCNN
+from nndet.ptmodule.rcnn.base import BoxRCNN
 
 
 @MODULE_REGISTRY.register
-class RetinaRCNNC001(BoxRCNN):
+class MaskRCNNC001(BoxRCNN):
     # TODO: update docs
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
@@ -66,6 +66,6 @@ class RetinaRCNNC001(BoxRCNN):
 
 
 @MODULE_REGISTRY.register
-class RetinaRCNNC001FC(BoxRCNN):
+class MaskRCNNC001FC(BoxRCNN):
     roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
