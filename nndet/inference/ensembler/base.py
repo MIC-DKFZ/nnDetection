@@ -72,23 +72,37 @@ class BaseEnsembler(ABC):
             raise ValueError(f"Wrong type {type(device)} for device argument.")
 
     @classmethod
-    def from_case(
+    def constructor(
         cls,
-        case: Dict,
-        properties: Optional[Dict] = None,
         parameters: Optional[Dict] = None,
         **kwargs,
     ):
         """
-        Primary way to instantiate this class. Automatically extracts all
+        Get a contructor for this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
 
         Args:
-            case: case which is predicted
-            properties: Additional properties. Defaults to None.
             parameters: Additional parameters. Defaults to None.
+
+        Returns:
+            Callable: callable to isntantiate ensembler class with two
+                input variable:
+                    `case`: input data from case (e.g. 'data' to extract shape
+                        information)
+                    `properties`: additional properties of case
         """
-        return cls(properties=properties, parameters=parameters, **kwargs)
+
+        def create(
+            case: Dict,
+            properties: Dict,
+            *args,
+            **kwargs2,
+        ):
+            return cls(
+                properties=properties, parameters=parameters, *args, **kwargs, **kwargs2
+            )
+
+        return create
 
     def add_model(
         self,

@@ -16,7 +16,7 @@ limitations under the License.
 
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, Hashable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -74,10 +74,8 @@ class BoxEnsembler(BaseEnsembler):
         self.overlap_map = OverlapMap(tuple(self.properties["shape"]))
 
     @classmethod
-    def from_case(
+    def constructor(
         cls,
-        case: Dict,
-        properties: Dict,
         parameters: Optional[Dict] = None,
         box_key: str = "pred_boxes",
         score_key: str = "pred_scores",
@@ -85,49 +83,69 @@ class BoxEnsembler(BaseEnsembler):
         data_key: str = "data",
         device: Optional[Union[torch.device, str]] = None,
         **kwargs,
-    ):
+    ) -> Callable[[Dict, Dict], BaseEnsembler]:
         """
-        Primary way to instantiate this class. Automatically extracts all
+        Get a contructor for this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
 
         Args:
-            case: case which is predicted.
-            properties: Additional properties.
-                Required keys:
-                    `transpose_backward`
-                    `spacing_after_resampling`
-                    `crop_bbox`
             parameters: Additional parameters. Defaults to None.
             box_key: key where boxes are located inside prediction dict
             score_key: key where scores are located inside prediction dict
             label_key: key where labels are located inside prediction dict
             data_key: key where data is located inside batch dict
             device: device to use for internal computations
-        """
-        _parameters = cls.get_default_parameters()
-        _parameters.update(parameters)
 
-        _properties = {
-            "shape": case[data_key].shape[1:],  # remove channel dim
-            "transpose_backward": properties["transpose_backward"],
-            "original_spacing": properties["original_spacing"],
-            "spacing_after_resampling": properties["spacing_after_resampling"],
-            "crop_bbox": properties["crop_bbox"],
-            "original_size_of_raw_data": properties["original_size_of_raw_data"],
-            "itk_origin": properties["itk_origin"],
-            "itk_spacing": properties["itk_spacing"],
-            "itk_direction": properties["itk_direction"],
-        }
-        return cls(
-            properties=_properties,
-            parameters=_parameters,
-            box_key=box_key,
-            score_key=score_key,
-            label_key=label_key,
-            data_key=data_key,
-            device=device,
-            **kwargs,
-        )
+        Returns:
+            Callable: callable to isntantiate ensembler class with two
+                input variable:
+                    `case`: input data from case (e.g. 'data' to extract shape
+                        information)
+                    `properties`: additional properties of case
+                        Required keys:
+                            `transpose_backward`
+                            `spacing_after_resampling`
+                            `crop_bbox`
+                            `original_size_of_raw_data`
+                            `itk_origin`
+                            `itk_spacing`
+                            `itk_direction`
+        """
+
+        def create(
+            case: Dict,
+            properties: Dict,
+            *args,
+            **kwargs2,
+        ):
+            _parameters = cls.get_default_parameters()
+            _parameters.update(parameters)
+
+            _properties = {
+                "shape": case[data_key].shape[1:],  # remove channel dim
+                "transpose_backward": properties["transpose_backward"],
+                "original_spacing": properties["original_spacing"],
+                "spacing_after_resampling": properties["spacing_after_resampling"],
+                "crop_bbox": properties["crop_bbox"],
+                "original_size_of_raw_data": properties["original_size_of_raw_data"],
+                "itk_origin": properties["itk_origin"],
+                "itk_spacing": properties["itk_spacing"],
+                "itk_direction": properties["itk_direction"],
+            }
+            return cls(
+                properties=_properties,
+                parameters=_parameters,
+                box_key=box_key,
+                score_key=score_key,
+                label_key=label_key,
+                data_key=data_key,
+                device=device,
+                *args,
+                **kwargs,
+                **kwargs2,
+            )
+
+        return create
 
     @classmethod
     def get_default_parameters(cls):

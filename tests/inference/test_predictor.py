@@ -183,3 +183,160 @@
 #         # self.assertTrue(pred_boxes.allclose(torch.tensor([[1., 1., 4., 4.]]).to(pred_boxes)))
 #         assert (pred_scores.allclose(torch.tensor([1.]).to(pred_scores)))
 #         assert (pred_labels.allclose(torch.tensor([1.]).to(pred_labels)))
+
+
+from functools import partial
+from typing import Tuple
+
+import numpy as np
+import pytest
+import torch
+
+from nndet.inference.ensembler.detection import BoxEnsemblerSelective
+from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.inference.predictor import Predictor
+from nndet.io.transforms.instances import instances_to_boxes, instances_to_boxes_np
+
+
+@pytest.fixture
+def properties_simple():
+    return {
+        "transpose_backward": [0, 1, 2],
+        "original_spacing": [1.0, 1.0, 1.0],
+        "spacing_after_resampling": [1.0, 1.0, 1.0],
+        "crop_bbox": None,
+        "size_after_cropping": None,
+        "original_size_of_raw_data": None,
+        "itk_origin": None,
+        "itk_spacing": None,
+        "itk_direction": None,
+    }
+
+
+class DummyBoxModel(torch.nn.Module):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: [N, C, dims]
+        # return: [N, classes, dims]
+        print(x)
+        return x.max(dim=1, keepdim=True)[0] > 0
+
+    def inference_step(self, images, *args, **kwargs):
+        pboxes = []
+        pscores = []
+        plabels = []
+
+        for i in range(images.shape[0]):
+            boxes, _ = instances_to_boxes(images[i].to(torch.int), dim=3)
+
+            if boxes.nelement() > 0:
+                scores = torch.tensor([1.0] * boxes.shape[0])
+                labels = torch.tensor([1] * boxes.shape[0])
+            else:
+                scores = torch.tensor([])
+                labels = torch.tensor([])
+
+            pboxes.append(boxes.view(-1, (images.ndim - 2) * 2))
+            pscores.append(scores)
+            plabels.append(labels)
+
+        return {
+            "pred_boxes": pboxes,
+            "pred_scores": pscores,
+            "pred_labels": plabels,
+        }
+
+
+class DummySegModel(torch.nn.Module):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: [N, C, dims]
+        # return: [N, classes, dims]
+        print(x)
+        return x.max(dim=1, keepdim=True)[0] > 0
+
+    def inference_step(self, images, *args, **kwargs):
+        pred = self(images) * 1.0
+        return {"pred_seg": pred}
+
+
+SMOKE_SHAPES = [
+    ((1, 256, 256, 256), (128, 128, 128)),
+    ((1, 32, 256, 256), (128, 128, 128)),
+    ((1, 256, 32, 256), (128, 128, 128)),
+    ((1, 256, 256, 32), (128, 128, 128)),
+    ((1, 32, 32, 32), (128, 128, 128)),
+    ((1, 32, 32, 32), (32, 32, 32)),
+]
+
+
+class TestPredictorSegmentationEnsembler:
+    @pytest.mark.parametrize("shape,crop_size", SMOKE_SHAPES)
+    @pytest.mark.parametrize("use_gaussian", [True, False])
+    def test_integration_segmentation(
+        self,
+        properties_simple: dict,
+        shape: Tuple,
+        crop_size: Tuple,
+        use_gaussian: bool,
+    ):
+        data = np.zeros(shape)
+        idx = (slice(0, 1), *[slice(0, s // 2) for s in shape[1:]])
+        data[idx] = 1
+        assert data.max() == 1
+
+        case = {"data": data}
+        _fn = SegmentationEnsembler.constructor(
+            parameters={"use_gaussian": use_gaussian, "argmax": False},
+        )
+
+        predictor = Predictor(
+            ensembler={"seg": _fn},
+            models=[DummySegModel()],
+            crop_size=crop_size,
+            device="cpu",
+        )
+        prediction = predictor.predict_case(case=case, properties=properties_simple)
+
+        assert "seg" in prediction
+        assert "pred_seg" in prediction["seg"]
+        assert not prediction["seg"]["restore"]
+        assert np.allclose(data, prediction["seg"]["pred_seg"].numpy())
+
+
+class TestPredictorBoxEnsembler:
+    @pytest.mark.parametrize("shape,crop_size", SMOKE_SHAPES)
+    @pytest.mark.parametrize("obj_scale", [2.0, 3.0])
+    def test_integration_boxes(
+        self, properties_simple: dict, shape: Tuple, crop_size: Tuple, obj_scale: float
+    ):
+        data = np.zeros(shape)
+        idx = (slice(0, 1), *[slice(0, int(s / obj_scale)) for s in crop_size])
+        data[idx] = 1
+        data[0, 0:3] = 0
+        assert data.max() == 1
+
+        boxes, _ = instances_to_boxes_np(data, dim=data.ndim - 1)
+        case = {"data": data}
+
+        _fn = BoxEnsemblerSelective.constructor(
+            parameters={"model_iou": 0.0000001},
+        )
+        predictor = Predictor(
+            ensembler={"box": _fn},
+            models=[DummyBoxModel()],
+            crop_size=crop_size,
+            device="cpu",
+        )
+        prediction = predictor.predict_case(case=case, properties=properties_simple)
+
+        assert "box" in prediction
+        assert "pred_boxes" in prediction["box"]
+        assert not prediction["box"]["restore"]
+
+        # Needs to be changed after https://github.com/MIC-DKFZ/nnDetection/issues/23
+        boxes[boxes < 0] = 0
+        assert np.allclose(boxes, prediction["box"]["pred_boxes"])
+        assert np.allclose(np.array([1.0]), prediction["box"]["pred_scores"])
+        assert np.allclose(np.array([1]), prediction["box"]["pred_labels"])
+
+
+# TODO: update doc string save_get
