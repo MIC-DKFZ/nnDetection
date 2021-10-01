@@ -32,3 +32,9 @@ class RetinaUNetC014Focal(RetinaUNetCV001Focal):
     head_sampler_cls = None
     head_regressor_cls = L1Regressor
     head_classifier_cls = FocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC014BNFocal(RetinaUNetC014Focal):
+    backbone_conv_cls = ConvBatchLReLU
+    neck_conv_cls = ConvBatchLReLU
