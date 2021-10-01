@@ -9,7 +9,7 @@ from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 from nndet.planning.estimator import MemoryEstimatorDetection
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.base import AbstractPlanner
-from nndet.preprocessing.preprocessor import GenericPreprocessor
+from nndet.preprocessing.preprocessor import DynDTypePreprocessor, GenericPreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
 
 
@@ -224,3 +224,20 @@ class D3V001(AbstractPlanner):
             return True
         else:
             return False
+
+
+@PLANNER_REGISTRY.register
+class D3V001DynDtype(D3V001):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> DynDTypePreprocessor:
+        """
+        Create Preprocessor
+        """
+        preprocessor = DynDTypePreprocessor(
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+        )
+        return preprocessor

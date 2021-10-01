@@ -1,6 +1,5 @@
 import os
 from abc import ABC
-from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, Hashable, Sequence, Type
 
@@ -83,8 +82,6 @@ class BoxPredictionMixin(PredictionMixin):
                 "seg": SegmentationEnsembler,
             },
         }
-        if dim == 2:
-            raise NotImplementedError
         return _lookup[dim][key]
 
     @classmethod
@@ -113,16 +110,18 @@ class BoxPredictionMixin(PredictionMixin):
             f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
         )
 
+        box_ensembler_cls = cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"])
         ensembler = {
-            "boxes": partial(
-                cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"]).from_case,
+            "boxes": box_ensembler_cls.constructor(
                 parameters=inferene_plan,
             )
         }
+
         if do_seg:
-            ensembler["seg"] = partial(
-                cls.get_ensembler_cls(key="seg", dim=plan["network_dim"]).from_case,
+            seg_ensembler_cls = cls.get_ensembler_cls(
+                key="seg", dim=plan["network_dim"]
             )
+            ensembler["seg"] = seg_ensembler_cls.constructor()
 
         predictor = Predictor(
             ensembler=ensembler,

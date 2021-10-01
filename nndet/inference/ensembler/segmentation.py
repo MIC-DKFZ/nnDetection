@@ -60,56 +60,76 @@ class SegmentationEnsembler(BaseEnsembler):
         self.cache_crop_weight: Dict[Tuple, torch.Tensor] = {}
 
     @classmethod
-    def from_case(
+    def constructor(
         cls,
-        case: Dict,
-        properties: Dict,
         parameters: Optional[Dict] = None,
         seg_key: str = "pred_seg",
         data_key: str = "data",
         **kwargs,
     ):
         """
-        Primary way to instantiate this class. Automatically extracts all
+        Get a contructor for this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
 
         Args:
-            case: case which is predicted.
             mode: operation mode of ensembler (defines which network was used)
                 e.g. '2d' | '3d'
-            properties: Additional properties.
-                Required keys:
-                    `transpose_backward`
-                    `spacing_after_resampling`
-                    `crop_bbox`
             parameters: Additional parameters. Defaults to None.
             seg_key: key where segmentation is located inside prediction dict
             data_key: key where data is located inside batch dict
+
+        Returns:
+            Callable: callable to isntantiate ensembler class with two
+                input variable:
+                    `case`: input data from case (e.g. 'data' to extract shape
+                        information)
+                    `properties`: additional properties of case
+                        Required keys:
+                            `transpose_backward`
+                            `spacing_after_resampling`
+                            `crop_bbox`
+                            `original_size_of_raw_data`
+                            `itk_origin`
+                            `itk_spacing`
+                            `itk_direction`
         """
-        parameters = parameters if parameters is not None else {}
-        _parameters = {"use_gaussian": True, "argmax": True}
-        _parameters.update(parameters)
 
-        _properties = {
-            "shape": case[data_key].shape[1:],  # remove channel dim
-            "transpose_backward": properties["transpose_backward"],
-            "original_spacing": properties["original_spacing"],
-            "spacing_after_resampling": properties["spacing_after_resampling"],
-            "crop_bbox": properties["crop_bbox"],
-            "size_after_cropping": properties["size_after_cropping"],
-            "original_size_before_cropping": properties["original_size_of_raw_data"],
-            "itk_origin": properties["itk_origin"],
-            "itk_spacing": properties["itk_spacing"],
-            "itk_direction": properties["itk_direction"],
-        }
+        def create(
+            case: Dict,
+            properties: Dict,
+            *args,
+            **kwargs2,
+        ):
+            _parameters = parameters if parameters is not None else {}
+            init_parameters = {"use_gaussian": True, "argmax": True}
+            init_parameters.update(_parameters)
 
-        return cls(
-            properties=_properties,
-            parameters=_parameters,
-            seg_key=seg_key,
-            data_key=data_key,
-            **kwargs,
-        )
+            _properties = {
+                "shape": case[data_key].shape[1:],  # remove channel dim
+                "transpose_backward": properties["transpose_backward"],
+                "original_spacing": properties["original_spacing"],
+                "spacing_after_resampling": properties["spacing_after_resampling"],
+                "crop_bbox": properties["crop_bbox"],
+                "size_after_cropping": properties["size_after_cropping"],
+                "original_size_before_cropping": properties[
+                    "original_size_of_raw_data"
+                ],
+                "itk_origin": properties["itk_origin"],
+                "itk_spacing": properties["itk_spacing"],
+                "itk_direction": properties["itk_direction"],
+            }
+
+            return cls(
+                properties=_properties,
+                parameters=init_parameters,
+                seg_key=seg_key,
+                data_key=data_key,
+                *args,
+                **kwargs,
+                **kwargs2,
+            )
+
+        return create
 
     def add_model(
         self,
@@ -201,11 +221,13 @@ class SegmentationEnsembler(BaseEnsembler):
             case_start = max(0, c.start)
             case_stop = min(self.model_results.shape[dim + 1], c.stop)
 
-            diff_stop = c.stop - self.model_results.shape[dim + 1]
             crop_start = max(
                 0, 0 - (c.start - 0)
             )  # 0 added for completeness of pattern
-            crop_stop = min(seg.shape[dim + 1], seg.shape[dim + 1] - diff_stop)
+            crop_stop = min(
+                seg.shape[dim + 1],
+                seg.shape[dim + 1] - (c.stop - self.model_results.shape[dim + 1]),
+            )
 
             crop_slicer.append(slice(crop_start, crop_stop, c.step))
             case_slicer.append(slice(case_start, case_stop, c.step))

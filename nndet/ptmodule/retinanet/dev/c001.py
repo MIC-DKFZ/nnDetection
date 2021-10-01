@@ -14,25 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
-from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.regressor import L1Regressor
-from nndet.core.boxes.matcher import ATSSMatcher
+from nndet.arch.heads.classifier import FocalClassifier
+from nndet.arch.heads.comb import BoxHeadAll
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinanet.base import RetinaNetModule
 
 
 @MODULE_REGISTRY.register
 class RetinaNetC001(RetinaNetModule):
-    backbone_conv_cls = ConvInstanceRelu
-    neck_conv_cls = ConvInstanceRelu
-    head_conv_cls = ConvGroupRelu
-
-    head_cls = BoxHeadHNM
-    head_classifier_cls = BCECLassifier
-    head_regressor_cls = L1Regressor
-    matcher_cls = ATSSMatcher
+    pass
 
 
 @MODULE_REGISTRY.register

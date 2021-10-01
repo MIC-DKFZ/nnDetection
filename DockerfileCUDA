@@ -1,0 +1,46 @@
+FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
+# nvidia/cuda:10.1-devel-ubuntu16.04
+# nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
+# nvidia/cuda:11.0-cudnn8-devel-ubuntu18.04
+
+# Setup cuda environment variables
+ENV FORCE_CUDA=1
+ENV TORCH_CUDA_ARCH_LIST=6.1+PTX;7.0+PTX;7.5+PTX
+
+# Install some tools
+RUN apt-get update -y && apt-get install -y \
+ git \
+ cmake \
+ make \
+ wget \
+ gnupg \
+ build-essential \
+ software-properties-common \
+ gdb \
+ ninja-build
+
+# Setup miniconda and create a new python environment with python 3.7
+RUN wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh \
+  && chmod +x miniconda.sh \
+  && ./miniconda.sh -b -p /opt/miniconda \
+  && rm ./miniconda.sh \
+  && ln -s /opt/miniconda/bin/activate /activate \
+  && . /activate \
+  && pip install numpy \
+  && pip install torch torchvision
+
+# Set environment variables for execution
+ENV det_data=/opt/data det_models=/opt/models det_num_threads=2
+
+# Install own code
+COPY ./requirements.txt .
+
+RUN mkdir ${det_data} \
+  && mkdir ${det_models} \
+  && mkdir -p /opt/code/nndet \
+  && . /activate \
+  && pip install -r requirements.txt
+
+WORKDIR /opt/code/nndet
+COPY . .
+RUN . /activate && pip install -v -e .
