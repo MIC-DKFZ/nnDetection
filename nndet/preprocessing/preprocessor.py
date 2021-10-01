@@ -889,4 +889,52 @@ class PreprocessorFP16I16(GenericPreprocessor):
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
 
 
+class DynDTypePreprocessor(GenericPreprocessor):
+    def run_process(
+        self,
+        target_spacing: Sequence[float],
+        case_id: str,
+        output_dir_stage: Path,
+        cropped_data_dir: Path,
+    ) -> None:
+        """
+        Process a single case
+        Result is saved into :param:`output_dir_stage`
+
+        Args:
+            target_spacing: target spacing for processed case
+            case_id: case identifier
+            output_dir_stage: path to output directory
+            cropped_data_dir: path to source directory
+        """
+        data, seg, properties = load_case_cropped(cropped_data_dir, case_id)
+        seg = seg[None]
+
+        data, seg, properties = self.apply_process(
+            data, target_spacing, properties, seg
+        )
+        properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
+
+        data = data.astype(np.float16)
+
+        seg_dtype = np.int16 if seg.max() > 126 else np.int8
+        seg = seg.astype(seg_dtype)
+
+        candidates = self.compute_candidates(
+            data=data,
+            seg=seg,
+            properties=properties,
+        )
+
+        logger.info(f"Saving: {case_id} into {output_dir_stage}.")
+        np.savez_compressed(
+            str(output_dir_stage / f"{case_id}.npz"),
+            data=data,
+            seg=seg,
+        )
+
+        save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
+        save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
+
+
 PreprocessorType = TypeVar("PreprocessorType", bound=AbstractPreprocessor)
