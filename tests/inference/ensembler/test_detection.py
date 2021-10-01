@@ -50,11 +50,13 @@ def example():
 
 
 class TestDetectionEnsembler:
-    def test_from_case(self, example):
-        ensembler = BoxEnsembler.from_case(
+    def test_constructor(self, example):
+        constructor = BoxEnsembler.constructor(
+            parameters={"model_iou": 0.5, "ensemble_topk": 10},
+        )
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={"model_iou": 0.5, "ensemble_topk": 10},
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
@@ -68,10 +70,10 @@ class TestDetectionEnsembler:
         assert ensembler.parameters["ensemble_topk"] == 10
 
     def test_add_model(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         ensembler.add_model("model_test", 0.5)
 
@@ -81,10 +83,10 @@ class TestDetectionEnsembler:
         assert "model_test" in ensembler.model_weights
 
     def test_process_batch(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         ensembler.add_model("model_test0", 1.0)
         ensembler.process_batch(example.result0, example.batch0)
@@ -110,10 +112,10 @@ class TestDetectionEnsembler:
             assert exp_box.allclose(ens_box)
 
     def test_get_box_in_tile_weight(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
 
         tile_size = (10, 10)
@@ -123,10 +125,10 @@ class TestDetectionEnsembler:
         assert pred_weight.allclose(expected_weight)
 
     def test_apply_offsets_to_boxes(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
 
         boxes = [
@@ -143,25 +145,24 @@ class TestDetectionEnsembler:
             assert r.allclose(e)
 
     def test_save_case_result(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
-        ensembler1 = BoxEnsembler.from_case(
+        ensembler1 = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         with TemporaryDirectory(dir=os.getcwd()) as _dir:
             ensembler.save_state(_dir, "tmp_case")
             ensembler1.load_state(Path(_dir), "tmp_case")
 
     def test_get_case_result(self, example):
-        ensembler = BoxEnsembler.from_case(
+        constructor = BoxEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         ensembler.add_model("model0", 1.0)
         ensembler.process_batch(example.result0, example.batch0)

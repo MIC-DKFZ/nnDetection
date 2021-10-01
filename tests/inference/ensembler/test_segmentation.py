@@ -41,11 +41,13 @@ def example():
 
 
 class TestSegmentationEnsembler:
-    def test_from_case(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+    def test_constructor(self, example):
+        constructor = SegmentationEnsembler.constructor(
+            parameters={"model_iou": 0.5, "ensemble_topk": 10},
+        )
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={"model_iou": 0.5, "ensemble_topk": 10},
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
@@ -59,10 +61,10 @@ class TestSegmentationEnsembler:
         assert ensembler.parameters["ensemble_topk"] == 10
 
     def test_process_batch(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+        constructor = SegmentationEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         ensembler.add_model(model_weight=1.0)
         ensembler.process_batch(example.result0, example.batch0)
@@ -80,19 +82,19 @@ class TestSegmentationEnsembler:
         assert result.allclose(torch.ones_like(result))
 
     def test_save_case_result(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+        constructor = SegmentationEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case=example.case,
             properties=example.properties,
-            parameters={},
         )
         with TemporaryDirectory(dir=os.getcwd()) as _dir:
             ensembler.save_state(_dir, "tmp_case")
 
     def test_crop_to_case_boundaries(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+        constructor = SegmentationEnsembler.constructor(parameters={})
+        ensembler = constructor(
             case={"data": torch.zeros(3, 10, 10)},
             properties=example.properties,
-            parameters={},
         )
         ensembler.model_results = torch.zeros(3, 10, 10)
 
@@ -107,10 +109,12 @@ class TestSegmentationEnsembler:
         ensembler.model_results[slicer] = new_seg
 
     def test_get_weighting(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+        constructor = SegmentationEnsembler.constructor(
+            parameters={"use_gaussian": True},
+        )
+        ensembler = constructor(
             case={"data": torch.zeros(3, 10, 10)},
             properties=example.properties,
-            parameters={"use_gaussian": True},
         )
         assert ensembler.parameters["use_gaussian"]
         w = ensembler.get_weighting((10, 10))
@@ -118,10 +122,12 @@ class TestSegmentationEnsembler:
         w2 = ensembler.get_weighting((10, 10))
 
     def test_get_case_result(self, example):
-        ensembler = SegmentationEnsembler.from_case(
+        constructor = SegmentationEnsembler.constructor(
+            parameters={"argmax": False},
+        )
+        ensembler = constructor(
             case={"data": torch.zeros(3, 10, 10)},
             properties=example.properties,
-            parameters={"argmax": False},
         )
         assert not ensembler.parameters["argmax"]
 

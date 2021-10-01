@@ -284,8 +284,7 @@ class TestPredictorSegmentationEnsembler:
         assert data.max() == 1
 
         case = {"data": data}
-        _fn = partial(
-            SegmentationEnsembler.from_case,
+        _fn = SegmentationEnsembler.constructor(
             parameters={"use_gaussian": use_gaussian, "argmax": False},
         )
 
@@ -318,8 +317,8 @@ class TestPredictorBoxEnsembler:
         boxes, _ = instances_to_boxes_np(data, dim=data.ndim - 1)
         case = {"data": data}
 
-        _fn = partial(
-            BoxEnsemblerSelective.from_case, parameters={"model_iou": 0.0000001}
+        _fn = BoxEnsemblerSelective.constructor(
+            parameters={"model_iou": 0.0000001},
         )
         predictor = Predictor(
             ensembler={"box": _fn},
