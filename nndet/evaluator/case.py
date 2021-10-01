@@ -27,6 +27,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     roc_auc_score,
+    roc_curve,
 )
 
 from nndet.evaluator import AbstractEvaluator
@@ -82,6 +83,16 @@ class _CaseEvaluator(AbstractEvaluator):
                 computed
 
         Notes:
+            Internal States:
+            `results_list` consists of:
+                `case_classes`: a list of np.array containing the present
+                    unique classes for each case
+                `case_scores`: a list of np.ndarray which contains the
+                    predicted probability for all classes. The probability
+                    is determined by the max predicted probability of an
+                    object of that class.
+
+            Results:
             The keys: "N_img", "N_count_{class name}" and
             "N_count_agg_{class name}" are used internally to save debugging
             information and should not be used for metrics. See
@@ -147,11 +158,31 @@ class _CaseEvaluator(AbstractEvaluator):
             This caches the max predicted probability per class per element
             and the unique classes present per element.
         """
+        if len(pred_scores) != len(pred_classes):
+            raise ValueError(
+                f"Found inconsistent predictions: found {len(pred_scores)} "
+                f"predicted scored and {len(pred_classes)} predicted classes."
+            )
+
+        if len(gt_classes) != len(pred_classes):
+            raise ValueError(
+                f"Found inconsistent predictions/gt: found {len(pred_scores)} "
+                f"predictions and {len(gt_classes)} ground truth."
+            )
+
         case_classes = [np.unique(gtc) for gtc in gt_classes]
         case_scores = []
+
         for case_instance_scores, case_instance_classes in zip(
             pred_scores, pred_classes
         ):
+            if len(case_instance_scores) != len(case_instance_classes):
+                raise ValueError(
+                    "Each predicted class needs a score found: "
+                    f"{len(case_instance_scores)} scores and "
+                    f"{len(case_instance_classes)} classes."
+                )
+
             _scores = np.zeros(self.num_classes)
             for instance_score, instance_class in zip(
                 case_instance_scores, case_instance_classes
@@ -420,7 +451,9 @@ class CaseEvaluator(_CaseEvaluator):
             "rec_case": rec_fn,
             "acc_case": accuracy_score,
         }
-        score_metrics_curve = {}
+        score_metrics_curve = {
+            "roc_curve": roc_curve,
+        }
         class_metrics_curve = {
             "cfm_case": confusion_matrix,
         }
