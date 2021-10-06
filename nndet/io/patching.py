@@ -431,6 +431,5 @@ def _padded_crop(data: np.ndarray,
     origin = [int(x.start) for x in crop]
     return (np.pad(data[tuple([..., *clipped_crop])], pad_width=padding, mode=mode, **kwargs),
             origin,
-            clipped_crop,
+            crop,
             )
-
