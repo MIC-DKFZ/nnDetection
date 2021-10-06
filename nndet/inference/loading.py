@@ -85,6 +85,12 @@ def load_final_model(
     logger.info(f"Loading {identifier} model")
 
     model_names = list(source_models.glob('*.ckpt'))
+    if not model_names:
+        logger.info("Did not find models with '.ckpt' ending looking for '.model' checkpoints.")
+        model_names = list(source_models.glob('*.model'))
+        if model_names:
+            logger.info("Found models with '.model' ending.")
+    
     model_names = [m for m in model_names if identifier in str(m.stem)]
     assert len(model_names) == 1, f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
 
@@ -125,8 +131,14 @@ def load_all_models(
             `rank`: rank of model
     """
     from nndet.ptmodule import MODULE_REGISTRY
-    
+
     model_names = list(source_models.glob('*.ckpt'))
+    if not model_names:
+        logger.info("Did not find models with '.ckpt' ending looking for '.model' checkpoints.")
+        model_names = list(source_models.glob('*.model'))
+        if model_names:
+            logger.info("Found models with '.model' ending.")
+
     if not model_names:
         raise RuntimeError(f"Did not find any models in {source_models}")
     logger.info(f"Found {len(model_names)} models to ensemble")
