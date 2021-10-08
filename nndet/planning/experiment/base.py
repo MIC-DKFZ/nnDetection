@@ -285,18 +285,17 @@ class AbstractPlanner(ABC):
         Returns:
             Dict[int, str]: integer index represents modality and string is
                 either `CT` or `nonCT`
+
+        Notes:
+            This function was deprecated and the normalization scheme is
+            solely dependent on the preprocessor class!
         """
         schemes = OrderedDict()
         modalities = self.data_properties["modalities"]
         num_modalities = len(list(modalities.keys()))
 
         for i in range(num_modalities):
-            if modalities[i] == "CT":
-                schemes[i] = "CT"
-            elif modalities[i] == "CT2":
-                schemes[i] = "CT2"
-            else:
-                schemes[i] = "nonCT"
+            schemes[i] = modalities[i]
         return schemes
 
     def determine_whether_to_use_mask_for_norm(self) -> Dict[int, bool]:

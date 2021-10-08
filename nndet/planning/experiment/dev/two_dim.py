@@ -4,11 +4,8 @@ from loguru import logger
 
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-from nndet.preprocessing.preprocessor import (
-    GenericPreprocessor,
-    Preprocessor2D,
-    Preprocessor2DRGB01,
-)
+from nndet.preprocessing.preprocessor import GenericPreprocessor
+from nndet.preprocessing.preprocessor.others import Preprocessor2D, Preprocessor2DRGB01
 
 
 @PLANNER_REGISTRY.register
