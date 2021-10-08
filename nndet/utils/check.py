@@ -208,9 +208,10 @@ def check_data_and_label_splitted(
             # check label info (json files)
             mask_path = case_paths[-1]
             if mask_path.name.endswith(".nii.gz"):
-                _c = mask_path.rsplit(".", 2)[0]
+                _c = mask_path.name.rsplit(".", 2)[0]
             else:
-                _c = mask_path.rsplit(".", 1)[0]
+                _c = mask_path.name.rsplit(".", 1)[0]
+
             mask_info_path = mask_path.parent / f"{_c}.json"
             if not Path(mask_info_path).is_file():
                 raise ValueError(
