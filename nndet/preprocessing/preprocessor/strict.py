@@ -20,6 +20,7 @@ class StrictNormMixin:
             n = c.lower() if c.lower() in norm_schemes else "other"
             rep = rep + f"({idx}): {n}"
         logger.info(rep)
+        logger.info(f"Use mask for norm: {self.use_mask_for_norm}")
         return norm_schemes
 
     def normalize(self, data: np.ndarray, seg: np.ndarray) -> np.ndarray:
@@ -93,7 +94,8 @@ class StrictNormMixin:
         use_nonzero_mask: bool,
     ) -> np.ndarray:
         """
-        clip to lb and ub from train data foreground, use mn and sd from each case for normalization
+        clip to lb and ub from train data foreground, use mn and sd
+        from each case for normalization
         (This uses mean and std from whole case!)
 
         Args:
@@ -171,6 +173,37 @@ class StrictNormMixin:
         return data
 
 
+class StrictNormFgMixin(StrictNormMixin):
+    def normalize_other(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        modality: int,
+        use_nonzero_mask: bool,
+    ) -> np.ndarray:
+        """
+        Zero mean and unit std computed on FG mask
+
+        Args:
+            data: data to normalize [C, dims]
+            seg: segmentation [C, dims]
+            modality: current modality
+            use_nonzero_mask: use non zero region for normalization [C]
+
+        Returns:
+            np.ndarray: normalized data (only modality channel was changes)
+        """
+        mask = data > 0
+        mn = data[mask].mean()
+        sd = data[mask].std()
+
+        data = (data - mn) / (sd + 1e-8)
+
+        if use_nonzero_mask:
+            data[seg[-1] < 0] = 0
+        return data
+
+
 class StrictPreprocessor(
     StrictNormMixin,
     GenericPreprocessor,
@@ -180,6 +213,20 @@ class StrictPreprocessor(
 
 class StrictPreprocessorDynDtype(
     StrictNormMixin,
+    DynDTypePreprocessor,
+):
+    pass
+
+
+class StrictFgPreprocessor(
+    StrictNormFgMixin,
+    GenericPreprocessor,
+):
+    pass
+
+
+class StrictFgPreprocessorDynDtype(
+    StrictNormFgMixin,
     DynDTypePreprocessor,
 ):
     pass
