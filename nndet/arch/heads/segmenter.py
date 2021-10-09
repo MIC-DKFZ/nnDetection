@@ -272,10 +272,6 @@ class DiCESegmenterFgBg(DiCESegmenter):
             ce_kwargs: keyword arguments passed to CE loss
             dice_kwargs: keyword arguments passed to dice loss
             loss_fp32: If True, loss is forced to be computed in float32
-
-        Warnings:
-            If this class is used, the reportet dice scores during training
-            are wrong if multiple classes are present in the dataset.
         """
         super().__init__(
             conv=conv,
@@ -386,10 +382,6 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
             ce_kwargs: keyword arguments passed to CE loss
             topk: percentage of all entries to use for loss computation
             loss_fp32: If True, loss is forced to be computed in float32
-
-        Warnings:
-            If this class is used, the reportet dice scores during training
-            are wrong if multiple classes are present in the dataset.
         """
         super().__init__(
             conv=conv,
@@ -408,6 +400,166 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
         self.ce_loss = TopKLoss(
             topk=topk,
             loss_fp32=loss_fp32,
+        )
+
+
+class DiCETopKSegmenter(DiCESegmenter):
+    def __init__(
+        self,
+        conv,
+        seg_classes: int,
+        in_channels: Sequence[int],
+        decoder_levels: Sequence[int],
+        internal_channels: Optional[int] = None,
+        num_internal: int = 0,
+        add_norm: bool = True,
+        add_act: bool = True,
+        kernel_size: Union[int, Sequence[int]] = 3,
+        weight_ce: float = 0.3,
+        weight_dice: float = 0.4,
+        weight_topk: float = 0.3,
+        ce_kwargs: Optional[dict] = None,
+        dice_kwargs: Optional[dict] = None,
+        topk_kwargs: Optional[dict] = None,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
+        """
+        Basic Segmentation Head with dice and CE loss which only
+        differentiates foreground and background
+        (num_internal x conv [kernel_size]) -> final conv [1x1]
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            seg_classes: ignored!
+            in_channels: number of input channels at all decoder levels
+            decoder_levels: decoder levels used for detection
+            internal_channels: number of channels of internal convolutions
+            num_internal: number of internal convolutions
+            add_norm: add normalization layers to internal convolutions
+            add_act: add activation layers to internal convolutions
+            kernel_size: kernel size of conv
+            weight_ce: weight of CrossEntropy loss
+            weight_dice: weight of SoftDice loss
+            weight_topk: weight of TopK loss
+            ce_kwargs: keyword arguments passed to CE loss
+            dice_kwargs: keyword arguments passed to Dice loss
+            topk_kwargs: keyword arguments passed to TopK loss
+            loss_fp32: If True, loss is forced to be computed in float32
+        """
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            seg_classes=seg_classes,
+            decoder_levels=decoder_levels,
+            internal_channels=internal_channels,
+            num_internal=num_internal,
+            add_norm=add_norm,
+            add_act=add_act,
+            kernel_size=kernel_size,
+            ce_kwargs=ce_kwargs,
+            dice_kwargs=dice_kwargs,
+            loss_fp32=loss_fp32,
+            **kwargs,
+        )
+        if topk_kwargs is None:
+            topk_kwargs = {}
+        topk_kwargs.setdefault("topk", 0.1)
+
+        self.topk_loss = TopKLoss(
+            **topk_kwargs,
+            loss_fp32=loss_fp32,
+        )
+        self.weight_ce = weight_ce
+        self.weight_dice = weight_dice
+        self.weight_topk = weight_topk
+
+    def compute_loss(
+        self,
+        pred_seg: Dict[str, torch.Tensor],
+        target: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Compute weighted dice and cross entropy loss
+
+        Args:
+            pred_seg: segmentation predictions
+                `seg_logits`: predicted logits
+            target: ground truth segmentation of top layer
+
+        Returns:
+            Dict[str, torch.Tensor]: computed loss (contained in key seg)
+        """
+        seg_logits = pred_seg["seg_logits"]
+        return {
+            "seg_ce": self.weight_ce * self.ce_loss(seg_logits, target.long()),
+            "seg_topk": self.weight_topk * self.topk_loss(seg_logits, target.long()),
+            "seg_softdice": self.weight_dice * self.dice_loss(seg_logits, target),
+        }
+
+
+class DiCETopKSegmenterFgBg(DiCETopKSegmenter):
+    def __init__(
+        self,
+        conv,
+        seg_classes: int,
+        in_channels: Sequence[int],
+        decoder_levels: Sequence[int],
+        internal_channels: Optional[int] = None,
+        num_internal: int = 0,
+        add_norm: bool = True,
+        add_act: bool = True,
+        kernel_size: Union[int, Sequence[int]] = 3,
+        weight_ce: float = 0.3,
+        weight_dice: float = 0.4,
+        weight_topk: float = 0.3,
+        ce_kwargs: Optional[dict] = None,
+        dice_kwargs: Optional[dict] = None,
+        topk_kwargs: Optional[dict] = None,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
+        """
+        Basic Segmentation Head with dice and CE loss which only
+        differentiates foreground and background
+        (num_internal x conv [kernel_size]) -> final conv [1x1]
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            seg_classes: ignored!
+            in_channels: number of input channels at all decoder levels
+            decoder_levels: decoder levels used for detection
+            internal_channels: number of channels of internal convolutions
+            num_internal: number of internal convolutions
+            add_norm: add normalization layers to internal convolutions
+            add_act: add activation layers to internal convolutions
+            kernel_size: kernel size of conv
+            weight_ce: weight of CrossEntropy loss
+            weight_dice: weight of SoftDice loss
+            weight_topk: weight of TopK loss
+            ce_kwargs: keyword arguments passed to CE loss
+            dice_kwargs: keyword arguments passed to Dice loss
+            topk_kwargs: keyword arguments passed to TopK loss
+            loss_fp32: If True, loss is forced to be computed in float32
+        """
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            seg_classes=1,
+            decoder_levels=decoder_levels,
+            internal_channels=internal_channels,
+            num_internal=num_internal,
+            add_norm=add_norm,
+            add_act=add_act,
+            kernel_size=kernel_size,
+            weight_ce=weight_ce,
+            weight_dice=weight_dice,
+            weight_topk=weight_topk,
+            ce_kwargs=ce_kwargs,
+            dice_kwargs=dice_kwargs,
+            topk_kwargs=topk_kwargs,
+            loss_fp32=loss_fp32,
+            **kwargs,
         )
 
 
