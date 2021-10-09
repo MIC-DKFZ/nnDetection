@@ -2,6 +2,7 @@ from nndet.arch.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.heads.classifier import FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.regressor import L1Regressor
+from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetCV001Focal, RetinaUNetV001
 
@@ -14,6 +15,11 @@ class RetinaUNetC014(RetinaUNetV001):
 
     head_cls = BoxHeadHNM
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC014DiceTopK(RetinaUNetV001):
+    segmenter_cls = DiceTopKSegmenterFgBg
 
 
 @MODULE_REGISTRY.register
