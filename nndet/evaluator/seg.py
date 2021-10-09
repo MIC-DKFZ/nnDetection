@@ -134,6 +134,8 @@ class SegmentationEvaluator(AbstractEvaluator):
                 for cls_idx, dc in enumerate(global_dc_per_class):
                     results[f"{cls_idx}_seg_dice"] = dc
             results["seg_dice"] = np.mean(global_dc_per_class)
+        else:
+            logger.warning("No segmentation results found.")
         return results, None
 
     @classmethod
