@@ -292,25 +292,6 @@ class DiCESegmenterFgBg(DiCESegmenter):
             **kwargs,
         )
 
-    def compute_loss(
-        self,
-        pred_seg: Dict[str, torch.Tensor],
-        target: torch.Tensor,
-    ) -> Dict[str, torch.Tensor]:
-        """
-        Compute weighted dice and cross entropy loss
-
-        Args:
-            pred_seg: segmentation predictions
-                `seg_logits`: predicted logits
-            target: ground truth segmentation of top layer
-
-        Returns:
-            Dict[str, torch.Tensor]: computed loss (contained in key seg)
-        """
-        target[target > 0] = 1
-        return super().compute_loss(pred_seg, target)
-
 
 class DiceTopKSegmenter(DiCESegmenter):
     def __init__(

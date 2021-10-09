@@ -10,6 +10,7 @@ from nndet.io.transforms import (
     AbstractTransform,
     FindInstances,
     Instances2Boxes,
+    Instances2Fg,
     Instances2Segmentation,
 )
 from nndet.utils.tensor import to_numpy
@@ -237,6 +238,7 @@ class SemanticMixin(ModeMixin):
                 instance_key="target",
                 map_key="instance_mapping",
                 present_instances="present_instances",
+                seg_key="target_seg",
             )
         )
         return trafos
@@ -328,10 +330,9 @@ class SemanticFgMixin(ModeMixin):
         """
         trafos = super().get_pre_transforms(plan=plan)
         trafos.append(
-            Instances2Segmentation(
+            Instances2Fg(
                 instance_key="target",
-                map_key="instance_mapping",
-                present_instances="present_instances",
+                seg_key="target_seg",
             )
         )
         return trafos

@@ -29,7 +29,6 @@ class SegmentationEvaluator(AbstractEvaluator):
     def __init__(
         self,
         per_class: bool = True,
-        fg_mode: bool = False,
         *args,
         **kwargs,
     ):
@@ -38,13 +37,8 @@ class SegmentationEvaluator(AbstractEvaluator):
 
         Args:
             per_class: report per class dice scores
-            fg_mode: only differentiate between foreground and background
-                but not between different foreground classes.
         """
         self.per_class = per_class
-        self.fg_mode = fg_mode
-        if self.fg_mode:
-            logger.info("Running segmentation evaluation in FG mode.")
         self.results_list = defaultdict(list)
 
     def reset(self):
@@ -74,14 +68,6 @@ class SegmentationEvaluator(AbstractEvaluator):
         num_classes = seg_probs.shape[1]
         output_seg = np.argmax(seg_probs, axis=1).reshape((seg_probs.shape[0], -1))
         target = target.reshape((target.shape[0], -1))
-
-        if self.fg_mode:
-            if num_classes != 2:
-                raise ValueError(
-                    "FG mode is activate for segmentation evaluation "
-                    f"but found more than two classes for prediciton (found {num_classes})."
-                )
-            target = (target > 0).astype(int)
 
         tp_hard = np.zeros((target.shape[0], num_classes - 1))
         fp_hard = np.zeros((target.shape[0], num_classes - 1))
