@@ -213,7 +213,7 @@ class BoxMixin(ModeMixin):
 
 class SemanticMixin(ModeMixin):
     """
-    This Mixin onl works with BoxMixin!
+    This Mixin only works with BoxMixin!
     BoxMixin needs to be subclassed last e.g.
     `Module(.. SemanticMixin, BoxMixin, ..)`
 
@@ -243,7 +243,7 @@ class SemanticMixin(ModeMixin):
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
-        Initialize BoxEvaluator
+        Initialize SegmentationEvaluator
 
         Notes:
             make sure to call the super classes here!
@@ -251,7 +251,7 @@ class SemanticMixin(ModeMixin):
         evaluators = super().evaluation_init(plan=plan)
         if "semantic" in evaluators:
             raise RuntimeError(
-                "Found BoxEvaluator in evaluators, can not register a second one!"
+                "Found SegmentationEvaluator in evaluators, can not register a second one!"
             )
 
         evaluators["semantic"] = SegmentationEvaluator.create()
@@ -305,6 +305,28 @@ class SemanticMixin(ModeMixin):
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
 
         return metric_scores
+
+
+class SemanticFgMixin(SemanticMixin):
+    """
+    Run segmentation evaluation in FG mode
+    """
+
+    def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
+        """
+        Initialize SegmentationEvaluator
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        evaluators = super().evaluation_init(plan=plan)
+        if "semantic" in evaluators:
+            raise RuntimeError(
+                "Found SegmentationEvaluator in evaluators, can not register a second one!"
+            )
+
+        evaluators["semantic"] = SegmentationEvaluator.create(fg_mode=True)
+        return evaluators
 
 
 class InstanceMixin(ModeMixin):

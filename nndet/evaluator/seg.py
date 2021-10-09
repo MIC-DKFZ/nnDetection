@@ -18,6 +18,7 @@ from collections import defaultdict
 from typing import Dict, Sequence, Tuple
 
 import numpy as np
+from loguru import logger
 
 from nndet.evaluator import AbstractEvaluator
 
@@ -28,13 +29,22 @@ class SegmentationEvaluator(AbstractEvaluator):
     def __init__(
         self,
         per_class: bool = True,
+        fg_mode: bool = False,
         *args,
         **kwargs,
     ):
         """
         Compute dice score during training
+
+        Args:
+            per_class: report per class dice scores
+            fg_mode: only differentiate between foreground and background
+                but not between different foreground classes.
         """
         self.per_class = per_class
+        self.fg_mode = fg_mode
+        if self.fg_mode:
+            logger.info("Running segmentation evaluation in FG mode.")
         self.results_list = defaultdict(list)
 
     def reset(self):
@@ -65,9 +75,18 @@ class SegmentationEvaluator(AbstractEvaluator):
         output_seg = np.argmax(seg_probs, axis=1).reshape((seg_probs.shape[0], -1))
         target = target.reshape((target.shape[0], -1))
 
+        if self.fg_mode:
+            if num_classes != 2:
+                raise ValueError(
+                    "FG mode is activate for segmentation evaluation "
+                    f"but found more than two classes for prediciton (found {num_classes})."
+                )
+            target = (target > 0).astype(int)
+
         tp_hard = np.zeros((target.shape[0], num_classes - 1))
         fp_hard = np.zeros((target.shape[0], num_classes - 1))
         fn_hard = np.zeros((target.shape[0], num_classes - 1))
+
         for c in range(1, num_classes):
             tp_hard[:, c - 1] = (
                 (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
@@ -121,8 +140,12 @@ class SegmentationEvaluator(AbstractEvaluator):
     def create(
         cls,
         per_class: bool = False,
+        fg_mode: bool = False,
     ):
-        return cls(per_class=per_class)
+        return cls(
+            per_class=per_class,
+            fg_mode=fg_mode,
+        )
 
 
 class PerCaseSegmentationEvaluator(AbstractEvaluator):
