@@ -460,9 +460,9 @@ def _sweep(
             e.g. RetinaUNetV001_D3V001_3d
         fold: current fold
     """
-    nndet_data_dir = Path(os.getenv("det_models"))
+    nndet_model_dir = Path(os.getenv("det_models"))
     task = get_task(task, name=True, models=True)
-    train_dir = nndet_data_dir / task / model / f"fold{fold}"
+    train_dir = nndet_model_dir / task / model / f"fold{fold}"
 
     cfg = OmegaConf.load(str(train_dir / "config.yaml"))
     os.chdir(str(train_dir))
