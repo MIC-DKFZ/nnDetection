@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from nndet.arch.blocks.basic import StackedConvBlock3
 from nndet.arch.heads.classifier import FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll
 from nndet.ptmodule import MODULE_REGISTRY
@@ -35,3 +36,8 @@ class RetinaNetC001Focal(RetinaNetModule):
     head_cls = BoxHeadAll
     head_classifier_cls = FocalClassifier
     head_sampler_cls = None
+
+
+@MODULE_REGISTRY.register
+class RetinaNetC001FocalC3(RetinaNetC001Focal):
+    backbone_block = StackedConvBlock3  # define central building block of backbone
