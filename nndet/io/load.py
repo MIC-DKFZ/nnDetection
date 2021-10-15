@@ -89,7 +89,11 @@ def load_case_from_list(
         seg_itk = sitk.ReadImage(str(seg_file))
         seg_npy = sitk.GetArrayFromImage(seg_itk)[None].astype(np.float32)
 
-        seg_props_file = f"{str(seg_file).split('.')[0]}.json"
+        if str(seg_file).endswith(".nii.gz"):
+            seg_props_file = f"{str(seg_file).rsplit('.', 2)[0]}.json"
+        else:
+            seg_props_file = f"{str(seg_file).rsplit('.', 1)[0]}.json"
+
         if os.path.isfile(seg_props_file):
             properties_json = load_json(seg_props_file)
 

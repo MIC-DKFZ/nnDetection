@@ -207,7 +207,11 @@ def check_data_and_label_splitted(
         if labels:
             # check label info (json files)
             mask_path = case_paths[-1]
-            mask_info_path = mask_path.parent / f"{mask_path.stem.split('.')[0]}.json"
+            if mask_path.name.endswith(".nii.gz"):
+                _c = mask_path.rsplit(".", 2)[0]
+            else:
+                _c = mask_path.rsplit(".", 1)[0]
+            mask_info_path = mask_path.parent / f"{_c}.json"
             if not Path(mask_info_path).is_file():
                 raise ValueError(
                     f"Expected {mask_info_path} to be a raw splitted "
