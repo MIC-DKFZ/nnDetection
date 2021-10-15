@@ -129,6 +129,10 @@ class Predictor:
 
         self.grid_mode = "symmetric"
         self.save_get_mode = "shift"
+        logger.info(
+            f"Initialized predictor with patch size {self.crop_size} "
+            f"batch size {self.batch_size} overlap {self.overlap}"
+        )
 
     @classmethod
     def create(cls, *args, **kwargs):
