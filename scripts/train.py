@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import argparse
+import importlib
 import os
 import socket
 import sys
@@ -466,6 +467,10 @@ def _sweep(
 
     cfg = OmegaConf.load(str(train_dir / "config.yaml"))
     os.chdir(str(train_dir))
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="INFO")

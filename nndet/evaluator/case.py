@@ -320,6 +320,13 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         info = {}
 
+        if "_target_class" not in scalar_results:
+            info["_target_class"] = self.target_class
+        else:
+            raise ValueError(
+                "`_target_class` is used internally and is not allowed for case metric naming!"
+            )
+
         # add debug information
         if "N_img" not in scalar_results:
             info["N_img"] = len(gt_classes)
