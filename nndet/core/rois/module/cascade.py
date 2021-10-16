@@ -101,7 +101,7 @@ class CascadeRoIModule(BaseRoIModule):
                     proposal_matcher=self.matcher[0],
                     anchors=proposal_boxes,
                     target_boxes=targets["target_boxes"],
-                    target_classes=targets["target_classes"],
+                    target_classes=targets["target_roi_classes"],
                 )  # List([N]), List([N, dims * 2]), List([N])
 
             # box loss
@@ -130,7 +130,7 @@ class CascadeRoIModule(BaseRoIModule):
                         proposal_matcher=self.matcher[0],
                         anchors=proposal_boxes,
                         target_boxes=targets["target_boxes"],
-                        target_classes=targets["target_classes"],
+                        target_classes=targets["target_roi_classes"],
                     )  # List([N]), List([N, dims * 2]), List([N])
 
                 mask_losses, _ = self._train_step_masks(

@@ -2,7 +2,7 @@
 defaults:
   - augmentation: more_modular
 
-module: BoxCascadeRCNN
+module: CascadeMaskURCNNC001
 
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
