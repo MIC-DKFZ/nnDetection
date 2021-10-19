@@ -1,5 +1,6 @@
 ## Changelog
 ### nnDetection v0.1.3-dev
+- Tox Testautomation aa8a35f3e0d48777aa91c86498ac222e41172483
 - C014 [tag switch of padding in predictor]
 - (breaking) Encoder / Decoder Names in Config are now deprecated
 - (breaking) Introduced new model building names: Encoder->Backbone, Decoder->Neck
