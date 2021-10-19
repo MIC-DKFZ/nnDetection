@@ -99,34 +99,28 @@ def get_extensions():
     return ext_modules
 
 
-requirements = resolve_requirements(
-    os.path.join(os.path.dirname(__file__), "requirements.txt")
-)
+_SRC = os.path.dirname(__file__)
+_REQ = os.path.join(_SRC, "requirements")
+
+base_req = resolve_requirements(os.path.join(_REQ, "base.txt"))
+extras = {
+    "dev": resolve_requirements(os.path.join(_REQ, "dev.txt")),
+}
 readme = read_file(os.path.join(os.path.dirname(__file__), "README.md"))
 
 setup(
     name="nndet",
-    version="v0.1",
+    version="0.1",
     packages=find_packages(),
-    include_package_data=True,
+    # include_package_data=True,
     long_description=readme,
     long_description_content_type="text/markdown",
-    install_requires=requirements,
+    install_requires=base_req,
     python_requires=">=3.8",
     author="Division of Medical Image Computing, German Cancer Research Center",
     maintainer_email="m.baumgartner@dkfz-heidelberg.de",
     ext_modules=get_extensions(),
-    extras_require={
-        "dev": [
-            "pytest",
-            "pytest-cov",
-            "pytest-mock",
-            "flake8",
-            # "autopep8",
-            "pre-commit",
-            "black==21.7b0",
-        ],
-    },
+    extras_require=extras,
     cmdclass={
         "build_ext": BuildExtension,
         "clean": clean,
