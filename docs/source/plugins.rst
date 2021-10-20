@@ -1,5 +1,5 @@
-Custom Plugins
-==============
+Plugins
+=======
 
 Plugins
 -------
