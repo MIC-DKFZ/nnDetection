@@ -28,7 +28,7 @@ Source
   - nndet_env / collect env to check cuda versions)
 
 User Install
-............
+~~~~~~~~~~~~
 
 Developer Install
-.................
+~~~~~~~~~~~~~~~~~
