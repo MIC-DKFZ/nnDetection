@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=docs/source/nnDetection.svg width="600px">
+<img src=docs/source/_static/nnDetection.svg width="600px">
 
 ![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
@@ -83,14 +83,14 @@ To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.
 
 # nnDetection
 <div align="center">
-    <img src=docs/source/nnDetectionFunctional.svg width="600px">
+    <img src=docs/source/_static/nnDetectionFunctional.svg width="600px">
 </div>
 
 <details close>
 <summary>nnDetection Module Overview</summary>
 <br>
     <div align="center">
-        <img src=docs/source/nnDetectionModule.svg width="600px">
+        <img src=docs/source/_static/nnDetectionModule.svg width="600px">
     </div>
 
 nnDetection uses multiple Registries to keep track of different modules and easily switch between them via the config files.
@@ -121,7 +121,7 @@ It can be imported from `nndet.ptmodule` and examples can be found in `nndet.ptm
 <summary>nnDetection Functional Details</summary>
 <br>
     <div align="center">
-        <img src=docs/source/nnDetectionFunctionalDetails.svg width="600px">
+        <img src=docs/source/_static/nnDetectionFunctionalDetails.svg width="600px">
     </div>
 </details>
 
