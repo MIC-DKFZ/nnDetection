@@ -16,6 +16,10 @@
 
    Just testing here
 
+TODOs
+=====
+- application limited to 3D
+- Pointer to Projects and Plugins
 
 What is nnDetection?
 ====================
@@ -40,37 +44,31 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :name: Installation
 
    installation
 
 .. toctree::
    :maxdepth: 2
-   :name: User Guide
 
    user_guide
 
 .. toctree::
    :maxdepth: 2
-   :name: Developer Guide
 
    dev_guide
 
 .. toctree::
    :maxdepth: 2
-   :name: Projects
 
    projects
 
 .. toctree::
    :maxdepth: 2
-   :name: Plugins
 
    plugins
 
 .. toctree::
    :maxdepth: 2
-   :name: API
 
    api
 
