@@ -40,9 +40,10 @@ extensions = [
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 autoclass_content = 'both'
+autodoc_member_order = 'bysource'
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = [' ']
 exclude_patterns = ['_build']
 
 # List of patterns, relative to source directory, that match files and
