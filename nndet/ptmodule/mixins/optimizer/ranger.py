@@ -7,9 +7,8 @@ from nndet.training.optimizer import get_params_no_wd_on_norm
 class RangerDefaultMixin:
     """
     Ranger Optimizer Mixin
-    
-    Please refer to the following
-    `repo <https://github.com/jettify/pytorch-optimizer>`_ for more info.
+
+    Please refer to https://github.com/jettify/pytorch-optimizer for more info.
     """
     def configure_optimizers(self):
         try:
@@ -54,8 +53,7 @@ class Ranger21DefaultMixin:
     """
     Ranger21 Optimizer Mixin
     
-    Please refer to the following
-    `repo <https://github.com/lessw2020/Ranger21>`_ for more info.
+    Please refer to https://github.com/lessw2020/Ranger21 for more info.
     """
     def configure_optimizers(self):
         """

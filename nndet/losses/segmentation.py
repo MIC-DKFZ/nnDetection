@@ -37,14 +37,15 @@ def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):
 def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     """
     net_output must be (b, c, x, y(, z)))
-    gt must be a label map (shape (b, 1, x, y(, z)) OR shape (b, x, y(, z))) or one hot encoding (b, c, x, y(, z))
-    if mask is provided it must have shape (b, 1, x, y(, z)))
-    :param net_output:
-    :param gt:
-    :param axes:
-    :param mask: mask must be 1 for valid pixels and 0 for invalid pixels
-    :param square: if True then fp, tp and fn will be squared before summation
-    :return:
+    gt must be a label map (shape (b, 1, x, y(, z)) OR shape (b, x, y(, z)))
+    or one hot encoding (b, c, x, y(, z))
+    if mask is provided it must have shape (b, 1, x, y(, z))
+
+        - `net_output`
+        - `gt`
+        - `axes`
+        - `mask` : mask must be 1 for valid pixels and 0 for invalid pixels
+        - `square` : if True then fp, tp and fn will be squared before summation
     """
     if axes is None:
         axes = tuple(range(2, len(net_output.size())))
@@ -151,9 +152,9 @@ class SoftDiceLoss(Loss):
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean' | 'sum'
-                 'mean': The output will be averaged.
-                 'sum': The output will be summed.
-                 'none': NOT supported
+                - 'mean': The output will be averaged.
+                - 'sum': The output will be summed.
+                - 'none': NOT supported
         """
         super().__init__(
             loss_weight=loss_weight,
@@ -255,9 +256,9 @@ class TopKLoss(CrossEntropyLoss):
         Compute CE loss and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground classes [N, C, *]
+            input: logits for all foreground classes [N, C, \*]
             target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [N, *]
+                treated as foreground classes. [N, \*]
 
         Returns:
             Tensor: final loss
@@ -313,8 +314,8 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
         and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground(!) classes [N, C, *]
-            target: target classes [N, *]. Targets will be encoded with one
+            input: logits for all foreground(!) classes [N, C, \*]
+            target: target classes [N, \*]. Targets will be encoded with one
                 hot and 0 is treated as the background class and removed.
 
         Returns:

@@ -36,12 +36,14 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
+autoclass_content = 'both'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
-exclude_patterns = ['_build', '_templates']
+exclude_patterns = ['_build']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

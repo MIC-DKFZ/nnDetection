@@ -37,7 +37,7 @@ class LightningBaseModule(pl.LightningModule):
         All lightning modules of nnDetection should be derifed from this!
 
         Args:
-            model_cfg: model configuration. Check :method:`from_config_plan`
+            model_cfg: model configuration. Check ::method::`from_config_plan`
                 for more information
             trainer_cfg: trainer information
             plan: contains parameters which were derived from the planning

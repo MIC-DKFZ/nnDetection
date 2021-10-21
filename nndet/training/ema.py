@@ -34,6 +34,9 @@ class EMAWeightsCB(Callback):
         Notes:
             This is only a prototype.
             Multi GPU and ema_eval are not supported.
+        
+        Warning:
+            This is an experimental feature!
         """
         self.ema: Optional[EMAWeights] = None
         self.device = device

@@ -6,6 +6,7 @@
 .. image:: ./_static/nnDetection.svg
    :width: 500
    :align: center
+   :alt: nnDetection
 
 |
 |
@@ -32,6 +33,7 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 .. image:: ./_static/nnDetectionFunctional.svg
    :width: 600
    :align: center
+   :alt: nnDetection functional overview
 
 |
 

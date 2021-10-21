@@ -10,3 +10,5 @@ a time limitation of an active research project.
    :maxdepth: 4
 
    ptmodule
+   losses
+   training
