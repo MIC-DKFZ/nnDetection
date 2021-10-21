@@ -39,8 +39,14 @@ extensions = [
     "sphinx.ext.viewcode",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
-autoclass_content = 'both'
-autodoc_member_order = 'bysource'
+# autoclass_content = 'both'
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
