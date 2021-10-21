@@ -1,5 +1,5 @@
 # Docs
-docs/source/api/*
+docs/source/api/*/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
