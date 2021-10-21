@@ -13,7 +13,9 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
 
@@ -30,10 +32,16 @@ release = '0.1.3-dirty'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+]
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+exclude_patterns = ['_build', '_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -44,7 +52,6 @@ templates_path = ['_templates']
 #     '.txt': 'markdown',
 #     '.md': 'markdown',
 # }
-extensions = []
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -62,6 +69,9 @@ html_logo = "_static/nnDetectionText.svg"
 
 # options
 html_theme_options = {
+    "show_prev_next": False,
+    "collapse_navigation": False,
+    "navigation_depth": 4,
     "icon_links": [
         {
             "name": "GitHub",

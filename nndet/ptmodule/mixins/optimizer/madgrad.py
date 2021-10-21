@@ -5,6 +5,12 @@ from nndet.training.optimizer import get_params_no_wd_on_norm
 
 
 class MadgradDefaultMixin:
+    """
+    Madgrad Optimizer Mixin
+    
+    Please refer to the official
+    `repo <https://github.com/facebookresearch/madgrad>`_ for more info.
+    """
     def configure_optimizers(self):
         try:
             from madgrad import MADGRAD

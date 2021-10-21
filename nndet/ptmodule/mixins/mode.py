@@ -44,7 +44,7 @@ class ModeMixin(ABC):
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
         Initialize evaluation. Needs to be called before
-        :method:`evaluation_step` and :method:`evaluation_end`.
+        ::method::`evaluation_step` and ::method::`evaluation_end`.
 
         Notes:
             make sure to call the super classes here!
@@ -74,17 +74,17 @@ class ModeMixin(ABC):
         """
         Compute validation metrics of epoch
 
-        ```
-        General pipeline should look something like this:
-        # collect other scores
-        scores = super().evaluation_end()
+        .. code-block::
 
-        # compute own scores
-        own_scores = ...
+            General pipeline should look something like this:
+            # collect other scores
+            scores = super().evaluation_end()
 
-        # add own scores
-        metric_scores.update(own_scores)
-        ```
+            # compute own scores
+            own_scores = ...
+
+            # add own scores
+            metric_scores.update(own_scores)
 
         Returns:
             Dict[str, float]: computed metrics
