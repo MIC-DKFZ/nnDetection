@@ -105,8 +105,8 @@ class BaseRetinaNet(AbstractModel):
             dict: segmentation prediction. None if retina net is configured.
                 Typically includes
 
-                    ``"seg_logits"`` Tensor
-                        segmentation logits
+                ``"seg_logits"`` Tensor
+                    segmentation logits
 
             List[torch.Tensor]: feature maps from decoder
         """
@@ -301,6 +301,7 @@ class BaseRetinaNet(AbstractModel):
 
         Returns:
             Dict: post processed predictions
+
                 ``"pred_boxes"`` List[Tensor]
                     predicted bounding boxes for each image List[[R, dim * 2]]
 
