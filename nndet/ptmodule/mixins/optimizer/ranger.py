@@ -10,6 +10,7 @@ class RangerDefaultMixin:
 
     Please refer to https://github.com/jettify/pytorch-optimizer for more info.
     """
+
     def configure_optimizers(self):
         try:
             import torch_optimizer as optim
@@ -52,9 +53,10 @@ class RangerDefaultMixin:
 class Ranger21DefaultMixin:
     """
     Ranger21 Optimizer Mixin
-    
+
     Please refer to https://github.com/lessw2020/Ranger21 for more info.
     """
+
     def configure_optimizers(self):
         """
         Experimental Settings

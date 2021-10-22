@@ -9,6 +9,7 @@ class SGDDefaultMixin:
     """
     SGD Optimizer Mixin
     """
+
     def configure_optimizers(self):
         """
         Configure optimizer and scheduler

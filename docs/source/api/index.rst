@@ -12,3 +12,4 @@ a time limitation of an active research project.
    ptmodule
    losses
    training
+   core

@@ -35,13 +35,13 @@ def nms_cpu(boxes, scores, thresh):
     Performs non-maximum suppression for 3d boxes on cpu
 
     Args:
-        boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): score for each box [N]
-        iou_threshold (float): threshould when boxes are discarded
+        boxes: tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: score for each box [N]
+        iou_threshold: threshould when boxes are discarded
 
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     ious = box_iou(boxes, boxes)
     _, _idx = torch.sort(scores, descending=True)
@@ -65,13 +65,13 @@ def nms(
     Performs non-maximum suppression
 
     Args:
-        boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): score for each box [N]
-        iou_threshold (float): threshould when boxes are discarded
+        boxes: tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: score for each box [N]
+        iou_threshold: threshould when boxes are discarded
 
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS,
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     if boxes.shape[1] == 4:
         # prefer torchvision in 2d because they have c++ cpu version
@@ -104,8 +104,8 @@ def _batched_nms(
         iou_threshold:  discards all overlapping boxes with IoU > iou_threshold
 
     Returns
-        keep: int64 tensor with the indices of the elements that have been kept by NMS,
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     if boxes.numel() == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)

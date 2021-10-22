@@ -307,12 +307,12 @@ class LightningBaseModule(pl.LightningModule):
     def configure_callbacks(self):
         """
         Configure default callbacks.
-        Per default the epoch timer is added to measure training and 
+        Per default the epoch timer is added to measure training and
         validation time. Optionally a Stochastic Weight Averaging
         Callback can be added by configuring `swa_epoch` with a
         cyclic learning rate which oscilates between `initial_lr / 10`
         and `initial_lr / 1000` once per epoch.
-    
+
         Configuration keys:
             - `swa_epochs` (int): number of epoch to perform SWA. The model
                will be snapshotted at the end of each epoch.

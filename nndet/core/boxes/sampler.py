@@ -206,7 +206,7 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
         num_pos: int,
     ) -> int:
         """
-        Sample enough negatives to fill up :param:`self.batch_size_per_image`
+        Sample enough negatives to fill up `self.batch_size_per_image`
 
         Args:
             negative: indices of positive anchors

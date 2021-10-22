@@ -92,16 +92,22 @@ class BaseRetinaNet(AbstractModel):
             inp (torch.Tensor): batch of input images
 
         Returns:
-            dict: predictions from head. Typically includes:
-                `box_deltas`(Tensor): bounding box offsets
-                    [Num_Anchors_Batch, (dim * 2)]
-                `box_logits`(Tensor): classification logits
-                    [Num_Anchors_Batch, (num_classes)]
+            dict: predictions from head. Typically includes
+
+                ``"box_deltas"`` Tensor
+                    bounding box offsets [Num_Anchors_Batch, (dim * 2)]
+
+                ``"box_logits"`` Tensor
+                    classification logits  [Num_Anchors_Batch, (num_classes)]
+
             List[torch.Tensor]: list of anchors (for each image inside the
                 batch)
             dict: segmentation prediction. None if retina net is configured.
-                Typically includes:
-                    `seg_logits`: segmentation logits
+                Typically includes
+
+                    ``"seg_logits"`` Tensor
+                        segmentation logits
+
             List[torch.Tensor]: feature maps from decoder
         """
         features_maps_all = self.neck(self.backbone(inp))
@@ -123,7 +129,7 @@ class BaseRetinaNet(AbstractModel):
         batch_num: int,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
         """
-        See self.train_step_with_features
+        See `self.train_step_with_features`
         """
         losses, prediction, _ = self.train_step_with_features(
             images=images,
@@ -146,15 +152,19 @@ class BaseRetinaNet(AbstractModel):
         Args:
             images: batch of images
             targets: labels for training
-                `target_boxes` (List[Tensor]): ground truth bounding boxes
-                    (x1, y1, x2, y2, (z1, z2))[X, dim * 2], X= number of ground
-                    truth boxes in image
-                `target_classes` (List[Tensor]): ground truth class per box
-                    (classes start from 0) [X], X= number of ground truth
-                    boxes in image
-                `target_seg`(Tensor): segmentation ground truth
-                    (only needed if :param:`segmenter`
+
+                ``"target_boxes"`` (List[Tensor])
+                    ground truth bounding boxes  (x1, y1, x2, y2, (z1, z2))
+                    [X, dim * 2], X= number of  ground truth boxes in image
+
+                ``"target_classes"`` (List[Tensor])
+                    ground truth class per box (classes start from 0) [X],
+                    X= number of ground truth boxes in image
+
+                ``"target_seg"`` (Tensor)
+                    segmentation ground truth (only needed if ::param::`segmenter`
                     was provided in init) (classes start from 1, 0 background)
+
             predict: compute final predictions (includes detection
                 postprocessing)
             batch_num: batch index inside epoch
@@ -162,12 +172,19 @@ class BaseRetinaNet(AbstractModel):
         Returns:
             Dict: all losses
             Dict: predictions for metric calculation
-                'pred_boxes': List[Tensor]: predicted bounding boxes for each
-                    image List[[R, dim * 2]]
-                'pred_scores': List[Tensor]: predicted probability for the
-                    class List[[R]]
-                'pred_labels': List[Tensor]: predicted class List[[R]]
-                'pred_seg': Tensor: predicted segmentation [N, dims]
+
+                ``"pred_boxes"`` List[Tensor]
+                    predicted bounding boxes for each image List[[R, dim * 2]]
+
+                ``"pred_scores"`` List[Tensor]
+                    predicted probability for the class List[[R]]
+
+                ``"pred_labels"`` List[Tensor]
+                    predicted class List[[R]]
+
+                ``"pred_seg"`` Tensor
+                    predicted segmentation [N, dims]
+
             List[torch.Tensor]: feature maps from decoder
         """
         # import napari
@@ -240,13 +257,20 @@ class BaseRetinaNet(AbstractModel):
             images: batch of input images [N, C, W, H, (D)]
 
         Returns:
-            Dict:
-                'pred_boxes': List[Tensor]: predicted bounding boxes for each
-                    image List[[R, dim * 2]]
-                'pred_scores': List[Tensor]: predicted probability for
-                    the class List[[R]]
-                'pred_labels': List[Tensor]: predicted class List[[R]]
-                'pred_seg': Tensor: predicted segmentation [N, C, dims]
+            Dict: predictions
+
+                ``"pred_boxes"`` List[Tensor]
+                    predicted bounding boxes for each image List[[R, dim * 2]]
+
+                ``"pred_scores"`` List[Tensor]
+                    predicted probability for the class List[[R]]
+
+                ``"pred_labels"`` List[Tensor]
+                    predicted class List[[R]]
+
+                ``"pred_seg"`` Tensor
+                    predicted segmentation [N, C, dims]
+
             List[torch.Tensor]: feature maps from encoder
         """
         pred_detection, anchors, pred_seg, features = self(images)
@@ -277,12 +301,18 @@ class BaseRetinaNet(AbstractModel):
 
         Returns:
             Dict: post processed predictions
-                'pred_boxes': List[Tensor]: predicted bounding boxes for each
-                    image List[[R, dim * 2]]
-                'pred_scores': List[Tensor]: predicted probability for
-                    the class List[[R]]
-                'pred_labels': List[Tensor]: predicted class List[[R]]
-                'pred_seg': Tensor: predicted segmentation [N, C, dims]
+                ``"pred_boxes"`` List[Tensor]
+                    predicted bounding boxes for each image List[[R, dim * 2]]
+
+                ``"pred_scores"`` List[Tensor]
+                    predicted probability for the class List[[R]]
+
+                ``"pred_labels"`` List[Tensor]
+                    predicted class List[[R]]
+
+                ``"pred_seg"`` Tensor
+                    predicted segmentation [N, C, dims]
+
         """
         image_shapes = [images.shape[2:]] * images.shape[0]
         boxes, probs, labels = self.postprocess_detections(
@@ -311,9 +341,13 @@ class BaseRetinaNet(AbstractModel):
 
         Args:
             pred_detection: detection predictions for loss computation
-                `box_logits`: classification logits for each anchor [N]
-                `box_deltas`: offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
+                ``"box_logits"`` Tensor
+                    classification logits for each anchor [N]
+
+                ``"box_deltas"`` Tensor
+                    offsets for each anchor (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             anchors: proposals for each image
             image_shapes: shape of each image
 

@@ -17,13 +17,11 @@ def assign_targets_to_anchors(
     Adapted from torchvision https://github.com/pytorch/vision
 
     Args:
-        anchors: anchors (!)per image(!)
-            List[[N, dim * 2]], N=number of anchors per image
-        target_boxes: ground truth boxes
-            (!)per image(!)
-            List[[X, dim * 2]], X=number of gt per image
-        target_classes: ground truth classes
-            (!)per image(!) (classes start from 0)
+        anchors: anchors *per image* List[[N, dim * 2]],
+            N=number of anchors per image
+        target_boxes: ground truth boxes *per image* List[[X, dim * 2]],
+            X=number of gt per image
+        target_classes: ground truth classes *per image* (classes start from 0)
             List[[X]], X=number of gt per image
         kwargs: keyword arguments passed to anchor matcher
 

@@ -7,10 +7,11 @@ from nndet.training.optimizer import get_params_no_wd_on_norm
 class RAdamDefaultMixin:
     """
     RAdam Optimizer Mixin
-    
+
     Please refer to the following
     `repo <https://github.com/jettify/pytorch-optimizer>`_ for more info.
     """
+
     def configure_optimizers(self):
         try:
             import torch_optimizer as optim

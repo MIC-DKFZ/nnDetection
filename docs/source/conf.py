@@ -15,16 +15,17 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))  # Source code dir relative to this file
+
+sys.path.insert(0, os.path.abspath("../.."))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
 
-project = 'nnDetection'
-copyright = '2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany'
-author = 'Michael Baumgartner, Paul F. Jaeger, Fabian Isensee, Klaus H. Maier-Hein'
+project = "nnDetection"
+copyright = "2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany"
+author = "Michael Baumgartner, Paul F. Jaeger, Fabian Isensee, Klaus H. Maier-Hein"
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.3-dirty'
+release = "0.1.3-dirty"
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,16 +42,18 @@ extensions = [
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 # autoclass_content = 'both'
 autodoc_default_options = {
-    'members': True,
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
-    'exclude-members': '__weakref__'
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
-exclude_patterns = ['_build']
+templates_path = ["_templates"]
+exclude_patterns = ["_build"]
+
+napoleon_custom_sections = [("Returns", "params_style")]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -67,12 +70,12 @@ exclude_patterns = ['_build']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 html_logo = "_static/nnDetectionText.svg"
 
@@ -93,4 +96,4 @@ html_theme_options = {
             "icon": "fab fa-twitter-square",
         },
     ],
-    }
+}

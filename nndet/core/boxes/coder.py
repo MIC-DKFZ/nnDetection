@@ -266,7 +266,7 @@ class BoxCoderND(BoxCoder):
         """
         Encode a set of proposals with respect to some reference boxes
 
-        Arguments:
+        Args:
             reference_boxes: reference boxes  (x1, y1, x2, y2, (z1, z2))
             proposals: boxes to be encoded  (x1, y1, x2, y2, (z1, z2))
         """

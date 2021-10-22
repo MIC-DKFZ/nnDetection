@@ -58,17 +58,20 @@ Source
 User Install
 ~~~~~~~~~~~~
 .. note::
-  nnDetection requires python 3.8+
+  Requirements:
+    - CUDA >= 10.1
+    - Python >= 3.8
+    - PyTorch >= 1.7
 
 .. note::
   To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7.X-1.8.X
   Starting from PyTorch 1.9.X the pip installation gives mixed precision 3D conv speedup aswell.
 
 
-1. Install CUDA (>10.1) (make sure to select compatible versions(https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)
+1. Install CUDA (make sure to select compatible versions(https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check compute capabilities(https://developer.nvidia.com/cuda-gpus) here.
 3. Install setup dependencies
-    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+)
+    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!)
     - torchvision(https://github.com/pytorch/vision)(make sure to match the versions with pytorch!).
 4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
 5. Set environment variables:

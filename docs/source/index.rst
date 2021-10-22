@@ -21,6 +21,10 @@ TODOs
 =====
 - application limited to 3D
 - Pointer to Projects and Plugins
+- Improvements
+   - select best model for evaluation
+   - run inference on CPU (inference_kwargs.device=cpu)
+   - run segmentation of RetinaU-Net
 
 What is nnDetection?
 ====================
@@ -55,9 +59,9 @@ Contents:
    user_guide
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   dev_guide
+   dev/index
 
 .. toctree::
    :maxdepth: 2

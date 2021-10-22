@@ -61,7 +61,7 @@ class StackedBlock(AbstractBlock):
         """
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
-        channels to :param:`out_channels`.
+        channels to `out_channels`.
 
         Args:
             conv: conv generator to use for internal convolutions
@@ -444,7 +444,7 @@ class StackedConvBlock(AbstractBlock):
         """
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
-        channels to :param:`out_channels`.
+        channels to `out_channels`.
 
         Args:
             conv: conv generator to use for internal convolutions

@@ -27,11 +27,12 @@ def box_area_3d(boxes: Tensor) -> Tensor:
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2, z1, z2) coordinates.
 
-    Arguments:
-        boxes (Union[Tensor, ndarray]): boxes for which the area will be computed. They
+    Args:
+        boxes: boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2, z1, z2) format. [N, 6]
+
     Returns:
-        area (Union[Tensor, ndarray]): area for each box [N]
+        Tensor: area for each box [N]
     """
     return (
         (boxes[:, 2] - boxes[:, 0])
@@ -45,24 +46,25 @@ def box_area_2d(boxes: Tensor) -> Tensor:
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2) coordinates.
 
-    Arguments:
-        boxes (Union[Tensor, ndarray]): boxes for which the area will be computed. They
+    Args:
+        boxes: boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2) format. [N, 4]
+
     Returns:
-        area (Union[Tensor, ndarray]): area for each box [N]
+        Tensor: area for each box [N]
     """
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
-def box_area(boxes: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
+def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes
 
     Args:
-        boxes (Union[Tensor, ndarray]): boxes of shape; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes: boxes of shape; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
 
     Returns:
-        Union[Tensor, ndarray]: area of boxes
+        Tensor: area of boxes
 
     See Also:
         :func:`box_area_3d`, :func:`torchvision.ops.boxes.box_area`
@@ -79,13 +81,13 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
     Return intersection-over-union (Jaccard index) of boxes.
     (Works for Tensors and Numpy Arrays)
 
-    Arguments:
-        boxes1: boxes; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        boxes2: boxes; (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
+    Args:
+        boxes1: boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes2: boxes (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
         eps: optional small constant for numerical stability
 
     Returns:
-        iou (Tensor): the NxM matrix containing the pairwise
+        Tensor: the NxM iou matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2; [N, M]
 
     See Also:
@@ -109,13 +111,13 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tenso
     """
     Generalized box iou
 
-    Arguments:
-        boxes1: boxes; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        boxes2: boxes; (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
+    Args:
+        boxes1: boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes2: boxes (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
         eps: optional small constant for numerical stability
 
     Returns:
-        Tensor: the NxM matrix containing the pairwise
+        Tensor: the NxM iou matrix containing the pairwise
             generalized IoU values for every element in boxes1 and boxes2; [N, M]
 
     Notes:
@@ -143,10 +145,10 @@ def box_iou_union_3d(
         eps: optional small constant for numerical stability
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
-        Tensor[N, M]: the nxM matrix containing the pairwise union
-            values
+        Tensor: the NxM matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2, shape [N, M]
+        Tensor: the nxM matrix containing the pairwise union
+            values, shape [N, M]
     """
     vol1 = box_area_3d(boxes1)
     vol2 = box_area_3d(boxes2)
@@ -175,8 +177,8 @@ def generalized_box_iou_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
         eps: optional small constant for numerical stability
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise
-            generalized IoU values for every element in boxes1 and boxes2
+        Tensor: the NxM matrix containing the pairwise generalized IoU values
+            for every element in boxes1 and boxes2, shape [N, M]
     """
     iou, union = box_iou_union_3d(boxes1, boxes2)
 
@@ -200,16 +202,16 @@ def box_iou_union_2d(
     Return intersection-over-union (Jaccard index) and  of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
+    Args:
         boxes1: set of boxes (x1, y1, x2, y2)[N, 4]
         boxes2: set of boxes (x1, y1, x2, y2)[M, 4]
         eps: optional small constant for numerical stability
 
     Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
-        union (Tensor[N, M]): the nxM matrix containing the pairwise union
-            values
+        Tensor: iou  NxM matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2, shape [N, M]
+        Tensor: union NxM matrix containing the pairwise union
+            values, shape [N, M]
     """
     area1 = box_area_2d(boxes1)
     area2 = box_area_2d(boxes2)
@@ -234,8 +236,8 @@ def generalized_box_iou_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
         eps: optional small constant for numerical stability
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise
-            generalized IoU values for every element in boxes1 and boxes2
+        Tensor: the NxM matrix containing the pairwise generalized IoU values
+            for every element in boxes1 and boxes2, shape [N, M]
     """
     iou, union = box_iou_union_2d(boxes1, boxes2)
 
@@ -252,11 +254,12 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     Remove boxes with at least one side smaller than min_size.
 
-    Arguments:
-        boxes (Tensor): boxes (x1, y1, x2, y2, (z1, z2)) [N, dim * 2]
-        min_size (float): minimum size
+    Args:
+        boxes: boxes (x1, y1, x2, y2, (z1, z2)) [N, dim * 2]
+        min_size: minimum size
+
     Returns:
-        keep (Tensor): indices of the boxes that have both sides
+        Tensor: indices of the boxes that have all sides
             larger than min_size [N]
     """
     if boxes.shape[1] == 4:
@@ -279,15 +282,15 @@ def box_center_dist(
     """
     Distance of center points between two sets of boxes
 
-    Arguments:
-        boxes1: boxes; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        boxes2: boxes; (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
+    Args:
+        boxes1: boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes2: boxes (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
         euclidean: computed the euclidean distance otherwise it uses the l1
             distance
 
     Returns:
         Tensor: the NxM matrix containing the pairwise
-            distances for every element in boxes1 and boxes2; [N, M]
+            distances for every element in boxes1 and boxes2 [N, M]
         Tensor: center points of boxes1
         Tensor: center points of boxes2
     """
@@ -384,7 +387,7 @@ def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
     Expand x,y,z data to box format
 
     Args:
-        data (Tensor): data to expand (N, dim)[:, (x, y, [z])]
+        data: data to expand (N, dim)[:, (x, y, [z])]
 
     Returns:
         Tensor: expanded tensors
@@ -404,7 +407,7 @@ def box_size(boxes: Tensor) -> Tensor:
     Compute length of boxes along all dimensions
 
     Args:
-        boxes (Tensor): boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
+        boxes: boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
 
     Returns:
         Tensor: size along axis (x, y, (z))[N, dim]

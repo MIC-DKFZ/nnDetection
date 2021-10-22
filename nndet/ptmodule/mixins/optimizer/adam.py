@@ -9,6 +9,7 @@ class AdamWDefaultMixin:
     """
     AdamW Optimizer Mixin
     """
+
     def configure_optimizers(self):
         """
         Configure optimizer and scheduler

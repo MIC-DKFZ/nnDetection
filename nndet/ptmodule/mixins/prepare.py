@@ -101,3 +101,19 @@ class SemanticFgPrepareMixin(PrepareMixin):
             )
         )
         return trafos
+
+
+class InstancePrepareMixin(PrepareMixin):
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
+        """
+        Craete instane segmentations
+
+        Returns:
+            List[AbstractTransform]: return a list of transformations
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        raise NotImplementedError
+        trafos = super().get_pre_transforms(plan=plan)
+        return trafos

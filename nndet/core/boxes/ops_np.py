@@ -54,13 +54,13 @@ def box_iou_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     Return intersection-over-union (Jaccard index) of boxes.
     (Works for ndarrays and Numpy Arrays)
 
-    Arguments:
-        boxes1 (ndarray): boxes; (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        boxes2 (ndarray): boxes; (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
+    Args:
+        boxes1: boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes2: boxes (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
 
     Returns:
-        iou (ndarray): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2; [N, M]
+        ndarray: the NxM iou matrix containing the pairwise
+            IoU values for every element in boxes1 and boxes2; shape [N, M]
 
     See Also:
         :func:`box_iou_3d`, :func:`torchvision.ops.boxes.box_iou`
@@ -77,12 +77,12 @@ def box_iou_2d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     Return intersection-over-union (Jaccard index) of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
-        boxes1 (ndarray): set of boxes (x1, y1, x2, y2)[N, 4]
-        boxes2 (ndarray): set of boxes (x1, y1, x2, y2)[M, 4]
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2)[N, 4]
+        boxes2: set of boxes (x1, y1, x2, y2)[M, 4]
 
     Returns:
-        iou (ndarray[N, M]): the NxM matrix containing the pairwise
+        ndarray: the NxM iou matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
     """
     area1 = box_area_2d_np(boxes1)
@@ -104,12 +104,12 @@ def box_iou_3d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     Return intersection-over-union (Jaccard index) of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
 
-    Arguments:
-        boxes1 (ndarray): set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
-        boxes2 (ndarray): set of boxes (x1, y1, x2, y2, z1, z2)[M, 6]
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[M, 6]
 
     Returns:
-        iou (ndarray[N, M]): the NxM matrix containing the pairwise
+        ndarray: the NxM iou matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
     """
     area1 = box_area_3d_np(boxes1)
@@ -135,7 +135,7 @@ def box_size_np(boxes: ndarray) -> ndarray:
     Compute length of boxes along all dimensions
 
     Args:
-        boxes (ndarray): boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
+        boxes: boxes (x1, y1, x2, y2, z1, z2)[N, dim * 2]
 
     Returns:
         ndarray: size along axis (x, y, (z))[N, dim]
@@ -156,7 +156,7 @@ def box_center_np(boxes: np.ndarray) -> np.ndarray:
         boxes: bounding boxes (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
 
     Returns:
-        Tensor: center points [N, dims]
+        ndarray: center points [N, dims]
     """
     centers = [(boxes[:, 2] + boxes[:, 0]) / 2.0, (boxes[:, 3] + boxes[:, 1]) / 2.0]
     if boxes.shape[1] == 6:

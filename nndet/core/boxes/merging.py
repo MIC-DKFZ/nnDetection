@@ -39,8 +39,8 @@ def weighted_merging(
         scores: weight for each box [N]
 
     Returns:
-        torch.Tensor: new box [2 * dim]
-        torch.Tensor new score [1]
+        Tensor: new box [2 * dim]
+        Tensor new score [1]
     """
     new_boxes = (boxes * scores[:, None]).sum(dim=0) / scores.sum()
     new_scores = scores.mean()
