@@ -2,7 +2,7 @@ from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.arch.heads.classifier.dense import BCECLassifier, FocalClassifier
 from nndet.arch.heads.comb.anchor_all import BoxHeadAll
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMNative
-from nndet.arch.heads.regressor.dense_single import GIoURegressor
+from nndet.arch.heads.regressor.dense import GIoURegressor
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.ptmodule import MODULE_REGISTRY

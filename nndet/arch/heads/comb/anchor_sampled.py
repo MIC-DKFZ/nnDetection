@@ -6,9 +6,10 @@ from torch import Tensor
 from nndet.arch.heads.abstract import ClassifierType, RegressorType
 from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+from nndet.arch.heads.regressor.dense import DenseRegressorType
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.sampler import SamplerType
+from nndet.utils.tensor import cat
 
 
 class BoxHeadHNM(AnchorHead):
@@ -88,11 +89,11 @@ class BoxHeadHNM(AnchorHead):
         sampled_pos_inds, sampled_neg_inds = self.select_indices(
             target_labels, box_logits
         )
-        sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
+        sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
-        batch_anchors = torch.cat(anchors, dim=0)
-        target_labels = torch.cat(target_labels, dim=0)
-        target_boxes = torch.cat(matched_gt_boxes, dim=0)
+        batch_anchors = cat(anchors, dim=0)
+        target_labels = cat(target_labels, dim=0)
+        target_boxes = cat(matched_gt_boxes, dim=0)
 
         reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
             batch_anchors=batch_anchors[sampled_pos_inds],
@@ -147,8 +148,8 @@ class BoxHeadHNM(AnchorHead):
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(
             target_labels, boxes_max_fg_probs
         )
-        sampled_pos_inds = torch.where(torch.cat(sampled_pos_inds, dim=0))[0]
-        sampled_neg_inds = torch.where(torch.cat(sampled_neg_inds, dim=0))[0]
+        sampled_pos_inds = torch.where(cat(sampled_pos_inds, dim=0))[0]
+        sampled_neg_inds = torch.where(cat(sampled_neg_inds, dim=0))[0]
 
         # if self.logger:
         #     self.logger.add_scalar("train/num_pos", sampled_pos_inds.numel())
@@ -193,16 +194,16 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
         sampled_pos_inds, sampled_neg_inds = self.select_indices(
             target_labels, box_logits
         )
-        sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-        target_labels = torch.cat(target_labels, dim=0)
+        sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
+        target_labels = cat(target_labels, dim=0)
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds]
         )
 
         pos_inds = torch.where(target_labels >= 1)[0]
-        batch_anchors = torch.cat(anchors, dim=0)
-        target_boxes = torch.cat(matched_gt_boxes, dim=0)
+        batch_anchors = cat(anchors, dim=0)
+        target_boxes = cat(matched_gt_boxes, dim=0)
 
         reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
             batch_anchors=batch_anchors[pos_inds],
@@ -287,11 +288,11 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
         sampled_pos_inds, sampled_neg_inds = self.select_indices(
             target_labels, box_logits
         )
-        sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-        target_labels = torch.cat(target_labels, dim=0)
+        sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
+        target_labels = cat(target_labels, dim=0)
 
-        batch_matched_gt_boxes = torch.cat(matched_gt_boxes, dim=0)
-        batch_anchors = torch.cat(anchors, dim=0)
+        batch_matched_gt_boxes = cat(matched_gt_boxes, dim=0)
+        batch_anchors = cat(anchors, dim=0)
 
         # encode anchor deltas
         target_deltas_sampled = self.coder.encode_single(

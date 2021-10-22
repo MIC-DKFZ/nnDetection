@@ -1,5 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
+from typing import Callable
 
 from loguru import logger
 
@@ -422,3 +423,408 @@ class SingleStageMixin(ModelMixin):
             **kwargs,
         )
         return segmenter
+
+
+class RoIBuildMixin:
+    # Use `detector_cls` to set RPN module class
+    full_detector_cls = ...  # Two stage detector class RCNN
+
+    # RoI classes
+    roi_conv_cls = ...
+    roi_module_cls = ...  # RoIModule
+    roi_head_cls = ...  # RoIBoxHead
+    roi_classifier_cls = ...  # RoIClassifierTwoMLP
+    roi_regressor_cls = ...  # RoIRegressorConv
+
+    roi_matcher_cls = ...  # IoUMatcher
+    roi_sampler_cls = ...  # BalancedHardNegativeSampler
+    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
+
+    # optional mask branches
+    roi_masker_cls = None  # BCESingleMasker
+    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+
+    @staticmethod
+    def get_roi_box_size(
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        return model_cfg["roi_pooling"]["roi_box_size"]
+
+    @staticmethod
+    def get_roi_mask_size(
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        return model_cfg["roi_pooling"]["roi_mask_size"]
+
+    @classmethod
+    def _build_rpn(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        if model_cfg["rpn_class_agnostic"]:
+            _plan_arch = copy.deepcopy(plan_arch)
+            _plan_arch["classifier_classes"] = 1
+        else:
+            logger.info("Running class sensitive RPN module!")
+            _plan_arch = plan_arch
+        rpn = super().from_config_plan(
+            model_cfg=model_cfg,
+            plan_arch=_plan_arch,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+        return rpn
+
+    @classmethod
+    def _build_roi_classifier(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        conv: Callable,
+    ):
+        name = cls.head_classifier_cls.__name__
+        kwargs = model_cfg["roi_classifier_kwargs"]
+        logger.info(f"Building:: roi classifier {name}: {kwargs}")
+
+        classifier = cls.roi_classifier_cls(
+            conv=conv,
+            input_size=cls.get_roi_box_size(plan_arch, model_cfg),
+            in_channels=plan_arch["fpn_channels"],
+            internal_channels=plan_arch["fpn_channels"],
+            num_classes=plan_arch["classifier_classes"],
+            **kwargs,
+        )
+        return classifier
+
+    @classmethod
+    def _build_roi_regressor(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        conv: Callable,
+    ):
+        name = cls.roi_regressor_cls.__name__
+        kwargs = model_cfg["roi_regressor_kwargs"]
+        logger.info(f"Building:: roi regressor {name}: {kwargs}")
+
+        regressor = cls.roi_regressor_cls(
+            conv=conv,
+            input_size=cls.get_roi_box_size(plan_arch, model_cfg),
+            in_channels=plan_arch["fpn_channels"],
+            internal_channels=plan_arch["fpn_channels"],
+            **kwargs,
+        )
+        return regressor
+
+    @classmethod
+    def _build_roi_head(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier,
+        regressor,
+        coder,
+    ):
+        name = cls.roi_head_cls.__name__
+        kwargs = model_cfg["roi_head_kwargs"]
+
+        logger.info(f"Building:: roi head {name}: {kwargs}")
+        roi_head = cls.roi_head_cls(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            **kwargs,
+        )
+        return roi_head
+
+    @classmethod
+    def _build_roi_masker(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        conv: Callable,
+    ):
+        if cls.roi_masker_cls is not None:
+            name = cls.roi_masker_cls.__name__
+            kwargs = model_cfg["roi_masker_kwargs"]
+            logger.info(f"Building:: roi masker {name}: {kwargs}")
+
+            masker = cls.roi_masker_cls(
+                conv,
+                in_channels=plan_arch["fpn_channels"],
+                internal_channels=plan_arch["fpn_channels"],
+                **kwargs,
+            )
+        else:
+            masker = None
+        return masker
+
+    @classmethod
+    def _build_box_pooler(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        pooler_name = cls.roi_box_pooler_cls.__name__
+        feature_output_size = cls.get_roi_box_size(plan_arch, model_cfg)
+        logger.info(
+            f"Building:: box pooler {pooler_name} with output size {feature_output_size}"
+        )
+
+        box_pooler = cls.roi_box_pooler_cls(
+            feature_output_size=feature_output_size,
+        )
+        return box_pooler
+
+    @classmethod
+    def _build_mask_pooler(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        if cls.roi_mask_pooler_cls is not None:
+            pooler_name = cls.roi_box_pooler_cls.__name__
+            mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)
+            mask_gt_size = [m * 2 for m in mask_feature_size]  # TODO # FIXME
+
+            logger.info(
+                f"Building:: box pooler {pooler_name} with output "
+                f"size {mask_feature_size} and gt size {mask_gt_size}"
+            )
+
+            mask_pooler = cls.roi_mask_pooler_cls(
+                feature_output_size=mask_feature_size,
+                mask_output_size=mask_gt_size,
+            )
+        else:
+            mask_pooler = None
+        return mask_pooler
+
+    @classmethod
+    def _build_roi_sampler(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        sampler_name = cls.roi_sampler_cls.__name__
+        sampler_kwargs = model_cfg["roi_sampler_kwargs"]
+
+        logger.info(f"Building:: roi sampler {sampler_name}: {sampler_kwargs}")
+        return cls.roi_sampler_cls(**sampler_kwargs)
+
+    @classmethod
+    def _build_roi_module(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        box_head,
+        matcher,
+        box_pooler,
+        sampler,
+        # mask heads
+        mask_head,
+        mask_pooler,
+    ):
+        roi_module_name = cls.roi_module_cls.__name__
+        roi_module_kwargs = model_cfg["roi_module_kwargs"]
+
+        logger.info(f"Building:: roi module {roi_module_name}: {roi_module_kwargs}")
+
+        roi_module = cls.roi_module_cls(
+            box_head=box_head,
+            matcher=matcher,
+            box_pooler=box_pooler,
+            sampler=sampler,
+            num_classes=plan_arch["classifier_classes"],
+            decoder_levels=plan_arch["decoder_levels"],
+            # mask heads
+            mask_head=mask_head,
+            mask_pooler=mask_pooler,
+            **roi_module_kwargs,
+        )
+        return roi_module
+
+
+class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
+    @classmethod
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        # build RPN
+        rpn = cls._build_rpn(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+
+        # build stage(s)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+        conv = Generator(cls.roi_conv_cls, plan_arch["dim"])
+
+        roi_classifier = cls._build_roi_classifier(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            conv=conv,
+        )
+        roi_regressor = cls._build_roi_regressor(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            conv=conv,
+        )
+        roi_head = cls._build_roi_head(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            classifier=roi_classifier,
+            regressor=roi_regressor,
+            coder=coder,
+        )
+
+        # mask branch
+        masker = cls._build_roi_masker(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            conv=conv,
+        )
+
+        # pooler
+        box_pooler = cls._build_box_pooler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        mask_pooler = cls._build_mask_pooler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
+        # RoI Module
+        roi_matcher = cls.roi_matcher_cls(
+            similarity_fn=box_iou,
+            **model_cfg["roi_matcher_kwargs"],
+        )
+        roi_sampler = cls._build_roi_sampler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
+        roi_module = cls._build_roi_module(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            box_head=roi_head,
+            matcher=roi_matcher,
+            box_pooler=box_pooler,
+            sampler=roi_sampler,
+            # mask heads
+            mask_head=masker,
+            mask_pooler=mask_pooler,
+        )
+
+        return cls.full_detector_cls(
+            rpn=rpn,
+            roi_module=roi_module,
+        )
+
+
+class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
+    @classmethod
+    def from_config_plan(
+        cls,
+        model_cfg: dict,
+        plan_arch: dict,
+        plan_anchors: dict,
+        **kwargs,
+    ):
+        # build RPN
+        rpn = super().from_config_plan(
+            model_cfg=model_cfg,
+            plan_arch=plan_arch,
+            plan_anchors=plan_anchors,
+            **kwargs,
+        )
+
+        # build stage(s)
+        coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
+        conv = Generator(cls.roi_conv_cls, plan_arch["dim"])
+
+        heads = []
+        matchers = []
+        maskers = []
+        for i in range(model_cfg["roi_cascade_stages"]):
+            roi_classifier = cls._build_roi_classifier(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                conv=conv,
+            )
+            roi_regressor = cls._build_roi_regressor(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                conv=conv,
+            )
+            roi_head = cls._build_roi_head(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                classifier=roi_classifier,
+                regressor=roi_regressor,
+                coder=coder,
+            )
+            heads.append(roi_head)
+
+            # mask branch
+            masker = cls._build_roi_masker(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                conv=conv,
+            )
+            maskers.append(masker)
+
+            # Matcher
+            roi_matcher = cls.roi_matcher_cls(
+                similarity_fn=box_iou,
+                **model_cfg[f"roi_matcher_kwargs_s{i}"],
+            )
+            matchers.append(roi_matcher)
+
+        # pooler
+        box_pooler = cls._build_box_pooler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        mask_pooler = cls._build_mask_pooler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
+        # RoI Module
+        roi_sampler = cls._build_roi_sampler(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
+        # seq[None] -> None
+        if maskers[0] is None:
+            maskers = None
+
+        roi_module = cls._build_roi_module(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            box_head=heads,
+            matcher=matchers,
+            box_pooler=box_pooler,
+            sampler=roi_sampler,
+            # mask heads
+            mask_head=maskers,
+            mask_pooler=mask_pooler,
+        )
+        return cls.full_detector_cls(
+            rpn=rpn,
+            roi_module=roi_module,
+        )

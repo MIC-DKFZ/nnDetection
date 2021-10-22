@@ -164,3 +164,19 @@ class BaseHead(nn.Module):
 
 
 HeadType = TypeVar("HeadType", bound=BaseHead)
+
+
+class RoIConv1x1View(torch.nn.Module):
+    def __init__(self, dim: int):
+        """
+        Small helper class to reshape input tensors for RoI processing
+        of 1x1 convs immitating fully connected layers.
+
+        Args:
+            dim: number of spatial dimensions
+        """
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x.view(x.shape[0], -1, *[1] * self.dim)

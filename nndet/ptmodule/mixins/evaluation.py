@@ -1,22 +1,15 @@
 from abc import ABC
-from typing import Dict, List
+from typing import Dict
 
 from loguru import logger
 
 from nndet.evaluator import AbstractEvaluator
 from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
-from nndet.io.transforms import (
-    AbstractTransform,
-    FindInstances,
-    Instances2Boxes,
-    Instances2Fg,
-    Instances2Segmentation,
-)
 from nndet.utils.tensor import to_numpy
 
 
-class ModeMixin(ABC):
+class EvalMixin(ABC):
     """
     This mixin module defines the operation modes of the network.
     It provides the transformation to prepare the ground truth and input
@@ -24,23 +17,6 @@ class ModeMixin(ABC):
     """
 
     evaluators: Dict = {}  # needs to be overwritten in subclass
-
-    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
-        """
-        Perform a sequence of transformations to the intput before passing it
-        to the network. These transforamtions need to support pytorch tensors
-        and are executed on the GPU.
-
-        Raises:
-            NotImplementedError: needs to be overwritten in the subclasses
-
-        Returns:
-            List[AbstractTransform]: return a list of transformations
-
-        Notes:
-            make sure to call the super classes here!
-        """
-        return []
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
@@ -96,35 +72,7 @@ class ModeMixin(ABC):
         return {}
 
 
-class BoxMixin(ModeMixin):
-    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
-        """
-        Search for unqiue instances -> Instances to Boxes
-
-        Returns:
-            List[AbstractTransform]: return a list of transformations
-
-        Notes:
-            make sure to call the super classes here!
-        """
-        trafos = super().get_pre_transforms(plan=plan)
-        trafos.append(
-            FindInstances(
-                instance_key="target",
-                save_key="present_instances",
-            )
-        )
-        trafos.append(
-            Instances2Boxes(
-                instance_key="target",
-                map_key="instance_mapping",
-                box_key="boxes",
-                class_key="classes",
-                present_instances="present_instances",
-            )
-        )
-        return trafos
-
+class BoxEvalMixin(EvalMixin):
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
         Initialize BoxEvaluator
@@ -212,7 +160,7 @@ class BoxMixin(ModeMixin):
         return metric_scores
 
 
-class SemanticMixin(ModeMixin):
+class SemanticEvalMixin(EvalMixin):
     """
     This Mixin only works with BoxMixin!
     BoxMixin needs to be subclassed last e.g.
@@ -221,27 +169,6 @@ class SemanticMixin(ModeMixin):
     Args:
         OperationModeMixin ([type]): [description]
     """
-
-    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
-        """
-        Search for unqiue instances -> Instances to Boxes
-
-        Returns:
-            List[AbstractTransform]: return a list of transformations
-
-        Notes:
-            make sure to call the super classes here!
-        """
-        trafos = super().get_pre_transforms(plan=plan)
-        trafos.append(
-            Instances2Segmentation(
-                instance_key="target",
-                map_key="instance_mapping",
-                present_instances="present_instances",
-                seg_key="target_seg",
-            )
-        )
-        return trafos
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
@@ -309,7 +236,7 @@ class SemanticMixin(ModeMixin):
         return metric_scores
 
 
-class SemanticFgMixin(ModeMixin):
+class SemanticFgEvalMixin(EvalMixin):
     """
     Run segmentation evaluation in FG mode
 
@@ -317,25 +244,6 @@ class SemanticFgMixin(ModeMixin):
     BoxMixin needs to be subclassed last e.g.
     `Module(.. SemanticMixin, BoxMixin, ..)`
     """
-
-    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
-        """
-        Search for unqiue instances -> Instances to Boxes
-
-        Returns:
-            List[AbstractTransform]: return a list of transformations
-
-        Notes:
-            make sure to call the super classes here!
-        """
-        trafos = super().get_pre_transforms(plan=plan)
-        trafos.append(
-            Instances2Fg(
-                instance_key="target",
-                seg_key="target_seg",
-            )
-        )
-        return trafos
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
@@ -403,5 +311,5 @@ class SemanticFgMixin(ModeMixin):
         return metric_scores
 
 
-class InstanceMixin(ModeMixin):
+class InstanceEvalMixin(EvalMixin):
     pass

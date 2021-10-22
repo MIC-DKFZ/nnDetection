@@ -85,9 +85,9 @@ class Matcher(ABC):
             # no ground truth
             num_anchors = anchors.shape[0]
             match_quality_matrix = torch.tensor([]).to(anchors)
-            matches = torch.empty(num_anchors, dtype=torch.int64).fill_(
-                self.BELOW_LOW_THRESHOLD
-            )
+            matches = torch.empty(
+                num_anchors, dtype=torch.int64, device=anchors.device
+            ).fill_(self.BELOW_LOW_THRESHOLD)
             return match_quality_matrix, matches
         else:
             # at least one ground truth

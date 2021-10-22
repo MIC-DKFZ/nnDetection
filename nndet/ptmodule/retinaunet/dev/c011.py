@@ -18,7 +18,7 @@ from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 from nndet.arch.heads.comb.base import AnchorHeadType
 from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType, DualRegressor
+from nndet.arch.heads.regressor.dense import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001

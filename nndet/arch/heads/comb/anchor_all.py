@@ -5,7 +5,7 @@ from torch import Tensor
 
 from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.regressor.dense_single import DenseRegressorType
+from nndet.arch.heads.regressor.dense import DenseRegressorType
 from nndet.core.boxes.coder import BoxCoderND
 
 

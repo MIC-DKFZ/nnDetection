@@ -177,12 +177,12 @@ class BaseRetinaNet(AbstractModel):
 
         target_boxes: List[Tensor] = targets["target_boxes"]
         target_classes: List[Tensor] = targets["target_classes"]
-        target_seg: Tensor = targets["target_seg"]
+        target_seg: Tensor = targets.get("target_seg", None)
 
         pred_detection, anchors, pred_seg, features = self(images)
 
         # with torch.no_grad():
-        labels, matched_gt_boxes = assign_targets_to_anchors(
+        labels, matched_gt_boxes, _ = assign_targets_to_anchors(
             proposal_matcher=self.proposal_matcher,
             anchors=anchors,
             target_boxes=target_boxes,
@@ -198,6 +198,7 @@ class BaseRetinaNet(AbstractModel):
         losses.update(head_losses)
 
         if self.segmenter is not None:
+            assert target_seg is not None, "FIXME"  # FIXME: better handling here
             losses.update(self.segmenter.compute_loss(pred_seg, target_seg))
 
         if predict:
@@ -336,7 +337,7 @@ class BaseRetinaNet(AbstractModel):
         # iterate over images
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
             if not self.head.regress_multi_class:
-                boxes, probs, labels = post_image_single_class_regression(
+                _boxes, _probs, _labels = post_image_single_class_regression(
                     boxes=boxes,
                     probs=probs,
                     num_foreground_classes=self.num_foreground_classes,
@@ -350,9 +351,9 @@ class BaseRetinaNet(AbstractModel):
             else:
                 raise NotImplementedError
 
-            all_boxes.append(boxes)
-            all_probs.append(probs)
-            all_labels.append(labels)
+            all_boxes.append(_boxes)
+            all_probs.append(_probs)
+            all_labels.append(_labels)
         return all_boxes, all_probs, all_labels
 
     # @torch.no_grad()
