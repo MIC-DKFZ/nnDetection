@@ -164,7 +164,7 @@ class BoxPredictionMixin(PredictionMixin):
                 ``"iou_thresh"`` float
                     best IoU threshold
 
-                ``"score_thresh"` float
+                ``"score_thresh"`` float
                     best score threshold
 
                 ``"no_overlap"`` bool

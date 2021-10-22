@@ -114,13 +114,15 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
-        losses, _ = self.model.train_step(  # FIXME
+        targets = {key: item for key, item in batch.items() if "target_" in key}
+        if "target_seg" in targets:
+            targets["target_seg"] = targets["target_seg"][
+                :, 0
+            ]  # Remove channel dimension
+
+        losses, _ = self.model.train_step(
             images=batch["data"],
-            targets={
-                "target_boxes": batch["boxes"],
-                "target_classes": batch["classes"],
-                "target_seg": batch["target_seg"][:, 0],  # Remove channel dimension
-            },
+            targets=targets,
             predict=False,
             batch_num=batch_idx,
         )
@@ -138,12 +140,14 @@ class LightningBaseModule(pl.LightningModule):
         """
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
-            targets = {
-                "target_boxes": batch["boxes"],
-                "target_classes": batch["classes"],
-                "target_seg": batch["target_seg"][:, 0],  # Remove channel dimension
-            }
-            losses, predictions = self.model.train_step(  # FIXME
+
+            targets = {key: item for key, item in batch.items() if "target_" in key}
+            if "target_seg" in targets:
+                targets["target_seg"] = targets["target_seg"][
+                    :, 0
+                ]  # Remove channel dimension
+
+            losses, predictions = self.model.train_step(
                 images=batch["data"],
                 targets=targets,
                 predict=True,

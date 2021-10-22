@@ -17,42 +17,44 @@ class PrepareMixin(ABC):
         to the network. These transforamtions need to support pytorch tensors
         and are executed on the GPU.
 
-        Raises:
-            NotImplementedError: needs to be overwritten in the subclasses
-
         Returns:
             List[AbstractTransform]: return a list of transformations
 
         Notes:
             make sure to call the super classes here!
         """
-        return []
+        transforms = [
+            FindInstances(
+                instance_key="target",
+                save_key="present_instances",
+            ),
+        ]
+        return transforms
 
 
 class BoxPrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
-        Search for unqiue instances -> Instances to Boxes
+        Convert numbered instance mask to bounding boxes and classes.
+        Requires input keys `target`, `instance_mapping` and `present_instances`.
+        Results are saved into `target_boxes` and `target_classes`.
 
         Returns:
             List[AbstractTransform]: return a list of transformations
 
         Notes:
             make sure to call the super classes here!
+
+        See Also:
+            `Instances2Boxes`
         """
         transforms = super().get_pre_transforms(plan=plan)
-        transforms.append(
-            FindInstances(
-                instance_key="target",
-                save_key="present_instances",
-            )
-        )
         transforms.append(
             Instances2Boxes(
                 instance_key="target",
                 map_key="instance_mapping",
-                box_key="boxes",
-                class_key="classes",
+                box_key="target_boxes",
+                class_key="target_classes",
                 present_instances="present_instances",
             )
         )
@@ -62,13 +64,17 @@ class BoxPrepareMixin(PrepareMixin):
 class SemanticPrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
-        Search for unqiue instances -> Instances to Boxes
+        Convert numbered instance mask to semantic segmentation.
+        Requires input keys `target` and `present_instances`.
 
         Returns:
             List[AbstractTransform]: return a list of transformations
 
         Notes:
             make sure to call the super classes here!
+
+        See Also:
+            `Instances2Segmentation`
         """
         transforms = super().get_pre_transforms(plan=plan)
         transforms.append(
@@ -85,13 +91,17 @@ class SemanticPrepareMixin(PrepareMixin):
 class SemanticFgPrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
-        Map all instance to foreground
+        Convert numbered instance mask to foreground segmentation.
+        Requires input keys `target`.
 
         Returns:
             List[AbstractTransform]: return a list of transformations
 
         Notes:
             make sure to call the super classes here!
+
+        See Also:
+            `Instances2Fg`
         """
         trafos = super().get_pre_transforms(plan=plan)
         trafos.append(
@@ -106,13 +116,18 @@ class SemanticFgPrepareMixin(PrepareMixin):
 class InstancePrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
-        Craete instane segmentations
+        Convert numbered instance mask to binary segmentation masks.
+        Requires input keys `target` and `present_instances`.
 
         Returns:
             List[AbstractTransform]: return a list of transformations
 
         Notes:
             make sure to call the super classes here!
+
+        See Also:
+            # TODO
+
         """
         raise NotImplementedError
         trafos = super().get_pre_transforms(plan=plan)

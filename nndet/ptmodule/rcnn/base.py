@@ -95,8 +95,8 @@ class BoxRCNN(
         losses, _ = self.model.train_step(
             images=batch["data"],
             targets={
-                "target_boxes": batch["boxes"],
-                "target_classes": batch["classes"],
+                "target_boxes": batch["target_boxes"],
+                "target_classes": batch["target_classes"],
                 "target_masks": batch["target"][:, 0],  # Remove channel dimension
                 "target_num_instances": [len(i) for i in batch["present_instances"]],
                 **kwargs,
@@ -125,8 +125,8 @@ class BoxRCNN(
                 )  # Remove channel dimension
 
             targets = {
-                "target_boxes": batch["boxes"],
-                "target_classes": batch["classes"],
+                "target_boxes": batch["target_boxes"],
+                "target_classes": batch["target_classes"],
                 **kwargs,
             }
             predictions = self.model.inference_step(
@@ -197,8 +197,8 @@ class BoxCascadeRCNN(
             batch = self.pre_trafo(**batch)
 
         targets = {
-            "target_boxes": batch["boxes"],
-            "target_classes": batch["classes"],
+            "target_boxes": batch["target_boxes"],
+            "target_classes": batch["target_classes"],
             "target_masks": batch["target"][:, 0],  # Remove channel dimension
             "target_num_instances": [len(i) for i in batch["present_instances"]],
         }
@@ -226,8 +226,8 @@ class BoxCascadeRCNN(
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
             targets = {
-                "target_boxes": batch["boxes"],
-                "target_classes": batch["classes"],
+                "target_boxes": batch["target_boxes"],
+                "target_classes": batch["target_classes"],
             }
             if "target_seg" in batch:
                 targets["target_seg"] = batch["target_seg"][
