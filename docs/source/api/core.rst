@@ -10,8 +10,8 @@ Detector Blueprints
    :toctree: Detector Blueprints
    :nosignatures:
 
-   rcnn
    retina
+   rcnn
 
 Boxes
 -----

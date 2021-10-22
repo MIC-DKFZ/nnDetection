@@ -210,7 +210,8 @@ def instances_to_boxes_np(
 
 
 def get_instance_class_from_properties(
-    instance_idx: torch.Tensor, map_dict: Dict[Union[str, int], Union[str, int]]
+    instance_idx: torch.Tensor,
+    map_dict: Dict[Union[str, int], Union[str, int]],
 ) -> Tensor:
     """
     Extract instance classes form mapping dict
@@ -228,7 +229,8 @@ def get_instance_class_from_properties(
 
 
 def get_instance_class_from_properties_seq(
-    instance_idx: Sequence[int], map_dict: Dict[Union[str, int], Union[str, int]]
+    instance_idx: Sequence[int],
+    map_dict: Dict[Union[str, int], Union[str, int]],
 ) -> Sequence[int]:
     """
     Extract instance classes form mapping dict
@@ -305,7 +307,7 @@ def instances_to_segmentation(
     instances: Tensor,
     mapping: Dict[str, Union[str, int]],
     add_background: bool = True,
-    instance_idx: Optional[Sequence[int]] = None,
+    instance_idx: Optional[Tensor] = None,
     out: Tensor = None,
 ) -> Tensor:
     """

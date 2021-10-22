@@ -1,9 +1,14 @@
 from typing import Sequence, Tuple, Union
 
 import torch
+from loguru import logger
 from torch import Tensor
 
-from nndet._C import roi_align as roi_align_3d
+try:
+    from nndet._C import roi_align as roi_align_3d
+except ImportError:
+    logger.warning("nnDetection was not build with GPU support!")
+    roi_align_3d = None
 from nndet.core.boxes.ops import expand_to_boxes
 
 
