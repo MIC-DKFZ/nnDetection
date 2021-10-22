@@ -21,8 +21,9 @@ Mixins
    :toctree: Modes
    :nosignatures:
 
-   mode
    model
+   prepare
+   evaluation
    prediction
 
 Optimizers
@@ -43,6 +44,14 @@ Optimizers
 Models
 ------
 
+.. currentmodule:: nndet.ptmodule.retinanet
+
+.. autosummary::
+   :toctree: Models
+   :nosignatures:
+
+   base
+
 .. currentmodule:: nndet.ptmodule.retinaunet
 
 .. autosummary::
@@ -52,7 +61,8 @@ Models
    base
    v001
 
-.. currentmodule:: nndet.ptmodule.retinanet
+
+.. currentmodule:: nndet.ptmodule.rcnn
 
 .. autosummary::
    :toctree: Models
