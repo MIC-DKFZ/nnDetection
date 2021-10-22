@@ -18,6 +18,7 @@ from collections import defaultdict
 from typing import Dict, Sequence, Tuple
 
 import numpy as np
+from loguru import logger
 
 from nndet.evaluator import AbstractEvaluator
 
@@ -33,6 +34,9 @@ class SegmentationEvaluator(AbstractEvaluator):
     ):
         """
         Compute dice score during training
+
+        Args:
+            per_class: report per class dice scores
         """
         self.per_class = per_class
         self.results_list = defaultdict(list)
@@ -68,6 +72,7 @@ class SegmentationEvaluator(AbstractEvaluator):
         tp_hard = np.zeros((target.shape[0], num_classes - 1))
         fp_hard = np.zeros((target.shape[0], num_classes - 1))
         fn_hard = np.zeros((target.shape[0], num_classes - 1))
+
         for c in range(1, num_classes):
             tp_hard[:, c - 1] = (
                 (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
@@ -115,14 +120,20 @@ class SegmentationEvaluator(AbstractEvaluator):
                 for cls_idx, dc in enumerate(global_dc_per_class):
                     results[f"{cls_idx}_seg_dice"] = dc
             results["seg_dice"] = np.mean(global_dc_per_class)
+        else:
+            logger.warning("No segmentation results found.")
         return results, None
 
     @classmethod
     def create(
         cls,
         per_class: bool = False,
+        fg_mode: bool = False,
     ):
-        return cls(per_class=per_class)
+        return cls(
+            per_class=per_class,
+            fg_mode=fg_mode,
+        )
 
 
 class PerCaseSegmentationEvaluator(AbstractEvaluator):

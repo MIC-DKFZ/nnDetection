@@ -10,6 +10,7 @@ from nndet.io.transforms import (
     AbstractTransform,
     FindInstances,
     Instances2Boxes,
+    Instances2Fg,
     Instances2Segmentation,
 )
 from nndet.utils.tensor import to_numpy
@@ -213,7 +214,7 @@ class BoxMixin(ModeMixin):
 
 class SemanticMixin(ModeMixin):
     """
-    This Mixin onl works with BoxMixin!
+    This Mixin only works with BoxMixin!
     BoxMixin needs to be subclassed last e.g.
     `Module(.. SemanticMixin, BoxMixin, ..)`
 
@@ -237,13 +238,14 @@ class SemanticMixin(ModeMixin):
                 instance_key="target",
                 map_key="instance_mapping",
                 present_instances="present_instances",
+                seg_key="target_seg",
             )
         )
         return trafos
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
-        Initialize BoxEvaluator
+        Initialize SegmentationEvaluator
 
         Notes:
             make sure to call the super classes here!
@@ -251,7 +253,7 @@ class SemanticMixin(ModeMixin):
         evaluators = super().evaluation_init(plan=plan)
         if "semantic" in evaluators:
             raise RuntimeError(
-                "Found BoxEvaluator in evaluators, can not register a second one!"
+                "Found SegmentationEvaluator in evaluators, can not register a second one!"
             )
 
         evaluators["semantic"] = SegmentationEvaluator.create()
@@ -303,6 +305,100 @@ class SemanticMixin(ModeMixin):
 
         # [optional] log own scores
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
+
+        return metric_scores
+
+
+class SemanticFgMixin(ModeMixin):
+    """
+    Run segmentation evaluation in FG mode
+
+    This Mixin only works with BoxMixin!
+    BoxMixin needs to be subclassed last e.g.
+    `Module(.. SemanticMixin, BoxMixin, ..)`
+    """
+
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
+        """
+        Search for unqiue instances -> Instances to Boxes
+
+        Returns:
+            List[AbstractTransform]: return a list of transformations
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        trafos = super().get_pre_transforms(plan=plan)
+        trafos.append(
+            Instances2Fg(
+                instance_key="target",
+                seg_key="target_seg",
+            )
+        )
+        return trafos
+
+    def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
+        """
+        Initialize SegmentationEvaluator
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        evaluators = super().evaluation_init(plan=plan)
+        if "semantic_fg" in evaluators:
+            raise RuntimeError(
+                "Found SegmentationEvaluator in evaluators, can not register a second one!"
+            )
+
+        evaluators["semantic_fg"] = SegmentationEvaluator.create(fg_mode=True)
+        return evaluators
+
+    def evaluation_step(
+        self,
+        predictions: dict,
+        targets: dict,
+    ) -> None:
+        """
+        Evaluate a validation batch with metrics
+
+        Args:
+            predictions: dict with predictions.
+                Exact keys depend on the module class
+            targets: dict with ground truth.
+                Exact keys depend on the module class.
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        super().evaluation_step(predictions=predictions, targets=targets)
+
+        pred_seg = to_numpy(predictions["pred_seg"])
+        gt_seg = to_numpy(targets["target_seg"])
+
+        self.evaluators["semantic_fg"].run_online_evaluation(
+            seg_probs=pred_seg,
+            target=gt_seg,
+        )
+
+    def evaluation_end(self) -> Dict[str, float]:
+        """
+        Compute validation metrics of epoch
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        # collect other scores
+        metric_scores = super().evaluation_end()
+
+        # compute own scores
+        seg_scores, _ = self.evaluators["semantic_fg"].finish_online_evaluation()
+        self.evaluators["semantic_fg"].reset()
+
+        # add own scores
+        metric_scores.update(seg_scores)
+
+        # [optional] log own scores
+        logger.info(f"Proxy FG Dice (fg_mode=True): {seg_scores['seg_dice']:0.3f}")
 
         return metric_scores
 

@@ -372,3 +372,58 @@ def instances_to_segmentation_np(
             _cls += 1
         out[instances == instance_id] = _cls
     return out
+
+
+class Instances2Fg(AbstractTransform):
+    def __init__(
+        self,
+        instance_key: str,
+        seg_key: str = None,
+        grad: bool = False,
+    ):
+        """
+        Convert instances to foreground segmentation
+
+        Args:
+            instance_key: key where instance segmentation is located
+            seg_key: key where fg segmentation should be saved; If None, the
+                instance key will be overwritten
+            grad: enable gradient propagation through transformation
+        """
+        super().__init__(grad=grad)
+        self.seg_key = seg_key if seg_key is not None else instance_key
+        self.instance_key = instance_key
+
+    def forward(self, **data) -> dict:
+        """
+        Convert instance segmentation to fg semantic segmentation
+
+        Args:
+            **data: batch dict
+
+        Returns:
+            dict: processed batch
+        """
+        semantic_fg = instances_to_fg(data[self.instance_key])
+        data[self.seg_key] = semantic_fg
+        return data
+
+
+def instances_to_fg(
+    instances: Tensor,
+    out: Optional[Tensor] = None,
+):
+    if out is None:
+        out = torch.zeros_like(instances)
+    out = (instances > 0).to(instances)
+    return out
+
+
+def instances_to_fg_np(
+    instances: np.ndarray,
+    out: np.ndarray = None,
+):
+    if out is None:
+        out = np.zeros_like(instances)
+    out = (instances > 0).astype(instances.dtype)
+    return out

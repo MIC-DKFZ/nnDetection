@@ -2,7 +2,7 @@ from typing import Dict
 
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-from nndet.preprocessing.preprocessor import PreprocessorFP16I16
+from nndet.preprocessing.preprocessor.others import PreprocessorFP16I16
 
 
 @PLANNER_REGISTRY.register

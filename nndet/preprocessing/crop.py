@@ -128,10 +128,10 @@ def crop_to_nonzero(data, seg=None, nonzero_label=-1):
     bbox = get_bbox_from_mask(nonzero_mask, 0)
 
     data = crop_to_bbox(data, bbox)
-    seg = crop_to_bbox(seg, bbox)
     nonzero_mask = crop_to_bbox_no_channels(nonzero_mask, bbox)[None]
 
     if seg is not None:
+        seg = crop_to_bbox(seg, bbox)
         seg[(seg == 0) & (nonzero_mask == 0)] = nonzero_label
     else:
         nonzero_mask = nonzero_mask.astype(np.int32)
@@ -247,7 +247,10 @@ class ImageCropper(object):
             raise e
 
     @staticmethod
-    def load_crop_from_list_of_files(data_files: List[Path], seg_file: Path = None):
+    def load_crop_from_list_of_files(
+        data_files: List[Path],
+        seg_file: Path = None,
+    ):
         """
         Load and crop form list of files
 
@@ -274,14 +277,18 @@ class ImageCropper(object):
         return ImageCropper.crop(data, properties, seg)
 
     @staticmethod
-    def crop(data: np.ndarray, properties: dict, seg: np.ndarray = None):
+    def crop(
+        data: np.ndarray,
+        properties: dict,
+        seg: np.ndarray = None,
+    ):
         """
         Crop data and segmentation to non zero region
 
         Args:
-            data (np.ndarray): data to crop [C, X, Y, Z]
-            properties (dict): additional properties
-            seg (np.ndarray): segmentation [1, X, Y, Z]
+            data: data to crop [C, X, Y, Z]
+            properties: additional properties
+            seg: segmentation [1, X, Y, Z]
 
         Returns:
             data (np.ndarray): data to crop [C, X, Y, Z]

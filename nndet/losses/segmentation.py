@@ -250,6 +250,7 @@ class TopKLoss(CrossEntropyLoss):
         if topk < 0 or topk > 1:
             raise ValueError("topk needs to be in the range [0, 1].")
         self.topk = topk
+        logger.info(f"TopK loss uses topk: {self.topk:.2f}")
 
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         """

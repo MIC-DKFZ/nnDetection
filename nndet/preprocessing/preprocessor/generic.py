@@ -13,100 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-from abc import ABC, abstractmethod
 from itertools import repeat
 from multiprocessing import Pool
 from os import PathLike
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple, TypeVar, Union
+from typing import Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
 
-from nndet.io.crop import ImageCropper
 from nndet.io.load import load_case_cropped, save_pickle
 from nndet.io.paths import get_case_id_from_path, get_case_ids_from_dir
 from nndet.io.transforms.instances import instances_to_boxes_np
+from nndet.preprocessing.crop import ImageCropper
+from nndet.preprocessing.preprocessor.abstract import AbstractPreprocessor
 from nndet.preprocessing.resampling import resample_patient
 
 
-class AbstractPreprocessor(ABC):
-    DATA_ID = "abstractdata"
-
-    def __init__(self, **kwargs):
-        """
-        Interface for preprocessor
-        """
-        for key, item in kwargs.items():
-            setattr(self, key, item)
-
-    @abstractmethod
-    def run(
-        self,
-        target_spacings: Sequence[Sequence[float]],
-        identifiers: Sequence[str],
-        cropped_data_dir: Path,
-        preprocessed_output_dir: Path,
-        num_processes: int,
-        force_separate_z=None,
-    ):
-        """
-        Run preprocessing
-
-        Args:
-            target_spacings: target spacing for each case
-            identifiers: identifier strings used to name the directory
-            cropped_data_dir: source directory
-            preprocessed_output_dir: target directory
-            num_processes: number of processes used for preprocessing
-            force_separate_z: force independent resampling of z direction
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def run_test(
-        self,
-        data_files,
-        target_spacing,
-        target_dir: PathLike,
-    ) -> None:
-        """
-        Preprocess and save test data
-
-        Args:
-            data_files: path to data files
-            target_spacing: spacing to resample
-            target_dir: directory to save data to
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def preprocess_test_case(
-        self,
-        data_files,
-        target_spacing,
-        seg_file=None,
-        force_separate_z=None,
-    ) -> Tuple[np.ndarray, np.ndarray, dict]:
-        """
-        Preprocess a test file
-
-        Args:
-            data_files: path to data files
-            target_spacing: spacing to resample
-            seg_file: optional segmentation file
-            force_separate_z: separate resampling in z direction
-
-        Returns:
-            np.ndarray: preprocessed data [C, dims]
-            np.ndarray: preprocessed segmentation [1, dims]
-            dict: updated properties
-        """
-        raise NotImplementedError
-
-
-class GenericPreprocessor:
+class GenericPreprocessor(AbstractPreprocessor):
     DATA_ID = "Generic"
 
     def __init__(
@@ -140,8 +64,10 @@ class GenericPreprocessor:
         self.transpose_forward = list(transpose_forward)
         self.use_mask_for_norm = use_mask_for_norm
         self.norm_scheme_per_modality = norm_scheme_per_modality
+        self.norm_schemes = self.init_norm_schemes()
 
-        self.norm_schemes = {
+    def init_norm_schemes(self):
+        return {
             "CT": self.normalize_ct,
             "CT2": self.normalize_ct2,
             "CT3": self.normalize_ct,
@@ -441,10 +367,19 @@ class GenericPreprocessor:
             data
         ), "use_mask_for_norm must have as many entries as data has modalities"
 
+        rep = "Applying norm scheme: "
         for c in range(len(data)):
             scheme = self.norm_scheme_per_modality[c]
-            scheme_fn = self.norm_schemes.get(scheme, self.normalize_other)
+
+            if scheme in self.norm_schemes:
+                rep = rep + f"({c}): {scheme} "
+                scheme_fn = self.norm_schemes[scheme]
+            else:
+                rep = rep + f"({c}): default "
+                scheme_fn = self.normalize_other
+
             data = scheme_fn(data, seg, c, self.use_mask_for_norm)
+        logger.info(rep)
         return data
 
     def normalize_ct(
@@ -705,190 +640,6 @@ class GenericPreprocessor:
         return data.astype(np.float32), seg.astype(np.int32), properties
 
 
-class Preprocessor2D(GenericPreprocessor):
-    """
-    Do not resample along the z direction
-    """
-
-    def resample(
-        self,
-        data: np.ndarray,
-        seg: np.ndarray,
-        original_spacing: Sequence[float],
-        target_spacing: Sequence[float],
-    ) -> Tuple[np.ndarray, np.ndarray, dict]:
-        """
-        Resample data and segmentation to new spacing
-
-        Args:
-            data: input data
-            seg: input segmentation
-            original_spacing: original spacing
-            target_spacing: target spacing
-
-        Returns:
-            np.ndarray: resampled data
-            np.ndarray: resampled segmentation
-            dict: properties after resampling
-                `spacing`: spacing after resampling
-                `shape (resampled)`: shape after resampling
-        """
-        original_spacing = np.array(original_spacing)
-        target_spacing = np.array(target_spacing)
-        data[np.isnan(data)] = 0
-
-        # prevent resampling along the z direction
-        target_spacing[0] = original_spacing[0]
-
-        data, seg = resample_patient(
-            data,
-            seg,
-            original_spacing,
-            target_spacing,
-            order_data=3,
-            order_seg=0,
-            force_separate_z=False,
-            order_z_data=9999,
-            order_z_seg=9999,
-            separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
-        )
-
-        after = {
-            "spacing": target_spacing,
-            "shape (resampled)": data.shape,
-        }
-        return data, seg, after
-
-
-class Preprocessor2DRGB01(GenericPreprocessor):
-    def normalize(self, data: np.ndarray, seg: np.ndarray) -> np.ndarray:
-        """
-        Normalize data by dividing by 255 to normalize to 0,1 range
-
-        Args:
-            data: input data
-            seg: input data
-
-        Returns:
-            np.ndarray: normalized data
-        """
-        return data / 255
-
-
-class PreprocessorNoResampling(GenericPreprocessor):
-    def resample(
-        self,
-        data: np.ndarray,
-        seg: np.ndarray,
-        original_spacing: Sequence[float],
-        target_spacing: Sequence[float],
-    ) -> Tuple[np.ndarray, np.ndarray, dict]:
-        """
-        Do not resample
-
-        Args:
-            data: input data
-            seg: input segmentation
-            original_spacing: original spacing
-            target_spacing: target spacing
-
-        Returns:
-            np.ndarray: resampled data
-            np.ndarray: resampled segmentation
-            dict: properties after resampling
-                `spacing`: spacing after resampling
-                `shape (resampled)`: shape after resampling
-        """
-        original_spacing = np.array(original_spacing)
-        data[np.isnan(data)] = 0
-
-        after = {
-            "spacing": original_spacing,
-            "shape (resampled)": data.shape,
-        }
-        return data, seg, after
-
-
-class PreprocessorRibFrac(PreprocessorNoResampling):
-    """
-    No resampling + bone window
-    """
-
-    def normalize_ct(
-        self,
-        data: np.ndarray,
-        seg: np.ndarray,
-        modality: int,
-        use_nonzero_mask: Dict[int, bool],
-    ) -> np.ndarray:
-        """
-        clip to lb and ub from train data foreground and use foreground mn and sd from training data
-        (This uses the foreground mean and std!)
-        Args:
-            data: data to normalize [C, dims]
-            seg: segmentation [C, dims]
-            modality: current modality
-            use_nonzero_mask: use non zero region for normalization and set all values
-                outside to zero [C]
-
-        Returns:
-            np.ndarray: normalized data (only modality channel was changes)
-        """
-        lower_bound = 450.0 - (1100.0 / 2.0)
-        upper_bound = 450.0 + (1100.0 / 2.0)
-        data[modality] = np.clip(data[modality], lower_bound, upper_bound)
-        data[modality] = data[modality] - data[modality].min()  # (0, X)
-        data[modality] = data[modality] / data[modality].max()  # (0, 1)
-        data[modality] = (data[modality] - 0.5) * 2  # (-1, 1)
-        return data
-
-
-class PreprocessorFP16I16(GenericPreprocessor):
-    def run_process(
-        self,
-        target_spacing: Sequence[float],
-        case_id: str,
-        output_dir_stage: Path,
-        cropped_data_dir: Path,
-    ) -> None:
-        """
-        Process a single case
-        Result is saved into :param:`output_dir_stage`
-
-        Args:
-            target_spacing: target spacing for processed case
-            case_id: case identifier
-            output_dir_stage: path to output directory
-            cropped_data_dir: path to source directory
-        """
-        data, seg, properties = load_case_cropped(cropped_data_dir, case_id)
-        seg = seg[None]
-
-        data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg
-        )
-        properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
-
-        data = data.astype(np.float16)  # use float16 instead of float32
-        seg = seg.astype(np.int16)  # use int16 instead of int32
-
-        candidates = self.compute_candidates(
-            data=data,
-            seg=seg,
-            properties=properties,
-        )
-
-        logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(
-            str(output_dir_stage / f"{case_id}.npz"),
-            data=data,
-            seg=seg,
-        )
-
-        save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
-        save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
-
-
 class DynDTypePreprocessor(GenericPreprocessor):
     def run_process(
         self,
@@ -935,6 +686,3 @@ class DynDTypePreprocessor(GenericPreprocessor):
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
-
-
-PreprocessorType = TypeVar("PreprocessorType", bound=AbstractPreprocessor)

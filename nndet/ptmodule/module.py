@@ -119,7 +119,7 @@ class LightningBaseModule(pl.LightningModule):
             targets={
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch["target"][:, 0],  # Remove channel dimension
+                "target_seg": batch["target_seg"][:, 0],  # Remove channel dimension
             },
             predict=False,
             batch_num=batch_idx,
@@ -141,7 +141,7 @@ class LightningBaseModule(pl.LightningModule):
             targets = {
                 "target_boxes": batch["boxes"],
                 "target_classes": batch["classes"],
-                "target_seg": batch["target"][:, 0],  # Remove channel dimension
+                "target_seg": batch["target_seg"][:, 0],  # Remove channel dimension
             }
             losses, predictions = self.model.train_step(  # FIXME
                 images=batch["data"],
