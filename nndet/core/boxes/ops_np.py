@@ -18,7 +18,9 @@ import numpy as np
 from numpy import ndarray
 
 
-def box_area_np(boxes: ndarray) -> ndarray:
+def box_area_np(
+    boxes: ndarray,
+) -> ndarray:
     """
     See Also:
         :func:`nndet.core.boxes.ops.box_area`
@@ -29,7 +31,9 @@ def box_area_np(boxes: ndarray) -> ndarray:
         return box_area_3d_np(boxes)
 
 
-def box_area_3d_np(boxes: np.ndarray) -> np.ndarray:
+def box_area_3d_np(
+    boxes: np.ndarray,
+) -> np.ndarray:
     """
     See Also:
         `nndet.core.boxes.ops.box_area_3d`
@@ -41,7 +45,9 @@ def box_area_3d_np(boxes: np.ndarray) -> np.ndarray:
     )
 
 
-def box_area_2d_np(boxes: np.ndarray) -> np.ndarray:
+def box_area_2d_np(
+    boxes: np.ndarray,
+) -> np.ndarray:
     """
     See Also:
         `nndet.core.boxes.ops.box_area_2d`
@@ -49,7 +55,10 @@ def box_area_2d_np(boxes: np.ndarray) -> np.ndarray:
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
-def box_iou_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
+def box_iou_np(
+    boxes1: ndarray,
+    boxes2: ndarray,
+) -> ndarray:
     """
     Return intersection-over-union (Jaccard index) of boxes.
     (Works for ndarrays and Numpy Arrays)
@@ -72,7 +81,10 @@ def box_iou_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
         return box_iou_3d_np(boxes1, boxes2)
 
 
-def box_iou_2d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
+def box_iou_2d_np(
+    boxes1: ndarray,
+    boxes2: ndarray,
+) -> ndarray:
     """
     Return intersection-over-union (Jaccard index) of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
@@ -99,7 +111,10 @@ def box_iou_2d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     return inter / (area1[:, None] + area2 - inter)
 
 
-def box_iou_3d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
+def box_iou_3d_np(
+    boxes1: ndarray,
+    boxes2: ndarray,
+) -> ndarray:
     """
     Return intersection-over-union (Jaccard index) of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
@@ -130,7 +145,9 @@ def box_iou_3d_np(boxes1: ndarray, boxes2: ndarray) -> ndarray:
     return inter / (area1[:, None] + area2 - inter)
 
 
-def box_size_np(boxes: ndarray) -> ndarray:
+def box_size_np(
+    boxes: ndarray,
+) -> ndarray:
     """
     Compute length of boxes along all dimensions
 
@@ -148,7 +165,9 @@ def box_size_np(boxes: ndarray) -> ndarray:
     return np.stack(dists, axis=-1)
 
 
-def box_center_np(boxes: np.ndarray) -> np.ndarray:
+def box_center_np(
+    boxes: np.ndarray,
+) -> np.ndarray:
     """
     Compute center point of boxes
 

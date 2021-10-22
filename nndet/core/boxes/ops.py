@@ -22,7 +22,9 @@ from torch import Tensor
 from torch.cuda.amp import autocast
 
 
-def box_area_3d(boxes: Tensor) -> Tensor:
+def box_area_3d(
+    boxes: Tensor,
+) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2, z1, z2) coordinates.
@@ -41,7 +43,9 @@ def box_area_3d(boxes: Tensor) -> Tensor:
     )
 
 
-def box_area_2d(boxes: Tensor) -> Tensor:
+def box_area_2d(
+    boxes: Tensor,
+) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2) coordinates.
@@ -56,7 +60,9 @@ def box_area_2d(boxes: Tensor) -> Tensor:
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
-def box_area(boxes: Tensor) -> Tensor:
+def box_area(
+    boxes: Tensor,
+) -> Tensor:
     """
     Computes the area of a set of bounding boxes
 
@@ -76,7 +82,11 @@ def box_area(boxes: Tensor) -> Tensor:
 
 
 @autocast(enabled=False)
-def box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
+def box_iou(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
     (Works for Tensors and Numpy Arrays)
@@ -107,7 +117,11 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
 
 
 @autocast(enabled=False)
-def generalized_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
+def generalized_box_iou(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
     """
     Generalized box iou
 
@@ -133,7 +147,9 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tenso
 
 
 def box_iou_union_3d(
-    boxes1: Tensor, boxes2: Tensor, eps: float = 0
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
 ) -> Tuple[Tensor, Tensor]:
     """
     Return intersection-over-union (Jaccard index) and  of boxes.
@@ -167,7 +183,11 @@ def box_iou_union_3d(
     return inter / union, union
 
 
-def generalized_box_iou_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
+def generalized_box_iou_3d(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
     """
     Computes the generalized box iou between given bounding boxes
 
@@ -196,7 +216,9 @@ def generalized_box_iou_3d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
 
 
 def box_iou_union_2d(
-    boxes1: Tensor, boxes2: Tensor, eps: float = 0
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
 ) -> Tuple[Tensor, Tensor]:
     """
     Return intersection-over-union (Jaccard index) and  of boxes.
@@ -226,7 +248,11 @@ def box_iou_union_2d(
     return inter / union, union
 
 
-def generalized_box_iou_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Tensor:
+def generalized_box_iou_2d(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
     """
     Computes the generalized box iou between given bounding boxes
 
@@ -250,7 +276,10 @@ def generalized_box_iou_2d(boxes1: Tensor, boxes2: Tensor, eps: float = 0) -> Te
     return iou - (area - union) / area
 
 
-def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
+def remove_small_boxes(
+    boxes: Tensor,
+    min_size: float,
+) -> Tensor:
     """
     Remove boxes with at least one side smaller than min_size.
 
@@ -277,7 +306,9 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
 
 def box_center_dist(
-    boxes1: Tensor, boxes2: Tensor, euclidean: bool = True
+    boxes1: Tensor,
+    boxes2: Tensor,
+    euclidean: bool = True,
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """
     Distance of center points between two sets of boxes
@@ -305,7 +336,11 @@ def box_center_dist(
     return dists, center1, center2
 
 
-def center_in_boxes(center: Tensor, boxes: Tensor, eps: float = 0.01) -> Tensor:
+def center_in_boxes(
+    center: Tensor,
+    boxes: Tensor,
+    eps: float = 0.01,
+) -> Tensor:
     """
     Checks which center points are within boxes
 
@@ -329,7 +364,9 @@ def center_in_boxes(center: Tensor, boxes: Tensor, eps: float = 0.01) -> Tensor:
     return torch.stack(axes, dim=1).min(dim=1)[0] > eps
 
 
-def box_center(boxes: Tensor) -> Tensor:
+def box_center(
+    boxes: Tensor,
+) -> Tensor:
     """
     Compute center point of boxes
 
@@ -382,7 +419,9 @@ def permute_boxes(
     return boxes[:, new_axis]
 
 
-def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
+def expand_to_boxes(
+    data: Union[Tensor, ndarray],
+) -> Union[Tensor, ndarray]:
     """
     Expand x,y,z data to box format
 
@@ -402,7 +441,9 @@ def expand_to_boxes(data: Union[Tensor, ndarray]) -> Union[Tensor, ndarray]:
     return data[:, idx]
 
 
-def box_size(boxes: Tensor) -> Tensor:
+def box_size(
+    boxes: Tensor,
+) -> Tensor:
     """
     Compute length of boxes along all dimensions
 
@@ -420,7 +461,9 @@ def box_size(boxes: Tensor) -> Tensor:
     return torch.stack(dists, axis=1)
 
 
-def extend_and_cat_boxes(boxes: List[Tensor]) -> Tensor:
+def extend_and_cat_boxes(
+    boxes: List[Tensor],
+) -> Tensor:
     """
     Concatenate boxes of multiple images and add batch idx at first pos
 
@@ -443,7 +486,9 @@ def extend_and_cat_boxes(boxes: List[Tensor]) -> Tensor:
     return torch.cat(extended_boxes, dim=0)
 
 
-def cat_and_index(boxes: List[Tensor]) -> Tuple[Tensor, Tensor]:
+def cat_and_index(
+    boxes: List[Tensor],
+) -> Tuple[Tensor, Tensor]:
     indices = []
     for i, b in enumerate(boxes):
         indices.append(torch.full((b.shape[0],), i, dtype=b.dtype, device=b.device))

@@ -71,7 +71,10 @@ def clip_boxes_to_image(
         raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
 
 
-def clip_boxes_to_image_2d_(boxes: torch.Tensor, img_shape: Tuple[int, int]):
+def clip_boxes_to_image_2d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
     """
     Clip boxes to image dimensions
 
@@ -88,7 +91,10 @@ def clip_boxes_to_image_2d_(boxes: torch.Tensor, img_shape: Tuple[int, int]):
     return boxes
 
 
-def clip_boxes_to_image_3d_(boxes: torch.Tensor, img_shape: Tuple[int, int, int]):
+def clip_boxes_to_image_3d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
     """
     Clip boxes to image dimensions
 
@@ -110,7 +116,10 @@ def clip_boxes_to_image_3d_(boxes: torch.Tensor, img_shape: Tuple[int, int, int]
     return boxes
 
 
-def clip_boxes_to_image_2d(boxes: torch.Tensor, img_shape: Tuple[int, int]):
+def clip_boxes_to_image_2d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
     """
     Clip boxes to image dimensions
 
@@ -131,7 +140,10 @@ def clip_boxes_to_image_2d(boxes: torch.Tensor, img_shape: Tuple[int, int]):
     return boxes
 
 
-def clip_boxes_to_image_3d(boxes: torch.Tensor, img_shape: Tuple[int, int, int]):
+def clip_boxes_to_image_3d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
     """
     Clip boxes to image dimensions
 

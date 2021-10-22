@@ -200,7 +200,12 @@ class IoUMatcher(Matcher):
 
         return match_quality_matrix, matches
 
-    def set_low_quality_matches_(self, matches, all_matches, match_quality_matrix):
+    def set_low_quality_matches_(
+        self,
+        matches,
+        all_matches,
+        match_quality_matrix,
+    ):
         """
         Find the best matching prediction for each bounding box
         regardless of its IoU (this implementation excludes ties!)

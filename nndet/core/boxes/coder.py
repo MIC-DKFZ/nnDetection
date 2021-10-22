@@ -116,7 +116,10 @@ def encode_boxes(
 
 
 def decode_single(
-    rel_codes: Tensor, boxes: Tensor, weights: Sequence[float], bbox_xform_clip: float
+    rel_codes: Tensor,
+    boxes: Tensor,
+    weights: Sequence[float],
+    bbox_xform_clip: float,
 ) -> Tensor:
     """
     From a set of original boxes and encoded relative box offsets,

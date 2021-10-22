@@ -257,9 +257,9 @@ class TopKLoss(CrossEntropyLoss):
         Compute CE loss and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground classes [N, C, \*]
+            input: logits for all foreground classes [N, C, * ]
             target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [N, \*]
+                treated as foreground classes. [N, * ]
 
         Returns:
             Tensor: final loss
@@ -315,8 +315,8 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
         and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground(!) classes [N, C, \*]
-            target: target classes [N, \*]. Targets will be encoded with one
+            input: logits for all foreground(!) classes [N, C, * ]
+            target: target classes [N, * ]. Targets will be encoded with one
                 hot and 0 is treated as the background class and removed.
 
         Returns:
