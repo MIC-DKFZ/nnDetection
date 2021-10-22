@@ -165,9 +165,6 @@ class SemanticEvalMixin(EvalMixin):
     This Mixin only works with BoxMixin!
     BoxMixin needs to be subclassed last e.g.
     `Module(.. SemanticMixin, BoxMixin, ..)`
-
-    Args:
-        OperationModeMixin ([type]): [description]
     """
 
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:

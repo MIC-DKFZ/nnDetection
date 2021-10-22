@@ -18,11 +18,11 @@ class SmoothL1Loss(Loss):
         Module wrapper for functional
 
         Args:
-            beta (float): L1 to L2 change point.
+            beta: L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
-            reduction (str): 'none' | 'mean' | 'sum'
+            reduction: 'none' | 'mean' | 'sum'
                  'none': No reduction will be applied to the output.
                  'mean': The output will be averaged.
                  'sum': The output will be summed.
@@ -46,8 +46,8 @@ class SmoothL1Loss(Loss):
         Compute loss
 
         Args:
-            inp (torch.Tensor): predicted tensor (same shape as target)
-            target (torch.Tensor): target tensor
+            inp: predicted tensor (same shape as target)
+            target: target tensor
 
         Returns:
             Tensor: computed loss
@@ -102,11 +102,11 @@ def smooth_l1_loss(
     slope is 1. The quadratic segment smooths the L1 loss near x = 0.
 
     Args:
-        inp (Tensor): input tensor of any shape
-        target (Tensor): target value tensor with the same shape as input
-        beta (float): L1 to L2 change point.
+        inp: input tensor of any shape
+        target: target value tensor with the same shape as input
+        beta: L1 to L2 change point.
             For beta values < 1e-5, L1 loss is computed.
-        reduction (str): 'none' | 'mean' | 'sum'
+        reduction: 'none' | 'mean' | 'sum'
              'none': No reduction will be applied to the output.
              'mean': The output will be averaged.
              'sum': The output will be summed.

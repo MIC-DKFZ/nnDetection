@@ -82,20 +82,44 @@ class SingleStageMixin(ModelMixin):
             model_cfg: model configurations. See example configs for more info
             plan_arch: plan architecture
 
-                - `dim` (int): number of spatial dimensions
-                - `in_channels` (int): number of input channels
-                - `classifier_classes` (int): number of classes
-                - `seg_classes` (int): number of classes
-                - `start_channels` (int): number of start channels in backbone
-                - `fpn_channels` (int): number of channels to use for FPN
-                - `head_channels` (int): number of channels to use for head
-                - `decoder_levels` (int): decoder levels to user for detection
+                ``"dim"`` int
+                    number of spatial dimensions
+
+                ``"in_channels"`` int
+                    number of input channels
+
+                ``"classifier_classes"`` int
+                    number of classes
+
+                ``"seg_classes"`` int
+                    number of classes
+
+                ``"start_channels"`` int
+                    number of start channels in backbone
+
+                ``"fpn_channels"`` int
+                    number of channels to use for FPN
+
+                ``"head_channels"`` int
+                    number of channels to use for head
+
+                ``"decoder_levels"`` int
+                    decoder levels to user for detection
+
             plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
 
-                - `stride`: stride
-                - `aspect_ratios`: aspect ratios
-                - `sizes`: sized for 2d acnhors
-                - (`zsizes`: additional z sizes for 3d)
+                ``"stride"``
+                    stride
+
+                ``"aspect_ratios"``
+                    aspect ratios
+
+                ``"sizes"``
+                    sized for 2d acnhors
+
+                ``"zsizes"``
+                    (optional) additional z sizes for 3d
+
             **kwargs: ignored
         """
         logger.info(

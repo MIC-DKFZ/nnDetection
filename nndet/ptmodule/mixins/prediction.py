@@ -60,7 +60,7 @@ class PredictionMixin(ABC):
                 data is located
             case_ids: case identifies to prepare and predict
             run_prediction: predict cases
-            **kwargs: keyword arguments passed to predict function
+            kwargs: keyword arguments passed to predict function
         """
         ...
 
@@ -155,14 +155,21 @@ class BoxPredictionMixin(PredictionMixin):
                 data is located
             case_ids: case identifies to prepare and predict
             run_prediction: predict cases
-            **kwargs: keyword arguments passed to predict function
+            kwargs: keyword arguments passed to predict function
 
         Returns:
             Dict: inference plan
                 e.g. (exact params depend on ensembler class usef for prediction)
-                `iou_thresh` (float): best IoU threshold
-                `score_thresh (float)`: best score threshold
-                `no_overlap` (bool): enable/disable class independent NMS (ciNMS)
+
+                ``"iou_thresh"`` float
+                    best IoU threshold
+
+                ``"score_thresh"` float
+                    best score threshold
+
+                ``"no_overlap"`` bool
+                    enable/disable class independent NMS (ciNMS)
+
         """
         logger.info(f"Running parameter sweep on {case_ids}")
 

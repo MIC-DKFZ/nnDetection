@@ -51,7 +51,7 @@ def focal_loss_with_logits(
 
     Args:
         logits: predicted logits [N, dims]
-        target: (float) binary targets [N, dims]
+        target: binary targets [N, dims]
         gamma: balance easy and hard examples in focal loss
         alpha: balance positive and negative samples [0, 1] (increasing
             alpha increase weight of foreground classes (better recall))
@@ -166,8 +166,8 @@ def asymmetric_focal_loss_with_logits(
     and https://arxiv.org/abs/1907.10982 (without margin)
 
     Args:
-        logits: (float) predicted logits [N, dims]
-        target: (float) binary targets [N, dims]
+        logits: predicted logits [N, dims]
+        target: binary targets [N, dims]
         gamma: balance easy and hard examples in focal loss
         alpha: balance factor for background (different from focal loss)
         reduction: 'mean'|'sum'|'none'

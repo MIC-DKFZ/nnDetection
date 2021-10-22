@@ -134,7 +134,7 @@ class LightningBaseModule(pl.LightningModule):
         """
         Computes a single validation step (same as train step but with
         additional prediciton processing)
-        See :class:`BaseRetinaNet` for more information
+        See ::class::`BaseRetinaNet` for more information
         """
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
@@ -314,11 +314,13 @@ class LightningBaseModule(pl.LightningModule):
         and `initial_lr / 1000` once per epoch.
 
         Configuration keys:
-            - `swa_epochs` (int): number of epoch to perform SWA. The model
-               will be snapshotted at the end of each epoch.
-            - `initial_lr` (float): initial learning rate of optimizer
-            - `num_train_batches_per_epoch` (int): number of train batches
-                per epoch.
+            ``"swa_epochs"`` int
+                number of epoch to perform SWA. The model will be snapshotted
+                at the end of each epoch.
+            ``"initial_lr"`` float
+                initial learning rate of optimizer
+            ``"num_train_batches_per_epoch"`` int
+                number of train batches per epoch.
         """
         callbacks = super().configure_callbacks()
         callbacks.append(EpochTimerCallback())
