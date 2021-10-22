@@ -17,12 +17,25 @@ class AdamWDefaultMixin:
         rate schedule. Configuration is done via the config file.
 
         Configurations keys:
-            - `initial_lr` (float): learning rate *after* warmup
-            - `weight_decay` (float): weight decay passed to optimzier
-            - `num_train_batches_per_epoch` (int): number of batches per epoch
-            - `warm_iterations` (int): number of iterations to runw warm up
-            - `warm_lr` (float): learning rate to start warming up from
-            - `poly_gamma` (float): gamma term passed to PolyLR
+
+            ``"initial_lr"`` float
+                learning rate *after* warmup
+
+            ``"weight_decay"`` float
+                weight decay passed to optimzier
+
+            ``"num_train_batches_per_epoch"`` int
+                number of batches per epoch
+
+            ``"warm_iterations"`` int
+                number of iterations to runw warm up
+
+            ``"warm_lr"`` float
+                learning rate to start warming up from
+
+            ``"poly_gamma"`` float
+                gamma term passed to PolyLR
+
         """
         # configure optimizer
         logger.info(
