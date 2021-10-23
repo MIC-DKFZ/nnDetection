@@ -106,19 +106,27 @@ class SingleStageMixin(ModelMixin):
                 ``"decoder_levels"`` int
                     decoder levels to user for detection
 
+                ``"conv_kernels"`` Sequence[Union[Tuple[int], int]]
+                    kernel sizes of convolutions for each stage/level
+
+                ``"strides"`` Sequence[Union[Tuple[int], int]]
+                    stride of downsampling block for each stage/level
+                    Downsampling is alwyas performed at the beginning of the blocks.
+                    First stage/level is always full resolution.
+
             plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
 
                 ``"stride"``
-                    stride
+                    stride # FIXME
 
                 ``"aspect_ratios"``
-                    aspect ratios
+                    aspect ratios # FIXME
 
                 ``"sizes"``
-                    sized for 2d acnhors
+                    sized for 2d acnhors # FIXME
 
                 ``"zsizes"``
-                    (optional) additional z sizes for 3d
+                    (optional) additional z sizes for 3d # FIXME
 
             **kwargs: ignored
         """

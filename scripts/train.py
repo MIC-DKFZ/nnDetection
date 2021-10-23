@@ -368,9 +368,13 @@ def _train(
 
     trainer_kwargs = {}
     if cfg["train"]["mode"].lower() == "resume":
+        logger.info("Found train mode: resume -> will load checkpoint")
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
     elif cfg["train"]["mode"].lower() == "transfer":
-        module.load_state_dict(torch.load(train_dir / "model_last.ckpt")["state_dict"])
+        logger.info("Found train mode: transfer -> loading model weights")
+        module.load_state_dict(
+            torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True
+        )
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
