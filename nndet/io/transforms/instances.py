@@ -288,15 +288,17 @@ class Instances2Segmentation(AbstractTransform):
             dict: processed batch
         """
         semantic = torch.zeros_like(data[self.instance_key])
-        _present_instances = (
-            data[self.present_instances] if self.present_instances is not None else None
-        )
         for batch_idx in range(semantic.shape[0]):
+            _present_instances = (
+                data[self.present_instances][batch_idx]
+                if self.present_instances is not None
+                else None
+            )
             instances_to_segmentation(
                 data[self.instance_key][batch_idx],
                 data[self.map_key][batch_idx],
                 add_background=self.add_background,
-                instance_idx=_present_instances[batch_idx],
+                instance_idx=_present_instances,
                 out=semantic[batch_idx],
             )
         data[self.seg_key] = semantic
@@ -414,7 +416,17 @@ class Instances2Fg(AbstractTransform):
 def instances_to_fg(
     instances: Tensor,
     out: Optional[Tensor] = None,
-):
+) -> Tensor:
+    """
+    Convert instances to foreground segmentation (0 = background)
+
+    Args:
+        instances: numbered array of instances, shape [dims]
+        out: Optional output array. Defaults to None.
+
+    Returns:
+        Tensor: array of same shape as input with foregronud segmentation
+    """
     if out is None:
         out = torch.zeros_like(instances)
     out = (instances > 0).to(instances)
@@ -424,8 +436,160 @@ def instances_to_fg(
 def instances_to_fg_np(
     instances: np.ndarray,
     out: np.ndarray = None,
-):
+) -> np.ndarray:
+    """
+    Convert instances to foreground segmentation (0 = background)
+
+    Args:
+        instances: numbered array of instances, shape [dims]
+        out: Optional output array. Defaults to None.
+
+    Returns:
+        np.ndarray: array of same shape as input with foregronud segmentation
+    """
     if out is None:
         out = np.zeros_like(instances)
     out = (instances > 0).astype(instances.dtype)
     return out
+
+
+def instances_to_binary_masks(
+    instances: Tensor,
+    instance_idx: Optional[Tensor] = None,
+    out: Tensor = None,
+) -> Tensor:
+    """
+    Convert numbered instances to binary masks. If no instances are present
+    an empty array will be returend.
+
+    Args:
+        instances: numbered instances, shape [1, dims] (1 = channel dimension)
+        instance_idx: Provide instance indices which are present.
+            By providing the instances beforehand, running an additional
+            unique operation will be avoided. Defaults to None.
+        out: Optional output array. Defaults to None.
+
+    Returns:
+        Tensor: binary masks of instance, shape [R, dims] where R are the number
+            of isntances. If no instances are present, an empty array is
+            returned.
+    """
+    if instance_idx is None:
+        instance_idx = instances.unique(sorted=True)
+        instance_idx = instance_idx[instance_idx > 0]
+
+    if instance_idx.numel() > 0:
+        num_instances = instance_idx.shape[0]
+    else:
+        # no instances present return empty tensor
+        num_instances = 0
+        out = torch.tensor([]).to(instances)
+        return out
+
+    if out is None:
+        out = torch.zeros(
+            num_instances,
+            *instances.shape[1:],
+            dtype=instances.dtype,
+            device=instances.device,
+        )
+
+    for _c in range(num_instances):
+        out[_c] = instances == instance_idx[_c]
+    return out
+
+
+def instances_to_binary_masks_np(
+    instances: np.ndarray,
+    instance_idx: Optional[np.ndarray] = None,
+    out: np.ndarray = None,
+) -> np.ndarray:
+    """
+    Convert numbered instances to binary masks. If no instances are present
+    an empty array will be returend.
+
+    Args:
+        instances: numbered instances, shape [1, dims] (1 = channel dimension)
+        instance_idx: Provide instance indices which are present.
+            By providing the instances beforehand, running an additional
+            unique operation will be avoided. Defaults to None.
+        out: Optional output array. Defaults to None.
+
+    Returns:
+        np.ndarray: binary masks of instance, shape [R, dims] where R are the
+            number of isntances. If no instances are present, an empty array is
+            returned.
+    """
+    if instance_idx is None:
+        instance_idx = np.unique(instances)
+        instance_idx = instance_idx[instance_idx > 0]
+
+    if instance_idx.size > 0:
+        num_instances = instance_idx.shape[0]
+    else:
+        # no instances present return empty tensor
+        num_instances = 0
+        out = np.array([]).astype(instances.dtype)
+        return out
+
+    if out is None:
+        out = np.zeros(
+            (num_instances, *instances.shape[1:]),
+            dtype=instances.dtype,
+        )
+
+    for _c in range(num_instances):
+        out[_c] = instances == instance_idx[_c]
+    return out
+
+
+class Instances2BinaryMasks(AbstractTransform):
+    def __init__(
+        self,
+        instance_key: str,
+        binary_mask_key: str,
+        grad: bool = False,
+        present_instances: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Convert numbered instances to binary masks. If no instances are present
+        an empty array will be inserted.
+
+        Args:
+            instance_key: Key where instances are saved
+            binary_mask_key: Key where binary masks should be saved
+            grad: Requries grad. Defaults to False.
+            present_instances: Key where instance indices are present.
+                By providing the instances beforehand, running an additional
+                unique operation will be avoided. Defaults to None.
+        """
+        super().__init__(grad=grad, **kwargs)
+        self.binary_mask_key = binary_mask_key
+        self.instance_key = instance_key
+        self.present_instances = present_instances
+
+    def forward(self, **data) -> dict:
+        """
+        Convert numbered instances to binary masks
+
+        Args:
+            **data: batch dict
+
+        Returns:
+            dict: processed batch
+        """
+        data[self.binary_mask_key] = []
+        for batch_idx, instance_element in enumerate(data[self.instance_key].split(1)):
+            _present_instances = (
+                data[self.present_instances][batch_idx]
+                if self.present_instances is not None
+                else None
+            )
+            data[self.binary_mask_key].append(
+                instances_to_binary_masks(
+                    instances=instance_element,
+                    instance_idx=_present_instances,
+                )
+            )
+        return data

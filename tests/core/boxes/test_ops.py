@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from nndet.core.boxes import *
+from nndet.core.boxes.ops import cat_and_index
 
 
 @pytest.fixture
@@ -116,3 +117,11 @@ def test_permute_boxes_3d():
     new_boxes = permute_boxes(boxes, (2, 0, 1))
     expected_boxes = boxes[:, [4, 0, 5, 2, 1, 3]]
     assert expected_boxes.allclose(new_boxes)
+
+
+def test_cat_and_index(boxes0_3d, boxes1_3d):
+    boxes, idx = cat_and_index(
+        [boxes0_3d, torch.tensor([[]]).reshape(-1, 6), boxes1_3d]
+    )
+    torch.allclose(boxes, torch.cat([boxes0_3d, boxes1_3d], dim=0))
+    torch.allclose(idx, torch.tensor([0, 0, 2, 2, 2], dtype=boxes0_3d.dtype))
