@@ -36,6 +36,12 @@ class FixedSlimDataLoaderBase(SlimDataLoaderBase):
         num_batches_per_epoch: int = 2500,
         **kwargs,
     ):
+        """
+        Batchgenerator dataloader base with fixed number of batches per epoch
+
+        Args:
+            num_batches_per_epoch: Number of batches per epoch. Defaults to 2500.
+        """
         self.num_batches_per_epoch = num_batches_per_epoch
         super().__init__(*args, **kwargs)
 
@@ -117,8 +123,8 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
             RuntimeError: Raised if data was not unpacked
 
         Returns:
-            Tuple[Tuple[int], Tuple[int]]: Final shape of data,
-                Final shape of seg (including batchdim)
+            Tuple[int]: Final shape of data (including batchdim)
+            Tuple[int]: Final shape of seg (including batchdim)
         """
         k = list(self._data.keys())[0]
         if (p := Path(self._data[k]["data_file"])).is_file():
@@ -143,8 +149,10 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
 
         Returns:
             Dict[str, List]: cache for sampling
-                `case`: list with all case identifiers
-                `instances`: list with tuple of (case_id, instance_id)
+
+                ``"case"``: list with all case identifiers
+
+                ``"instances"``: list with tuple of (case_id, instance_id)
         """
         instance_cache = []
 
@@ -160,18 +168,17 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
 
     def select(self) -> Tuple[List, List]:
         """
-        Selects cases and instances. If instance id is -1 a random background
+        Selects cases and instances. If instance id is `-1` a random background
         patch will be sampled.
 
-        Foreground sampling: sample uniformly from all the foreground classes
+        - Foreground sampling: sample uniformly from all the foreground classes
             and enforce the respective class while patch sampling.
-        Background sampling: We jsut sample a random case
+        - Background sampling: We jsut sample a random case
 
         Returns:
             List: case identifiers
-            List: instance ids
-                id > 0 indicates an instance
-                id = -1 indicates a random (background) patch
+            List: instance ids. `id > 0` represents the foreground isntance
+                to sample while `id = -1` indicates background patches
         """
         selected_cases = []
         selected_instances = []
@@ -195,14 +202,25 @@ class DataLoader3DFast(FixedSlimDataLoaderBase):
 
         Returns:
             Dict: batch dict
-                `data` (np.ndarray): data
-                `seg` (np.ndarray): unordered(!) instance segmentation
+
+                ``"data"`` np.ndarray
+                    data
+
+                ``"seg"`` np.ndarray
+                    unordered(!) numbered instance segmentation
                     Reordering needs to happen after final crop
-                `instances` (List[Sequence[int]]): class for each instance in
-                    the case (<- we can not extract them because we do not
-                    know the present instances yet)
-                `properties`(List[Dict]): properties of each case
-                `keys` (List[str]): case ids
+
+                ``"instances"`` List[Sequence[int]]
+                    class for each instance in the case (<- we can not
+                    extract them because we do not know the present instances
+                    yet)
+
+                ``"properties"`` List[Dict]
+                    properties of each case
+
+                ``"keys"`` List[str]
+                    case ids
+
         """
         data_batch = np.zeros(self.data_shape_batch, dtype=float)
         seg_batch = np.zeros(self.seg_shape_batch, dtype=float)
@@ -460,9 +478,21 @@ class DataLoader3DBalanced(DataLoader3DOffset):
 
     def select(self) -> Tuple[List, List]:
         """
-        Foreground sampling: sample uniformly from all the foreground classes
+        Selects cases and instances. If instance id is `-1` a random background
+        patch will be sampled. In this balanced version, the classes
+        are also balanced on a patient level while this is not the case
+        in the default loader (which leads to unbalanced results for
+        data sets where foreground and background patches are unbalanced on
+        a patient level).
+
+        - Foreground sampling: sample uniformly from all the foreground classes
             and enforce the respective class while patch sampling.
-        Background sampling: We jsut sample a random case
+        - Background sampling: We jsut sample a random case
+
+        Returns:
+            List: case identifiers
+            List: instance ids. `id > 0` represents the foreground isntance
+                to sample while `id = -1` indicates background patches
         """
         selected_classes = np.random.choice(
             list(self.cache["fg"].keys()), self.batch_size, replace=True
@@ -507,14 +537,25 @@ class DataLoader2DOffset(DataLoader3DFast):
 
         Returns:
             Dict: batch dict
-                `data` (np.ndarray): data
-                `seg` (np.ndarray): unordered(!) instance segmentation
+
+                ``"data"`` np.ndarray
+                    data
+
+                ``"seg"`` np.ndarray
+                    unordered(!) numbered instance segmentation
                     Reordering needs to happen after final crop
-                `instances` (List[Sequence[int]]): class for each instance in
-                    the case (<- we can not extract them because we do not
-                    know the present instances yet)
-                `properties`(List[Dict]): properties of each case
-                `keys` (List[str]): case ids
+
+                ``"instances"`` List[Sequence[int]]
+                    class for each instance in the case (<- we can not
+                    extract them because we do not know the present instances
+                    yet)
+
+                ``"properties"`` List[Dict]
+                    properties of each case
+
+                ``"keys"`` List[str]
+                    case ids
+
         """
         data_batch = np.zeros(self.data_shape_batch, dtype=np.float32)
         seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float32)
@@ -724,14 +765,25 @@ class DataLoader2DDeeplesion(DataLoader2DOffset):
 
         Returns:
             Dict: batch dict
-                `data` (np.ndarray): data
-                `seg` (np.ndarray): unordered(!) instance segmentation
+
+                ``"data"`` np.ndarray
+                    data
+
+                ``"seg"`` np.ndarray
+                    unordered(!) numbered instance segmentation
                     Reordering needs to happen after final crop
-                `instances` (List[Sequence[int]]): class for each instance in
-                    the case (<- we can not extract them because we do not
-                    know the present instances yet)
-                `properties`(List[Dict]): properties of each case
-                `keys` (List[str]): case ids
+
+                ``"instances"`` List[Sequence[int]]
+                    class for each instance in the case (<- we can not
+                    extract them because we do not know the present instances
+                    yet)
+
+                ``"properties"`` List[Dict]
+                    properties of each case
+
+                ``"keys"`` List[str]
+                    case ids
+
         """
         data_batch = np.zeros(self.data_shape_batch, dtype=np.float32)
         seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float32)

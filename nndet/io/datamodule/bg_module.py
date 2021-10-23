@@ -113,18 +113,28 @@ class Datamodule(BaseModule):
 
         Args:
             augment_cfg: provide settings for augmentation
-                `splits_file` (str, optional): provide alternative splits file
-                `oversample_foreground_percent` (float, optional):
+
+                ``"splits_file"`` str, optional
+                    provide alternative splits file
+
+                ``"oversample_foreground_percent"`` float, optional
                     ratio of foreground and background inside of batches,
                     defaults to 0.33
-                `patch_size`(Sequence[int], optional): overwrite patch size
-                `batch_size`(int, optional): overwrite patch size
+
+                ``"patch_size"`` Sequence[int], optional
+                    overwrite patch size
+
+                ``"batch_size"`` int, optional
+                    overwrite patch size
+
             plan: current plan
             preprocessed_dir: path to base preprocessed dir
             data_dir: path to preprocessed data dir
-            fold: current fold; if None, does not create folds and uses
-                whole dataset for training and validation (don't do this ...
-                except you know what you are doing :P)
+            fold: current fold
+
+        Warnings:
+            `fold=None` was deperacated to prevent wrong usage, it is
+            possible to enable it by uncommenting the raised error.
         """
         super().__init__(
             plan=plan,

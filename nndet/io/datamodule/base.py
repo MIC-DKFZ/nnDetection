@@ -38,18 +38,19 @@ class BaseModule(pl.LightningDataModule):
     ):
         """
         Baseclass for nnDetection data nodules.
-        Overwrite :method:`setup` to customize the bahvior.
+        Overwrite `setup` to customize the bahvior.
         The splits are created iniside the init because we
 
         Args:
             plan: plan file
             augment_cfg: provide settings for augmentation
-                `splits_file` (str, optional): provide alternative splits file
+
+                ``"splits_file"`` (str, optional)
+                    provide alternative splits file
+
             data_dir: path to preprocessed data dir. Needs to follow:
-                `.../preprocessed/[data_identifier]/imagesTr
-            fold: current fold; if None, does not create folds and uses
-                whole dataset for training and validation (don't do this ...
-                except you know what you are doing :P)
+                `.../preprocessed/[data_identifier]/imagesTr`
+            fold: current fold
         """
         super().__init__(**kwargs)
         self.plan = plan
@@ -90,6 +91,7 @@ class BaseModule(pl.LightningDataModule):
         splits = load_pickle(splits_file)
 
         if self.fold is None:
+            raise RuntimeError("Not supported anymore, remove this on own risk")
             logger.warning("USING SAME TRAIN AND VAL SET")
             tr_keys = val_keys = list(self.dataset.keys())
         else:

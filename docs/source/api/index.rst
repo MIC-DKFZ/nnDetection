@@ -9,7 +9,8 @@ a time limitation of an active research project.
 .. toctree::
    :maxdepth: 4
 
+   core
    ptmodule
+   io
    losses
    training
-   core

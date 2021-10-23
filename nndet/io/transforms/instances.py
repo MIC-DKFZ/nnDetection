@@ -55,7 +55,7 @@ class Instances2Boxes(AbstractTransform):
         """
         Convert instance segmentation to bounding boxes
 
-        Args
+        Args:
             instance_key: key where instance segmentation is located
             map_key: key where mapping from instances to classes is located
                 (should be a dict which keys(instances) to items(classes))
@@ -63,7 +63,7 @@ class Instances2Boxes(AbstractTransform):
             class_key: key where classes of instances will be saved
             grad: enable gradient computation inside transformation
             present_instances: key where precomputed present instances are
-                saved. If None it will compute the present instance new.
+                saved. If `None` it will compute the present instance new.
         """
         super().__init__(grad=grad, **kwargs)
         self.class_key = class_key
@@ -77,7 +77,7 @@ class Instances2Boxes(AbstractTransform):
         Extract boxes from instances
 
         Args:
-            **data: batch dict
+            data: batch dict
 
         Returns:
             dict: processed batch
@@ -114,16 +114,16 @@ def instances_to_boxes(
     """
     Convert instance segmentation to bounding boxes (not batched)
 
-    Args
-    seg: instance segmentation of individual classes [..., dims]
-    dim: number of spatial dimensions to create bounding box for
-        (always start from the last dimension). If None, all dimensions are
-        used
+    Args:
+        seg: instance segmentation of individual classes [..., dims]
+        dim: number of spatial dimensions to create bounding box for
+            Conversion will always start from the last dimension. If `None`,
+            all dimensions are used.
 
-    Returns
+    Returns:
         Tensor: bounding boxes
             (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
-        Tensor: if `instances` is None: sorted instance indices
+        Tensor: if `instances` is `None`: sorted instance indices
             Otherwise will pass through instances
     """
     if dim > 3:
@@ -167,16 +167,16 @@ def instances_to_boxes_np(
     """
     Convert instance segmentation to bounding boxes (not batched)
 
-    Args
-    seg: instance segmentation of individual classes [..., dims]
-    dim: number of spatial dimensions to create bounding box for
-        (always start from the last dimension). If None, all dimensions are
-        used
+    Args:
+        seg: instance segmentation of individual classes [..., dims]
+        dim: number of spatial dimensions to create bounding box for
+            Conversion will always start from the last dimension. If `None`,
+            all dimensions are used.
 
-    Returns
+    Returns:
         np.ndarray: bounding boxes
-            (x1, y1, x2, y2, (z1, z2)) List[Tensor[N, dim * 2]]
-        np.ndarray: if `instances` is None: sorted instance indices
+            `(x1, y1, x2, y2, (z1, z2))` `List[Tensor[N, dim * 2]]`
+        np.ndarray: if `instances` is `None`: sorted instance indices
             Otherwise will pass through instances
     """
     if dim > 3:

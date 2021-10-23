@@ -63,10 +63,10 @@ class Mirror(AbstractTransform):
         """
         Implement transform functionality here
 
-        Args
+        Args:
             data: dict with data
 
-        Returns
+        Returns:
             dict: dict with transformed data
         """
         for key in self.keys:
@@ -105,12 +105,12 @@ def mirror(data: torch.Tensor, dims: Sequence[int]) -> torch.Tensor:
     """
     Mirror data at dims
 
-    Args
+    Args:
         data: input data [N, C, spatial dims]
         dims: dimensions to mirror starting from spatial dims
             e.g. dim=(0,) mirror the first spatial dimension
 
-    Returns
+    Returns:
         torch.Tensor: tensor with mirrored dimensions
     """
     dims = [d + 2 for d in dims]
@@ -184,7 +184,7 @@ def points_to_homogeneous(points: Sequence[torch.Tensor]) -> List[torch.Tensor]:
         points: list of points to transform [N, dims] where N is the number
             of points and dims is the number of spatial dimensions
 
-    Returns
+    Returns:
         torch.Tensor: the batch of points in homogeneous coordinates [N, dim + 1]
     """
     return [torch.cat([p, torch.ones(p.shape[0], 1).to(p)], dim=1) for p in points]
@@ -210,10 +210,10 @@ def boxes2points(boxes: Tensor) -> Tensor:
     Convert boxes to points
 
     Args:
-        boxes: (x1, y1, x2, y2, (z1, z2))[N, dims *2]
+        boxes: (x1, y1, x2, y2, (z1, z2))[N, dims x 2]
 
     Returns:
-        Tensor: points [N * 2, dims]
+        Tensor: points [N x 2, dims]
     """
     if boxes.shape[1] == 4:
         idx0 = [0, 1]

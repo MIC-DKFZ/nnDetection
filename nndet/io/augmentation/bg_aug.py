@@ -216,18 +216,18 @@ class DefaultAug(NoAug):
 class BaseMoreAug(NoAug):
     def get_training_transforms(self):
         """
-        UtilTransforms
-        SpatialTransform
-        GaussianNoiseTransform
-        GaussianBlurTransform
-        BrightnessMultiplicativeTransform
-        [optional] BrightnessTransform
-        ContrastAugmentationTransform
-        [optional] SimulateLowResolutionTransform
-        GammaTransform (inverted)
-        [optional] GammaTransform
-        MirrorTransform
-        UtilTransforms
+        - UtilTransforms
+        - SpatialTransform
+        - GaussianNoiseTransform
+        - GaussianBlurTransform
+        - BrightnessMultiplicativeTransform
+        - [optional] BrightnessTransform
+        - ContrastAugmentationTransform
+        - [optional] SimulateLowResolutionTransform
+        - GammaTransform (inverted)
+        - [optional] GammaTransform
+        - MirrorTransform
+        - UtilTransforms
         """
         assert (
             self.params.get("mirror") is None
@@ -611,18 +611,18 @@ class InsaneAug(NoAug):
 class BaseInsaneAug(NoAug):
     def get_training_transforms(self):
         """
-        UtilTransforms
-        SpatialTransform
-        GaussianNoiseTransform
-        GaussianBlurTransform
-        BrightnessMultiplicativeTransform
-        [optional] BrightnessTransform
-        ContrastAugmentationTransform
-        [optional] SimulateLowResolutionTransform
-        [optional] GammaTransform (inverted)
-        [optional] GammaTransform
-        [optional] MirrorTransform
-        UtilTransforms
+        - UtilTransforms
+        - SpatialTransform
+        - GaussianNoiseTransform
+        - GaussianBlurTransform
+        - BrightnessMultiplicativeTransform
+        - [optional] BrightnessTransform
+        - ContrastAugmentationTransform
+        - [optional] SimulateLowResolutionTransform
+        - [optional] GammaTransform (inverted)
+        - [optional] GammaTransform
+        - [optional] MirrorTransform
+        - UtilTransforms
         """
         assert (
             self.params.get("mirror") is None
