@@ -4,6 +4,8 @@ Training
 
 Dataloading
 ===========
+# TODO: write new augmentation pipelines
+# TODO: write new dataloaders
 
 Lightning Module
 ================
