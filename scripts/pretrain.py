@@ -22,6 +22,7 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose
 from nndet.utils.info import (
+    ModelSummary,
     create_debug_plan,
     flatten_mapping,
     log_git,
@@ -211,6 +212,7 @@ def _pretrain(
     checkpoint_cb.CHECKPOINT_NAME_LAST = "model_last"
     callbacks.append(checkpoint_cb)
     callbacks.append(LearningRateMonitor(logging_interval="epoch"))
+    callbacks.append(ModelSummary(max_depth=10))
 
     # save configs
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "pre_config.yaml"))
@@ -261,9 +263,8 @@ def _pretrain(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,  # 10,
-        weights_summary="full",
         plugins=plugins,
-        terminate_on_nan=True,  # TODO: make modular
+        detect_anomaly=True,
         move_metrics_to_cpu=True,
         **trainer_kwargs,
     )

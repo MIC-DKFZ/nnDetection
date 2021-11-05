@@ -1,4 +1,5 @@
 defaults:
+    - _self_
     - train: v001
     - prep: process
 

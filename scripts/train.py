@@ -398,9 +398,8 @@ def _train(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
-        # weights_summary=weights_summary,
         plugins=plugins,
-        terminate_on_nan=cfg["trainer_cfg"].get("terminate_on_nan", True),
+        detect_anomaly=cfg["trainer_cfg"].get("terminate_on_nan", True),
         move_metrics_to_cpu=False,
         **trainer_kwargs,
     )
