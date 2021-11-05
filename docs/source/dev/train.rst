@@ -10,7 +10,7 @@ Dataloading
 Lightning Module
 ================
 
-Working with Config and Hydra
+Working with Configs and Hydra
 -----------------------------
 TBD
 
@@ -36,9 +36,9 @@ An example which builds a standard RetinaNet is shown below:
         LightningBaseModule,
         # Convert the dataloader output to bounding boxes
         BoxPrepareMixin,
-        # Run Bounding Box evaluation furing training
+        # Run Bounding Box evaluation during training
         BoxEvalMixin,
-        # Use model structure of single stage detection
+        # Use model structure of single stage detector
         SingleStageMixin,
         # Run the default Bounding Box Prediction and Sweep
         BoxPredictionMixin,
