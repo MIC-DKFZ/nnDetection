@@ -110,12 +110,13 @@ CASES = [
     "device",
     [
         "cpu",
-        pytest.param(
-            "cuda",
-            marks=pytest.mark.skipif(
-                not torch.cuda.is_available(), reason="No cuda gpu available"
-            ),
-        ),
+        # TODO: gpu tests
+        # pytest.param(
+        #     "cuda",
+        #     marks=pytest.mark.skipif(
+        #         not torch.cuda.is_available(), reason="No cuda gpu available"
+        #     ),
+        # ),
     ],
 )
 def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device):
@@ -136,6 +137,7 @@ def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device)
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=example_plan,
     )
+    module.to(device)
 
     batch = example_batch(
         in_channels=example_plan["architecture"]["in_channels"],
@@ -148,3 +150,4 @@ def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device)
         module.validation_step(batch=batch, batch_idx=0)
     else:
         raise ValueError(f"Step {step} is unknown")
+    module.cpu()
