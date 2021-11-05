@@ -50,7 +50,7 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
-from nndet.utils.info import create_debug_plan, flatten_mapping, log_git
+from nndet.utils.info import ModelSummary, create_debug_plan, flatten_mapping, log_git
 
 
 @env_guard
@@ -381,10 +381,8 @@ def _train(
     plugins = cfg["trainer_cfg"].get("plugins", None)
     logger.info(f"Using {plugins} plugins for training")
 
-    if no_summary:
-        weights_summary = None
-    else:
-        weights_summary = cfg["trainer_cfg"].get("weights_summary", "full")
+    if not no_summary:
+        callbacks.append(ModelSummary(max_depth=10))
 
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
@@ -400,7 +398,7 @@ def _train(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
-        weights_summary=weights_summary,
+        # weights_summary=weights_summary,
         plugins=plugins,
         terminate_on_nan=cfg["trainer_cfg"].get("terminate_on_nan", True),
         move_metrics_to_cpu=False,

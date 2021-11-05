@@ -24,11 +24,15 @@ from collections.abc import MutableMapping
 from contextlib import contextmanager
 from pathlib import Path
 from subprocess import PIPE, run
-from typing import Any, Callable, Iterable, Mapping, Optional, Union
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple, Union
 
 from git import InvalidGitRepositoryError, Repo
 from loguru import logger
+from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
+from pytorch_lightning.utilities.model_summary import _format_summary_table
 from tqdm import tqdm
+
+from nndet.io.load import save_txt
 
 
 class SuppressPrint:
@@ -39,6 +43,29 @@ class SuppressPrint:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
+
+class ModelSummary(_ModelSummary):
+    def summarize(
+        self,
+        summary_data: List[Tuple[str, List[str]]],
+        total_parameters: int,
+        trainable_parameters: int,
+        model_size: float,
+    ) -> None:
+        super().summarize(
+            summary_data=summary_data,
+            total_parameters=total_parameters,
+            trainable_parameters=trainable_parameters,
+            model_size=model_size,
+        )
+        summary_table = _format_summary_table(
+            total_parameters,
+            trainable_parameters,
+            model_size,
+            *summary_data,
+        )
+        save_txt(summary_table, "./network")
 
 
 def deprecate(

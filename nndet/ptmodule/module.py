@@ -17,14 +17,12 @@ limitations under the License.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Dict, TypeVar
 
 import pytorch_lightning as pl
 import torch
 from loguru import logger
-from pytorch_lightning.core.memory import ModelSummary
 
-from nndet.io.load import save_txt
 from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.training.misc import EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
@@ -234,14 +232,6 @@ class LightningBaseModule(pl.LightningModule):
         Create example input
         """
         return torch.zeros(*self.example_input_array_shape)
-
-    def summarize(self, *args, **kwargs) -> Optional[ModelSummary]:
-        """
-        Save model summary as txt
-        """
-        summary = super().summarize(*args, **kwargs)
-        save_txt(summary, "./network")
-        return summary
 
     def inference_step(self, batch: Any, **kwargs) -> Dict[str, Any]:
         """
