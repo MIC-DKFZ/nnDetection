@@ -32,7 +32,7 @@ repos:
       name: Flake8
       args: [
         '--config=setup.cfg',
-        '--ignore=W503,W504,E203,E402'
+        '--ignore=W503,W504,E203,E402,E262'
         ]
       exclude: |
         (?x)(

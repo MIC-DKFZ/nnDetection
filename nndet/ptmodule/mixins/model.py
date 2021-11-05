@@ -43,29 +43,30 @@ class ModelMixin(ABC):
 
 class SingleStageMixin(ModelMixin):
     """
-    This class provides the template to build a detection model
+    This class provides the template to build a detection model.
+    By overwriting the class attributes the configuration can be adapted.
     """
 
-    # define detector cls
-    detector_cls = ...
+    detector_cls = ...  #: define detector cls
 
-    backbone_cls = ...  # define class for backbone
-    backbone_conv_cls = ...  # conv class used for backbone
-    backbone_block = ...  # define central building block of backbone
+    backbone_cls = ...  #: define class for backbone
+    backbone_conv_cls = ...  #: conv class used for backbone
+    backbone_block = ...  #: define central building block of backbone
 
-    neck_cls = ...  # define class for neck
-    neck_conv_cls = ...  # conv class used for neck
+    neck_cls = ...  #: define class for neck
+    neck_conv_cls = ...  #: conv class used for neck
 
-    head_cls = ...  # define class for head
-    head_conv_cls = ...  # conv class used for head
-    head_classifier_cls = ...  # define class for head classifier
-    head_regressor_cls = ...  # define class for head regressor
-    # [optional] sampler class for negative mining
-    # if None: no sampler will be given to the head
-    head_sampler_cls = None
+    head_cls = ...  #: define class for head
+    head_conv_cls = ...  #: conv class used for head
+    head_classifier_cls = ...  #: define class for head classifier
+    head_regressor_cls = ...  #: define class for head regressor
 
-    matcher_cls = ...  # define class to match anchors to ground truth
-    segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
+    head_sampler_cls = (
+        None  #: [optional] sampler class for negative mining. None = no sampling.
+    )
+
+    matcher_cls = ...  #: define class to match anchors to ground truth
+    segmenter_cls = None  #: [optional] segmentation head as in RetinaUNet
 
     @classmethod
     def from_config_plan(
@@ -405,7 +406,13 @@ class SingleStageMixin(ModelMixin):
         return head
 
     @classmethod
-    def has_sampler(cls):
+    def has_sampler(cls) -> bool:
+        """
+        Check if configuration should have a sampler
+
+        Returns:
+            bool: True if detector needs sampler, False othterwise
+        """
         return cls.head_sampler_cls is not None
 
     @classmethod
@@ -422,6 +429,12 @@ class SingleStageMixin(ModelMixin):
 
     @classmethod
     def has_segmenter(cls):
+        """
+        Check if configuration should have a segmenter
+
+        Returns:
+            bool: True if detector needs segemetner, False othterwise
+        """
         return cls.segmenter_cls is not None
 
     @classmethod
@@ -459,22 +472,26 @@ class SingleStageMixin(ModelMixin):
 
 class RoIBuildMixin:
     # Use `detector_cls` to set RPN module class
-    full_detector_cls = ...  # Two stage detector class RCNN
+    full_detector_cls = ...  #: Two stage detector class RCNN
 
     # RoI classes
-    roi_conv_cls = ...
-    roi_module_cls = ...  # RoIModule
-    roi_head_cls = ...  # RoIBoxHead
-    roi_classifier_cls = ...  # RoIClassifierTwoMLP
-    roi_regressor_cls = ...  # RoIRegressorConv
+    roi_conv_cls = ...  #: conv class for RoI head
+    roi_module_cls = (
+        ...
+    )  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
+    roi_head_cls = ...  #: define class for RoI box head
+    roi_classifier_cls = ...  #: define class for box classifier
+    roi_regressor_cls = ...  #: define class for box regressor
 
-    roi_matcher_cls = ...  # IoUMatcher
-    roi_sampler_cls = ...  # BalancedHardNegativeSampler
-    roi_box_pooler_cls = ...  # RoIAlignNaiveAssign
+    roi_matcher_cls = ...  #:  define class to match proposals to ground truth
+    roi_sampler_cls = (
+        ...
+    )  #: [optional] sampler class for negative mining. None = no sampling
+    roi_box_pooler_cls = ...  # define pooling operation of RoIs for box branch
 
     # optional mask branches
-    roi_masker_cls = None  # BCESingleMasker
-    roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+    roi_masker_cls = None  #: define class of mask branch in RoI module
+    roi_mask_pooler_cls = None  #: define pooling operation of RoIs for mask branch
 
     @staticmethod
     def get_roi_box_size(
@@ -691,6 +708,9 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         plan_anchors: dict,
         **kwargs,
     ):
+        """
+        # TODO
+        """
         # build RPN
         rpn = cls._build_rpn(
             plan_arch=plan_arch,
@@ -775,6 +795,9 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         plan_anchors: dict,
         **kwargs,
     ):
+        """
+        # TODO
+        """
         # build RPN
         rpn = super().from_config_plan(
             model_cfg=model_cfg,
