@@ -428,6 +428,14 @@ The installation command could look like this:
 pip install -e .[dev] -v
 ```
 
+The documentation of nnDetection can be built by running
+
+```bash
+make html
+```
+
+in the `docs` folder and opening `/docs/build/html/index.html` inside your browser.
+
 Install pre-commit hooks to automatically run tests and formatting via:
 
 ```bash
