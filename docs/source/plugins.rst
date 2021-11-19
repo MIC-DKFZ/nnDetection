@@ -21,7 +21,7 @@ Setting up a new plugin can be done with some simple steps:
 6. Replace `[project]` inside the hydra plugin
     - rename folder inside `hydra_plugins`
     - rename python file inside `hydra_plugins/[project]-searchpath_plugin`
-    - rename provider variable inside `hydra_plugins/[project]-searchpath_plugin/[project]_searchpath_plugin.py`
+    - rename variables inside `hydra_plugins/[project]-searchpath_plugin/[project]_searchpath_plugin.py`
 7. **Customize `README.md`**
 
 Working with a Plugin
