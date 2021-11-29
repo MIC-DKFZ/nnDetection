@@ -16,9 +16,9 @@ Following nnU-Net’s agenda, in this work we systematize and automate the confi
 The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
 We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
 
-**If you use nnDetection please cite our [paper](https://arxiv.org/abs/2106.00817)**:
+**If you use nnDetection please cite our [paper](https://miccai2021.org/openaccess/paperlinks/2021/09/01/341-Paper1836.html)**:
 ```
-Baumgartner, M., Jaeger, P. F., Isensee, F., & Maier-Hein, K. H. (2021). nnDetection: A Self-configuring Method for Medical Object Detection. arXiv preprint arXiv:2106.00817
+Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
 ```
 :tada: nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21) :tada:
 
