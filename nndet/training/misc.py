@@ -1,5 +1,4 @@
 import time
-from typing import Any, List
 
 from loguru import logger
 from pytorch_lightning import LightningModule
@@ -31,14 +30,13 @@ class EpochTimerCallback(Callback):
         self,
         trainer,
         pl_module: LightningModule,
-        outputs: List[Any],
     ) -> None:
         self.train_epoch_toc = time.time()
         logger.info(
             f"Train epoch {trainer.current_epoch} took "
             f"{int(self.train_epoch_toc - self.train_epoch_tic)} s"
         )
-        return super().on_train_epoch_end(trainer, pl_module, outputs)
+        return super().on_train_epoch_end(trainer, pl_module)
 
     def on_validation_epoch_start(
         self,
