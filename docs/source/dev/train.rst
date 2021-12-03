@@ -10,10 +10,6 @@ Dataloading
 Lightning Module
 ================
 
-Working with Configs and Hydra
------------------------------
-TBD
-
 Building New nnDetection Models
 -------------------------------
 
