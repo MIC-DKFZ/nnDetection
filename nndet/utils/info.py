@@ -90,7 +90,7 @@ def deprecate(
             if inspect.isclass(func):
                 func_name = func.__class__.__name__
             else:
-                func_name = func.__name__
+                func_name = func.__qualname__
 
             time_str = "now" if deprecate is None else deprecate
 
