@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import copy
 import os
 from collections import OrderedDict
 from pathlib import Path
@@ -100,14 +101,20 @@ class BaseModule(pl.LightningDataModule):
 
         tr_keys.sort()
         val_keys.sort()
+        _dataset = copy.deepcopy(self.dataset)
 
         self.dataset_tr = OrderedDict()
         for i in tr_keys:
-            self.dataset_tr[i] = self.dataset[i]
+            self.dataset_tr[i] = _dataset.pop(i)
 
         self.dataset_val = OrderedDict()
-        for i in val_keys:
-            self.dataset_val[i] = self.dataset[i]
+        for j in val_keys:
+            self.dataset_val[j] = _dataset.pop(j)
+        if len(_dataset) > 0:
+            logger.error(
+                "IMPORTANT: Found data samples which are not present "
+                f"in split file and will be ignored: {_dataset}"
+            )
 
     def create_new_split(self, splits_file: Path) -> None:
         """
