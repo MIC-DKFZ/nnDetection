@@ -194,7 +194,7 @@ class AnchorGenerator2D(torch.nn.Module):
                 torch.arange(0, size1, dtype=torch.float, device=device) * stride1
             )
 
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
@@ -453,7 +453,9 @@ class AnchorGenerator3D(AnchorGenerator2D):
             shifts_y = torch.arange(0, size1, dtype=dtype, device=device) * stride1
             shifts_z = torch.arange(0, size2, dtype=dtype, device=device) * stride2
 
-            shift_x, shift_y, shift_z = torch.meshgrid(shifts_x, shifts_y, shifts_z)
+            shift_x, shift_y, shift_z = torch.meshgrid(
+                shifts_x, shifts_y, shifts_z, indexing="ij"
+            )
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shift_z = shift_z.reshape(-1)
