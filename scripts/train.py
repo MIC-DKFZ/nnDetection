@@ -384,6 +384,13 @@ def _train(
     if not no_summary:
         callbacks.append(ModelSummary(max_depth=10))
 
+    if "terminate_on_nan" in cfg["trainer_cfg"]:
+        detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
+    elif "detect_anomaly" in cfg["trainer_cfg"]:
+        detect_anomaly = cfg["trainer_cfg"]["detect_anomaly"]
+    else:
+        detect_anomaly = False
+
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
         accelerator=cfg["trainer_cfg"]["accelerator"],
@@ -399,7 +406,7 @@ def _train(
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
         plugins=plugins,
-        detect_anomaly=cfg["trainer_cfg"].get("terminate_on_nan", True),
+        detect_anomaly=detect_anomaly,
         move_metrics_to_cpu=False,
         **trainer_kwargs,
     )
