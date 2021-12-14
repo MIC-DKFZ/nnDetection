@@ -47,7 +47,7 @@ def post_image_single_class_regression(
         keep_idxs = probs > score_thresh
         probs, idx = probs[keep_idxs], idx[keep_idxs]
 
-    anchor_idxs = idx // num_foreground_classes
+    anchor_idxs = torch.div(idx, num_foreground_classes, rounding_mode="floor")
     labels = idx % num_foreground_classes
     boxes = boxes[anchor_idxs]
 
