@@ -41,16 +41,22 @@ class RCNN(AbstractModel):
             predict=True,
             batch_num=batch_num,
         )
+
+        predictions = {f"rpn_{key}": item for key, item in proposals.items()}
         targets.pop("target_classes")  # remove targets to avoid accidental class mixup
-        roi_losses, roi_prediction = self.roi_module.train_step(
+
+        roi_losses, roi_predictions = self.roi_module.train_step(
             images=images,
             features=features,
             proposals=proposals,
             targets=targets,
             predict=predict,
         )
+
         losses.update(roi_losses)
-        return losses, roi_prediction
+        if roi_predictions is not None:
+            predictions.update(roi_predictions)
+        return losses, predictions
 
     @torch.no_grad()
     def inference_step(
@@ -61,9 +67,12 @@ class RCNN(AbstractModel):
         proposals, features = self.rpn.inference_step_with_features(
             images=images, **kwargs
         )
-        roi_prediction = self.roi_module.inference_step(
+        predictions = {f"rpn_{key}": item for key, item in proposals.items()}
+
+        roi_predictions = self.roi_module.inference_step(
             images=images,
             features=features,
             proposals=proposals,
         )
-        return roi_prediction
+        predictions.update(roi_predictions)
+        return predictions

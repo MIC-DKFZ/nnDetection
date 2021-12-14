@@ -9,7 +9,6 @@ from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
 from nndet.arch.heads.regressor.dense import L1Regressor
 from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
@@ -47,7 +46,7 @@ class MaskRCNNC001(BoxRCNN):
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
-    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     # RoI classes
     roi_conv_cls = ConvGroupLReLU

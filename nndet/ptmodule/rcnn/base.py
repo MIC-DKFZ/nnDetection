@@ -23,7 +23,7 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule, RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
 from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
@@ -37,7 +37,7 @@ class BoxRCNN(
     LightningBaseModule,  # Detection Base
     SemanticPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
-    BoxEvalMixin,  # Boundig Box Evaluation
+    BoxWithRPNEvalMixin,  # Boundig Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
@@ -146,7 +146,7 @@ class BoxCascadeRCNN(
     LightningBaseModule,  # Detection Base
     SemanticPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
-    BoxEvalMixin,  # Boundig Box Evaluation
+    BoxWithRPNEvalMixin,  # Boundig Box Evaluation
     MultiStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
