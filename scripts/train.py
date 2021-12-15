@@ -47,6 +47,7 @@ from nndet.io.datamodule.bg_module import Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.mixins.optimizer.amp import ExposedNativeMixedPrecisionPlugin
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
@@ -378,7 +379,10 @@ def _train(
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
-    plugins = cfg["trainer_cfg"].get("plugins", None)
+
+    plugins = []
+    if p := cfg["trainer_cfg"].get("plugins", None):
+        plugins.append(p)
     logger.info(f"Using {plugins} plugins for training")
 
     if not no_summary:
@@ -390,6 +394,18 @@ def _train(
         detect_anomaly = cfg["trainer_cfg"]["detect_anomaly"]
     else:
         detect_anomaly = False
+
+    if (
+        cfg["trainer_cfg"]["precision"] == 16
+        and cfg["trainer_cfg"]["amp_backend"] == "native"
+    ):
+        device = "cuda" if num_gpus > 0 else "cpu"
+        precision_plugin = ExposedNativeMixedPrecisionPlugin(
+            precision=16,
+            device=device,
+            init_scale=8192.0,
+        )
+        plugins.append(precision_plugin)
 
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
