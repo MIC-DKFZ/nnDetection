@@ -8,6 +8,7 @@ from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.regressor.dense import L1Regressor
 from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
+from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
@@ -61,6 +62,11 @@ class FasterRCNNC001(BoxRCNN):
     # optional mask branches
     roi_masker_cls = None  # BCESingleMasker
     roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
+
+
+@MODULE_REGISTRY.register
+class FasterURCNNC001(FasterRCNNC001):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
 
 
 @MODULE_REGISTRY.register

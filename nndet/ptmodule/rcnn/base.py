@@ -27,7 +27,7 @@ from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
 from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
@@ -35,7 +35,7 @@ from nndet.ptmodule.module import LightningBaseModule
 class BoxRCNN(
     SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
-    SemanticPrepareMixin,  # prepare batch for semantic segmentation training
+    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Boundig Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
@@ -144,7 +144,7 @@ class BoxRCNN(
 class BoxCascadeRCNN(
     SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
-    SemanticPrepareMixin,  # prepare batch for semantic segmentation training
+    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Boundig Box Evaluation
     MultiStageMixin,  # Single Stage Detector
