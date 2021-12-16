@@ -47,7 +47,7 @@ def init_train_dir(
     # determine folder for experiment
     output_dir = Path(cfg.host.parent_results) / str(task) / str(id) / "transfer"
 
-    if cfg["train"]["mode"].lower() == "overwrite":
+    if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
             print(
                 f"Found existing folder {output_dir}, this run will overwrite "
@@ -238,7 +238,7 @@ def _pretrain(
     save_pickle(splits, train_dir / "pre_splits.pkl")
 
     trainer_kwargs = {}
-    if cfg["train"]["mode"].lower() == "resume":
+    if cfg["exec"]["mode"].lower() == "resume":
         raise NotImplementedError(
             "Resume training not implemented for pretask training."
         )

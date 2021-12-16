@@ -3,16 +3,15 @@ defaults:
     - train: v001
     - prep: process
 
-logger: mlflow # one of None | mlflow | tensorboard
 
 exp:
   tag: ""
   fold: 0
   id: ${module}_${plan}${exp.tag}
 
-train:
+exec:
+  logger: mlflow # one of None | mlflow | tensorboard
   mode: "overwrite" # can be either `overwrite` or `resume`
-  val_test: True # run testing on validation data to get final training results
 
 host:
   # DO NOT CHANGE THESE

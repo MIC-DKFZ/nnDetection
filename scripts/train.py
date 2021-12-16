@@ -191,7 +191,7 @@ def init_train_dir(cfg) -> Path:
         / f"fold{cfg.exp.fold}"
     )
 
-    if cfg["train"]["mode"].lower() == "overwrite":
+    if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
             print(
                 f"Found existing folder {output_dir}, this run will overwrite "
@@ -218,7 +218,7 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
     Returns:
         LightningLoggerBase: Instantiated logger
     """
-    logger_name = cfg.get("logger", "mlflow")
+    logger_name = cfg["exec"].get("logger", "mlflow")
     if isinstance(logger_name, str):
         logger_name = logger_name.lower()
 
@@ -368,10 +368,10 @@ def _train(
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
-    if cfg["train"]["mode"].lower() == "resume":
+    if cfg["exec"]["mode"].lower() == "resume":
         logger.info("Found train mode: resume -> will load checkpoint")
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
-    elif cfg["train"]["mode"].lower() == "transfer":
+    elif cfg["exec"]["mode"].lower() == "transfer":
         logger.info("Found train mode: transfer -> loading model weights")
         module.load_state_dict(
             torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True
