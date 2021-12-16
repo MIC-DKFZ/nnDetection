@@ -190,6 +190,7 @@ def _pretrain(
     )
 
     datamodule = Datamodule(
+        io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
         plan=pre_plan,
         data_dir=data_dir,

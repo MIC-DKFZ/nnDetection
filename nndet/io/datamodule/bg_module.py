@@ -103,6 +103,7 @@ class Datamodule(BaseModule):
     def __init__(
         self,
         plan: dict,
+        io_cfg: dict,
         augment_cfg: dict,
         data_dir: os.PathLike,
         fold: int = 0,
@@ -113,6 +114,7 @@ class Datamodule(BaseModule):
 
         Args:
             augment_cfg: provide settings for augmentation
+            io_cfg: Input/Output configuration
 
                 ``"splits_file"`` str, optional
                     provide alternative splits file
@@ -138,6 +140,7 @@ class Datamodule(BaseModule):
         """
         super().__init__(
             plan=plan,
+            io_cfg=io_cfg,
             augment_cfg=augment_cfg,
             data_dir=data_dir,
             fold=fold,
@@ -147,46 +150,20 @@ class Datamodule(BaseModule):
         self.patch_size_generator: Optional[Sequence[int]] = None
 
     @property
-    def patch_size(self):
-        """
-        Get patch size which can be (optionally) overwritten in the
-        augmentation config
-        """
-        if "patch_size" in self.augment_cfg:
-            ps = self.augment_cfg["patch_size"]
-            logger.warning(f"Patch Size Overwrite Found: running patch size {ps}")
-            return np.array(ps).astype(np.int32)
-        else:
-            return np.array(self.plan["patch_size"]).astype(np.int32)
-
-    @property
-    def batch_size(self):
-        """
-        Get batch size which can be (optionally) overwritten in the
-        augmentation config
-        """
-        if "batch_size" in self.augment_cfg:
-            bs = self.augment_cfg["batch_size"]
-            logger.warning(f"Batch Size Overwrite Found: running batch size {bs}")
-            return bs
-        else:
-            return self.plan["batch_size"]
-
-    @property
     def dataloader(self):
         """
         Get dataloader class name
         """
-        return self.augment_cfg["dataloader"].format(self.plan["network_dim"])
+        return self.io_cfg["dataloader"].format(self.plan["network_dim"])
 
     @property
     def dataloader_kwargs(self):
         """
         Get dataloader kwargs which can be (optionally) overwritten in the
-        augmentation config
+        io config
         """
         dataloader_kwargs = self.plan.get("dataloader_kwargs", {})
-        if dl_kwargs := self.augment_cfg.get("dataloader_kwargs", {}):
+        if dl_kwargs := self.io_cfg.get("dataloader_kwargs", {}):
             logger.warning(f"Dataloader Kwargs Overwrite Found: {dl_kwargs}")
             dataloader_kwargs.update(dl_kwargs)
         return dataloader_kwargs
@@ -198,7 +175,7 @@ class Datamodule(BaseModule):
         augmentation object.
         """
         dim = len(self.patch_size)
-        params = self.augment_cfg["augmentation"]
+        params = self.augment_cfg
         patch_size = self.patch_size
 
         if dim == 2:
@@ -253,21 +230,19 @@ class Datamodule(BaseModule):
             batch_size=self.batch_size,
             patch_size_generator=self.patch_size_generator,
             patch_size_final=self.patch_size,
-            oversample_foreground_percent=self.augment_cfg[
-                "oversample_foreground_percent"
-            ],
+            oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
             pad_mode="constant",
-            num_batches_per_epoch=self.augment_cfg["num_train_batches_per_epoch"],
+            num_batches_per_epoch=self.io_cfg["num_train_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
 
         tr_gen = get_augmenter(
             dataloader=dl_tr,
             transform=self.augmentation.get_training_transforms(),
-            # num_processes=min(int(self.augment_cfg.get('num_threads', 12)), 16) - 1,
+            # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.augment_cfg.get("num_cached_per_thread", 2),
-            multiprocessing=self.augment_cfg.get("multiprocessing", True),
+            num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),
+            multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
         )
@@ -289,21 +264,19 @@ class Datamodule(BaseModule):
             batch_size=self.batch_size,
             patch_size_generator=self.patch_size,
             patch_size_final=self.patch_size,
-            oversample_foreground_percent=self.augment_cfg[
-                "oversample_foreground_percent"
-            ],
+            oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
             pad_mode="constant",
-            num_batches_per_epoch=self.augment_cfg["num_val_batches_per_epoch"],
+            num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
 
         val_gen = get_augmenter(
             dataloader=dl_val,
             transform=self.augmentation.get_validation_transforms(),
-            # num_processes=min(int(self.augment_cfg.get('num_threads', 12)), 16) - 1,
+            # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.augment_cfg.get("num_cached_per_thread", 2),
-            multiprocessing=self.augment_cfg.get("multiprocessing", True),
+            num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),
+            multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
         )

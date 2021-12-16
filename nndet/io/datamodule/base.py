@@ -32,6 +32,7 @@ class BaseModule(pl.LightningDataModule):
     def __init__(
         self,
         plan: dict,
+        io_cfg: dict,
         augment_cfg: dict,
         data_dir: os.PathLike,
         fold: int = 0,
@@ -44,23 +45,35 @@ class BaseModule(pl.LightningDataModule):
 
         Args:
             plan: plan file
-            augment_cfg: provide settings for augmentation
+            io_cfg: Input/Output configuration
 
-                ``"splits_file"`` (str, optional)
+                ``"splits_file"`` str, optional
                     provide alternative splits file
 
+                ``"oversample_foreground_percent"`` float, optional
+                    ratio of foreground and background inside of batches,
+                    defaults to 0.33
+
+                ``"patch_size"`` Sequence[int], optional
+                    overwrite patch size
+
+                ``"batch_size"`` int, optional
+                    overwrite patch size
+
+            augment_cfg: provide settings for augmentation
             data_dir: path to preprocessed data dir. Needs to follow:
                 `.../preprocessed/[data_identifier]/imagesTr`
             fold: current fold
         """
         super().__init__(**kwargs)
         self.plan = plan
+        self.io_cfg = io_cfg
         self.augment_cfg = augment_cfg
         self.data_dir = Path(data_dir)
         self.fold = fold
 
         self.preprocessed_dir = self.data_dir.parent.parent
-        self.splits_file = self.augment_cfg.get("splits", "splits_final")
+        self.splits_file = self.io_cfg.get("splits", "splits_final")
 
         self.dataset_tr = {}
         self.dataset_val = {}
@@ -73,10 +86,39 @@ class BaseModule(pl.LightningDataModule):
 
     @splits_file.setter
     def splits_file(self, f: str) -> None:
+        if f != "splits_final":
+            logger.warning(f"Found splits_file overwrite: {f}")
+
         if f.endswith("pkl"):
             self._splits_file = f
         else:
             self._splits_file = f + ".pkl"
+
+    @property
+    def patch_size(self):
+        """
+        Get patch size which can be (optionally) overwritten in the
+        io config
+        """
+        if "patch_size" in self.io_cfg:
+            ps = self.io_cfg["patch_size"]
+            logger.warning(f"Patch Size Overwrite Found: running patch size {ps}")
+            return np.array(ps).astype(np.int32)
+        else:
+            return np.array(self.plan["patch_size"]).astype(np.int32)
+
+    @property
+    def batch_size(self):
+        """
+        Get batch size which can be (optionally) overwritten in the
+        io config
+        """
+        if "batch_size" in self.io_cfg:
+            bs = self.io_cfg["batch_size"]
+            logger.warning(f"Batch Size Overwrite Found: running batch size {bs}")
+            return bs
+        else:
+            return self.plan["batch_size"]
 
     def do_split(self) -> None:
         """

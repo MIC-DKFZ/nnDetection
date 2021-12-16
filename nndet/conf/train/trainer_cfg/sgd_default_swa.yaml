@@ -1,0 +1,29 @@
+gpus: 1 # number of gpus
+accelerator: # distributed backend
+precision: 16 # mixed precision
+amp_backend: native # mixed precision backend
+amp_level: # when mixed precision backend is APEX use O1
+# Per default training is deterministic, non-deterministic allows
+# cudnn.benchmark which can give up to 20% performance. Set this to false
+# to perform non-deterministic training
+deterministic: False
+benchmark: False
+
+monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
+monitor_mode: "max" # metric operation mode "min" or "max"
+
+max_num_epochs: 50 # max number of epochs
+num_train_batches_per_epoch: 2500 # number of train batches per epoch
+num_val_batches_per_epoch: 100 # number of val batches per epoch
+
+initial_lr: 0.01 # initial learning rate to start with
+sgd_momentum: 0.9 # momentum term
+sgd_nesterov: True # nesterov momentum
+weight_decay: 3.e-5 # weight decay for optimizer
+
+warm_iterations: 4000 # number of iterations with warmup
+warm_lr: 1.e-6 # learning rate to start warmup from
+
+poly_gamma: 0.9 # poly learning rate gamma
+
+swa_epochs: 10 # number of epochs to run swa with cyclic learning rate

@@ -63,5 +63,4 @@ def compose(task, *args, models: bool = False, **kwargs) -> dict:
     for imp in cfg.get("additional_imports", []):
         print(f"Additional import found {imp}")
         importlib.import_module(imp)
-
     return cfg

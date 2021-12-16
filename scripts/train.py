@@ -295,8 +295,8 @@ def _train(
         params = {
             "module": cfg["module"],
             "plan": cfg["plan"],
-            "aug_name": cfg["augment_cfg"]["augmentation"]["name"],
-            "aug_transforms": cfg["augment_cfg"]["augmentation"]["transforms"],
+            "aug_name": cfg["augment_cfg"]["name"],
+            "aug_transforms": cfg["augment_cfg"]["transforms"],
             **flatten_mapping(
                 {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}
             ),
@@ -336,6 +336,7 @@ def _train(
     )
 
     datamodule = Datamodule(
+        io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
         plan=plan,
         data_dir=data_dir,
