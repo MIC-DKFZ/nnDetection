@@ -1,6 +1,6 @@
 # @package __global__
 defaults:
-  - augmentation: base_more
+  - augment_cfg: base_more
 
 module: RetinaUNetV001
 predictor: BoxPredictorSelective
@@ -8,8 +8,7 @@ predictor: BoxPredictorSelective
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
-augment_cfg:
-  augmentation: ${augmentation}
+io_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 

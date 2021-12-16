@@ -28,5 +28,5 @@ warm_lr: 1.e-6 # learning rate to start warmup from
 
 poly_gamma: 0.9 # poly learning rate gamma
 
-swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
+swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
 # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".

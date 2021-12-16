@@ -47,7 +47,7 @@ class BaseModule(pl.LightningDataModule):
             plan: plan file
             io_cfg: Input/Output configuration
 
-                ``"splits_file"`` str, optional
+                ``"splits"`` str, optional
                     provide alternative splits file
 
                 ``"oversample_foreground_percent"`` float, optional
