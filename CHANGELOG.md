@@ -1,5 +1,6 @@
 ## Changelog
 ### nnDetection v0.1.3-dev
+- Rename "train" key in main config, move "logger" to "exec.logger" 993aa2bdf14ff8628ebe3173ff37fc30e8afaaa1
 - Tox Testautomation aa8a35f3e0d48777aa91c86498ac222e41172483
 - (breaking) Assign targets to anchors now also returns matched idx 
 - (breaking) HardNegativeSamplerBatched now return List[Tensor] instead of Tensor like any other sampler
