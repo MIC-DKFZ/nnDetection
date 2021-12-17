@@ -1,14 +1,12 @@
 # @package __global__
 defaults:
-  - augmentation: more_modular
+  - augment_cfg: more_modular
 
-module: MaskRCNNC001
-
+module: RetinaUNetC014Focal
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
-augment_cfg:
-  augmentation: ${augmentation}
+io_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
@@ -19,6 +17,11 @@ augment_cfg:
   num_threads: ${oc.env:det_num_threads, "12"}
   num_cached_per_thread: 2
   multiprocessing: True # only deactivate this if debugging
+
+  # Additional overwrites
+  # patch_size; Default: plan
+  # batch_size; Default: plan
+  # splits; Default: splits_final
 
 trainer_cfg:
   gpus: 1 # number of gpus
@@ -31,7 +34,9 @@ trainer_cfg:
   # to perform non-deterministic training
   deterministic: False
   benchmark: False
+  terminate_on_nan: True # [optional; Default True]
 
+  save_top_k: 1 # topk model selection [optonal; Default 1]
   monitor_key: "val/mAP_IoU_0.10_0.50_0.05_MaxDet_100" # used to determine the best model
   monitor_mode: "max" # metric operation mode "min" or "max"
 
@@ -47,7 +52,7 @@ trainer_cfg:
   warm_iterations: 4000 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from
 
-  poly_gamma: 0.9 # poly learning rate gamma
+  poly_gamma: 0.9
 
   swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
 
@@ -68,20 +73,14 @@ model_cfg:
   head_kwargs: # keyword arguments to passed to head
     reg_mode: "encode"
 
-  head_sampler_kwargs: # keyword arguments passed to sampler
-    batch_size_per_image: 32 # number of anchors sampled per image
-    positive_fraction: 0.5 # defines ratio between positive and negative anchors
-    # hard negatives are sampled from a pool of size:
-    # batch_size_per_image * (1 - positive_fraction) * pool_size
-    pool_size: 20
-    min_neg: 1 # minimum number of negative anchors sampled per image
-
   head_classifier_kwargs: # keyword arguments passed to classifier in head
     num_convs: 1
     norm_channels_per_group: 16
     norm_affine: True
-    reduction: "mean"
-    loss_weight: 1.
+    reduction: "sum"
+    gamma: 1.
+    alpha: 0.75
+    loss_weight: 0.3
     prior_prob: 0.01
 
   head_regressor_kwargs: # keyword arguments passed to regressor in head
@@ -103,33 +102,3 @@ model_cfg:
 
   plan_arch_overwrites: {} # overwrite arguments of architecture
   plan_anchors_overwrites: {} # overwrite arguments of anchors
-
-  rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
-
-  roi_pooling:
-    roi_box_size: [4, 4, 4] # overwrite roi size for box branch
-    roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
-
-  roi_classifier_kwargs: # keyword arguments passed to RoI classifier
-    num_convs: 1
-    add_norm: True
-  roi_regressor_kwargs: # keyword arguments passed to RoI regressor
-    num_convs: 1
-    add_norm: True
-  roi_head_kwargs: {}
-
-  roi_masker_kwargs:
-    num_convs: 1
-    add_norm: False
-
-  roi_matcher_kwargs:
-    low_threshold: 0.2
-    high_threshold: 0.3
-    allow_low_quality_matches: False
-
-  roi_sampler_kwargs:
-    batch_size_per_image: 32
-    positive_fraction: 0.5
-
-  roi_module_kwargs:
-    gt_to_proposals: True

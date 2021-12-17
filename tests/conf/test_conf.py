@@ -1,3 +1,4 @@
+import pytest
 from hydra import compose, initialize_config_module
 
 
@@ -20,7 +21,6 @@ def test_basic_compose():
 
 
 def test_batch_size_overwrite():
-    ov = []
     with initialize_config_module(config_module="nndet.conf"):
         cfg = compose(
             "config.yaml", overrides=["train=v001_mod", "+io_cfg.batch_size=42"]
@@ -30,7 +30,6 @@ def test_batch_size_overwrite():
 
 
 def test_patch_size_overwrite():
-    ov = []
     with initialize_config_module(config_module="nndet.conf"):
         cfg = compose(
             "config.yaml", overrides=["train=v001_mod", "+io_cfg.patch_size=42"]
@@ -40,10 +39,26 @@ def test_patch_size_overwrite():
 
 
 def test_splits_overwrite():
-    ov = []
     with initialize_config_module(config_module="nndet.conf"):
         cfg = compose(
             "config.yaml", overrides=["train=v001_mod", "+io_cfg.splits=custom"]
         )
 
         assert cfg["io_cfg"]["splits"] == "custom"
+
+
+def test_v001():
+    with initialize_config_module(config_module="nndet.conf"):
+        cfg_backup = compose("config.yaml", overrides=["train=v001"])
+    with initialize_config_module(config_module="nndet.conf"):
+        cfg_mod = compose("config.yaml", overrides=["train=v001_mod"])
+    assert cfg_backup == cfg_mod
+
+
+@pytest.mark.parametrize("name", ["c014", "c014_focal"])
+def test_backups(name):
+    with initialize_config_module(config_module="nndet.conf"):
+        cfg_backup = compose("config.yaml", overrides=[f"train={name}_backup"])
+    with initialize_config_module(config_module="nndet.conf"):
+        cfg_mod = compose("config.yaml", overrides=[f"train={name}"])
+    assert cfg_backup == cfg_mod

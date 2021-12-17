@@ -3,8 +3,6 @@ defaults:
   - augment_cfg: base_more
 
 module: RetinaUNetV001
-predictor: BoxPredictorSelective
-
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
