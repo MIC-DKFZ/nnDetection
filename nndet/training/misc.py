@@ -26,7 +26,7 @@ class EpochTimerCallback(Callback):
         self.train_epoch_tic = time.time()
         return super().on_train_epoch_start(trainer, pl_module)
 
-    def on_train_epoch_end(
+    def on_validation_epoch_start(
         self,
         trainer,
         pl_module: LightningModule,
@@ -36,13 +36,7 @@ class EpochTimerCallback(Callback):
             f"Train epoch {trainer.current_epoch} took "
             f"{int(self.train_epoch_toc - self.train_epoch_tic)} s"
         )
-        return super().on_train_epoch_end(trainer, pl_module)
 
-    def on_validation_epoch_start(
-        self,
-        trainer,
-        pl_module: LightningModule,
-    ) -> None:
         self.val_epoch_tic = time.time()
         return super().on_validation_epoch_start(trainer, pl_module)
 

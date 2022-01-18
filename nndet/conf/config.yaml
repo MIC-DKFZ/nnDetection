@@ -1,6 +1,6 @@
 defaults:
     - _self_
-    - train: v001
+    - train: v001_mod
     - prep: process
 
 exp:
