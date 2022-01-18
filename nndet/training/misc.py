@@ -4,6 +4,8 @@ from loguru import logger
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import Callback
 
+from nndet.training.ema import EMA
+
 
 class EpochTimerCallback(Callback):
     def __init__(self) -> None:
@@ -18,6 +20,9 @@ class EpochTimerCallback(Callback):
         self.val_epoch_tic = 0
         self.val_epoch_toc = 0
 
+        self.train_time_ema = EMA(beta=0.9, bias_correction=True)
+        self.val_time_ema = EMA(beta=0.9, bias_correction=True)
+
     def on_train_epoch_start(
         self,
         trainer,
@@ -31,11 +36,14 @@ class EpochTimerCallback(Callback):
         trainer,
         pl_module: LightningModule,
     ) -> None:
-        self.train_epoch_toc = time.time()
-        logger.info(
-            f"Train epoch {trainer.current_epoch} took "
-            f"{int(self.train_epoch_toc - self.train_epoch_tic)} s"
-        )
+        if self.train_epoch_tic > 0:
+            self.train_epoch_toc = time.time()
+            train_time = int(self.train_epoch_toc - self.train_epoch_tic)
+            self.train_time_ema.add(train_time)
+            logger.info(
+                f"Train epoch {trainer.current_epoch} took "
+                f"{train_time} s and train EMA is {self.train_time_ema.get()} s"
+            )
 
         self.val_epoch_tic = time.time()
         return super().on_validation_epoch_start(trainer, pl_module)
@@ -46,8 +54,11 @@ class EpochTimerCallback(Callback):
         pl_module: LightningModule,
     ) -> None:
         self.val_epoch_toc = time.time()
+        val_time = int(self.val_epoch_toc - self.val_epoch_tic)
+        self.val_time_ema.add(val_time)
+
         logger.info(
             f"Val epoch {trainer.current_epoch} took "
-            f"{int(self.val_epoch_toc - self.val_epoch_tic)} s"
+            f"{val_time} s and val time EMA is {self.val_time_ema.get()} s"
         )
         return super().on_validation_epoch_end(trainer, pl_module)

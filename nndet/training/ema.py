@@ -138,7 +138,7 @@ class EMA:
         """
         Exponentially weighted moving average
         new_cache = beta * cache + (1 - beta) * new_val
-        Approximatley averages (1 - beta)^(-1) values
+        Approximately averages (1 - beta)^(-1) values
 
         Args:
             beta: weights for averaging
