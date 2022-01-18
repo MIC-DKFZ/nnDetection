@@ -37,7 +37,7 @@ class BoxRCNN(
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
-    BoxWithRPNEvalMixin,  # Boundig Box Evaluation (with RPN)
+    BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):

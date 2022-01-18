@@ -158,6 +158,18 @@ class BoxEvalMixin(EvalMixin):
             f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
             f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
         )
+
+        # log own scores
+        for key, item in box_scores.items():
+            self.log(
+                f"val/{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
+            )
+
         return metric_scores
 
 
@@ -241,11 +253,11 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
         metric_scores = super().evaluation_end()
 
         # compute own scores
-        box_scores, _ = self.evaluators["rpn_boxes"].finish_online_evaluation()
+        rpn_scores, _ = self.evaluators["rpn_boxes"].finish_online_evaluation()
         self.evaluators["rpn_boxes"].reset()
 
         # add own scores
-        metric_scores.update({f"rpn_{key}": item for key, item in box_scores.items()})
+        metric_scores.update({f"rpn_{key}": item for key, item in rpn_scores.items()})
 
         # [optional] log own scores
         logger.info(
@@ -255,6 +267,18 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
             f"RPN AR@0.1: {metric_scores['rpn_AR_IoU_0.10_MaxDet_100']:0.3f} "
             f"RPN AR@0.5: {metric_scores['rpn_AR_IoU_0.50_MaxDet_100']:0.3f} "
         )
+
+        # log own scores
+        for key, item in rpn_scores.items():
+            self.log(
+                f"val_rpn/{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
+            )
+
         return metric_scores
 
 
@@ -327,6 +351,17 @@ class SemanticEvalMixin(EvalMixin):
 
         # [optional] log own scores
         logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
+
+        # log own scores
+        for key, item in seg_scores.items():
+            self.log(
+                f"val/{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
+            )
 
         return metric_scores
 
@@ -402,6 +437,17 @@ class SemanticFgEvalMixin(EvalMixin):
 
         # [optional] log own scores
         logger.info(f"Proxy FG Dice (fg_mode=True): {seg_scores['seg_dice']:0.3f}")
+
+        # log own scores
+        for key, item in seg_scores.items():
+            self.log(
+                f"val/{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
+            )
 
         return metric_scores
 

@@ -20,6 +20,7 @@ Configuration
 * `det_num_threads`
 * `det_verbose`
 * `det_logging`
+* `det_logger`
 
 Pypi
 ----

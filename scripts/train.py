@@ -224,6 +224,11 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
 
     pl_logger = False
     save_dir = os.getenv("det_logging", None)
+
+    # logger not defined
+    if logger_name.lower() == "none":
+        return pl_logger
+
     if logger_name == "mlflow":
         if save_dir is not None:
             save_dir = Path(save_dir)

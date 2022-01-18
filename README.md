@@ -60,6 +60,7 @@ When running a training inside the container it is necessary to [increase the sh
     - `det_num_threads`: [recommended] Number processes to use for augmentation (at least 6, default 12)
     - `det_verbose`: [optional] Can be used to deactivate progress bars (activated by default)
     - `det_logging`: [optional] Specify the logging directory. nnDetection supports [MLFlow]((https://www.mlflow.org/docs/latest/tracking.html)) or [Tensorboard](https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard). If not set, logs will be saved to current training directory.
+    - `det_logger`: [optional] Define logger type. One of tensorboard | mlflow | none.
 
 Note: nnDetection was developed on Linux => Windows is not supported.
 
