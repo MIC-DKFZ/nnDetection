@@ -217,7 +217,7 @@ class DummyBoxModel(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [N, C, dims]
         # return: [N, classes, dims]
-        print(x)
+        # print(x)
         return x.max(dim=1, keepdim=True)[0] > 0
 
     def inference_step(self, images, *args, **kwargs):
@@ -250,7 +250,7 @@ class DummySegModel(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [N, C, dims]
         # return: [N, classes, dims]
-        print(x)
+        # print(x)
         return x.max(dim=1, keepdim=True)[0] > 0
 
     def inference_step(self, images, *args, **kwargs):
