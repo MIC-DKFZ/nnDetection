@@ -47,7 +47,7 @@ from nndet.io.datamodule.bg_module import Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.optimizer.amp import ExposedNativeMixedPrecisionPlugin
+from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info

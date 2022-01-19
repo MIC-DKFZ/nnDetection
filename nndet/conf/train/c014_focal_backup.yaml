@@ -44,6 +44,7 @@ trainer_cfg:
   num_train_batches_per_epoch: 2500 # number of train batches per epoch
   num_val_batches_per_epoch: 100 # number of val batches per epoch
 
+  opt_class: "SGDLWPoly"
   initial_lr: 0.01 # initial learning rate to start with
   sgd_momentum: 0.9 # momentum term
   sgd_nesterov: True # nesterov momentum

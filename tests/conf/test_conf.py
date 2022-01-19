@@ -1,5 +1,6 @@
 import pytest
 from hydra import compose, initialize_config_module
+from omegaconf.omegaconf import OmegaConf
 
 
 def test_basic_compose():
@@ -52,7 +53,7 @@ def test_v001():
         cfg_backup = compose("config.yaml", overrides=["train=v001"])
     with initialize_config_module(config_module="nndet.conf"):
         cfg_mod = compose("config.yaml", overrides=["train=v001_mod"])
-    assert cfg_backup == cfg_mod
+    assert OmegaConf.to_container(cfg_backup) == OmegaConf.to_container(cfg_mod)
 
 
 @pytest.mark.parametrize("name", ["c014", "c014_focal"])
@@ -61,4 +62,4 @@ def test_backups(name):
         cfg_backup = compose("config.yaml", overrides=[f"train={name}_backup"])
     with initialize_config_module(config_module="nndet.conf"):
         cfg_mod = compose("config.yaml", overrides=[f"train={name}"])
-    assert cfg_backup == cfg_mod
+    assert OmegaConf.to_container(cfg_backup) == OmegaConf.to_container(cfg_mod)

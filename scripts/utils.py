@@ -284,6 +284,10 @@ def print_reg():
         from nndet.ptmodule import MODULE_REGISTRY
 
         registry = MODULE_REGISTRY
+    elif registry_name == "optimizer":
+        from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
+
+        registry = OPTIMIZER_REGISTRY
     else:
         raise ValueError(f"Did not find registry for {registry_name}")
 

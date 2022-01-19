@@ -29,14 +29,12 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.retina import BaseRetinaNet
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
-from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
 class RetinaUNetModule(
-    SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
     SemanticPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training

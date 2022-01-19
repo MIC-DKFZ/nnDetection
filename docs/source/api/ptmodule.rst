@@ -29,7 +29,7 @@ Mixins
 Optimizers
 ----------
 
-.. currentmodule:: nndet.ptmodule.mixins.optimizer
+.. currentmodule:: nndet.ptmodule.optimizer
 
 .. autosummary::
    :toctree: Optimizers

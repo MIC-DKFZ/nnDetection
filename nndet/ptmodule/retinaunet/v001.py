@@ -30,7 +30,6 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
-from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -38,7 +37,6 @@ from nndet.ptmodule.module import LightningBaseModule
 
 @MODULE_REGISTRY.register
 class RetinaUNetV001(
-    SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
     # prepare inputs
     BoxPrepareMixin,
@@ -47,6 +45,7 @@ class RetinaUNetV001(
     BoxEvalMixin,
     SemanticFgEvalMixin,
     SingleStageMixin,  # Single Stage Detector
+    # inference
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     # define detector cls

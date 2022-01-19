@@ -2,20 +2,29 @@ import inspect
 import os
 import shutil
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping, TypeVar
+
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 
 
-class Registry:
+class Registry(Mapping[KT, VT]):
     def __init__(self):
         self.mapping = {}
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: KT) -> VT:
         if key in self.mapping:
             return self.mapping[key]["fn"]
         else:
             raise KeyError(
                 f"Key {key} in not registered in registry with keys: {list(self.mapping.keys())}"
             )
+
+    def __iter__(self):
+        return self.mapping
+
+    def __len__(self):
+        return len(self.mapping)
 
     def register(self, fn: Callable):
         self._register(fn.__name__, fn, inspect.getfile(fn))

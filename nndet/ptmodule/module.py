@@ -24,6 +24,7 @@ import torch
 from loguru import logger
 
 from nndet.io.transforms import Compose, TransferInputChannel
+from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.misc import EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
 
@@ -239,64 +240,13 @@ class LightningBaseModule(pl.LightningModule):
         """
         return self.model.inference_step(batch, **kwargs)
 
-    # @classmethod
-    # def from_config_plan(  # FIXME
-    #     cls,
-    #     model_cfg: dict,
-    #     plan_arch: dict,
-    #     plan_anchors: dict,
-    #     log_num_anchors: str = None,
-    #     **kwargs,
-    # ):
-    #     """
-    #     Used to generate the model
-    #     """
-    #     raise NotImplementedError
-
-    # @staticmethod
-    # def get_ensembler_cls(key: Hashable, dim: int) -> Callable: # TODO
-    #     """
-    #     Get ensembler classes to combine multiple predictions
-    #     Needs to be overwritten in subclasses!
-    #     """
-    #     raise NotImplementedError
-
-    # @classmethod
-    # def get_predictor(
-    #     cls,
-    #     plan: Dict,
-    #     models: Sequence[LightningBaseModule],
-    #     num_tta_transforms: int = None,
-    #     **kwargs,
-    # ) -> Type[Predictor]: # TODO
-    #     """
-    #     Get predictor
-    #     Needs to be overwritten in subclasses!
-    #     """
-    #     raise NotImplementedError
-
-    # def sweep(
-    #     self,
-    #     cfg: dict,
-    #     save_dir: os.PathLike,
-    #     train_data_dir: os.PathLike,
-    #     case_ids: Sequence[str],
-    #     run_prediction: bool = True,
-    # ) -> Dict[str, Any]:  # TODO
-    #     """
-    #     Sweep parameters to find the best predictions
-    #     Needs to be overwritten in subclasses!
-
-    #     Args:
-    #         cfg: config used for training
-    #         save_dir: save dir used for training
-    #         train_data_dir: directory where preprocessed training/validation
-    #             data is located
-    #         case_ids: case identifies to prepare and predict
-    #         run_prediction: predict cases
-    #         **kwargs: keyword arguments passed to predict function
-    #     """
-    #     raise NotImplementedError
+    def configure_optimizers(self):
+        """
+        Configure optimizer and scheduler
+        """
+        return OPTIMIZER_REGISTRY[self.trainer_cfg["opt_class"]].configure_optimizers(
+            self
+        )
 
     def configure_callbacks(self):
         """

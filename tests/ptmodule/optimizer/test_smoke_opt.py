@@ -1,14 +1,7 @@
 import pytest
 import torch
 
-from nndet.ptmodule.mixins.optimizer import (
-    AdamWDefaultMixin,
-    MadgradDefaultMixin,
-    RAdamDefaultMixin,
-    Ranger21DefaultMixin,
-    RangerDefaultMixin,
-    SGDDefaultMixin,
-)
+from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.learning_rate import LinearWarmupPolyLR
 
 base_cfg = {
@@ -25,7 +18,7 @@ default_scheduler = {
 
 TEST_CASES = [
     (
-        SGDDefaultMixin,
+        "SGDLWPoly",
         {
             **base_cfg,
             **default_scheduler,
@@ -35,10 +28,14 @@ TEST_CASES = [
         (torch.optim.SGD, LinearWarmupPolyLR),
     ),
     (
-        AdamWDefaultMixin,
+        "AdamWLWPoly",
         {
             **base_cfg,
             **default_scheduler,
+            "beta1": 0.9,
+            "beta2": 0.999,
+            "eps": 1e-8,
+            "amsgrad": True,
         },
         (torch.optim.AdamW, LinearWarmupPolyLR),
     ),
@@ -50,7 +47,7 @@ try:
 
     TEST_CASES.append(
         (
-            RAdamDefaultMixin,
+            "RAdamLWPoly",
             {
                 **base_cfg,
                 **default_scheduler,
@@ -60,7 +57,7 @@ try:
     )
     TEST_CASES.append(
         (
-            RangerDefaultMixin,
+            "RangerLWPoly",
             {
                 **base_cfg,
                 **default_scheduler,
@@ -77,7 +74,7 @@ try:
 
     TEST_CASES.append(
         (
-            Ranger21DefaultMixin,
+            "Ranger21",
             {
                 **base_cfg,
                 **default_scheduler,
@@ -94,7 +91,7 @@ try:
 
     TEST_CASES.append(
         (
-            MadgradDefaultMixin,
+            "MadgradLWPoly",
             {
                 **base_cfg,
                 **default_scheduler,
@@ -107,16 +104,18 @@ except ImportError:
     pass
 
 
-@pytest.mark.parametrize("opt_mixin_cls,cfg,opt_expected_cls", TEST_CASES)
-def test_optim_mixin_smoke(opt_mixin_cls, cfg, opt_expected_cls):
-    class OptMixedIn(torch.nn.Module, opt_mixin_cls):
-        def __init__(self, cfg) -> None:
-            super().__init__()
-            self.train_epochs = 100
-            self.trainer_cfg = cfg
-            self.layer = torch.nn.Conv2d(10, 10, 3)
+class DummyModule(torch.nn.Module):
+    def __init__(self, cfg) -> None:
+        super().__init__()
+        self.train_epochs = 100
+        self.trainer_cfg = cfg
+        self.layer = torch.nn.Conv2d(10, 10, 3)
 
-    result = OptMixedIn(cfg).configure_optimizers()  # get optimizers
+
+@pytest.mark.parametrize("opt_str,cfg,opt_expected_cls", TEST_CASES)
+def test_optim_mixin_smoke(opt_str, cfg, opt_expected_cls):
+    module = DummyModule(cfg)
+    result = OPTIMIZER_REGISTRY[opt_str].configure_optimizers(module)  # get optimizers
 
     if isinstance(result, tuple):
         optimizer, scheduler = result

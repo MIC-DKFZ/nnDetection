@@ -25,7 +25,6 @@ from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
-from nndet.ptmodule.mixins.optimizer import SGDDefaultMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -33,7 +32,6 @@ from nndet.ptmodule.module import LightningBaseModule
 
 @MODULE_REGISTRY.register
 class BoxRCNN(
-    SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training
@@ -142,7 +140,6 @@ class BoxRCNN(
 
 @MODULE_REGISTRY.register
 class BoxCascadeRCNN(
-    SGDDefaultMixin,  # Default SGD optimization
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxPrepareMixin,  # prepare batch for box training

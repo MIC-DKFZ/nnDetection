@@ -44,10 +44,11 @@ trainer_cfg:
   num_train_batches_per_epoch: 2500 # number of train batches per epoch
   num_val_batches_per_epoch: 100 # number of val batches per epoch
 
+  opt_class: "SGDLWPoly"
   initial_lr: 0.01 # initial learning rate to start with
+  weight_decay: 3.e-5 # weight decay for optimizer
   sgd_momentum: 0.9 # momentum term
   sgd_nesterov: True # nesterov momentum
-  weight_decay: 3.e-5 # weight decay for optimizer
 
   warm_iterations: 4000 # number of iterations with warmup
   warm_lr: 1.e-6 # learning rate to start warmup from
@@ -71,7 +72,8 @@ model_cfg:
     norm_out: False
     activation_out: False
 
-  head_kwargs: {} # keyword arguments to passed to head
+  head_kwargs:  # keyword arguments to passed to head
+    reg_mode: "encode"
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
     num_convs: 1
@@ -88,6 +90,7 @@ model_cfg:
     reduction: "sum"
     loss_weight: 1.
     learn_scale: True
+
 
   head_sampler_kwargs: # keyword arguments passed to sampler
     batch_size_per_image: 32 # number of anchors sampled per image
