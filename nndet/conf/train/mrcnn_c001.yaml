@@ -3,8 +3,8 @@ defaults:
   - augment_cfg: more_modular
   - io_cfg: base_offset
   - trainer_cfg: sgd_base_swa
-  - model_cfg: mrcnn_l1_hnm_atss_init
+  - model_cfg: mrcnn_l1_hnm_atss_fc
 
-module: MaskURCNNC001
+module: MaskURCNNC001FC
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing

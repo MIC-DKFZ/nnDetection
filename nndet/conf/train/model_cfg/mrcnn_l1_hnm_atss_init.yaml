@@ -56,6 +56,9 @@ plan_anchors_overwrites: {} # overwrite arguments of anchors
 ##########################
 rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
 
+roi_channel_multiplier: 1  # cale number of channels of RoI head
+roi_mask_channel_multiplier : 1  # scale number of channels of RoI Mask head
+
 roi_pooling:
   roi_box_size: [4, 4, 4] # overwrite roi size for box branch
   roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch

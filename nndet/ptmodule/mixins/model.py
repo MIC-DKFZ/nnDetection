@@ -540,11 +540,12 @@ class RoIBuildMixin:
         kwargs = model_cfg["roi_classifier_kwargs"]
         logger.info(f"Building:: roi classifier {name}: {kwargs}")
 
+        roi_channel_multiplier = model_cfg["roi_channel_multiplier"]
         classifier = cls.roi_classifier_cls(
             conv=conv,
             input_size=cls.get_roi_box_size(plan_arch, model_cfg),
             in_channels=plan_arch["fpn_channels"],
-            internal_channels=plan_arch["fpn_channels"],
+            internal_channels=int(roi_channel_multiplier * plan_arch["fpn_channels"]),
             num_classes=plan_arch["classifier_classes"],
             **kwargs,
         )
@@ -561,11 +562,12 @@ class RoIBuildMixin:
         kwargs = model_cfg["roi_regressor_kwargs"]
         logger.info(f"Building:: roi regressor {name}: {kwargs}")
 
+        roi_channel_multiplier = model_cfg["roi_channel_multiplier"]
         regressor = cls.roi_regressor_cls(
             conv=conv,
             input_size=cls.get_roi_box_size(plan_arch, model_cfg),
             in_channels=plan_arch["fpn_channels"],
-            internal_channels=plan_arch["fpn_channels"],
+            internal_channels=int(roi_channel_multiplier * plan_arch["fpn_channels"]),
             **kwargs,
         )
         return regressor
@@ -603,10 +605,13 @@ class RoIBuildMixin:
             kwargs = model_cfg["roi_masker_kwargs"]
             logger.info(f"Building:: roi masker {name}: {kwargs}")
 
+            roi_mask_channel_multiplier = model_cfg["roi_mask_channel_multiplier"]
             masker = cls.roi_masker_cls(
                 conv,
                 in_channels=plan_arch["fpn_channels"],
-                internal_channels=plan_arch["fpn_channels"],
+                internal_channels=int(
+                    roi_mask_channel_multiplier * plan_arch["fpn_channels"]
+                ),
                 **kwargs,
             )
         else:
