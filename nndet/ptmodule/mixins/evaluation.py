@@ -150,13 +150,15 @@ class BoxEvalMixin(EvalMixin):
         # add own scores
         metric_scores.update(box_scores)
 
+        breakpoint()
         # [optional] log own scores
         logger.info(
-            f"mAP@0.1:0.5:0.05: {metric_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"AP@0.1: {metric_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"AP@0.5: {metric_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"AR@0.1: {metric_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"AR@0.5: {metric_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
@@ -261,11 +263,12 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"RPN mAP@0.1:0.5:0.05: {metric_scores['rpn_mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"RPN AP@0.1: {metric_scores['rpn_AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"RPN AP@0.5: {metric_scores['rpn_AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN AR@0.1: {metric_scores['rpn_AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN AR@0.5: {metric_scores['rpn_AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"RPN AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores

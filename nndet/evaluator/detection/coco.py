@@ -182,7 +182,9 @@ class COCOMetric(DetectionMetric):
                 f"MaxDet_{self.max_detections[-1]}"
             )
             results[key] = self.select_ap(
-                dataset_statistics, iou_idx=self.iou_range_idx, max_det_idx=-1
+                dataset_statistics,
+                iou_idx=self.iou_range_idx,
+                max_det_idx=-1,
             )
 
             if self.per_class:
@@ -237,8 +239,16 @@ class COCOMetric(DetectionMetric):
         """
         results = {}
         for max_det_idx, max_det in enumerate(self.max_detections):  # mAR
-            key = f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_MaxDet_{max_det}"
-            results[key] = self.select_ar(dataset_statistics, max_det_idx=max_det_idx)
+            if self.iou_range:
+                key = (
+                    f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
+                    f"_MaxDet_{max_det}"
+                )
+                results[key] = self.select_ar(
+                    dataset_statistics,
+                    iou_idx=self.iou_range_idx,
+                    max_det_idx=max_det_idx,
+                )
 
             if self.per_class:
                 for cls_idx, cls_str in enumerate(self.classes):  # per class results
@@ -248,7 +258,10 @@ class COCOMetric(DetectionMetric):
                         f"MaxDet_{max_det}"
                     )
                     results[key] = self.select_ar(
-                        dataset_statistics, cls_idx=cls_idx, max_det_idx=max_det_idx
+                        dataset_statistics,
+                        iou_idx=self.iou_range_idx,
+                        cls_idx=cls_idx,
+                        max_det_idx=max_det_idx,
                     )
 
         for idx in self.iou_list_idx:  # AR@IoU
