@@ -35,6 +35,7 @@ class DetectionEvaluator(AbstractEvaluator):
     def __init__(self,
                  metrics: Sequence[DetectionMetric],
                  iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
+                 match_fn: Callable = matching_batch,
                  max_detections: int = 100,
                  ):
         """
@@ -46,6 +47,7 @@ class DetectionEvaluator(AbstractEvaluator):
             max_detections (int): number of maximum detections per image (reduces computation)
         """
         self.iou_fn = iou_fn
+        self.match_fn = match_fn
         self.max_detections = max_detections
         self.metrics = metrics
         self.results_list = []  # store results of each image
@@ -99,7 +101,7 @@ class DetectionEvaluator(AbstractEvaluator):
             n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
-        self.results_list.extend(matching_batch(
+        self.results_list.extend(self.match_fn(
             self.iou_fn, self.iou_thresholds, pred_boxes=pred_boxes, pred_classes=pred_classes,
             pred_scores=pred_scores, gt_boxes=gt_boxes, gt_classes=gt_classes, gt_ignore=gt_ignore,
             max_detections=self.max_detections))

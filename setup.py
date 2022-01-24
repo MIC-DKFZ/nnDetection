@@ -129,6 +129,7 @@ setup(
             'nndet_seg2nii = scripts.utils:seg2nii',
             'nndet_unpack = scripts.utils:unpack',
             'nndet_env = scripts.utils:env',
+            'nndet_searchpath = scripts.utils:hydra_searchpath'
         ]
     },
 )
