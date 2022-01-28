@@ -10,7 +10,6 @@ from nndet.arch.heads.masker.base import MaskerType
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.ops import cat_and_index
-from nndet.core.boxes.post import post_image_single_class_regression
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.rois.ops import create_binary_masks
 from nndet.core.rois.pooler import NDSIZE, PoolerType
@@ -19,6 +18,7 @@ from nndet.utils.tensor import cat, detach_all
 
 # TODO: cleanup
 # FIXME: no proposals case -> matcher
+# TODO: box_post & mask_post
 class BaseRoIModule(torch.nn.Module):
     def __init__(
         self,
@@ -74,8 +74,8 @@ class BaseRoIModule(torch.nn.Module):
                 "Mask mode requires head and pooler to be set! "
                 "Mask Head was not porovided."
             )
-        self.mask_mode_train = mask_head is not None and mask_pooler is not None
-        if self.mask_mode_train:
+        self.mask_mode = mask_head is not None and mask_pooler is not None
+        if self.mask_mode:
             logger.info("Running mask branch for training")
             if not isinstance(mask_head, (list, tuple)):
                 mask_head = [mask_head]
@@ -305,7 +305,7 @@ class BaseRoIModule(torch.nn.Module):
         features: List[torch.Tensor],
         proposal_boxes: List[torch.Tensor],
         stage: int = 0,
-    ):
+    ) -> Dict[List[str, torch.Tensor]]:
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
         roi_features = self.box_pooler(
@@ -335,22 +335,36 @@ class BaseRoIModule(torch.nn.Module):
         self,
         images: torch.Tensor,
         features: List[torch.Tensor],
-        proposal_boxes: List[torch.Tensor],
+        pred_boxes: List[torch.Tensor],
+        pred_probs: List[torch.Tensor],
+        pred_labels: List[torch.Tensor],
         stage: int = 0,
-    ):
-        _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
+    ) -> Dict[str, List[Tensor]]:
+        _boxes, batch_idx = cat_and_index(pred_boxes)
         roi_features = self.mask_pooler(
             features=features,
-            proposal_boxes=_proposal_boxes,
+            proposal_boxes=_boxes,
             batch_idx=batch_idx,
             image_size=tuple(images.shape[2:]),
         )  # [P, C, spatial]
 
-        pred_masks, _ = self.mask_head[stage](roi_features)
-        # TODO: postprocessing
-        # TODO: move cat and index to inference step
+        _masks, _ = self.mask_head[stage](roi_features)  # [P, C, mask_dim]
 
-    # TODO: code duplication :/
+        image_shapes = [images.shape[2:]] * images.shape[0]
+        masks, probs, labels = self.postprocess_masks(
+            masks=_masks,
+            pred_probs=pred_probs,
+            pred_labels=pred_labels,
+            image_shapes=image_shapes,
+            stage=stage,
+        )
+        prediction = {
+            "pred_masks": masks,
+            "pred_mask_scores": probs,
+            "pred_mask_labels": labels,
+        }
+        return prediction
+
     @torch.no_grad()
     def postprocess_detections(
         self,
@@ -368,33 +382,36 @@ class BaseRoIModule(torch.nn.Module):
             pred_detection["pred_boxes"],
             pred_detection["pred_probs"],
         )
-
-        # split boxes and scores per image
         pred_boxes = pred_boxes.split(boxes_per_image, 0)
         pred_probs = pred_probs.split(boxes_per_image, 0)
 
-        all_boxes, all_probs, all_labels = [], [], []
+        return self.box_post.process(
+            reps=pred_boxes,
+            probs=pred_probs,
+            image_shapes=image_shapes,
+        )
 
-        for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
-            if not self.box_head[stage].regress_multi_class:
-                _boxes, _probs, _labels = post_image_single_class_regression(
-                    boxes=boxes,
-                    probs=probs,
-                    num_foreground_classes=self.num_foreground_classes,
-                    image_shape=image_shape,
-                    nms_thresh=self.roi_nms_thresh,
-                    topk_candidates=None,
-                    score_thresh=self.roi_score_thresh,
-                    remove_small_boxes=None,
-                    detections_per_img=self.roi_detections_per_img,
-                )
-            else:
-                raise NotImplementedError
+    @torch.no_grad()
+    def postprocess_masks(
+        self,
+        masks: torch.Tensor,
+        pred_probs: List[torch.Tensor],
+        pred_labels: List[torch.Tensor],
+        image_shapes: List[Tuple[int]],
+        stage: int,
+    ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+        masks_per_image = [len(pl) for pl in pred_labels]
+        assert [len(pp) == len(pl) for pp, pl in zip(pred_probs, pred_labels)]
 
-            all_boxes.append(_boxes)
-            all_probs.append(_probs)
-            all_labels.append(_labels)
-        return all_boxes, all_probs, all_labels
+        pred_masks = self.mask_head[stage].logits_to_probs(masks)
+        pred_masks = pred_masks.split(masks_per_image, 0)
+
+        return self.mask_post.process(
+            reps=pred_masks,
+            probs=pred_probs,
+            pred_labels=pred_labels,
+            image_shapes=image_shapes,
+        )
 
 
 class RoIModule(BaseRoIModule):
@@ -429,7 +446,7 @@ class RoIModule(BaseRoIModule):
         )
 
         # mask loss
-        if self.mask_mode_train:
+        if self.mask_mode:
             mask_losses, _ = self._train_step_masks(
                 features=_features,
                 matched_gt_labels=matched_gt_labels,
@@ -459,12 +476,13 @@ class RoIModule(BaseRoIModule):
             proposal_boxes=proposals["pred_boxes"],
         )
 
-        if self.mask_mode_train:  # TODO: handle mask inference
-            self._inference_step_masks(
+        if self.mask_mode:
+            mask_preds = self._inference_step_masks(
                 images=images,
                 features=_features,
                 proposal_boxes=proposals["pred_boxes"],
             )
+            prediction.update(mask_preds)
         return prediction
 
 

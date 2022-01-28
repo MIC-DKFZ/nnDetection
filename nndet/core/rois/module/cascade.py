@@ -64,7 +64,7 @@ class CascadeRoIModule(BaseRoIModule):
             self.loss_weight_stage = list(map(float, loss_weight_stage))
         logger.info(
             f"Running Cascade RoI Module with {self.num_stages} stages and "
-            f"train mask {self.mask_mode_train}"
+            f"train mask {self.mask_mode}"
         )
         self.mask_interleaved_execution = mask_interleaved_execution
 
@@ -118,7 +118,7 @@ class CascadeRoIModule(BaseRoIModule):
                 losses[f"roi_s{stage_idx}_{k}"] = i * self.loss_weight_stage[stage_idx]
 
             # mask loss
-            if self.mask_mode_train:
+            if self.mask_mode:
                 if self.mask_interleaved_execution:  # use new boxes for mask
                     proposals = self.detach_proposals(new_proposals)
                     proposal_boxes = proposals["pred_boxes"]
@@ -170,7 +170,7 @@ class CascadeRoIModule(BaseRoIModule):
                 proposal_boxes=proposals["pred_boxes"],
                 stage=stage_idx,
             )
-            if self.mask_mode_train:
+            if self.mask_mode:
                 if self.mask_interleaved_execution:
                     proposal_boxes = prediction["pred_boxes"]
                 else:

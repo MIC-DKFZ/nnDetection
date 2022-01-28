@@ -152,18 +152,18 @@ class DenseClassifier(Classifier):
         """
         return self.loss(pred_logits, targets, **kwargs)
 
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
+    def logits_to_probs(self, logits: Tensor) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits [N, C]
+            logits (Tensor): bounding box logits [N, C]
                 N = number of anchors, C=number of foreground classes
 
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)
+        return self.logits_convert_fn(logits)
 
     def init_weights(self) -> None:
         """
@@ -320,19 +320,17 @@ class CEClassifier(DenseClassifier):
         )
         self.logits_convert_fn = nn.Softmax(dim=1)
 
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
+    def logits_to_probs(self, logits: Tensor) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits [N, C], C=number of classes
+            logits (Tensor): bounding box logits [N, C], C=number of classes
 
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)[
-            :, 1:
-        ]  # remove background predictions
+        return self.logits_convert_fn(logits)[:, 1:]  # remove background predictions
 
 
 class FocalClassifier(DenseClassifier):

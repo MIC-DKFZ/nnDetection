@@ -31,15 +31,15 @@ class Classifier(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def box_logits_to_probs(
+    def logits_to_probs(
         self,
-        box_logits: Tensor,
+        logits: Tensor,
     ) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits
+            logits (Tensor): bounding box logits
                 [N, C], C=number of classes
 
         Returns:

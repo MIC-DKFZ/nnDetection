@@ -103,7 +103,7 @@ class AnchorHead(BaseHead):
         """
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
+            "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
 
@@ -223,7 +223,7 @@ class RoIHead(BaseHead):
         """
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
+            "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
 

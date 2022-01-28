@@ -136,18 +136,18 @@ class Masker(Classifier):
         else:
             return {"mask": pred_logits.new_zeros([1])}
 
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
+    def logits_to_probs(self, logits: Tensor) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits [N, C]
+            logits (Tensor): bounding box logits [N, C]
                 N = number of anchors, C=number of foreground classes
 
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)
+        return self.logits_convert_fn(logits)
 
 
 class BCESingleMasker(Masker):
