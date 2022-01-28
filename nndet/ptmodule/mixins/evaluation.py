@@ -150,7 +150,7 @@ class BoxEvalMixin(EvalMixin):
         # add own scores
         metric_scores.update(box_scores)
 
-        breakpoint()
+        # breakpoint()
         # [optional] log own scores
         logger.info(
             f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
