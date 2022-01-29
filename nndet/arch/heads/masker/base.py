@@ -6,6 +6,7 @@ from torch import Tensor, nn
 
 from nndet.arch.heads.abstract import Classifier
 from nndet.losses.classification import BCEWithLogitsLoss
+from nndet.losses.segmentation import SoftDiceLoss
 
 # TODO: cleanup
 
@@ -158,6 +159,49 @@ class BCESingleMasker(Masker):
 
     def get_output_channels(self) -> int:
         return 1
+
+
+class DiceBCESingleMasker(BCESingleMasker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # TODO: cleanup
+        self.loss_dice = SoftDiceLoss(
+            nonlin=self.logits_convert_fn,
+            batch_dice=False,
+            do_bg=False,
+            smooth_nom=1e-5,
+            smooth_denom=1e-5,
+            loss_weight=1.0,
+            loss_fp32=True,
+            reduction="mean",
+        )
+
+    def get_output_channels(self) -> int:
+        return 1
+
+    def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
+        """
+        Base classifier with cross entropy loss (in general hard negative
+        example mining should be done before this)
+
+        Args:
+            pred_logits (Tensor): predicted logits
+            targets (Tensor): classification targets
+
+        Returns:
+            Tensor: classification loss
+        """
+        breakpoint()
+        if pred_logits.numel() > 0:
+            return {
+                "mask_bce": self.loss(pred_logits, targets, **kwargs),
+                "mask_dice": self.loss(pred_logits, targets[:, None], **kwargs),
+            }
+        else:
+            return {
+                "mask_bce": pred_logits.new_zeros([1]),
+                "mask_dice": pred_logits.new_zeros([1]),
+            }
 
 
 MaskerType = TypeVar("MaskerType", bound=Masker)

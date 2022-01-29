@@ -305,7 +305,7 @@ class BaseRoIModule(torch.nn.Module):
         features: List[torch.Tensor],
         proposal_boxes: List[torch.Tensor],
         stage: int = 0,
-    ) -> Dict[List[str, torch.Tensor]]:
+    ) -> Dict[str, List[torch.Tensor]]:
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
         roi_features = self.box_pooler(

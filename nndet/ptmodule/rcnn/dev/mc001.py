@@ -7,6 +7,7 @@ from nndet.arch.heads.classifier.roi import BCEConvRoIClassifier, BCEFCRoIClassi
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
+from nndet.arch.heads.masker.base import DiceBCESingleMasker
 from nndet.arch.heads.regressor.dense import L1Regressor
 from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
 from nndet.arch.heads.segmenter import DiCESegmenterFgBg
@@ -88,3 +89,8 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
     roi_sampler_cls = (
         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     )
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC001DiceBCE(MaskURCNNC001):
+    roi_masker_cls = DiceBCESingleMasker
