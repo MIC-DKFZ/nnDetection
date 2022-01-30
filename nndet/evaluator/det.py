@@ -207,6 +207,7 @@ class BoxEvaluator(DetectionEvaluator):
         fast: bool = True,
         verbose: bool = False,
         save_dir: Optional[Path] = None,
+        iou_fn=box_iou_np,
     ):
         """
         Create an box evaluator object
@@ -218,11 +219,12 @@ class BoxEvaluator(DetectionEvaluator):
                 Does no calculate pre class metrics
             verbose: Additional logging output
             save_dir: Path to save information
+            iou_fn: function to compute similarity between two items
 
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        iou_fn = box_iou_np
+        # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
         per_class = False if fast else True

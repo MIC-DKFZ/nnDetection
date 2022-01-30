@@ -150,7 +150,6 @@ class BoxEvalMixin(EvalMixin):
         # add own scores
         metric_scores.update(box_scores)
 
-        # breakpoint()
         # [optional] log own scores
         logger.info(
             f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
@@ -456,6 +455,33 @@ class SemanticFgEvalMixin(EvalMixin):
 
 
 class ScoreMasksEvalMixin(EvalMixin):
+    def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
+        """
+        Initialize `BoxEvaluator`
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        # from nndet.core.masks.ops import bin_mask_iou
+        from nndet.core.masks.ops_np import bin_mask_iou_np
+
+        evaluators = super().evaluation_init(plan=plan)
+        if "score_masks" in evaluators:
+            raise RuntimeError(
+                "Found ScoreMasksEvaluator in evaluators, can not register a second one!"
+            )
+
+        _classes = [
+            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
+        ]
+        evaluators["score_masks"] = BoxEvaluator.create(
+            classes=_classes,
+            fast=True,
+            save_dir=None,
+            iou_fn=bin_mask_iou_np,
+        )
+        return evaluators
+
     def evaluation_step(
         self,
         predictions: dict,
@@ -475,27 +501,79 @@ class ScoreMasksEvalMixin(EvalMixin):
         """
         super().evaluation_step(predictions=predictions, targets=targets)
 
-        from nndet.core.masks.ops import bin_mask_iou, roi_mask_to_image_mask
+        from nndet.core.masks.ops import roi_mask_to_image_mask
         from nndet.core.rois.ops import create_binary_masks
 
         target_bin_masks = create_binary_masks(targets["target_masks"])
-        pred_boxes = predictions["pred_boxes"]
-        pred_roi_masks = predictions["pred_masks"]
-
         # TODO think about masks output format, squeeze channel?
-        assert len(pred_roi_masks) == len(target_bin_masks)
-        preds, mean_sims = [], []
+        # TODO: refactor this
+        assert (
+            len(predictions["pred_masks"])
+            == len(target_bin_masks)
+            == len(predictions["pred_boxes"])
+        )
+        pred_masks = []
         for idx in range(len(target_bin_masks)):
             pred_bin_masks = roi_mask_to_image_mask(
-                boxes=pred_boxes[idx],
-                masks=pred_roi_masks[idx],
+                boxes=predictions["pred_boxes"][idx],
+                masks=predictions["pred_masks"][idx],
                 image_shape=tuple(target_bin_masks[idx].shape[1:]),
                 threshold=0.5,
             )
-            similarity_matrix = bin_mask_iou(pred_bin_masks, target_bin_masks[idx])
+            pred_masks.append(pred_bin_masks)
 
-            preds.append(pred_bin_masks)
-            mean_sims.append(
-                similarity_matrix.max() if similarity_matrix.numel() > 0 else -1
+        pred_masks = to_numpy(pred_masks)
+        pred_classes = to_numpy(predictions["pred_mask_labels"])
+        pred_scores = to_numpy(predictions["pred_mask_scores"])
+
+        gt_masks = to_numpy(target_bin_masks)
+        gt_classes = to_numpy(targets["target_classes"])
+        gt_ignore = None
+
+        self.evaluators["score_masks"].run_online_evaluation(
+            pred_boxes=pred_masks,
+            pred_classes=pred_classes,
+            pred_scores=pred_scores,
+            gt_boxes=gt_masks,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
+        )
+
+    def evaluation_end(self) -> Dict[str, float]:
+        """
+        Compute validation metrics of epoch
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        # collect other scores
+        metric_scores = super().evaluation_end()
+
+        # compute own scores
+        box_scores, _ = self.evaluators["score_masks"].finish_online_evaluation()
+        self.evaluators["score_masks"].reset()
+
+        # add own scores
+        metric_scores.update({f"mask_{k}": i for k, i in box_scores.items()})
+
+        # [optional] log own scores
+        logger.info(
+            f"Mask mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"Mask AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"Mask AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Mask AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"Mask AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Mask FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+        )
+
+        # log own scores
+        for key, item in box_scores.items():
+            self.log(
+                f"val/mask_{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
             )
-        print(mean_sims)
+        return metric_scores
