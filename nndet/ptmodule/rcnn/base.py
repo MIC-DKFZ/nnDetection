@@ -25,7 +25,7 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule, RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
@@ -40,6 +40,7 @@ class BoxRCNN(
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
+    ScoreMasksEvalMixin,
 ):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
@@ -131,6 +132,7 @@ class BoxRCNN(
             targets = {
                 "target_boxes": batch["target_boxes"],
                 "target_classes": batch["target_classes"],
+                "target_masks": batch["target"][:, 0],  # Remove channel dimension
                 **kwargs,
             }
             predictions = self.model.inference_step(

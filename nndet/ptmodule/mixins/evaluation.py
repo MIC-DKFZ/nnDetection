@@ -455,5 +455,47 @@ class SemanticFgEvalMixin(EvalMixin):
         return metric_scores
 
 
-class InstanceEvalMixin(EvalMixin):
-    pass
+class ScoreMasksEvalMixin(EvalMixin):
+    def evaluation_step(
+        self,
+        predictions: dict,
+        targets: dict,
+    ) -> None:
+        """
+        Evaluate a validation batch with metrics
+
+        Args:
+            predictions: dict with predictions.
+                Exact keys depend on the module class
+            targets: dict with ground truth.
+                Exact keys depend on the module class.
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        super().evaluation_step(predictions=predictions, targets=targets)
+
+        from nndet.core.masks.ops import bin_mask_iou, roi_mask_to_image_mask
+        from nndet.core.rois.ops import create_binary_masks
+
+        target_bin_masks = create_binary_masks(targets["target_masks"])
+        pred_boxes = predictions["pred_boxes"]
+        pred_roi_masks = predictions["pred_masks"]
+
+        # TODO think about masks output format, squeeze channel?
+        assert len(pred_roi_masks) == len(target_bin_masks)
+        preds, mean_sims = [], []
+        for idx in range(len(target_bin_masks)):
+            pred_bin_masks = roi_mask_to_image_mask(
+                boxes=pred_boxes[idx],
+                masks=pred_roi_masks[idx],
+                image_shape=tuple(target_bin_masks[idx].shape[1:]),
+                threshold=0.5,
+            )
+            similarity_matrix = bin_mask_iou(pred_bin_masks, target_bin_masks[idx])
+
+            preds.append(pred_bin_masks)
+            mean_sims.append(
+                similarity_matrix.max() if similarity_matrix.numel() > 0 else -1
+            )
+        print(mean_sims)
