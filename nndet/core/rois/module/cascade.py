@@ -30,6 +30,7 @@ class CascadeRoIModule(BaseRoIModule):
         ] = None,
         mask_pooler: Optional[PoolerType] = None,
         mask_interleaved_execution: bool = False,
+        # TODO: refactor postprocessing
         # post-processing
         roi_score_thresh: float = None,
         roi_detections_per_img: int = 100,
@@ -176,6 +177,7 @@ class CascadeRoIModule(BaseRoIModule):
                 else:
                     proposal_boxes = proposals["pred_boxes"]
 
+                # TODO: update
                 self._inference_step_masks(
                     images=images,
                     features=fpn_features,

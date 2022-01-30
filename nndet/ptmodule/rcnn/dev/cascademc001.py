@@ -62,3 +62,4 @@ class CascadeMaskURCNNC001(BoxCascadeRCNN):
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+    # TODO: postprocessing

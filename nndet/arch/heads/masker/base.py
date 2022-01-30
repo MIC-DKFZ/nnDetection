@@ -150,6 +150,10 @@ class Masker(Classifier):
         """
         return self.logits_convert_fn(logits)
 
+    @classmethod
+    def class_agnostic(cls):
+        return True
+
 
 class BCESingleMasker(Masker):
     def __init__(self, *args, **kwargs):
@@ -168,7 +172,7 @@ class DiceBCESingleMasker(BCESingleMasker):
         self.loss_dice = SoftDiceLoss(
             nonlin=self.logits_convert_fn,
             batch_dice=False,
-            do_bg=False,
+            do_bg=True,
             smooth_nom=1e-5,
             smooth_denom=1e-5,
             loss_weight=1.0,
@@ -191,17 +195,17 @@ class DiceBCESingleMasker(BCESingleMasker):
         Returns:
             Tensor: classification loss
         """
-        breakpoint()
         if pred_logits.numel() > 0:
-            return {
+            mask_losses = {
                 "mask_bce": self.loss(pred_logits, targets, **kwargs),
-                "mask_dice": self.loss(pred_logits, targets[:, None], **kwargs),
+                "mask_dice": self.loss_dice(pred_logits, targets, **kwargs),
             }
         else:
-            return {
+            mask_losses = {
                 "mask_bce": pred_logits.new_zeros([1]),
                 "mask_dice": pred_logits.new_zeros([1]),
             }
+        return mask_losses
 
 
 MaskerType = TypeVar("MaskerType", bound=Masker)

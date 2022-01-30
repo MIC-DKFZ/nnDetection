@@ -16,6 +16,8 @@ from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
     HardNegativeSamplerBatched,
 )
+from nndet.core.post.box import CrossLevelBoxPostprocessing
+from nndet.core.post.mask import NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
@@ -60,10 +62,14 @@ class MaskRCNNC001(BoxRCNN):
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
     roi_box_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+    roi_box_post_cls = (
+        CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
+    )
 
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+    roi_mask_post_cls = NoMaskPostprocessing
 
 
 @MODULE_REGISTRY.register

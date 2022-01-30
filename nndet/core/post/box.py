@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
 
@@ -7,22 +7,20 @@ from nndet.core.boxes.clip import clip_boxes_to_image_
 from nndet.core.boxes.nms import batched_nms
 from nndet.core.boxes.ops import remove_small_boxes as fn_remove_small_boxes
 
-# TODO: pass through class
-# TODO: Box vs Mask Post
 
-
-class AbstractPostprocessing:
+class BoxPostprocessing:
     def __init__(
         self,
         num_foreground_classes: int,
-        nms_thresh: float = 0.9,
+        nms_thresh: float = 1.0,
+        remove_small_boxes: Optional[float] = None,
         detections_per_img: Optional[int] = None,
         topk_candidates: Optional[int] = None,
         score_thresh: Optional[float] = None,
-        regress_class_agnostic: bool = False,
+        class_agnostic: bool = True,
     ) -> None:
         """
-        Provides an abstract interface to postprocess a batch of boxes and masks
+        Provides an abstract interface to postprocess a batch of boxes
         from a detection model.
 
         Args:
@@ -31,27 +29,29 @@ class AbstractPostprocessing:
         super().__init__()
         self.num_foreground_classes = num_foreground_classes
         self.nms_thresh = nms_thresh
+        self.remove_small_boxes = remove_small_boxes
         self.detections_per_img = detections_per_img
         self.topk_candidates = topk_candidates
         self.score_thresh = score_thresh
-        self.regress_class_agnostic = regress_class_agnostic
+        self.class_agnostic = class_agnostic
 
     def process_batch(
         self,
         reps: List[torch.Tensor],
         probs: List[torch.Tensor],
         image_shapes: List[Union[Tuple[int, int], Tuple[int, int, int]]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         all_reps, all_probs, all_labels = [], [], []
         for idx, img_shape in enumerate(image_shapes):
-            if self.regress_class_agnostic:
-                _reps, _probs, _labels = self.process_image_reg_agnostic(
+            if self.class_agnostic:
+                _reps, _probs, _labels = self.process_image_class_agnostic(
                     img_reps=reps[idx],
                     img_probs=probs[idx],
                     img_shape=img_shape,
                 )
             else:
-                _reps, _probs, _labels = self.process_image_reg_per_class(
+                _reps, _probs, _labels = self.process_image_per_class(
                     img_reps=reps[idx],
                     img_probs=probs[idx],
                     img_shape=img_shape,
@@ -63,20 +63,22 @@ class AbstractPostprocessing:
         return all_reps, all_probs, all_labels
 
     @abstractmethod
-    def process_image_reg_agnostic(
+    def process_image_class_agnostic(
         self,
         img_reps: torch.Tensor,
         img_probs: torch.Tensor,
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
     @abstractmethod
-    def process_image_reg_per_class(
+    def process_image_per_class(
         self,
         img_reps: torch.Tensor,
         img_probs: torch.Tensor,
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
@@ -88,32 +90,13 @@ class AbstractPostprocessing:
         pass
 
 
-class BoxCrossMapsPostprocessing(AbstractPostprocessing):
-    def __init__(
-        self,
-        num_foreground_classes: int,
-        nms_thresh: float = 0.9,
-        remove_small_boxes: float = 1e-2,
-        detections_per_img: int = 100,
-        topk_candidates: int = 10000,
-        score_thresh: Optional[float] = None,
-        regress_class_agnostic: bool = False,
-    ) -> None:
-        super().__init__(
-            num_foreground_classes=num_foreground_classes,
-            nms_thresh=nms_thresh,
-            detections_per_img=detections_per_img,
-            topk_candidates=topk_candidates,
-            score_thresh=score_thresh,
-            regress_class_agnostic=regress_class_agnostic,
-        )
-        self.remove_small_boxes = remove_small_boxes
-
-    def process_image_reg_agnostic(
+class CrossLevelBoxPostprocessing(BoxPostprocessing):
+    def process_image_class_agnostic(
         self,
         img_reps: torch.Tensor,
         img_probs: torch.Tensor,
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Postprocess bounding box deltas and probabilities for a single image
@@ -159,11 +142,12 @@ class BoxCrossMapsPostprocessing(AbstractPostprocessing):
             labels = labels[: self.detections_per_img]
         return boxes, probs, labels
 
-    def process_image_reg_per_class(
+    def process_image_per_class(
         self,
         img_reps: torch.Tensor,
         img_probs: torch.Tensor,
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
@@ -173,9 +157,24 @@ class BoxCrossMapsPostprocessing(AbstractPostprocessing):
         img_probs: torch.Tensor,
         img_labels: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        return batched_nms(
+        res = batched_nms(
             boxes=img_reps,
             scores=img_probs,
-            idxs=img_labels,
-            iou_threshold=self.nms_thresh,
+            labels=img_labels,
+            iou_thresh=self.nms_thresh,
         )
+        return res[:3]
+
+
+# class NoNMSCrossLevelPostprocessing(CrossLevelBoxPostprocessing):
+#     def nms(
+#         self,
+#         img_reps: torch.Tensor,
+#         img_probs: torch.Tensor,
+#         img_labels: torch.Tensor,
+#     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+#         return (
+#             img_reps,
+#             img_probs,
+#             img_labels,
+#         )

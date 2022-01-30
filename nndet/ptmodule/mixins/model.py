@@ -487,11 +487,13 @@ class RoIBuildMixin:
     roi_sampler_cls = (
         ...
     )  #: [optional] sampler class for negative mining. None = no sampling
-    roi_box_pooler_cls = ...  # define pooling operation of RoIs for box branch
+    roi_box_pooler_cls = ...  #: define pooling operation of RoIs for box branch
+    roi_box_post_cls = ...  #: define roi box postprocessing strategy
 
     # optional mask branches
     roi_masker_cls = None  #: define class of mask branch in RoI module
     roi_mask_pooler_cls = None  #: define pooling operation of RoIs for mask branch
+    roi_mask_post_cls = None  #: define roi mask postprocessing strategy
 
     @staticmethod
     def get_roi_box_size(
@@ -660,6 +662,42 @@ class RoIBuildMixin:
         return mask_pooler
 
     @classmethod
+    def _build_roi_box_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        name = cls.roi_box_post_cls.__name__
+        kwargs = model_cfg["roi_box_post_kwargs"]
+        logger.info(f"Building:: roi box postprocessing {name}: {kwargs}")
+
+        roi_box_post = cls.roi_box_post_cls(
+            num_foreground_classes=plan_arch["classifier_classes"],
+            class_agnostic=cls.roi_regressor_cls.class_agnostic,
+            **model_cfg["roi_box_post_kwargs"],
+        )
+        return roi_box_post
+
+    @classmethod
+    def _build_roi_mask_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        if cls.roi_mask_post_cls is not None:
+            name = cls.roi_mask_post_cls.__name__
+            kwargs = model_cfg["roi_mask_post_kwargs"]
+            logger.info(f"Building:: roi mask postprocessing {name}: {kwargs}")
+
+            roi_mask_post = cls.roi_mask_post_cls(
+                class_agnostic=cls.roi_masker_cls.class_agnostic,
+                **model_cfg["roi_mask_post_kwargs"],
+            )
+        else:
+            roi_mask_post = None
+        return roi_mask_post
+
+    @classmethod
     def _build_roi_sampler(
         cls,
         plan_arch: dict,
@@ -677,12 +715,14 @@ class RoIBuildMixin:
         plan_arch: dict,
         model_cfg: dict,
         box_head,
-        matcher,
         box_pooler,
+        box_post,
+        matcher,
         sampler,
         # mask heads
         mask_head,
         mask_pooler,
+        mask_post,
     ):
         roi_module_name = cls.roi_module_cls.__name__
         roi_module_kwargs = model_cfg["roi_module_kwargs"]
@@ -691,14 +731,16 @@ class RoIBuildMixin:
 
         roi_module = cls.roi_module_cls(
             box_head=box_head,
-            matcher=matcher,
             box_pooler=box_pooler,
+            box_post=box_post,
+            matcher=matcher,
             sampler=sampler,
             num_classes=plan_arch["classifier_classes"],
             decoder_levels=plan_arch["decoder_levels"],
             # mask heads
             mask_head=mask_head,
             mask_pooler=mask_pooler,
+            mask_post=mask_post,
             **roi_module_kwargs,
         )
         return roi_module
@@ -773,16 +815,27 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
             model_cfg=model_cfg,
         )
 
+        roi_box_post = cls._build_roi_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        roi_mask_post = cls._build_roi_mask_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
             box_head=roi_head,
-            matcher=roi_matcher,
             box_pooler=box_pooler,
+            box_post=roi_box_post,
+            matcher=roi_matcher,
             sampler=roi_sampler,
             # mask heads
             mask_head=masker,
             mask_pooler=mask_pooler,
+            mask_post=roi_mask_post,
         )
 
         return cls.full_detector_cls(
@@ -873,6 +926,7 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         if maskers[0] is None:
             maskers = None
 
+        # TODO: postprocessing refactor
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,

@@ -11,6 +11,8 @@ from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
+from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.ops import create_binary_masks
 from nndet.core.rois.pooler import NDSIZE, PoolerType
 from nndet.utils.tensor import cat, detach_all
@@ -24,6 +26,7 @@ class BaseRoIModule(torch.nn.Module):
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
         box_pooler: PoolerType,
+        box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
         num_classes: int,
@@ -34,6 +37,7 @@ class BaseRoIModule(torch.nn.Module):
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
         mask_pooler: Optional[PoolerType] = None,
+        mask_post: Optional[MaskPostprocessing] = None,
         # post-processing
         roi_score_thresh: float = None,
         roi_detections_per_img: int = 100,
@@ -55,6 +59,7 @@ class BaseRoIModule(torch.nn.Module):
 
         self.box_head = torch.nn.ModuleList(list(box_head))
         self.box_pooler = box_pooler
+        self.box_post = box_post
 
         self.matcher = matcher
         self.sampler = sampler
@@ -84,11 +89,15 @@ class BaseRoIModule(torch.nn.Module):
                     f"Each stage needs to have a matcher and box head. "
                     f"Received {len(mask_head)} mask heads but has {self.num_stages} stages."
                 )
+            if mask_post is None:
+                raise ValueError("Need to provide mask postprocessing in mask mode.")
 
             self.mask_head = torch.nn.ModuleList(list(mask_head))
-            self.mask_pooler = mask_pooler
+        else:
+            self.mask_head = None
+        self.mask_pooler = mask_pooler
+        self.mask_post = mask_post
 
-        # Inference
         self.roi_score_thresh = roi_score_thresh
         self.roi_detections_per_img = roi_detections_per_img
         self.roi_nms_thresh = roi_nms_thresh
@@ -385,7 +394,7 @@ class BaseRoIModule(torch.nn.Module):
         pred_boxes = pred_boxes.split(boxes_per_image, 0)
         pred_probs = pred_probs.split(boxes_per_image, 0)
 
-        return self.box_post.process(
+        return self.box_post.process_batch(
             reps=pred_boxes,
             probs=pred_probs,
             image_shapes=image_shapes,
@@ -406,11 +415,10 @@ class BaseRoIModule(torch.nn.Module):
         pred_masks = self.mask_head[stage].logits_to_probs(masks)
         pred_masks = pred_masks.split(masks_per_image, 0)
 
-        return self.mask_post.process(
+        return self.mask_post.process_batch(
             reps=pred_masks,
             probs=pred_probs,
-            pred_labels=pred_labels,
-            image_shapes=image_shapes,
+            labels=pred_labels,
         )
 
 
@@ -480,7 +488,9 @@ class RoIModule(BaseRoIModule):
             mask_preds = self._inference_step_masks(
                 images=images,
                 features=_features,
-                proposal_boxes=proposals["pred_boxes"],
+                pred_boxes=prediction["pred_boxes"],
+                pred_probs=prediction["pred_scores"],
+                pred_labels=prediction["pred_labels"],
             )
             prediction.update(mask_preds)
         return prediction
