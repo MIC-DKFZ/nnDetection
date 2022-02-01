@@ -100,3 +100,8 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
 @MODULE_REGISTRY.register
 class MaskURCNNC001DiceBCE(MaskURCNNC001):
     roi_masker_cls = DiceBCESingleMasker
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC001RSBDiceBCE(MaskURCNNC001RSB):
+    roi_masker_cls = DiceBCESingleMasker
