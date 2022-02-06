@@ -270,10 +270,12 @@ class MaskEnsembler(BaseEnsembler):
         )
         boxes = torch.from_numpy(boxes_np).to(dtype=_old_dtype)
 
+        transposing = [0] + [i + 1 for i in self.properties["transpose_backward"]]
+        masks = np.transpose(masks, transposing)
         image_masks = roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
-            image_shape=tuple(self.properties["shape"]),
+            image_shape=tuple(self.properties["original_size_of_raw_data"]),
             mode=self.parameters["interpolation_mode"],
             align_corners=self.parameters["align_corners"],
             threshold=self.parameters["bin_mask_threshold"],

@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
 
@@ -131,6 +132,110 @@ def boxes2nii():
 
         sitk.WriteImage(instance_mask_itk, str(save_dir / f"{cid}_boxes.nii.gz"))
         save_json(prediction_meta, save_dir / f"{cid}_boxes.json")
+
+
+@env_guard
+def masks2nii():
+    """
+    Only for visualisation purposes.
+    """
+    import argparse
+    import os
+    from pathlib import Path
+
+    import numpy as np
+    import SimpleITK as sitk
+    from loguru import logger
+
+    from nndet.io import load_pickle, save_json
+    from nndet.io.paths import get_task, get_training_dir
+    from nndet.utils.info import maybe_verbose_iterable
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument("fold", type=int, help="fold to sweep.")
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Minimum probability of predictions",
+        required=False,
+        default=0.5,
+    )
+    parser.add_argument("--test", action="store_true")
+
+    args = parser.parse_args()
+    model = args.model
+    fold = args.fold
+    task = args.task
+    overwrites = args.overwrites
+    test = args.test
+    threshold = args.threshold
+
+    task_name = get_task(task, name=True, models=True)
+    task_dir = Path(os.getenv("det_models")) / task_name
+
+    training_dir = get_training_dir(task_dir / model, fold)
+
+    overwrites = overwrites if overwrites is not None else []
+    overwrites.append("host.parent_data=${env:det_data}")
+    overwrites.append("host.parent_results=${env:det_models}")
+
+    prediction_dir = (
+        training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    )
+    save_dir = (
+        training_dir / "test_predictions_nii"
+        if test
+        else training_dir / "val_predictions_nii"
+    )
+    save_dir.mkdir(exist_ok=True)
+
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_masks.pkl")]
+    for cid in maybe_verbose_iterable(case_ids):
+        res = load_pickle(prediction_dir / f"{cid}_masks.pkl")
+
+        masks = res["pred_masks"]
+        scores = res["pred_mask_scores"]
+        labels = res["pred_mask_labels"]
+
+        keep = scores >= threshold
+        masks = masks[keep]
+        scores = scores[keep]
+        labels = labels[keep]
+
+        idx = np.argsort(scores)
+        masks = masks[idx]
+        scores = scores[idx]
+        labels = labels[idx]
+
+        prediction_meta = {}
+        for instance_id, (pscore, plabel) in enumerate(zip(scores, labels), start=1):
+            prediction_meta[int(instance_id)] = {
+                "score": float(pscore),
+                "label": int(plabel),
+            }
+
+        logger.info(f"Created binary mask with {masks.shape[0]} instances.")
+
+        if masks.shape[0] == 0:
+            masks = np.zeros((1, *masks.shape[1:]))
+        masks = masks.transpose(1, 2, 3, 0)
+        instance_mask_itk = sitk.GetImageFromArray(masks)
+        instance_mask_itk.SetOrigin(res["itk_origin"])
+        instance_mask_itk.SetDirection(res["itk_direction"])
+        instance_mask_itk.SetSpacing(res["itk_spacing"])
+
+        sitk.WriteImage(instance_mask_itk, str(save_dir / f"{cid}_masks.nii.gz"))
+        save_json(prediction_meta, save_dir / f"{cid}_masks.json")
 
 
 @env_guard
@@ -334,4 +439,5 @@ def create_test_split():
 
 
 if __name__ == "__main__":
-    env()
+    # env()
+    masks2nii()
