@@ -5,7 +5,7 @@ import numpy as np
 from loguru import logger
 
 from nndet.evaluator import AbstractEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.utils.tensor import to_numpy
 
@@ -457,14 +457,12 @@ class SemanticFgEvalMixin(EvalMixin):
 class ScoreMasksEvalMixin(EvalMixin):
     def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
         """
-        Initialize `BoxEvaluator`
+        Initialize `MaskEvaluator`
+        Masks are resized with nearest neighbor and an cutoff value of 0.5 .
 
         Notes:
             make sure to call the super classes here!
         """
-        # from nndet.core.masks.ops import bin_mask_iou
-        from nndet.core.masks.ops_np import bin_mask_iou_np
-
         evaluators = super().evaluation_init(plan=plan)
         if "score_masks" in evaluators:
             raise RuntimeError(
@@ -474,11 +472,10 @@ class ScoreMasksEvalMixin(EvalMixin):
         _classes = [
             f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
         ]
-        evaluators["score_masks"] = BoxEvaluator.create(
+        evaluators["score_masks"] = MaskEvaluator.create(
             classes=_classes,
             fast=True,
             save_dir=None,
-            iou_fn=bin_mask_iou_np,
         )
         return evaluators
 

@@ -22,7 +22,7 @@ import numpy as np
 from loguru import logger
 
 from nndet.evaluator.case import CaseEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import PerCaseSegmentationEvaluator
 from nndet.io.load import load_pickle, save_json, save_pickle
 
@@ -86,6 +86,78 @@ def evaluate_box_dir(
             pred_scores=[pred["pred_scores"]],
             gt_boxes=[gt["boxes"]],
             gt_classes=[gt["classes"]],
+            gt_ignore=None,
+            case_id=case_id,
+        )
+    return evaluator.finish_online_evaluation()
+
+
+# FIXME: refactor, code duplication
+def evaluate_mask_dir(
+    pred_dir: PathLike,
+    gt_dir: PathLike,
+    classes: Sequence[str],
+    save_dir: Optional[Path] = None,
+) -> Tuple[Dict, Dict]:
+    """
+    Run mask (instance segmentation) evaluation inside a directory
+
+    Args:
+        pred_dir: path to dir with predictions
+        gt_dir: path to dir with groud truth data
+        classes: classes present in dataset
+        save_dir: optional path to save plots
+
+    Returns:
+        Dict[str, float]: dictionary with scalar values for evaluation
+        Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+
+    See Also:
+        :class:`nndet.evaluator.registry.BoxEvaluator`
+    """
+    pred_dir = Path(pred_dir)
+    gt_dir = Path(gt_dir)
+    if save_dir is not None:
+        save_dir.mkdir(parents=True, exist_ok=True)
+    case_ids = [
+        p.stem.rsplit("_masks", 1)[0]
+        for p in pred_dir.iterdir()
+        if p.is_file() and p.stem.endswith("_masks")
+    ]
+    logger.info(f"Found {len(case_ids)} for masks evaluation in {pred_dir}")
+
+    evaluator = MaskEvaluator.create(
+        classes=classes,
+        fast=False,
+        verbose=False,
+        save_dir=save_dir,
+    )
+
+    for case_id in case_ids:
+        gt_boxes = np.load(
+            str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
+        )  # FIXME
+        gt = np.load(
+            str(gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
+        )  # FIXME
+        pred = load_pickle(pred_dir / f"{case_id}_masks.pkl")
+
+        # FIXME: code cuplication
+        def create_binary_masks(mask):
+            assert mask.shape[0] == 1
+            inds = np.unique(mask)
+            inds = inds[inds > 0]
+            out = np.zeros((len(inds), *tuple(mask.shape[1:])))
+            for channel_ind, instance_ind in enumerate(inds):
+                out[channel_ind][mask[0] == instance_ind] = 1
+            return out
+
+        evaluator.run_online_evaluation(
+            pred_boxes=[pred["pred_masks"]],
+            pred_classes=[pred["pred_mask_labels"]],
+            pred_scores=[pred["pred_mask_scores"]],
+            gt_boxes=[create_binary_masks(gt["instances"])],  # FIXME
+            gt_classes=[gt_boxes["classes"]],
             gt_ignore=None,
             case_id=case_id,
         )

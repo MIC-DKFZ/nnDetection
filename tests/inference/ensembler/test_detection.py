@@ -9,6 +9,7 @@ import pytest
 import torch
 
 from nndet.inference.ensembler import BoxEnsembler
+from nndet.inference.ensembler.utils import apply_offsets_to_boxes
 
 
 @dataclass
@@ -136,7 +137,7 @@ class TestDetectionEnsembler:
             torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
         ]
         offsets = [[0, 0, 0], [1, 2, 3]]
-        res = ensembler._apply_offsets_to_boxes(boxes, offsets)
+        res = apply_offsets_to_boxes(boxes, offsets)
         expected = [
             torch.tensor([[0, 0, 1, 1, 0, 1]]).float(),
             torch.tensor([[1, 2, 2, 3, 3, 4]]).float(),

@@ -27,7 +27,7 @@ from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin, MaskPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
@@ -39,7 +39,8 @@ class BoxRCNN(
     BoxPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    # BoxPredictionMixin,  # Bounding Box Sweep
+    MaskPredictionMixin,  # Mask Sweep
     ScoreMasksEvalMixin,
 ):
     # Use `detector_cls` to set RPN module class

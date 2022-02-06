@@ -125,9 +125,11 @@ def batched_nms(
     labels: Tensor,
     iou_thresh: float,
     weights: Optional[Tensor] = None,
+    masks: Optional[Tensor] = None,
 ) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor]]:
     """
     Model nms for ensembler (same as batched nms with adjusted signature)
+    (NMS is always performed on the boxes!)
 
     Args:
         boxes: predicted boxes
@@ -135,9 +137,12 @@ def batched_nms(
         labels: predicted labels
         weights: weight per box
         iou_thresh: IoU threshold for nms
+        masks: predicted masks
 
     Returns:
         Tensor: postprocessed boxes
+        Tensor: postprocessed masks. Only returned if masks is not None.
+            Skipped otherwise!
         Tensor: postprocessed scores (descending)
         Tensor: postprocessed labels
         Tensor: if weights is not None, corresponding weights, None otherwise
@@ -154,7 +159,10 @@ def batched_nms(
     else:
         _weights = None
 
-    return boxes[keep], scores[keep], labels[keep], _weights
+    if masks is not None:
+        return boxes[keep], masks[keep], scores[keep], labels[keep], _weights
+    else:
+        return boxes[keep], scores[keep], labels[keep], _weights
 
 
 def batched_weighted_nms(
@@ -163,10 +171,12 @@ def batched_weighted_nms(
     labels: Tensor,
     iou_thresh: float,
     weights: Tensor,
+    masks: Optional[Tensor] = None,
 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     """
     Uses scores and weights to compute NMS suppression
     Returned scores are the original ones
+    (NMS is always performed on the boxes!)
 
     Args:
         boxes: predicted boxes
@@ -174,9 +184,12 @@ def batched_weighted_nms(
         labels: predicted labels
         weights: weight per box
         iou_thresh: IoU threshold for nms
+        masks: predicted masks
 
     Returns:
         Tensor: postprocessed boxes
+        Tensor: postprocessed masks. Only returned if masks is not None.
+            Skipped otherwise!
         Tensor: kept scores.
         Tensor: postprocessed labels
         Tensor: vector filled with ones.
@@ -190,4 +203,7 @@ def batched_weighted_nms(
     )
     new_weights = torch.ones_like(weights)
 
-    return boxes[keep], scores[keep], labels[keep], new_weights[keep]
+    if masks is not None:
+        return boxes[keep], masks[keep], scores[keep], labels[keep], new_weights[keep]
+    else:
+        return boxes[keep], scores[keep], labels[keep], new_weights[keep]
