@@ -15,7 +15,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
 
 import nndet
-from nndet.io.datamodule.bg_module import Datamodule
+from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task
 from nndet.ptmodule import MODULE_REGISTRY

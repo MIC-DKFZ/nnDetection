@@ -43,7 +43,7 @@ from nndet.evaluator.registry import (
     save_metric_output,
 )
 from nndet.inference.ensembler.base import extract_results
-from nndet.io.datamodule.pt_module import Datamodule
+from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
@@ -53,8 +53,6 @@ from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
 from nndet.utils.info import ModelSummary, create_debug_plan, flatten_mapping, log_git
-
-# from nndet.io.datamodule.bg_module import Datamodule
 
 
 @env_guard

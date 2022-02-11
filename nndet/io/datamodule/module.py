@@ -16,14 +16,15 @@ limitations under the License.
 
 import os
 import random
+from abc import abstractstaticmethod
 from typing import Dict, Iterable, List, Optional, Sequence, Type
 
 import numpy as np
 import torch
-
-# from batchgenerators.dataloading.single_threaded_augmenter import (
-#     SingleThreadedAugmenter,
-# )
+from batchgenerators.dataloading.multi_threaded_augmenter import MultiThreadedAugmenter
+from batchgenerators.dataloading.single_threaded_augmenter import (
+    SingleThreadedAugmenter,
+)
 from loguru import logger
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
@@ -32,15 +33,14 @@ from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.base import BaseModule
 
 
-# TODO: check DDP
-def seed_worker(worker_id):
-    """
-    https://pytorch.org/docs/stable/notes/randomness.html#dataloader
-    to fix https://tanelp.github.io/posts/a-bug-that-plagues-thousands-of-open-source-ml-projects/
-    """
-    worker_seed = torch.initial_seed() % 2 ** 32
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
+class FixedLengthSingleThreadedAugmenter(SingleThreadedAugmenter):
+    def __len__(self):
+        return len(self.data_loader)
+
+
+class FixedLengthMultiThreadedAugmenter(MultiThreadedAugmenter):
+    def __len__(self):
+        return len(self.generator)
 
 
 class TransformWrapper(torch.utils.data.Dataset):
@@ -56,58 +56,27 @@ class TransformWrapper(torch.utils.data.Dataset):
         return len(self.loader)
 
 
+def seed_worker(worker_id):
+    """
+    https://pytorch.org/docs/stable/notes/randomness.html#dataloader
+    to fix https://tanelp.github.io/posts/a-bug-that-plagues-thousands-of-open-source-ml-projects/
+    """
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
 def skipped_collate_fn(batch):
     assert len(batch) == 1
     return batch[0]
 
 
-def get_augmenter(
-    dataloader,
-    transform,
-    num_processes: int,
-    num_cached_per_queue: int = 2,
-    multiprocessing: bool = True,
-    seeds: Optional[List[int]] = None,
-    pin_memory=True,
-    **kwargs,
-):
-    """
-    Wrapper to switch between multi-threaded and single-threaded augmenter
-    """
-    if multiprocessing:
-        logger.info(
-            f"Using {num_processes} num_processes "
-            f"and {num_cached_per_queue} num_cached_per_queue for augmentation."
-        )
-        wrapped_loader = TransformWrapper(dataloader, transform=transform)
-        ptloader = torch.utils.data.DataLoader(
-            dataset=wrapped_loader,
-            num_workers=num_processes,
-            batch_size=1,  # dataset provides batches so use batch size 1 here
-            pin_memory=pin_memory,
-            drop_last=False,
-            worker_init_fn=seed_worker,
-            prefetch_factor=num_cached_per_queue,
-            collate_fn=skipped_collate_fn,
-            persistent_workers=True,
-            **kwargs,
-        )
-    else:
-        raise NotImplementedError
-        # loader = FixedLengthSingleThreadedAugmenter(
-        #     data_loader=dataloader,
-        #     transform=transform,
-        #     **kwargs,
-        # )
-    return ptloader
-
-
 import subprocess
 
+
 # TODO: remove this! do something different
-
-
 def get_allowed_n_proc_DA():
+    # return 8
     hostname = subprocess.getoutput(["hostname"])
     if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
         return 16
@@ -125,7 +94,7 @@ def get_allowed_n_proc_DA():
         return int(os.getenv("det_num_threads", 12))
 
 
-class Datamodule(BaseModule):
+class BaseDatamodule(BaseModule):
     def __init__(
         self,
         plan: dict,
@@ -262,7 +231,7 @@ class Datamodule(BaseModule):
             **self.dataloader_kwargs,
         )
 
-        tr_gen = get_augmenter(
+        tr_gen = self.get_augmenter(
             dataloader=dl_tr,
             transform=self.augmentation.get_training_transforms(),
             # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
@@ -296,7 +265,7 @@ class Datamodule(BaseModule):
             **self.dataloader_kwargs,
         )
 
-        val_gen = get_augmenter(
+        val_gen = self.get_augmenter(
             dataloader=dl_val,
             transform=self.augmentation.get_validation_transforms(),
             # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
@@ -308,3 +277,101 @@ class Datamodule(BaseModule):
         )
         logger.info("VALIDATION KEYS:\n %s" % (str(self.dataset_val.keys())))
         return val_gen
+
+    @abstractstaticmethod
+    def get_augmenter(
+        dataloader,
+        transform,
+        num_processes: int,
+        num_cached_per_queue: int = 2,
+        multiprocessing: bool = True,
+        seeds: Optional[List[int]] = None,
+        pin_memory=True,
+        **kwargs,
+    ):
+        """
+        Provide an interface to wrap the dataset (Pt naming) with a
+        dataloader (Pt naming)
+        """
+        raise NotImplementedError
+
+
+class BgDatamodule(BaseDatamodule):
+    @staticmethod
+    def get_augmenter(
+        dataloader,
+        transform,
+        num_processes: int,
+        num_cached_per_queue: int = 2,
+        multiprocessing: bool = True,
+        seeds: Optional[List[int]] = None,
+        pin_memory=True,
+        **kwargs,
+    ):
+        """
+        Provide an interface to wrap the dataset (Pt naming) with a
+        dataloader (Pt naming)
+        """
+        if multiprocessing:
+            logger.info(
+                f"Using Batchgenerators with {num_processes} num_processes "
+                f"and {num_cached_per_queue} num_cached_per_queue for augmentation."
+            )
+            loader = FixedLengthMultiThreadedAugmenter(
+                data_loader=dataloader,
+                transform=transform,
+                num_processes=num_processes,
+                num_cached_per_queue=num_cached_per_queue,
+                seeds=seeds,
+                pin_memory=pin_memory,
+                **kwargs,
+            )
+        else:
+            loader = FixedLengthSingleThreadedAugmenter(
+                data_loader=dataloader,
+                transform=transform,
+                **kwargs,
+            )
+        return loader
+
+
+class PtDatamodule(BaseDatamodule):
+    @staticmethod
+    def get_augmenter(
+        dataloader,
+        transform,
+        num_processes: int,
+        num_cached_per_queue: int = 2,
+        multiprocessing: bool = True,
+        seeds: Optional[List[int]] = None,
+        pin_memory=True,
+        **kwargs,
+    ):
+        """
+        Provide an interface to wrap the dataset (Pt naming) with a
+        dataloader (Pt naming)
+        """
+        if not multiprocessing:
+            num_processes = 0
+            persistent_workers = False
+        else:
+            persistent_workers = True
+
+        logger.info(
+            f"Using PyTorch with {num_processes} num_processes "
+            f"and {num_cached_per_queue} num_cached_per_queue for augmentation."
+        )
+        wrapped_loader = TransformWrapper(dataloader, transform=transform)
+        ptloader = torch.utils.data.DataLoader(
+            dataset=wrapped_loader,
+            num_workers=num_processes,
+            batch_size=1,  # dataset provides batches so use batch size 1 here
+            pin_memory=pin_memory,
+            drop_last=False,
+            worker_init_fn=seed_worker,
+            prefetch_factor=num_cached_per_queue,
+            collate_fn=skipped_collate_fn,
+            persistent_workers=persistent_workers,
+            **kwargs,
+        )
+        return ptloader
