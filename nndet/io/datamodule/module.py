@@ -362,6 +362,15 @@ class PtDatamodule(BaseDatamodule):
             f"and {num_cached_per_queue} num_cached_per_queue for augmentation."
         )
         wrapped_loader = TransformWrapper(dataloader, transform=transform)
+
+        if not torch.distributed.is_initialized():
+            s = 0
+        else:
+            s = torch.distributed.get_rank()
+            logger.info(f"Found Torch Distributed: Using local rank for seed {s}")
+        g = torch.Generator()
+        g.manual_seed(s)
+
         ptloader = torch.utils.data.DataLoader(
             dataset=wrapped_loader,
             num_workers=num_processes,
@@ -372,6 +381,7 @@ class PtDatamodule(BaseDatamodule):
             prefetch_factor=num_cached_per_queue,
             collate_fn=skipped_collate_fn,
             persistent_workers=persistent_workers,
+            generator=g,
             **kwargs,
         )
         return ptloader
