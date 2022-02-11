@@ -44,7 +44,7 @@ from nndet.evaluator.registry import (
     save_metric_output,
 )
 from nndet.inference.ensembler.base import extract_results
-from nndet.io.datamodule.bg_module import Datamodule
+from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
