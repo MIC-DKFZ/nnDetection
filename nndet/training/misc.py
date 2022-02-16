@@ -52,7 +52,7 @@ class EpochTimerCallback(Callback):
             self.train_time_ema.add(train_time)
             logger.info(
                 f"Train epoch {trainer.current_epoch} took "
-                f"{train_time} s and train EMA is {self.train_time_ema.get()} s"
+                f"{train_time:.2f} s and train EMA is {self.train_time_ema.get():.2f} s"
             )
 
         self.val_epoch_tic = time.time()
@@ -69,6 +69,6 @@ class EpochTimerCallback(Callback):
 
         logger.info(
             f"Val epoch {trainer.current_epoch} took "
-            f"{val_time} s and val time EMA is {self.val_time_ema.get()} s"
+            f"{val_time:.2f} s and val time EMA is {self.val_time_ema.get():.2f} s"
         )
         return super().on_validation_epoch_end(trainer, pl_module)

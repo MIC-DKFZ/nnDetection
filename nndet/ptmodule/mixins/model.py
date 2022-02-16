@@ -649,7 +649,7 @@ class RoIBuildMixin:
             mask_gt_size = [m * 2 for m in mask_feature_size]  # TODO # FIXME
 
             logger.info(
-                f"Building:: box pooler {pooler_name} with output "
+                f"Building:: mask pooler {pooler_name} with output "
                 f"size {mask_feature_size} and gt size {mask_gt_size}"
             )
 
