@@ -152,18 +152,18 @@ class BoxEvalMixin(EvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-            f"FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"Box mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"Box AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"Box AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Box AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"Box AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Box FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
         for key, item in box_scores.items():
             self.log(
-                f"val/{key}",
+                f"val/box_{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -262,18 +262,18 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"RPN mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"RPN AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"RPN Box mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"RPN Box AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN Box AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN Box AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN Box AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN Box FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
         for key, item in rpn_scores.items():
             self.log(
-                f"val_rpn/{key}",
+                f"val_rpn/box_{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -357,7 +357,7 @@ class SemanticEvalMixin(EvalMixin):
         # log own scores
         for key, item in seg_scores.items():
             self.log(
-                f"val/{key}",
+                f"val_seg/{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -443,7 +443,7 @@ class SemanticFgEvalMixin(EvalMixin):
         # log own scores
         for key, item in seg_scores.items():
             self.log(
-                f"val/{key}",
+                f"val_seg/{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -566,7 +566,7 @@ class ScoreMasksEvalMixin(EvalMixin):
         # log own scores
         for key, item in box_scores.items():
             self.log(
-                f"val/mask_{key}",
+                f"val_mask/mask_{key}",
                 item,
                 on_step=None,
                 on_epoch=True,

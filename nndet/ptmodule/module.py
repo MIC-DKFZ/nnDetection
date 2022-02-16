@@ -200,10 +200,11 @@ class LightningBaseModule(pl.LightningModule):
             self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
 
         # process and log metrics
-        metric_scores = super().evaluation_end()
+        super().evaluation_end()
 
-        for key, item in metric_scores.items():
-            self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
+        # metrics are logged by respective evaluator
+        # for key, item in metric_scores.items():
+        #     self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
 
         return super().validation_epoch_end(validation_step_outputs)
 

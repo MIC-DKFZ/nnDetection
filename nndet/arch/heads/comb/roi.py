@@ -66,7 +66,7 @@ class RoIBoxHead(RoIHead):
             self.pos_ema.add(_numel_pos)
             _numel_all = self.all_ema.get()
             _numel_pos = self.pos_ema.get()
-            print(_numel_pos)
+            # print(_numel_pos)
 
         losses = {}
         if sampled_pos_inds.numel() > 0:
