@@ -1,12 +1,14 @@
 import functools
+import math
 from abc import abstractmethod
 from typing import Optional, Sequence
 
 import torch
+from loguru import logger
 from torch import Tensor
 
 from nndet.arch.conv import nd_pool
-from nndet.arch.heads.abstract import Classifier, RoIConv1x1View
+from nndet.arch.heads.abstract import CONV_TYPES, Classifier, RoIConv1x1View
 from nndet.losses.classification import BCEWithLogitsLossOneHot, CrossEntropyLoss
 
 
@@ -173,8 +175,10 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
+        prior_prob: Optional[float] = None,
         **kwargs,
     ):
+        self.prior_prob = prior_prob
         super().__init__(
             conv=conv,
             input_size=input_size,
@@ -194,6 +198,31 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
             loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = torch.nn.Sigmoid()
+
+    def init_weights(self) -> None:
+        """
+        Init weights with prior prob
+        """
+        if self.prior_prob is not None:
+            logger.info(f"Init RoI classifier weights: prior prob {self.prior_prob}")
+            for layer in self.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
+                    if layer.bias is not None:
+                        torch.nn.init.constant_(layer.bias, 0)
+
+            # Use prior in model initialization to improve stability
+            if math.isclose(self.prior_prob, 0):
+                logger.info("Found prior prob 0, init bias with 0")
+                bias_value = 0
+            else:
+                bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)
+
+            for layer in self.module_out.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.constant_(layer.bias, bias_value)
+        else:
+            logger.info("Init RoI classifier weights: conv default")
 
 
 class BCEFCRoIClassifier(FCRoIClassifier):
@@ -211,8 +240,10 @@ class BCEFCRoIClassifier(FCRoIClassifier):
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
+        prior_prob: Optional[float] = None,
         **kwargs,
     ):
+        self.prior_prob = prior_prob
         super().__init__(
             conv=conv,
             input_size=input_size,
@@ -232,6 +263,31 @@ class BCEFCRoIClassifier(FCRoIClassifier):
             loss_fp32=loss_fp32,
         )
         self.logits_convert_fn = torch.nn.Sigmoid()
+
+    def init_weights(self) -> None:
+        """
+        Init weights with prior prob
+        """
+        if self.prior_prob is not None:
+            logger.info(f"Init RoI classifier weights: prior prob {self.prior_prob}")
+            for layer in self.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
+                    if layer.bias is not None:
+                        torch.nn.init.constant_(layer.bias, 0)
+
+            # Use prior in model initialization to improve stability
+            if math.isclose(self.prior_prob, 0):
+                logger.info("Found prior prob 0, init bias with 0")
+                bias_value = 0
+            else:
+                bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)
+
+            for layer in self.module_out.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.constant_(layer.bias, bias_value)
+        else:
+            logger.info("Init RoI classifier weights: conv default")
 
 
 class CEConvRoIClassifier(ConvRoIClassifier):
