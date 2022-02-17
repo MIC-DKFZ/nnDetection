@@ -5,6 +5,6 @@ defaults:
   - trainer_cfg: sgd_base
   - model_cfg: retinaunet_l1_hnm_atss
 
-module: RetinaUNetC014
+module: RetinaUNetC015
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
