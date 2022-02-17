@@ -25,7 +25,7 @@ from loguru import logger
 
 from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
-from nndet.training.misc import EpochTimerCallback
+from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
 
 
@@ -268,6 +268,7 @@ class LightningBaseModule(pl.LightningModule):
         """
         callbacks = super().configure_callbacks()
         callbacks.append(EpochTimerCallback())
+        callbacks.append(CheckWeightsNaN())
 
         if e := self.trainer_cfg.get("swa_epochs", 0) > 0:
             logger.info(f"Training with SWA, found {e} swa epochs.")
