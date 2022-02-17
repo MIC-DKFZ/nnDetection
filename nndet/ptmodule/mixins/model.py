@@ -190,7 +190,10 @@ class SingleStageMixin(ModelMixin):
             coder=coder,
         )
 
-        detections_per_img = plan_arch.get("detections_per_img", 100)
+        if "detections_per_img" in model_cfg:
+            detections_per_img = model_cfg["detections_per_img"]
+        else:
+            detections_per_img = plan_arch.get("detections_per_img", 100)  # FIXME
         score_thresh = plan_arch.get("score_thresh", 0)
         topk_candidates = plan_arch.get("topk_candidates", 10000)
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
