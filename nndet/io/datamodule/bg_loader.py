@@ -451,7 +451,25 @@ class DataLoader3DOffset(DataLoader3DFast):
 
 
 @DATALOADER_REGISTRY.register
-class DataLoader3DBalanced(DataLoader3DOffset):
+class DataLoader3DProbOffset(DataLoader3DOffset):
+    def __init__(self, *args, offset_prob: float = 1.0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.offset_prob = offset_prob
+
+    def get_fg_crop(self, *args, **kwargs) -> List[slice]:
+        if np.random.rand(1) < self.offset_prob:
+            return DataLoader3DOffset.get_fg_crop(self, *args, **kwargs)
+        else:
+            return DataLoader3DFast.get_fg_crop(self, *args, **kwargs)
+
+
+@DATALOADER_REGISTRY.register
+class DataLoader3DPOB(DataLoader3DProbOffset):
+    """
+    Balanced dataloader which (probabilisticly) balances (several)fg and
+    bg classes on the patient level
+    """
+
     def build_cache(self) -> Tuple[Dict[int, List[Tuple[str, int]]], List]:
         """
         Build up cache for sampling
@@ -491,9 +509,10 @@ class DataLoader3DBalanced(DataLoader3DOffset):
 
         Returns:
             List: case identifiers
-            List: instance ids. `id > 0` represents the foreground isntance
+            List: instance ids. `id > 0` represents the foreground instance
                 to sample while `id = -1` indicates background patches
         """
+        # randomly select foreground classes
         selected_classes = np.random.choice(
             list(self.cache["fg"].keys()), self.batch_size, replace=True
         )
@@ -514,19 +533,6 @@ class DataLoader3DBalanced(DataLoader3DOffset):
                 selected_cases.append(_case)
                 selected_instances.append(int(_instance_id))
         return selected_cases, selected_instances
-
-
-@DATALOADER_REGISTRY.register
-class DataLoader3DProbOffset(DataLoader3DOffset):
-    def __init__(self, *args, offset_prob: float = 1.0, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.offset_prob = offset_prob
-
-    def get_fg_crop(self, *args, **kwargs) -> List[slice]:
-        if np.random.rand(1) < self.offset_prob:
-            return DataLoader3DOffset.get_fg_crop(self, *args, **kwargs)
-        else:
-            return DataLoader3DFast.get_fg_crop(self, *args, **kwargs)
 
 
 @DATALOADER_REGISTRY.register

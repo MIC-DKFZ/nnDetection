@@ -1,10 +1,10 @@
 # @package __global__
 defaults:
-  - augment_cfg: base_more
+  - augment_cfg: more_modular
   - io_cfg: base_offset
-  - trainer_cfg: sgd_base_swa
-  - model_cfg: retina_l1_hnm_atss_v1
+  - trainer_cfg: adamw_base
+  - model_cfg: retinaunet_l1_hnm_atss
 
-module: RetinaUNetV001
+module: RetinaUNetC014
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing

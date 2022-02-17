@@ -3,7 +3,7 @@ defaults:
   - augment_cfg: more_modular
   - io_cfg: base_offset
   - trainer_cfg: sgd_base
-  - model_cfg: retina_l1_hnm_atss
+  - model_cfg: retinaunet_l1_hnm_atss
 
 module: RetinaUNetC014
 plan: D3V001_3d # plan used for training
