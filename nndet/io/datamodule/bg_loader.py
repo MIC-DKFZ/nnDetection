@@ -561,7 +561,6 @@ class DataLoader2DOffset(DataLoader3DFast):
 
                 ``"keys"`` List[str]
                     case ids
-
         """
         data_batch = np.zeros(self.data_shape_batch, dtype=np.float32)
         seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float32)
