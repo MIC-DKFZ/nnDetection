@@ -3,7 +3,11 @@ from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier.dense import BCECLassifier
-from nndet.arch.heads.classifier.roi import BCEConvRoIClassifier, BCEFCRoIClassifier
+from nndet.arch.heads.classifier.roi import (
+    BCEConvRoIClassifier,
+    BCEFCRoIClassifier,
+    CEConvRoIClassifier,
+)
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker import BCESingleMasker
@@ -82,6 +86,11 @@ class MaskURCNNC001RSB(MaskURCNNC001):
     roi_sampler_cls = (
         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     )
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC001RSBCE(MaskURCNNC001):
+    roi_classifier_cls = CEConvRoIClassifier
 
 
 @MODULE_REGISTRY.register
