@@ -4,7 +4,7 @@ from nndet.utils.registry import Registry
 
 DATALOADER_REGISTRY: Mapping[str, Iterable] = Registry()
 
-from nndet.io.datamodule.bg_loader import (
+from nndet.io.datamodule.loader import (
     DataLoader2DDeeplesion,
     DataLoader2DFast,
     DataLoader2DOffset,
