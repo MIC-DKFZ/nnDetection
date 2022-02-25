@@ -1,10 +1,14 @@
 from abc import abstractmethod
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
 
 class BGCrop:
+    patch_size_generator: Union[Tuple[int, int], Tuple[int, int, int]]
+    need_to_pad: Union[Tuple[int, int], Tuple[int, int, int]]
+    patch_size_final: Union[Tuple[int, int], Tuple[int, int, int]]
+
     @abstractmethod
     def get_bg_crop(
         self,
