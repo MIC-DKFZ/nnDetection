@@ -1,13 +1,15 @@
 from abc import abstractmethod
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 import numpy as np
 
+from nndet.utils.typing import ND_TUPLE_INT
+
 
 class BGCrop:
-    patch_size_generator: Union[Tuple[int, int], Tuple[int, int, int]]
-    need_to_pad: Union[Tuple[int, int], Tuple[int, int, int]]
-    patch_size_final: Union[Tuple[int, int], Tuple[int, int, int]]
+    patch_size_generator: ND_TUPLE_INT
+    need_to_pad: ND_TUPLE_INT
+    patch_size_final: ND_TUPLE_INT
 
     @abstractmethod
     def get_bg_crop(
@@ -61,6 +63,46 @@ class RandomBGCrop3D(BGCrop):
         data_shape = case_data.shape[1:]
 
         crop = []
+        for ps, ds, _pad in zip(
+            self.patch_size_generator, data_shape, self.need_to_pad
+        ):
+            pad = _pad
+            if pad + ds < ps:
+                pad = ps - ds
+            origin = np.random.randint(
+                -(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1
+            )
+            crop.append(slice(origin, origin + ps))
+        return crop
+
+
+class RandomBGCrop2D(BGCrop):
+    def get_bg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
+        """
+        Extract slices for (random) background crop
+
+        Args:
+            case_data: case data (this should be a memmap!)
+            case_seg: case segmentation (this should be a memmap!)
+            properties: properties of case
+            case_id: identifier of case
+            candidates: foreground candidates. Is not used in this
+                specific implementation and thus None
+
+        Returns:
+            List[slice]: determined crop
+        """
+        data_shape = case_data.shape[2:]
+
+        slice_idx = np.random.randint(0, case_data.shape[1])
+        crop = [slice(slice_idx, slice_idx + 1)]
         for ps, ds, _pad in zip(
             self.patch_size_generator, data_shape, self.need_to_pad
         ):
