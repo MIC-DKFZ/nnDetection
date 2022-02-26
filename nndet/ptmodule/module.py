@@ -89,11 +89,11 @@ class LightningBaseModule(pl.LightningModule):
         logger.info(f"Lightningmodule running evaluators: {self.evaluators}")
 
         # define key for sweeping
-        if self.trainer_cfg["monitor_key"].startswith("val/"):
-            self.eval_score_key = str(self.trainer_cfg["monitor_key"]).split("/", 1)[1]
-        else:
-            self.eval_score_key = self.trainer_cfg
-        logger.info(f"Using {self.eval_score_key} for sweeping.")
+        self.sweep_key = self.trainer_cfg["sweep_key"]
+        self.monitor_key = self.trainer_cfg["monitor_key"]
+        logger.info(
+            f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring."
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

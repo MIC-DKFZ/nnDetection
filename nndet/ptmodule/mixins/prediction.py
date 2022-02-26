@@ -208,7 +208,7 @@ class BoxPredictionMixin(PredictionMixin):
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=prediction_dir,
             gt_dir=processed_eval_labels,
-            target_metric=self.eval_score_key,
+            target_metric=self.sweep_key,
             ensembler_cls=ensembler_cls,
             save_dir=_save_dir,
         )
@@ -339,7 +339,7 @@ class MaskPredictionMixin(PredictionMixin):
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=prediction_dir,
             gt_dir=processed_eval_labels,
-            target_metric=self.eval_score_key,
+            target_metric=self.sweep_key,
             ensembler_cls=ensembler_cls,
             save_dir=_save_dir,
         )
