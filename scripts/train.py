@@ -529,11 +529,11 @@ def _sweep(
 
     splits = load_pickle(train_dir / "splits.pkl")
     case_ids = splits[cfg["exp"]["fold"]]["val"]
-    case_ids = case_ids[:10]
 
-    # if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
-    #     logger.warning("Detected debug mode for sweep using reduced set of cases!")
-    #     case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
+    if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
+        logger.warning("Detected debug mode for sweep using reduced set of cases!")
+        case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
+    # case_ids = case_ids[:10]
 
     inference_plan = module.sweep(
         cfg=OmegaConf.to_container(cfg, resolve=True),
