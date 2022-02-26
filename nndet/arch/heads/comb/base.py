@@ -1,10 +1,11 @@
 from abc import abstractmethod
-from typing import Dict, List, Optional, Tuple, TypeVar
+from typing import Dict, List, Optional, Tuple, TypeVar, Union
 
 import torch
 
 from nndet.arch.heads.abstract import BaseHead, ClassifierType, RegressorType
 from nndet.core.boxes import BoxCoderND
+from nndet.utils.enums import BoxRegressionMode
 
 
 class AnchorHead(BaseHead):
@@ -14,7 +15,7 @@ class AnchorHead(BaseHead):
         regressor: RegressorType,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: str = "decode",
+        reg_mode: Union[str, BoxRegressionMode] = "decode",
     ):
         """
         Provides an abstract interface for an module which takes
@@ -40,12 +41,7 @@ class AnchorHead(BaseHead):
             shared=shared,
             coder=coder,
         )
-        self.reg_mode = reg_mode.lower()
-        if self.reg_mode not in ["encode", "decode"]:
-            raise ValueError(
-                f"Reg mode {self.reg_mode} is not supported. "
-                "Only one of 'encode' or 'decode' are supported."
-            )
+        self.reg_mode = BoxRegressionMode(reg_mode)
 
     def forward(
         self,
@@ -127,10 +123,10 @@ class AnchorHead(BaseHead):
                 `encode`: predicted box deltas, target box deltas
                 `decode`: predicted boxes, target boxes
         """
-        if self.reg_mode == "encode":
+        if self.reg_mode == BoxRegressionMode.ENCODE:
             target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
             return batch_pred_deltas, target_deltas
-        elif self.reg_mode == "decode":
+        elif self.reg_mode == BoxRegressionMode.DECODE:
             pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
             return pred_boxes, batch_target_boxes
         else:
