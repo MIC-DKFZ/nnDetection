@@ -568,9 +568,9 @@ def _sweep(
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
-        # do_boxes_eval=True,  # TODO: make this configurable
-        # do_analyze_boxes=True,  # TODO: make this configurable
-        do_masks_eval=True,  # TODO: make this configurable
+        do_boxes_eval=True,  # TODO: make this configurable
+        do_analyze_boxes=True,  # TODO: make this configurable
+        # do_masks_eval=True,  # TODO: make this configurable
     )
 
     # _evaluate(
