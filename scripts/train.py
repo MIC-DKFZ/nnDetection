@@ -327,6 +327,7 @@ def _train(
     meta_data["torch_version"] = str(torch.__version__)
     meta_data["date"] = str(datetime.now())
     meta_data["git"] = log_git(nndet.__path__[0], repo_name="nndet")
+    meta_data["overwrites"] = str(ov)
     save_json(meta_data, "./meta.json")
     # try:
     #     write_requirements_to_file("requirements.txt")
