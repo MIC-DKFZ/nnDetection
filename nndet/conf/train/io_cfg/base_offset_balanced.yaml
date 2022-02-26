@@ -1,0 +1,15 @@
+num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
+num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
+
+dataloader: "DataLoader{}DPOB"
+oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
+dataloader_kwargs: {}
+
+num_threads: ${oc.env:det_num_threads, "12"}
+num_cached_per_thread: 2
+multiprocessing: True # only deactivate this if debugging
+
+# Additional overwrites
+# patch_size; Default: plan
+# batch_size; Default: plan
+# splits; Default: splits_final

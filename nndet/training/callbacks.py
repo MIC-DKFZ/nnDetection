@@ -1,10 +1,24 @@
 import time
 
+import pytorch_lightning as pl
+import torch
 from loguru import logger
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import Callback
 
 from nndet.training.ema import EMA
+
+
+class CheckWeightsNaN(Callback):
+    def on_train_epoch_end(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+    ) -> None:
+        for param in pl_module.parameters():
+            if torch.isnan(param).any():
+                raise RuntimeError("Found NaN parameter in module, aborting training.")
+        return super().on_train_epoch_end(trainer, pl_module)
 
 
 class EpochTimerCallback(Callback):
