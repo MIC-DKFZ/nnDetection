@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -7,6 +7,7 @@ from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.comb.base import AnchorHead
 from nndet.arch.heads.regressor.dense import DenseRegressorType
 from nndet.core.boxes.coder import BoxCoderND
+from nndet.utils.enums import BoxRegressionMode
 
 
 class BoxHeadAll(AnchorHead):
@@ -16,7 +17,7 @@ class BoxHeadAll(AnchorHead):
         regressor: DenseRegressorType,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: str = "decode",
+        reg_mode: Union[str, BoxRegressionMode] = "decode",
     ):
         """
         Box head with classifier and regression module. Uses all
