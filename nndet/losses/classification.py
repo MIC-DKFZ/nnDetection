@@ -37,7 +37,7 @@ def one_hot_smooth(
     return targets
 
 
-@torch.jit.script
+# @torch.jit.script
 def focal_loss_with_logits(
     logits: torch.Tensor,
     target: torch.Tensor,
@@ -152,7 +152,7 @@ class FocalLossWithLogits(Loss):
         return loss
 
 
-@torch.jit.script
+# @torch.jit.script
 def asymmetric_focal_loss_with_logits(
     logits: torch.Tensor,
     target: torch.Tensor,
