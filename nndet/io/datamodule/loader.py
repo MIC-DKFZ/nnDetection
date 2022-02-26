@@ -57,8 +57,9 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         """
         Basic Dataloder for 3D Data.
         Center of foreground patches is sampled from pre computed bounding
-        boxes. Background patches are sampled randomly. Cases are selected
-        randomly.
+        boxes.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
 
         Args:
             data: dict with cases and data paths
@@ -348,7 +349,57 @@ class DataLoader3DOffset(
     RandomSelectionMixin,
     BaseDataLoader3D,
 ):
-    pass
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        offset_prob: float = 1.0,
+        offset_magn: float = 1.0,
+    ):
+        """
+        Dataloder for 3D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            offset_prob: probability to apply additional offsets of objects.
+            offset_magn: magnitude of additional offset.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.offset_prob = offset_prob
+        self.offset_magn = offset_magn
 
 
 @DATALOADER_REGISTRY.register
@@ -368,7 +419,54 @@ class DataLoader2DOffset(
     RandomSelectionMixin,
     BaseDataLoader2D,
 ):
-    pass
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        offset_prob: float = 1.0,
+    ):
+        """
+        Dataloder for 2D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            offset_prob: probability to apply additional offsets of objects.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.offset_prob = offset_prob
 
 
 ####

@@ -86,13 +86,9 @@ class InsideFGCrop3D(FGCrop):
 
 
 class OffsetFGCrop3D(FGCrop):
-    # TODO: magnitude parameter
-    # TODO: probability parameter
-    #     def get_fg_crop(self, *args, **kwargs) -> List[slice]:
-    #         if np.random.rand(1) < self.offset_prob:
-    #             return DataLoader3DOffset.get_fg_crop(self, *args, **kwargs)
-    #         else:
-    #             return DataLoader3DFast.get_fg_crop(self, *args, **kwargs)
+    offset_prob: float
+    offset_magn: float  # TODO
+
     def get_fg_crop(
         self,
         case_data: np.ndarray,
@@ -125,7 +121,16 @@ class OffsetFGCrop3D(FGCrop):
         box = box[0]
 
         origins = []
-        for i, (ib, ib2) in enumerate([(0, 2), (1, 3), (4, 5)]):
+        offset_rand = np.random.rand(1)
+        for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
+            if offset_rand < self.offset_prob:
+                # no offset should be applied
+                origins.append(
+                    np.random.randint(int(box[0]) + 1, int(box[2]))
+                    - (self.patch_size_generator[0] // 2)
+                )
+                continue
+
             if (
                 spatial_shape[i] <= self.patch_size_generator[i]
             ):  # patch larger than scan
@@ -135,16 +140,16 @@ class OffsetFGCrop3D(FGCrop):
                 box_size[i] >= self.patch_size_final[i]
             ):  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
-                center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
+                center = np.random.randint(int(box[ilb]) + 1, int(box[ulb]))
                 origins.append(center - (self.patch_size_generator[0] // 2))
             else:  # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
                 lower_bound = np.clip(
-                    box[ib] - (self.patch_size_final[i] - box_size[i]),
+                    box[ilb] - (self.patch_size_final[i] - box_size[i]),
                     a_min=0,
                     a_max=patch_upper_bound,
                 )
-                upper_bound = np.clip(box[ib], a_min=0, a_max=patch_upper_bound)
+                upper_bound = np.clip(box[ilb], a_min=0, a_max=patch_upper_bound)
 
                 if lower_bound == upper_bound:
                     _origin = int(lower_bound)
