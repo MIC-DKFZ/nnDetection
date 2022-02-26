@@ -1246,7 +1246,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         else:
             _kwargs = {}
 
-        boxes, probs, labels, _ = self.get_ensemble_nms(
+        boxes, probs, labels, _ = self.get_ensemble_nms()(
             boxes,
             probs,
             labels,

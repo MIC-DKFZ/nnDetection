@@ -94,13 +94,14 @@ def example_batch(in_channels, patch_size, device):
 
 
 CASES = [
-    (RetinaNetC001, "v001"),
-    (RetinaNetC001Focal, "c014_focal"),
-    (RetinaUNetV001, "v001"),
-    (RetinaUNetCV001Focal, "c014_focal"),
-    (FasterRCNNC001, "frcnn_c001"),
-    (MaskRCNNC001, "mrcnn_c001"),
-    (CascadeMaskURCNNC001, "cascmrcnn_c001"),
+    # (RetinaNetC001, "v001"),
+    # (RetinaNetC001Focal, "c014_focal"),
+    (RetinaUNetV001, "retinaunet_v001"),
+    (RetinaUNetV001, "retinaunet_v001_mod"),
+    # (RetinaUNetCV001Focal, "c014_focal"),
+    # (FasterRCNNC001, "frcnn_c001"),
+    # (MaskRCNNC001, "mrcnn_c001"),
+    # (CascadeMaskURCNNC001, "cascmrcnn_c001"),
 ]
 
 
