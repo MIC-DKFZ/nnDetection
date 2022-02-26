@@ -86,6 +86,13 @@ class InsideFGCrop3D(FGCrop):
 
 
 class OffsetFGCrop3D(FGCrop):
+    # TODO: magnitude parameter
+    # TODO: probability parameter
+    #     def get_fg_crop(self, *args, **kwargs) -> List[slice]:
+    #         if np.random.rand(1) < self.offset_prob:
+    #             return DataLoader3DOffset.get_fg_crop(self, *args, **kwargs)
+    #         else:
+    #             return DataLoader3DFast.get_fg_crop(self, *args, **kwargs)
     def get_fg_crop(
         self,
         case_data: np.ndarray,

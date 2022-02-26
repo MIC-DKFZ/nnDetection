@@ -33,6 +33,7 @@ from nndet.io.datamodule.mixins.select import (
 )
 from nndet.io.load import load_pickle
 from nndet.io.patching import save_get_crop
+from nndet.utils.info import deprecate
 
 
 class BaseDataLoader3D(SlimDataLoaderBase):
@@ -327,25 +328,6 @@ class BaseDataLoader2D(BaseDataLoader3D):
         }
 
 
-# # TODO: introduce general probability parameter
-# @DATALOADER_REGISTRY.register
-# class DataLoader3DProbOffset(DataLoader3DOffset):
-#     def __init__(self, *args, offset_prob: float = 1.0, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.offset_prob = offset_prob
-
-#     def get_fg_crop(self, *args, **kwargs) -> List[slice]:
-#         if np.random.rand(1) < self.offset_prob:
-#             return DataLoader3DOffset.get_fg_crop(self, *args, **kwargs)
-#         else:
-#             return DataLoader3DFast.get_fg_crop(self, *args, **kwargs)
-
-
-# @DATALOADER_REGISTRY.register
-# class DataLoader2DFast(DataLoader2DOffset):
-#     pass
-
-
 ###
 # Concrete Dataloader Classes
 ###
@@ -394,14 +376,32 @@ class DataLoader2DOffset(
 ####
 @DATALOADER_REGISTRY.register
 class DataLoader3DFast(DataLoader3D):  # backwards compatibility
-    pass
+    @deprecate(
+        replacement="`DataLoader3D`",
+        deprecate="v0.1.3",
+        remove="v0.2",
+    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 @DATALOADER_REGISTRY.register
 class DataLoader3DPOB(DataLoader3DOffsetBalanced):
-    pass
+    @deprecate(
+        replacement="`DataLoader3DOffset` with probability parameter",
+        deprecate="v0.1.3",
+        remove="v0.2",
+    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 @DATALOADER_REGISTRY.register
 class DataLoader3DBalanced(DataLoader3DOffsetBalanced):
-    pass
+    @deprecate(
+        replacement="`DataLoader3DOffsetBalanced`",
+        deprecate="v0.1.3",
+        remove="v0.2",
+    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
