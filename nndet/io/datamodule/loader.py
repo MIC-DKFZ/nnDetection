@@ -27,8 +27,8 @@ from nndet.io.datamodule.mixins.fgcrop import (
     OffsetFGCrop2D,
     OffsetFGCrop3D,
 )
-from nndet.io.datamodule.mixins.select import (
-    BalancedSelectionMixin,
+from nndet.io.datamodule.mixins.select import (  # PatientBalancedSelectionMixin,
+    ObjectBalancedSelectionMixin,
     RandomSelectionMixin,
 )
 from nndet.io.load import load_pickle
@@ -403,10 +403,10 @@ class DataLoader3DOffset(
 
 
 @DATALOADER_REGISTRY.register
-class DataLoader3DOffsetBalanced(
+class DataLoader3DOffsetObjectBalanced(
     RandomBGCrop3D,
     OffsetFGCrop3D,
-    BalancedSelectionMixin,
+    ObjectBalancedSelectionMixin,
     BaseDataLoader3D,
 ):
     pass
@@ -484,7 +484,7 @@ class DataLoader3DFast(DataLoader3D):  # backwards compatibility
 
 
 @DATALOADER_REGISTRY.register
-class DataLoader3DPOB(DataLoader3DOffsetBalanced):
+class DataLoader3DPOB(DataLoader3DOffsetObjectBalanced):
     @deprecate(
         replacement="`DataLoader3DOffset` with probability parameter",
         deprecate="v0.1.3",
@@ -495,7 +495,7 @@ class DataLoader3DPOB(DataLoader3DOffsetBalanced):
 
 
 @DATALOADER_REGISTRY.register
-class DataLoader3DBalanced(DataLoader3DOffsetBalanced):
+class DataLoader3DBalanced(DataLoader3DOffsetObjectBalanced):
     @deprecate(
         replacement="`DataLoader3DOffsetBalanced`",
         deprecate="v0.1.3",
