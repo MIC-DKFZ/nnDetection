@@ -2,6 +2,7 @@ from loguru import logger
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
 from nndet.io.augmentation.base import ComposePretty
+from nndet.io.augmentation.monai import MonaiTransform
 from nndet.io.augmentation.pipeline.modular import AugModular
 from nndet.io.augmentation.torchio import TIOTransform
 
@@ -9,6 +10,11 @@ try:
     import torchio as tio
 except ImportError:
     tio = None
+
+try:
+    import monai
+except ImportError:
+    monai = None
 
 
 @AUGMENTATION_REGISTRY.register
@@ -36,6 +42,9 @@ class MRIAugModular(AugModular):
         MRI Transforms:
             - TBD
         """
+        if tio is None:
+            raise ImportError("MRI augs require TorchIO!")
+
         print("THIS IS A PLACEHOLDER")
         tr_transforms = [super().get_training_transforms()]
 
@@ -46,6 +55,15 @@ class MRIAugModular(AugModular):
 
         trafo = TIOTransform(
             trafo=tio.transforms.Compose(mri_transforms), data_key="data"
+        )
+
+        mri_transforms = []
+        mri_transforms.append(
+            monai.transforms.RandBiasFieldD(prob=1.0, keys=["data"]),
+        )
+
+        trafo = MonaiTransform(
+            trafo=monai.transforms.Compose(mri_transforms), data_key="data"
         )
 
         logger.info(f"Training transforms were extended with \n{mri_transforms}")
