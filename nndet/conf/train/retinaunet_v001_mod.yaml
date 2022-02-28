@@ -1,7 +1,7 @@
 # @package __global__
 defaults:
   - augment_cfg: base_more
-  - io_cfg: base_offset
+  - io_cfg: offset
   - trainer_cfg: sgd_base_swa
   - model_cfg: retinaunet_l1_hnm_atss_v1
 
