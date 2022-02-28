@@ -116,7 +116,15 @@ class RandomSelectionMixin(SelectionMixin):
 
 class ObjectBalancedSelectionMixin(SelectionMixin):
     force_bg_case: bool
-    selection_mode: SelectionMode
+    _selection_mode: SelectionMode
+
+    @property
+    def selection_mode(self) -> SelectionMode:
+        return self._selection_mode
+
+    @selection_mode.setter
+    def selection_mode(self, key: Union[str, SelectionMode]):
+        self._selection_mode = SelectionMode(key)
 
     def build_cache(self) -> Dict[str, Union[Dict, List]]:
         """
@@ -223,6 +231,17 @@ class ObjectBalancedSelectionMixin(SelectionMixin):
 
 
 class PatientBalancedSelectionMixin(SelectionMixin):
+    force_bg_case: bool
+    _selection_mode: SelectionMode
+
+    @property
+    def selection_mode(self) -> SelectionMode:
+        return self._selection_mode
+
+    @selection_mode.setter
+    def selection_mode(self, key: Union[str, SelectionMode]):
+        self._selection_mode = SelectionMode(key)
+
     pass  # TODO # FIXME
 
 

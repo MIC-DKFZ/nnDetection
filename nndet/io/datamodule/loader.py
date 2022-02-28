@@ -27,12 +27,14 @@ from nndet.io.datamodule.mixins.fgcrop import (
     OffsetFGCrop2D,
     OffsetFGCrop3D,
 )
-from nndet.io.datamodule.mixins.select import (  # PatientBalancedSelectionMixin,
+from nndet.io.datamodule.mixins.select import (
     ObjectBalancedSelectionMixin,
+    PatientBalancedSelectionMixin,
     RandomSelectionMixin,
 )
 from nndet.io.load import load_pickle
 from nndet.io.patching import save_get_crop
+from nndet.utils.enums import SelectionMode
 from nndet.utils.info import deprecate
 
 
@@ -71,6 +73,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             memmap_mode: Do not change this. Defaults to "r".
             pad_mode: Padding mode for data. Defaults to "constant".
             pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -81,7 +84,6 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             batch_size=batch_size,
             number_of_threads_in_multithreaded=None,
         )
-        self.num_batches_per_epoch = num_batches_per_epoch
         if len(patch_size_generator) != len(patch_size_final):
             raise ValueError(
                 f"Final and generator patch size need to have the same length."
@@ -91,11 +93,10 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.patch_size_generator = patch_size_generator
         self.patch_size_final = patch_size_final
         self.oversample_foreground_percent = oversample_foreground_percent
-
         self.memmap_mode = memmap_mode
-
         self.pad_mode = pad_mode
         self.pad_kwargs_data = pad_kwargs_data if pad_kwargs_data is not None else {}
+        self.num_batches_per_epoch = num_batches_per_epoch
 
         # we sample bigger patches and create a center crop during augmentation
         # to cover the boarders of the patient we need to adjust the position
@@ -339,7 +340,61 @@ class DataLoader3D(
     RandomSelectionMixin,
     BaseDataLoader3D,
 ):
-    pass
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        force_bg_case: bool = False,
+        offset_prob: float = 1.0,
+        offset_magn: float = 1.0,
+    ):
+        """
+        Dataloder for 3D Data.
+        Center of foreground patches are sampled within bounding boxes.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
+            force_bg_case: force extraction of background patches from cases
+                without any objects
+            offset_prob: probability to apply additional offsets of objects.
+            offset_magn: magnitude of additional offset.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.force_bg_case = force_bg_case
+        self.offset_prob = offset_prob
+        self.offset_magn = offset_magn
 
 
 @DATALOADER_REGISTRY.register
@@ -360,6 +415,7 @@ class DataLoader3DOffset(
         pad_mode: str = "constant",
         pad_kwargs_data: Optional[Dict[str, Any]] = None,
         num_batches_per_epoch: int = 2500,
+        force_bg_case: bool = False,
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
     ):
@@ -380,6 +436,9 @@ class DataLoader3DOffset(
             memmap_mode: Do not change this. Defaults to "r".
             pad_mode: Padding mode for data. Defaults to "constant".
             pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
+            force_bg_case: force extraction of background patches from cases
+                without any objects
             offset_prob: probability to apply additional offsets of objects.
             offset_magn: magnitude of additional offset.
 
@@ -398,6 +457,7 @@ class DataLoader3DOffset(
             pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
+        self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
         self.offset_magn = offset_magn
 
@@ -409,7 +469,140 @@ class DataLoader3DOffsetObjectBalanced(
     ObjectBalancedSelectionMixin,
     BaseDataLoader3D,
 ):
-    pass
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        force_bg_case: bool = False,
+        offset_prob: float = 1.0,
+        offset_magn: float = 1.0,
+        selection_mode: Union[str, SelectionMode] = "uniform",
+    ):
+        """
+        Dataloder for 3D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Object classes are balanced and each object inside a class is sampled
+        uniformly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
+            force_bg_case: force extraction of background patches from cases
+                without any objects
+            offset_prob: probability to apply additional offsets of objects.
+            offset_magn: magnitude of additional offset.
+            selection_mode: Define how classes should be sampled. 'uniform'
+                sampled each object class with the sample probability.
+                'sqrt' applies sqrt to the number of objects per class and
+                uses those values for weighted sampling.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.force_bg_case = force_bg_case
+        self.offset_prob = offset_prob
+        self.offset_magn = offset_magn
+        self.selection_mode = selection_mode
+
+
+@DATALOADER_REGISTRY.register
+class DataLoader3DOffsetPatientBalanced(
+    RandomBGCrop3D,
+    OffsetFGCrop3D,
+    PatientBalancedSelectionMixin,
+    BaseDataLoader3D,
+):
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        force_bg_case: bool = False,
+        offset_prob: float = 1.0,
+        offset_magn: float = 1.0,
+        selection_mode: Union[str, SelectionMode] = "uniform",
+    ):
+        """
+        Dataloder for 3D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
+            force_bg_case: force extraction of background patches from cases
+                without any objects
+            offset_prob: probability to apply additional offsets of objects.
+            offset_magn: magnitude of additional offset.
+            selection_mode: Define how classes should be sampled. 'uniform'
+                sampled each object class with the sample probability.
+                'sqrt' applies sqrt to the number of objects per class and
+                uses those values for weighted sampling.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.force_bg_case = force_bg_case
+        self.offset_prob = offset_prob
+        self.offset_magn = offset_magn
+        self.selection_mode = selection_mode
 
 
 @DATALOADER_REGISTRY.register

@@ -1,7 +1,7 @@
 num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
 num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
-dataloader: "DataLoader{}DPOB"
+dataloader: "DataLoader{}DOffsetObjectBalanced"
 oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
 dataloader_kwargs: {}
 
