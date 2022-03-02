@@ -123,7 +123,7 @@ class OffsetFGCrop3D(FGCrop):
         origins = []
         offset_rand = np.random.rand(1)
         for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
-            if offset_rand < self.offset_prob:
+            if offset_rand > self.offset_prob:
                 # no offset should be applied
                 origins.append(
                     np.random.randint(int(box[0]) + 1, int(box[2]))
