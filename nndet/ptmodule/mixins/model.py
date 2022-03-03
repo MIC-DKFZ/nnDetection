@@ -197,7 +197,11 @@ class SingleStageMixin(ModelMixin):
         score_thresh = plan_arch.get("score_thresh", 0)
         topk_candidates = plan_arch.get("topk_candidates", 10000)
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
-        nms_thresh = plan_arch.get("nms_thresh", 0.6)
+        if "rpn_nms_thresh" in model_cfg:
+            nms_thresh = model_cfg["rpn_nms_thresh"]
+            logger.info(f"Found RPN NMS thresh in config, using {nms_thresh}")
+        else:
+            nms_thresh = plan_arch.get("nms_thresh", 0.6)
 
         logger.info(
             f"Model Inference Summary: \n"

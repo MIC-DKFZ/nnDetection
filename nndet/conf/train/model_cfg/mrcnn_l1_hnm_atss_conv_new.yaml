@@ -52,8 +52,8 @@ matcher_kwargs: # keyword arguments passed to matcher
 plan_arch_overwrites: {} # overwrite arguments of architecture
 plan_anchors_overwrites: {} # overwrite arguments of anchors
 
-# RoI Cascading Parameters
-##########################
+# RoI (Cascading) Parameters
+############################
 rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
 
 roi_channel_multiplier: 2  # cale number of channels of RoI head
