@@ -1,7 +1,7 @@
 # @package __global__
 defaults:
   - augment_cfg: more_modular
-  - io_cfg: base_offset
+  - io_cfg: offset
   - trainer_cfg: smoke
   - model_cfg: retina_l1_hnm_atss
 

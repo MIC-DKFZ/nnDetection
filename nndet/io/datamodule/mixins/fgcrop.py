@@ -87,7 +87,7 @@ class InsideFGCrop3D(FGCrop):
 
 class OffsetFGCrop3D(FGCrop):
     offset_prob: float
-    offset_magn: float  # TODO
+    offset_magn: float
 
     def get_fg_crop(
         self,
@@ -123,26 +123,18 @@ class OffsetFGCrop3D(FGCrop):
         origins = []
         offset_rand = np.random.rand(1)
         for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
-            if offset_rand > self.offset_prob:
-                # no offset should be applied
-                origins.append(
-                    np.random.randint(int(box[0]) + 1, int(box[2]))
-                    - (self.patch_size_generator[0] // 2)
-                )
-                continue
-
-            if (
-                spatial_shape[i] <= self.patch_size_generator[i]
-            ):  # patch larger than scan
+            if (offset_rand > self.offset_prob) or (
+                box_size[i] >= self.patch_size_final[i]
+            ):
+                # no offset prob | object is bigger than patch
+                center = np.random.randint(int(box[ilb]) + 1, int(box[ulb]))
+                origins.append(center - (self.patch_size_generator[i] // 2))
+            elif spatial_shape[i] <= self.patch_size_generator[i]:
+                # patch larger than scan
                 # we center the slice and pad the rest
                 origins.append(-(self.need_to_pad[i] // 2))
-            elif (
-                box_size[i] >= self.patch_size_final[i]
-            ):  # selected instance is larger than patch
-                # we can not offset, we select our center point inside the bounding box and hope for the best
-                center = np.random.randint(int(box[ilb]) + 1, int(box[ulb]))
-                origins.append(center - (self.patch_size_generator[0] // 2))
-            else:  # create best effort offset
+            else:
+                # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
                 lower_bound = np.clip(
                     box[ilb] - (self.patch_size_final[i] - box_size[i]),
@@ -151,13 +143,18 @@ class OffsetFGCrop3D(FGCrop):
                 )
                 upper_bound = np.clip(box[ilb], a_min=0, a_max=patch_upper_bound)
 
+                _d = (upper_bound - lower_bound) / 2
+                lower_bound = lower_bound + round((1.0 - self.offset_magn) * _d)
+                upper_bound = upper_bound - round((1.0 - self.offset_magn) * _d)
+                assert upper_bound >= lower_bound
+
                 if lower_bound == upper_bound:
                     _origin = int(lower_bound)
                 else:
                     _origin = np.random.randint(lower_bound, upper_bound)
-
                 origins.append(_origin - (self.need_to_pad[i] // 2))
 
+        assert len(origins) == 3
         return [
             slice(origins[0], origins[0] + self.patch_size_generator[0]),
             slice(origins[1], origins[1] + self.patch_size_generator[1]),
@@ -211,7 +208,7 @@ class OffsetFGCrop2D(FGCrop):
             ):  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
                 center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
-                origins.append(center - (self.patch_size_generator[0] // 2))
+                origins.append(center - (self.patch_size_generator[i] // 2))
             else:  # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
                 lower_bound = np.clip(
