@@ -3,7 +3,11 @@ from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import UFPNModular
 from nndet.arch.encoder.modular import Encoder
 from nndet.arch.heads.classifier.dense import BCECLassifier
-from nndet.arch.heads.classifier.roi import CEConvRoIClassifier, CEFCRoIClassifier
+from nndet.arch.heads.classifier.roi import (
+    BCEConvRoIClassifier,
+    CEConvRoIClassifier,
+    CEFCRoIClassifier,
+)
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.regressor.dense import L1Regressor
@@ -53,7 +57,7 @@ class FasterRCNNC001(BoxRCNN):
     roi_conv_cls = ConvGroupLReLU
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
-    roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
+    roi_classifier_cls = BCEConvRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
@@ -75,6 +79,46 @@ class FasterURCNNC001(FasterRCNNC001):
 
 
 @MODULE_REGISTRY.register
+class FasterURCNNC001RSB(FasterURCNNC001):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
+
+
+@MODULE_REGISTRY.register
+class FasterURCNNC001RSBCE(FasterURCNNC001RSB):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
+    roi_classifier_cls = CEConvRoIClassifier
+
+
+@MODULE_REGISTRY.register
+class FasterRCNNC001RSB(FasterRCNNC001):
+    segmenter_cls = None  # [optional] segmentation head as in RetinaUNetg
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
+
+
+@MODULE_REGISTRY.register
+class FasterRCNNC001RSBCE(FasterRCNNC001RSB):
+    segmenter_cls = None  # [optional] segmentation head as in RetinaUNetg
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
+    roi_classifier_cls = CEConvRoIClassifier
+
+
+@MODULE_REGISTRY.register
 class FasterRCNNC001FC(BoxRCNN):
+    roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+
+
+@MODULE_REGISTRY.register
+class FasterRCNNC001FCF(FasterRCNNC001):
     roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv

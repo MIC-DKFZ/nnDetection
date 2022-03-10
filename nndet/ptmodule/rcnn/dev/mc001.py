@@ -83,24 +83,41 @@ class MaskURCNNC001(MaskRCNNC001):
 
 @MODULE_REGISTRY.register
 class MaskURCNNC001RSB(MaskURCNNC001):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
     roi_sampler_cls = (
         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     )
 
 
 @MODULE_REGISTRY.register
-class MaskURCNNC001RSBCE(MaskURCNNC001):
+class MaskURCNNC001RSBCE(MaskURCNNC001):  # wrong parent class
+    roi_classifier_cls = CEConvRoIClassifier
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC001RSBCEF(MaskURCNNC001RSB):  # fixed parent class
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
     roi_classifier_cls = CEConvRoIClassifier
 
 
 @MODULE_REGISTRY.register
 class MaskURCNNC001FC(MaskURCNNC001):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+
     roi_classifier_cls = BCEFCRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
 
 
 @MODULE_REGISTRY.register
 class MaskURCNNC001FCRSB(MaskURCNNC001FC):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+
+    roi_classifier_cls = BCEFCRoIClassifier  # RoIClassifierTwoMLP
+    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+
     roi_sampler_cls = (
         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     )
@@ -108,9 +125,16 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
 
 @MODULE_REGISTRY.register
 class MaskURCNNC001DiceBCE(MaskURCNNC001):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+
     roi_masker_cls = DiceBCESingleMasker
 
 
 @MODULE_REGISTRY.register
 class MaskURCNNC001RSBDiceBCE(MaskURCNNC001RSB):
+    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    roi_sampler_cls = (
+        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+    )
+
     roi_masker_cls = DiceBCESingleMasker
