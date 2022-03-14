@@ -163,6 +163,14 @@ class OffsetFGCrop3D(FGCrop):
 
 
 class OffsetFGCrop3DV2(FGCrop):
+    """
+    Fixes center crop
+    Uses a different offset magnitude mechanism; if magnitude is set to 0 the
+    object is centered inside the patch. if magnitude is set to 1 offset
+    is maximized. Float values in between will dynamically vary the offset
+    strength.
+    """
+
     offset_prob: float
     offset_magn: float
     max_size_pct: float
@@ -236,7 +244,6 @@ class OffsetFGCrop3DV2(FGCrop):
                         spatial_size=spatial_shape[i],
                         box_lower=int(box[ilb]),
                         box_upper=int(box[ulb]),
-                        box_size=box_size[i],
                     )
                 )
 
@@ -298,7 +305,6 @@ class OffsetFGCrop3DV2(FGCrop):
         spatial_size: int,
         box_lower: int,
         box_upper: int,
-        box_size: Union[int, float],
     ) -> int:
         """
         Try to offset the object randomly while keeping the whole object
@@ -317,24 +323,31 @@ class OffsetFGCrop3DV2(FGCrop):
         Returns:
             int: lower boundary of patch to extract
         """
-        patch_upper_bound = spatial_size - ps
+        patch_upper_bound = spatial_size - ps  # keep patch inside scan
         lower_bound = np.clip(
-            box_lower - (ps - box_size),
+            # lower + ps = box_upper => lower = box_upper - ps
+            box_upper - ps,
             a_min=-1,
             a_max=patch_upper_bound,
-        )  # -1
-        upper_bound = np.clip(box_lower, a_min=-1, a_max=patch_upper_bound)  # 95
+        )
+        upper_bound = np.clip(box_lower, a_min=-1, a_max=patch_upper_bound)
 
-        _d = (upper_bound - lower_bound) / 2
-        lower_bound = lower_bound + round((1.0 - self.offset_magn) * _d)
-        upper_bound = upper_bound - round((1.0 - self.offset_magn) * _d)
+        if self.offset_magn < 1.0:
+            # if offset margin is smaller 1.0, the bound are moved towards the centralized position
+            centered = box_lower - (ps / 2) + (box_upper - box_lower) / 2
+            lower_bound = lower_bound + round(
+                (1.0 - self.offset_magn) * (centered - lower_bound)
+            )
+            upper_bound = upper_bound - round(
+                (1.0 - self.offset_magn) * (upper_bound - centered)
+            )
         assert upper_bound >= lower_bound
 
         if lower_bound == upper_bound:
             _origin = int(lower_bound)
         else:
             _origin = np.random.randint(lower_bound, upper_bound)
-        return _origin - (ntp // 2), lower_bound, upper_bound
+        return _origin - (ntp // 2)
 
 
 class OffsetFGCrop2D(FGCrop):

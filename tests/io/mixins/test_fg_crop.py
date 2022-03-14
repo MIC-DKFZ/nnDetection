@@ -4,7 +4,6 @@ from unittest.mock import Mock, call, patch
 import numpy as np
 import pytest
 
-from nndet.core.boxes.ops_np import box_size_np
 from nndet.io.datamodule.mixins.fgcrop import OffsetFGCrop3DV2
 
 SEEDS = [0, 1, 2, 3, 4, 5]
@@ -226,7 +225,6 @@ class TestOffsetFGCrop3DV2:
 
         mock.assert_called()
         box = candidates["boxes"][instance_id - 1]
-        box_size = box_size_np(box[None])[0]
         calls = [
             call(
                 ps=6,
@@ -234,7 +232,6 @@ class TestOffsetFGCrop3DV2:
                 spatial_size=16,
                 box_lower=box[0],
                 box_upper=box[2],
-                box_size=box_size[0],
             ),
             call(
                 ps=10,
@@ -242,7 +239,6 @@ class TestOffsetFGCrop3DV2:
                 spatial_size=32,
                 box_lower=box[1],
                 box_upper=box[3],
-                box_size=box_size[1],
             ),
             call(
                 ps=20,
@@ -250,7 +246,6 @@ class TestOffsetFGCrop3DV2:
                 spatial_size=64,
                 box_lower=box[4],
                 box_upper=box[5],
-                box_size=box_size[2],
             ),
         ]
         mock.assert_has_calls(calls)
@@ -258,7 +253,6 @@ class TestOffsetFGCrop3DV2:
     def test_offseet_box_magn0(self, cropper: OffsetFGCrop3DV2):
         cropper.offset_magn = 0.0
         idx = cropper._offset_box(
-            ps=128, ntp=0, spatial_size=256, box_lower=95, box_upper=105, box_size=10
+            ps=128, ntp=72, spatial_size=256, box_lower=95, box_upper=105
         )
-        breakpoint()
-        assert idx == 36
+        assert idx == 0
