@@ -162,6 +162,181 @@ class OffsetFGCrop3D(FGCrop):
         ]
 
 
+class OffsetFGCrop3DV2(FGCrop):
+    offset_prob: float
+    offset_magn: float
+    max_size_pct: float
+
+    def get_fg_crop(
+        self,
+        case_data: np.ndarray,
+        case_seg: np.ndarray,
+        properties: dict,
+        case_id: str,
+        instance_id: int,
+        candidates: Union[Dict, None],
+    ) -> List[slice]:
+        """
+        Sample foreground patches from precomputed boxes
+        (fixes the centering mechanism)
+
+        Args:
+            case_data: case data (this should be a memmap!)
+            case_seg: case segmentation (this should be a memmap!)
+            properties: properties of case
+            case_id: identifier of case
+            instance_id: instance index to sample
+            candidates: candidate positions to sample foreground from.
+                Should not be None for this case.
+
+        Returns:
+            List[slice]: determined crop
+        """
+        spatial_shape = case_data.shape[1:]
+        # some instances might get lost during resampling so we need to find the correct index
+        idx = candidates["instances"].index(instance_id)
+        box = candidates["boxes"][[idx]]  # [1, 6]
+        box_size = box_size_np(box)[0]
+        box = box[0]
+
+        origins = []
+        offset_rand = np.random.rand(1)
+        for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
+            if (offset_rand > self.offset_prob) or (
+                box_size[i] >= (self.max_size_pct * self.patch_size_final[i])
+            ):
+                # no offset prob | object is bigger than patch
+                # print("inbox", box_size, self.patch_size_final)
+                origins.append(
+                    self._inside_box(
+                        ps=self.patch_size_final[i],
+                        psg=self.patch_size_generator[i],
+                        box_lower=int(box[ilb]),
+                        box_upper=int(box[ulb]),
+                    )
+                )
+            elif spatial_shape[i] <= self.patch_size_generator[i]:
+                # print("center")
+                # patch larger than scan
+                # we center the slice and pad the rest
+                origins.append(
+                    self._center_data(
+                        ps=self.patch_size_final[i],
+                        psg=self.patch_size_generator[i],
+                        spatial_size=spatial_shape[i],
+                    )
+                )
+            else:
+                # print("offset")
+                # create best effort offset
+                origins.append(
+                    self._offset_box(
+                        ps=self.patch_size_final[i],
+                        ntp=self.need_to_pad[i],
+                        spatial_size=spatial_shape[i],
+                        box_lower=int(box[ilb]),
+                        box_upper=int(box[ulb]),
+                        box_size=box_size[i],
+                    )
+                )
+
+        assert len(origins) == 3
+        return [
+            slice(origins[0], origins[0] + self.patch_size_generator[0]),
+            slice(origins[1], origins[1] + self.patch_size_generator[1]),
+            slice(origins[2], origins[2] + self.patch_size_generator[2]),
+        ]
+
+    def _center_data(
+        self,
+        ps: int,
+        psg: int,
+        spatial_size: int,
+    ) -> int:
+        """
+        Center data inside generator patch.
+        All inputs to this function refer to one axis.
+
+        Args:
+            ps: patch size for network (after aug crop)
+            psg: patch size to extract by dataloader
+            spatial_size: size of data
+
+        Returns:
+            int: lower boundary of patch to extract
+        """
+        center = spatial_size // 2
+        return center - (psg // 2)
+
+    def _inside_box(
+        self,
+        ps: int,
+        psg: int,
+        box_lower: int,
+        box_upper: int,
+    ) -> int:
+        """
+        Select random point inside box as center of patch
+        All inputs to this function refer to one axis.
+
+        Args:
+            ps: patch size for network (after aug crop)
+            psg: patch size to extract by dataloader
+            box_lower: lower bound of box
+            box_upper: upper bound of box
+
+        Returns:
+            int: lower boundary of patch to extract
+        """
+        center = np.random.randint(box_lower + 1, box_upper)
+        return center - (psg // 2)
+
+    def _offset_box(
+        self,
+        ps: int,
+        ntp: int,
+        spatial_size: int,
+        box_lower: int,
+        box_upper: int,
+        box_size: Union[int, float],
+    ) -> int:
+        """
+        Try to offset the object randomly while keeping the whole object
+        inside the patch.
+        All inputs to this function refer to one axis.
+
+        Args:
+            ps: patch size for network (after aug crop)
+            ntp: amount that needs to be padded (difference between network
+                patch size and dataloader patch size)
+            spatial_size: size of data
+            box_lower: lower bound of box
+            box_upper: upper bound of box
+            box_size: size of bounding box
+
+        Returns:
+            int: lower boundary of patch to extract
+        """
+        patch_upper_bound = spatial_size - ps
+        lower_bound = np.clip(
+            box_lower - (ps - box_size),
+            a_min=-1,
+            a_max=patch_upper_bound,
+        )  # -1
+        upper_bound = np.clip(box_lower, a_min=-1, a_max=patch_upper_bound)  # 95
+
+        _d = (upper_bound - lower_bound) / 2
+        lower_bound = lower_bound + round((1.0 - self.offset_magn) * _d)
+        upper_bound = upper_bound - round((1.0 - self.offset_magn) * _d)
+        assert upper_bound >= lower_bound
+
+        if lower_bound == upper_bound:
+            _origin = int(lower_bound)
+        else:
+            _origin = np.random.randint(lower_bound, upper_bound)
+        return _origin - (ntp // 2), lower_bound, upper_bound
+
+
 class OffsetFGCrop2D(FGCrop):
     def get_fg_crop(
         self,

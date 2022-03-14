@@ -26,6 +26,7 @@ from nndet.io.datamodule.mixins.fgcrop import (
     InsideFGCrop3D,
     OffsetFGCrop2D,
     OffsetFGCrop3D,
+    OffsetFGCrop3DV2,
 )
 from nndet.io.datamodule.mixins.select import (
     ObjectBalancedSelectionMixin,
@@ -96,6 +97,9 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.memmap_mode = memmap_mode
         self.pad_mode = pad_mode
         self.pad_kwargs_data = pad_kwargs_data if pad_kwargs_data is not None else {}
+        if "constant_values" not in pad_kwargs_data:
+            # this is also the numpy default; to be sure that is won't change we set it manually
+            pad_kwargs_data["constant_values"] = 0  # pad 0 is used during inference
         self.num_batches_per_epoch = num_batches_per_epoch
 
         # we sample bigger patches and create a center crop during augmentation
@@ -380,6 +384,10 @@ class DataLoader3D(
         Raises:
             ValueError: patch size of dataloder and final patch size need to
                 have the same length
+
+        Notes:
+            Please refer to the Mixin-Classes for moe details about the
+            patch extraction procedure.
         """
         super().__init__(
             data=data,
@@ -445,6 +453,10 @@ class DataLoader3DOffset(
         Raises:
             ValueError: patch size of dataloder and final patch size need to
                 have the same length
+
+        Notes:
+            Please refer to the Mixin-Classes for moe details about the
+            patch extraction procedure.
         """
         super().__init__(
             data=data,
@@ -463,9 +475,83 @@ class DataLoader3DOffset(
 
 
 @DATALOADER_REGISTRY.register
+class DataLoader3DOffsetV2(
+    RandomBGCrop3D,
+    OffsetFGCrop3DV2,
+    RandomSelectionMixin,
+    BaseDataLoader3D,
+):
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        force_bg_case: bool = False,
+        offset_prob: float = 1.0,
+        offset_magn: float = 1.0,
+        max_size_pct: float = 1.0,
+    ):
+        """
+        Dataloder for 3D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            num_batches_per_epoch: number of batcher per epoch
+            force_bg_case: force extraction of background patches from cases
+                without any objects
+            offset_prob: probability to apply additional offsets of objects.
+            offset_magn: magnitude of additional offset.
+            max_size_pct: if object size exceeds this percentage of the
+                patch size the patch center will be sampled randomly
+                within the box instead of an offeset.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+
+        Notes:
+            Please refer to the Mixin-Classes for moe details about the
+            patch extraction procedure.
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.force_bg_case = force_bg_case
+        self.offset_prob = offset_prob
+        self.offset_magn = offset_magn
+        self.max_size_pct = max_size_pct
+
+
+@DATALOADER_REGISTRY.register
 class DataLoader3DOffsetObjectBalanced(
     RandomBGCrop3D,
-    OffsetFGCrop3D,
+    OffsetFGCrop3DV2,
     ObjectBalancedSelectionMixin,
     BaseDataLoader3D,
 ):
@@ -483,6 +569,7 @@ class DataLoader3DOffsetObjectBalanced(
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
+        max_size_pct: float = 1.0,
         selection_mode: Union[str, SelectionMode] = "uniform",
     ):
         """
@@ -508,6 +595,9 @@ class DataLoader3DOffsetObjectBalanced(
                 without any objects
             offset_prob: probability to apply additional offsets of objects.
             offset_magn: magnitude of additional offset.
+            max_size_pct: if object size exceeds this percentage of the
+                patch size the patch center will be sampled randomly
+                within the box instead of an offeset.
             selection_mode: Define how classes should be sampled. 'uniform'
                 sampled each object class with the sample probability.
                 'sqrt' applies sqrt to the number of objects per class and
@@ -516,6 +606,10 @@ class DataLoader3DOffsetObjectBalanced(
         Raises:
             ValueError: patch size of dataloder and final patch size need to
                 have the same length
+
+        Notes:
+            Please refer to the Mixin-Classes for moe details about the
+            patch extraction procedure.
         """
         super().__init__(
             data=data,
@@ -531,13 +625,14 @@ class DataLoader3DOffsetObjectBalanced(
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
         self.offset_magn = offset_magn
+        self.max_size_pct = max_size_pct
         self.selection_mode = selection_mode
 
 
 @DATALOADER_REGISTRY.register
 class DataLoader3DOffsetPatientBalanced(
     RandomBGCrop3D,
-    OffsetFGCrop3D,
+    OffsetFGCrop3DV2,
     PatientBalancedSelectionMixin,
     BaseDataLoader3D,
 ):
@@ -555,6 +650,7 @@ class DataLoader3DOffsetPatientBalanced(
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
+        max_size_pct: float = 1.0,
         selection_mode: Union[str, SelectionMode] = "uniform",
     ):
         """
@@ -579,6 +675,9 @@ class DataLoader3DOffsetPatientBalanced(
                 without any objects
             offset_prob: probability to apply additional offsets of objects.
             offset_magn: magnitude of additional offset.
+            max_size_pct: if object size exceeds this percentage of the
+                patch size the patch center will be sampled randomly
+                within the box instead of an offeset.
             selection_mode: Define how classes should be sampled. 'uniform'
                 sampled each object class with the sample probability.
                 'sqrt' applies sqrt to the number of objects per class and
@@ -587,6 +686,10 @@ class DataLoader3DOffsetPatientBalanced(
         Raises:
             ValueError: patch size of dataloder and final patch size need to
                 have the same length
+
+        Notes:
+            Please refer to the Mixin-Classes for moe details about the
+            patch extraction procedure.
         """
         super().__init__(
             data=data,
@@ -602,6 +705,7 @@ class DataLoader3DOffsetPatientBalanced(
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
         self.offset_magn = offset_magn
+        self.max_size_pct = max_size_pct
         self.selection_mode = selection_mode
 
 
