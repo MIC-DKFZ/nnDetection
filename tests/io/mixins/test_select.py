@@ -20,6 +20,7 @@ class DataProvider:
         self.batch_size = 4
         self.oversample_foreground_percent = 0.5
         self.force_bg_case = False
+        self.selection_mode = SelectionMode.UNIFORM
 
     def side_effect(self, key):
         return self._data[key]
@@ -61,8 +62,23 @@ def unbal_provider():
     return DataProvider(data)
 
 
+@pytest.fixture(scope="function")
+def unbal_provider_large(request):
+    rng = np.random.default_rng(seed=request.param)
+
+    data = {}
+    for i in range(1000):
+        _n = f"o{i}"
+        _num = rng.integers(0, 100, size=1)
+        _labels = rng.choice([0, 1], size=_num, replace=True, p=[0.9, 0.1]).tolist()
+        _instances = list(range(1, len(_labels) + 1))
+        data[_n] = {"boxes_file": _n, "instances": _instances, "labels": _labels}
+    return DataProvider(data)
+
+
 class TestRandomSelection:
     select_iterations = 20
+    select_iterations_full = 500
 
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_build_cache_no_instances(self, mock_load, no_instances_provider):
@@ -113,9 +129,34 @@ class TestRandomSelection:
                     ]
                 )
 
+    @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
+    @patch("nndet.io.datamodule.mixins.select.load_pickle")
+    def test_select_ratio(self, mock_load, unbal_provider_large):
+        np.random.seed(0)  # seed selection
+
+        mock_load.side_effect = unbal_provider_large.side_effect
+        unbal_provider_large.cache = RandomSelectionMixin.build_cache(
+            unbal_provider_large
+        )
+        classes_sampled = []
+        for _ in range(self.select_iterations_full):
+            cases, instance_ids = RandomSelectionMixin.select(unbal_provider_large)
+            assert len(cases) == len(instance_ids)
+            assert len(cases) == unbal_provider_large.batch_size
+            _classes = [
+                unbal_provider_large._data[c]["labels"][i - 1]
+                for c, i in zip(cases, instance_ids)
+                if i > -1
+            ]
+            classes_sampled.extend(_classes)
+        _, cls_counts = np.unique(classes_sampled, return_counts=True)
+        assert 0.88 <= cls_counts[0] / sum(cls_counts) <= 0.92
+        assert 0.08 <= cls_counts[1] / sum(cls_counts) <= 0.12
+
 
 class TestObjectBalancedSelection:
     select_iterations = 20
+    select_iterations_full = 1000
 
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_build_cache_no_instances(self, mock_load, no_instances_provider):
@@ -207,9 +248,36 @@ class TestObjectBalancedSelection:
                     ]
                 )
 
+    @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
+    @patch("nndet.io.datamodule.mixins.select.load_pickle")
+    def test_select_ratio(self, mock_load, unbal_provider_large):
+        np.random.seed(0)  # seed selection
+
+        mock_load.side_effect = unbal_provider_large.side_effect
+        unbal_provider_large.cache = ObjectBalancedSelectionMixin.build_cache(
+            unbal_provider_large
+        )
+        classes_sampled = []
+        for _ in range(self.select_iterations_full):
+            cases, instance_ids = ObjectBalancedSelectionMixin.select(
+                unbal_provider_large
+            )
+            assert len(cases) == len(instance_ids)
+            assert len(cases) == unbal_provider_large.batch_size
+            _classes = [
+                unbal_provider_large._data[c]["labels"][i - 1]
+                for c, i in zip(cases, instance_ids)
+                if i > -1
+            ]
+            classes_sampled.extend(_classes)
+        _, cls_counts = np.unique(classes_sampled, return_counts=True)
+        assert 0.48 <= cls_counts[0] / sum(cls_counts) <= 0.52
+        assert 0.48 <= cls_counts[1] / sum(cls_counts) <= 0.52
+
 
 class TestPatientBalancedSelection:
     select_iterations = 20
+    select_iterations_full = 1000
 
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_build_cache_no_instances(self, mock_load, no_instances_provider):
@@ -290,3 +358,29 @@ class TestPatientBalancedSelection:
                         if instance_ids[i] < 0
                     ]
                 )
+
+    @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
+    @patch("nndet.io.datamodule.mixins.select.load_pickle")
+    def test_select_ratio(self, mock_load, unbal_provider_large):
+        np.random.seed(0)  # seed selection
+
+        mock_load.side_effect = unbal_provider_large.side_effect
+        unbal_provider_large.cache = PatientBalancedSelectionMixin.build_cache(
+            unbal_provider_large
+        )
+        classes_sampled = []
+        for _ in range(self.select_iterations_full):
+            cases, instance_ids = PatientBalancedSelectionMixin.select(
+                unbal_provider_large
+            )
+            assert len(cases) == len(instance_ids)
+            assert len(cases) == unbal_provider_large.batch_size
+            _classes = [
+                unbal_provider_large._data[c]["labels"][i - 1]
+                for c, i in zip(cases, instance_ids)
+                if i > -1
+            ]
+            classes_sampled.extend(_classes)
+        _, cls_counts = np.unique(classes_sampled, return_counts=True)
+        assert 0.48 <= cls_counts[0] / sum(cls_counts) <= 0.52
+        assert 0.48 <= cls_counts[1] / sum(cls_counts) <= 0.52
