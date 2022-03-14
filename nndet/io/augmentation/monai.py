@@ -11,7 +11,7 @@ except ImportError:
 class MonaiTransform(AbstractTransform):
     def __init__(
         self,
-        trafo: monai.transforms.Transform,
+        trafo: "monai.transforms.Transform",
         data_key: str = "data",
         label_key: Optional[str] = "target",
     ) -> None:

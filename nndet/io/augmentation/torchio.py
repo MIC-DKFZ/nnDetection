@@ -9,7 +9,7 @@ except ImportError:
 class TIOTransform(AbstractTransform):
     def __init__(
         self,
-        trafo: tio.transforms.Transform,
+        trafo: "tio.transforms.Transform",
         data_key: str = "data",
     ) -> None:
         """
