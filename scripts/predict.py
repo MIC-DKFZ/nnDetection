@@ -147,14 +147,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
-    parser.add_argument(
-        "-f",
-        "--fold",
-        type=int,
-        required=False,
-        default=-1,
-        help="fold to use for prediction. -1 uses the consolidated model",
-    )
+    parser.add_argument("fold", type=int, help="fold to use for prediction")
+
+    # parser.add_argument(
+    #     "-f",
+    #     "--fold",
+    #     type=int,
+    #     required=False,
+    #     default=-1,
+    #     help="fold to use for prediction. -1 uses the consolidated model",
+    # )
     parser.add_argument(
         "-nmodels",
         "--num_models",

@@ -108,14 +108,21 @@ def sweep():
         help="full name of experiment to sweep e.g. RetinaUNetV0_D3V001_3d",
     )
     parser.add_argument("fold", type=int, help="experiment fold")
+    parser.add_argument(
+        "--no_pred",
+        help="Turn of model prediction",
+        action="store_true",
+    )
     args = parser.parse_args()
     task = args.task
     model = args.model
     fold = args.fold
+    run_prediction = bool(not args.no_pred)
     _sweep(
         task=task,
         model=model,
         fold=fold,
+        run_prediction=run_prediction,
     )
 
 
@@ -489,6 +496,7 @@ def _sweep(
     task: str,
     model: str,
     fold: int,
+    run_prediction: bool,
 ):
     """
     Determine best postprocessing parameters for a trained model
@@ -540,7 +548,7 @@ def _sweep(
         save_dir=train_dir,
         train_data_dir=data_dir,
         case_ids=case_ids,
-        run_prediction=True,  # TODO: add commmand line arg
+        run_prediction=run_prediction,
     )
 
     plan["inference_plan"] = inference_plan

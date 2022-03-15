@@ -24,8 +24,10 @@ from torchvision.ops.boxes import nms as nms_2d
 
 try:
     from nndet._C import nms as nms_gpu
-except ImportError:
-    logger.warning("nnDetection was not build with GPU support!")
+except ImportError as e:
+    logger.warning(
+        f"NMS Cuda import failed with {e}, nnDetection was probably not build with GPU support or build failed!"
+    )
     nms_gpu = None
 from nndet.core.boxes.ops import box_iou
 
