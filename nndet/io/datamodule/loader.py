@@ -97,9 +97,11 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.memmap_mode = memmap_mode
         self.pad_mode = pad_mode
         self.pad_kwargs_data = pad_kwargs_data if pad_kwargs_data is not None else {}
-        if "constant_values" not in pad_kwargs_data:
+        if "constant_values" not in self.pad_kwargs_data:
             # this is also the numpy default; to be sure that is won't change we set it manually
-            pad_kwargs_data["constant_values"] = 0  # pad 0 is used during inference
+            self.pad_kwargs_data[
+                "constant_values"
+            ] = 0  # pad 0 is used during inference
         self.num_batches_per_epoch = num_batches_per_epoch
 
         # we sample bigger patches and create a center crop during augmentation
