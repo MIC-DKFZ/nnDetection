@@ -371,7 +371,7 @@ class BaseRetinaNet(AbstractModel):
         all_boxes, all_probs, all_labels = [], [], []
         # iterate over images
         for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
-            if not self.head.regress_multi_class:
+            if self.head.class_agnostic:
                 _boxes, _probs, _labels = post_image_single_class_regression(
                     boxes=boxes,
                     probs=probs,

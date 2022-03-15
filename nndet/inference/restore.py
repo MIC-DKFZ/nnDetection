@@ -27,7 +27,7 @@ from nndet.preprocessing.resampling import (
 )
 
 
-def restore_detection(
+def restore_boxes(
     boxes: np.ndarray,
     transpose_backward: Sequence[int],
     original_spacing: Sequence[float],

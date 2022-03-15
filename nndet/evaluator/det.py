@@ -21,6 +21,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from nndet.core.boxes import box_iou_np
+from nndet.core.masks.ops_np import bin_mask_iou_np
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
@@ -32,6 +33,8 @@ __all__ = ["DetectionEvaluator"]
 
 
 class DetectionEvaluator(AbstractEvaluator):
+    similarity_fn = box_iou_np
+
     def __init__(
         self,
         metrics: Sequence[DetectionMetric],
@@ -198,8 +201,6 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         self.results_list = []
 
-
-class BoxEvaluator(DetectionEvaluator):
     @classmethod
     def create(
         cls,
@@ -222,7 +223,7 @@ class BoxEvaluator(DetectionEvaluator):
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        iou_fn = box_iou_np
+        # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
         per_class = False if fast else True
@@ -257,7 +258,15 @@ class BoxEvaluator(DetectionEvaluator):
                     iou_thresholds=(0.1, 0.5),
                 )
             )
-        return cls(metrics=tuple(metrics), iou_fn=iou_fn)
+        return cls(metrics=tuple(metrics), iou_fn=cls.similarity_fn)
+
+
+class BoxEvaluator(DetectionEvaluator):
+    similarity_fn = box_iou_np
+
+
+class MaskEvaluator(DetectionEvaluator):
+    similarity_fn = bin_mask_iou_np
 
 
 class CountDifferenceEvaluator(AbstractEvaluator):

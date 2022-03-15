@@ -5,7 +5,7 @@ import numpy as np
 from loguru import logger
 
 from nndet.evaluator import AbstractEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.utils.tensor import to_numpy
 
@@ -150,21 +150,20 @@ class BoxEvalMixin(EvalMixin):
         # add own scores
         metric_scores.update(box_scores)
 
-        # breakpoint()
         # [optional] log own scores
         logger.info(
-            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-            f"FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"Box mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"Box AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"Box AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Box AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"Box AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Box FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
         for key, item in box_scores.items():
             self.log(
-                f"val/{key}",
+                f"val/box_{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -263,18 +262,18 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"RPN mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"RPN AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"RPN Box mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"RPN Box AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN Box AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN Box AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"RPN Box AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"RPN Box FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
         for key, item in rpn_scores.items():
             self.log(
-                f"val_rpn/{key}",
+                f"val_rpn/box_{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -358,7 +357,7 @@ class SemanticEvalMixin(EvalMixin):
         # log own scores
         for key, item in seg_scores.items():
             self.log(
-                f"val/{key}",
+                f"val_seg/{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -444,7 +443,7 @@ class SemanticFgEvalMixin(EvalMixin):
         # log own scores
         for key, item in seg_scores.items():
             self.log(
-                f"val/{key}",
+                f"val_seg/{key}",
                 item,
                 on_step=None,
                 on_epoch=True,
@@ -455,5 +454,123 @@ class SemanticFgEvalMixin(EvalMixin):
         return metric_scores
 
 
-class InstanceEvalMixin(EvalMixin):
-    pass
+class ScoreMasksEvalMixin(EvalMixin):
+    def evaluation_init(self, plan: dict) -> Dict[str, AbstractEvaluator]:
+        """
+        Initialize `MaskEvaluator`
+        Masks are resized with nearest neighbor and an cutoff value of 0.5 .
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        evaluators = super().evaluation_init(plan=plan)
+        if "score_masks" in evaluators:
+            raise RuntimeError(
+                "Found ScoreMasksEvaluator in evaluators, can not register a second one!"
+            )
+
+        _classes = [
+            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
+        ]
+        evaluators["score_masks"] = MaskEvaluator.create(
+            classes=_classes,
+            fast=True,
+            save_dir=None,
+        )
+        return evaluators
+
+    def evaluation_step(
+        self,
+        predictions: dict,
+        targets: dict,
+    ) -> None:
+        """
+        Evaluate a validation batch with metrics
+
+        Args:
+            predictions: dict with predictions.
+                Exact keys depend on the module class
+            targets: dict with ground truth.
+                Exact keys depend on the module class.
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        super().evaluation_step(predictions=predictions, targets=targets)
+
+        from nndet.core.masks.ops import roi_mask_to_image_mask
+        from nndet.core.rois.ops import create_binary_masks
+
+        target_bin_masks = create_binary_masks(targets["target_masks"])
+        # TODO think about masks output format, squeeze channel?
+        # TODO: refactor this
+        assert (
+            len(predictions["pred_masks"])
+            == len(target_bin_masks)
+            == len(predictions["pred_boxes"])
+        )
+        pred_masks = []
+        for idx in range(len(target_bin_masks)):
+            pred_bin_masks = roi_mask_to_image_mask(
+                boxes=predictions["pred_boxes"][idx],
+                masks=predictions["pred_masks"][idx],
+                image_shape=tuple(target_bin_masks[idx].shape[1:]),
+                threshold=0.5,
+            )
+            pred_masks.append(pred_bin_masks)
+
+        pred_masks = to_numpy(pred_masks)
+        pred_classes = to_numpy(predictions["pred_mask_labels"])
+        pred_scores = to_numpy(predictions["pred_mask_scores"])
+
+        gt_masks = to_numpy(target_bin_masks)
+        gt_classes = to_numpy(targets["target_classes"])
+        gt_ignore = None
+
+        self.evaluators["score_masks"].run_online_evaluation(
+            pred_boxes=pred_masks,
+            pred_classes=pred_classes,
+            pred_scores=pred_scores,
+            gt_boxes=gt_masks,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
+        )
+
+    def evaluation_end(self) -> Dict[str, float]:
+        """
+        Compute validation metrics of epoch
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        # collect other scores
+        metric_scores = super().evaluation_end()
+
+        # compute own scores
+        box_scores, _ = self.evaluators["score_masks"].finish_online_evaluation()
+        self.evaluators["score_masks"].reset()
+
+        # add own scores
+        metric_scores.update({f"mask_{k}": i for k, i in box_scores.items()})
+
+        # [optional] log own scores
+        logger.info(
+            f"Mask mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"Mask AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"Mask AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Mask AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
+            f"Mask AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
+            f"Mask FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+        )
+
+        # log own scores
+        for key, item in box_scores.items():
+            self.log(
+                f"val_mask/mask_{key}",
+                item,
+                on_step=None,
+                on_epoch=True,
+                prog_bar=False,
+                logger=True,
+            )
+        return metric_scores

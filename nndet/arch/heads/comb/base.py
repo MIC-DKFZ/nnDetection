@@ -74,11 +74,11 @@ class AnchorHead(BaseHead):
             logits.append(self.classifier(intermediate, level=level))
 
         sdim = fmaps[0].ndim - 2
-        if self.regress_multi_class:
+        if self.class_agnostic:
+            box_deltas = torch.cat(offsets, dim=1).reshape(-1, sdim * 2)
+        else:
             # TODO multi class regression
             raise NotImplementedError
-        else:
-            box_deltas = torch.cat(offsets, dim=1).reshape(-1, sdim * 2)
         box_logits = torch.cat(logits, dim=1).flatten(0, -2)
         return {"box_deltas": box_deltas, "box_logits": box_logits}
 
@@ -99,7 +99,7 @@ class AnchorHead(BaseHead):
         """
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
+            "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
 
@@ -219,7 +219,7 @@ class RoIHead(BaseHead):
         """
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
-            "pred_probs": self.classifier.box_logits_to_probs(prediction["box_logits"]),
+            "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
 

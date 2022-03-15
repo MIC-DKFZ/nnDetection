@@ -70,11 +70,12 @@ roi_classifier_kwargs: # keyword arguments passed to RoI classifier
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 1
   add_norm: True
+# this parameters are used for online val and a pre-reduction during inference.
+# the predictor will apply a different set of parameters during pat val / inference.
+roi_box_post_kwargs: # keyword arguments passed to roi box postprocessing
+  detections_per_img: 100
+  nms_thresh: 0.6 # choose conservative threshold here
 roi_head_kwargs: {}
-
-roi_masker_kwargs:
-  num_convs: 1
-  add_norm: False
 
 # matcher for each stage
 roi_matcher_kwargs_s0:
@@ -99,3 +100,9 @@ roi_sampler_kwargs:
 roi_module_kwargs:
   gt_to_proposals: True
   loss_weight_stage: [1., 1., 1.]
+
+roi_masker_kwargs:
+  num_convs: 1
+  add_norm: False
+
+roi_mask_post_kwargs: {} # keyword arguments passed to roi mask postprocessing

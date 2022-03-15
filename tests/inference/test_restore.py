@@ -1,6 +1,6 @@
 import numpy as np
 
-from nndet.inference import restore_detection
+from nndet.inference import restore_boxes
 
 
 def test_center_crop_object_mask():
@@ -11,7 +11,7 @@ def test_center_crop_object_mask():
 
     boxes = np.array([[10.0, 10.0, 20.0, 20.0, 4.0, 6.0]])
     boxes_expected = np.array([[6.0, 30.0, 8.0, 50.0, 30.0, 50.0]])
-    boxe_corrected = restore_detection(
+    boxe_corrected = restore_boxes(
         boxes,
         transpose_backward=transpose_backward,
         original_spacing=original_spacing,

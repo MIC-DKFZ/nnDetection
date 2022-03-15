@@ -89,11 +89,11 @@ class LightningBaseModule(pl.LightningModule):
         logger.info(f"Lightningmodule running evaluators: {self.evaluators}")
 
         # define key for sweeping
-        if self.trainer_cfg["monitor_key"].startswith("val/"):
-            self.eval_score_key = str(self.trainer_cfg["monitor_key"]).split("/", 1)[1]
-        else:
-            self.eval_score_key = self.trainer_cfg
-        logger.info(f"Using {self.eval_score_key} for sweeping.")
+        self.sweep_key = self.trainer_cfg["sweep_key"]
+        self.monitor_key = self.trainer_cfg["monitor_key"]
+        logger.info(
+            f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring."
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -200,10 +200,11 @@ class LightningBaseModule(pl.LightningModule):
             self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
 
         # process and log metrics
-        metric_scores = super().evaluation_end()
+        super().evaluation_end()
 
-        for key, item in metric_scores.items():
-            self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
+        # metrics are logged by respective evaluator
+        # for key, item in metric_scores.items():
+        #     self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
 
         return super().validation_epoch_end(validation_step_outputs)
 

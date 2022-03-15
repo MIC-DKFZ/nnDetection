@@ -1,11 +1,14 @@
+import math
 from abc import abstractmethod
 from typing import Optional, TypeVar
 
 import torch
+from loguru import logger
 from torch import Tensor, nn
 
-from nndet.arch.heads.abstract import Classifier
+from nndet.arch.heads.abstract import CONV_TYPES, Classifier
 from nndet.losses.classification import BCEWithLogitsLoss
+from nndet.losses.segmentation import SoftDiceLoss
 
 # TODO: cleanup
 
@@ -31,7 +34,7 @@ class Masker(Classifier):
 
         self.loss: Optional[nn.Module] = None
         self.logits_convert_fn: Optional[nn.Module] = None
-        # self.init_weights()
+        self.init_weights()
 
     @abstractmethod
     def get_output_channels(self) -> int:
@@ -90,15 +93,18 @@ class Masker(Classifier):
             module=conv(
                 self.internal_channels,
                 self.get_output_channels(),
-                kernel_size=3,
+                kernel_size=1,
                 stride=1,
-                padding=1,
+                padding=0,
                 add_norm=False,
                 add_act=False,
                 bias=True,
             ),
         )
         return _conv_out
+
+    def init_weights(self):
+        pass
 
     def forward(
         self,
@@ -136,28 +142,99 @@ class Masker(Classifier):
         else:
             return {"mask": pred_logits.new_zeros([1])}
 
-    def box_logits_to_probs(self, box_logits: Tensor) -> Tensor:
+    def logits_to_probs(self, logits: Tensor) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits [N, C]
+            logits (Tensor): bounding box logits [N, C]
                 N = number of anchors, C=number of foreground classes
 
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(box_logits)
+        return self.logits_convert_fn(logits)
+
+    @classmethod
+    def class_agnostic(cls):
+        return True
 
 
 class BCESingleMasker(Masker):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, prior_prob: Optional[float] = None, **kwargs):
+        self.prior_prob = prior_prob
         super().__init__(*args, **kwargs)
         self.loss = BCEWithLogitsLoss()
         self.logits_convert_fn = torch.nn.Sigmoid()
 
     def get_output_channels(self) -> int:
         return 1
+
+    def init_weights(self) -> None:
+        """
+        Init weights with prior prob
+        """
+        if self.prior_prob is not None:
+            logger.info(f"Init RoI Masker weights: prior prob {self.prior_prob}")
+            for layer in self.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
+                    if layer.bias is not None:
+                        torch.nn.init.constant_(layer.bias, 0)
+
+            # Use prior in model initialization to improve stability
+            if math.isclose(self.prior_prob, 0):
+                logger.info("Found prior prob 0, init bias with 0")
+                bias_value = 0
+            else:
+                bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)
+
+            for layer in self.conv_out.modules():
+                if isinstance(layer, CONV_TYPES):
+                    torch.nn.init.normal_(layer.weight, mean=0, std=0.001)
+                    torch.nn.init.constant_(layer.bias, bias_value)
+        else:
+            logger.info("Init RoI Masker weights: conv default")
+
+
+class DiceBCESingleMasker(BCESingleMasker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # TODO: cleanup
+        self.loss_dice = SoftDiceLoss(
+            nonlin=self.logits_convert_fn,
+            batch_dice=False,
+            do_bg=True,
+            smooth_nom=1e-5,
+            smooth_denom=1e-5,
+            loss_weight=1.0,
+            loss_fp32=True,
+            reduction="mean",
+        )
+
+    def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
+        """
+        Base classifier with cross entropy loss (in general hard negative
+        example mining should be done before this)
+
+        Args:
+            pred_logits (Tensor): predicted logits
+            targets (Tensor): classification targets
+
+        Returns:
+            Tensor: classification loss
+        """
+        if pred_logits.numel() > 0:
+            mask_losses = {
+                "mask_bce": self.loss(pred_logits, targets, **kwargs),
+                "mask_dice": self.loss_dice(pred_logits, targets, **kwargs),
+            }
+        else:
+            mask_losses = {
+                "mask_bce": pred_logits.new_zeros([1]),
+                "mask_dice": pred_logits.new_zeros([1]),
+            }
+        return mask_losses
 
 
 MaskerType = TypeVar("MaskerType", bound=Masker)

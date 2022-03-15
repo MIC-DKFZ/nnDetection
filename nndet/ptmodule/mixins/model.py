@@ -190,11 +190,18 @@ class SingleStageMixin(ModelMixin):
             coder=coder,
         )
 
-        detections_per_img = plan_arch.get("detections_per_img", 100)
+        if "detections_per_img" in model_cfg:
+            detections_per_img = model_cfg["detections_per_img"]
+        else:
+            detections_per_img = plan_arch.get("detections_per_img", 100)  # FIXME
         score_thresh = plan_arch.get("score_thresh", 0)
         topk_candidates = plan_arch.get("topk_candidates", 10000)
         remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
-        nms_thresh = plan_arch.get("nms_thresh", 0.6)
+        if "rpn_nms_thresh" in model_cfg:
+            nms_thresh = model_cfg["rpn_nms_thresh"]
+            logger.info(f"Found RPN NMS thresh in config, using {nms_thresh}")
+        else:
+            nms_thresh = plan_arch.get("nms_thresh", 0.6)
 
         logger.info(
             f"Model Inference Summary: \n"
@@ -487,11 +494,13 @@ class RoIBuildMixin:
     roi_sampler_cls = (
         ...
     )  #: [optional] sampler class for negative mining. None = no sampling
-    roi_box_pooler_cls = ...  # define pooling operation of RoIs for box branch
+    roi_box_pooler_cls = ...  #: define pooling operation of RoIs for box branch
+    roi_box_post_cls = ...  #: define roi box postprocessing strategy
 
     # optional mask branches
     roi_masker_cls = None  #: define class of mask branch in RoI module
     roi_mask_pooler_cls = None  #: define pooling operation of RoIs for mask branch
+    roi_mask_post_cls = None  #: define roi mask postprocessing strategy
 
     @staticmethod
     def get_roi_box_size(
@@ -647,7 +656,7 @@ class RoIBuildMixin:
             mask_gt_size = [m * 2 for m in mask_feature_size]  # TODO # FIXME
 
             logger.info(
-                f"Building:: box pooler {pooler_name} with output "
+                f"Building:: mask pooler {pooler_name} with output "
                 f"size {mask_feature_size} and gt size {mask_gt_size}"
             )
 
@@ -658,6 +667,42 @@ class RoIBuildMixin:
         else:
             mask_pooler = None
         return mask_pooler
+
+    @classmethod
+    def _build_roi_box_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        name = cls.roi_box_post_cls.__name__
+        kwargs = model_cfg["roi_box_post_kwargs"]
+        logger.info(f"Building:: roi box postprocessing {name}: {kwargs}")
+
+        roi_box_post = cls.roi_box_post_cls(
+            num_foreground_classes=plan_arch["classifier_classes"],
+            class_agnostic=cls.roi_regressor_cls.class_agnostic,
+            **model_cfg["roi_box_post_kwargs"],
+        )
+        return roi_box_post
+
+    @classmethod
+    def _build_roi_mask_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        if cls.roi_mask_post_cls is not None:
+            name = cls.roi_mask_post_cls.__name__
+            kwargs = model_cfg["roi_mask_post_kwargs"]
+            logger.info(f"Building:: roi mask postprocessing {name}: {kwargs}")
+
+            roi_mask_post = cls.roi_mask_post_cls(
+                class_agnostic=cls.roi_masker_cls.class_agnostic,
+                **model_cfg["roi_mask_post_kwargs"],
+            )
+        else:
+            roi_mask_post = None
+        return roi_mask_post
 
     @classmethod
     def _build_roi_sampler(
@@ -677,12 +722,14 @@ class RoIBuildMixin:
         plan_arch: dict,
         model_cfg: dict,
         box_head,
-        matcher,
         box_pooler,
+        box_post,
+        matcher,
         sampler,
         # mask heads
         mask_head,
         mask_pooler,
+        mask_post,
     ):
         roi_module_name = cls.roi_module_cls.__name__
         roi_module_kwargs = model_cfg["roi_module_kwargs"]
@@ -691,14 +738,16 @@ class RoIBuildMixin:
 
         roi_module = cls.roi_module_cls(
             box_head=box_head,
-            matcher=matcher,
             box_pooler=box_pooler,
+            box_post=box_post,
+            matcher=matcher,
             sampler=sampler,
             num_classes=plan_arch["classifier_classes"],
             decoder_levels=plan_arch["decoder_levels"],
             # mask heads
             mask_head=mask_head,
             mask_pooler=mask_pooler,
+            mask_post=mask_post,
             **roi_module_kwargs,
         )
         return roi_module
@@ -773,16 +822,27 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
             model_cfg=model_cfg,
         )
 
+        roi_box_post = cls._build_roi_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        roi_mask_post = cls._build_roi_mask_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
             box_head=roi_head,
-            matcher=roi_matcher,
             box_pooler=box_pooler,
+            box_post=roi_box_post,
+            matcher=roi_matcher,
             sampler=roi_sampler,
             # mask heads
             mask_head=masker,
             mask_pooler=mask_pooler,
+            mask_post=roi_mask_post,
         )
 
         return cls.full_detector_cls(
@@ -873,6 +933,7 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         if maskers[0] is None:
             maskers = None
 
+        # TODO: postprocessing refactor
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,

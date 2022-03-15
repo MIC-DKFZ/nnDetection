@@ -142,7 +142,7 @@ class BoxHeadHNM(AnchorHead):
             Tensor: sampled positive indices [R]
             Tensor: sampled negative indices [R]
         """
-        boxes_max_fg_probs = self.classifier.box_logits_to_probs(boxes_scores)
+        boxes_max_fg_probs = self.classifier.logits_to_probs(boxes_scores)
         boxes_max_fg_probs = boxes_max_fg_probs.max(dim=1)[0]  # search max of fg probs
 
         # positive and negative anchor indices per image

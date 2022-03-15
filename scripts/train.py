@@ -39,6 +39,7 @@ import nndet
 from nndet.evaluator.registry import (
     evaluate_box_dir,
     evaluate_case_dir,
+    evaluate_mask_dir,
     evaluate_seg_dir,
     save_metric_output,
 )
@@ -47,8 +48,7 @@ from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
-
-# from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
+from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
@@ -140,10 +140,12 @@ def evaluate():
     )
     parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
     parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
-    parser.add_argument("--seg", help="Run Box Evaluation", action="store_true")
-    parser.add_argument("--instances", help="Run Box Evaluation", action="store_true")
     parser.add_argument(
-        "--analyze_boxes", help="Run Box Evaluation", action="store_true"
+        "--seg", help="Run Semantic Segmentation Evaluation", action="store_true"
+    )
+    parser.add_argument("--masks", help="Run Mask Evaluation", action="store_true")
+    parser.add_argument(
+        "--analyze_boxes", help="Analyze Box Results", action="store_true"
     )
     parser.add_argument(
         "--eval_preprocessed",
@@ -160,7 +162,7 @@ def evaluate():
     do_boxes_eval = args.boxes
     do_case_eval = args.case
     do_seg_eval = args.seg
-    do_instances_eval = args.instances
+    do_masks_eval = args.masks
 
     do_analyze_boxes = args.analyze_boxes
 
@@ -174,7 +176,7 @@ def evaluate():
         do_boxes_eval=do_boxes_eval,
         do_case_eval=do_case_eval,
         do_seg_eval=do_seg_eval,
-        do_instances_eval=do_instances_eval,
+        do_masks_eval=do_masks_eval,
         do_analyze_boxes=do_analyze_boxes,
         eval_preprocessed=eval_preprocessed,
     )
@@ -403,17 +405,17 @@ def _train(
     else:
         detect_anomaly = False
 
-    # if (
-    #     cfg["trainer_cfg"]["precision"] == 16
-    #     and cfg["trainer_cfg"]["amp_backend"] == "native"
-    # ):
-    #     device = "cuda" if num_gpus > 0 else "cpu"
-    #     # precision_plugin = ExposedNativeMixedPrecisionPlugin(
-    #     #     precision=16,
-    #     #     device=device,
-    #     #     init_scale=8192.0,
-    #     # )
-    #     # plugins.append(precision_plugin)
+    if (
+        cfg["trainer_cfg"]["precision"] == 16
+        and cfg["trainer_cfg"]["amp_backend"] == "native"
+    ):
+        device = "cuda" if num_gpus > 0 else "cpu"
+        precision_plugin = ExposedNativeMixedPrecisionPlugin(
+            precision=16,
+            device=device,
+            init_scale=8192.0,
+        )
+        plugins.append(precision_plugin)
 
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
@@ -438,8 +440,12 @@ def _train(
 
     if do_sweep:
         case_ids = splits[cfg["exp"]["fold"]]["val"]
-        if "debug" in cfg and "num_cases_val" in cfg["debug"]:
-            case_ids = case_ids[: cfg["debug"]["num_cases_val"]]
+        if (
+            "debug" in cfg["trainer_cfg"]
+            and "num_cases_val" in cfg["trainer_cfg"]["debug"]
+        ):
+            logger.warning("Detected debug mode for sweep using reduced set of cases!")
+            case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
 
         inference_plan = module.sweep(
             cfg=OmegaConf.to_container(cfg, resolve=True),
@@ -523,6 +529,12 @@ def _sweep(
 
     splits = load_pickle(train_dir / "splits.pkl")
     case_ids = splits[cfg["exp"]["fold"]]["val"]
+
+    if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
+        logger.warning("Detected debug mode for sweep using reduced set of cases!")
+        case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
+    # case_ids = case_ids[:10]
+
     inference_plan = module.sweep(
         cfg=OmegaConf.to_container(cfg, resolve=True),
         save_dir=train_dir,
@@ -558,7 +570,17 @@ def _sweep(
         test=False,
         do_boxes_eval=True,  # TODO: make this configurable
         do_analyze_boxes=True,  # TODO: make this configurable
+        # do_masks_eval=True,  # TODO: make this configurable
     )
+
+    # _evaluate(
+    #     task=cfg["task"],
+    #     model=cfg["exp"]["id"],
+    #     fold=cfg["exp"]["fold"],
+    #     test=False,
+    #     do_boxes_eval=True,  # TODO: make this configurable
+    #     do_analyze_boxes=True,  # TODO: make this configurable
+    # )
 
 
 def _evaluate(
@@ -568,8 +590,8 @@ def _evaluate(
     test: bool = False,
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
+    do_masks_eval: bool = False,
     do_seg_eval: bool = False,
-    do_instances_eval: bool = False,
     do_analyze_boxes: bool = False,
     eval_preprocessed: bool = False,
 ):
@@ -584,8 +606,8 @@ def _evaluate(
         test: use test split
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
+        do_masks_eval: perform instance segmentation evaluation
         do_seg_eval: perform semantic segmentation evaluation
-        do_instances_eval: perform instance segmentation evaluation
         do_analyze_boxes: run analysis of box results
     """
     # prepare paths
@@ -635,6 +657,7 @@ def _evaluate(
                 save_dir=save_dir / "boxes",
             )
             save_metric_output(scores, curves, save_dir, "results_boxes")
+
         if do_case_eval:
             logger.info(f"Computing case metrics: restore {restore}")
             scores, curves = evaluate_case_dir(
@@ -644,6 +667,7 @@ def _evaluate(
                 target_class=data_cfg["target_class"],
             )
             save_metric_output(scores, curves, save_dir, "results_case")
+
         if do_seg_eval:
             logger.info(f"Computing seg metrics: restore {restore}")
             scores, curves = evaluate_seg_dir(
@@ -651,8 +675,16 @@ def _evaluate(
                 gt_dir=gt_dir,
             )
             save_metric_output(scores, curves, save_dir, "results_seg")
-        if do_instances_eval:
-            raise NotImplementedError
+
+        if do_masks_eval:
+            logger.info(f"Computing mask metrics: restore {restore}")
+            scores, curves = evaluate_mask_dir(
+                pred_dir=pred_dir,
+                gt_dir=gt_dir,
+                classes=list(data_cfg["labels"].keys()),
+                save_dir=save_dir / "masks",
+            )
+            save_metric_output(scores, curves, save_dir, "results_masks")
 
         # run analysis
         save_dir = (

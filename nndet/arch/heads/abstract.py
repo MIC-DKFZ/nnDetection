@@ -31,15 +31,15 @@ class Classifier(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def box_logits_to_probs(
+    def logits_to_probs(
         self,
-        box_logits: Tensor,
+        logits: Tensor,
     ) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            box_logits (Tensor): bounding box logits
+            logits (Tensor): bounding box logits
                 [N, C], C=number of classes
 
         Returns:
@@ -70,13 +70,13 @@ class Regressor(nn.Module):
         """
         raise NotImplementedError
 
-    @property
-    def regress_multi_class(self):
+    @classmethod
+    def class_agnostic(cls):
         """
-        True if anchors are regressed for each class individually
-        False if anchors are only regressed once
+        True if anchors are regressed in a class agnostic manner.
+        False if anchors are regressed for each class separately.
         """
-        return False
+        return True
 
 
 ClassifierType = TypeVar("ClassifierType", bound=Classifier)
@@ -154,13 +154,13 @@ class BaseHead(nn.Module):
         raise NotImplementedError
 
     @property
-    def regress_multi_class(self) -> bool:
+    def class_agnostic(self) -> bool:
         """
         Return if regression is performed per class or not.
         True => each anchor is regressed for each class separately
         False => each anchor is regressed once
         """
-        return self.regressor.regress_multi_class
+        return self.regressor.class_agnostic
 
 
 HeadType = TypeVar("HeadType", bound=BaseHead)

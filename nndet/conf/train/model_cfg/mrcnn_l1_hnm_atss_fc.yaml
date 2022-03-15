@@ -52,8 +52,8 @@ matcher_kwargs: # keyword arguments passed to matcher
 plan_arch_overwrites: {} # overwrite arguments of architecture
 plan_anchors_overwrites: {} # overwrite arguments of anchors
 
-# RoI Cascading Parameters
-##########################
+# RoI (Cascading) Parameters
+############################
 rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
 
 roi_channel_multiplier: 3  # cale number of channels of RoI head
@@ -69,12 +69,13 @@ roi_classifier_kwargs: # keyword arguments passed to RoI classifier
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 1
   add_norm: True
-
+# this parameters are used for online val and a pre-reduction during inference.
+# the predictor will apply a different set of parameters during pat val / inference.
+roi_box_post_kwargs: # keyword arguments passed to roi box postprocessing
+  detections_per_img: 50
+  nms_thresh: 0.6 # choose conservative threshold here
+  remove_small_boxes: 1 # only keep non empty boxes
 roi_head_kwargs: {}
-
-roi_masker_kwargs:
-  num_convs: 1
-  add_norm: False
 
 roi_matcher_kwargs:
   low_threshold: 0.1
@@ -87,3 +88,9 @@ roi_sampler_kwargs:
 
 roi_module_kwargs:
   gt_to_proposals: True
+
+roi_masker_kwargs:
+  num_convs: 1
+  add_norm: False
+
+roi_mask_post_kwargs: {} # keyword arguments passed to roi mask postprocessing

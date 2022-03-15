@@ -21,7 +21,6 @@ from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tupl
 import numpy as np
 import torch
 from loguru import logger
-from scipy.stats import norm
 from torch import Tensor
 
 from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
@@ -29,7 +28,12 @@ from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMe
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
 from nndet.core.boxes.wbc import batched_wbc
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
-from nndet.inference.restore import restore_detection
+from nndet.inference.ensembler.utils import (
+    apply_offsets_to_boxes,
+    get_box_in_tile_weight_linear,
+    get_box_in_tile_weight_normal,
+)
+from nndet.inference.restore import restore_boxes
 from nndet.utils.enums import DimBoxMerger, EnsembleNMS, ModelNMS
 from nndet.utils.tensor import cat, to_device
 
@@ -219,7 +223,7 @@ class BoxEnsembler(BaseEnsembler):
             remove small boxes -> nms
 
         Args:
-            boxes: predicted deltas for proposals [N, dim * 2]
+            boxes: predicted boxes [N, dim * 2]
             probs: predicted logits for boxes [N]
             labels: predicted labels for boxes [N]
             weights: weight for each box [N]
@@ -264,43 +268,6 @@ class BoxEnsembler(BaseEnsembler):
         _weights = _weights[: self.parameters.get("model_detections_per_image", 1000)]
         return _boxes, _probs, _labels, _weights
 
-    @staticmethod
-    def _apply_offsets_to_boxes(
-        boxes: List[Tensor],
-        tile_offset: Sequence[Sequence[int]],
-    ) -> List[Tensor]:
-        """
-        Apply offset to bounding boxes to position them correctly inside
-        the whole case
-
-        Args:
-            boxes: predicted boxes [N, dims * 2]
-                [x1, y1, x2, y2, (z1, z2))
-            tile_offset: defines offset for each tile
-
-        Returns:
-            List[Tensor]: bounding boxes with respect to origin of whole case
-        """
-        offset_boxes = []
-        for img_boxes, offset in zip(boxes, tile_offset):
-            if img_boxes.nelement() == 0:
-                offset_boxes.append(img_boxes)
-                continue
-            offset = Tensor(offset).to(img_boxes)
-            _boxes = img_boxes.clone()
-
-            _boxes[:, 0] += offset[0]
-            _boxes[:, 1] += offset[1]
-            _boxes[:, 2] += offset[0]
-            _boxes[:, 3] += offset[1]
-
-            if img_boxes.shape[1] == 6:
-                _boxes[:, 4] += offset[2]
-                _boxes[:, 5] += offset[2]
-
-            offset_boxes.append(_boxes)
-        return offset_boxes
-
     def restore_prediction(self, boxes: Tensor):
         """
         Restore predictions in the original image space
@@ -313,7 +280,7 @@ class BoxEnsembler(BaseEnsembler):
                 (x1, y1, x2, y2, (z1, z2))
         """
         _old_dtype = boxes.dtype
-        boxes_np = restore_detection(
+        boxes_np = restore_boxes(
             boxes.detach().cpu().numpy(),
             transpose_backward=self.properties["transpose_backward"],
             original_spacing=self.properties["original_spacing"],
@@ -432,7 +399,7 @@ class BoxEnsembler(BaseEnsembler):
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
-        boxes = self._apply_offsets_to_boxes(boxes, tile_origins)
+        boxes = apply_offsets_to_boxes(boxes, tile_origins)
 
         self.model_results[self.model_current]["boxes"].extend(boxes)
         self.model_results[self.model_current]["scores"].extend(scores)
@@ -461,23 +428,10 @@ class BoxEnsembler(BaseEnsembler):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        if box_centers.numel() > 0:
-            all_weights = []
-            centers_np = box_centers.detach().cpu().numpy()
-            for center_np in centers_np:
-                weight = np.mean(
-                    [
-                        norm.pdf(bc, loc=ps, scale=ps * 0.8)
-                        * np.sqrt(2 * np.pi)
-                        * ps
-                        * 0.8
-                        for bc, ps in zip(center_np, np.array(tile_size) / 2)
-                    ]
-                )
-                all_weights.append([weight])
-            return torch.from_numpy(np.concatenate(all_weights)).to(box_centers)
-        else:
-            return Tensor([]).to(box_centers)
+        return get_box_in_tile_weight_normal(
+            box_centers=box_centers,
+            tile_size=tile_size,
+        )
 
     @torch.no_grad()
     def get_case_result(
@@ -636,16 +590,11 @@ class BoxEnsemblerLW(BoxEnsembler):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        plateau_length = 0.5  # adjust width of plateau and min weight
-        if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
-
-            max_dist = tile_center.norm(p=2)  # [1]
-            boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
-            weight = -(boxes_dist / max_dist - plateau_length).clamp_(min=0) + 1
-            return weight
-        else:
-            return Tensor([]).to(box_centers)
+        return get_box_in_tile_weight_linear(
+            box_centers=box_centers,
+            tile_size=tile_size,
+            plateau_length=0.5,
+        )
 
 
 class BoxEnsemblerFastest(BoxEnsemblerLW):
@@ -754,7 +703,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
-        boxes = self._apply_offsets_to_boxes(boxes, tile_origins)
+        boxes = apply_offsets_to_boxes(boxes, tile_origins)
 
         self.model_results[self.model_current]["boxes"].extend(boxes)
         self.model_results[self.model_current]["scores"].extend(scores)
@@ -784,19 +733,11 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        plateau_length = 0.5  # adjust width of plateau and min weight
-        if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
-
-            max_dist = tile_center.norm(p=2)  # [1]
-            boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
-            weight = (
-                -(boxes_dist / max_dist - plateau_length).float().clamp_(min=0).half()
-                + 1
-            )
-            return weight
-        else:
-            return Tensor([]).to(box_centers).half()
+        return get_box_in_tile_weight_linear(
+            box_centers=box_centers,
+            tile_size=tile_size,
+            plateau_length=0.5,
+        )
 
     def process_model(
         self,
@@ -1140,7 +1081,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
-        boxes = self._apply_offsets_to_boxes(boxes, tile_origins)
+        boxes = apply_offsets_to_boxes(boxes, tile_origins)
 
         self.model_results[self.model_current]["boxes"].extend(boxes)
         self.model_results[self.model_current]["scores"].extend(scores)
@@ -1166,16 +1107,11 @@ class BoxEnsemblerSelective(BoxEnsembler):
         Returns:
             Tensor: weight for each bounding box [N]
         """
-        plateau_length = 0.5  # adjust width of plateau and min weight
-        if box_centers.numel() > 0:
-            tile_center = torch.tensor(tile_size).to(box_centers) / 2.0  # [dims]
-
-            max_dist = tile_center.norm(p=2)  # [1]
-            boxes_dist = (box_centers - tile_center[None]).norm(p=2, dim=1)  # [N]
-            weight = -(boxes_dist / max_dist - plateau_length).clamp_(min=0) + 1
-            return weight
-        else:
-            return Tensor([]).to(box_centers)
+        return get_box_in_tile_weight_linear(
+            box_centers=box_centers,
+            tile_size=tile_size,
+            plateau_length=0.5,
+        )
 
     def process_model(self, name: Hashable) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
@@ -1412,7 +1348,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
         tile_origins = [to[1:] for to in zip(*batch["tile_origin"])]
-        boxes = self._apply_offsets_to_boxes(boxes, tile_origins)
+        boxes = apply_offsets_to_boxes(boxes, tile_origins)
 
         # convert to 3d boxes
         boxes_3d = []

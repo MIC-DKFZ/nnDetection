@@ -18,14 +18,18 @@ from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
     HardNegativeSamplerBatched,
 )
+from nndet.core.post.box import CrossLevelBoxPostprocessing
+from nndet.core.post.mask import NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule, RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
+from nndet.ptmodule.mixins.evaluation import (  # , ScoreMasksEvalMixin
+    BoxWithRPNEvalMixin,
+)
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # , MaskPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
@@ -38,6 +42,8 @@ class BoxRCNN(
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
+    # MaskPredictionMixin,  # Mask Sweep
+    # ScoreMasksEvalMixin,
 ):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
@@ -73,10 +79,14 @@ class BoxRCNN(
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
     roi_box_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+    roi_box_post_cls = (
+        CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
+    )
 
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+    roi_mask_post_cls = NoMaskPostprocessing
 
     def training_step(self, batch, batch_idx):  # TODO
         """
@@ -125,6 +135,7 @@ class BoxRCNN(
             targets = {
                 "target_boxes": batch["target_boxes"],
                 "target_classes": batch["target_classes"],
+                "target_masks": batch["target"][:, 0],  # Remove channel dimension
                 **kwargs,
             }
             predictions = self.model.inference_step(
@@ -184,6 +195,8 @@ class BoxCascadeRCNN(
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
+
+    # TODO: mask & box postprocessing
 
     def training_step(self, batch, batch_idx):  # TODO
         """

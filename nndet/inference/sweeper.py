@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
 import numpy as np
 from loguru import logger
 
+from nndet.evaluator.det import MaskEvaluator
 from nndet.evaluator.registry import BoxEvaluator
 from nndet.io.load import save_json
 from nndet.utils import to_numpy
@@ -30,6 +31,8 @@ from nndet.utils.info import maybe_verbose_iterable
 
 
 class Sweeper(ABC):
+    evaluator_cls = None
+
     def __init__(
         self,
         classes: Sequence[str],
@@ -78,6 +81,8 @@ class Sweeper(ABC):
 
 
 class BoxSweeper(Sweeper):
+    evaluator_cls = BoxEvaluator
+
     def __init__(
         self,
         classes: Sequence[str],
@@ -105,8 +110,6 @@ class BoxSweeper(Sweeper):
             target_metric=target_metric,
             save_dir=save_dir,
         )
-
-        self.evaluator_cls = BoxEvaluator
         self.ensembler_cls = ensembler_cls
 
     def run_postprocessing_sweep(self):
@@ -233,6 +236,78 @@ class BoxSweeper(Sweeper):
                 pred_scores=[pred["pred_scores"]],
                 gt_boxes=[gt["boxes"]],
                 gt_classes=[gt["classes"]],
+                gt_ignore=None,
+            )
+
+        metric_scores, _ = evaluator.finish_online_evaluation()
+        return metric_scores
+
+
+class MaskSweeper(BoxSweeper):
+    evaluator_cls = MaskEvaluator
+
+    def _evaluate_value(
+        self,
+        state: Dict[str, Any],
+        **overwrite,
+    ):
+        """
+        Evalaute a single value
+
+        Args:
+            state: state for ensembler
+            overwrite: state overwrites
+
+        Returns:
+            Dict: scalar metrics
+        """
+        evaluator = self.evaluator_cls.create(
+            classes=self.classes,
+            fast=True,
+            verbose=False,
+            save_dir=None,
+        )
+
+        for case_id in maybe_verbose_iterable(
+            self.ensembler_cls.get_case_ids(self.pred_dir)
+        ):
+            ensembler = self.ensembler_cls.from_checkpoint(
+                base_dir=self.pred_dir,
+                case_id=case_id,
+                device=self.device,
+            )
+            ensembler.update_parameters(**state)
+            ensembler.update_parameters(**overwrite)
+
+            pred = to_numpy(ensembler.get_case_result(restore=False))
+            gt = np.load(
+                str(self.gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
+            )
+            # FIXME
+            gt_boxes = np.load(
+                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
+            )
+
+            # FIXME: code cuplication
+            def create_binary_masks(mask):
+                assert mask.shape[0] == 1
+                inds = np.unique(mask)
+                inds = inds[inds > 0]
+                out = np.zeros((len(inds), *tuple(mask.shape[1:])))
+                for channel_ind, instance_ind in enumerate(inds):
+                    out[channel_ind][mask[0] == instance_ind] = 1
+                return out
+
+            target_bin_masks = create_binary_masks(gt["instances"])
+
+            # TODO signature change
+            # TODO: make sure instances are consecutive!
+            evaluator.run_online_evaluation(
+                pred_boxes=[pred["pred_masks"]],
+                pred_classes=[pred["pred_mask_labels"]],
+                pred_scores=[pred["pred_mask_scores"]],
+                gt_boxes=[target_bin_masks],
+                gt_classes=[gt_boxes["classes"]],  # FIXME
                 gt_ignore=None,
             )
 
