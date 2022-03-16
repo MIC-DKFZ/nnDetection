@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import List, Sequence
-
-from batchgenerators.transforms.abstract_transforms import Compose
 from batchgenerators.transforms.channel_selection_transforms import (
     DataChannelSelectionTransform,
     SegChannelSelectionTransform,
@@ -27,7 +24,6 @@ from batchgenerators.transforms.color_transforms import (
     ContrastAugmentationTransform,
     GammaTransform,
 )
-from batchgenerators.transforms.crop_and_pad_transforms import CenterCropTransform
 from batchgenerators.transforms.noise_transforms import (
     GaussianBlurTransform,
     GaussianNoiseTransform,
@@ -46,7 +42,8 @@ from batchgenerators.transforms.utility_transforms import (
 )
 from loguru import logger
 
-from nndet.io.augmentation.base import AugmentationSetup, get_patch_size
+from nndet.io.augmentation.base import ComposePretty
+from nndet.io.augmentation.pipeline.noaug import NoAug
 from nndet.utils.info import SuppressPrint
 
 with SuppressPrint():
@@ -57,79 +54,6 @@ with SuppressPrint():
     )
 
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
-
-
-class ComposePretty(Compose):
-    def __str__(self) -> str:
-        s = "--- Augmentation ---\n"
-        for tr in self.transforms:
-            s += f"{tr}\n"
-        s += "---"
-        return s
-
-
-@AUGMENTATION_REGISTRY.register
-class NoAug(AugmentationSetup):
-    def __init__(self, patch_size: Sequence[int], params: dict) -> None:
-        super().__init__(patch_size, params)
-        self.dummy_2d = self.params.get("dummy_2D", False)
-        if self.dummy_2d:
-            logger.info("Running dummy 2d augmentation transforms!")
-
-        if self.dummy_2d:
-            self._spatial_transform_patch_size = self.patch_size[1:]
-        else:
-            self._spatial_transform_patch_size = self.patch_size
-
-    def get_patch_size_generator(self) -> List[int]:
-        """
-        Compute patch size to extract from volume to avoid augmentation
-        artifacts
-        """
-        _patch_size = list(
-            get_patch_size(
-                patch_size=self._spatial_transform_patch_size,
-                rot_x=self.params["rotation_x"],
-                rot_y=self.params["rotation_y"],
-                rot_z=self.params["rotation_z"],
-                scale_range=self.params["scale_range"],
-            )
-        )
-        if self.dummy_2d:
-            _patch_size = [self.patch_size[0]] + _patch_size
-        return _patch_size
-
-    def get_training_transforms(self):
-        tr_transforms = []
-        if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
-        if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
-        tr_transforms.append(CenterCropTransform(self.patch_size))
-        tr_transforms.append(RemoveLabelTransform(-1, 0))
-        tr_transforms.append(RenameTransform("seg", "target", True))
-        tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
-        return ComposePretty(tr_transforms)
-
-    def get_validation_transforms(self):
-        val_transforms = []
-        if self.params.get("selected_data_channels"):
-            val_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
-        if self.params.get("selected_seg_channels"):
-            val_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
-        val_transforms.append(CenterCropTransform(self.patch_size))
-        val_transforms.append(RemoveLabelTransform(-1, 0))
-        val_transforms.append(RenameTransform("seg", "target", True))
-        val_transforms.append(NumpyToTensor(["data", "target"], "float"))
-        return ComposePretty(val_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
@@ -775,10 +699,3 @@ class BaseInsaneAug(NoAug):
         transforms = ComposePretty(tr_transforms)
         logger.info(f"Training Transforms: \n{transforms}")
         return transforms
-
-
-@AUGMENTATION_REGISTRY.register
-class AugModular(BaseInsaneAug):
-    """
-    rename
-    """

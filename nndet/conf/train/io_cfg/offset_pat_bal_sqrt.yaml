@@ -1,9 +1,14 @@
 num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
 num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
-dataloader: "DataLoader{}DPOB"
+dataloader: "DataLoader{}DOffsetPatientBalanced"
 oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
-dataloader_kwargs: {}
+dataloader_kwargs:
+  selection_mode: sqrt
+# force_bg_case
+# offset_prob
+# offset_magn
+# selection_mode
 
 num_threads: ${oc.env:det_num_threads, "12"}
 num_cached_per_thread: 2

@@ -18,6 +18,16 @@ from abc import ABC, abstractmethod
 from typing import List, Sequence
 
 import numpy as np
+from batchgenerators.transforms.abstract_transforms import Compose
+
+
+class ComposePretty(Compose):
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s
 
 
 def get_patch_size(

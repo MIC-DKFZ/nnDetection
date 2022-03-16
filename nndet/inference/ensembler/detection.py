@@ -34,6 +34,7 @@ from nndet.inference.ensembler.utils import (
     get_box_in_tile_weight_normal,
 )
 from nndet.inference.restore import restore_boxes
+from nndet.utils.enums import DimBoxMerger, EnsembleNMS, ModelNMS
 from nndet.utils.tensor import cat, to_device
 
 
@@ -151,6 +152,28 @@ class BoxEnsembler(BaseEnsembler):
 
         return create
 
+    def get_model_nms(self) -> Callable:
+        _name = ModelNMS(self.parameters["model_nms_fn"])
+
+        if _name == ModelNMS.NMS:
+            _fn = batched_nms
+        elif _name == ModelNMS.WNMS:
+            _fn = batched_weighted_nms
+        else:
+            raise RuntimeError(f"Unknown enum {_name}, this should not happen.")
+        return _fn
+
+    def get_ensemble_nms(self) -> Callable:
+        _name = EnsembleNMS(self.parameters["ensemble_nms_fn"])
+
+        if _name == EnsembleNMS.NMS:
+            _fn = batched_nms
+        elif _name == EnsembleNMS.WBC:
+            _fn = batched_wbc
+        else:
+            raise RuntimeError(f"Unknown enum {_name}, this should not happen.")
+        return _fn
+
     @classmethod
     def get_default_parameters(cls):
         """
@@ -174,13 +197,13 @@ class BoxEnsembler(BaseEnsembler):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_nms,
+            "model_nms_fn": "batched_nms",
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc,
+            "ensemble_nms_fn": "batched_wbc",
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -230,7 +253,7 @@ class BoxEnsembler(BaseEnsembler):
         keep = remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
         b, p, l, w = b[keep], p[keep], l[keep], w[keep]
 
-        _boxes, _probs, _labels, _weights = self.parameters["model_nms_fn"](
+        _boxes, _probs, _labels, _weights = self.get_model_nms()(
             boxes=b,
             scores=p,
             labels=l,
@@ -524,12 +547,12 @@ class BoxEnsembler(BaseEnsembler):
         weights = weights[idx]
 
         n_exp_preds = self.overlap_map.mean_num_overlap_of_boxes(boxes)
-        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+        if "wbc" in self.parameters["ensemble_nms_fn"]:
             _kwargs = {"n_exp_preds": n_exp_preds}
         else:
             _kwargs = {}
 
-        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
+        boxes, probs, labels, _ = self.get_ensemble_nms()(
             boxes,
             probs,
             labels,
@@ -613,13 +636,13 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_nms,
+            "model_nms_fn": "batched_nms",
             "model_score_thresh": 0.1,
             "model_topk": 1000,
             "model_detections_per_image": 1000,
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc,
+            "ensemble_nms_fn": "batched_wbc",
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -792,12 +815,12 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         weights = weights[idx]
 
         n_exp_preds = self.overlap_map_mean.expand(len(boxes)).to(boxes)
-        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+        if "wbc" in self.parameters["ensemble_nms_fn"]:
             _kwargs = {"n_exp_preds": n_exp_preds}
         else:
             _kwargs = {}
 
-        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
+        boxes, probs, labels, _ = self.get_ensemble_nms()(
             boxes,
             probs,
             labels,
@@ -994,13 +1017,13 @@ class BoxEnsemblerSelective(BoxEnsembler):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_weighted_nms,
+            "model_nms_fn": "batched_weighted_nms",
             "model_score_thresh": 0.0,
             "model_topk": 1000,
             "model_detections_per_image": 100,
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc,
+            "ensemble_nms_fn": "batched_wbc",
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
@@ -1017,8 +1040,8 @@ class BoxEnsemblerSelective(BoxEnsembler):
             # single model
             "model_iou": iou_threshs,
             "model_nms_fn": [
-                batched_nms,
-                batched_weighted_nms,
+                "batched_nms",
+                "batched_weighted_nms",
             ],
             # ensemble multiple models
             "ensemble_iou": iou_threshs,
@@ -1154,12 +1177,12 @@ class BoxEnsemblerSelective(BoxEnsembler):
         weights = weights[idx]
 
         n_exp_preds = torch.tensor([num_models] * len(boxes)).to(boxes)
-        if "wbc" in self.parameters["ensemble_nms_fn"].__name__:
+        if "wbc" in self.parameters["ensemble_nms_fn"]:
             _kwargs = {"n_exp_preds": n_exp_preds}
         else:
             _kwargs = {}
 
-        boxes, probs, labels, _ = self.parameters["ensemble_nms_fn"](
+        boxes, probs, labels, _ = self.get_ensemble_nms()(
             boxes,
             probs,
             labels,
@@ -1246,9 +1269,20 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
         params["track_iou"] = 0.5
         params["track_neighbor_slices"] = 1
-        params["track_merger_cls"] = VoteLabelGreedyIoUBoxMerger
+        params["track_merger_cls"] = "VoteLabelGreedyIoUBoxMerger"
         params["track_remove_small_boxes"] = 0
         return params
+
+    def get_box_merger(self) -> Callable:
+        _name = DimBoxMerger(self.parameters["track_merger_cls"])
+
+        if _name == DimBoxMerger.GREEDYIOU:
+            _fn = GreedyIoUBoxMerger
+        elif _name == DimBoxMerger.VOTELABELGREEDYIOU:
+            _fn = VoteLabelGreedyIoUBoxMerger
+        else:
+            raise RuntimeError(f"Unknown enum {_name}, this should not happen.")
+        return _fn
 
     @classmethod
     def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
@@ -1260,16 +1294,16 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
             # single model
             "model_iou": iou_threshs,
             "model_nms_fn": [
-                batched_weighted_nms,
-                batched_nms,
+                "batched_weighted_nms",
+                "batched_nms",
             ],
             # ensemble multiple models
             "ensemble_iou": iou_threshs,
             "track_iou": track_ious,
             "track_neighbor_slices": [1, 2, 3, 4],
             "track_merger_cls": [
-                GreedyIoUBoxMerger,
-                VoteLabelGreedyIoUBoxMerger,
+                "GreedyIoUBoxMerger",
+                "VoteLabelGreedyIoUBoxMerger",
             ],
             "track_remove_small_boxes": [0, 1, 2, 3, 4],
             "model_score_thresh": [0.2, 0.3, 0.4, 0.5, 0.6],
@@ -1413,7 +1447,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         if self.properties["shape"][0] > 1:
             boxes_2d = boxes[:, [1, 4, 3, 5]]  # [N, 4]
             slices = torch.round(boxes[:, 0]).int()  # [N]
-            merger = self.parameters["track_merger_cls"](
+            merger = self.get_box_merger()(
                 boxes=boxes_2d,
                 slices=slices,
                 scores=probs,
@@ -1462,13 +1496,13 @@ class BoxEnsemblerSelectiveFaster(BoxEnsemblerSelective):
         return {
             # single model
             "model_iou": 0.1,
-            "model_nms_fn": batched_weighted_nms,
+            "model_nms_fn": "batched_weighted_nms",
             "model_score_thresh": 0.1,
             "model_topk": 1000,
             "model_detections_per_image": 100,
             # ensemble multiple models
             "ensemble_iou": 0.5,
-            "ensemble_nms_fn": batched_wbc,
+            "ensemble_nms_fn": "batched_wbc",
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
