@@ -1,4 +1,10 @@
-from nndet.arch.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
+from nndet.arch.conv import (
+    ConvBatchLReLU,
+    ConvGroupLReLU,
+    ConvGroupMish,
+    ConvInstanceLReLU,
+    ConvInstanceMish,
+)
 from nndet.arch.heads.classifier import FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.regressor import L1Regressor
@@ -19,6 +25,18 @@ class RetinaUNetC015(RetinaUNetV001):
 
     head_cls = BoxHeadHNM
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015MishHead(RetinaUNetC015):
+    head_conv_cls = ConvGroupMish
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015MishAll(RetinaUNetC015):
+    backbone_conv_cls = ConvInstanceMish
+    neck_conv_cls = ConvInstanceMish
+    head_conv_cls = ConvGroupMish
 
 
 @MODULE_REGISTRY.register
