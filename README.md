@@ -423,9 +423,9 @@ Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 ## Pretrained models
 **Coming Soon**
 
-# FAQ & Commen Issues
+# FAQ & Common Issues
 <details close>
-<summary>Installation Errors & Initial Setup Errors</summary>
+<summary>Installation & Initial Setup Errors</summary>
 <br>
 
 1. Error: Undefined CUDA symbols when importing `nndet._C` or other import related Errors from `nndet._C` or CUDA related ARCH errors
@@ -485,7 +485,7 @@ As before make sure to delete the `build` folder when rerunning the installation
 </details>
 
 <details close>
-<summary>Training doesn't start and is stuck</summary>
+<summary>Training doesn't start or is stuck</summary>
 <br>
 
 1. Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
