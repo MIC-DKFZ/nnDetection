@@ -92,6 +92,8 @@ class SegmentationEnsembler(BaseEnsembler):
                             `itk_origin`
                             `itk_spacing`
                             `itk_direction`
+            str: identifier of ensembler class. This needs to be used as the
+                key when construction the ensembler dict for the predictor!
         """
 
         def create(
@@ -129,7 +131,7 @@ class SegmentationEnsembler(BaseEnsembler):
                 **kwargs2,
             )
 
-        return create
+        return create, cls.ID
 
     def add_model(
         self,

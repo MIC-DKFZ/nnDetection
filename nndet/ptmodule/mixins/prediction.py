@@ -112,17 +112,18 @@ class BoxPredictionMixin(PredictionMixin):
         )
 
         box_ensembler_cls = cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"])
-        ensembler = {
-            "boxes": box_ensembler_cls.constructor(
-                parameters=inferene_plan,
-            )
-        }
+        box_ensembler, box_ensembler_key = box_ensembler_cls.constructor(
+            parameters=inferene_plan,
+        )
+        ensembler = {box_ensembler_key: box_ensembler}
 
         if do_seg:
             seg_ensembler_cls = cls.get_ensembler_cls(
-                key="seg", dim=plan["network_dim"]
+                key="seg",
+                dim=plan["network_dim"],
             )
-            ensembler["seg"] = seg_ensembler_cls.constructor()
+            seg_ensembler, seg_ensembler_key = seg_ensembler_cls.constructor()
+            ensembler[seg_ensembler_key] = seg_ensembler
 
         predictor = Predictor(
             ensembler=ensembler,
@@ -253,7 +254,10 @@ class MaskPredictionMixin(PredictionMixin):
         )
 
         mask_ensembler_cls = cls.get_ensembler_cls(key="masks", dim=plan["network_dim"])
-        ensembler = {"masks": mask_ensembler_cls.constructor(parameters=inference_plan)}
+        mask_ensembler, mask_ensembler_key = mask_ensembler_cls.constructor(
+            parameters=inference_plan
+        )
+        ensembler = {mask_ensembler_key: mask_ensembler}
 
         predictor = Predictor(
             ensembler=ensembler,

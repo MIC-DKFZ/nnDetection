@@ -115,6 +115,8 @@ class BoxEnsembler(BaseEnsembler):
                             `itk_origin`
                             `itk_spacing`
                             `itk_direction`
+            str: identifier of ensembler class. This needs to be used as the
+                key when construction the ensembler dict for the predictor!
         """
 
         def create(
@@ -150,7 +152,7 @@ class BoxEnsembler(BaseEnsembler):
                 **kwargs2,
             )
 
-        return create
+        return create, cls.ID
 
     def get_model_nms(self) -> Callable:
         _name = ModelNMS(self.parameters["model_nms_fn"])

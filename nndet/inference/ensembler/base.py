@@ -18,12 +18,11 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import torch
 
 from nndet.io.load import save_pickle
-from nndet.utils.info import maybe_verbose_iterable
 from nndet.utils.tensor import to_numpy
 
 
@@ -90,6 +89,8 @@ class BaseEnsembler(ABC):
                     `case`: input data from case (e.g. 'data' to extract shape
                         information)
                     `properties`: additional properties of case
+            str: identifier of ensembler class. This needs to be used as the
+                key when construction the ensembler dict for the predictor!
         """
 
         def create(
@@ -102,7 +103,7 @@ class BaseEnsembler(ABC):
                 properties=properties, parameters=parameters, *args, **kwargs, **kwargs2
             )
 
-        return create
+        return create, cls.ID
 
     def add_model(
         self,
@@ -247,6 +248,11 @@ class BaseEnsembler(ABC):
             for c in Path(base_dir).glob(f"*_{cls.ID}.pt")
         ]
 
+    @classmethod
+    def save_result(cls, data: Dict, target_dir: Path, case_name: str) -> None:
+        # name without extension!
+        save_pickle(to_numpy(data), target_dir / f"{case_name}_{cls.ID}.pkl")
+
 
 class OverlapMap:
     def __init__(self, data_shape: Sequence[int]):
@@ -323,34 +329,6 @@ class OverlapMap:
         """
         self.overlap_map = torch.zeros_like(self.overlap_map)
         self.overlap_map = float(val)
-
-
-def extract_results(
-    source_dir: PathLike,
-    target_dir: PathLike,
-    ensembler_cls: Callable,
-    restore: bool,
-    **params,
-) -> None:
-    """
-    Compute case result from ensembler and save it
-
-    Args:
-        source_dir: directory which contains the saved predictions/state from
-            the ensembler class
-        target_dir: directory to save results
-        ensembler_cls: ensembler class for prediction
-        restore: if true, the results are converted into the opriginal image
-            space
-    """
-    Path(target_dir).mkdir(parents=True, exist_ok=True)
-    for case_id in maybe_verbose_iterable(ensembler_cls.get_case_ids(source_dir)):
-        ensembler = ensembler_cls.from_checkpoint(base_dir=source_dir, case_id=case_id)
-        ensembler.update_parameters(**params)
-
-        pred = to_numpy(ensembler.get_case_result(restore=restore))
-
-        save_pickle(pred, Path(target_dir) / f"{case_id}_{ensembler_cls.ID}.pkl")
 
 
 BaseEnsemblerType = TypeVar("BaseEnsemblerType", bound=BaseEnsembler)

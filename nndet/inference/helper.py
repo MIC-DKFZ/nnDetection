@@ -20,8 +20,8 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 from loguru import logger
 
-from nndet.io.load import load_pickle, save_pickle
-from nndet.utils.tensor import to_numpy
+from nndet.io.load import load_pickle
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def predict_dir(
@@ -106,6 +106,36 @@ def predict_dir(
                 case_id=None,
                 restore=restore,
             )
-            for key, item in to_numpy(result).items():
-                save_pickle(item, target_dir / f"{case_id}_{key}.pkl")
+            predictor.save_case(result=result, target_dir=target_dir, case_id=case_id)
     return predictor
+
+
+def extract_results(
+    source_dir: os.PathLike,
+    target_dir: os.PathLike,
+    ensembler_cls: Callable,
+    restore: bool,
+    **params,
+) -> None:
+    """
+    Compute case result from ensembler and save it
+
+    Args:
+        source_dir: directory which contains the saved predictions/state from
+            the ensembler class
+        target_dir: directory to save results
+        ensembler_cls: ensembler class for prediction
+        restore: if true, the results are converted into the opriginal image
+            space
+    """
+    Path(target_dir).mkdir(parents=True, exist_ok=True)
+    for case_id in maybe_verbose_iterable(ensembler_cls.get_case_ids(source_dir)):
+        ensembler = ensembler_cls.from_checkpoint(base_dir=source_dir, case_id=case_id)
+        ensembler.update_parameters(**params)
+
+        pred = ensembler.get_case_result(restore=restore)
+        ensembler.save_result(
+            data=pred,
+            target_dir=Path(target_dir),
+            case_name=case_id,
+        )

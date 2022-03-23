@@ -43,7 +43,7 @@ from nndet.evaluator.registry import (
     evaluate_seg_dir,
     save_metric_output,
 )
-from nndet.inference.ensembler.base import extract_results
+from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir

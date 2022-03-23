@@ -17,17 +17,7 @@ limitations under the License.
 import collections
 import time
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
 import numpy as np
 import torch
@@ -82,7 +72,8 @@ class Predictor:
 
         Args:
             ensembler: Callable to instantiate ensembler from case and
-                properties
+                properties, The keys need to be obtained from the constructor
+                function of the respective ensembler class!
             models: models to ensemble
             crop_size: size of each crop (for most cases this should be
                 the same as in training)
@@ -105,6 +96,7 @@ class Predictor:
         """
         self.ensemble_on_device = ensemble_on_device
         self.device = device
+
         self.ensembler_fns = ensembler
         self.ensembler = {}
 
@@ -127,40 +119,38 @@ class Predictor:
         self.post_transform = post_transform
         self.pre_transform = pre_transform
 
-        self.grid_mode = "symmetric"
-        self.save_get_mode = "shift"
+        self.grid_mode = "symmetric"  # FIXME
+        self.save_get_mode = "shift"  # FIXME
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
             f"batch size {self.batch_size} overlap {self.overlap}"
         )
 
-    @classmethod
-    def create(cls, *args, **kwargs):
+    def save_case(
+        self,
+        result: Dict,
+        target_dir: Path,
+        case_id: str,
+    ) -> None:
         """
-        Create predictor object with specific ensembler objects
-
-        Raises:
-            NotImplementedError: Need to be overwritten in subclasses
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def get_ensembler(cls, key: Hashable, dim: int) -> Callable:
-        """
-        Return ensembler class for specific keys
-        Typically: `boxes`, `seg`, `instances`
+        Save prediction from a single case. In contrast to the `save_dir`
+        option from the `predict_case` function this will not save any state
+        information of the ensembler and is thus inly intended for efficient
+        saving of the final predictions of a case. (Usually final results
+        will be saved in the form of numpy arrays)
 
         Args:
-            key: Key to return
-            dim: number of spatial dimensions the network expects
-
-        Raises:
-            NotImplementedError: Need to be overwritten in subclasses
-
-        Returns:
-            Callable: Ensembler class
+            result: results of case to save. The keys of this dict
+                need to correspond to the keys of the provided ensemblers.
+            target_dir: directory to save data
+            case_id: name of case to save result
         """
-        raise NotImplementedError
+        for key, item in result.items():
+            self.ensembler_fns[key].save_result(
+                data=item,
+                target_dir=target_dir,
+                case_name=case_id,
+            )
 
     def predict_case(
         self,
@@ -187,7 +177,17 @@ class Predictor:
         """
         tic = time.perf_counter()
         for name, fn in self.ensembler_fns.items():
-            self.ensembler[name] = fn(case, properties=properties)
+            if name in self.ensembler:
+                raise ValueError(
+                    f"{name} is already in ensemblers of predictor, "
+                    "can not use multiple ensembler of same type."
+                )
+            _ensembler = fn(case, properties=properties)
+            if name != _ensembler.ID:
+                raise RuntimeError(
+                    f"Provided predictor key {name} does not match ensembler ID {_ensembler.ID}!"
+                )
+            self.ensembler[name] = _ensembler
 
         tiles = self.tile_case(case)
         self.predict_tiles(tiles)
@@ -204,6 +204,7 @@ class Predictor:
             save_pickle(properties, save_dir / f"{case_id}_properties.pkl")
         toc = time.perf_counter()
         logger.info(f"Prediction took {toc - tic} s")
+        self.ensembler = {}
         return result
 
     def tile_case(

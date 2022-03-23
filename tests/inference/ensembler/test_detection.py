@@ -52,9 +52,11 @@ def example():
 
 class TestDetectionEnsembler:
     def test_constructor(self, example):
-        constructor = BoxEnsembler.constructor(
+        constructor, key = BoxEnsembler.constructor(
             parameters={"model_iou": 0.5, "ensemble_topk": 10},
         )
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -71,7 +73,9 @@ class TestDetectionEnsembler:
         assert ensembler.parameters["ensemble_topk"] == 10
 
     def test_add_model(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -84,7 +88,9 @@ class TestDetectionEnsembler:
         assert "model_test" in ensembler.model_weights
 
     def test_process_batch(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -113,7 +119,9 @@ class TestDetectionEnsembler:
             assert exp_box.allclose(ens_box)
 
     def test_get_box_in_tile_weight(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -126,7 +134,9 @@ class TestDetectionEnsembler:
         assert pred_weight.allclose(expected_weight)
 
     def test_apply_offsets_to_boxes(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -146,7 +156,9 @@ class TestDetectionEnsembler:
             assert r.allclose(e)
 
     def test_save_case_result(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,
@@ -160,7 +172,9 @@ class TestDetectionEnsembler:
             ensembler1.load_state(Path(_dir), "tmp_case")
 
     def test_get_case_result(self, example):
-        constructor = BoxEnsembler.constructor(parameters={})
+        constructor, key = BoxEnsembler.constructor(parameters={})
+        assert key == "boxes"
+
         ensembler = constructor(
             case=example.case,
             properties=example.properties,

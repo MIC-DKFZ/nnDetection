@@ -284,12 +284,12 @@ class TestPredictorSegmentationEnsembler:
         assert data.max() == 1
 
         case = {"data": data}
-        _fn = SegmentationEnsembler.constructor(
+        _fn, _fn_key = SegmentationEnsembler.constructor(
             parameters={"use_gaussian": use_gaussian, "argmax": False},
         )
 
         predictor = Predictor(
-            ensembler={"seg": _fn},
+            ensembler={_fn_key: _fn},
             models=[DummySegModel()],
             crop_size=crop_size,
             device="cpu",
@@ -317,26 +317,26 @@ class TestPredictorBoxEnsembler:
         boxes, _ = instances_to_boxes_np(data, dim=data.ndim - 1)
         case = {"data": data}
 
-        _fn = BoxEnsemblerSelective.constructor(
+        _fn, _fn_key = BoxEnsemblerSelective.constructor(
             parameters={"model_iou": 0.0000001},
         )
         predictor = Predictor(
-            ensembler={"box": _fn},
+            ensembler={_fn_key: _fn},
             models=[DummyBoxModel()],
             crop_size=crop_size,
             device="cpu",
         )
         prediction = predictor.predict_case(case=case, properties=properties_simple)
 
-        assert "box" in prediction
-        assert "pred_boxes" in prediction["box"]
-        assert not prediction["box"]["restore"]
+        assert "boxes" in prediction
+        assert "pred_boxes" in prediction["boxes"]
+        assert not prediction["boxes"]["restore"]
 
         # Needs to be changed after https://github.com/MIC-DKFZ/nnDetection/issues/23
         boxes[boxes < 0] = 0
-        assert np.allclose(boxes, prediction["box"]["pred_boxes"])
-        assert np.allclose(np.array([1.0]), prediction["box"]["pred_scores"])
-        assert np.allclose(np.array([1]), prediction["box"]["pred_labels"])
+        assert np.allclose(boxes, prediction["boxes"]["pred_boxes"])
+        assert np.allclose(np.array([1.0]), prediction["boxes"]["pred_scores"])
+        assert np.allclose(np.array([1]), prediction["boxes"]["pred_labels"])
 
 
 # TODO: update doc string save_get

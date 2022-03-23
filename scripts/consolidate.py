@@ -25,7 +25,7 @@ from typing import Sequence
 from loguru import logger
 from omegaconf import OmegaConf
 
-from nndet.inference.ensembler.base import extract_results
+from nndet.inference.helper import extract_results
 from nndet.inference.loading import get_latest_model
 from nndet.inference.sweeper import BoxSweeper
 from nndet.io import get_task, load_pickle, save_pickle
