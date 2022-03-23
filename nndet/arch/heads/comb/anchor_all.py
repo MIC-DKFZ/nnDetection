@@ -1,12 +1,14 @@
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+from loguru import logger
 from torch import Tensor
 
 from nndet.arch.heads.classifier.dense import DenseClassifierType
 from nndet.arch.heads.comb.base import AnchorHead
 from nndet.arch.heads.regressor.dense import DenseRegressorType
 from nndet.core.boxes.coder import BoxCoderND
+from nndet.training.ema import EMA
 from nndet.utils.enums import BoxRegressionMode
 
 
@@ -18,6 +20,7 @@ class BoxHeadAll(AnchorHead):
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: Union[str, BoxRegressionMode] = "decode",
+        ema_loss_norm: bool = False,
     ):
         """
         Box head with classifier and regression module. Uses all
@@ -35,6 +38,7 @@ class BoxHeadAll(AnchorHead):
                 `encode`: uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
+            ema_loss_norm: use ema to normalize denominator of losses
         """
         super().__init__(
             classifier=classifier,
@@ -43,6 +47,10 @@ class BoxHeadAll(AnchorHead):
             shared=shared,
             reg_mode=reg_mode,
         )
+        self.ema_loss_norm = ema_loss_norm
+        if self.ema_loss_norm:
+            logger.info("Using EMA norm loss in RoI Head")
+            self.pos_ema = EMA(beta=0.95, bias_correction=True)
         self.logger = (
             None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
         )
@@ -89,14 +97,19 @@ class BoxHeadAll(AnchorHead):
         sampled_inds = torch.where(target_labels >= 0)[0]
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
+        _numel_pos = sampled_pos_inds.numel()
+        if self.ema_loss_norm:
+            self.pos_ema.add(_numel_pos)
+            _numel_pos = self.pos_ema.get()
+
         losses = {}
-        if sampled_pos_inds.numel() > 0:
+        if sampled_pos_inds > 0:
             losses["reg"] = (
                 self.regressor.compute_loss(
                     reg_pred[sampled_pos_inds],
                     reg_target[sampled_pos_inds],
                 )
-                / max(1, sampled_pos_inds.numel())
+                / max(1, _numel_pos)
             )
 
         losses["cls"] = (
@@ -104,6 +117,6 @@ class BoxHeadAll(AnchorHead):
                 box_logits[sampled_inds],
                 target_labels[sampled_inds],
             )
-            / max(1, sampled_pos_inds.numel())
+            / max(1, _numel_pos)
         )
         return losses, sampled_pos_inds, None

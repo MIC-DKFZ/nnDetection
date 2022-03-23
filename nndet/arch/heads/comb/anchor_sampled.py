@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+from loguru import logger
 from torch import Tensor
 
 from nndet.arch.heads.abstract import ClassifierType, RegressorType
@@ -9,6 +10,7 @@ from nndet.arch.heads.comb.base import AnchorHead
 from nndet.arch.heads.regressor.dense import DenseRegressorType
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.sampler import SamplerType
+from nndet.training.ema import EMA
 from nndet.utils.enums import BoxRegressionMode
 from nndet.utils.tensor import cat
 
@@ -41,6 +43,10 @@ class BoxHeadHNM(AnchorHead):
                 `encode`: uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
+
+        Notes:
+            Regression loss will be normalized automatically while
+            classification loss is expected to be normalized.
         """
         super().__init__(
             classifier=classifier,
@@ -121,6 +127,176 @@ class BoxHeadHNM(AnchorHead):
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds]
+        )
+        return losses, sampled_pos_inds, sampled_neg_inds
+
+    def select_indices(
+        self,
+        target_labels: List[Tensor],
+        boxes_scores: Tensor,
+    ) -> Tuple[Tensor, Tensor]:
+        """
+        Sample positive and negative anchors from target labels
+
+        Args:
+            target_labels (List[Tensor]): target labels for each anchor
+                (per image) [M]
+            boxes_scores (Tensor): classification logits for each anchor
+                [N, num_classes]
+
+        Returns:
+            Tensor: sampled positive indices [R]
+            Tensor: sampled negative indices [R]
+        """
+        boxes_max_fg_probs = self.classifier.logits_to_probs(boxes_scores)
+        boxes_max_fg_probs = boxes_max_fg_probs.max(dim=1)[0]  # search max of fg probs
+
+        # positive and negative anchor indices per image
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(
+            target_labels, boxes_max_fg_probs
+        )
+        sampled_pos_inds = torch.where(cat(sampled_pos_inds, dim=0))[0]
+        sampled_neg_inds = torch.where(cat(sampled_neg_inds, dim=0))[0]
+
+        # if self.logger:
+        #     self.logger.add_scalar("train/num_pos", sampled_pos_inds.numel())
+        #     self.logger.add_scalar("train/num_neg", sampled_neg_inds.numel())
+
+        return sampled_pos_inds, sampled_neg_inds
+
+
+class BoxHeadHNMV2(AnchorHead):
+    def __init__(
+        self,
+        classifier: DenseClassifierType,
+        regressor: DenseRegressorType,
+        coder: BoxCoderND,
+        sampler: SamplerType,
+        shared: Optional[torch.nn.Module] = None,
+        reg_mode: Union[str, BoxRegressionMode] = "encode",
+        ema_loss_norm: bool = False,
+    ):
+        """
+        Box detection head with classifier and regression module.
+        Uses hard negative example mining to compute loss. Optionally,
+        the normalization of the loss functions can be with EMA.
+
+        Args:
+            classifier: classifier module
+            regressor: regression module
+            coder: Module to encoder/decoder box delta wrt to anchors/proposals
+            sampler: sampler for select positive and negative examples
+            shared: optional shared module which is applied to before the
+                classifier and regression head
+            reg_mode: define regression mode. One of `decode` | `encode`
+                `decode`: uses the predicted box deltas to decode the
+                    predicted boxes which are passed to the regression loss
+                    in combination with the matched ground truth boxes
+                `encode`: uses the matched ground truth to encode the
+                    expected box deltas which are passed to the regression loss
+                    in combination with the predicted box deltas
+            ema_loss_norm: use ema to normalize denominator of losses
+
+        Notes:
+            Classification and Regression loss will be normalized by head
+            automatically.
+        """
+        super().__init__(
+            classifier=classifier,
+            regressor=regressor,
+            coder=coder,
+            shared=shared,
+            reg_mode=reg_mode,
+        )
+        self.ema_loss_norm = ema_loss_norm
+        if self.ema_loss_norm:
+            logger.info("Using EMA norm loss in Dense Anchor Head")
+            self.all_ema = EMA(beta=0.95, bias_correction=True)
+            self.pos_ema = EMA(beta=0.95, bias_correction=True)
+
+        self.logger = (
+            None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
+        )
+        self.fg_bg_sampler = sampler
+
+    def compute_loss(
+        self,
+        prediction: Dict[str, Tensor],
+        target_labels: List[Tensor],
+        matched_gt_boxes: List[Tensor],
+        anchors: List[Tensor],
+    ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
+        """
+        Compute regression and classification loss
+        N anchors over all images; M anchors per image => sum(M) = N
+
+        Args:
+            prediction: detection predictions for loss computation
+                box_logits (Tensor): classification logits for each anchor
+                    [N, num_classes]
+                box_deltas (Tensor): offsets for each anchor
+                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            target_labels (List[Tensor]): target labels for each anchor
+                (per image) [M]
+            matched_gt_boxes: matched gt box for each anchor
+                List[[N, dim *  2]], N=number of anchors per image
+            anchors: anchors per image List[[N, dim *  2]]
+
+        Returns:
+            Tensor: dict with losses (reg for regression loss, cls
+                for classification loss)
+            Tensor: sampled positive indices of anchors (after concatenation)
+            Tensor: sampled negative indices of anchors (after concatenation)
+        """
+        box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
+
+        losses = {}
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(
+            target_labels, box_logits
+        )
+        sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
+
+        batch_anchors = cat(anchors, dim=0)
+        target_labels = cat(target_labels, dim=0)
+        target_boxes = cat(matched_gt_boxes, dim=0)
+
+        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+            batch_anchors=batch_anchors[sampled_pos_inds],
+            batch_target_boxes=target_boxes[sampled_pos_inds],
+            batch_pred_deltas=box_deltas[sampled_pos_inds],
+        )
+
+        # target_deltas = self.coder.encode(matched_gt_boxes, anchors)
+        # target_deltas_sampled = torch.cat(target_deltas, dim=0)[sampled_pos_inds]
+
+        # assert len(batch_anchors) == len(batch_matched_gt_boxes)
+        # assert len(batch_anchors) == len(box_deltas)
+        # assert len(batch_anchors) == len(box_logits)
+        # assert len(batch_anchors) == len(target_labels)
+
+        _numel_all = sampled_inds.numel()
+        _numel_pos = sampled_pos_inds.numel()
+        if self.ema_loss_norm:
+            self.all_ema.add(_numel_all)
+            self.pos_ema.add(_numel_pos)
+            _numel_all = self.all_ema.get()
+            _numel_pos = self.pos_ema.get()
+
+        if sampled_pos_inds.numel() > 0:
+            losses["reg"] = (
+                self.regressor.compute_loss(
+                    reg_pred_sampled,
+                    reg_target_sampled,
+                )
+                / max(1, _numel_pos)
+            )
+
+        losses["cls"] = (
+            self.classifier.compute_loss(
+                box_logits[sampled_inds],
+                target_labels[sampled_inds],
+            )
+            / max(1, _numel_all)
         )
         return losses, sampled_pos_inds, sampled_neg_inds
 
