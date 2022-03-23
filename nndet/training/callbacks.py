@@ -15,9 +15,17 @@ class CheckWeightsNaN(Callback):
         trainer: "pl.Trainer",
         pl_module: "pl.LightningModule",
     ) -> None:
-        for param in pl_module.parameters():
+        found_nan = False
+        for name, param in pl_module.named_parameters():
             if torch.isnan(param).any():
-                raise RuntimeError("Found NaN parameter in module, aborting training.")
+                found_nan = True
+                logger.error(
+                    f"Found NaN parameter in module {name}, aborting training."
+                )
+
+        if found_nan:
+            raise RuntimeError("Found NaN parameter in module, aborting training.")
+
         return super().on_train_epoch_end(trainer, pl_module)
 
 
