@@ -423,7 +423,79 @@ Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 ## Pretrained models
 **Coming Soon**
 
-# FAQ
+# FAQ & Commen Issues
+<details close>
+<summary>Installation Errors & Initial Setup Errors</summary>
+<br>
+
+1. Error: Undefined CUDA symbols when importing `nndet._C` or other import related Errors from `nndet._C` or CUDA related ARCH errors
+nnDetection includes additional CUDA code which needs to compiled upon installation and thus requires correct configuration of the CUDA dependencies.
+Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build.
+This can be done by running `nndet_env` if the installation succeeded  or by running `python scripts/utils.py`.
+An example output of the command is shown below:
+
+```bash
+----- PyTorch Information -----
+PyTorch Version: 1.11.0+cu113
+PyTorch Debug: False
+PyTorch CUDA: 11.3
+PyTorch Backend cudnn: 8200
+PyTorch CUDA Arch List: ['sm_37', 'sm_50', 'sm_60', 'sm_70', 'sm_75', 'sm_80', 'sm_86']
+PyTorch Current Device Capability: (7, 5)
+PyTorch CUDA available: True
+
+----- System Information -----
+System NVCC: nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2021 NVIDIA Corporation
+Built on Sun_Aug_15_21:14:11_PDT_2021
+Cuda compilation tools, release 11.4, V11.4.120
+Build cuda_11.4.r11.4/compiler.30300941_0
+
+System Arch List: None
+System OMP_NUM_THREADS: 1
+System CUDA_HOME is None: True
+System CPU Count: 8
+Python Version: 3.8.11 (default, Aug  3 2021, 15:09:35)
+[GCC 7.5.0]
+
+----- nnDetection Information -----
+det_num_threads 6
+det_data is set True
+det_models is set True
+```
+Things to look out for:
+
+Make sure that the versions of PyTorch CUDA and NVCC CUDA match (minor version mismatch as in this case, will work without error but could potentially introduce bugs.)
+
+`OMP_NUM_THREADS` should always be set to 1 and `det_num_threads` should always be lower or equal `Systemm CPU Count`.
+
+2. Error persists even after fixing the environment
+Make sure to delete the `build` folder before rerunning the installation since it won't recompile the code otherwise.
+
+3. Error: No kernel image is available for execution
+
+You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
+
+Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
+approriately (e.g. check Dockefile for example).
+As before make sure to delete the `build` folder when rerunning the installation process.
+
+3. Please open an Issue and provide your environment as obtained by `nndet_env`.
+
+</details>
+
+<details close>
+<summary>Training doesn't start and is stuck</summary>
+<br>
+
+1. Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
+
+2. Try running the training without multiprocessing as a sanity check: `nndet_train XXX -o augment_cfg.multiprocessing=False`. Don't use this for the full training, this is just one step of the debugging process.
+
+3. Please open an Issue and provide your environment as obtained by `nndet_env` and report if the training without multiprocessing started correctly.
+
+</details>
+
 <details close>
 <summary>GPU requirements</summary>
 <br>
@@ -433,22 +505,6 @@ While the memory can be adjusted by manipulating the correct setting we recommen
 Future releases will refactor the planning stage to improve the VRAM estimation and add support for different memory budgets.
 </details>
 
-<details close>
-<summary>Error: Undefined CUDA symbols when importing `nndet._C`</summary>
-<br>
-Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build!
-Follow the installation instruction at the beginning!
-</details>
-
-<details close>
-<summary>Error: No kernel image is available for execution"</summary>
-<br>
-You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
-
-Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
-approriately (e.g. check Dockefile for example).
-Make sure to delete all caches before rebulding!
-</details>
 
 <details close>
 <summary>Training with bounding boxes</summary>
