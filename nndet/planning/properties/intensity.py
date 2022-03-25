@@ -124,6 +124,7 @@ def get_voxels_in_foreground(
     Returns:
         list: foreground voxels
     """
+    logger.info(f"Running voxels in fg on {case_id}")
     data, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     modality = data[modality_id]
     mask = seg > 0
