@@ -13,9 +13,10 @@ from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
-from nndet.core.rois.ops import create_binary_masks
 from nndet.core.rois.pooler import NDSIZE, PoolerType
 from nndet.utils.tensor import cat, detach_all
+
+# from nndet.core.rois.ops import create_binary_masks
 
 
 # TODO: cleanup
@@ -177,16 +178,11 @@ class BaseRoIModule(torch.nn.Module):
         matched_gt_labels: List[Tensor],
         matched_gt_idx: List[Tensor],
         proposal_boxes: List[Tensor],
-        target_masks: Tensor,
+        target_binary_masks: Tensor,
         image_size: NDSIZE,
-        num_instances: List[int],
         stage: int = 0,
         predict: bool = False,
     ) -> Dict[str, Tensor]:
-        binary_masks = create_binary_masks(
-            target_masks, num_instances=num_instances
-        )  # List[Tensor]
-
         # compute mask loss on positive proposals
         pos_matched_gt_idx = []
         pos_proposal_boxes = []
@@ -198,7 +194,7 @@ class BaseRoIModule(torch.nn.Module):
             pos_proposal_boxes.append(prop_b[pos_idx])
 
         target_masks_prepared = self.mask_pooler.pool_masks(
-            binary_masks=binary_masks,
+            binary_masks=target_binary_masks,
             proposal_boxes=pos_proposal_boxes,
             matched_gt_idx=pos_matched_gt_idx,
         )  # List[[R, output_size]]
@@ -430,7 +426,45 @@ class RoIModule(BaseRoIModule):
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         predict: bool = False,
-    ):
+    ) -> Tuple[Dict[str, torch.Tensor], None]:
+        """
+        Perform a training step of the RoI Module
+
+        Args:
+            images: batch of input images
+            features: multi-scale features from neck
+            proposals: proposals, usually from Region Proposal Network
+
+                ``"pred_boxes"`` List[Tensor]
+                    proposed boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each proposal [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated label for each proposal [N]
+
+            targets: ground truth
+                ``"target_boxes"`` List[Tensor]
+                    ground truth boxes [R, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"target_roi_classes"``
+                    associated class for each ground truth object [R]
+
+                ``"target_binary_masks"``
+                    Only required when additional mask head is provided.
+                    associated binary mask for each ground truth object
+                    [R, image_size]. The i-th entry along the first dimension
+                    corresponds to the i-th object / box / class.
+
+            predict: Ignored
+
+        Returns:
+            Dict[str, torch.Tensor]: computed losses
+            None: will always be None
+        """
         _features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
 
@@ -460,9 +494,8 @@ class RoIModule(BaseRoIModule):
                 matched_gt_labels=matched_gt_labels,
                 matched_gt_idx=matched_gt_idx,
                 proposal_boxes=proposal_boxes,
-                target_masks=targets["target_masks"],
+                target_binary_masks=targets["target_binary_masks"],
                 image_size=image_size,
-                num_instances=targets["target_num_instances"],
                 stage=0,
                 predict=False,
             )
@@ -476,7 +509,53 @@ class RoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Union[List[torch.Tensor], torch.Tensor]]:
+        """
+        Perform an inference step of the RoI Module
+
+        Args:
+            images: batch of input images
+            features: multi-scale features from neck
+            proposals: proposals, usually from Region Proposal Network
+
+                ``"pred_boxes"`` List[Tensor]
+                    proposed boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each proposal [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated label for each proposal [N]
+
+            kwargs: ignored
+
+        Returns:
+            Dict[str, Any]: predictions
+
+                ``"pred_boxes"`` List[Tensor]
+                    predicted boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each predicted box [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated labels for each predicted box [N]
+
+                ``"pred_masks"`` List[Tensor]
+                    predicted probability masks from mask head [N, RoI_dims]
+                    The output size of the masks are determined by the Masker
+                    RoI Module. To compute the evaluated additional post-
+                    processing will be required.
+
+                ``"pred_mask_scores"`` List[Tensor]
+                    associated scores for each predicted masks [N]
+
+                ``"pred_mask_labels"`` List[Tensor]
+                    associated labels for each predicted masks [N]
+
+        """
         _features = [features[i] for i in self.decoder_levels]
         prediction = self._inference_step_boxes(
             images=images,

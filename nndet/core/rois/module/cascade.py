@@ -139,9 +139,8 @@ class CascadeRoIModule(BaseRoIModule):
                     matched_gt_labels=matched_gt_labels,
                     matched_gt_idx=matched_gt_idx,
                     proposal_boxes=proposal_boxes,
-                    target_masks=targets["target_masks"],
+                    target_binary_masks=targets["target_binary_masks"],
                     image_size=image_size,
-                    num_instances=targets["target_num_instances"],
                     stage=stage_idx,
                     predict=False,
                 )
