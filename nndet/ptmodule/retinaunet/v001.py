@@ -31,7 +31,7 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
@@ -39,7 +39,7 @@ from nndet.ptmodule.module import LightningBaseModule
 class RetinaUNetV001(
     LightningBaseModule,  # Detection Base
     # prepare inputs
-    BoxPrepareMixin,
+    BoxesPrepareMixin,
     SemanticFgPrepareMixin,
     # evaluation
     BoxEvalMixin,

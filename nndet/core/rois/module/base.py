@@ -15,6 +15,7 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.pooler import NDSIZE, PoolerType
 from nndet.utils.tensor import cat, detach_all
+from nndet.utils.typing import ND_TUPLE_INT
 
 # from nndet.core.rois.ops import create_binary_masks
 
@@ -209,8 +210,13 @@ class BaseRoIModule(torch.nn.Module):
         )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
 
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
+        target_masks_prepared_batched = torch.cat(
+            target_masks_prepared, dim=0
+        ).unsqueeze(dim=1)
+        assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
         losses = self.mask_head[stage].compute_loss(
-            pred_masks, torch.cat(target_masks_prepared, dim=0).unsqueeze(dim=1)
+            pred_masks,
+            target_masks_prepared_batched,
         )
         return losses, None
 
@@ -367,6 +373,7 @@ class BaseRoIModule(torch.nn.Module):
             "pred_masks": masks,
             "pred_mask_scores": probs,
             "pred_mask_labels": labels,
+            "__pred_image_spatial_size": tuple(images.shape[2:]),
         }
         return prediction
 
@@ -450,10 +457,10 @@ class RoIModule(BaseRoIModule):
                     ground truth boxes [R, dims * 2]
                     (x_min, y_min, x_max, y_max, z_min, z_max)
 
-                ``"target_roi_classes"``
+                ``"target_roi_classes"`` List[Tensor]
                     associated class for each ground truth object [R]
 
-                ``"target_binary_masks"``
+                ``"target_binary_masks"`` List[Tensor]
                     Only required when additional mask head is provided.
                     associated binary mask for each ground truth object
                     [R, image_size]. The i-th entry along the first dimension
@@ -509,7 +516,7 @@ class RoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         **kwargs,
-    ) -> Dict[str, Union[List[torch.Tensor], torch.Tensor]]:
+    ) -> Dict[str, Union[List[torch.Tensor], torch.Tensor, ND_TUPLE_INT]]:
         """
         Perform an inference step of the RoI Module
 
@@ -554,6 +561,10 @@ class RoIModule(BaseRoIModule):
 
                 ``"pred_mask_labels"`` List[Tensor]
                     associated labels for each predicted masks [N]
+
+                ``"__pred_image_spatial_size"`` ND_TUPLE_INT
+                    image size which was used for prediction. Needed to restore
+                    correct size of image when pasting binary masks.
 
         """
         _features = [features[i] for i in self.decoder_levels]

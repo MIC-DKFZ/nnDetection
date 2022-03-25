@@ -1,7 +1,7 @@
 # @package __global__
 defaults:
   - augment_cfg: more_modular
-  - io_cfg: base_offset
+  - io_cfg: offset
   - trainer_cfg: sgd_base
   - model_cfg: mrcnn_l1_hnm_atss_fc_new
 

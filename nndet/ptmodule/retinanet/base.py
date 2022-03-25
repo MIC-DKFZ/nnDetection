@@ -27,13 +27,13 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
 class RetinaNetModule(
     LightningBaseModule,  # Detection Base
-    BoxPrepareMixin,  # prepare batch for box training
+    BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep

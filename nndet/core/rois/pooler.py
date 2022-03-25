@@ -230,7 +230,8 @@ class RoIAlignNaiveAssign(Pooler):
         Pooling masks for given matched gt boxes
 
         Args:
-            binary_masks: binary segmentation masks [C, sdims]; C=number of instances
+            binary_masks: binary segmentation masks [C, sdims]
+                C=number of instances
             proposal_boxes: proposal boxes to pool
                 (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
             matched_gt_idx: index of matched ground truth box. The n-th
@@ -249,15 +250,25 @@ class RoIAlignNaiveAssign(Pooler):
         pooled_masks = []
         for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
             p_boxes_prepared = torch.cat([m_idx[:, None], p_boxes], dim=1)
-            pooled_masks.append(
-                roi_align(
-                    input=m[:, None],
-                    boxes=p_boxes_prepared,
-                    output_size=output_size,
-                    spatial_scale=1.0,
-                    aligned=True,
-                )[:, 0]
-            )
+            if m.numel() == 0:
+                # no ground truth
+                pooled_masks.append(
+                    torch.tensor(
+                        [],
+                        dtype=p_boxes.dtype,
+                        device=p_boxes.device,
+                    ).view(0, *output_size)
+                )  # empty mask with correct shape for concatenation
+            else:
+                pooled_masks.append(
+                    roi_align(
+                        input=m[:, None],
+                        boxes=p_boxes_prepared,
+                        output_size=output_size,
+                        spatial_scale=1.0,
+                        aligned=True,
+                    )[:, 0]
+                )
         return pooled_masks
 
 

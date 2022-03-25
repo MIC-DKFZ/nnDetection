@@ -25,25 +25,28 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule, RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import (  # , ScoreMasksEvalMixin
-    BoxWithRPNEvalMixin,
-)
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin, TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # , MaskPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxPrepareMixin, SemanticFgPrepareMixin
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prepare import (
+    BinaryMasksPrepareMixin,
+    BoxesPrepareMixin,
+    SemanticFgPrepareMixin,
+)
 from nndet.ptmodule.module import LightningBaseModule
 
 
 @MODULE_REGISTRY.register
 class BoxRCNN(
     LightningBaseModule,  # Detection Base
+    BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
-    BoxPrepareMixin,  # prepare batch for box training
+    BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
+    ScoreMasksEvalMixin,  # Mask Evaluations
     # MaskPredictionMixin,  # Mask Sweep
-    # ScoreMasksEvalMixin,
 ):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
@@ -105,8 +108,7 @@ class BoxRCNN(
             targets={
                 "target_boxes": batch["target_boxes"],
                 "target_classes": batch["target_classes"],
-                "target_masks": batch["target"][:, 0],  # Remove channel dimension
-                "target_num_instances": [len(i) for i in batch["present_instances"]],
+                "target_binary_masks": batch["target_binary_masks"],
                 **kwargs,
             },
             predict=False,
@@ -135,7 +137,7 @@ class BoxRCNN(
             targets = {
                 "target_boxes": batch["target_boxes"],
                 "target_classes": batch["target_classes"],
-                "target_masks": batch["target"][:, 0],  # Remove channel dimension
+                "target_binary_masks": batch["target_binary_masks"],
                 **kwargs,
             }
             predictions = self.model.inference_step(
@@ -153,7 +155,7 @@ class BoxRCNN(
 class BoxCascadeRCNN(
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
-    BoxPrepareMixin,  # prepare batch for box training
+    BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Boundig Box Evaluation
     MultiStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
@@ -209,8 +211,7 @@ class BoxCascadeRCNN(
         targets = {
             "target_boxes": batch["target_boxes"],
             "target_classes": batch["target_classes"],
-            "target_masks": batch["target"][:, 0],  # Remove channel dimension
-            "target_num_instances": [len(i) for i in batch["present_instances"]],
+            "target_binary_masks": batch["target_binary_masks"],
         }
         if "target_seg" in batch:
             targets["target_seg"] = batch["target_seg"][

@@ -25,7 +25,10 @@ from nndet.io.transforms.base import AbstractTransform
 
 class FindInstances(AbstractTransform):
     def __init__(
-        self, instance_key: str, save_key: str = "present_instances", **kwargs
+        self,
+        instance_key: str,
+        save_key: str = "present_instances",
+        **kwargs,
     ):
         super().__init__(grad=False)
         self.instance_key = instance_key
@@ -33,7 +36,7 @@ class FindInstances(AbstractTransform):
 
     def forward(self, **data) -> dict:
         present_instances = []
-        for instance_element in data[self.instance_key].split(1):
+        for instance_element in data[self.instance_key].split(1, dim=0):
             tmp = instance_element.to(dtype=torch.int).unique(sorted=True)
             tmp = tmp[tmp > 0]
             present_instances.append(tmp)
@@ -84,7 +87,9 @@ class Instances2Boxes(AbstractTransform):
         """
         data[self.box_key] = []
         data[self.class_key] = []
-        for batch_idx, instance_element in enumerate(data[self.instance_key].split(1)):
+        for batch_idx, instance_element in enumerate(
+            data[self.instance_key].split(1, dim=0)
+        ):
             _present_instances = (
                 data[self.present_instances][batch_idx]
                 if self.present_instances is not None
@@ -548,8 +553,8 @@ class Instances2BinaryMasks(AbstractTransform):
         self,
         instance_key: str,
         binary_mask_key: str,
-        grad: bool = False,
         present_instances: Optional[str] = None,
+        grad: bool = False,
         **kwargs,
     ):
         """
@@ -580,7 +585,10 @@ class Instances2BinaryMasks(AbstractTransform):
             dict: processed batch
         """
         data[self.binary_mask_key] = []
-        for batch_idx, instance_element in enumerate(data[self.instance_key].split(1)):
+        for batch_idx, instance_element in enumerate(
+            data[self.instance_key].split(1, dim=0)
+        ):
+            # print(f"Element shape: {instance_element.shape} orig {data[self.instance_key].shape}")
             _present_instances = (
                 data[self.present_instances][batch_idx]
                 if self.present_instances is not None
@@ -588,7 +596,7 @@ class Instances2BinaryMasks(AbstractTransform):
             )
             data[self.binary_mask_key].append(
                 instances_to_binary_masks(
-                    instances=instance_element,
+                    instances=instance_element[0],  # squeeze batch dim
                     instance_idx=_present_instances,
                 )
             )

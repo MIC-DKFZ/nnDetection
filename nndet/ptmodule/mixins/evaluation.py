@@ -1,13 +1,16 @@
 from abc import ABC
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
+import torch
 from loguru import logger
 
+from nndet.core.masks.ops import roi_mask_to_image_mask
 from nndet.evaluator import AbstractEvaluator
 from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import SegmentationEvaluator
 from nndet.utils.tensor import to_numpy
+from nndet.utils.typing import ND_TUPLE_INT
 
 
 class EvalMixin(ABC):
@@ -498,32 +501,29 @@ class ScoreMasksEvalMixin(EvalMixin):
         """
         super().evaluation_step(predictions=predictions, targets=targets)
 
-        from nndet.core.masks.ops import roi_mask_to_image_mask
-        from nndet.core.rois.ops import create_binary_masks
-
-        target_bin_masks = create_binary_masks(targets["target_masks"])
-        # TODO think about masks output format, squeeze channel?
-        # TODO: refactor this
-        assert (
-            len(predictions["pred_masks"])
-            == len(target_bin_masks)
-            == len(predictions["pred_boxes"])
-        )
+        _pred_boxes: List[torch.Tensor] = predictions["pred_boxes"]
+        _pred_masks_probs: List[torch.Tensor] = predictions["pred_masks"]
+        _image_spatial_size: ND_TUPLE_INT = predictions["__pred_image_spatial_size"]
+        target_binary_masks: List[torch.Tensor] = targets["target_binary_masks"]
+        assert len(_pred_masks_probs) == len(target_binary_masks) == len(_pred_boxes)
         pred_masks = []
-        for idx in range(len(target_bin_masks)):
+        for idx in range(len(target_binary_masks)):
+            # breakpoint()
             pred_bin_masks = roi_mask_to_image_mask(
-                boxes=predictions["pred_boxes"][idx],
-                masks=predictions["pred_masks"][idx],
-                image_shape=tuple(target_bin_masks[idx].shape[1:]),
+                boxes=_pred_boxes[idx],
+                masks=_pred_masks_probs[idx],
+                image_shape=_image_spatial_size,
                 threshold=0.5,
+                mode="nearest",
             )
+            assert pred_bin_masks.ndim == len(_image_spatial_size) + 1
             pred_masks.append(pred_bin_masks)
 
         pred_masks = to_numpy(pred_masks)
         pred_classes = to_numpy(predictions["pred_mask_labels"])
         pred_scores = to_numpy(predictions["pred_mask_scores"])
 
-        gt_masks = to_numpy(target_bin_masks)
+        gt_masks = to_numpy(target_binary_masks)
         gt_classes = to_numpy(targets["target_classes"])
         gt_ignore = None
 
