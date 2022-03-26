@@ -75,7 +75,6 @@ class CascadeRoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-        predict: bool = False,
     ):
         fpn_features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
@@ -148,7 +147,7 @@ class CascadeRoIModule(BaseRoIModule):
                     losses[f"roi_s{stage_idx}_{k}"] = (
                         i * self.loss_weight_stage[stage_idx]
                     )
-        return losses, None
+        return losses
 
     @torch.no_grad()
     def inference_step(

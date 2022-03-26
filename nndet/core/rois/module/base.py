@@ -111,8 +111,7 @@ class BaseRoIModule(torch.nn.Module):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-        predict: bool = False,
-    ):
+    ) -> Dict[str, torch.Tensor]:
         raise NotImplementedError
 
     @abstractmethod
@@ -432,8 +431,7 @@ class RoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-        predict: bool = False,
-    ) -> Tuple[Dict[str, torch.Tensor], None]:
+    ) -> Dict[str, torch.Tensor]:
         """
         Perform a training step of the RoI Module
 
@@ -466,11 +464,8 @@ class RoIModule(BaseRoIModule):
                     [R, image_size]. The i-th entry along the first dimension
                     corresponds to the i-th object / box / class.
 
-            predict: Ignored
-
         Returns:
             Dict[str, torch.Tensor]: computed losses
-            None: will always be None
         """
         _features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
@@ -507,7 +502,7 @@ class RoIModule(BaseRoIModule):
                 predict=False,
             )
             losses.update(mask_losses)
-        return {f"roi_s0_{k}": i for k, i in losses.items()}, None
+        return {f"roi_s0_{k}": i for k, i in losses.items()}
 
     @torch.no_grad()
     def inference_step(

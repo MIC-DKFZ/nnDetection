@@ -23,6 +23,7 @@ import pytorch_lightning as pl
 import torch
 from loguru import logger
 
+from nndet.core.abstract import AbstractDetector
 from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
@@ -55,7 +56,7 @@ class LightningBaseModule(pl.LightningModule):
         )
 
         # initialize model
-        self.model = self.from_config_plan(
+        self.model: AbstractDetector = self.from_config_plan(
             model_cfg=self.model_cfg,
             plan_arch=self.plan["architecture"],
             plan_anchors=self.plan["anchors"],
@@ -115,14 +116,16 @@ class LightningBaseModule(pl.LightningModule):
 
         targets = {key: item for key, item in batch.items() if "target_" in key}
         if "target_seg" in targets:
-            targets["target_seg"] = targets["target_seg"][
-                :, 0
-            ]  # Remove channel dimension
+            # [optional] add semantic segmentation to targets if available
+            # Remove channel dimension of semantic segmentation
+            targets["target_seg"] = targets["target_seg"][:, 0]
+        if "target_binary_masks" in targets:
+            # [optional] add bianry masks to targets if available
+            targets["target_binary_masks"] = targets["target_binary_masks"]
 
-        losses, _ = self.model.train_step(
+        losses = self.model.train_step(
             images=batch["data"],
             targets=targets,
-            predict=False,
             batch_num=batch_idx,
         )
         loss = sum(losses.values())
@@ -142,14 +145,16 @@ class LightningBaseModule(pl.LightningModule):
 
             targets = {key: item for key, item in batch.items() if "target_" in key}
             if "target_seg" in targets:
-                targets["target_seg"] = targets["target_seg"][
-                    :, 0
-                ]  # Remove channel dimension
+                # [optional] add semantic segmentation to targets if available
+                # Remove channel dimension of semantic segmentation
+                targets["target_seg"] = targets["target_seg"][:, 0]
+            if "target_binary_masks" in targets:
+                # [optional] add bianry masks to targets if available
+                targets["target_binary_masks"] = targets["target_binary_masks"]
 
-            losses, predictions = self.model.train_step(
+            losses, predictions = self.model.validation_step(
                 images=batch["data"],
                 targets=targets,
-                predict=True,
                 batch_num=batch_idx,
             )
             loss = sum(losses.values())

@@ -26,7 +26,7 @@ from typing import Callable, Sequence, Tuple, Union
 import torch
 from loguru import logger
 
-from nndet.arch.abstract import AbstractModel
+from nndet.core.abstract import AbstractDetector
 
 """
 This is just a first prototype to estimate VRAM consumption for different GPUs
@@ -116,7 +116,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         self,
         min_shape: Sequence[int],
         target_shape: Sequence[int],
-        network: AbstractModel,
+        network: AbstractDetector,
         optimizer_cls: Callable = torch.optim.Adam,
         in_channels: int = None,
         num_instances: int = 1,
@@ -160,7 +160,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         self,
         min_shape: Sequence[int],
         target_shape: Sequence[int],
-        network: AbstractModel,
+        network: AbstractDetector,
         optimizer_cls: Callable = torch.optim.Adam,
         num_instances: int = 1,
     ) -> Tuple[int, bool]:
@@ -178,7 +178,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         self,
         min_shape: Sequence[int],
         target_shape: Sequence[int],
-        network: AbstractModel,
+        network: AbstractDetector,
         optimizer_cls: Callable = torch.optim.Adam,
         num_instances: int = 1,
     ) -> Tuple[int, bool]:
@@ -202,7 +202,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
     def measure(
         self,
         shape: Sequence[int],
-        network: AbstractModel,
+        network: AbstractDetector,
         optimizer_cls: Callable = torch.optim.Adam,
         num_instances: int = 1,
     ):

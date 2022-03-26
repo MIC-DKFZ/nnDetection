@@ -21,7 +21,7 @@ import torch
 from torch import Tensor
 
 
-class AbstractModel(torch.nn.Module):
+class AbstractDetector(torch.nn.Module):
     @classmethod
     @abstractmethod
     def from_config_plan(
@@ -41,14 +41,34 @@ class AbstractModel(torch.nn.Module):
         targets: dict,
         predict: bool,
         batch_num: int,
-    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Dict[str, torch.Tensor]:
         """
-        Perform a single training step
+        Perform a single training step -> only losses are computed
 
         Args:
             images: images to process
             targets: labels for training
-            predict: compute final predictions which should be used for metric evaluation
+            batch_num: batch index inside epoch
+
+        Returns:
+            Dict[str, torch.Tensor]: losses
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def validation_step(
+        self,
+        images: Tensor,
+        targets: dict,
+        batch_num: bool,
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+        """
+        Perform a single validation step -> losses (without grad) and
+        predictions are computed
+
+        Args:
+            images: images to process
+            targets: labels for training
             batch_num: batch index inside epoch
 
         Returns:
@@ -57,6 +77,28 @@ class AbstractModel(torch.nn.Module):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def inference_step(
+        self,
+        images: Tensor,
+        *args,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Perform a single inference step -> only predictions are computed
+
+        Args:
+            images: images to process
+            *args: positional arguments
+            **kwargs: keyword arguments
+
+        Returns:
+            Dict: predictions
+        """
+        raise NotImplementedError
+
+
+class AbstractOneStageDetector(AbstractDetector):
     def train_step_with_features(
         self,
         images: Tensor,
@@ -81,33 +123,13 @@ class AbstractModel(torch.nn.Module):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def inference_step(
-        self,
-        images: Tensor,
-        *args,
-        **kwargs,
-    ) -> Dict[str, Any]:
-        """
-        Perform a single training step
-
-        Args:
-            images: images to process
-            *args: positional arguments
-            **kwargs: keyword arguments
-
-        Returns:
-            Dict: predictions
-        """
-        raise NotImplementedError
-
     def inference_step_with_features(
         self,
         images: Tensor,
         **kwargs,
     ) -> Union[Dict[str, Any], List[torch.Tensor]]:
         """
-        Perform a single training step
+        Perform a single inference step
         Only needed for one stage detectors
 
         Args:

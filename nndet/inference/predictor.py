@@ -24,7 +24,7 @@ import torch
 from loguru import logger
 from torch.utils.data import DataLoader
 
-from nndet.arch.abstract import AbstractModel
+from nndet.core.abstract import AbstractDetector
 from nndet.io.load import save_pickle
 from nndet.io.patching import create_grid, save_get_crop
 from nndet.io.transforms import NoOp
@@ -38,7 +38,7 @@ class Predictor:
     def __init__(
         self,
         ensembler: Dict[str, Callable],
-        models: Sequence[AbstractModel],
+        models: Sequence[AbstractDetector],
         crop_size: Sequence[int],
         overlap: float = 0.5,
         tile_keys: Sequence[str] = ("data",),
@@ -330,7 +330,7 @@ class Predictor:
 
     def predict_with_transformation(
         self,
-        model: AbstractModel,
+        model: AbstractDetector,
         batch: Dict,
         batch_num: int,
         transform: Callable,

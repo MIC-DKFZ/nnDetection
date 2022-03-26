@@ -91,64 +91,64 @@ class BoxRCNN(
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
     roi_mask_post_cls = NoMaskPostprocessing
 
-    def training_step(self, batch, batch_idx):  # TODO
-        """
-        Computes a single training step
-        See :class:`BaseRetinaNet` for more information
-        """
-        with torch.no_grad():
-            batch = self.pre_trafo(**batch)
+    # def training_step(self, batch, batch_idx):  # TODO
+    #     """
+    #     Computes a single training step
+    #     See :class:`BaseRetinaNet` for more information
+    #     """
+    #     with torch.no_grad():
+    #         batch = self.pre_trafo(**batch)
 
-        kwargs = {}
-        if "target_seg" in batch:
-            kwargs["target_seg"] = batch["target_seg"][:, 0]  # Remove channel dimension
+    #     kwargs = {}
+    #     if "target_seg" in batch:
+    #         kwargs["target_seg"] = batch["target_seg"][:, 0]  # Remove channel dimension
 
-        losses, _ = self.model.train_step(
-            images=batch["data"],
-            targets={
-                "target_boxes": batch["target_boxes"],
-                "target_classes": batch["target_classes"],
-                "target_binary_masks": batch["target_binary_masks"],
-                **kwargs,
-            },
-            predict=False,
-            batch_num=batch_idx,
-        )
-        loss = sum(losses.values())
+    #     losses, _ = self.model.train_step(
+    #         images=batch["data"],
+    #         targets={
+    #             "target_boxes": batch["target_boxes"],
+    #             "target_classes": batch["target_classes"],
+    #             "target_binary_masks": batch["target_binary_masks"],
+    #             **kwargs,
+    #         },
+    #         predict=False,
+    #         batch_num=batch_idx,
+    #     )
+    #     loss = sum(losses.values())
 
-        # self.log_dict(
-        #     {f"train_loss_step/{k}": i for k, i in losses.items()},
-        #     prog_bar=True,
-        #     logger=True,
-        #     on_step=True,
-        # )
-        return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
+    #     # self.log_dict(
+    #     #     {f"train_loss_step/{k}": i for k, i in losses.items()},
+    #     #     prog_bar=True,
+    #     #     logger=True,
+    #     #     on_step=True,
+    #     # )
+    #     return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
 
-    def validation_step(self, batch, batch_idx):
-        with torch.no_grad():
-            batch = self.pre_trafo(**batch)
+    # def validation_step(self, batch, batch_idx):
+    #     with torch.no_grad():
+    #         batch = self.pre_trafo(**batch)
 
-            kwargs = {}
-            if "target_seg" in batch:
-                kwargs["target_seg"] = (
-                    batch["target_seg"][:, 0],
-                )  # Remove channel dimension
+    #         kwargs = {}
+    #         if "target_seg" in batch:
+    #             kwargs["target_seg"] = (
+    #                 batch["target_seg"][:, 0],
+    #             )  # Remove channel dimension
 
-            targets = {
-                "target_boxes": batch["target_boxes"],
-                "target_classes": batch["target_classes"],
-                "target_binary_masks": batch["target_binary_masks"],
-                **kwargs,
-            }
-            predictions = self.model.inference_step(
-                images=batch["data"],
-                targets=targets,
-                predict=True,
-                batch_num=batch_idx,
-            )
+    #         targets = {
+    #             "target_boxes": batch["target_boxes"],
+    #             "target_classes": batch["target_classes"],
+    #             "target_binary_masks": batch["target_binary_masks"],
+    #             **kwargs,
+    #         }
+    #         predictions = self.model.inference_step(
+    #             images=batch["data"],
+    #             targets=targets,
+    #             predict=True,
+    #             batch_num=batch_idx,
+    #         )
 
-        self.evaluation_step(predictions=predictions, targets=targets)
-        return {"loss": 0}
+    #     self.evaluation_step(predictions=predictions, targets=targets)
+    #     return {"loss": 0}
 
 
 @MODULE_REGISTRY.register
