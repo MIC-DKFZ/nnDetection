@@ -11,19 +11,8 @@ Data
    :nosignatures:
 
    base
-
-
-Batchgenerators
----------------
-
-.. currentmodule:: nndet.io.datamodule
-
-.. autosummary::
-   :toctree: Batchgenerators
-   :nosignatures:
-
-   bg_module
-   bg_loader
+   loader
+   module
 
 
 Augmentation
@@ -36,7 +25,9 @@ Augmentation
    :nosignatures:
 
    base
-   bg_aug
+   bg
+   monai
+   torchio
 
 
 Transforms

@@ -7,10 +7,10 @@ Training
    :toctree: Training
    :nosignatures:
 
-   ema
+   callbacks
    learning_rate
-   misc
    swa
+   ema
 
 
 .. currentmodule:: nndet.training.optimizer
