@@ -21,7 +21,7 @@ from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.heads.regressor.dense import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.ema import EMAWeightsCB
 from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer.sam import SAM

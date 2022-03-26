@@ -24,7 +24,7 @@ from nndet.arch.heads.regressor import DenseRegressorType
 from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.core.boxes.coder import CoderType
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer import get_params_no_wd_on_norm
 

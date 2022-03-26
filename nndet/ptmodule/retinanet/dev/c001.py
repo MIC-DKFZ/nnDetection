@@ -31,7 +31,7 @@ from nndet.core.boxes.matcher import ATSSMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinanet.base import RetinaNetModule
+from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
 from nndet.utils.typing import CONVSEQ
 
 

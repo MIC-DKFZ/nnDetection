@@ -4,7 +4,7 @@ from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.regressor import L1Regressor
 from nndet.core.boxes.matcher import IoUMatcher
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 
 @MODULE_REGISTRY.register
