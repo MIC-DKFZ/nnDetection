@@ -13,7 +13,7 @@ from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
-from nndet.core.rois.pooler import NDSIZE, PoolerType
+from nndet.core.rois.pooler import NDSIZE, RoIPoolerType
 from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
@@ -27,7 +27,7 @@ class BaseRoIModule(torch.nn.Module):
     def __init__(
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
-        box_pooler: PoolerType,
+        box_pooler: RoIPoolerType,
         box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
@@ -38,7 +38,7 @@ class BaseRoIModule(torch.nn.Module):
         mask_head: Optional[
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
-        mask_pooler: Optional[PoolerType] = None,
+        mask_pooler: Optional[RoIPoolerType] = None,
         mask_post: Optional[MaskPostprocessing] = None,
         # post-processing
         roi_score_thresh: float = None,

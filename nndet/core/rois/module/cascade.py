@@ -9,7 +9,7 @@ from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.rois.module.base import BaseRoIModule
-from nndet.core.rois.pooler import PoolerType
+from nndet.core.rois.pooler import RoIPoolerType
 
 # TODO: cleanup
 
@@ -18,7 +18,7 @@ class CascadeRoIModule(BaseRoIModule):
     def __init__(
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
-        box_pooler: PoolerType,
+        box_pooler: RoIPoolerType,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
         num_classes: int,
@@ -28,7 +28,7 @@ class CascadeRoIModule(BaseRoIModule):
         mask_head: Optional[
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
-        mask_pooler: Optional[PoolerType] = None,
+        mask_pooler: Optional[RoIPoolerType] = None,
         mask_interleaved_execution: bool = False,
         # TODO: refactor postprocessing
         # post-processing

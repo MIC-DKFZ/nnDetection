@@ -11,7 +11,7 @@ NDSIZE = Union[Tuple[int, int], Tuple[int, int, int]]
 
 
 # TODO: docs with feature output size instead of simple output size
-class Pooler(torch.nn.Module):
+class RoIPooler(torch.nn.Module):
     def __init__(
         self,
         feature_output_size: NDSIZE,
@@ -171,7 +171,7 @@ class Pooler(torch.nn.Module):
         raise NotImplementedError
 
 
-class RoIAlignNaiveAssign(Pooler):
+class RoIAlignNaiveAssign(RoIPooler):
     @torch.no_grad()
     def _find_pyramid_level(
         self,
@@ -272,4 +272,4 @@ class RoIAlignNaiveAssign(Pooler):
         return pooled_masks
 
 
-PoolerType = TypeVar("PoolerType", bound=Pooler)
+RoIPoolerType = TypeVar("RoIPoolerType", bound=RoIPooler)
