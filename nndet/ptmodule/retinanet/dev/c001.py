@@ -16,7 +16,7 @@ limitations under the License.
 from typing import Optional, Type
 
 from nndet.arch.blocks.basic import AbstractBlock, StackedConvBlock2, StackedConvBlock3
-from nndet.arch.conv import BaseConvNormAct, ConvGroupLReLU, ConvInstanceLReLU, ConvSeq
+from nndet.arch.conv import BaseConvNormAct, ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import BaseUFPN, UFPNModular
 from nndet.arch.encoder.abstract import AbstractEncoder
 from nndet.arch.encoder.modular import Encoder
@@ -32,6 +32,7 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinanet.base import RetinaNetModule
+from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
@@ -48,10 +49,10 @@ class RetinaNetC001(RetinaNetModule):
     ] = StackedConvBlock2  # define central building block of backbone
 
     neck_cls: Type[BaseUFPN] = UFPNModular  # define class for neck
-    neck_conv_cls: Type[ConvSeq] = ConvInstanceLReLU  # conv class used for neck
+    neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
-    head_conv_cls: Type[ConvSeq] = ConvGroupLReLU  # conv class used for head
+    head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
     head_classifier_cls: Type[
         DenseClassifier
     ] = BCECLassifier  # define class for head classifier

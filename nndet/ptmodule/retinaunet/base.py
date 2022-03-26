@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Optional, Type
 
 from nndet.arch.blocks.basic import AbstractBlock, StackedConvBlock2
-from nndet.arch.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu, ConvSeq
+from nndet.arch.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu
 from nndet.arch.decoder.base import BaseUFPN, UFPNModular
 from nndet.arch.encoder.abstract import AbstractEncoder
 from nndet.arch.encoder.modular import Encoder
@@ -39,6 +39,7 @@ from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
+from nndet.utils.typing import CONVSEQ
 
 
 class RetinaUNetModule(
@@ -54,16 +55,16 @@ class RetinaUNetModule(
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
     backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
-    backbone_conv_cls: Type[ConvSeq] = ...  # conv class used for backbone
+    backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
     backbone_block: Type[
         AbstractBlock
     ] = ...  # define central building block of backbone
 
     neck_cls: Type[BaseUFPN] = ...  # define class for neck
-    neck_conv_cls: Type[ConvSeq] = ...  # conv class used for neck
+    neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
-    head_conv_cls: Type[ConvSeq] = ...  # conv class used for head
+    head_conv_cls: Type[CONVSEQ] = ...  # conv class used for head
     head_classifier_cls: Type[DenseClassifier] = ...  # define class for head classifier
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
@@ -90,10 +91,10 @@ class RetinaUNetBase(RetinaUNetModule):
     ] = StackedConvBlock2  # define central building block of backbone
 
     neck_cls: Type[BaseUFPN] = UFPNModular  # define class for neck
-    neck_conv_cls: Type[ConvSeq] = ConvInstanceRelu  # conv class used for neck
+    neck_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
-    head_conv_cls: Type[ConvSeq] = ConvGroupRelu  # conv class used for head
+    head_conv_cls: Type[CONVSEQ] = ConvGroupRelu  # conv class used for head
     head_classifier_cls: Type[
         DenseClassifier
     ] = CEClassifier  # define class for head classifier

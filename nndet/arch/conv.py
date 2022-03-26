@@ -33,62 +33,8 @@ except ImportError:
     torch_mish = False
 
 
-NdParam = Union[int, Tuple[int, int], Tuple[int, int, int]]
-
-
-class ConvSeq(torch.nn.Sequential):
-    def __init__(
-        self,
-        dim: int,
-        in_channels: int,
-        out_channels: int,
-        norm: Optional[Union[Callable[..., Type[nn.Module]], str]],
-        act: Optional[Union[Callable[..., Type[nn.Module]], str]],
-        kernel_size: Union[int, tuple],
-        stride: Union[int, tuple] = 1,
-        padding: Union[int, tuple] = 0,
-        dilation: Union[int, tuple] = 1,
-        groups: int = 1,
-        bias: bool = None,
-        transposed: bool = False,
-        norm_kwargs: Optional[dict] = None,
-        act_inplace: Optional[bool] = None,
-        act_kwargs: Optional[dict] = None,
-        initializer: Callable[[nn.Module], None] = None,
-    ):
-        """
-        Provide interface to generate a Conv Sequence, usual sequences are:
-            conv -> norm -> activation
-
-        Args
-            dim: number of dimensions the convolution should be chosen for
-            in_channels: input channels
-            out_channels: output_channels
-            norm: type of normalization. If None, no normalization will be applied
-            kernel_size: size of convolution kernel
-            act: class of non linearity; if None no actication is used.
-            stride: convolution stride
-            padding: padding value
-                (if input or output padding depends on whether the convolution
-                is transposed or not)
-            dilation: convolution dilation
-            groups: number of convolution groups
-            bias: whether to include bias or not
-                If None, the bias will be determined dynamicaly: False
-                if a normalization follows otherwise True
-            transposed: whether the convolution should be transposed or not
-            norm_kwargs: keyword arguments for normalization layer
-            act_inplace: whether to perform activation inplce or not
-                If None, inplace will be determined dynamicaly: True
-                if a normalization follows otherwise False
-            act_kwargs: keyword arguments for non linearity layer.
-            initializer: initilize weights
-        """
-        pass
-
-
 class Generator:
-    def __init__(self, conv_cls: ConvSeq, dim: int):
+    def __init__(self, conv_cls, dim: int):
         """
         Factory helper which saves the conv class and dimension to generate objects
 
@@ -113,7 +59,7 @@ class Generator:
         return self.conv_cls(self.dim, *args, **kwargs)
 
 
-class BaseConvNormAct(ConvSeq):
+class BaseConvNormAct(torch.nn.Sequential):
     def __init__(
         self,
         dim: int,

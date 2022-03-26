@@ -23,7 +23,8 @@ import torch.nn as nn
 
 from nndet.arch.blocks.mbconv import MyFusedMBConv
 from nndet.arch.blocks.res import ResBottleneck, ResPlain
-from nndet.arch.conv import NdParam, nd_pool
+from nndet.arch.conv import nd_pool
+from nndet.utils.typing import ND_INT
 
 
 class AbstractBlock(nn.Module):
@@ -51,8 +52,8 @@ class StackedBlock(AbstractBlock):
         self,
         conv: Callable[[], nn.Module],
         in_channels: int,
-        conv_kernel: NdParam,
-        stride: NdParam = None,
+        conv_kernel: ND_INT,
+        stride: ND_INT = None,
         out_channels: int = None,
         max_out_channels: int = None,
         num_blocks: int = 1,
@@ -143,9 +144,9 @@ class StackedBlock(AbstractBlock):
         conv: Callable[[], nn.Module],
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
     ) -> nn.Module:
         raise NotImplementedError
 
@@ -156,9 +157,9 @@ class StackedConvBlock2(StackedBlock):
         conv: Callable,
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
@@ -201,9 +202,9 @@ class StackedConvBlock2Max(StackedBlock):
         conv: Callable,
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
@@ -265,9 +266,9 @@ class StackedConvBlock3(StackedBlock):
         conv: Callable,
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
@@ -318,9 +319,9 @@ class StackedResPlain(StackedBlock):
         conv: Callable[[], nn.Module],
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
@@ -354,9 +355,9 @@ class StackedResBottleneck(StackedBlock):
         conv: Callable[[], nn.Module],
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
@@ -392,9 +393,9 @@ class MySEBlockExp2(StackedBlock):
         conv: Callable,
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         **kwargs,
     ) -> nn.Module:
         """
