@@ -17,12 +17,9 @@ from nndet.core.rois.pooler import NDSIZE, RoIPoolerType
 from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
-# from nndet.core.rois.ops import create_binary_masks
-
 
 # TODO: cleanup
 # FIXME: no proposals case -> matcher
-# TODO: box_post & mask_post
 class BaseRoIModule(torch.nn.Module):
     def __init__(
         self,

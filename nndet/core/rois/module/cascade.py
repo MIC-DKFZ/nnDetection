@@ -8,6 +8,8 @@ from nndet.arch.heads.masker.base import MaskerType
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
+from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPoolerType
 
@@ -19,6 +21,7 @@ class CascadeRoIModule(BaseRoIModule):
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
         box_pooler: RoIPoolerType,
+        box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
         num_classes: int,
@@ -29,8 +32,8 @@ class CascadeRoIModule(BaseRoIModule):
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
         mask_pooler: Optional[RoIPoolerType] = None,
+        mask_post: Optional[MaskPostprocessing] = None,
         mask_interleaved_execution: bool = False,
-        # TODO: refactor postprocessing
         # post-processing
         roi_score_thresh: float = None,
         roi_detections_per_img: int = 100,
@@ -41,6 +44,7 @@ class CascadeRoIModule(BaseRoIModule):
         super().__init__(
             box_head=box_head,
             box_pooler=box_pooler,
+            box_post=box_post,
             matcher=matcher,
             sampler=sampler,
             num_classes=num_classes,
@@ -49,6 +53,7 @@ class CascadeRoIModule(BaseRoIModule):
             # mask
             mask_head=mask_head,
             mask_pooler=mask_pooler,
+            mask_post=mask_post,
             # post-processing
             roi_score_thresh=roi_score_thresh,
             roi_detections_per_img=roi_detections_per_img,
@@ -172,14 +177,20 @@ class CascadeRoIModule(BaseRoIModule):
             if self.mask_mode:
                 if self.mask_interleaved_execution:
                     proposal_boxes = prediction["pred_boxes"]
+                    proposal_probs = prediction["pred_scores"]
+                    proposal_labels = prediction["pred_labels"]
                 else:
                     proposal_boxes = proposals["pred_boxes"]
+                    proposal_probs = proposals["pred_scores"]
+                    proposal_labels = proposals["pred_labels"]
 
-                # TODO: update
-                self._inference_step_masks(
+                mask_preds = self._inference_step_masks(
                     images=images,
                     features=fpn_features,
-                    proposal_boxes=proposal_boxes,
+                    pred_boxes=proposal_boxes,
+                    pred_probs=proposal_probs,
+                    pred_labels=proposal_labels,
                     stage=stage_idx,
                 )
+                prediction.update(mask_preds)
         return prediction

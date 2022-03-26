@@ -70,6 +70,7 @@ class MaskRCNNModule(
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
+    # Classes other than None are not supprted here
     segmenter_cls: Optional[
         Type[Segmenter]
     ] = None  # [optional] segmentation head as in RetinaUNet
@@ -136,10 +137,7 @@ class MaskURCNNModule(
     head_sampler_cls: Type[SamplerType] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
-    # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
-    segmenter_cls: Optional[
-        Type[Segmenter]
-    ] = None  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Optional[Type[Segmenter]] = ...  # segmentation head as in RetinaUNet
 
     ########################
     # RoI Head Configuration

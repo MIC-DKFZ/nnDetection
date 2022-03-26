@@ -923,6 +923,15 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
             model_cfg=model_cfg,
         )
 
+        roi_box_post = cls._build_roi_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        roi_mask_post = cls._build_roi_mask_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
         # RoI Module
         roi_sampler = cls._build_roi_sampler(
             plan_arch=plan_arch,
@@ -933,17 +942,18 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         if maskers[0] is None:
             maskers = None
 
-        # TODO: postprocessing refactor
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
             box_head=heads,
-            matcher=matchers,
             box_pooler=box_pooler,
+            box_post=roi_box_post,
+            matcher=matchers,
             sampler=roi_sampler,
             # mask heads
             mask_head=maskers,
             mask_pooler=mask_pooler,
+            mask_post=roi_mask_post,
         )
         return cls.full_detector_cls(
             rpn=rpn,

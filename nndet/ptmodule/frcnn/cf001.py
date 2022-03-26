@@ -8,7 +8,6 @@ from nndet.arch.heads.classifier.dense import DenseClassifier
 from nndet.arch.heads.classifier.roi import RoIClassifier
 from nndet.arch.heads.comb.base import AnchorHead
 from nndet.arch.heads.comb.roi import RoIBoxHead
-from nndet.arch.heads.masker.base import Masker
 from nndet.arch.heads.regressor.dense import DenseRegressor
 from nndet.arch.heads.regressor.roi import RoIRegressor
 from nndet.arch.heads.segmenter import Segmenter
@@ -16,33 +15,24 @@ from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
-from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.rois.module import CascadeRoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # MaskPredictionMixin,
-from nndet.ptmodule.mixins.prepare import (
-    BinaryMasksPrepareMixin,
-    BoxesPrepareMixin,
-    SemanticFgPrepareMixin,
-)
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 
 
 @MODULE_REGISTRY.register
-class CascadeMaskURCNNModule(
+class CascadeFasterRCNNModule(
     LightningBaseModule,  # Detection Base
-    BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
-    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     MultiStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
-    # MaskPredictionMixin,  # Mask Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
@@ -70,10 +60,8 @@ class CascadeMaskURCNNModule(
     head_sampler_cls: Type[SamplerType] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
-    # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
-    segmenter_cls: Optional[
-        Type[Segmenter]
-    ] = None  # [optional] segmentation head as in RetinaUNet
+    # Not supprted here; see `CascadeMaskRCNN`
+    segmenter_cls: Optional[Type[Segmenter]] = None
 
     ########################
     # RoI Head Configuration
@@ -92,8 +80,7 @@ class CascadeMaskURCNNModule(
         BoxPostprocessing
     ] = ...  # define roi box postprocessing strategy
 
-    roi_masker_cls: Type[Masker] = ...  # class of RoI mask head
-    roi_mask_pooler_cls: Type[RoIPooler] = ...  # class of RoI mask pooler
-    roi_mask_post_cls: Type[
-        MaskPostprocessing
-    ] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+    # Not supprted here; see `CascadeMaskRCNN`
+    roi_masker_cls = None
+    roi_mask_pooler_cls = None
+    roi_mask_post_cls = None

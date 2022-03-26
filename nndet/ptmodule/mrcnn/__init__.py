@@ -1,2 +1,3 @@
-from nndet_reg.ptmodule.mrccn.cm001 import CascadeMaskURCNNC001
-from nndet_reg.ptmodule.mrccn.m001 import MaskRCNNC001, MaskURCNNC001
+from nndet.ptmodule.mrcnn.cm001 import CascadeMaskURCNNModule
+from nndet.ptmodule.mrcnn.dev import *
+from nndet.ptmodule.mrcnn.m001 import MaskRCNNModule, MaskURCNNModule
