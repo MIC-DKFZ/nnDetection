@@ -1,7 +1,7 @@
 from typing import Optional, Type
 
 from nndet.arch.blocks.basic import AbstractBlock
-from nndet.arch.conv import BaseConvNormAct
+from nndet.arch.conv import ConvSeq
 from nndet.arch.decoder.base import BaseUFPN
 from nndet.arch.encoder.abstract import AbstractEncoder
 from nndet.arch.heads.classifier.dense import DenseClassifier
@@ -52,16 +52,16 @@ class MaskRCNNModule(
     # RPN Configuration
     ###################
     backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
-    backbone_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for backbone
+    backbone_conv_cls: Type[ConvSeq] = ...  # conv class used for backbone
     backbone_block: Type[
         AbstractBlock
     ] = ...  # define central building block of backbone
 
     neck_cls: Type[BaseUFPN] = ...  # define class for neck
-    neck_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for neck
+    neck_conv_cls: Type[ConvSeq] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
-    head_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for head
+    head_conv_cls: Type[ConvSeq] = ...  # conv class used for head
     head_classifier_cls: Type[DenseClassifier] = ...  # define class for head classifier
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
@@ -120,21 +120,21 @@ class MaskURCNNModule(
     # RPN Configuration
     ###################
     backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
-    backbone_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for backbone
+    backbone_conv_cls: Type[ConvSeq] = ...  # conv class used for backbone
     backbone_block: Type[
         AbstractBlock
     ] = ...  # define central building block of backbone
 
     neck_cls: Type[BaseUFPN] = ...  # define class for neck
-    neck_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for neck
+    neck_conv_cls: Type[ConvSeq] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
-    head_conv_cls: Type[BaseConvNormAct] = ...  # conv class used for head
+    head_conv_cls: Type[ConvSeq] = ...  # conv class used for head
     head_classifier_cls: Type[DenseClassifier] = ...  # define class for head classifier
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Type[SamplerType] = ...
+    head_sampler_cls: Optional[Type[SamplerType]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     segmenter_cls: Optional[Type[Segmenter]] = ...  # segmentation head as in RetinaUNet
