@@ -1,10 +1,11 @@
 import os
-from abc import ABC
+from abc import ABC, abstractclassmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, Hashable, Sequence, Type
+from typing import Any, Dict, Hashable, Sequence, Type
 
 from loguru import logger
 
+from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelective,
     BoxEnsemblerSelective2D,
@@ -14,116 +15,124 @@ from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.inference.helper import predict_dir
 from nndet.inference.loading import get_loader_fn
 from nndet.inference.predictor import Predictor
-from nndet.inference.sweeper import BoxSweeper, MaskSweeper
+from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
 from nndet.inference.transforms import Inference2D, get_tta_transforms
 from nndet.ptmodule.module import LightningBaseModule
 
 
 class PredictionMixin(ABC):
-    @staticmethod
-    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
+    @classmethod
+    def requires_box_eval(cls) -> bool:
         """
-        Get ensembler classes to combine multiple predictions
-        Needs to be overwritten in subclasses!
+        Returns:
+            bool: `True` if box evaluation should be performed.
+                `False` otherwise.
         """
-        ...
+        return False
 
     @classmethod
-    def get_predictor(
+    def requires_mask_eval(cls) -> bool:
+        """
+        Returns:
+            bool: `True` if mask evaluation should be performed.
+                `False` otherwise.
+        """
+        return False
+
+    @classmethod
+    def requires_case_eval(cls) -> bool:
+        """
+        Returns:
+            bool: `True` if case evaluation should be performed.
+                `False` otherwise.
+        """
+        return False
+
+    @classmethod
+    def requires_seg_eval(cls) -> bool:
+        """
+        Returns:
+            bool: `True` if (semantic) seg evaluation should be performed.
+                `False` otherwise.
+        """
+        return False
+
+    @abstractclassmethod
+    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
+        """
+        Returns:
+            Type[BaseEnsembler]: return class of ensembler to use for this
+                class
+        """
+        raise NotImplementedError
+
+    @abstractclassmethod
+    def get_sweeper_cls(cls) -> Type[Sweeper]:
+        """
+        Returns:
+            Type[Sweeper]: return class of sweeper to use for this class
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def create_predictor(
         cls,
         plan: Dict,
         models: Sequence[LightningBaseModule],
         num_tta_transforms: int = None,
-        **kwargs,
-    ) -> Type[Predictor]:
-        """
-        Get predictor
-        Needs to be overwritten in subclasses!
-        """
-        ...
-
-    def sweep(
-        self,
-        cfg: dict,
-        save_dir: os.PathLike,
-        train_data_dir: os.PathLike,
-        case_ids: Sequence[str],
-        run_prediction: bool = True,
-    ) -> Dict[str, Any]:
-        """
-        Sweep parameters to find the best predictions
-        Needs to be overwritten in subclasses!
-
-        Args:
-            cfg: config used for training
-            save_dir: save dir used for training
-            train_data_dir: directory where preprocessed training/validation
-                data is located
-            case_ids: case identifies to prepare and predict
-            run_prediction: predict cases
-            kwargs: keyword arguments passed to predict function
-        """
-        ...
-
-
-class BoxPredictionMixin(PredictionMixin):
-    @staticmethod
-    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
-        """
-        Get ensembler classes to combine multiple predictions
-        Needs to be overwritten in subclasses!
-        """
-        _lookup = {
-            2: {
-                "boxes": BoxEnsemblerSelective2D,
-                "seg": SegmentationEnsembler,
-            },
-            3: {
-                "boxes": BoxEnsemblerSelective,
-                "seg": SegmentationEnsembler,
-            },
-        }
-        return _lookup[dim][key]
-
-    @classmethod
-    def get_predictor(
-        cls,
-        plan: Dict,
-        models: Sequence[LightningBaseModule],
-        num_tta_transforms: int = None,
-        do_seg: bool = False,
+        # do_seg: bool = False,
         **kwargs,
     ) -> Predictor:
+        """
+        Create predictor
+
+        Args:
+            plan: plan obtained from preprocessing. Required keys:
+
+                ``"patch_size"`` Sequence[int]
+                    patch size to use for inference
+
+                ``"batch_size"`` int
+                    batch size to use for inference
+
+                ``"network_dim"`` int
+                    indicate dim of network -> 3 or 2
+
+                ``"inference_plan"`` dict
+                    parameters which were determined by sweep can be
+                    provided here and will overwrite values from the
+                    ensembler
+
+            models: models to ensemble
+            num_tta_transforms: number of tta transforms. If None, maximum
+                number of tta transforms will be used. One of None | 0 | 4 | 8
+
+        Returns:
+            Predictor: instantiated predictor for inference
+        """
         # process plan
         crop_size = plan["patch_size"]
         batch_size = plan["batch_size"]
-        inferene_plan = plan.get("inference_plan", {})
-        logger.info(f"Found inference plan: {inferene_plan} for prediction")
+        inference_plan = plan.get("inference_plan", {})
+        logger.info(f"Found inference plan: {inference_plan} for prediction")
         if num_tta_transforms is None:
             num_tta_transforms = 8 if plan["network_dim"] == 3 else 4
 
         # setup
+        # FIXME: needs general interface to determine which keys need to be transformed
         tta_transforms, tta_inverse_transforms = get_tta_transforms(
             num_tta_transforms,
-            seg=do_seg,
+            seg=False,
         )
         logger.info(
             f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
         )
 
-        box_ensembler_cls = cls.get_ensembler_cls(key="boxes", dim=plan["network_dim"])
-        box_ensembler, box_ensembler_key = box_ensembler_cls.constructor(
-            parameters=inferene_plan,
+        ensembler_cls = cls.get_ensembler_cls(dim=plan["network_dim"])
+        _ensembler, _ensembler_key = ensembler_cls.constructor(
+            parameters=inference_plan
         )
-        ensembler = {box_ensembler_key: box_ensembler}
-
-        if do_seg:
-            seg_ensembler_cls = cls.get_ensembler_cls(
-                key="seg",
-                dim=plan["network_dim"],
-            )
-            seg_ensembler, seg_ensembler_key = seg_ensembler_cls.constructor()
-            ensembler[seg_ensembler_key] = seg_ensembler
+        ensembler = {_ensembler_key: _ensembler}
 
         predictor = Predictor(
             ensembler=ensembler,
@@ -160,18 +169,8 @@ class BoxPredictionMixin(PredictionMixin):
             kwargs: keyword arguments passed to predict function
 
         Returns:
-            Dict: inference plan
-                e.g. (exact params depend on ensembler class usef for prediction)
-
-                ``"iou_thresh"`` float
-                    best IoU threshold
-
-                ``"score_thresh"`` float
-                    best score threshold
-
-                ``"no_overlap"`` bool
-                    enable/disable class independent NMS (ciNMS)
-
+            Dict: inference plan. Exact parameter depend on current ensembler
+                class.
         """
         logger.info(f"Running parameter sweep on {case_ids}")
 
@@ -202,10 +201,9 @@ class BoxPredictionMixin(PredictionMixin):
             )
 
         logger.info("Start parameter sweep...")
-        ensembler_cls = self.get_ensembler_cls(
-            key="boxes", dim=self.plan["network_dim"]
-        )
-        sweeper = BoxSweeper(
+        ensembler_cls = self.get_ensembler_cls(dim=self.plan["network_dim"])
+        sweeper_cls = self.get_sweeper_cls()
+        sweeper = sweeper_cls(
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=prediction_dir,
             gt_dir=processed_eval_labels,
@@ -217,16 +215,47 @@ class BoxPredictionMixin(PredictionMixin):
         return inference_plan
 
 
-class MaskPredictionMixin(PredictionMixin):
-    # FIXME: refactor
-    @staticmethod
-    def get_ensembler_cls(key: Hashable, dim: int) -> Callable:
-        """
-        Get ensembler classes to combine multiple predictions
-        Needs to be overwritten in subclasses!
-        """
-        return MaskViaBoxesSelectiveEnsembler
+class BoxPredictionMixin(PredictionMixin):
+    @classmethod
+    def requires_box_eval(cls) -> bool:
+        return True
 
+    @classmethod
+    def requires_case_eval(cls) -> bool:
+        return True
+
+    @classmethod
+    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
+        """
+        Returns:
+            Type[BaseEnsembler]: return class of ensembler to use for this
+                class
+        """
+        if dim == 2:
+            return BoxEnsemblerSelective2D
+        elif dim == 3:
+            return BoxEnsemblerSelective
+        else:
+            raise ValueError(f"Dim {dim} not supported in get_ensembler_cls.")
+
+    @classmethod
+    def get_sweepter_cls(cls) -> Type[Sweeper]:
+        return BoxSweeper
+
+    @classmethod
+    def _get_ensembler_cls(cls, key: Hashable, dim: int) -> Type[BaseEnsembler]:
+        """
+        This is used internally to exchange the ensembler classes
+        for experimentation but should not be used from outside.
+        """
+        if key == "boxes":
+            return cls.get_ensembler_cls(dim=dim)
+        elif key == "seg":
+            return SegmentationEnsembler
+        else:
+            raise ValueError(f"Key {key} not supported in _get_ensembler_cls.")
+
+    # FIXME: do_seg workaround
     @classmethod
     def get_predictor(
         cls,
@@ -253,11 +282,19 @@ class MaskPredictionMixin(PredictionMixin):
             f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
         )
 
-        mask_ensembler_cls = cls.get_ensembler_cls(key="masks", dim=plan["network_dim"])
-        mask_ensembler, mask_ensembler_key = mask_ensembler_cls.constructor(
+        ensembler_cls = cls.get_ensembler_cls(dim=plan["network_dim"])
+        _ensembler, _ensembler_key = ensembler_cls.constructor(
             parameters=inference_plan
         )
-        ensembler = {mask_ensembler_key: mask_ensembler}
+        ensembler = {_ensembler_key: _ensembler}
+
+        if do_seg:
+            seg_ensembler_cls = cls._get_ensembler_cls(
+                key="seg",
+                dim=plan["network_dim"],
+            )
+            seg_ensembler, seg_ensembler_key = seg_ensembler_cls.constructor()
+            ensembler[seg_ensembler_key] = seg_ensembler
 
         predictor = Predictor(
             ensembler=ensembler,
@@ -272,80 +309,36 @@ class MaskPredictionMixin(PredictionMixin):
             predictor.pre_transform = Inference2D(["data"])
         return predictor
 
-    def sweep(
-        self,
-        cfg: dict,
-        save_dir: os.PathLike,
-        train_data_dir: os.PathLike,
-        case_ids: Sequence[str],
-        run_prediction: bool = True,
-        **kwargs,
-    ) -> Dict[str, Any]:
+
+class MaskBoxPredictionMixin(PredictionMixin):
+    @classmethod
+    def requires_box_eval(cls) -> bool:
+        return True
+
+    @classmethod
+    def requires_mask_eval(cls) -> bool:
+        return True
+
+    @classmethod
+    def requires_case_eval(cls) -> bool:
+        return True
+
+    @classmethod
+    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
         """
-        Sweep detection parameters to find the best predictions
-
-        Args:
-            cfg: config used for training
-            save_dir: save dir used for training
-            train_data_dir: directory where preprocessed training/validation
-                data is located
-            case_ids: case identifies to prepare and predict
-            run_prediction: predict cases
-            kwargs: keyword arguments passed to predict function
-
         Returns:
-            Dict: inference plan
-                e.g. (exact params depend on ensembler class usef for prediction)
-
-                ``"iou_thresh"`` float
-                    best IoU threshold
-
-                ``"score_thresh"`` float
-                    best score threshold
-
-                ``"no_overlap"`` bool
-                    enable/disable class independent NMS (ciNMS)
-
+            Type[BaseEnsembler]: return class of ensembler to use for this
+                class
         """
-        logger.info(f"Running parameter sweep on {case_ids}")
+        if dim == 3:
+            return MaskViaBoxesSelectiveEnsembler
+        else:
+            raise ValueError(f"Dim {dim} not supported in get_ensembler_cls.")
 
-        train_data_dir = Path(train_data_dir)
-        preprocessed_dir = train_data_dir.parent
-        processed_eval_labels = preprocessed_dir / "labelsTr"
-
-        _save_dir = save_dir / "sweep"
-        _save_dir.mkdir(parents=True, exist_ok=True)
-
-        prediction_dir = save_dir / "sweep_predictions"
-        prediction_dir.mkdir(parents=True, exist_ok=True)
-
-        if run_prediction:
-            logger.info("Predict cases with default settings...")
-            predict_dir(
-                source_dir=train_data_dir,
-                target_dir=prediction_dir,
-                cfg=cfg,
-                plan=self.plan,
-                source_models=save_dir,
-                num_models=1,
-                num_tta_transforms=None,
-                case_ids=case_ids,
-                save_state=True,
-                model_fn=get_loader_fn(mode=self.trainer_cfg.get("sweep_ckpt", "last")),
-                **kwargs,
-            )
-
-        logger.info("Start parameter sweep...")
-        ensembler_cls = self.get_ensembler_cls(
-            key="boxes", dim=self.plan["network_dim"]
-        )
-        sweeper = MaskSweeper(
-            classes=[item for _, item in cfg["data"]["labels"].items()],
-            pred_dir=prediction_dir,
-            gt_dir=processed_eval_labels,
-            target_metric=self.sweep_key,
-            ensembler_cls=ensembler_cls,
-            save_dir=_save_dir,
-        )
-        inference_plan = sweeper.run_postprocessing_sweep()
-        return inference_plan
+    @classmethod
+    def get_sweeper_cls(cls) -> Type[Sweeper]:
+        """
+        Returns:
+            Type[Sweeper]: return class of sweeper to use for this class
+        """
+        return MaskSweeper

@@ -451,7 +451,9 @@ def _train(
             "debug" in cfg["trainer_cfg"]
             and "num_cases_val" in cfg["trainer_cfg"]["debug"]
         ):
-            logger.warning("Detected debug mode for sweep using reduced set of cases!")
+            logger.warning(
+                "[!!!] Detected debug mode for sweep using reduced set of cases"
+            )
             case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
 
         inference_plan = module.sweep(
@@ -601,6 +603,7 @@ def _evaluate(
     do_masks_eval: bool = False,
     do_seg_eval: bool = False,
     do_analyze_boxes: bool = False,
+    do_analyze_masks: bool = False,
     eval_preprocessed: bool = False,
 ):
     """
@@ -617,6 +620,7 @@ def _evaluate(
         do_masks_eval: perform instance segmentation evaluation
         do_seg_eval: perform semantic segmentation evaluation
         do_analyze_boxes: run analysis of box results
+        do_analyze_masks: run analysis of mask results
     """
     # prepare paths
     task = get_task(task, name=True)
@@ -707,6 +711,8 @@ def _evaluate(
                 gt_dir=gt_dir,
                 save_dir=save_dir / "boxes",
             )
+        if do_analyze_masks:
+            logger.info("Analyze mask predictions is not implemented yet.")
 
 
 if __name__ == "__main__":
