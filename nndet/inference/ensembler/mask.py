@@ -194,8 +194,8 @@ class MaskEnsembler(BaseEnsembler):
         return {
             "pred_boxes": boxes,
             "pred_masks": masks,
-            "pred_mask_scores": probs,
-            "pred_mask_labels": labels,
+            "pred_scores": probs,
+            "pred_labels": labels,
             "restore": restore,
             "original_size_of_raw_data": self.properties["original_size_of_raw_data"],
             "itk_origin": self.properties["itk_origin"],
@@ -318,8 +318,8 @@ class MaskEnsembler(BaseEnsembler):
 
         boxes_result = {
             "pred_boxes": data_numpy["pred_boxes"],
-            "pred_scores": data_numpy["pred_mask_scores"],
-            "pred_labels": data_numpy["pred_mask_scores"],
+            "pred_scores": data_numpy["pred_scores"],
+            "pred_labels": data_numpy["pred_labels"],
             "restore": data_numpy["restore"],
             "original_size_of_raw_data": data_numpy["original_size_of_raw_data"],
             "itk_origin": data_numpy["itk_origin"],
@@ -328,8 +328,8 @@ class MaskEnsembler(BaseEnsembler):
         }
         masks_result = {
             "pred_masks": data_numpy["pred_masks"],
-            "pred_scores": data_numpy["pred_mask_scores"],
-            "pred_labels": data_numpy["pred_mask_scores"],
+            "pred_scores": data_numpy["pred_scores"],
+            "pred_labels": data_numpy["pred_labels"],
             "restore": data_numpy["restore"],
         }
         masks_meta = {
@@ -689,7 +689,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
             probs,
             labels,
             weights=weights,
-            iou_thresh=self.parameters["model_iou"],
+            iou_thresh=self.parameters["ensemble_iou"],
             masks=masks,
             # **_kwargs,
         )

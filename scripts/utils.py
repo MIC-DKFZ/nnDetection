@@ -321,13 +321,15 @@ def masks2nii():
     )
     save_dir.mkdir(exist_ok=True)
 
-    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_masks.pkl")]
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_masks.npz")]
+    case_ids.sort()
     for cid in maybe_verbose_iterable(case_ids):
-        res = load_pickle(prediction_dir / f"{cid}_masks.pkl")
+        res = np.load(prediction_dir / f"{cid}_masks.npz")
+        res_meta = load_pickle(prediction_dir / f"{cid}_masks.pkl")
 
         masks = res["pred_masks"]
-        scores = res["pred_mask_scores"]
-        labels = res["pred_mask_labels"]
+        scores = res["pred_scores"]
+        labels = res["pred_labels"]
 
         keep = scores >= threshold
         masks = masks[keep]
@@ -348,13 +350,13 @@ def masks2nii():
 
         logger.info(f"Created binary mask with {masks.shape[0]} instances.")
 
-        if masks.shape[0] == 0:
-            masks = np.zeros((1, *masks.shape[1:]))
+        if masks.size == 0:
+            masks = np.zeros((1, *res_meta["original_size_of_raw_data"]))
         masks = masks.transpose(1, 2, 3, 0)
         instance_mask_itk = sitk.GetImageFromArray(masks)
-        instance_mask_itk.SetOrigin(res["itk_origin"])
-        instance_mask_itk.SetDirection(res["itk_direction"])
-        instance_mask_itk.SetSpacing(res["itk_spacing"])
+        instance_mask_itk.SetOrigin(res_meta["itk_origin"])
+        instance_mask_itk.SetDirection(res_meta["itk_direction"])
+        instance_mask_itk.SetSpacing(res_meta["itk_spacing"])
 
         sitk.WriteImage(instance_mask_itk, str(save_dir / f"{cid}_masks.nii.gz"))
         save_json(prediction_meta, save_dir / f"{cid}_masks.json")

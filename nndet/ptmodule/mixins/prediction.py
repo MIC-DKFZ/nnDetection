@@ -314,7 +314,7 @@ class BoxPredictionMixin(PredictionMixin):
         return predictor
 
 
-class MaskBoxPredictionMixin(PredictionMixin):
+class MaskViaBoxPredictionMixin(PredictionMixin):
     @classmethod
     def requires_box_eval(cls) -> bool:
         return True

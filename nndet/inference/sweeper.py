@@ -26,6 +26,7 @@ from loguru import logger
 from nndet.evaluator.det import MaskEvaluator
 from nndet.evaluator.registry import BoxEvaluator
 from nndet.io.load import save_json
+from nndet.io.transforms.instances import instances_to_binary_masks_np
 from nndet.utils import to_numpy
 from nndet.utils.info import maybe_verbose_iterable
 
@@ -288,25 +289,17 @@ class MaskSweeper(BoxSweeper):
                 str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
             )
 
-            # FIXME: code cuplication
-            def create_binary_masks(mask):
-                assert mask.shape[0] == 1
-                inds = np.unique(mask)
-                inds = inds[inds > 0]
-                out = np.zeros((len(inds), *tuple(mask.shape[1:])))
-                for channel_ind, instance_ind in enumerate(inds):
-                    out[channel_ind][mask[0] == instance_ind] = 1
-                return out
+            pred_masks = pred["pred_masks"]
+            if gt["instances"].ndim < (pred_masks.ndim - 1):
+                gt_instances = gt["instances"][None]
+            else:
+                gt_instances = gt["instances"]
 
-            target_bin_masks = create_binary_masks(gt["instances"])
-
-            # TODO signature change
-            # TODO: make sure instances are consecutive!
             evaluator.run_online_evaluation(
-                pred_boxes=[pred["pred_masks"]],
-                pred_classes=[pred["pred_mask_labels"]],
-                pred_scores=[pred["pred_mask_scores"]],
-                gt_boxes=[target_bin_masks],
+                pred_boxes=[pred_masks],
+                pred_classes=[pred["pred_labels"]],
+                pred_scores=[pred["pred_scores"]],
+                gt_boxes=[instances_to_binary_masks_np(gt_instances)],
                 gt_classes=[gt_boxes["classes"]],  # FIXME
                 gt_ignore=None,
             )

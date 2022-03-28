@@ -81,6 +81,7 @@ def evaluate_box_dir(
     for case_id in case_ids:
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         pred = load_pickle(pred_dir / f"{case_id}_boxes.pkl")
+
         evaluator.run_online_evaluation(
             pred_boxes=[pred["pred_boxes"]],
             pred_classes=[pred["pred_labels"]],
@@ -150,7 +151,7 @@ def evaluate_mask_dir(
             gt_instances = gt["instances"]
 
         evaluator.run_online_evaluation(
-            pred_boxes=[pred["pred_masks"]],
+            pred_boxes=[pred_masks],
             pred_classes=[pred["pred_labels"]],
             pred_scores=[pred["pred_scores"]],
             gt_boxes=[instances_to_binary_masks_np(gt_instances)],
