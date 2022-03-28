@@ -38,7 +38,7 @@ modalities = 1
 
 # 3D example
 dim = 3
-image_size = [128, 128, 128]
+image_size = [512, 512, 512]
 object_size = [16, 32]
 object_width = 4
 
@@ -139,7 +139,7 @@ def main():
     meta = {
         "task": f"Task000D{dim}M{modalities}_Example",
         "name": "Example",
-        "target_class": None,
+        "target_class": 0,
         "test_labels": True,
         "labels": {"0": "Square", "1": "SquareHole"},
         "modalities": {str(i): "MRI" for i in range(modalities)},

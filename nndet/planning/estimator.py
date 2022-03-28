@@ -262,10 +262,9 @@ class MemoryEstimatorDetection(MemoryEstimator):
                     }
                     fixed_mem = torch.cuda.memory_reserved()
                     with torch.cuda.amp.autocast():
-                        loss_dict, _ = network.train_step(
+                        loss_dict = network.train_step(
                             images=inp["images"],
                             targets=inp["targets"],
-                            predict=False,
                             batch_num=0,
                         )
                         loss = sum(loss_dict.values())

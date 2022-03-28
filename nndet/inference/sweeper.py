@@ -131,6 +131,7 @@ class BoxSweeper(Sweeper):
         )
 
         best_score = float("-inf")
+        tic = time.perf_counter()
         for param_name, values in sweep_params.items():
             best_value, _best_score = self.run_parameter(
                 values=values,
@@ -146,10 +147,11 @@ class BoxSweeper(Sweeper):
                     f"Previous: {best_score} now {_best_score}"
                 )
             best_score = _best_score
-
+        toc = time.perf_counter()
         logger.info(
             f"\n\n Determined {state} with best sweeping score {best_score} {self.target_metric}\n\n"
         )
+        logger.info(f"Sweep took {toc - tic} s total")
         return state
 
     def run_parameter(
@@ -179,7 +181,7 @@ class BoxSweeper(Sweeper):
             }
             cache.append(metric_scores[self.target_metric])
             toc = time.perf_counter()
-            logger.info(f"Sweep took {toc - tic} s")
+            logger.info(f"Sweep param took {toc - tic} s")
 
         best_idx = np.argmax(cache)
         best_value = values[best_idx]

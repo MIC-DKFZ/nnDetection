@@ -442,6 +442,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
             "ensemble_iou": 0.5,
             "ensemble_nms_fn": batched_nms,
             "ensemble_topk": 1000,
+            "ensemble_num_preds": 30,  # FIXME
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
             "interpolation_mode": "linear",
@@ -699,6 +700,16 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         probs = probs[keep]
         labels = labels[keep]
         masks = masks[keep]
+
+        num_topk = min(self.parameters["ensemble_num_preds"], boxes.size(0))
+        _, idx = probs.sort(descending=True)
+        keep_idx = idx[:num_topk]
+
+        boxes = boxes[keep_idx]
+        probs = probs[keep_idx]
+        labels = labels[keep_idx]
+        masks = masks[keep_idx]
+
         return boxes.cpu(), masks.cpu(), probs.cpu(), labels.cpu()
 
     def save_state(
