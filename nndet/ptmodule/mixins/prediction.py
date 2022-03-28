@@ -119,10 +119,11 @@ class PredictionMixin(ABC):
             num_tta_transforms = 8 if plan["network_dim"] == 3 else 4
 
         # setup
-        # FIXME: needs general interface to determine which keys need to be transformed
         tta_transforms, tta_inverse_transforms = get_tta_transforms(
-            num_tta_transforms,
-            seg=False,
+            num_tta_transforms=num_tta_transforms,
+            inverse_boxes=cls.requires_box_eval(),
+            inverse_masks=cls.requires_mask_eval(),
+            inverse_seg=cls.requires_seg_eval(),
         )
         logger.info(
             f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
@@ -239,7 +240,7 @@ class BoxPredictionMixin(PredictionMixin):
             raise ValueError(f"Dim {dim} not supported in get_ensembler_cls.")
 
     @classmethod
-    def get_sweepter_cls(cls) -> Type[Sweeper]:
+    def get_sweeper_cls(cls) -> Type[Sweeper]:
         return BoxSweeper
 
     @classmethod
@@ -255,7 +256,6 @@ class BoxPredictionMixin(PredictionMixin):
         else:
             raise ValueError(f"Key {key} not supported in _get_ensembler_cls.")
 
-    # FIXME: do_seg workaround
     @classmethod
     def get_predictor(
         cls,
@@ -275,8 +275,10 @@ class BoxPredictionMixin(PredictionMixin):
 
         # setup
         tta_transforms, tta_inverse_transforms = get_tta_transforms(
-            num_tta_transforms,
-            seg=do_seg,
+            num_tta_transforms=num_tta_transforms,
+            inverse_boxes=cls.requires_box_eval(),
+            inverse_masks=cls.requires_mask_eval(),
+            inverse_seg=(cls.requires_seg_eval() or do_seg),
         )
         logger.info(
             f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."

@@ -29,6 +29,7 @@ class Mirror(AbstractTransform):
         dims: Sequence[int],
         point_keys: Sequence[str] = (),
         box_keys: Sequence[str] = (),
+        mask_keys: Sequence[str] = (),
         grad: bool = False,
     ):
         """
@@ -43,6 +44,8 @@ class Mirror(AbstractTransform):
                 [N, dims]
             box_keys: keys where boxes are located; following format
                 needs to be used (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
+            mask_keys: keys where masks are located. In contrast to the
+                normal mirror keys, masks are in the format List[[N, dims]]
             grad: enable gradient computation inside transformation
 
         Warnings:
@@ -58,6 +61,7 @@ class Mirror(AbstractTransform):
         self.keys = keys
         self.point_keys = point_keys
         self.box_keys = box_keys
+        self.mask_keys = mask_keys
 
     def forward(self, **data) -> dict:
         """
@@ -70,7 +74,9 @@ class Mirror(AbstractTransform):
             dict: dict with transformed data
         """
         for key in self.keys:
-            data[key] = mirror(data[key], self.dims)
+            data[key] = mirror(data[key], dims=self.dims, offset=2)
+        for key in self.mask_keys:
+            data[key] = [mirror(d, dims=self.dims, offset=1) for d in data[key]]
 
         if "_data_shapes" in data:
             data_shapes = data["_data_shapes"]
@@ -101,7 +107,11 @@ class Mirror(AbstractTransform):
         return self(**data)
 
 
-def mirror(data: torch.Tensor, dims: Sequence[int]) -> torch.Tensor:
+def mirror(
+    data: torch.Tensor,
+    dims: Sequence[int],
+    offset: int = 2,
+) -> torch.Tensor:
     """
     Mirror data at dims
 
@@ -109,11 +119,15 @@ def mirror(data: torch.Tensor, dims: Sequence[int]) -> torch.Tensor:
         data: input data [N, C, spatial dims]
         dims: dimensions to mirror starting from spatial dims
             e.g. dim=(0,) mirror the first spatial dimension
+        offset: offset for dimensions. For data with batch and channel
+            dimension this should be set to `offset=2`. For masks
+            without channels `offset=1`. For data which only has spatial dims
+            use `oiffset=0`.
 
     Returns:
         torch.Tensor: tensor with mirrored dimensions
     """
-    dims = [d + 2 for d in dims]
+    dims = [d + offset for d in dims]
     return data.flip(dims)
 
 

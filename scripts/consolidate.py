@@ -27,7 +27,6 @@ from omegaconf import OmegaConf
 
 from nndet.inference.helper import extract_results
 from nndet.inference.loading import get_latest_model
-from nndet.inference.sweeper import BoxSweeper
 from nndet.io import get_task, load_pickle, save_pickle
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.check import env_guard
@@ -129,14 +128,9 @@ def main():
         help="Deactivate if consolidating nnUNet results",
     )
     parser.add_argument(
-        "--sweep_boxes",
+        "--sweep",
         action="store_true",
-        help="Sweep for best parameters for bounding box based models",
-    )
-    parser.add_argument(
-        "--sweep_instances",
-        action="store_true",
-        help="Sweep for best parameters for instance segmentation based models",
+        help="Sweep for best parameters",
     )
     parser.add_argument(
         "--ckpt",
@@ -222,17 +216,16 @@ def main():
     plan = load_pickle(target_dir / "plan.pkl")
     gt_dir = preprocessed_output_dir / plan["data_identifier"] / "labelsTr"
 
+    module = MODULE_REGISTRY[cfg["module"]]
+    ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
+
     if sweep_boxes:
         logger.info("Sweeping box predictions")
-        module = MODULE_REGISTRY[cfg["module"]]
-        ensembler_cls = module.get_ensembler_cls(
-            key="boxes", dim=plan["network_dim"]
-        )  # TODO: make this configurable
 
         target_metric = cfg["trainer_cfg"]["sweep_key"]
         logger.info(f"Sweep for metric: {target_metric}")
 
-        sweeper = BoxSweeper(
+        sweeper = module.get_sweeper_cls()(
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=target_dir / "sweep_predictions",
             gt_dir=gt_dir,

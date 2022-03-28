@@ -467,9 +467,7 @@ def _train(
         plan["inference_plan"] = inference_plan
         save_pickle(plan, train_dir / "plan_inference.pkl")
 
-        ensembler_cls = module.get_ensembler_cls(
-            key="boxes", dim=plan["network_dim"]
-        )  # TODO: make this configurable
+        ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
         for restore in [True, False]:
             target_dir = (
                 train_dir / "val_predictions"
@@ -483,14 +481,19 @@ def _train(
                 restore=restore,
                 **inference_plan,
             )
-
         _evaluate(
             task=cfg["task"],
             model=cfg["exp"]["id"],
             fold=cfg["exp"]["fold"],
             test=False,
-            do_boxes_eval=True,  # TODO: make this configurable
-            do_analyze_boxes=True,  # TODO: make this configurable
+            do_case_eval=(
+                module.requires_case_eval and (cfg["data"]["target_class"] is not None)
+            ),
+            do_boxes_eval=module.requires_box_eval(),
+            do_analyze_boxes=module.requires_box_eval(),
+            do_masks_eval=module.requires_mask_eval(),
+            do_analyze_masks=module.requires_mask_eval(),
+            do_seg_eval=module.requires_seg_eval(),
         )
 
 
@@ -556,9 +559,7 @@ def _sweep(
     plan["inference_plan"] = inference_plan
     save_pickle(plan, train_dir / "plan_inference.pkl")
 
-    ensembler_cls = module.get_ensembler_cls(
-        key="boxes", dim=plan["network_dim"]
-    )  # TODO: make this configurable
+    ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
     for restore in [True, False]:
         target_dir = (
             train_dir / "val_predictions"
@@ -578,19 +579,15 @@ def _sweep(
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
-        do_boxes_eval=True,  # TODO: make this configurable
-        do_analyze_boxes=True,  # TODO: make this configurable
-        # do_masks_eval=True,  # TODO: make this configurable
+        do_case_eval=(
+            module.requires_case_eval and (cfg["data"]["target_class"] is not None)
+        ),
+        do_boxes_eval=module.requires_box_eval(),
+        do_analyze_boxes=module.requires_box_eval(),
+        do_masks_eval=module.requires_mask_eval(),
+        do_analyze_masks=module.requires_mask_eval(),
+        do_seg_eval=module.requires_seg_eval(),
     )
-
-    # _evaluate(
-    #     task=cfg["task"],
-    #     model=cfg["exp"]["id"],
-    #     fold=cfg["exp"]["fold"],
-    #     test=False,
-    #     do_boxes_eval=True,  # TODO: make this configurable
-    #     do_analyze_boxes=True,  # TODO: make this configurable
-    # )
 
 
 def _evaluate(
@@ -681,6 +678,7 @@ def _evaluate(
             save_metric_output(scores, curves, save_dir, "results_case")
 
         if do_seg_eval:
+            raise NotImplementedError()
             logger.info(f"Computing seg metrics: restore {restore}")
             scores, curves = evaluate_seg_dir(
                 pred_dir=pred_dir,
