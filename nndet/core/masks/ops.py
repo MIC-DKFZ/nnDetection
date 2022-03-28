@@ -23,12 +23,14 @@ def roi_mask_to_image_mask(
 
     image_mask = torch.zeros(num_items, *image_shape, device=masks.device)
     if num_items == 0:
-        return image_mask
+        return torch.tensor([], device=masks.device, dtype=masks.dtype)
 
     boxes_size = torch.round(box_size(boxes)).to(dtype=torch.int)
     for idx in range(num_items):
+        if (boxes_size[idx] < 1).any():
+            continue
         _mask_rescale = F.interpolate(
-            masks[idx][None],
+            masks[idx][None, None],
             size=tuple(boxes_size[idx].tolist()),
             mode=mode,
             align_corners=align_corners,

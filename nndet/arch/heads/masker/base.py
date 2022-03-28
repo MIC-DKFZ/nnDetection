@@ -142,18 +142,20 @@ class Masker(Classifier):
         else:
             return {"mask": pred_logits.new_zeros([1])}
 
-    def logits_to_probs(self, logits: Tensor) -> Tensor:
+    @abstractmethod
+    def logits_to_probs(self, logits: Tensor, labels: Tensor) -> Tensor:
         """
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C]
-                N = number of anchors, C=number of foreground classes
+            logits: mask logits [N, C, dims], N=number of objects,
+                C=number of classes, dims = spatial dimensions
+            labels: predicted label for each mask [N]
 
         Returns:
             Tensor: probabilities
         """
-        return self.logits_convert_fn(logits)
+        raise NotImplementedError
 
     @classmethod
     def class_agnostic(cls):
@@ -195,6 +197,20 @@ class BCESingleMasker(Masker):
                     torch.nn.init.constant_(layer.bias, bias_value)
         else:
             logger.info("Init RoI Masker weights: conv default")
+
+    def logits_to_probs(self, logits: Tensor, labels: Tensor) -> Tensor:
+        """
+        Convert bounding box logits to probabilities
+
+        Args:
+            logits: mask logits [N, C, dims], N=number of objects,
+                C=number of classes, dims = spatial dimensions
+            labels: predicted label for each mask [N]
+
+        Returns:
+            Tensor: probabilities
+        """
+        return self.logits_convert_fn(logits).squeeze(dim=1)
 
 
 class DiceBCESingleMasker(BCESingleMasker):

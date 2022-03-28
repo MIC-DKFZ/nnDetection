@@ -14,7 +14,8 @@ from nndet.inference.ensembler.utils import (
     get_box_in_tile_weight_linear,
 )
 from nndet.inference.restore import restore_boxes
-from nndet.utils.tensor import cat
+from nndet.io import save_pickle
+from nndet.utils.tensor import cat, to_numpy
 
 
 class MaskEnsembler(BaseEnsembler):
@@ -138,53 +139,6 @@ class MaskEnsembler(BaseEnsembler):
 
         return create, cls.ID
 
-    def save_state(
-        self,
-        target_dir: Path,
-        name: str,
-        **kwargs,
-    ):
-        """
-        Save case result as pickle file. Identifier of ensembler will
-        be added to the name
-
-        Args:
-            target_dir: folder to save result to
-            name: name of case
-
-        Notes:
-            The device is not saved inside the checkpoint and everything
-            will be loaded on the CPU.
-        """
-        super().save_state(
-            target_dir=target_dir,
-            name=name,
-            score_key=self.score_key,
-            label_key=self.label_key,
-            box_key=self.box_key,
-            mask_key=self.mask_key,
-            data_key=self.data_key,
-            overlap_map=self.overlap_map,
-            **kwargs,
-        )
-
-    @classmethod
-    def from_checkpoint(cls, base_dir: os.PathLike, case_id: str, **kwargs):
-        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"))
-
-        t = cls(
-            properties=ckp["properties"],
-            parameters=ckp["parameters"],
-            box_key=ckp["box_key"],
-            mask_key=ckp["mask_key"],
-            score_key=ckp["score_key"],
-            label_key=ckp["label_key"],
-            data_key=ckp["data_key"],
-            **kwargs,
-        )
-        t._load(ckp)
-        return t
-
     @torch.no_grad()
     def get_case_result(
         self,
@@ -278,7 +232,7 @@ class MaskEnsembler(BaseEnsembler):
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["original_size_of_raw_data"]),
-            mode=self.parameters["interpolation_mode"],
+            mode=self.interpolated_mode,
             align_corners=self.parameters["align_corners"],
             threshold=self.parameters["bin_mask_threshold"],
         )
@@ -297,15 +251,112 @@ class MaskEnsembler(BaseEnsembler):
                 (x1, y1, x2, y2, (z1, z2))
             Tensor: masks in image space [N, image_dims]
         """
+        assert (
+            masks.ndim == (boxes.shape[1] // 2) + 1
+        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
         image_masks = roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["shape"]),
-            mode=self.parameters["interpolation_mode"],
+            mode=self.interpolated_mode,
             align_corners=self.parameters["align_corners"],
             threshold=self.parameters["bin_mask_threshold"],
         )
         return image_masks
+
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
+        """
+        Save case result as pickle file. Identifier of ensembler will
+        be added to the name
+
+        Args:
+            target_dir: folder to save result to
+            name: name of case
+
+        Notes:
+            The device is not saved inside the checkpoint and everything
+            will be loaded on the CPU.
+        """
+        super().save_state(
+            target_dir=target_dir,
+            name=name,
+            score_key=self.score_key,
+            label_key=self.label_key,
+            box_key=self.box_key,
+            mask_key=self.mask_key,
+            data_key=self.data_key,
+            overlap_map=self.overlap_map,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_checkpoint(cls, base_dir: os.PathLike, case_id: str, **kwargs):
+        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"))
+
+        t = cls(
+            properties=ckp["properties"],
+            parameters=ckp["parameters"],
+            box_key=ckp["box_key"],
+            mask_key=ckp["mask_key"],
+            score_key=ckp["score_key"],
+            label_key=ckp["label_key"],
+            data_key=ckp["data_key"],
+            **kwargs,
+        )
+        t._load(ckp)
+        return t
+
+    @classmethod
+    def save_result(cls, data: Dict, target_dir: Path, case_name: str) -> None:
+        # name without extension!
+        data_numpy = to_numpy(data)
+
+        boxes_result = {
+            "pred_boxes": data_numpy["pred_boxes"],
+            "pred_scores": data_numpy["pred_mask_scores"],
+            "pred_labels": data_numpy["pred_mask_scores"],
+            "restore": data_numpy["restore"],
+            "original_size_of_raw_data": data_numpy["original_size_of_raw_data"],
+            "itk_origin": data_numpy["itk_origin"],
+            "itk_spacing": data_numpy["itk_spacing"],
+            "itk_direction": data_numpy["itk_direction"],
+        }
+        masks_result = {
+            "pred_masks": data_numpy["pred_masks"],
+            "pred_scores": data_numpy["pred_mask_scores"],
+            "pred_labels": data_numpy["pred_mask_scores"],
+            "restore": data_numpy["restore"],
+        }
+        masks_meta = {
+            "original_size_of_raw_data": data_numpy["original_size_of_raw_data"],
+            "itk_origin": data_numpy["itk_origin"],
+            "itk_spacing": data_numpy["itk_spacing"],
+            "itk_direction": data_numpy["itk_direction"],
+        }
+
+        save_pickle(boxes_result, target_dir / f"{case_name}_boxes.pkl")
+        save_pickle(masks_meta, target_dir / f"{case_name}_{cls.ID}.pkl")
+        np.savez_compressed(target_dir / f"{case_name}_{cls.ID}.npz", **masks_result)
+
+    @property
+    def interpolated_mode(self):
+        dim = len(tuple(self.properties["shape"]))
+
+        if self.parameters["interpolation_mode"] == "linear":
+            if dim == 2:
+                interp = "bilinear"
+            elif dim == 3:
+                interp = "trilinear"
+            else:
+                raise RuntimeError(f"Dim {dim} not supported in interpolation mode.")
+        else:
+            interp = self.parameters["interpolation_mode"]
+        return interp
 
 
 # TODO: IMPORTANT: Mask representation no channel
@@ -393,7 +444,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
             "ensemble_topk": 1000,
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
-            "interpolation_mode": "nearest",
+            "interpolation_mode": "linear",
             "align_corners": None,
             "bin_mask_threshold": 0.5,
         }
@@ -544,6 +595,9 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
             Tensor: postprocessed labels
             Tensor: postprocessed weights
         """
+        assert (
+            masks.ndim == (boxes.shape[1] // 2) + 1
+        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
         p_sorted, idx_sorted = probs.sort(descending=True)
         idx_sorted = idx_sorted[: self.parameters["model_topk"]]
         p_sorted = p_sorted[: self.parameters["model_topk"]]
@@ -613,6 +667,10 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         labels = cat(labels, dim=0)
         weights = cat(weights, dim=0)
 
+        assert (
+            masks.ndim == (boxes.shape[1] // 2) + 1
+        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
+
         _, idx = probs.sort(descending=True)
         idx = idx[: self.parameters["ensemble_topk"]]
         boxes = boxes[idx]
@@ -678,8 +736,4 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
                 self.model_results[model]["scores"] = probs[idx_sorted]
                 self.model_results[model]["labels"] = labels[idx_sorted]
                 self.model_results[model]["weights"] = weights[idx_sorted]
-
         return super().save_state(target_dir=target_dir, name=name, **kwargs)
-
-
-# TODO: mask sweeper

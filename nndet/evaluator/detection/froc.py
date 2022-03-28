@@ -410,8 +410,14 @@ def select_froc_curves(
     ]
     frocs = [curves[c] for c in froc_keys]
     ious = [float(c.rsplit("_", 1)[1]) for c in froc_keys]
-    num_images = curves[f"{prefix}FROC_num_images"]
-    num_gt = curves[f"{prefix}FROC_num_gt"]
+    if (n := f"{prefix}FROC_num_images") in curves:
+        num_images = curves[n]
+    else:
+        num_images = np.nan
+    if (n := f"{prefix}FROC_num_gt") in curves:
+        num_gt = curves[n]
+    else:
+        num_gt = np.nan
     return froc_keys, frocs, ious, num_images, num_gt
 
 

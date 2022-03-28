@@ -410,8 +410,9 @@ class BaseRoIModule(torch.nn.Module):
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         masks_per_image = [len(pl) for pl in pred_labels]
         assert [len(pp) == len(pl) for pp, pl in zip(pred_probs, pred_labels)]
+        assert sum(masks_per_image) == masks.shape[0]
 
-        pred_masks = self.mask_head[stage].logits_to_probs(masks)
+        pred_masks = self.mask_head[stage].logits_to_probs(masks, pred_labels)
         pred_masks = pred_masks.split(masks_per_image, 0)
 
         return self.mask_post.process_batch(

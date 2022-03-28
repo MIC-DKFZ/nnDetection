@@ -22,7 +22,7 @@ from nndet.core.rois.pooler import RoIPooler
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # MaskPredictionMixin,
+from nndet.ptmodule.mixins.prediction import MaskBoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -39,9 +39,9 @@ class MaskRCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    MaskBoxPredictionMixin,  # Mask Sweep
+    # BoxPredictionMixin,  # Bounding Box Sweep
     ScoreMasksEvalMixin,  # Mask Evaluations
-    # MaskPredictionMixin,  # Mask Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
@@ -107,9 +107,9 @@ class MaskURCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    MaskBoxPredictionMixin,  # Mask Sweep
+    # BoxPredictionMixin,  # Bounding Box Sweep
     ScoreMasksEvalMixin,  # Mask Evaluations
-    # MaskPredictionMixin,  # Mask Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class

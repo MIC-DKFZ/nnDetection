@@ -75,7 +75,7 @@ class PredictionMixin(ABC):
         raise NotImplementedError
 
     @classmethod
-    def create_predictor(
+    def get_predictor(
         cls,
         plan: Dict,
         models: Sequence[LightningBaseModule],
@@ -203,7 +203,9 @@ class PredictionMixin(ABC):
 
         logger.info("Start parameter sweep...")
         ensembler_cls = self.get_ensembler_cls(dim=self.plan["network_dim"])
+        logger.info(f"Got ensembler class: {ensembler_cls.__name__} for sweep")
         sweeper_cls = self.get_sweeper_cls()
+        logger.info(f"Got sweeper class: {sweeper_cls.__name__} for sweep")
         sweeper = sweeper_cls(
             classes=[item for _, item in cfg["data"]["labels"].items()],
             pred_dir=prediction_dir,
