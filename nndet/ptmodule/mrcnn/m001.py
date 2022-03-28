@@ -40,7 +40,6 @@ class MaskRCNNModule(
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     MaskViaBoxPredictionMixin,  # Mask Sweep
-    # BoxPredictionMixin,  # Bounding Box Sweep
     ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
@@ -108,7 +107,6 @@ class MaskURCNNModule(
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     MaskViaBoxPredictionMixin,  # Mask Sweep
-    # BoxPredictionMixin,  # Bounding Box Sweep
     ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
@@ -143,7 +141,7 @@ class MaskURCNNModule(
     # RoI Head Configuration
     ########################
     # RoI classes
-    roi_conv_cls = ...  # conv class used for RoI head
+    roi_conv_cls: Type[CONVSEQ] = ...  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = ...  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = ...  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = ...  # box head classifier class
