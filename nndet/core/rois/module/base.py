@@ -315,22 +315,35 @@ class BaseRoIModule(torch.nn.Module):
     ) -> Dict[str, List[torch.Tensor]]:
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
-        roi_features = self.box_pooler(
-            features=features,
-            proposal_boxes=_proposal_boxes,
-            batch_idx=batch_idx,
-            image_size=tuple(images.shape[2:]),
-        )  # [P, C, spatial]
+        if proposal_boxes.numel() == 0:
+            batch_size = len(proposal_boxes)
+            dtype = proposal_boxes[0].dtype
+            device = proposal_boxes[0].device
+            boxes = [torch.zeros_like(proposal_boxes[b]) for b in range(batch_size)]
+            probs = [
+                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
+            ]
+            labels = [
+                torch.tensor([], dtype=torch.int64, device=device)
+                for b in range(batch_size)
+            ]
+        else:
+            roi_features = self.box_pooler(
+                features=features,
+                proposal_boxes=_proposal_boxes,
+                batch_idx=batch_idx,
+                image_size=tuple(images.shape[2:]),
+            )  # [P, C, spatial]
 
-        pred_detection = self.box_head[stage](roi_features)
+            pred_detection = self.box_head[stage](roi_features)
 
-        image_shapes = [images.shape[2:]] * images.shape[0]
-        boxes, probs, labels = self.postprocess_detections(
-            pred_detection=pred_detection,
-            proposal_boxes=proposal_boxes,
-            image_shapes=image_shapes,
-            stage=stage,
-        )
+            image_shapes = [images.shape[2:]] * images.shape[0]
+            boxes, probs, labels = self.postprocess_detections(
+                pred_detection=pred_detection,
+                proposal_boxes=proposal_boxes,
+                image_shapes=image_shapes,
+                stage=stage,
+            )
         prediction = {
             "pred_boxes": boxes,
             "pred_scores": probs,
@@ -348,23 +361,39 @@ class BaseRoIModule(torch.nn.Module):
         stage: int = 0,
     ) -> Dict[str, List[Tensor]]:
         _boxes, batch_idx = cat_and_index(pred_boxes)
-        roi_features = self.mask_pooler(
-            features=features,
-            proposal_boxes=_boxes,
-            batch_idx=batch_idx,
-            image_size=tuple(images.shape[2:]),
-        )  # [P, C, spatial]
 
-        _masks, _ = self.mask_head[stage](roi_features)  # [P, C, mask_dim]
+        if _boxes.numel() == 0:
+            batch_size = len(pred_boxes)
+            dtype = pred_boxes[0].dtype
+            device = pred_boxes[0].device
+            masks = [
+                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
+            ]
+            probs = [
+                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
+            ]
+            labels = [
+                torch.tensor([], dtype=torch.int64, device=device)
+                for b in range(batch_size)
+            ]
+        else:
+            roi_features = self.mask_pooler(
+                features=features,
+                proposal_boxes=_boxes,
+                batch_idx=batch_idx,
+                image_size=tuple(images.shape[2:]),
+            )  # [P, C, spatial]
 
-        image_shapes = [images.shape[2:]] * images.shape[0]
-        masks, probs, labels = self.postprocess_masks(
-            masks=_masks,
-            pred_probs=pred_probs,
-            pred_labels=pred_labels,
-            image_shapes=image_shapes,
-            stage=stage,
-        )
+            _masks, _ = self.mask_head[stage](roi_features)  # [P, C, mask_dim]
+
+            image_shapes = [images.shape[2:]] * images.shape[0]
+            masks, probs, labels = self.postprocess_masks(
+                masks=_masks,
+                pred_probs=pred_probs,
+                pred_labels=pred_labels,
+                image_shapes=image_shapes,
+                stage=stage,
+            )
         prediction = {
             "pred_masks": masks,
             "pred_mask_scores": probs,
@@ -475,6 +504,13 @@ class RoIModule(BaseRoIModule):
             matched_gt_boxes,
             matched_gt_idx,
         ) = self.assign_and_sample(proposals=proposals, targets=targets)
+
+        if proposal_boxes.numel() == 0:
+            logger.info(
+                "No proposals found return zero loss for RoI head "
+                f"with initial proposals {proposals} and targets {targets}"
+            )
+            return {}
 
         # box loss
         losses, _ = self._train_step_boxes(
