@@ -88,7 +88,7 @@ def get_allowed_n_proc_DA():
         return 16
     elif hostname.startswith("e230-dgx2"):
         return 6
-    elif hostname.startswith("e230-dgxa100-"):
+    elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf-"):
         # return 32
         return 16
     else:
