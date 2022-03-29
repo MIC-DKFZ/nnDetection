@@ -315,7 +315,7 @@ class BaseRoIModule(torch.nn.Module):
     ) -> Dict[str, List[torch.Tensor]]:
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
 
-        if proposal_boxes.numel() == 0:
+        if _proposal_boxes.numel() == 0:
             batch_size = len(proposal_boxes)
             dtype = proposal_boxes[0].dtype
             device = proposal_boxes[0].device
@@ -505,7 +505,7 @@ class RoIModule(BaseRoIModule):
             matched_gt_idx,
         ) = self.assign_and_sample(proposals=proposals, targets=targets)
 
-        if proposal_boxes.numel() == 0:
+        if sum(pb.numel() for pb in proposal_boxes) == 0:
             logger.info(
                 "No proposals found return zero loss for RoI head "
                 f"with initial proposals {proposals} and targets {targets}"
