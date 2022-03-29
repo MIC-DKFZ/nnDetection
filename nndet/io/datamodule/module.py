@@ -89,7 +89,8 @@ def get_allowed_n_proc_DA():
     elif hostname.startswith("e230-dgx2"):
         return 6
     elif hostname.startswith("e230-dgxa100-"):
-        return 32
+        # return 32
+        return 16
     else:
         return int(os.getenv("det_num_threads", 12))
 
