@@ -78,6 +78,18 @@ class RetinaUNetC015BNFocal(RetinaUNetC015Focal):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC015InfV2(RetinaUNetC015):
+    @classmethod
+    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
+        """
+        Returns:
+            Type[BaseEnsembler]: return class of ensembler to use for this
+                class
+        """
+        return BoxEnsemblerSelectiveV2
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC015MishHeadInfV2(RetinaUNetC015):
     head_conv_cls = ConvGroupMish
 
