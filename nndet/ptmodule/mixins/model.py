@@ -277,9 +277,17 @@ class SingleStageMixin(ModelMixin):
             EncoderType: backbone instance
         """
         conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
+
         logger.info(
             f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
         )
+
+        _kwargs = copy.deepcopy(model_cfg["backbone_kwargs"])
+        if "max_channels" in _kwargs:
+            max_channels = _kwargs.pop("max_channels")
+        else:
+            max_channels = plan_arch.get("max_channels", 320)
+
         backbone = cls.backbone_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -288,8 +296,8 @@ class SingleStageMixin(ModelMixin):
             in_channels=plan_arch["in_channels"],
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
-            max_channels=plan_arch.get("max_channels", 320),
-            **model_cfg["backbone_kwargs"],
+            max_channels=max_channels,
+            **_kwargs,
         )
         return backbone
 
