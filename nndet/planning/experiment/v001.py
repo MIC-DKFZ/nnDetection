@@ -148,7 +148,7 @@ class D3V001(AbstractPlanner):
             if "lr" not in mode:
                 raise RuntimeError(f"Mode {mode} is not supported for target spacing.")
             downscale = int(mode.split("lr")[-1])
-            target_spacing = base_target_spacing * (2 ** downscale)
+            target_spacing = base_target_spacing * (2**downscale)
         return target_spacing
 
     def _target_spacing_base(self) -> np.ndarray:

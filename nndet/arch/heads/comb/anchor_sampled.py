@@ -117,13 +117,10 @@ class BoxHeadHNM(AnchorHead):
         # assert len(batch_anchors) == len(target_labels)
 
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    reg_pred_sampled,
-                    reg_target_sampled,
-                )
-                / max(1, sampled_pos_inds.numel())
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                reg_pred_sampled,
+                reg_target_sampled,
+            ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds]
@@ -283,21 +280,15 @@ class BoxHeadHNMV2(AnchorHead):
             _numel_pos = self.pos_ema.get()
 
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    reg_pred_sampled,
-                    reg_target_sampled,
-                )
-                / max(1, _numel_pos)
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                reg_pred_sampled,
+                reg_target_sampled,
+            ) / max(1, _numel_pos)
 
-        losses["cls"] = (
-            self.classifier.compute_loss(
-                box_logits[sampled_inds],
-                target_labels[sampled_inds],
-            )
-            / max(1, _numel_all)
-        )
+        losses["cls"] = self.classifier.compute_loss(
+            box_logits[sampled_inds],
+            target_labels[sampled_inds],
+        ) / max(1, _numel_all)
         return losses, sampled_pos_inds, sampled_neg_inds
 
     def select_indices(
@@ -394,13 +385,10 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
         # assert len(batch_anchors) == len(target_labels)
 
         if pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    reg_pred_sampled,
-                    reg_target_sampled,
-                )
-                / max(1, pos_inds.numel())
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                reg_pred_sampled,
+                reg_target_sampled,
+            ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
 
@@ -487,15 +475,12 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
         )
 
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    pred_deltas=box_deltas[sampled_pos_inds],
-                    target_deltas=target_deltas_sampled,
-                    pred_boxes=pred_boxes_sampled,
-                    target_boxes=batch_matched_gt_boxes[sampled_pos_inds],
-                )
-                / max(1, sampled_pos_inds.numel())
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                pred_deltas=box_deltas[sampled_pos_inds],
+                target_deltas=target_deltas_sampled,
+                pred_boxes=pred_boxes_sampled,
+                target_boxes=batch_matched_gt_boxes[sampled_pos_inds],
+            ) / max(1, sampled_pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
 
@@ -563,13 +548,10 @@ class BoxHeadHNMNative(BoxHeadHNM):
 
         target_boxes_sampled = torch.cat(matched_gt_boxes, dim=0)[sampled_pos_inds]
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    pred_boxes_sampled,
-                    target_boxes_sampled,
-                )
-                / max(1, sampled_pos_inds.numel())
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                pred_boxes_sampled,
+                target_boxes_sampled,
+            ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds], target_labels[sampled_inds]
@@ -644,12 +626,9 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
         target_boxes = torch.cat(matched_gt_boxes, dim=0)[pos_inds]
 
         if pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    pred_boxes,
-                    target_boxes,
-                )
-                / max(1, pos_inds.numel())
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                pred_boxes,
+                target_boxes,
+            ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds

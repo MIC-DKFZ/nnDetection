@@ -130,7 +130,7 @@ def smooth_l1_loss(
     else:
         n = torch.abs(inp - target)
         cond = n < beta
-        loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
+        loss = torch.where(cond, 0.5 * n**2 / beta, n - 0.5 * beta)
     return reduction_helper(loss, reduction=reduction)
 
 
