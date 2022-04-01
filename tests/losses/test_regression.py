@@ -22,7 +22,7 @@ def test_functional_normal_beta(inp, target):
     inp = torch.tensor([0.2, 1.5])
     target = torch.tensor([0.3, 2.5])
     computed_loss = smooth_l1_loss(inp, target, beta=0.75, reduction="none")
-    expected_loss = torch.tensor([(0.5 * 0.1 ** 2 / 0.75), (1.0 - 0.5 * 0.75)])
+    expected_loss = torch.tensor([(0.5 * 0.1**2 / 0.75), (1.0 - 0.5 * 0.75)])
     assert math.isclose((computed_loss - expected_loss).sum().item(), 0, abs_tol=1e-8)
 
 

@@ -83,9 +83,9 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
         )
 
     if square:
-        tp = tp ** 2
-        fp = fp ** 2
-        fn = fn ** 2
+        tp = tp**2
+        fp = fp**2
+        fn = fn**2
 
     tp = tp.sum(dim=axes, keepdim=False)
     fp = fp.sum(dim=axes, keepdim=False)

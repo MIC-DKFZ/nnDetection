@@ -3,7 +3,9 @@ repos:
     rev: v2.3.0
     hooks:
     - id: check-yaml
+      exclude: .*
     - id: check-json
+      exclude: .*
     - id: end-of-file-fixer
       files: .*\.py
     - id: trailing-whitespace
@@ -13,7 +15,7 @@ repos:
     # - id: check-docstring-first
 
   - repo: https://github.com/psf/black
-    rev: 21.7b0
+    rev: 22.3.0
     hooks:
     - id: black
       name: Black Code Formatting
