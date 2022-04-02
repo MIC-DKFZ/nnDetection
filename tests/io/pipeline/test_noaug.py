@@ -28,6 +28,6 @@ def test_any_matching_axes(patch_size, expected_result):
     list(zip(PATCH_SIZES[:-1], EXPECTED_SAME_AXES[:-1])),
 )
 def test_same_axes(patch_size, expected_result):
-
+    raise RuntimeError
     pipeline = NoAug(patch_size, {})
     assert pipeline.same_axes() == expected_result
