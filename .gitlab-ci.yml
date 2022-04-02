@@ -41,7 +41,7 @@ build-job:
   artifacts:
     reports:
       cobertura: coverage.xml
-  coverage: ^TOTAL.+?(\d+\%)$
+  coverage: '^TOTAL.+?(\d+\%)$'
 
 build-docs:
   stage: docs
