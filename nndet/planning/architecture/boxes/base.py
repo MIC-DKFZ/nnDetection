@@ -14,7 +14,7 @@ from nndet.utils.info import SuppressPrint
 with SuppressPrint():
     from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
 
-from nndet.arch.abstract import AbstractModel
+from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes import (
     box_area_np,
     box_center,
@@ -39,7 +39,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         self,
         preprocessed_output_dir: os.PathLike,
         save_dir: os.PathLike,
-        network_cls: Type[AbstractModel] = None,
+        network_cls: Type[AbstractDetector] = None,
         estimator: MemoryEstimator = None,
         **kwargs,
     ):

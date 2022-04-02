@@ -1,15 +1,15 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import torch
 
-from nndet.arch.abstract import AbstractModel
+from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.rois.module import RoIModule
 
 
-class RCNN(AbstractModel):
+class RCNN(AbstractDetector):
     def __init__(
         self,
-        rpn: AbstractModel,
+        rpn: AbstractOneStageDetector,
         roi_module: RoIModule,
     ) -> None:
         super().__init__()
@@ -20,9 +20,8 @@ class RCNN(AbstractModel):
         self,
         images: torch.Tensor,
         targets: dict,
-        predict: bool,
         batch_num: int,
-    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Dict[str, torch.Tensor]:
         """
         #TODO docs2
         """
@@ -42,20 +41,27 @@ class RCNN(AbstractModel):
             batch_num=batch_num,
         )
 
-        predictions = {f"rpn_{key}": item for key, item in proposals.items()}
         targets.pop("target_classes")  # remove targets to avoid accidental class mixup
 
-        roi_losses, roi_predictions = self.roi_module.train_step(
+        roi_losses = self.roi_module.train_step(
             images=images,
             features=features,
             proposals=proposals,
             targets=targets,
-            predict=predict,
         )
 
         losses.update(roi_losses)
-        if roi_predictions is not None:
-            predictions.update(roi_predictions)
+        return losses
+
+    @torch.no_grad()
+    def validation_step(
+        self,
+        images: torch.Tensor,
+        targets: dict,
+        batch_num: bool,
+    ) -> Tuple[Dict[str, torch.Tensor], Dict]:
+        predictions = self.inference_step(images=images)
+        losses = {"placeholder": torch.tensor(0)}
         return losses, predictions
 
     @torch.no_grad()

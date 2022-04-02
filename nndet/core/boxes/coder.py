@@ -39,7 +39,7 @@ from typing import Sequence, TypeVar
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import List, Tuple
+from torch.jit.annotations import List
 from torchvision.models.detection._utils import BoxCoder
 
 
@@ -223,7 +223,7 @@ class BoxCoderND(BoxCoder):
         self,
         reference_boxes: List[Tensor],
         proposals: List[Tensor],
-    ) -> Tuple[Tensor]:
+    ) -> List[Tensor]:
         """
         Encode a set of proposals with respect to some reference boxes
 
@@ -234,7 +234,7 @@ class BoxCoderND(BoxCoder):
                 (x1, y1, x2, y2, (z1, z2))
 
         Returns:
-            Tuple[Tensor]: regression targets for each image
+            List[Tensor]: regression targets for each image
         """
         # filter for images which have a foreground class
         filter_min_one_gt = [rb.numel() > 0 for rb in reference_boxes]

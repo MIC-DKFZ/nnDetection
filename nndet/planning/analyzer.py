@@ -21,6 +21,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Callable, Dict, Sequence
 
+from loguru import logger
+
 from nndet.io.paths import get_case_ids_from_dir
 
 
@@ -64,6 +66,7 @@ class DatasetAnalyzer:
                 remove_modality=False,
             )
         )
+        logger.info(f"Analyzer found {len(self.case_ids)} case ids.")
         self.props_per_case_file = self.save_dir / "props_per_case.pkl"
         self.intensity_properties_file = self.save_dir / "intensity_properties.pkl"
 

@@ -263,6 +263,9 @@ SMOKE_SHAPES = [
     ((1, 32, 256, 256), (128, 128, 128)),
     ((1, 256, 32, 256), (128, 128, 128)),
     ((1, 256, 256, 32), (128, 128, 128)),
+    ((1, 256, 256, 256), (64, 128, 128)),
+    ((1, 256, 256, 256), (128, 64, 128)),
+    ((1, 256, 256, 256), (128, 128, 64)),
     ((1, 32, 32, 32), (128, 128, 128)),
     ((1, 32, 32, 32), (32, 32, 32)),
 ]
@@ -305,11 +308,24 @@ class TestPredictorSegmentationEnsembler:
 class TestPredictorBoxEnsembler:
     @pytest.mark.parametrize("shape,crop_size", SMOKE_SHAPES)
     @pytest.mark.parametrize("obj_scale", [2.0, 3.0])
+    @pytest.mark.parametrize("obj_at_origin", [True, False])
     def test_integration_boxes(
-        self, properties_simple: dict, shape: Tuple, crop_size: Tuple, obj_scale: float
+        self,
+        properties_simple: dict,
+        shape: Tuple,
+        crop_size: Tuple,
+        obj_scale: float,
+        obj_at_origin: bool,
     ):
         data = np.zeros(shape)
-        idx = (slice(0, 1), *[slice(0, int(s / obj_scale)) for s in crop_size])
+        if obj_at_origin:
+            idx = (slice(0, 1), *[slice(0, int(s / obj_scale)) for s in crop_size])
+        else:
+            idx = (
+                slice(0, 1),
+                *[slice(s // 10, s // 10 + int(obj_scale * 4)) for s in crop_size],
+            )
+
         data[idx] = 1
         data[0, 0:3] = 0
         assert data.max() == 1
@@ -337,6 +353,3 @@ class TestPredictorBoxEnsembler:
         assert np.allclose(boxes, prediction["boxes"]["pred_boxes"])
         assert np.allclose(np.array([1.0]), prediction["boxes"]["pred_scores"])
         assert np.allclose(np.array([1]), prediction["boxes"]["pred_labels"])
-
-
-# TODO: update doc string save_get

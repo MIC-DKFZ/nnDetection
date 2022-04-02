@@ -25,6 +25,7 @@ from nndet.evaluator.case import CaseEvaluator
 from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import PerCaseSegmentationEvaluator
 from nndet.io.load import load_pickle, save_json, save_pickle
+from nndet.io.transforms.instances import instances_to_binary_masks_np
 
 
 def save_metric_output(scores, curves, base_dir, name):
@@ -80,6 +81,7 @@ def evaluate_box_dir(
     for case_id in case_ids:
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         pred = load_pickle(pred_dir / f"{case_id}_boxes.pkl")
+
         evaluator.run_online_evaluation(
             pred_boxes=[pred["pred_boxes"]],
             pred_classes=[pred["pred_labels"]],
@@ -122,7 +124,7 @@ def evaluate_mask_dir(
     case_ids = [
         p.stem.rsplit("_masks", 1)[0]
         for p in pred_dir.iterdir()
-        if p.is_file() and p.stem.endswith("_masks")
+        if p.is_file() and p.name.endswith("_masks.npz")
     ]
     logger.info(f"Found {len(case_ids)} for masks evaluation in {pred_dir}")
 
@@ -140,23 +142,19 @@ def evaluate_mask_dir(
         gt = np.load(
             str(gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
         )  # FIXME
-        pred = load_pickle(pred_dir / f"{case_id}_masks.pkl")
+        pred = np.load(pred_dir / f"{case_id}_masks.npz")
 
-        # FIXME: code cuplication
-        def create_binary_masks(mask):
-            assert mask.shape[0] == 1
-            inds = np.unique(mask)
-            inds = inds[inds > 0]
-            out = np.zeros((len(inds), *tuple(mask.shape[1:])))
-            for channel_ind, instance_ind in enumerate(inds):
-                out[channel_ind][mask[0] == instance_ind] = 1
-            return out
+        pred_masks = pred["pred_masks"]
+        if gt["instances"].ndim < (pred_masks.ndim - 1):
+            gt_instances = gt["instances"][None]
+        else:
+            gt_instances = gt["instances"]
 
         evaluator.run_online_evaluation(
-            pred_boxes=[pred["pred_masks"]],
-            pred_classes=[pred["pred_mask_labels"]],
-            pred_scores=[pred["pred_mask_scores"]],
-            gt_boxes=[create_binary_masks(gt["instances"])],  # FIXME
+            pred_boxes=[pred_masks],
+            pred_classes=[pred["pred_labels"]],
+            pred_scores=[pred["pred_scores"]],
+            gt_boxes=[instances_to_binary_masks_np(gt_instances)],
             gt_classes=[gt_boxes["classes"]],
             gt_ignore=None,
             case_id=case_id,

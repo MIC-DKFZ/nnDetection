@@ -106,7 +106,11 @@ def predict_dir(
                 case_id=None,
                 restore=restore,
             )
-            predictor.save_case(result=result, target_dir=target_dir, case_id=case_id)
+            predictor.save_case(
+                result=result,
+                target_dir=target_dir,
+                case_id=case_id,
+            )
     return predictor
 
 

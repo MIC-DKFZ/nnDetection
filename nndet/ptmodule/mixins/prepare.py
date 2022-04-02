@@ -8,6 +8,7 @@ from nndet.io.transforms import (
     Instances2Fg,
     Instances2Segmentation,
 )
+from nndet.io.transforms.instances import Instances2BinaryMasks
 
 
 class PrepareMixin(ABC):
@@ -32,7 +33,7 @@ class PrepareMixin(ABC):
         return transforms
 
 
-class BoxPrepareMixin(PrepareMixin):
+class BoxesPrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Convert numbered instance mask to bounding boxes and classes.
@@ -113,7 +114,7 @@ class SemanticFgPrepareMixin(PrepareMixin):
         return trafos
 
 
-class InstancePrepareMixin(PrepareMixin):
+class BinaryMasksPrepareMixin(PrepareMixin):
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Convert numbered instance mask to binary segmentation masks.
@@ -126,9 +127,14 @@ class InstancePrepareMixin(PrepareMixin):
             make sure to call the super classes here!
 
         See Also:
-            # TODO
-
+            `Instances2BinaryMasks`
         """
-        raise NotImplementedError
-        trafos = super().get_pre_transforms(plan=plan)
-        return trafos
+        transforms = super().get_pre_transforms(plan=plan)
+        transforms.append(
+            Instances2BinaryMasks(
+                instance_key="target",
+                binary_mask_key="target_binary_masks",
+                present_instances="present_instances",
+            )
+        )
+        return transforms

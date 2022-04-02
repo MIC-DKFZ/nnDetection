@@ -5,8 +5,8 @@ from nndet.utils.registry import Registry
 
 MODULE_REGISTRY: Mapping[str, Type[LightningBaseModule]] = Registry()
 
-
-from nndet.ptmodule.rcnn import BoxCascadeRCNN, BoxRCNN
+from nndet.ptmodule.frcnn import FasterRCNNModule
+from nndet.ptmodule.mrcnn import MaskRCNNModule
 
 # register modules
 from nndet.ptmodule.retinanet import RetinaNetC001

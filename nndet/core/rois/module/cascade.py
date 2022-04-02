@@ -8,8 +8,10 @@ from nndet.arch.heads.masker.base import MaskerType
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
+from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
-from nndet.core.rois.pooler import PoolerType
+from nndet.core.rois.pooler import RoIPoolerType
 
 # TODO: cleanup
 
@@ -18,7 +20,8 @@ class CascadeRoIModule(BaseRoIModule):
     def __init__(
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
-        box_pooler: PoolerType,
+        box_pooler: RoIPoolerType,
+        box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
         num_classes: int,
@@ -28,9 +31,9 @@ class CascadeRoIModule(BaseRoIModule):
         mask_head: Optional[
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
-        mask_pooler: Optional[PoolerType] = None,
+        mask_pooler: Optional[RoIPoolerType] = None,
+        mask_post: Optional[MaskPostprocessing] = None,
         mask_interleaved_execution: bool = False,
-        # TODO: refactor postprocessing
         # post-processing
         roi_score_thresh: float = None,
         roi_detections_per_img: int = 100,
@@ -41,6 +44,7 @@ class CascadeRoIModule(BaseRoIModule):
         super().__init__(
             box_head=box_head,
             box_pooler=box_pooler,
+            box_post=box_post,
             matcher=matcher,
             sampler=sampler,
             num_classes=num_classes,
@@ -49,6 +53,7 @@ class CascadeRoIModule(BaseRoIModule):
             # mask
             mask_head=mask_head,
             mask_pooler=mask_pooler,
+            mask_post=mask_post,
             # post-processing
             roi_score_thresh=roi_score_thresh,
             roi_detections_per_img=roi_detections_per_img,
@@ -75,7 +80,6 @@ class CascadeRoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-        predict: bool = False,
     ):
         fpn_features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
@@ -139,9 +143,8 @@ class CascadeRoIModule(BaseRoIModule):
                     matched_gt_labels=matched_gt_labels,
                     matched_gt_idx=matched_gt_idx,
                     proposal_boxes=proposal_boxes,
-                    target_masks=targets["target_masks"],
+                    target_binary_masks=targets["target_binary_masks"],
                     image_size=image_size,
-                    num_instances=targets["target_num_instances"],
                     stage=stage_idx,
                     predict=False,
                 )
@@ -149,7 +152,7 @@ class CascadeRoIModule(BaseRoIModule):
                     losses[f"roi_s{stage_idx}_{k}"] = (
                         i * self.loss_weight_stage[stage_idx]
                     )
-        return losses, None
+        return losses
 
     @torch.no_grad()
     def inference_step(
@@ -174,14 +177,20 @@ class CascadeRoIModule(BaseRoIModule):
             if self.mask_mode:
                 if self.mask_interleaved_execution:
                     proposal_boxes = prediction["pred_boxes"]
+                    proposal_probs = prediction["pred_scores"]
+                    proposal_labels = prediction["pred_labels"]
                 else:
                     proposal_boxes = proposals["pred_boxes"]
+                    proposal_probs = proposals["pred_scores"]
+                    proposal_labels = proposals["pred_labels"]
 
-                # TODO: update
-                self._inference_step_masks(
+                mask_preds = self._inference_step_masks(
                     images=images,
                     features=fpn_features,
-                    proposal_boxes=proposal_boxes,
+                    pred_boxes=proposal_boxes,
+                    pred_probs=proposal_probs,
+                    pred_labels=proposal_labels,
                     stage=stage_idx,
                 )
+                prediction.update(mask_preds)
         return prediction

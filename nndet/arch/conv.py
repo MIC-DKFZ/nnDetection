@@ -33,9 +33,6 @@ except ImportError:
     torch_mish = False
 
 
-NdParam = Union[int, Tuple[int, int], Tuple[int, int, int]]
-
-
 class Generator:
     def __init__(self, conv_cls, dim: int):
         """

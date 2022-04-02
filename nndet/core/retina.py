@@ -3,18 +3,18 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from torch import Tensor
 
-from nndet.arch.abstract import AbstractModel
 from nndet.arch.decoder.base import DecoderType
 from nndet.arch.encoder.abstract import EncoderType
 from nndet.arch.heads.comb import AnchorHeadType
 from nndet.arch.heads.segmenter import SegmenterType
 from nndet.core import boxes as box_utils
+from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression
 
 
-class BaseRetinaNet(AbstractModel):
+class BaseRetinaNet(AbstractDetector):
     def __init__(
         self,
         dim: int,
@@ -125,19 +125,48 @@ class BaseRetinaNet(AbstractModel):
         self,
         images: Tensor,
         targets: dict,
-        predict: bool,
         batch_num: int,
-    ) -> Tuple[Dict[str, torch.Tensor], Optional[Dict]]:
+    ) -> Dict[str, torch.Tensor]:
         """
-        See `self.train_step_with_features`
+        See `self.train_step_with_features` for more info
+        """
+        losses, _, _ = self.train_step_with_features(
+            images=images,
+            targets=targets,
+            predict=False,
+            batch_num=batch_num,
+        )
+        return losses
+
+    @torch.no_grad()
+    def validation_step(
+        self,
+        images: Tensor,
+        targets: dict,
+        batch_num: bool,
+    ) -> Tuple[Dict[str, torch.Tensor], Dict]:
+        """
+        See `self.train_step_with_features` for more info
         """
         losses, prediction, _ = self.train_step_with_features(
             images=images,
             targets=targets,
-            predict=predict,
+            predict=True,
             batch_num=batch_num,
         )
         return losses, prediction
+
+    @torch.no_grad()
+    def inference_step(
+        self,
+        images: Tensor,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        See `inference_step_with_features` for more info
+        """
+        prediction, _ = self.inference_step_with_features(images=images, **kwargs)
+        return prediction
 
     def train_step_with_features(
         self,
@@ -233,18 +262,6 @@ class BaseRetinaNet(AbstractModel):
         #                             neg_idx=neg_idx, seg=seg_targets)
         return losses, prediction, features
 
-    @torch.no_grad()
-    def inference_step(
-        self,
-        images: Tensor,
-        **kwargs,
-    ) -> Dict[str, Any]:
-        """
-        See inference_step_with_features for more info
-        """
-        prediction, _ = self.inference_step_with_features(images=images, **kwargs)
-        return prediction
-
     def inference_step_with_features(
         self,
         images: Tensor,
@@ -282,6 +299,7 @@ class BaseRetinaNet(AbstractModel):
         )
         return prediction, features
 
+    # TODO: refactor this with new postprocessor object
     @torch.no_grad()
     def postprocess_for_inference(
         self,

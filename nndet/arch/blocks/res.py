@@ -24,7 +24,8 @@ import torch
 import torch.nn as nn
 from loguru import logger
 
-from nndet.arch.conv import NdParam, nd_pool
+from nndet.arch.conv import nd_pool
+from nndet.utils.typing import ND_INT
 
 
 class ResPlain(nn.Module):
@@ -33,9 +34,9 @@ class ResPlain(nn.Module):
         conv: Callable,
         in_channels: int,
         out_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         attention: Optional[nn.Module] = None,
     ):
         """
@@ -126,9 +127,9 @@ class ResBottleneck(nn.Module):
         conv: Callable,
         in_channels: int,
         internal_channels: int,
-        kernel_size: NdParam,
-        stride: NdParam,
-        padding: NdParam,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
         expansion: int = 1,
         attention: Optional[nn.Module] = None,
     ):

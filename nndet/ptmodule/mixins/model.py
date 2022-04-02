@@ -1,19 +1,34 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Optional, Type
 
 from loguru import logger
 
+from nndet.arch.blocks.basic import AbstractBlock
 from nndet.arch.conv import Generator
-from nndet.arch.decoder.base import DecoderType
-from nndet.arch.encoder.abstract import EncoderType
+from nndet.arch.decoder.base import BaseUFPN, DecoderType
+from nndet.arch.encoder.abstract import AbstractEncoder, EncoderType
 from nndet.arch.heads.classifier import DenseClassifierType
-from nndet.arch.heads.comb.base import AnchorHeadType
+from nndet.arch.heads.classifier.dense import DenseClassifier
+from nndet.arch.heads.classifier.roi import RoIClassifier
+from nndet.arch.heads.comb.base import AnchorHead, AnchorHeadType
+from nndet.arch.heads.comb.roi import RoIBoxHead
+from nndet.arch.heads.masker.base import Masker
 from nndet.arch.heads.regressor import DenseRegressorType
-from nndet.arch.heads.segmenter import SegmenterType
+from nndet.arch.heads.regressor.dense import DenseRegressor
+from nndet.arch.heads.regressor.roi import RoIRegressor
+from nndet.arch.heads.segmenter import Segmenter, SegmenterType
+from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
 from nndet.core.boxes.coder import BoxCoderND, CoderType
+from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.ops import box_iou
+from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
+from nndet.core.post.mask import MaskPostprocessing
+from nndet.core.rois.module.base import RoIModule
+from nndet.core.rois.pooler import RoIPooler
+from nndet.utils.typing import CONVSEQ
 
 
 class ModelMixin(ABC):
@@ -47,26 +62,32 @@ class SingleStageMixin(ModelMixin):
     By overwriting the class attributes the configuration can be adapted.
     """
 
-    detector_cls = ...  #: define detector cls
+    detector_cls: Type[AbstractOneStageDetector] = ...  #: define detector cls
 
-    backbone_cls = ...  #: define class for backbone
-    backbone_conv_cls = ...  #: conv class used for backbone
-    backbone_block = ...  #: define central building block of backbone
+    backbone_cls: Type[AbstractEncoder] = ...  #: define class for backbone
+    backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
+    backbone_block: Type[
+        AbstractBlock
+    ] = ...  #: define central building block of backbone
 
-    neck_cls = ...  #: define class for neck
-    neck_conv_cls = ...  #: conv class used for neck
+    neck_cls: Type[BaseUFPN] = ...  #: define class for neck
+    neck_conv_cls: Type[CONVSEQ] = ...  #: conv class used for neck
 
-    head_cls = ...  #: define class for head
-    head_conv_cls = ...  #: conv class used for head
-    head_classifier_cls = ...  #: define class for head classifier
-    head_regressor_cls = ...  #: define class for head regressor
+    head_cls: Type[AnchorHead] = ...  #: define class for head
+    head_conv_cls: Type[CONVSEQ] = ...  #: conv class used for head
+    head_classifier_cls: Type[
+        DenseClassifier
+    ] = ...  #: define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = ...  #: define class for head regressor
 
-    head_sampler_cls = (
-        None  #: [optional] sampler class for negative mining. None = no sampling.
-    )
+    head_sampler_cls: Optional[
+        Type[SamplerType]
+    ] = None  #: [optional] sampler class for negative mining. None = no sampling.
 
-    matcher_cls = ...  #: define class to match anchors to ground truth
-    segmenter_cls = None  #: [optional] segmentation head as in RetinaUNet
+    matcher_cls: Type[Matcher] = ...  #: define class to match anchors to ground truth
+    segmenter_cls: Optional[
+        Type[Segmenter]
+    ] = None  #: [optional] segmentation head as in RetinaUNet
 
     @classmethod
     def from_config_plan(
@@ -256,9 +277,17 @@ class SingleStageMixin(ModelMixin):
             EncoderType: backbone instance
         """
         conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
+
         logger.info(
             f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
         )
+
+        _kwargs = copy.deepcopy(model_cfg["backbone_kwargs"])
+        if "max_channels" in _kwargs:
+            max_channels = _kwargs.pop("max_channels")
+        else:
+            max_channels = plan_arch.get("max_channels", 320)
+
         backbone = cls.backbone_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
@@ -267,8 +296,8 @@ class SingleStageMixin(ModelMixin):
             in_channels=plan_arch["in_channels"],
             start_channels=plan_arch["start_channels"],
             stage_kwargs=None,
-            max_channels=plan_arch.get("max_channels", 320),
-            **model_cfg["backbone_kwargs"],
+            max_channels=max_channels,
+            **_kwargs,
         )
         return backbone
 
@@ -479,28 +508,38 @@ class SingleStageMixin(ModelMixin):
 
 class RoIBuildMixin:
     # Use `detector_cls` to set RPN module class
-    full_detector_cls = ...  #: Two stage detector class RCNN
+    full_detector_cls: Type[AbstractDetector] = ...  #: Two stage detector class RCNN
 
     # RoI classes
-    roi_conv_cls = ...  #: conv class for RoI head
-    roi_module_cls = (
-        ...
-    )  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
-    roi_head_cls = ...  #: define class for RoI box head
-    roi_classifier_cls = ...  #: define class for box classifier
-    roi_regressor_cls = ...  #: define class for box regressor
+    roi_conv_cls: Type[CONVSEQ] = ...  #: conv class for RoI head
+    roi_module_cls: Type[
+        RoIModule
+    ] = ...  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
+    roi_head_cls: Type[RoIBoxHead] = ...  #: define class for RoI box head
+    roi_classifier_cls: Type[RoIClassifier] = ...  #: define class for box classifier
+    roi_regressor_cls: Type[RoIRegressor] = ...  #: define class for box regressor
 
-    roi_matcher_cls = ...  #:  define class to match proposals to ground truth
-    roi_sampler_cls = (
-        ...
-    )  #: [optional] sampler class for negative mining. None = no sampling
-    roi_box_pooler_cls = ...  #: define pooling operation of RoIs for box branch
-    roi_box_post_cls = ...  #: define roi box postprocessing strategy
+    roi_matcher_cls: Type[
+        Matcher
+    ] = ...  #:  define class to match proposals to ground truth
+    roi_sampler_cls: Type[
+        SamplerType
+    ] = ...  #: sampler class for negative mining. None = no sampling
+    roi_box_pooler_cls: Type[
+        RoIPooler
+    ] = ...  #: define pooling operation of RoIs for box branch
+    roi_box_post_cls: Type[
+        BoxPostprocessing
+    ] = ...  #: define roi box postprocessing strategy
 
     # optional mask branches
-    roi_masker_cls = None  #: define class of mask branch in RoI module
-    roi_mask_pooler_cls = None  #: define pooling operation of RoIs for mask branch
-    roi_mask_post_cls = None  #: define roi mask postprocessing strategy
+    roi_masker_cls: Type[Masker] = None  #: define class of mask branch in RoI module
+    roi_mask_pooler_cls: Type[
+        RoIPooler
+    ] = None  #: define pooling operation of RoIs for mask branch
+    roi_mask_post_cls: Type[
+        MaskPostprocessing
+    ] = None  #: define roi mask postprocessing strategy
 
     @staticmethod
     def get_roi_box_size(
@@ -923,6 +962,15 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
             model_cfg=model_cfg,
         )
 
+        roi_box_post = cls._build_roi_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+        roi_mask_post = cls._build_roi_mask_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
+
         # RoI Module
         roi_sampler = cls._build_roi_sampler(
             plan_arch=plan_arch,
@@ -933,17 +981,18 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         if maskers[0] is None:
             maskers = None
 
-        # TODO: postprocessing refactor
         roi_module = cls._build_roi_module(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
             box_head=heads,
-            matcher=matchers,
             box_pooler=box_pooler,
+            box_post=roi_box_post,
+            matcher=matchers,
             sampler=roi_sampler,
             # mask heads
             mask_head=maskers,
             mask_pooler=mask_pooler,
+            mask_post=roi_mask_post,
         )
         return cls.full_detector_cls(
             rpn=rpn,

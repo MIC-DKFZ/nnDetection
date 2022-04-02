@@ -1,3 +1,5 @@
+from typing import Type
+
 from nndet.arch.blocks.basic import StackedConvBlock2
 from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.arch.decoder.base import UFPNModular
@@ -15,16 +17,18 @@ from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
     HardNegativeSamplerBatched,
 )
+from nndet.core.post.box import CrossLevelBoxPostprocessing
+from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.rcnn.base import BoxCascadeRCNN
+from nndet.ptmodule.mrcnn.cm001 import CascadeMaskURCNNModule
 
 
 @MODULE_REGISTRY.register
-class CascadeMaskURCNNC001(BoxCascadeRCNN):
+class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
     # define detector cls
@@ -54,6 +58,7 @@ class CascadeMaskURCNNC001(BoxCascadeRCNN):
     roi_head_cls = RoIBoxHead  # RoIBoxHead
     roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
+    roi_box_post_cls = CrossLevelBoxPostprocessing
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
@@ -62,4 +67,6 @@ class CascadeMaskURCNNC001(BoxCascadeRCNN):
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
-    # TODO: postprocessing
+    roi_mask_post_cls: Type[
+        MaskPostprocessing
+    ] = NoMaskPostprocessing  # define roi mask postprocessing strategy

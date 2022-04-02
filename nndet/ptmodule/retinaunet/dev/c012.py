@@ -17,7 +17,7 @@ from nndet.inference.ensembler.detection import (
 )
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 """
 NEED UPDATE

@@ -367,10 +367,10 @@ The following command will copy all the models and predictions from the folds. B
 This will generate a unified plan for all models which will be used during inference.
 
 ```bash
-nndet_consolidate [task] [model] [--overwrites] [--consolidate] [--num_folds] [--no_model] [--sweep_boxes] [--sweep_instances]
+nndet_consolidate [task] [model] [--overwrites] [--consolidate] [--num_folds] [--no_model] [--sweep]
 
 # Example
-nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep_boxes
+nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep
 
 # Script
 # /scripts/consolidate.py - main()
@@ -382,7 +382,7 @@ Data which is located in `raw_splitted/imagesTs` will be automatically preproces
 nndet_predict [task] [model] [--fold] [--num_tta] [--no_preprocess] [--check] [-npp / --num_processes_preprocessing] [--force_args]
 
 # Example
-nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
+nndet_predict 000 RetinaUNetV001_D3V001_3d -1
 
 # Script
 # /scripts/predict.py - main()

@@ -12,7 +12,8 @@ from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.regressor.dense import L1Regressor
 from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg
+
+# from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
@@ -24,12 +25,11 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.rcnn.base import BoxRCNN
+from nndet.ptmodule.frcnn.f001 import FasterRCNNModule
 
 
 @MODULE_REGISTRY.register
-class FasterRCNNC001(BoxRCNN):
-    # TODO: update docs
+class FasterRCNNC001(FasterRCNNModule):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
     # define detector cls
@@ -73,26 +73,26 @@ class FasterRCNNC001(BoxRCNN):
     roi_mask_post_cls = None
 
 
-@MODULE_REGISTRY.register
-class FasterURCNNC001(FasterRCNNC001):
-    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
+# @MODULE_REGISTRY.register
+# class FasterURCNNC001(FasterRCNNC001):
+#     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
 
 
-@MODULE_REGISTRY.register
-class FasterURCNNC001RSB(FasterURCNNC001):
-    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+# @MODULE_REGISTRY.register
+# class FasterURCNNC001RSB(FasterURCNNC001):
+#     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
+#     roi_sampler_cls = (
+#         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+#     )
 
 
-@MODULE_REGISTRY.register
-class FasterURCNNC001RSBCE(FasterURCNNC001RSB):
-    segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
-    roi_classifier_cls = CEConvRoIClassifier
+# @MODULE_REGISTRY.register
+# class FasterURCNNC001RSBCE(FasterURCNNC001RSB):
+#     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNetg
+#     roi_sampler_cls = (
+#         HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
+#     )
+#     roi_classifier_cls = CEConvRoIClassifier
 
 
 @MODULE_REGISTRY.register
@@ -112,10 +112,10 @@ class FasterRCNNC001RSBCE(FasterRCNNC001RSB):
     roi_classifier_cls = CEConvRoIClassifier
 
 
-@MODULE_REGISTRY.register
-class FasterRCNNC001FC(BoxRCNN):
-    roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+# @MODULE_REGISTRY.register
+# class FasterRCNNC001FC(BoxRCNN):
+#     roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
+#     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
 
 
 @MODULE_REGISTRY.register

@@ -6,18 +6,17 @@ from hydra import compose, initialize_config_module
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf.omegaconf import OmegaConf
 
-from nndet.ptmodule.rcnn.base import BoxCascadeRCNN, BoxRCNN
-from nndet.ptmodule.rcnn.dev.cascademc001 import CascadeMaskURCNNC001
-from nndet.ptmodule.rcnn.dev.fc001 import FasterRCNNC001
-from nndet.ptmodule.rcnn.dev.mc001 import MaskRCNNC001
-
-# base modules
-from nndet.ptmodule.retinanet.base import RetinaNetModule
+from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
+from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
+from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 
 # specific modules
 from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
-from nndet.ptmodule.retinaunet.base import RetinaUNetModule
-from nndet.ptmodule.retinaunet.v001 import RetinaUNetCV001Focal, RetinaUNetV001
+
+# base modules
+from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
+from nndet.ptmodule.retinaunet.run001 import RetinaUNetModule
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 
 @pytest.fixture

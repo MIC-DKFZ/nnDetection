@@ -140,6 +140,7 @@ setup(
             "nndet_consolidate = scripts.consolidate:main",
             "nndet_boxes2nii = scripts.utils:boxes2nii",
             "nndet_boxes2nii2 = scripts.utils:boxes2nii2",
+            "nndet_masks2nii = scripts.utils:masks2nii",
             "nndet_seg2nii = scripts.utils:seg2nii",
             "nndet_unpack = scripts.utils:unpack",
             "nndet_env = scripts.utils:env",

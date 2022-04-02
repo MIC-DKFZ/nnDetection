@@ -31,7 +31,7 @@ An example which builds a standard RetinaNet is shown below:
         # nnDetection Base Module to integrate other mixins
         LightningBaseModule,
         # Convert the dataloader output to bounding boxes
-        BoxPrepareMixin,
+        BoxesPrepareMixin,
         # Run Bounding Box evaluation during training
         BoxEvalMixin,
         # Use model structure of single stage detector
@@ -96,7 +96,7 @@ Prepare Mixins
 Sometimes it is necessary to add multiple `PrepareMixin` to create different ground truth formats, e.g. Retina U-Net requires bounding boxes and semantic segmentations.
 In general there are three `PrepareMixin` Types which save the result in different keys:
 
-- `BoxPrepareMixin` saves the boxes in `boxes` and class in `classes` #TODO
+- `BoxesPrepareMixin` saves the boxes in `boxes` and class in `classes` #TODO
 - `SemanticPrepareMixin` saves the result in `target_seg`
 - `InstancePrepareMixin`: #TODO
 
