@@ -501,7 +501,7 @@ class AugModularV2(NoAug):
                     )
                 )
 
-            def _gamma_strength(x, y):
+            def _gamma_strength():
                 if np.random.uniform() < 0.5:
                     return np.random.uniform(_strength_low[0], _strength_low[1])
                 else:
