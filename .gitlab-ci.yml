@@ -32,7 +32,7 @@ build-job:
     - echo "Install Package"
     - pip install .[dev]
     - echo "Batchgen Master"
-    - pip uninstall batchgenerators
+    - pip uninstall batchgenerators -y
     - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
     - echo "Run Tests"
     - pytest . -v
