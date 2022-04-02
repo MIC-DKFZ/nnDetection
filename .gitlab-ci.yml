@@ -35,7 +35,12 @@ build-job:
     - pip uninstall batchgenerators -y
     - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
     - echo "Run Tests"
-    - pytest . -v
+    - coverage run -m pytest -v
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
 
 build-docs:
   stage: docs
