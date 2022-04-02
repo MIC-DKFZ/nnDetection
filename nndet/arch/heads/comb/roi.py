@@ -70,19 +70,13 @@ class RoIBoxHead(RoIHead):
 
         losses = {}
         if sampled_pos_inds.numel() > 0:
-            losses["reg"] = (
-                self.regressor.compute_loss(
-                    box_deltas[sampled_pos_inds],
-                    target_deltas_sampled,
-                )
-                / max(1, _numel_pos)
-            )
+            losses["reg"] = self.regressor.compute_loss(
+                box_deltas[sampled_pos_inds],
+                target_deltas_sampled,
+            ) / max(1, _numel_pos)
 
-        losses["cls"] = (
-            self.classifier.compute_loss(
-                box_logits[sampled_inds],
-                target_labels[sampled_inds].long(),
-            )
-            / max(1, _numel_all)
-        )
+        losses["cls"] = self.classifier.compute_loss(
+            box_logits[sampled_inds],
+            target_labels[sampled_inds].long(),
+        ) / max(1, _numel_all)
         return losses, sampled_pos_inds, None

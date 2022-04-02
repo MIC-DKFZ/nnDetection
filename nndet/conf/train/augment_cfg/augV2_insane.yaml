@@ -1,0 +1,151 @@
+name: "augV2_base"
+transforms: "AugModularV2"
+transforms_kwargs: {}
+
+selected_data_channels:
+selected_seg_channels:
+
+# Spatial Transformation
+do_elastic: True
+p_eldef: 0.2 # low prob, need to save compute
+elastic_deform_alpha: [0., 900.]
+elastic_deform_sigma: [9., 13.]
+
+do_scaling: True
+p_scale: 0.3
+scale_range: [0.65, 1.6] # smaller range
+independent_scale_factor_for_each_axis: False
+p_rot_per_axis: 0.5
+
+do_rotation: True
+p_rot: 0.4
+rotation_x: [-30, 30]
+rotation_y: [-30, 30]
+rotation_z: [-30, 30]
+
+# Additional Spatial
+do_rot90: True
+rot90:
+  p_per_sample: 0.5
+
+do_transpose_axes: True
+transpose_axes:
+  p_per_sample: 0.5
+
+do_mirror: True
+mirror_axes: [0, 1, 2]
+
+# Noise Transforms
+do_noise: True
+gaussian_noise:
+  noise_variance: [0, 0.1]
+  p_per_sample: 0.1
+
+# Blurring
+do_blur: True
+gaussian_blur:
+  blur_sigma: [0.3, 0.5]
+  different_sigma_per_channel: False
+  p_per_sample: 0.2
+  p_per_channel: 0.5
+
+median_filter:
+  filter_size: [2, 8]
+  same_for_each_channel: False
+  p_per_sample: 0.2
+  p_per_channel: 0.5
+
+# Intensity Transforms
+do_brightness: True  # additive brightness
+brightness:
+  mu: 0
+  sigma: 0.5 # old value 0.1
+  per_channel: True
+  p_per_sample: 0.1
+  p_per_channel: 0.5
+
+do_contrast: True
+contrast:
+  contrast_range: [0.5, 2] # old values: 0.75, 1.25
+  per_channel: True
+  p_per_sample: 0.2
+  p_per_channel: 0.5
+
+# Artifact Augmentations
+do_sim_low_res: True
+sim_low_res:
+  p_per_sample: 0.05  # orig 0.15
+  p_per_channel: 0.5
+  zoom_range: [0.5, 1]  # [0.25, 1]
+  per_channel: True
+  order_downsample: 0
+  order_upsample: 3
+
+# GammaTransform
+do_gamma: True
+do_gamma_inverted: True
+p_gamma: 0.1
+p_gamma_inverted: 0.1
+gamma:
+  retain_stats: True
+  per_channel: True
+  gamma_range: [0.7, 1.5]
+
+# Blanks Transforms
+do_blanks: False
+blank_rectangle:
+  scale: [10, 3]
+  num_rectangles: [1, 5]
+  force_square: Flase
+  p_per_sample: 0.4
+  p_per_channel: 0.5
+
+# Local Intensity Transforms
+do_brightness_gradient: True
+brightness_gradient:
+  scale: [6, 1]
+  strength: [1, 5]
+  loc: [-0.5, 1.5]
+  mean_centered: False
+  same_for_all_channels: False
+  p_per_sample: 0.3
+  p_per_channel: 0.5
+
+do_local_gamma: True
+local_gamma:
+  scale: [6, 1]
+  strength_low: [0.01, 0.8]
+  strength_high: [1.5, 4]
+  loc: [-0.5, 1.5]
+  kernel_size: [0.5, 1]
+  same_for_all_channels: False
+  p_per_sample: 0.3
+  p_per_channel: 0.5
+
+# Sharpening
+do_sharpening: True
+sharpening:
+  strength: [0.1, 1]
+  same_for_each_channel: False
+  p_per_sample: 0.2
+  p_per_channel: 0.5
+
+# Other
+order_data: 3
+border_mode_data: "constant"
+border_cval_data: 0
+order_seg: 0
+border_cval_seg: -1
+border_mode_seg: "constant"
+
+random_crop: False
+random_crop_dist_to_border:
+
+2d_overwrites:
+  elastic_deform_alpha: [0., 200.]
+  elastic_deform_sigma: [9., 13.]
+  rotation_x: [-180, 180]
+  rotation_y: [0, 0]
+  rotation_z: [0, 0]
+  dummy_2D: False
+  mirror_axes: [0, 1]

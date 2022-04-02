@@ -61,7 +61,7 @@ def seed_worker(worker_id):
     https://pytorch.org/docs/stable/notes/randomness.html#dataloader
     to fix https://tanelp.github.io/posts/a-bug-that-plagues-thousands-of-open-source-ml-projects/
     """
-    worker_seed = torch.initial_seed() % 2 ** 32
+    worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
