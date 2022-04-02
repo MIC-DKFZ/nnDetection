@@ -32,7 +32,7 @@ build-job:
     - echo "Install Package"
     - pip install .[dev]
     - echo "Batchgen Master"
-    - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
+    - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git --upgrade
     - echo "Run Tests"
     - pytest . -v
 
