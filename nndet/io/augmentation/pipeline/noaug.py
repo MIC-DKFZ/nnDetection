@@ -1,5 +1,6 @@
 from typing import List, Sequence
 
+import numpy as np
 from batchgenerators.transforms.channel_selection_transforms import (
     DataChannelSelectionTransform,
     SegChannelSelectionTransform,
@@ -28,6 +29,32 @@ class NoAug(AugmentationSetup):
             self._spatial_transform_patch_size = self.patch_size[1:]
         else:
             self._spatial_transform_patch_size = self.patch_size
+
+    def any_matching_axes(self) -> bool:
+        """
+        Check if any axes have the same size
+
+        Returns:
+            bool: `True` if at least two axes have the same size.
+                `False` otherwise
+        """
+        num_matching_axes = np.array(
+            [sum([i == j for j in self.patch_size]) for i in self.patch_size]
+        )
+        return np.any(num_matching_axes > 1)
+
+    def same_axes(self) -> List[int]:
+        """
+        Compute number of matching axes of patch size
+
+        Returns:
+            List[int: indices of axes which has the same patch size
+        """
+        num_matching_axes = np.array(
+            [sum([i == j for j in self.patch_size]) for i in self.patch_size]
+        )
+        same_axes = list(np.where(num_matching_axes == np.max(num_matching_axes))[0])
+        return same_axes
 
     def get_patch_size_generator(self) -> List[int]:
         """

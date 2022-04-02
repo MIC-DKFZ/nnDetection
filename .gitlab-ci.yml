@@ -31,6 +31,8 @@ build-job:
     - pip uninstall torchtext -y
     - echo "Install Package"
     - pip install .[dev]
+    - echo "Batchgen Master"
+    - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
     - echo "Run Tests"
     - pytest . -v
 
