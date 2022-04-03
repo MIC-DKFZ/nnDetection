@@ -103,7 +103,7 @@ class BoxHeadAll(AnchorHead):
             _numel_pos = self.pos_ema.get()
 
         losses = {}
-        if sampled_pos_inds > 0:
+        if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred[sampled_pos_inds],
                 reg_target[sampled_pos_inds],
