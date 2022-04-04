@@ -432,11 +432,11 @@ def expand_to_boxes(
         Tensor: expanded tensors
     """
     idx = [0, 1, 0, 1]
-    if (len(data.shape) == 1 and data.shape[0] == 3) or (
-        len(data.shape) == 2 and data.shape[1] == 3
+    if (data.ndim == 1 and data.shape[0] == 3) or (
+        data.ndim == 2 and data.shape[1] == 3
     ):
         idx.extend((2, 2))
-    if len(data.shape) == 1:
+    if data.ndim == 1:
         data = data[None]
     return data[:, idx]
 

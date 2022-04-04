@@ -674,12 +674,16 @@ class RoIBuildMixin:
     ):
         pooler_name = cls.roi_box_pooler_cls.__name__
         feature_output_size = cls.get_roi_box_size(plan_arch, model_cfg)
+        box_feature_kwargs = model_cfg["roi_pooling"]["roi_box_feature_kwargs"]
+
         logger.info(
-            f"Building:: box pooler {pooler_name} with output size {feature_output_size}"
+            f"Building:: box pooler {pooler_name} with output "
+            f"size {feature_output_size} and feature kwargs {box_feature_kwargs}"
         )
 
         box_pooler = cls.roi_box_pooler_cls(
             feature_output_size=feature_output_size,
+            feature_pool_kwargs=box_feature_kwargs,
         )
         return box_pooler
 
@@ -694,14 +698,20 @@ class RoIBuildMixin:
             mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)
             mask_gt_size = [m * 2 for m in mask_feature_size]  # TODO # FIXME
 
+            mask_feature_kwargs = model_cfg["roi_pooling"]["roi_mask_feature_kwargs"]
+            mask_gt_kwargs = model_cfg["roi_pooling"]["roi_mask_gt_kwargs"]
+
             logger.info(
                 f"Building:: mask pooler {pooler_name} with output "
                 f"size {mask_feature_size} and gt size {mask_gt_size}"
+                f"feature kwargs {mask_feature_kwargs} and gt kwargs {mask_gt_kwargs}"
             )
 
             mask_pooler = cls.roi_mask_pooler_cls(
                 feature_output_size=mask_feature_size,
                 mask_output_size=mask_gt_size,
+                feature_pool_kwargs=mask_feature_kwargs,
+                mask_pool_kwargs=mask_gt_kwargs,
             )
         else:
             mask_pooler = None

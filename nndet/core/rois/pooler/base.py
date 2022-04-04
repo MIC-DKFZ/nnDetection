@@ -50,6 +50,8 @@ class RoIPooler(torch.nn.Module):
         Args:
             features: feature maps which should be used for pooling
                 from backbone/fpn, each with [N, C, dims]
+                Ordered from highest resolution feature map (0)
+                to the lowed resolution one (-1).
             proposal_boxes: box proposals
                 (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
             batch_idx: original batch index of each proposal [N]
@@ -77,8 +79,8 @@ class RoIPooler(torch.nn.Module):
         else:
             # determine level dynamically
             proposal_levels = self._find_pyramid_level(
-                proposal_boxes=proposal_boxes,
                 features=features,
+                proposal_boxes=proposal_boxes,
                 image_size=image_size,
             )
 
@@ -109,8 +111,8 @@ class RoIPooler(torch.nn.Module):
     @torch.no_grad()
     def _find_pyramid_level(
         self,
-        proposal_boxes: torch.Tensor,
         features: List[torch.Tensor],
+        proposal_boxes: torch.Tensor,
         image_size: Union[Tuple[int, int], Tuple[int, int, int]],
     ) -> torch.Tensor:
         """

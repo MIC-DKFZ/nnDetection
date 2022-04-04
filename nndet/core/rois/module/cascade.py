@@ -11,7 +11,7 @@ from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
-from nndet.core.rois.pooler import RoIPoolerType
+from nndet.core.rois.pooler import RoIPooler
 
 # TODO: cleanup
 
@@ -20,7 +20,7 @@ class CascadeRoIModule(BaseRoIModule):
     def __init__(
         self,
         box_head: Union[RoIHeadType, List[RoIHeadType], Tuple[RoIHeadType]],
-        box_pooler: RoIPoolerType,
+        box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
         sampler: SamplerType,  # NegativeSampler default => random balanced sampling
@@ -31,7 +31,7 @@ class CascadeRoIModule(BaseRoIModule):
         mask_head: Optional[
             Union[MaskerType, List[MaskerType], Tuple[MaskerType]]
         ] = None,
-        mask_pooler: Optional[RoIPoolerType] = None,
+        mask_pooler: Optional[RoIPooler] = None,
         mask_post: Optional[MaskPostprocessing] = None,
         mask_interleaved_execution: bool = False,
         # post-processing

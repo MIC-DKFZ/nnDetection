@@ -27,7 +27,7 @@ def roi_align(
 
     # apply scaling here, will be moved to cuda function down the road
     if isinstance(spatial_scale, Sequence):
-        _scale = torch.Tensor(spatial_scale, dtype=boxes.dtype, device=boxes.device)
+        _scale = torch.tensor(spatial_scale, dtype=boxes.dtype, device=boxes.device)
         boxes[:, 1:] = boxes[:, 1:] * expand_to_boxes(_scale)
     else:
         boxes[:, 1:] = boxes[:, 1:] * spatial_scale
@@ -63,7 +63,7 @@ class RoIAlignBase(RoIPooler):
     def _pool_features(
         self,
         fmap: torch.Tensor,
-        proposals: torch.Tensor,
+        proposal_boxes_batch_idx: torch.Tensor,
         spatial_scale: ND_FLOAT,
     ) -> torch.Tensor:
         """
@@ -71,11 +71,10 @@ class RoIAlignBase(RoIPooler):
         """
         return roi_align(
             input=fmap,
-            boxes=proposals.detach(),
+            boxes=proposal_boxes_batch_idx.detach(),
             output_size=self.feature_output_size,
             spatial_scale=spatial_scale,
-            aligned=True,
-            sampling_ratio=2,
+            **self.feature_pool_kwargs,
         )
 
     @torch.no_grad()
@@ -125,13 +124,48 @@ class RoIAlignBase(RoIPooler):
                         boxes=p_boxes_batch_idx,
                         output_size=output_size,
                         spatial_scale=1.0,
-                        aligned=True,
+                        **self.mask_pool_kwargs,
                     )[:, 0]
                 )
         return pooled_masks
 
 
-# FIXME: pass kwargs to functions
+class RoIAlignOrigAssign(RoIAlignBase):
+    @torch.no_grad()
+    def _find_pyramid_level(
+        self,
+        proposal_boxes: torch.Tensor,
+        features: List[torch.Tensor],
+        image_size: ND_TUPLE_INT,
+    ) -> torch.Tensor:
+        """
+        Assign proposals to pyramid levels for pooling
+
+        This is equivalent to the original in
+        `Feature Pyramid Networks for Object Detection`
+        https://arxiv.org/pdf/1612.03144.pdf and MDT
+
+        => this ignores the z axes completely
+        """
+        image_size_tensor = torch.tensor(
+            image_size,
+            dtype=proposal_boxes.dtype,
+            device=proposal_boxes.device,
+        )
+        proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
+
+        _, d2, d3 = box_size(proposal_boxes_norm).unbind(dim=-1)
+
+        num_levels = len(features)
+        level = (
+            (num_levels + torch.log2(torch.sqrt(d2 * d3)))
+            .round()
+            .clamp_(min=0, max=num_levels)
+            .to(dtype=torch.int)
+        )
+        return level
+
+
 class RoIAlignNaiveAssign(RoIAlignBase):
     """
     Define assignment V1
@@ -146,22 +180,21 @@ class RoIAlignNaiveAssign(RoIAlignBase):
     ) -> torch.Tensor:
         """
         Assign proposals to pyramid levels for pooling
-        Proposals with an image size of
         """
+        num_levels = len(features)
         image_size_tensor = torch.tensor(
             image_size,
             dtype=proposal_boxes.dtype,
             device=proposal_boxes.device,
         )
 
-        # normalize boes to [0, 1]
-        proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
-
-        # norm proposals. Proposals with 3/4 of the image size will be mapped to 1
         # We normalize the box size instead of the area/vol
         # since this should give better numerical results especially
         # when using mixed precision (i.e. 128^3 does not fit float16)
-        normed_size = box_size(proposal_boxes_norm) * 1.33  # [N, 3]
+        proposal_boxes_norm = (proposal_boxes * 1.33) / expand_to_boxes(
+            image_size_tensor
+        )
+        normed_size = box_size(proposal_boxes_norm)  # [N, 3]
 
         if len(image_size) == 2:
             v = torch.log2((normed_size[:, 0] * normed_size[:, 1]).sqrt())
@@ -172,5 +205,5 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         else:
             raise ValueError(f"Image size needs to be 2D or 3d, received {image_size}.")
 
-        level = torch.floor(v * len(features)) + len(features)
-        return level.clamp_(min=0, max=len(features)).to(dtype=torch.int)
+        level = (v + num_levels).clamp_(min=0, max=len(features)).to(dtype=torch.int)
+        return level

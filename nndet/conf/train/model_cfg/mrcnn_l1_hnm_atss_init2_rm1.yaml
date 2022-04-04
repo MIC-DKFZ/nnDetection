@@ -64,13 +64,13 @@ roi_pooling:
   roi_box_size: [4, 4, 4] # overwrite roi size for box branch
   roi_box_feature_kwargs:  # keyword arguments passed to box pooler
     aligned: False
-    sampling_ratio: 2
+    sampling_ratio: -1
 
   # mask branch
   roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
   roi_mask_feature_kwargs:  # keyword arguments passed to mask pooler
     aligned: False
-    sampling_ratio: 2
+    sampling_ratio: -1
   roi_mask_gt_kwargs:  # keyword arguments passed to mask pooler
     aligned: False
     sampling_ratio: -1

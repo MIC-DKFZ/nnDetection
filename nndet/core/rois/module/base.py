@@ -13,7 +13,7 @@ from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
-from nndet.core.rois.pooler import NDSIZE, RoIPooler
+from nndet.core.rois.pooler import RoIPooler
 from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
@@ -128,7 +128,7 @@ class BaseRoIModule(torch.nn.Module):
         matched_gt_boxes: List[Tensor],
         matched_gt_labels: List[Tensor],
         proposal_boxes: List[Tensor],
-        image_size: NDSIZE,
+        image_size: ND_TUPLE_INT,
         stage: int = 0,
         predict: bool = False,
     ) -> Dict[str, Tensor]:
@@ -176,7 +176,7 @@ class BaseRoIModule(torch.nn.Module):
         matched_gt_idx: List[Tensor],
         proposal_boxes: List[Tensor],
         target_binary_masks: Tensor,
-        image_size: NDSIZE,
+        image_size: ND_TUPLE_INT,
         stage: int = 0,
         predict: bool = False,
     ) -> Dict[str, Tensor]:
