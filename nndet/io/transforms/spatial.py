@@ -20,6 +20,7 @@ import torch
 from torch import Tensor
 
 from nndet.io.transforms.base import AbstractTransform
+from nndet.utils.typing import ND_TUPLE_INT
 
 
 class Mirror(AbstractTransform):
@@ -86,13 +87,34 @@ class Mirror(AbstractTransform):
             data["_data_shapes"] = data_shapes
 
         for key in self.box_keys:
-            points = [boxes2points(b) for b in data[key]]
-            points = mirror_points(points, self.dims, data_shapes)
-            data[key] = [points2boxes(p) for p in points]
+            data[key] = self.mirror_boxes(
+                batch_boxes=data[key],
+                data_shapes=data_shapes,
+            )
 
         for key in self.point_keys:
             data[key] = mirror_points(data[key], self.dims, data_shapes)
         return data
+
+    def mirror_boxes(
+        self,
+        batch_boxes: List[torch.Tensor],
+        data_shapes: ND_TUPLE_INT,
+    ) -> List[torch.Tensor]:
+        """
+        Mirror boxes
+
+        Args:
+            batch_boxes: batch of boxes. Each list element represents one
+                image. Boxes in format (x1, y1, x2, y2, (z1, z2))
+            data_shapes: image size
+
+        Returns:
+            List[torch.Tensor]: _description_
+        """
+        points = [boxes2points(b) for b in batch_boxes]
+        points = mirror_points(points, self.dims, data_shapes)
+        return [points2boxes(p) for p in points]
 
     def invert(self, **data) -> dict:
         """
@@ -158,7 +180,9 @@ def mirror_points(
 
 
 def nd_mirror_matrix(
-    cartesian_dims: int, mirror_dims: Sequence[int], data_shape: Sequence[int]
+    cartesian_dims: int,
+    mirror_dims: Sequence[int],
+    data_shape: Sequence[int],
 ) -> torch.Tensor:
     """
     Create n dimensional matrix to for mirroring
@@ -186,7 +210,7 @@ def nd_mirror_matrix(
     index_tensor = torch.Tensor(mirror_dims).long()
     src_tensor = torch.tensor([1] * len(mirror_dims), dtype=torch.float)
     offset_mask = self_tensor.scatter_(0, index_tensor, src_tensor)
-    mat[:-1, -1] = offset_mask * torch.tensor(data_shape)
+    mat[:-1, -1] = offset_mask * (torch.tensor(data_shape) - 1)
     return mat
 
 
