@@ -17,7 +17,7 @@ Please read the information from the homepage carefully and follow the rules and
             ktrains
             ProstateX
             ProstateX-TrainingLesionInformationv2
-            rcuocolo-PROSTATEx_masks-e344452
+            PROSTATEx_masks
 ```
 
 We used the masks from the git hash e3444521e70cd5e8d405f4e9a6bc08312df8afe7 for our experiments.

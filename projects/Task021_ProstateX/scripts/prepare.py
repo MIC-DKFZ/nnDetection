@@ -137,10 +137,10 @@ def main():
         raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
 
     source_data = source_data_dir / "PROSTATEx"
-    source_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452"
+    source_masks = source_data_dir / "PROSTATEx_masks"
     source_ktrans = source_data_dir / "ktrains"
     csv_labels = source_data_dir / "ProstateX-TrainingLesionInformationv2" / "ProstateX-Findings-Train.csv"
-    csv_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452" / "Files" / "Image_list.csv"
+    csv_masks = source_data_dir / "PROSTATEx_masks" / "Files" / "Image_list.csv"
 
     data_target = task_data_dir / "raw_splitted" / "imagesTr"
     data_target.mkdir(parents=True, exist_ok=True)
