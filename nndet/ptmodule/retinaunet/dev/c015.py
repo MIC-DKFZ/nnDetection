@@ -9,6 +9,7 @@ from nndet.arch.conv import (
 )
 from nndet.arch.heads.classifier import FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMV2
 from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
 from nndet.inference.ensembler.base import BaseEnsembler
@@ -29,6 +30,11 @@ class RetinaUNetC015(RetinaUNetV001):
 
     head_cls = BoxHeadHNM
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015HeadV2(RetinaUNetC015):
+    head_cls = BoxHeadHNMV2
 
 
 @MODULE_REGISTRY.register

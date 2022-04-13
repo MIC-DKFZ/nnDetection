@@ -39,6 +39,7 @@ modalities = 1
 # 3D example
 dim = 3
 image_size = [512, 512, 512]
+image_size = [256, 256, 256]
 object_size = [16, 32]
 object_width = 4
 

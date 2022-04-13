@@ -49,7 +49,7 @@ class BoxHeadAll(AnchorHead):
         )
         self.ema_loss_norm = ema_loss_norm
         if self.ema_loss_norm:
-            logger.info("Using EMA norm loss in RoI Head")
+            logger.info("Using EMA norm loss in RPN Head")
             self.pos_ema = EMA(beta=0.95, bias_correction=True)
         self.logger = (
             None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
