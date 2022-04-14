@@ -6,7 +6,7 @@ scikit-learn
 scikit-image>=0.14
 pandas>=0.8.1
 PyYAML>=5.1, !=5.4.*
-nevergrad<0.5.0
+nevergrad<=0.4.2
 dicom2nifti
 medpy
 SimpleITK<2.1.0
