@@ -225,4 +225,4 @@ def test_roi_align_narive_assign(pooler):
         features,
         image_size,
     )
-    assert levels.allclose(torch.tensor([0, 0, 0, 1, 2, 3, 3, 4]))
+    assert levels.allclose(torch.tensor([0, 0, 0, 1, 2, 3, 3, 4]).int())
