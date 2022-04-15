@@ -115,9 +115,10 @@ class TestNMS:
         computed = nms_pytorch(boxes, scores, th)
         assert (computed == expected).all()
 
-    def test_nms_pytorch_2d_random(self, th):
-        np.random.seed(0)
-        boxes, scores = generate_boxes(1000)
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_nms_pytorch_2d_random(self, th, seed):
+        np.random.seed(seed)
+        boxes, scores = generate_boxes(1000, seed=seed)
         computed_vision = nms_torchvision(boxes, scores, th)
         computed_pytorch = nms_pytorch(boxes, scores, th)
         assert (computed_vision == computed_pytorch).all()
