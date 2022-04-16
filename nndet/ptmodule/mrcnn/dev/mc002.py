@@ -6,9 +6,10 @@ from nndet.arch.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
 from nndet.arch.decoder.base import BaseUFPN, UFPNModular
 from nndet.arch.encoder import Encoder
 from nndet.arch.encoder.abstract import AbstractEncoder
+from nndet.arch.heads.classifier import FocalClassifier
 from nndet.arch.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.arch.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
-from nndet.arch.heads.comb import BoxHeadHNM
+from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.comb.base import AnchorHead
 from nndet.arch.heads.comb.roi import RoIBoxHead
 from nndet.arch.heads.masker.base import BCESingleMasker, Masker
@@ -136,6 +137,15 @@ class MaskURCNNC002(
 @MODULE_REGISTRY.register
 class MaskURCNNC002MishRoI(MaskURCNNC002):
     roi_conv_cls: Type[CONVSEQ] = ConvGroupMish  # conv class used for RoI head
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC002Focal(MaskURCNNC002):
+    head_cls = BoxHeadAll
+    head_sampler_cls = None
+
+    head_regressor_cls = L1Regressor
+    head_classifier_cls = FocalClassifier
 
 
 @MODULE_REGISTRY.register

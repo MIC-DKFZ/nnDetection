@@ -19,25 +19,25 @@ max_num_epochs: 5 # max number of epochs
 num_train_batches_per_epoch: 100 # number of train batches per epoch
 num_val_batches_per_epoch: 50 # number of val batches per epoch
 
-#### SGD ###
-#opt_class: "SGDLWPoly"
-#initial_lr: 0.01 # initial learning rate to start with
-#weight_decay: 3.e-5 # weight decay for optimizer
-#
-## SGD specific parameters
-#sgd_momentum: 0.9 # momentum term
-#sgd_nesterov: True # nesterov momentum
-
-### AdamW ###
-opt_class: "AdamWLWPoly"
-initial_lr: 3e-4 # initial learning rate to start with
+### SGD ###
+opt_class: "SGDLWPoly"
+initial_lr: 0.01 # initial learning rate to start with
 weight_decay: 3.e-5 # weight decay for optimizer
 
-# AdamW specific parameters
-beta1: 0.9
-beta2: 0.999
-eps: 1e-8
-amsgrad: True # PyTorch Default False
+# SGD specific parameters
+sgd_momentum: 0.9 # momentum term
+sgd_nesterov: True # nesterov momentum
+
+# ### AdamW ###
+# opt_class: "AdamWLWPoly"
+# initial_lr: 3e-4 # initial learning rate to start with
+# weight_decay: 3.e-5 # weight decay for optimizer
+
+# # AdamW specific parameters
+# beta1: 0.9
+# beta2: 0.999
+# eps: 1e-8
+# amsgrad: True # PyTorch Default False
 
 warm_iterations: 100 # number of iterations with warmup
 warm_lr: 1.e-6 # learning rate to start warmup from
