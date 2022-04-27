@@ -373,7 +373,7 @@ class DataLoader3DOffset(DataLoader3DFast):
             elif box_size[i] >= self.patch_size_final[i]:  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
                 center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
-                origins.append(center - (self.patch_size_generator[0] // 2))
+                origins.append(center - (self.patch_size_generator[i] // 2))
             else:  # create best effort offset
                 patch_upper_bound = spatial_shape[i] - self.patch_size_final[i]
                 lower_bound = np.clip(box[ib] - (self.patch_size_final[i] - box_size[i]),
