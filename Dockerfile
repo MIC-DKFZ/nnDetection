@@ -47,3 +47,6 @@ RUN mkdir ${det_data} \
 WORKDIR /opt/code/nndet
 COPY . .
 RUN FORCE_CUDA=1 pip install -v -e .
+
+# torchmetrics=='0.8.1' fails, so downgrade here
+RUN yes | pip install torchmetrics=='0.7.3'
