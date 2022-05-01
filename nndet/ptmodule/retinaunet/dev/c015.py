@@ -8,6 +8,7 @@ from nndet.arch.conv import (
     ConvInstanceMish,
 )
 from nndet.arch.heads.classifier import FocalClassifier
+from nndet.arch.heads.classifier.dense import Poly1BCECLassifier, Poly1FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
@@ -69,6 +70,16 @@ class RetinaUNetC015Focal(RetinaUNetCV001Focal):
     head_sampler_cls = None
     head_regressor_cls = L1Regressor
     head_classifier_cls = FocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015Poly1Focal(RetinaUNetC015Focal):
+    head_classifier_cls = Poly1FocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015Poly1BCE(RetinaUNetC015):
+    head_classifier_cls = Poly1BCECLassifier
 
 
 @MODULE_REGISTRY.register

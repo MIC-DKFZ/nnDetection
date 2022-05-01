@@ -33,7 +33,7 @@ def focal_loss_with_logits(
         :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
     """
     p = torch.sigmoid(logits)
-    focal_term = (1.0 - (p * target + (1 - p) * (1 - target))) ** gamma
+    focal_term = (1.0 - (p * target + (1 - p) * (1 - target))) ** float(gamma)
     loss = focal_term * F.binary_cross_entropy_with_logits(
         logits, target, reduction="none"
     )
@@ -44,6 +44,6 @@ def focal_loss_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-focal_loss_with_logits_jit: "torch.jit.ScriptFunction" = torch.jit.script(
+focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(
     focal_loss_with_logits
 )

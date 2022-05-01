@@ -14,8 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from abc import abstractmethod
+
 import torch
 from loguru import logger
+from torch.cuda.amp import autocast
 
 
 class Loss(torch.nn.Module):
@@ -52,6 +55,88 @@ class Loss(torch.nn.Module):
         self._loss_fp32 = val
         if val:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
+
+
+class SigmoidBaseLoss(Loss):
+    def __init__(
+        self,
+        loss_weight: float = 1,
+        loss_fp32: bool = False,
+        reduction: str = "sum",
+        smoothing: float = 0.0,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+            **kwargs,
+        )
+        self.smoothing = smoothing
+        if smoothing > 0:
+            logger.info(f"Running label smoothing with smoothing: {smoothing}")
+
+    def forward(
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute loss
+
+        Args:
+            logits: predicted logits [N, C, dims], where N is the batch size,
+                C number of classes, dims are arbitrary spatial dimensions
+                (background classes should be located at channel 0 if
+                ignore background is enabled)
+            targets: targets encoded as numbers [N, dims], where N is the
+                batch size, dims are arbitrary spatial dimensions
+
+        Returns:
+            torch.Tensor: loss
+        """
+        num_classes = logits.shape[1] + 1
+        target_onehot = ont_hot_smooth_first(
+            targets,
+            num_classes=num_classes,
+            smoothing=self.smoothing,
+        )
+        target_onehot = target_onehot[:, 1:]
+
+        if self.loss_fp32:
+            with autocast(enabled=False):
+                loss = self.comp_loss(
+                    logits=logits.float(),
+                    targets=target_onehot.float(),
+                )
+        else:
+            loss = self.comp_loss(
+                logits=logits,
+                targets=target_onehot.to(dtype=logits.dtype),
+            )
+        return self.loss_weight * loss
+
+    @abstractmethod
+    def comp_loss(
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute loss with subclass loss function
+
+        Args:
+            logits: predicted logits [N, C, dims], where N is the batch size,
+                C number of classes, dims are arbitrary spatial dimensions
+                (background classes should be located at channel 0 if
+                ignore background is enabled)
+            targets: ont-hot targets [N, C, dims], where N is the batch size,
+                C number of classes, dims are arbitrary spatial dimensions
+
+        Returns:
+            torch.Tensor: loss
+        """
+        raise NotImplementedError
 
 
 def reduction_helper(

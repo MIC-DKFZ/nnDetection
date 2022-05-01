@@ -1,31 +1,37 @@
 import torch
 
-from nndet.losses.classification.functional.asymfocal import (
-    asymmetric_focal_loss_with_logits_jit as asymmetric_focal_loss_with_logits,
+from nndet.losses.classification.functional.poly1 import (
+    poly1_bce_with_logits_jit as poly1_bce_with_logits,
 )
-from nndet.losses.classification.functional.focal import (
-    focal_loss_with_logits_jit as focal_loss_with_logits,
+from nndet.losses.classification.functional.poly1 import (
+    poly1_focal_loss_with_logits_jit as poly1_focal_loss_with_logits,
 )
 from nndet.losses.ops import SigmoidBaseLoss
 
 
-class FocalLossWithLogits(SigmoidBaseLoss):
+class Poly1FocalLossWithLogits(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,
         alpha: float = -1,
+        epsilon: float = -1,
         loss_fp32: bool = False,
         loss_weight: float = 1.0,
         reduction: str = "sum",
         smoothing: float = 0.0,
     ):
         """
-        Focal loss with multiple classes (uses one hot encoding and sigmoid)
+        Poly1 Focal loss with multiple classes
+        (internally uses one hot encoding and sigmoid)
+
+        Poly1 Focal-Loss
+        https://openreview.net/forum?id=gSdSJoenupI
 
         Args:
             gamma: balance easy and hard examples in focal loss
             alpha: balance positive and negative samples [0, 1] (increasing
                 alpha increase weight of foreground classes (better recall))
+            epsilon: epsilon of poly term.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean'|'sum'|'none'
@@ -43,6 +49,7 @@ class FocalLossWithLogits(SigmoidBaseLoss):
         )
         self.gamma = gamma
         self.alpha = alpha
+        self.epsilon = epsilon
 
     def comp_loss(
         self,
@@ -63,34 +70,38 @@ class FocalLossWithLogits(SigmoidBaseLoss):
         Returns:
             torch.Tensor: loss
         """
-        return focal_loss_with_logits(
+        return poly1_focal_loss_with_logits(
             logits,
             targets,
             gamma=self.gamma,
             alpha=self.alpha,
+            epsilon=self.epsilon,
             reduction=self.reduction,
         )
 
 
-class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
+class Poly1BCEWithLogits(SigmoidBaseLoss):
     def __init__(
         self,
-        gamma: float = 2,
-        alpha: float = 1,
-        loss_weight: float = 1.0,
+        alpha: float = -1,
+        epsilon: float = -1,
         loss_fp32: bool = False,
-        reduction: str = "mean",
+        loss_weight: float = 1.0,
+        reduction: str = "sum",
         smoothing: float = 0.0,
     ):
         """
-        Asymmetric Focal loss
-        https://arxiv.org/abs/2008.13367
-        and https://arxiv.org/abs/1907.10982
+        Poly1 BCE loss with multiple classes
+        (internally uses one hot encoding and sigmoid)
+
+        Poly1 BCE
+        https://openreview.net/forum?id=gSdSJoenupI
 
         Args:
             gamma: balance easy and hard examples in focal loss
             alpha: balance positive and negative samples [0, 1] (increasing
                 alpha increase weight of foreground classes (better recall))
+            epsilon: epsilon of poly term.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean'|'sum'|'none'
@@ -106,8 +117,8 @@ class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
             reduction=reduction,
             smoothing=smoothing,
         )
-        self.gamma = gamma
         self.alpha = alpha
+        self.epsilon = epsilon
 
     def comp_loss(
         self,
@@ -128,10 +139,10 @@ class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
         Returns:
             torch.Tensor: loss
         """
-        return asymmetric_focal_loss_with_logits(
+        return poly1_bce_with_logits(
             logits,
             targets,
-            gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
+            epsilon=self.epsilon,
         )
