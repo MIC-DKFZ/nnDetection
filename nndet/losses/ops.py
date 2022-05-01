@@ -75,3 +75,54 @@ def reduction_helper(
     if reduction.lower() == "sum":
         return torch.sum(data)
     raise AttributeError("Reduction parameter unknown.")
+
+
+def one_hot_smooth_last(
+    data: torch.Tensor,
+    num_classes: int,
+    smoothing: float = 0.0,
+) -> torch.Tensor:
+    """
+    Convert data with numbers into one-hot-encoding. The classes are
+    added at the end of the tensor!
+
+    Args:
+        data: input data with numbers [dims]
+        num_classes: number of classes
+        smoothing: Optional smoothing factor. Defaults to 0.0.
+
+    Returns:
+        torch.Tensor: one-hot-encoded targets. [dims, num_classes]
+    """
+    targets = (
+        torch.empty(size=(*data.shape, num_classes), device=data.device)
+        .fill_(smoothing / num_classes)
+        .scatter_(-1, data.long().unsqueeze(-1), 1.0 - smoothing)
+    )
+    return targets
+
+
+def ont_hot_smooth_first(
+    data: torch.Tensor,
+    num_classes: int,
+    smoothing: float = 0.0,
+) -> torch.Tensor:
+    """
+    Convert data with numbers into one-hot-encoding. The classes are
+    added in the first dimension of the tensor!
+
+    Args:
+        data: input data with numbers [dims]
+        num_classes: number of classes
+        smoothing: Optional smoothing factor. Defaults to 0.0.
+
+    Returns:
+        torch.Tensor: one-hot-encoded targets. [dims[0], num_classes, other_dims]
+    """
+    shape = data.shape
+    targets = (
+        torch.empty(size=(shape[0], num_classes, *shape[1:]), device=data.device)
+        .fill_(smoothing / num_classes)
+        .scatter_(1, data.long().unsqueeze(1), 1.0 - smoothing)
+    )
+    return targets
