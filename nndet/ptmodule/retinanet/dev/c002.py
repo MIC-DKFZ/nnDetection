@@ -30,8 +30,6 @@ from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
-from nndet.inference.ensembler.base import BaseEnsembler
-from nndet.inference.ensembler.detection import BoxEnsemblerSelectiveV2
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
 from nndet.utils.typing import CONVSEQ
@@ -71,15 +69,6 @@ class RetinaNetC002(RetinaNetModule):
 
     # Not suported here; See `RetinaUNet`
     segmenter_cls = None
-
-    @classmethod
-    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
-        """
-        Returns:
-            Type[BaseEnsembler]: return class of ensembler to use for this
-                class
-        """
-        return BoxEnsemblerSelectiveV2
 
 
 @MODULE_REGISTRY.register

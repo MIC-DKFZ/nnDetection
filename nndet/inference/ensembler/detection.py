@@ -1189,7 +1189,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
             probs,
             labels,
             weights=weights,
-            iou_thresh=self.parameters["model_iou"],
+            iou_thresh=self.parameters["ensemble_iou"],
             **_kwargs,
         )
 
@@ -1234,68 +1234,6 @@ class BoxEnsemblerSelective(BoxEnsembler):
                 self.model_results[model]["weights"] = weights[idx_sorted]
 
         return super().save_state(target_dir=target_dir, name=name, **kwargs)
-
-
-class BoxEnsemblerSelectiveV2(BoxEnsemblerSelective):
-    """
-    Fix bug which was introduced during refactoring ...
-    """
-
-    def process_ensemble(
-        self,
-        boxes: List[Tensor],
-        probs: List[Tensor],
-        labels: List[Tensor],
-        weights: List[Tensor],
-    ) -> Tuple[Tensor, Tensor, Tensor]:
-        """
-        Ensemble predictions from multiple models
-
-        Args:
-            boxes: predicted boxes List[[N, dims * 2]]
-                (x1, y1, x2, y2, (z1, z2))
-            probs: predicted probabilities List[[N]]
-            labels: predicted label List[[N]]
-            weights: additional weight List[[N]]
-
-        Returns:
-            Tensor: ensembled box predictions
-            Tensor: ensembled probabilities
-            Tensor: ensembled labels
-        """
-        num_models = len(boxes)
-        boxes = cat(boxes, dim=0)
-        probs = cat(probs, dim=0)
-        labels = cat(labels, dim=0)
-        weights = cat(weights, dim=0)
-
-        _, idx = probs.sort(descending=True)
-        idx = idx[: self.parameters["ensemble_topk"]]
-        boxes = boxes[idx]
-        probs = probs[idx]
-        labels = labels[idx]
-        weights = weights[idx]
-
-        n_exp_preds = torch.tensor([num_models] * len(boxes)).to(boxes)
-        if "wbc" in self.parameters["ensemble_nms_fn"]:
-            _kwargs = {"n_exp_preds": n_exp_preds}
-        else:
-            _kwargs = {}
-
-        boxes, probs, labels, _ = self.get_ensemble_nms()(
-            boxes,
-            probs,
-            labels,
-            weights=weights,
-            iou_thresh=self.parameters["ensemble_iou"],
-            **_kwargs,
-        )
-
-        keep = probs > self.parameters["ensemble_score_thresh"]
-        boxes = boxes[keep]
-        probs = probs[keep]
-        labels = labels[keep]
-        return boxes.cpu(), probs.cpu(), labels.cpu()
 
 
 class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
