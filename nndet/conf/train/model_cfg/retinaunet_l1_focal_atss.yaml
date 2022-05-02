@@ -23,6 +23,7 @@ head_classifier_kwargs: # keyword arguments passed to classifier in head
   alpha: 0.75
   loss_weight: 0.3
   prior_prob: 0.01
+  loss_fp32: True # requried for focal loss, jit won't work otherwise
 
 head_regressor_kwargs: # keyword arguments passed to regressor in head
   num_convs: 1
