@@ -9,7 +9,6 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
     def __init__(
         self,
         *args,
-        num_classes: int,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
@@ -33,7 +32,6 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
         self.smoothing = smoothing
         if smoothing > 0:
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
-        self.num_classes = num_classes
 
     def forward(
         self,
@@ -53,8 +51,9 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
         Returns:
             Tensor: final loss
         """
+        num_classes = input.shape[1]
         target_one_hot = one_hot_smooth_last(
-            target, num_classes=self.num_classes + 1, smoothing=self.smoothing
+            target, num_classes=num_classes + 1, smoothing=self.smoothing
         )  # [N, C + 1]
         target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
 

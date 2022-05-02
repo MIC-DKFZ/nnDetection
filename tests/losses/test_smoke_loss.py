@@ -8,6 +8,10 @@ from nndet.losses.classification import (
     CrossEntropyLoss,
     FocalLossWithLogits,
 )
+from nndet.losses.classification.poly1 import (
+    Poly1BCEWithLogits,
+    Poly1FocalLossWithLogits,
+)
 from nndet.losses.regression import GIoULoss, SmoothL1Loss
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss, TopKLossSigmoid
 
@@ -47,7 +51,17 @@ TEST_CASES = [
         torch.ones(1, 3, 10, dtype=torch.float),
     ),
     (
-        BCEWithLogitsLossOneHot(num_classes=3, reduction="mean"),
+        BCEWithLogitsLossOneHot(reduction="mean"),
+        torch.zeros(10, 3, dtype=torch.float),
+        torch.ones(10, dtype=torch.float),
+    ),
+    (
+        Poly1BCEWithLogits(reduction="mean"),
+        torch.zeros(10, 3, dtype=torch.float),
+        torch.ones(10, dtype=torch.float),
+    ),
+    (
+        Poly1FocalLossWithLogits(reduction="mean"),
         torch.zeros(10, 3, dtype=torch.float),
         torch.ones(10, dtype=torch.float),
     ),

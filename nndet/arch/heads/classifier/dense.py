@@ -250,7 +250,6 @@ class BCECLassifier(DenseClassifier):
         )
 
         self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
