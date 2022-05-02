@@ -47,7 +47,7 @@ def load_dataset_info(task_dir: os.PathLike) -> dict:
         with open(yaml_path, "r") as f:
             data = yaml.full_load(f)
     elif yaml_path_fallback.is_file():
-        with open(yaml_path_fallback, 'r') as f:
+        with open(yaml_path_fallback, "r") as f:
             data = yaml.full_load(f)
     elif json_path.is_file():
         with open(json_path, "r") as f:
