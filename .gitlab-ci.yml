@@ -1,0 +1,28 @@
+default:
+  image: nvcr.io/nvidia/pytorch:22.01-py3
+
+stages:
+  - build
+
+build-job:
+  stage: build
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - pip uninstall torchtext -y
+    - echo "Install Package"
+    - pip install .
+    - pip install pytest
+    - echo "Batchgen Master"
+    - pip uninstall batchgenerators -y
+    - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
+    - echo "Run Tests"
+    - coverage run -m pytest -v
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+  coverage: '/TOTAL.*\s+(\d+\%)/'

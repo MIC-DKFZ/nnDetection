@@ -96,7 +96,7 @@ setup(
     name='nndet',
     version="v0.1",
     packages=find_packages(),
-    include_package_data=True,
+    # include_package_data=True,
     test_suite="unittest",
     long_description=readme,
     long_description_content_type='text/markdown',
