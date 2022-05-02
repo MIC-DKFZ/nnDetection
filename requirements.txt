@@ -17,3 +17,4 @@ mlflow
 GitPython
 matplotlib
 seaborn
+torchmetrics>=0.7.0,<=0.7.3
