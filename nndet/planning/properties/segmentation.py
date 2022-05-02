@@ -15,27 +15,27 @@ limitations under the License.
 """
 
 import pickle
-import numpy as np
-
-from loguru import logger
-from itertools import repeat
 from collections import OrderedDict
-from skimage.morphology import label
+from itertools import repeat
 from multiprocessing import Pool
-from typing import Dict, List, Sequence, Tuple, Callable
+from typing import Callable, Dict, Sequence, Tuple
 
-from nndet.planning.analyzer import DatasetAnalyzer
+import numpy as np
+from loguru import logger
+from skimage.morphology import label
+
 from nndet.io.load import load_case_cropped
+from nndet.planning.analyzer import DatasetAnalyzer
 
 
 def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:
     """
-    Analyze segmentation of dataset (if overwrite is disabled and analysis was already run, 
+    Analyze segmentation of dataset (if overwrite is disabled and analysis was already run,
     this function will only load the results)
-    
+
     Args:
         analyzer: analyzer which calls this function
-    
+
     Returns:
         Dict:
             `class_dct`(np.ndarray): contains all present classes
@@ -50,12 +50,16 @@ def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:
     else:
         with open(analyzer.props_per_case_file, "rb") as f:
             props_per_case = pickle.load(f)
-    return {'class_dct': class_dct, 'all_classes': all_classes,
-            'segmentation_props_per_patient': props_per_case}
+    return {
+        "class_dct": class_dct,
+        "all_classes": all_classes,
+        "segmentation_props_per_patient": props_per_case,
+    }
 
 
-def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str,
-                                  all_classes: Sequence[int]) -> Dict:
+def analyze_segmentation_per_case(
+    analyzer: DatasetAnalyzer, case_id: str, all_classes: Sequence[int]
+) -> Dict:
     """
     1) what class is in this training case?
     2) what is the size distribution for each class?
@@ -79,30 +83,38 @@ def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str,
     """
     logger.info(f"Processing segmentation properties of case {case_id}")
     _, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
-    vol_per_voxel = np.prod(props['itk_spacing'])
+    vol_per_voxel = np.prod(props["itk_spacing"])
 
     unique_classes = np.unique(seg)
 
     regions = [list(all_classes)]
     for c in all_classes:
-        regions.append((c, ))
+        regions.append((c,))
     all_in_one_region = check_if_all_in_one_region(seg, regions)
 
     volume_per_class, region_sizes = collect_class_and_region_sizes(
-        seg, all_classes, vol_per_voxel)
+        seg, all_classes, vol_per_voxel
+    )
 
-    return {"has_classes": unique_classes, "only_one_region": all_in_one_region,
-            "volume_per_class": volume_per_class, "region_volume_per_class": region_sizes}
+    return {
+        "has_classes": unique_classes,
+        "only_one_region": all_in_one_region,
+        "volume_per_class": volume_per_class,
+        "region_volume_per_class": region_sizes,
+    }
 
 
 def run_analyze_segmentation(
-    analyzer: DatasetAnalyzer, all_classes: Sequence[int],
-    save: bool = True, 
-    analyze_fn: Callable[[DatasetAnalyzer, str, Sequence[int]], Dict] = analyze_segmentation_per_case) \
-        -> Dict[str, Dict]:
+    analyzer: DatasetAnalyzer,
+    all_classes: Sequence[int],
+    save: bool = True,
+    analyze_fn: Callable[
+        [DatasetAnalyzer, str, Sequence[int]], Dict
+    ] = analyze_segmentation_per_case,
+) -> Dict[str, Dict]:
     """
     Analyze segmentations of all cases in analyzer
-    
+
     Args:
         analyzer: analyzer which called this function
         all_classes: values of all classes
@@ -112,14 +124,15 @@ def run_analyze_segmentation(
             to compute needed properties of a single segmentation case. Takes
             the calling analyzer, the case id and a sequence of integers representing
             all classes in the dataset and should return a single dict
-    
+
     Returns:
         Dict[Dict]: computed properties per case
     """
     props_per_case = OrderedDict()
     with Pool(analyzer.num_processes) as p:
-        props = p.starmap(analyze_fn, zip(
-            repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
+        props = p.starmap(
+            analyze_fn, zip(repeat(analyzer), analyzer.case_ids, repeat(all_classes))
+        )
 
         for case_id, prop in zip(analyzer.case_ids, props):
             props_per_case[case_id] = prop
@@ -130,16 +143,17 @@ def run_analyze_segmentation(
     return props_per_case
 
 
-def check_if_all_in_one_region(seg: np.ndarray,
-                               regions: Sequence[Sequence[int]]) -> Dict[Tuple[int], bool]:
+def check_if_all_in_one_region(
+    seg: np.ndarray, regions: Sequence[Sequence[int]]
+) -> Dict[Tuple[int], bool]:
     """
     Check if regions are splited over multiple instances or are all connected
-    
+
     Args:
         seg: segmentation
         regions: Sequence of multiple regions to analyze.
             Each region can contain multiple classes
-    
+
     Returns:
         Dict[Tuple[int], bool]: result for each region
     """
@@ -156,28 +170,29 @@ def check_if_all_in_one_region(seg: np.ndarray,
     return res
 
 
-def collect_class_and_region_sizes(seg: np.ndarray, all_classes: Sequence[int],
-                                   vol_per_voxel: float) -> (Dict, Dict[str, Dict]):
+def collect_class_and_region_sizes(
+    seg: np.ndarray, all_classes: Sequence[int], vol_per_voxel: float
+) -> (Dict, Dict[str, Dict]):
     """
     Collect class and region sizes from segmentation
-    
+
     Args:
         seg: segmentation
         all_classes: array with all classes
         vol_per_voxel: physical volume per voxel
-    
+
     Returns:
         Dict: volume per class (dict index corresponds to class)
-        Dict[List]: sizes of each region; 
+        Dict[List]: sizes of each region;
             first dict indexes thes class while second dict indexed the regions
     """
     volume_per_class = OrderedDict()
     region_volume_per_class = OrderedDict()
     for c in all_classes:
         volume_per_class[c] = np.sum(seg == c) * vol_per_voxel
-        
+
         region_volume_per_class[c] = []
         labelmap, numregions = label(seg == c, return_num=True)
-        for l in range(1, numregions + 1):
-            region_volume_per_class[c].append(np.sum(labelmap == l) * vol_per_voxel)
+        for x in range(1, numregions + 1):
+            region_volume_per_class[c].append(np.sum(labelmap == x) * vol_per_voxel)
     return volume_per_class, region_volume_per_class

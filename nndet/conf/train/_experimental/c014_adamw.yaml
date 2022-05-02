@@ -1,0 +1,10 @@
+# @package __global__
+defaults:
+  - augment_cfg: more_modular
+  - io_cfg: offset
+  - trainer_cfg: adamw_base
+  - model_cfg: retinaunet_l1_hnm_atss
+
+module: RetinaUNetC014
+plan: D3V001_3d # plan used for training
+planner: D3V001 # planner used for preprocessing

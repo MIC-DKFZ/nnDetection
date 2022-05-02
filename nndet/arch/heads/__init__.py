@@ -1,4 +1,5 @@
-from nndet.arch.heads.classifier import ClassifierType, Classifier
-from nndet.arch.heads.comb import HeadType, AbstractHead
-from nndet.arch.heads.regressor import RegressorType, Regressor
-from nndet.arch.heads.segmenter import SegmenterType, Segmenter
+from nndet.arch.heads.abstract import BaseHead, ClassifierType, RegressorType
+from nndet.arch.heads.classifier import DenseClassifier, DenseClassifierType
+from nndet.arch.heads.comb import AnchorHeadType, RoIHeadType
+from nndet.arch.heads.regressor import DenseRegressor, DenseRegressorType
+from nndet.arch.heads.segmenter import Segmenter, SegmenterType

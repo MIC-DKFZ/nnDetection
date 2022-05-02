@@ -19,13 +19,17 @@ from typing import Tuple
 import torch
 
 
-def clip_boxes_to_image_(boxes: torch.Tensor, img_shape: Tuple[int]):
+def clip_boxes_to_image_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int],
+):
     """
     Clip boxes to image dimensions inplace
 
     Args:
-        boxes (Tensor): tensor with boxes [N x (2*dim)] (x_min, y_min, x_max, y_max(, z_min, z_max))
-        img_shape (Tuple[height, width(, depth)]): size of image
+        boxes: tensor with boxes [N x (2*dim)]
+            (x_min, y_min, x_max, y_max(, z_min, z_max))
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor
@@ -41,13 +45,17 @@ def clip_boxes_to_image_(boxes: torch.Tensor, img_shape: Tuple[int]):
         raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
 
 
-def clip_boxes_to_image(boxes: torch.Tensor, img_shape: Tuple[int]):
+def clip_boxes_to_image(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int],
+):
     """
     Clip boxes to image dimensions
 
     Args:
-        boxes (Tensor): tensor with boxes [N x (2*dim)] (x_min, y_min, x_max, y_max(, z_min, z_max))
-        img_shape (Tuple[height, width(, depth)]): size of image
+        boxes: tensor with boxes [N x (2*dim)]
+            (x_min, y_min, x_max, y_max(, z_min, z_max))
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor
@@ -63,13 +71,16 @@ def clip_boxes_to_image(boxes: torch.Tensor, img_shape: Tuple[int]):
         raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
 
 
-def clip_boxes_to_image_2d_(boxes: torch.Tensor, img_shape: Tuple[int, int]):
+def clip_boxes_to_image_2d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
     """
     Clip boxes to image dimensions
 
     Args:
-        boxes (Tensor): tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
-        img_shape (Tuple[x_max, y_max]): size of image
+        boxes: tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor
@@ -80,13 +91,17 @@ def clip_boxes_to_image_2d_(boxes: torch.Tensor, img_shape: Tuple[int, int]):
     return boxes
 
 
-def clip_boxes_to_image_3d_(boxes: torch.Tensor, img_shape: Tuple[int, int, int]):
+def clip_boxes_to_image_3d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
     """
     Clip boxes to image dimensions
 
     Args:
-        boxes (Tensor): tensor with boxes [N x 6] (x_min, y_min, x_max, y_max, z_min, z_max)
-        img_shape (Tuple[height, width, depth]): size of image
+        boxes: tensor with boxes [N x 6]
+            (x_min, y_min, x_max, y_max, z_min, z_max)
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor
@@ -101,13 +116,16 @@ def clip_boxes_to_image_3d_(boxes: torch.Tensor, img_shape: Tuple[int, int, int]
     return boxes
 
 
-def clip_boxes_to_image_2d(boxes: torch.Tensor, img_shape: Tuple[int, int]):
+def clip_boxes_to_image_2d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
     """
     Clip boxes to image dimensions
 
     Args:
-        boxes (Tensor): tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
-        img_shape (Tuple[x_max, y_max]): size of image
+        boxes: tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor
@@ -122,13 +140,17 @@ def clip_boxes_to_image_2d(boxes: torch.Tensor, img_shape: Tuple[int, int]):
     return boxes
 
 
-def clip_boxes_to_image_3d(boxes: torch.Tensor, img_shape: Tuple[int, int, int]):
+def clip_boxes_to_image_3d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
     """
     Clip boxes to image dimensions
 
     Args:
-        boxes (Tensor): tensor with boxes [N x 6] (x_min, y_min, x_max, y_max, z_min, z_max)
-        img_shape (Tuple[height, width, depth]): size of image
+        boxes: tensor with boxes [N x 6]
+            (x_min, y_min, x_max, y_max, z_min, z_max)
+        img_shape: size of image
 
     Returns:
         Tensor: clipped boxes as tensor

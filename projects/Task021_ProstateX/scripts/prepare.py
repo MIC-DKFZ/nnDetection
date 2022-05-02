@@ -1,18 +1,16 @@
 import os
 import sys
 import traceback
-from itertools import repeat
-from multiprocessing import Pool
 from pathlib import Path
 
 import pandas as pd
 import SimpleITK as sitk
-from nndet.io.prepare import create_test_split
 from loguru import logger
 
-from nndet.utils.check import env_guard
 from nndet.io import save_json
 from nndet.io.itk import load_sitk, load_sitk_as_array
+from nndet.io.prepare import create_test_split
+from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
 
 
@@ -23,15 +21,16 @@ def load_dicom_series_sitk(p):
     return reader.Execute()
 
 
-def prepare_case(case_id,
-                 data_dirs,
-                 ktrans_dirs,
-                 t2_masks,
-                 df_labels,
-                 df_masks,
-                 data_target,
-                 label_target,
-                 ):
+def prepare_case(
+    case_id,
+    data_dirs,
+    ktrans_dirs,
+    t2_masks,
+    df_labels,
+    df_masks,
+    data_target,
+    label_target,
+):
     try:
         logger.info(f"Preparing {case_id}")
 
@@ -40,12 +39,12 @@ def prepare_case(case_id,
         assert len(_dirs) == 1
         data_dir = tmp_dir / _dirs[0]
 
-        df_mask_case = df_masks[df_masks['T2'].str.contains(case_id)]
+        df_mask_case = df_masks[df_masks["T2"].str.contains(case_id)]
         assert len(df_mask_case) == 1
 
         t2_mask_file = df_mask_case.iloc[0]["T2"]
         assert f"{case_id}" in t2_mask_file
-        t2_series_id = int(t2_mask_file.rsplit(".", 2)[0].rsplit('_', 1)[1])
+        t2_series_id = int(t2_mask_file.rsplit(".", 2)[0].rsplit("_", 1)[1])
 
         adc_mask_file = df_mask_case.iloc[0]["ADC"]
         assert f"{case_id}" in adc_mask_file
@@ -56,19 +55,23 @@ def prepare_case(case_id,
         elif case_id == "ProstateX-0113":
             # even though the table shows 9 as the series
             # ID we use 10 because 9 is not an ADC file?
-            adc_series_id = int(adc_mask_file.rsplit(".", 2)[0].rsplit('_', 1)[1])
+            adc_series_id = int(adc_mask_file.rsplit(".", 2)[0].rsplit("_", 1)[1])
             assert adc_series_id == 9
             adc_series_id = 10
         else:
-            adc_series_id = int(adc_mask_file.rsplit(".", 2)[0].rsplit('_', 1)[1])
+            adc_series_id = int(adc_mask_file.rsplit(".", 2)[0].rsplit("_", 1)[1])
 
         # T2
-        t2_dir = [f for f in data_dir.glob("*t2*") if f.name.startswith(f"{t2_series_id}.")]
+        t2_dir = [
+            f for f in data_dir.glob("*t2*") if f.name.startswith(f"{t2_series_id}.")
+        ]
         assert len(t2_dir) == 1
         t2_data_itk = load_dicom_series_sitk(t2_dir[0])
 
         # ADC
-        adc_dir = [f for f in data_dir.glob("*ADC*") if f.name.startswith(f"{adc_series_id}.")]
+        adc_dir = [
+            f for f in data_dir.glob("*ADC*") if f.name.startswith(f"{adc_series_id}.")
+        ]
         assert len(adc_dir) == 1
         adc_data_itk = load_dicom_series_sitk(adc_dir[0])
 
@@ -89,7 +92,10 @@ def prepare_case(case_id,
 
         # prepare mask
         mask_paths = list(t2_masks.glob(f"{case_id}*"))
-        fids = [int([l for l in mp.name.split("-") if "Finding" in l][0][7:]) for mp in mask_paths]
+        fids = [
+            int([l for l in mp.name.split("-") if "Finding" in l][0][7:])
+            for mp in mask_paths
+        ]
         mask_itk = load_sitk(str(mask_paths[0]))
         mask = sitk.GetArrayFromImage(mask_itk)
         mask[mask > 0] = 1
@@ -103,7 +109,7 @@ def prepare_case(case_id,
         mask_final.SetDirection(t2_data_itk.GetDirection())
         mask_final.SetSpacing(t2_data_itk.GetSpacing())
 
-        df_case = df_labels.loc[df_labels['ProxID'] == case_id]
+        df_case = df_labels.loc[df_labels["ProxID"] == case_id]
         instances = {}
         for row in df_case.itertuples():
             if row.fid in fids:
@@ -115,7 +121,9 @@ def prepare_case(case_id,
         sitk.WriteImage(t2_data_itk, str(data_target / f"{case_id}_0000.nii.gz"))
         sitk.WriteImage(adc_data_itk_res, str(data_target / f"{case_id}_0001.nii.gz"))
         sitk.WriteImage(pdw_data_itk_res, str(data_target / f"{case_id}_0002.nii.gz"))
-        sitk.WriteImage(ktrans_data_itk_res, str(data_target / f"{case_id}_0003.nii.gz"))
+        sitk.WriteImage(
+            ktrans_data_itk_res, str(data_target / f"{case_id}_0003.nii.gz")
+        )
         sitk.WriteImage(mask_final, str(label_target / f"{case_id}.nii.gz"))
         save_json({"instances": instances}, label_target / f"{case_id}.json")
     except Exception as e:
@@ -128,19 +136,30 @@ def main():
     Does not use the KTrans Sequence of ProstateX
     This script only uses the provided T2 masks
     """
-    det_data_dir = Path(os.getenv('det_data'))
+    det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / "Task021_ProstateX"
 
     # setup raw paths
     source_data_dir = task_data_dir / "raw"
     if not source_data_dir.is_dir():
-        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
+        raise RuntimeError(
+            f"{source_data_dir} should contain the raw data but does not exist."
+        )
 
     source_data = source_data_dir / "PROSTATEx"
     source_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452"
     source_ktrans = source_data_dir / "ktrains"
-    csv_labels = source_data_dir / "ProstateX-TrainingLesionInformationv2" / "ProstateX-Findings-Train.csv"
-    csv_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452" / "Files" / "Image_list.csv"
+    csv_labels = (
+        source_data_dir
+        / "ProstateX-TrainingLesionInformationv2"
+        / "ProstateX-Findings-Train.csv"
+    )
+    csv_masks = (
+        source_data_dir
+        / "rcuocolo-PROSTATEx_masks-e344452"
+        / "Files"
+        / "Image_list.csv"
+    )
 
     data_target = task_data_dir / "raw_splitted" / "imagesTr"
     data_target.mkdir(parents=True, exist_ok=True)
@@ -165,42 +184,36 @@ def main():
     dataset_info = {
         "name": "ProstateX",
         "task": "Task021_ProstateX",
-
         "target_class": None,
         "test_labels": False,
-
         "labels": {
             "0": "clinically_significant",
             "1": "clinically_insignificant",
         },
-        "modalities": {
-            "0": "T2",
-            "1": "ADC",
-            "2": "PD-W",
-            "3": "Ktrans"
-        },
+        "modalities": {"0": "T2", "1": "ADC", "2": "PD-W", "3": "Ktrans"},
         "dim": 3,
         "info": "Ground Truth: T2 Masks; \n"
-                "Modalities: T2, ADC, PD-W, Ktrans \n;"
-                "Classes: clinically significant = 1, insignificant = 0 \n"
-                "Keep: ProstateX-0025 '10-28-2011-MR prostaat kanker detectie WDSmc MCAPRODETW-19047'\n"
-                "Masks\n"
-                "https://github.com/rcuocolo/PROSTATEx_masks\n"
-                "Github hash: e3444521e70cd5e8d405f4e9a6bc08312df8afe7"
+        "Modalities: T2, ADC, PD-W, Ktrans \n;"
+        "Classes: clinically significant = 1, insignificant = 0 \n"
+        "Keep: ProstateX-0025 '10-28-2011-MR prostaat kanker detectie WDSmc MCAPRODETW-19047'\n"
+        "Masks\n"
+        "https://github.com/rcuocolo/PROSTATEx_masks\n"
+        "Github hash: e3444521e70cd5e8d405f4e9a6bc08312df8afe7",
     }
     save_json(dataset_info, task_data_dir / "dataset.json")
 
     # prepare labels and data
     for cid in maybe_verbose_iterable(case_ids):
-        prepare_case(cid,
-                     data_dirs=source_data,
-                     ktrans_dirs=source_ktrans,
-                     t2_masks=t2_masks,
-                     df_labels=df_labels,
-                     df_masks=df_masks,
-                     data_target=data_target,
-                     label_target=label_target,
-                     )
+        prepare_case(
+            cid,
+            data_dirs=source_data,
+            ktrans_dirs=source_ktrans,
+            t2_masks=t2_masks,
+            df_labels=df_labels,
+            df_masks=df_masks,
+            data_target=data_target,
+            label_target=label_target,
+        )
 
     # with Pool(processes=6) as p:
     #     p.starmap(prepare_case, zip(case_ids,
@@ -214,13 +227,14 @@ def main():
     #                                 ))
 
     # create test split
-    create_test_split(task_data_dir / "raw_splitted",
-                      num_modalities=len(dataset_info["modalities"]),
-                      test_size=0.3,
-                      random_state=0,
-                      shuffle=True,
-                      )
+    create_test_split(
+        task_data_dir / "raw_splitted",
+        num_modalities=len(dataset_info["modalities"]),
+        test_size=0.3,
+        random_state=0,
+        shuffle=True,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

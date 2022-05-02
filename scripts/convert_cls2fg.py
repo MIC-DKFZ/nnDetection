@@ -23,20 +23,22 @@ from hydra import initialize_config_module
 from loguru import logger
 
 from nndet.io import get_task, load_json, save_json
-from nndet.utils.config import compose, load_dataset_info
 from nndet.utils.check import env_guard
+from nndet.utils.config import compose, load_dataset_info
 
 
 def convert_raw(task, overwrite, ov):
     task_name_full = get_task(task, name=True)
-    task_num, task_name = task_name_full[4:].split('_', 1)
+    task_num, task_name = task_name_full[4:].split("_", 1)
     new_task_name_full = f"Task{task_num}FG_{task_name}"
 
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
     print(cfg)
 
     source_splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
-    target_splitted_dir = Path(str(source_splitted_dir).replace(task_name_full, new_task_name_full))
+    target_splitted_dir = Path(
+        str(source_splitted_dir).replace(task_name_full, new_task_name_full)
+    )
     if target_splitted_dir.is_dir() and overwrite:
         shutil.rmtree(target_splitted_dir)
     target_splitted_dir.mkdir(parents=True)
@@ -67,7 +69,7 @@ def convert_raw(task, overwrite, ov):
 
         # remap properties file to foreground class
         target_label_dir = target_splitted_dir / f"labels{postfix}"
-        for f in [l for l in target_label_dir.glob("*.json")]:
+        for f in [x for x in target_label_dir.glob("*.json")]:
             props = load_json(f)
             props["instances"] = {key: 0 for key in props["instances"].keys()}
             save_json(props, f)
@@ -80,13 +82,21 @@ def main():
     a new dataset which only distinguishes fg and bg
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="Single or multiple task identifiers to process consecutively",
-                        )
-    parser.add_argument('--overwrite', action='store_true')
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False)
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
+    parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
     args = parser.parse_args()
     tasks = args.tasks
     ov = args.overwrites
@@ -97,5 +107,5 @@ def main():
         convert_raw(task, overwrite, ov)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

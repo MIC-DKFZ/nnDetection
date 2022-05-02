@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
-from typing import Dict, List, Sequence
-
 
 __all__ = ["AbstractEvaluator", "AbstractMetric", "DetectionMetric"]
 
@@ -47,7 +46,11 @@ class AbstractEvaluator(ABC):
 
 
 class AbstractMetric(ABC):
-    def __call__(self, *args, **kwargs) -> (Dict[str, float], Dict[str, np.ndarray]):
+    def __call__(
+        self,
+        *args,
+        **kwargs,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric. See :func:`compute` for more information.
 
@@ -62,8 +65,10 @@ class AbstractMetric(ABC):
         return self.compute(*args, **kwargs)
 
     @abstractmethod
-    def compute(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> (
-            Dict[str, float], Dict[str, np.ndarray]):
+    def compute(
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric
 
@@ -95,7 +100,7 @@ class DetectionMetric(AbstractMetric):
             Sequence[float]: IoU thresholds; [M], M is the number of thresholds
         """
         raise NotImplementedError
-    
+
     def check_number_of_iou(self, *args) -> None:
         """
         Check if shape of input in first dimension is consistent with expected IoU values

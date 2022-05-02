@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from abc import abstractmethod
+from typing import Dict, List, TypeVar, Union
+
 import torch
 import torch.nn as nn
-from typing import List, Dict, Union, TypeVar
-from abc import abstractmethod
-
 
 __all__ = ["AbstractEncoder"]
 
@@ -58,15 +58,15 @@ class AbstractEncoder(nn.Module):
     @abstractmethod
     def get_strides(self) -> List[Dict[str, Union[List[int], int]]]:
         """
-        Compute number backbone strides for 2d and 3d case and all options 
+        Compute number backbone strides for 2d and 3d case and all options
         of network
 
         Returns
-            List[Dict[str, Union[List[int], int]]]: dict with 'xy' for 2d 
+            List[Dict[str, Union[List[int], int]]]: dict with 'xy' for 2d
                 stride and optional 'z' for 3d cases. List
                 describes stride at respective output level
         """
         raise NotImplementedError
 
 
-EncoderType = TypeVar('EncoderType', bound=AbstractEncoder)
+EncoderType = TypeVar("EncoderType", bound=AbstractEncoder)

@@ -1,0 +1,62 @@
+default:
+  image: nvcr.io/nvidia/pytorch:22.01-py3
+
+stages:
+  - format
+  - build
+  - docs
+
+format-job:
+  stage: format
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - echo "Install"
+    - pip install pre-commit
+    - echo "Check Install"
+    - pre-commit --version
+    - pre-commit install
+    - echo "Run pre-commit hooks"
+    - pre-commit run --all-files --show-diff-on-failure
+
+build-job:
+  stage: build
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - pip uninstall torchtext -y
+    - echo "Install Package"
+    - pip install .[dev]
+    - echo "Batchgen Master"
+    - pip uninstall batchgenerators -y
+    - pip install git+https://github.com/MIC-DKFZ/batchgenerators.git
+    - echo "Run Tests"
+    - coverage run -m pytest -v
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+  coverage: '/TOTAL.*\s+(\d+\%)/'
+
+build-docs:
+  stage: docs
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - pip uninstall torchtext -y
+    - echo "Install Package"
+    - pip install .[dev]
+    - echo "Building Docs"
+    - mkdir public
+    - cd docs && make html
+    - cp -r ./build/html/* ../public
+  artifacts:
+    paths:
+      - public

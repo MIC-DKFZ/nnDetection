@@ -32,15 +32,15 @@ class ArchitecturePlanner(ABC):
         Approximate vram usage of model for planning
         """
         pass
-    
+
     def get_planner_id(self) -> str:
         """
         Create identifier for this planner
-        
+
         Returns:
             str: identifier
         """
         return self.__class__.__name__
 
 
-ArchitecturePlannerType = TypeVar('ArchitecturePlannerType', bound=ArchitecturePlanner)
+ArchitecturePlannerType = TypeVar("ArchitecturePlannerType", bound=ArchitecturePlanner)

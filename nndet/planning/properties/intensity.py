@@ -15,28 +15,28 @@ limitations under the License.
 """
 
 import pickle
-import numpy as np
-
-from loguru import logger
+from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
-from collections import OrderedDict
-from typing import Union, Sequence, Dict
+from typing import Dict, Sequence, Union
 
-from nndet.planning.analyzer import DatasetAnalyzer
+import numpy as np
+from loguru import logger
+
 from nndet.io.load import load_case_cropped
+from nndet.planning.analyzer import DatasetAnalyzer
 
 
 def get_modalities(analyzer: DatasetAnalyzer) -> dict:
     """
     Extract modalities from analyzer data info
-    
+
     Args:
         analyzer: calling analyzer; need to provide `modalities` dict in :param:`data_info`
-    
+
     Returns:
         dict: extract modalities
-            `modalities` (Dict[int, str]): modalities 
+            `modalities` (Dict[int, str]): modalities
     """
     modalities = analyzer.data_info["modalities"]
     modalities = {int(k): modalities[k] for k in modalities.keys()}
@@ -46,35 +46,36 @@ def get_modalities(analyzer: DatasetAnalyzer) -> dict:
 def analyze_intensities(analyzer: DatasetAnalyzer) -> dict:
     """
     Either recompute or load intensity statistics from dataset
-    
+
     Args:
-        analyzer: calling analyer; need to provide a dictionary where 
+        analyzer: calling analyer; need to provide a dictionary where
             modalities are named in :param:`data_info` in key `modalities`
 
     Returns:
-        Dict: 
+        Dict:
             `intensity_properties`: result of :func:`run_collect_intensity_properties`
     """
     num_modalities = len(analyzer.data_info["modalities"].keys())
-    
+
     if analyzer.overwrite or not analyzer.intensity_properties_file.is_file():
         results = run_collect_intensity_properties(analyzer, num_modalities)
     else:
-        with open(analyzer.intensity_properties_file, 'rb') as f:
+        with open(analyzer.intensity_properties_file, "rb") as f:
             results = pickle.load(f)
-    return {'intensity_properties': results}
+    return {"intensity_properties": results}
 
 
-def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
-                                     num_modalities: int, save: bool = True) -> Dict[int, Dict]:
+def run_collect_intensity_properties(
+    analyzer: DatasetAnalyzer, num_modalities: int, save: bool = True
+) -> Dict[int, Dict]:
     """
     Collect intensity properties over forground from whole dataset
-    
+
     Args:
         analyzer: calling analyzer
         num_modalities: number of modalities
         save (optional): Save result in `analyzer.intensity_properties_file`. Defaults to True.
-    
+
     Returns:
         Dict[int, Dict]: Intensity properties of foreground over the dataset.
             Evaluated statistics: `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
@@ -86,62 +87,74 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
             logger.info(f"Processing intensity values of modality {mod_id}")
             results[mod_id] = OrderedDict()
 
-            voxels = p.starmap(get_voxels_in_foreground,
-                               zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)))
+            voxels = p.starmap(
+                get_voxels_in_foreground,
+                zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)),
+            )
 
             local_props = p.map(compute_stats, voxels)
             props_per_case = OrderedDict()
             for case_id, lp in zip(analyzer.case_ids, local_props):
                 props_per_case[case_id] = lp
-            
+
             all_voxels = []
             for iv in voxels:
                 all_voxels += iv
-            results[mod_id]['local_props'] = props_per_case
+            results[mod_id]["local_props"] = props_per_case
             results[mod_id].update(compute_stats(all_voxels))
 
     if save:
-        with open(analyzer.intensity_properties_file, 'wb') as f:
+        with open(analyzer.intensity_properties_file, "wb") as f:
             pickle.dump(results, f)
     return results
 
 
-def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str,
-                             modality_id: int, subsample: int = 10) -> list:
+def get_voxels_in_foreground(
+    analyzer: DatasetAnalyzer, case_id: str, modality_id: int, subsample: int = 10
+) -> list:
     """
     Get voxels from foreground
-    
+
     Args:
         analyzer: calling analyzer
         case_id: case identifier
         modality_id: modality to choose for analyses
         subsample (optional): Subsample voxels for computational purposes. Defaults to 10.
-    
+
     Returns:
         list: foreground voxels
     """
+    logger.info(f"Running voxels in fg on {case_id}")
     data, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     modality = data[modality_id]
     mask = seg > 0
-    voxels = list(modality[mask.astype(bool)][::subsample])  # no need to take every voxel
+    voxels = list(
+        modality[mask.astype(bool)][::subsample]
+    )  # no need to take every voxel
     return voxels
 
 
 def compute_stats(voxels: Union[Sequence, np.ndarray]):
     """
     Compute statistics of voxels
-    
+
     Args:
         voxels: input voxels
-    
+
     Returns:
         Dict[str, np.ndarray]: computed statistics
             `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
     """
     if len(voxels) == 0:
-        stats = {"median": np.nan, "mean": np.nan, "std": np.nan, "min": np.nan,
-                 "max": np.nan, "percentile_99_5": np.nan, "percentile_00_5": np.nan,
-                }
+        stats = {
+            "median": np.nan,
+            "mean": np.nan,
+            "std": np.nan,
+            "min": np.nan,
+            "max": np.nan,
+            "percentile_99_5": np.nan,
+            "percentile_00_5": np.nan,
+        }
     else:
         stats = {
             "median": np.median(voxels),
@@ -153,4 +166,3 @@ def compute_stats(voxels: Union[Sequence, np.ndarray]):
             "percentile_00_5": np.percentile(voxels, 00.5),
         }
     return stats
-

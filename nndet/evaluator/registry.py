@@ -16,15 +16,16 @@ limitations under the License.
 
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Sequence, Optional, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 from loguru import logger
 
-from nndet.io.load import load_pickle, save_json, save_pickle
-from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.case import CaseEvaluator
+from nndet.evaluator.det import BoxEvaluator, MaskEvaluator
 from nndet.evaluator.seg import PerCaseSegmentationEvaluator
+from nndet.io.load import load_pickle, save_json, save_pickle
+from nndet.io.transforms.instances import instances_to_binary_masks_np
 
 
 def save_metric_output(scores, curves, base_dir, name):
@@ -32,7 +33,7 @@ def save_metric_output(scores, curves, base_dir, name):
     Helper function to save output of the function in a nice format
     """
     scores_string = {str(key): str(item) for key, item in scores.items()}
-    
+
     save_json(scores_string, base_dir / f"{name}.json")
     save_pickle({"scores": scores, "curves": curves}, base_dir / f"{name}.pkl")
 
@@ -42,7 +43,7 @@ def evaluate_box_dir(
     gt_dir: PathLike,
     classes: Sequence[str],
     save_dir: Optional[Path] = None,
-    ) -> Tuple[Dict, Dict]:
+) -> Tuple[Dict, Dict]:
     """
     Run box evaluation inside a directory
 
@@ -55,7 +56,7 @@ def evaluate_box_dir(
     Returns:
         Dict[str, float]: dictionary with scalar values for evaluation
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
-    
+
     See Also:
         :class:`nndet.evaluator.registry.BoxEvaluator`
     """
@@ -63,24 +64,101 @@ def evaluate_box_dir(
     gt_dir = Path(gt_dir)
     if save_dir is not None:
         save_dir.mkdir(parents=True, exist_ok=True)
-    case_ids = [p.stem.rsplit('_boxes', 1)[0] for p in pred_dir.iterdir()
-                if p.is_file() and p.stem.endswith("_boxes")]
+    case_ids = [
+        p.stem.rsplit("_boxes", 1)[0]
+        for p in pred_dir.iterdir()
+        if p.is_file() and p.stem.endswith("_boxes")
+    ]
     logger.info(f"Found {len(case_ids)} for box evaluation in {pred_dir}")
 
-    evaluator = BoxEvaluator.create(classes=classes,
-                                    fast=False,
-                                    verbose=False,
-                                    save_dir=save_dir,
-                                    )
+    evaluator = BoxEvaluator.create(
+        classes=classes,
+        fast=False,
+        verbose=False,
+        save_dir=save_dir,
+    )
 
     for case_id in case_ids:
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
         pred = load_pickle(pred_dir / f"{case_id}_boxes.pkl")
+
         evaluator.run_online_evaluation(
-            pred_boxes=[pred["pred_boxes"]], pred_classes=[pred["pred_labels"]],
-            pred_scores=[pred["pred_scores"]], gt_boxes=[gt["boxes"]],
-            gt_classes=[gt["classes"]], gt_ignore=None,
-            )
+            pred_boxes=[pred["pred_boxes"]],
+            pred_classes=[pred["pred_labels"]],
+            pred_scores=[pred["pred_scores"]],
+            gt_boxes=[gt["boxes"]],
+            gt_classes=[gt["classes"]],
+            gt_ignore=None,
+            case_id=case_id,
+        )
+    return evaluator.finish_online_evaluation()
+
+
+# FIXME: refactor, code duplication
+def evaluate_mask_dir(
+    pred_dir: PathLike,
+    gt_dir: PathLike,
+    classes: Sequence[str],
+    save_dir: Optional[Path] = None,
+) -> Tuple[Dict, Dict]:
+    """
+    Run mask (instance segmentation) evaluation inside a directory
+
+    Args:
+        pred_dir: path to dir with predictions
+        gt_dir: path to dir with groud truth data
+        classes: classes present in dataset
+        save_dir: optional path to save plots
+
+    Returns:
+        Dict[str, float]: dictionary with scalar values for evaluation
+        Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+
+    See Also:
+        :class:`nndet.evaluator.registry.BoxEvaluator`
+    """
+    pred_dir = Path(pred_dir)
+    gt_dir = Path(gt_dir)
+    if save_dir is not None:
+        save_dir.mkdir(parents=True, exist_ok=True)
+    case_ids = [
+        p.stem.rsplit("_masks", 1)[0]
+        for p in pred_dir.iterdir()
+        if p.is_file() and p.name.endswith("_masks.npz")
+    ]
+    logger.info(f"Found {len(case_ids)} for masks evaluation in {pred_dir}")
+
+    evaluator = MaskEvaluator.create(
+        classes=classes,
+        fast=False,
+        verbose=False,
+        save_dir=save_dir,
+    )
+
+    for case_id in case_ids:
+        gt_boxes = np.load(
+            str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
+        )  # FIXME
+        gt = np.load(
+            str(gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
+        )  # FIXME
+        pred = np.load(pred_dir / f"{case_id}_masks.npz")
+
+        pred_masks = pred["pred_masks"]
+        if gt["instances"].ndim < (pred_masks.ndim - 1):
+            gt_instances = gt["instances"][None]
+        else:
+            gt_instances = gt["instances"]
+
+        evaluator.run_online_evaluation(
+            pred_boxes=[pred_masks],
+            pred_classes=[pred["pred_labels"]],
+            pred_scores=[pred["pred_scores"]],
+            gt_boxes=[instances_to_binary_masks_np(gt_instances)],
+            gt_classes=[gt_boxes["classes"]],
+            gt_ignore=None,
+            case_id=case_id,
+        )
     return evaluator.finish_online_evaluation()
 
 
@@ -89,7 +167,7 @@ def evaluate_case_dir(
     gt_dir: PathLike,
     classes: Sequence[str],
     target_class: Optional[int] = None,
-    ) -> Tuple[Dict, Dict]:
+) -> Tuple[Dict, Dict]:
     """
     Run evaluation of case results inside a directory
 
@@ -103,19 +181,23 @@ def evaluate_case_dir(
     Returns:
         Dict[str, float]: dictionary with scalar values for evaluation
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graph)
-    
+
     See Also:
         :class:`nndet.evaluator.registry.CaseEvaluator`
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
-    case_ids = [p.stem.rsplit('_boxes', 1)[0] for p in pred_dir.iterdir()
-                if p.is_file() and p.stem.endswith("_boxes")]
+    case_ids = [
+        p.stem.rsplit("_boxes", 1)[0]
+        for p in pred_dir.iterdir()
+        if p.is_file() and p.stem.endswith("_boxes")
+    ]
     logger.info(f"Found {len(case_ids)} for case evaluation in {pred_dir}")
 
-    evaluator = CaseEvaluator.create(classes=classes,
-                                     target_class=target_class,
-                                     )
+    evaluator = CaseEvaluator.create(
+        classes=classes,
+        target_class=target_class,
+    )
 
     for case_id in case_ids:
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
@@ -123,8 +205,8 @@ def evaluate_case_dir(
         evaluator.run_online_evaluation(
             pred_classes=[pred["pred_labels"]],
             pred_scores=[pred["pred_scores"]],
-            gt_classes=[gt["classes"]]
-            )
+            gt_classes=[gt["classes"]],
+        )
     return evaluator.finish_online_evaluation()
 
 
@@ -132,7 +214,7 @@ def evaluate_seg_dir(
     pred_dir: PathLike,
     gt_dir: PathLike,
     classes: Sequence[str],
-    ) -> Tuple[Dict, None]:
+) -> Tuple[Dict, None]:
     """
     Compute dice metric across a directory
 
@@ -150,17 +232,22 @@ def evaluate_seg_dir(
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
-    case_ids = [p.stem.rsplit('_seg', 1)[0] for p in pred_dir.iterdir()
-                if p.is_file() and p.stem.endswith("_seg")]
+    case_ids = [
+        p.stem.rsplit("_seg", 1)[0]
+        for p in pred_dir.iterdir()
+        if p.is_file() and p.stem.endswith("_seg")
+    ]
     logger.info(f"Found {len(case_ids)} for seg evaluation in {pred_dir}")
 
     evaluator = PerCaseSegmentationEvaluator.create(classes=classes)
 
     for case_id in case_ids:
-        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)["seg"] # 1, dims
+        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)[
+            "seg"
+        ]  # 1, dims
         pred = load_pickle(pred_dir / f"{case_id}_seg.pkl")
         evaluator.run_online_evaluation(
             seg=pred[None],
             target=gt,
-            )
+        )
     return evaluator.finish_online_evaluation()

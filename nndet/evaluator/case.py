@@ -15,30 +15,39 @@ limitations under the License.
 """
 
 from collections import defaultdict
-from typing import Dict, Sequence, Callable, Tuple, Union, Mapping, Optional
+from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
-from sklearn.metrics import accuracy_score, average_precision_score, confusion_matrix, \
-    f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
 
 from nndet.evaluator import AbstractEvaluator
 from nndet.utils.info import experimental
-
 
 __all__ = ["CaseEvaluator"]
 
 
 class _CaseEvaluator(AbstractEvaluator):
     @experimental
-    def __init__(self,
-                 classes: Sequence[Union[str, int]],
-                 score_metrics_scalar: Mapping[str, Callable] = None,
-                 class_metrics_scalar: Mapping[str, Callable] = None,
-                 score_metrics_curve: Mapping[str, Callable] = None,
-                 class_metrics_curve: Mapping[str, Callable] = None,
-                 target_class: Optional[int] = None,
-                 ):
+    def __init__(
+        self,
+        classes: Sequence[Union[str, int]],
+        score_metrics_scalar: Mapping[str, Callable] = None,
+        class_metrics_scalar: Mapping[str, Callable] = None,
+        score_metrics_curve: Mapping[str, Callable] = None,
+        class_metrics_curve: Mapping[str, Callable] = None,
+        target_class: Optional[int] = None,
+        thresholds: Tuple[float] = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95),
+    ):
         """
         Compute case level evaluation metrics
         Predictions for individual instances are aggregated by using the
@@ -57,7 +66,7 @@ class _CaseEvaluator(AbstractEvaluator):
                 be a scalar.
             class_metrics_scalar: metrics which accept ground truth classes [N]
                 and prediction classes [N] for evaluation; N is the nunber
-                of cases and C is the number of classes. The output should 
+                of cases and C is the number of classes. The output should
                 be a scalar.
             score_metrics_curve: metrics which accept ground truth classes [N]
                 and prediction scores [N, C] for evaluation; N is the nunber
@@ -65,25 +74,58 @@ class _CaseEvaluator(AbstractEvaluator):
                 an array like object.
             class_metrics_curve: metrics which accept ground truth classes [N]
                 and prediction classes [N] for evaluation; N is the nunber
-                of cases and C is the number of classes. The output should 
+                of cases and C is the number of classes. The output should
                 be an array like object.
             target_class: target class for case evaluation (internally
                 results are evaluated in a binary case target class vs rest).
                 If None, fall back to fg vs bg
+            thresholds: score thresholds where class metrics will be
+                computed
+
+        Notes:
+            Internal States:
+            `results_list` consists of:
+                `case_classes`: a list of np.array containing the present
+                    unique classes for each case
+                `case_scores`: a list of np.ndarray which contains the
+                    predicted probability for all classes. The probability
+                    is determined by the max predicted probability of an
+                    object of that class.
+
+            Results:
+            The keys: "N_img", "N_count_{class name}" and
+            "N_count_agg_{class name}" are used internally to save debugging
+            information and should not be used for metrics. See
+            :method:`finish_online_evaluation` for more information on those
+            keys.
         """
         self.results_list = defaultdict(list)
 
-        self.score_metrics_scalar = score_metrics_scalar if score_metrics_scalar is not None else {}
-        self.class_metrics_scalar = class_metrics_scalar if class_metrics_scalar is not None else {}
-        self.score_metrics_curve = score_metrics_curve if score_metrics_curve is not None else {}
-        self.class_metrics_curve = class_metrics_curve if class_metrics_curve is not None else {}
+        self.score_metrics_scalar = (
+            score_metrics_scalar if score_metrics_scalar is not None else {}
+        )
+        self.class_metrics_scalar = (
+            class_metrics_scalar if class_metrics_scalar is not None else {}
+        )
+        self.score_metrics_curve = (
+            score_metrics_curve if score_metrics_curve is not None else {}
+        )
+        self.class_metrics_curve = (
+            class_metrics_curve if class_metrics_curve is not None else {}
+        )
 
         if isinstance(target_class, str):
-            raise ValueError(f"Need integer value of target class not the name!")
+            raise ValueError("Need integer value of target class not the name!")
 
+        if target_class is None:
+            raise ValueError(
+                "Target class can not be None when computing case metrics! "
+                "Please change this in the dataset.json/dataset.yaml file."
+            )
         self.target_class = int(target_class)
         self.classes = classes
         self.num_classes = len(classes)
+        self.thresholds = thresholds
 
     def reset(self):
         """
@@ -91,11 +133,12 @@ class _CaseEvaluator(AbstractEvaluator):
         """
         self.results_list = defaultdict(list)
 
-    def run_online_evaluation(self,
-                              pred_classes: Sequence[np.ndarray],
-                              pred_scores: Sequence[np.ndarray],
-                              gt_classes: Sequence[np.ndarray],
-                              ) -> Dict:
+    def run_online_evaluation(
+        self,
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+    ) -> Dict:
         """
         Run evaluation on each case (accepts a batch of case resutls
         at once).
@@ -110,101 +153,280 @@ class _CaseEvaluator(AbstractEvaluator):
 
         Returns:
             Dict: empty dict
-        
+
         Notes:
             This caches the max predicted probability per class per element
             and the unique classes present per element.
         """
+        if len(pred_scores) != len(pred_classes):
+            raise ValueError(
+                f"Found inconsistent predictions: found {len(pred_scores)} "
+                f"predicted scored and {len(pred_classes)} predicted classes."
+            )
+
+        if len(gt_classes) != len(pred_classes):
+            raise ValueError(
+                f"Found inconsistent predictions/gt: found {len(pred_scores)} "
+                f"predictions and {len(gt_classes)} ground truth."
+            )
+
         case_classes = [np.unique(gtc) for gtc in gt_classes]
         case_scores = []
-        for case_instance_scores, case_instance_classes in zip(pred_scores, pred_classes):
+
+        for case_instance_scores, case_instance_classes in zip(
+            pred_scores, pred_classes
+        ):
+            if len(case_instance_scores) != len(case_instance_classes):
+                raise ValueError(
+                    "Each predicted class needs a score found: "
+                    f"{len(case_instance_scores)} scores and "
+                    f"{len(case_instance_classes)} classes."
+                )
+
             _scores = np.zeros(self.num_classes)
-            for instance_score, instance_class in zip(case_instance_scores, case_instance_classes):
+            for instance_score, instance_class in zip(
+                case_instance_scores, case_instance_classes
+            ):
                 if _scores[int(instance_class)] < instance_score:
                     _scores[int(instance_class)] = instance_score
             case_scores.append(_scores)
 
         self.results_list["case_classes"].extend(case_classes)
         self.results_list["case_scores"].extend(case_scores)
-        return  {}
+        return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute final scores and curves of metrics
+
+        Returns:
+            Dict: results of scalar metrics
+                `N_img`: number of images found for case evaluation
+                `N_count_{class}`: Number of images where this class is present
+                `N_count_agg_{class}`: Number of images of this class after
+                    aggregation to binary classes was performed.
+            Dict: results of curve metrics
+        """
+        # aggregate ground truth
+        gt_classes = self.aggregate_classes()
+
+        # compute metrics
+        scalar_results, curve_results = self.get_score_based_metrics(
+            gt_classes=gt_classes
+        )
+        for th in self.thresholds:
+            _scalar, _curve = self.get_class_based_metrics_at_threshold(
+                gt_classes=gt_classes, threshold=th
+            )
+
+            for _key, _item in _scalar.items():
+                scalar_results[f"{_key}_th={th:0.3f}"] = _item
+            for _key, _item in _curve.items():
+                curve_results[f"{_key}_th={th:0.3f}"] = _item
+
+        scalar_results.update(
+            self.get_debug_info(scalar_results=scalar_results, gt_classes=gt_classes)
+        )
+
+        return scalar_results, curve_results
+
+    def get_score_based_metrics(self, gt_classes: Sequence[int]):
+        """
+        Compute class based (i.e. metrics which operate on the predictions
+        after thresholding) metrics at specified score threshold
+
+        Args:
+            gt_classes: class for each image
 
         Returns:
             Dict: results of scalar metrics
             Dict: results of curve metrics
         """
         # aggregate cases
-        gt_classes = self.aggregate_classes()
-        pred_scores, pred_classes = self.aggregate_prdictions()
+        # pass arbitrary threshold since we only use the scores here
+        pred_scores, _ = self.aggregate_prdictions(threshold=0)
 
-        # compute metrics
-        curve_results = {}
-        for key, metric in self.score_metrics_curve.items():
-            curve_results[key] = metric(gt_classes, pred_scores)
-        for key, metric in self.class_metrics_curve.items():
-            curve_results[key] = metric(gt_classes, pred_classes)
-
+        # scalar metrics
         scalar_results = {}
         for key, metric in self.score_metrics_scalar.items():
             try:
                 scalar_results[key] = metric(gt_classes, pred_scores)
             except (ValueError, RuntimeError) as e:
-                logger.warning(f"Metric {key} exited with error {e}; writing nan to result")
+                logger.warning(
+                    f"Metric {key} exited with error {e}; writing nan to result"
+                )
                 scalar_results[key] = np.nan
+
+        # compute non-scalar metrics
+        curve_results = {}
+        for key, metric in self.score_metrics_curve.items():
+            curve_results[key] = metric(gt_classes, pred_scores)
+
+        return scalar_results, curve_results
+
+    def get_class_based_metrics_at_threshold(
+        self, gt_classes: Sequence[int], threshold: float
+    ) -> Tuple[Dict, Dict]:
+        """
+        Compute class based (i.e. metrics which operate on the predictions
+        after thresholding) metrics at specified score threshold
+
+        Args:
+            gt_classes: class for each image
+            threshold: threshold for predictions
+
+        Returns:
+            Dict: results of scalar metrics
+            Dict: results of curve metrics
+        """
+        # aggregate cases
+        pred_scores, pred_classes = self.aggregate_prdictions(threshold=threshold)
+
+        # scalar metrics
+        scalar_results = {}
         for key, metric in self.class_metrics_scalar.items():
             try:
                 scalar_results[key] = metric(gt_classes, pred_classes)
             except (ValueError, RuntimeError) as e:
-                logger.warning(f"Metric {key} exited with error {e}; writing nan to result")
+                logger.warning(
+                    f"Metric {key} exited with error {e}; writing nan to result"
+                )
                 scalar_results[key] = np.nan
+
+        # non-scalar metrics
+        curve_results = {}
+        for key, metric in self.class_metrics_curve.items():
+            curve_results[key] = metric(gt_classes, pred_classes)
         return scalar_results, curve_results
+
+    def get_debug_info(self, scalar_results: Dict, gt_classes: Sequence[int]) -> Dict:
+        """
+        Get additional debug information
+
+        Args:
+            scalar_results: dict with scalar metrics. This is only used
+                to check if the debug keys already exist and raise errors!
+                The debug info is *not* directly saved in the dict.
+            gt_classes: class for each image
+
+        Returns:
+            Dict: debug information
+                `N_img`: number of images found for case evaluation
+                `N_count_{class}`: Number of images where this class is present
+                `N_count_agg_{class}`: Number of images of this class after
+                    aggregation to binary classes was performed.
+        """
+        info = {}
+
+        if "_target_class" not in scalar_results:
+            info["_target_class"] = self.target_class
+        else:
+            raise ValueError(
+                "`_target_class` is used internally and is not allowed for case metric naming!"
+            )
+
+        # add debug information
+        if "N_img" not in scalar_results:
+            info["N_img"] = len(gt_classes)
+        else:
+            raise ValueError(
+                "`N_img` is used internally and is not allowed for case metric naming!"
+            )
+
+        class_count_no_agg = self.class_count()
+        for _k, _i in class_count_no_agg.items():
+            _kd = f"N_count_{_k}"
+            if _kd not in scalar_results:
+                info[_kd] = _i
+            else:
+                raise ValueError(
+                    f"{_kd} is used internally and is not allowed for case metric naming!"
+                )
+
+        unqiue_classes_agg, class_count_agg = np.unique(gt_classes, return_counts=True)
+        for _c, _c_count in zip(unqiue_classes_agg, class_count_agg):
+            _kc = f"N_count_agg_{_c}"
+            if _kc not in scalar_results:
+                info[_kc] = _c_count
+            else:
+                raise ValueError(
+                    f"{_kc} is used internally and is not allowed for case metric naming!"
+                )
+        return info
+
+    def class_count(self) -> Dict[int, int]:
+        """
+        Count number of unique classes present in each case
+        No aggragtion is performed here.
+
+        Returns:
+            Dict[int, int]: key defined class, item defines the number of
+                cases where this class if present
+        """
+        count_dict = {int(i): 0 for i in range(self.num_classes)}
+        count_dict[-1] = 0
+        for cc in self.results_list["case_classes"]:
+            unique_classes = list(set(cc))
+
+            if unique_classes:
+                for c in unique_classes:
+                    count_dict[int(c)] += 1
+            else:
+                count_dict[-1] += 1
+        return count_dict
 
     def aggregate_classes(self) -> np.ndarray:
         """
         Aggregate classes of each instance in a case to one case class
-        
+
         Returns:
             np.ndarray: class per case [N], where N is the number of cases
         """
         if self.target_class is not None:
             gt_classes = np.asarray(
-                [int(self.target_class in cc) for cc in self.results_list["case_classes"]])
+                [
+                    int(self.target_class in cc)
+                    for cc in self.results_list["case_classes"]
+                ]
+            )
         else:
             gt_classes = np.asarray(
-                [1 if len(cc) > 0 else 0 for cc in self.results_list["case_classes"]])
+                [1 if len(cc) > 0 else 0 for cc in self.results_list["case_classes"]]
+            )
         return gt_classes
 
-    def aggregate_prdictions(self) -> Tuple[np.ndarray, np.ndarray]:
+    def aggregate_prdictions(self, threshold: float) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Aggreagte prediction scores per class to case scores with target class
+        Aggregate prediction scores per class to case scores with target class
+
+        Args:
+            threshold: prediction score threshold
 
         Returns:
             np.ndarray: predicted scores
             np.ndarray: predicted classes
         """
-        _pred_scores = np.stack(self.results_list["case_scores"], axis=0) # N, num_classes
-        
+        _pred_scores = np.stack(
+            self.results_list["case_scores"], axis=0
+        )  # N, num_classes
+
         if self.target_class is not None:
-            pred_scores = _pred_scores[:, self.target_class] # N
+            pred_scores = _pred_scores[:, self.target_class]  # N
             # pred_classes = (np.argmax(_pred_scores, axis=1) == self.target_class).astype(np.int32) # N
             # This is not always the correct choice, depending on the final
             # nonlinearity of the network (sigmoid vs. softmax)
-            pred_classes = (pred_scores > 0.5).astype(np.int32) # N
+            pred_classes = (pred_scores > threshold).astype(np.int32)  # N
         else:
-            pred_scores = _pred_scores.max(axis=1) # N
-            pred_classes = (pred_scores > 0.5).astype(np.int32) # N
+            pred_scores = _pred_scores.max(axis=1)  # N
+            pred_classes = (pred_scores > threshold).astype(np.int32)  # N
         return pred_scores, pred_classes
 
 
 class CaseEvaluator(_CaseEvaluator):
     @classmethod
-    def create(cls,
-               classes: Sequence[str],
-               target_class: int = None
-               ):
+    def create(cls, classes: Sequence[str], target_class: int = None):
         """
         Evaluation on patient level
 
@@ -213,7 +435,7 @@ class CaseEvaluator(_CaseEvaluator):
             target_class: if multiple classes are given, define
                 a target class to evaluate in an target_class vs rest setting.
                 Defaults to None.
-        
+
         Returns:
             CaseEvaluator: evaluator
         """
@@ -226,15 +448,27 @@ class CaseEvaluator(_CaseEvaluator):
         prec_fn = precision_score
         rec_fn = recall_score
 
-        score_metrics_scalar = {"auc_case": roc_auc_score, "ap_case": average_precision_score}
-        class_metrics_scalar = {"f1_case": f1_fn, "prec_case": prec_fn,
-                                "rec_case": rec_fn, "acc_case": accuracy_score}
-        score_metrics_curve = {}
-        class_metrics_curve = {"cfm_case": confusion_matrix}
-        return cls(classes=classes,
-                   score_metrics_scalar=score_metrics_scalar,
-                   class_metrics_scalar=class_metrics_scalar,
-                   score_metrics_curve=score_metrics_curve,
-                   class_metrics_curve=class_metrics_curve,
-                   target_class=target_class,
-                   )
+        score_metrics_scalar = {
+            "auc_case": roc_auc_score,
+            "ap_case": average_precision_score,
+        }
+        class_metrics_scalar = {
+            "f1_case": f1_fn,
+            "prec_case": prec_fn,
+            "rec_case": rec_fn,
+            "acc_case": accuracy_score,
+        }
+        score_metrics_curve = {
+            "roc_curve": roc_curve,
+        }
+        class_metrics_curve = {
+            "cfm_case": confusion_matrix,
+        }
+        return cls(
+            classes=classes,
+            score_metrics_scalar=score_metrics_scalar,
+            class_metrics_scalar=class_metrics_scalar,
+            score_metrics_curve=score_metrics_curve,
+            class_metrics_curve=class_metrics_curve,
+            target_class=target_class,
+        )

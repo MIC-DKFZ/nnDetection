@@ -14,30 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+
 import torch
 import torch.nn as nn
-from typing import Callable, Tuple, Sequence, Union, List, Dict, Optional
 
-from nndet.arch.encoder.abstract import AbstractEncoder
 from nndet.arch.blocks.basic import AbstractBlock
-
+from nndet.arch.encoder.abstract import AbstractEncoder
 
 __all__ = ["Encoder"]
 
 
 class Encoder(AbstractEncoder):
-    def __init__(self,
-                 conv: Callable[[], nn.Module],
-                 conv_kernels: Sequence[Union[Tuple[int], int]],
-                 strides: Sequence[Union[Tuple[int], int]],
-                 block_cls: AbstractBlock,
-                 in_channels: int,
-                 start_channels: int,
-                 stage_kwargs: Sequence[dict] = None,
-                 out_stages: Sequence[int] = None,
-                 max_channels: int = None,
-                 first_block_cls: Optional[AbstractBlock] = None,
-                 ):
+    def __init__(
+        self,
+        conv: Callable[[], nn.Module],
+        conv_kernels: Sequence[Union[Tuple[int], int]],
+        strides: Sequence[Union[Tuple[int], int]],
+        block_cls: AbstractBlock,
+        in_channels: int,
+        start_channels: int,
+        stage_kwargs: Sequence[dict] = None,
+        out_stages: Sequence[int] = None,
+        max_channels: int = None,
+        first_block_cls: Optional[AbstractBlock] = None,
+    ):
         """
         Build a modular encoder model with specified blocks
         The Encoder consists of "stages" which (in general) represent one
@@ -110,10 +111,10 @@ class Encoder(AbstractEncoder):
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         """
         Forward data through encoder
-        
+
         Args:
             x: input data
-        
+
         Returns:
             List[torch.Tensor]: list of output from stages defined by
                 param:`out_stages`
@@ -151,7 +152,11 @@ class Encoder(AbstractEncoder):
             if stage_id == 0:
                 out_strides.append([1] * self.dim)
             else:
-                new_stride = [prev_stride * pool_size for prev_stride, pool_size
-                              in zip(out_strides[stage_id - 1], self.strides[stage_id - 1])]
+                new_stride = [
+                    prev_stride * pool_size
+                    for prev_stride, pool_size in zip(
+                        out_strides[stage_id - 1], self.strides[stage_id - 1]
+                    )
+                ]
                 out_strides.append(new_stride)
         return out_strides

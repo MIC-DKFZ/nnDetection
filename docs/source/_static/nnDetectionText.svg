@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="750px" height="142px" viewBox="0 0 750 142" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>nnDetectionText</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="nnDetectionText" transform="translate(4.293800, 0.397975)">
+            <g id="Group-53" transform="translate(2.340200, 0.000000)" fill="#5E5E5E" fill-rule="nonzero" font-family="Arial-BoldMT, Arial" font-size="126" font-weight="bold">
+                <g id="nnDet">
+                    <text>
+                        <tspan x="0" y="114">nnDet</tspan>
+                    </text>
+                </g>
+                <g id="ection" transform="translate(371.684100, 0.000000)">
+                    <text id="ec">
+                        <tspan x="-5.68434189e-14" y="114">ec</tspan>
+                    </text>
+                    <text id="t">
+                        <tspan x="140.200791" y="114">t</tspan>
+                    </text>
+                    <text id="io">
+                        <tspan x="182.159775" y="114">io</tspan>
+                    </text>
+                    <text id="n">
+                        <tspan x="294.082031" y="114">n</tspan>
+                    </text>
+                </g>
+            </g>
+            <polygon id="Stroke-58" stroke="#5CC2B2" stroke-width="7" points="0 11.185525 366.3386 11.185525 366.3386 135.677325 0 135.677325"></polygon>
+        </g>
+    </g>
+</svg>

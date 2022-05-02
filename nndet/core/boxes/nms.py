@@ -14,31 +14,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Optional, Tuple
+
 import torch
+from loguru import logger
 from torch import Tensor
 from torch.cuda.amp import autocast
 from torchvision.ops.boxes import nms as nms_2d
 
-from nndet._C import nms as nms_gpu
+try:
+    from nndet._C import nms as nms_gpu
+except ImportError as e:
+    logger.warning(
+        f"NMS Cuda import failed with {e}, nnDetection was probably not build with GPU support or build failed!"
+    )
+    nms_gpu = None
 from nndet.core.boxes.ops import box_iou
 
 
 def nms_cpu(boxes, scores, thresh):
     """
     Performs non-maximum suppression for 3d boxes on cpu
-    
+
     Args:
-        boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): score for each box [N]
-        iou_threshold (float): threshould when boxes are discarded
-    
+        boxes: tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: score for each box [N]
+        iou_threshold: threshould when boxes are discarded
+
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     ious = box_iou(boxes, boxes)
     _, _idx = torch.sort(scores, descending=True)
-    
+
     keep = []
     while _idx.nelement() > 0:
         keep.append(_idx[0])
@@ -49,22 +58,27 @@ def nms_cpu(boxes, scores, thresh):
 
 
 @autocast(enabled=False)
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
+def nms(
+    boxes: Tensor,
+    scores: Tensor,
+    iou_threshold: float,
+) -> Tensor:
     """
     Performs non-maximum suppression
-    
+
     Args:
-        boxes (Tensor): tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): score for each box [N]
-        iou_threshold (float): threshould when boxes are discarded
-    
+        boxes: tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: score for each box [N]
+        iou_threshold: threshould when boxes are discarded
+
     Returns:
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     if boxes.shape[1] == 4:
         # prefer torchvision in 2d because they have c++ cpu version
         nms_fn = nms_2d
+        # nms_fn = nms_cpu
     else:
         if boxes.is_cuda:
             nms_fn = nms_gpu
@@ -73,21 +87,27 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float):
     return nms_fn(boxes.float(), scores.float(), iou_threshold)
 
 
-def batched_nms(boxes: Tensor, scores: Tensor, idxs: Tensor, iou_threshold: float):
+def _batched_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iou_threshold: float,
+) -> Tensor:
     """
     Performs non-maximum suppression in a batched fashion.
     Each index value correspond to a category, and NMS
     will not be applied between elements of different categories.
-    
+
     Args:
-        boxes (Tensor): boxes where NMS will be performed. (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-        scores (Tensor): scores for each one of the boxes [N]
-        idxs (Tensor): indices of the categories for each one of the boxes. [N]
-        iou_threshold (float):  discards all overlapping boxes with IoU > iou_threshold
-    
+        boxes: boxes where NMS will be performed
+            (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: scores for each one of the boxes [N]
+        idxs: indices of the categories for each one of the boxes. [N]
+        iou_threshold:  discards all overlapping boxes with IoU > iou_threshold
+
     Returns
-        keep (Tensor): int64 tensor with the indices of the elements that have been kept by NMS, 
-            sorted in decreasing order of scores
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by NMS, sorted in decreasing order of scores
     """
     if boxes.numel() == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
@@ -99,3 +119,93 @@ def batched_nms(boxes: Tensor, scores: Tensor, idxs: Tensor, iou_threshold: floa
     offsets = idxs.to(boxes) * (max_coordinate + 1)
     boxes_for_nms = boxes + offsets[:, None]
     return nms(boxes_for_nms, scores, iou_threshold)
+
+
+def batched_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    labels: Tensor,
+    iou_thresh: float,
+    weights: Optional[Tensor] = None,
+    masks: Optional[Tensor] = None,
+) -> Tuple[Tensor, Tensor, Tensor, Optional[Tensor]]:
+    """
+    Model nms for ensembler (same as batched nms with adjusted signature)
+    (NMS is always performed on the boxes!)
+
+    Args:
+        boxes: predicted boxes
+        scores: predicted scores
+        labels: predicted labels
+        weights: weight per box
+        iou_thresh: IoU threshold for nms
+        masks: predicted masks
+
+    Returns:
+        Tensor: postprocessed boxes
+        Tensor: postprocessed masks. Only returned if masks is not None.
+            Skipped otherwise!
+        Tensor: postprocessed scores (descending)
+        Tensor: postprocessed labels
+        Tensor: if weights is not None, corresponding weights, None otherwise
+    """
+    keep = _batched_nms(
+        boxes=boxes,
+        scores=scores,
+        idxs=labels,
+        iou_threshold=iou_thresh,
+    )
+
+    if weights is not None:
+        _weights = weights[keep]
+    else:
+        _weights = None
+
+    if masks is not None:
+        return boxes[keep], masks[keep], scores[keep], labels[keep], _weights
+    else:
+        return boxes[keep], scores[keep], labels[keep], _weights
+
+
+def batched_weighted_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    labels: Tensor,
+    iou_thresh: float,
+    weights: Tensor,
+    masks: Optional[Tensor] = None,
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    """
+    Uses scores and weights to compute NMS suppression
+    Returned scores are the original ones
+    (NMS is always performed on the boxes!)
+
+    Args:
+        boxes: predicted boxes
+        scores: predicted scores
+        labels: predicted labels
+        weights: weight per box
+        iou_thresh: IoU threshold for nms
+        masks: predicted masks
+
+    Returns:
+        Tensor: postprocessed boxes
+        Tensor: postprocessed masks. Only returned if masks is not None.
+            Skipped otherwise!
+        Tensor: kept scores.
+        Tensor: postprocessed labels
+        Tensor: vector filled with ones.
+    """
+    _scores = scores * weights
+    keep = _batched_nms(
+        boxes=boxes,
+        scores=_scores,
+        idxs=labels,
+        iou_threshold=iou_thresh,
+    )
+    new_weights = torch.ones_like(weights)
+
+    if masks is not None:
+        return boxes[keep], masks[keep], scores[keep], labels[keep], new_weights[keep]
+    else:
+        return boxes[keep], scores[keep], labels[keep], new_weights[keep]

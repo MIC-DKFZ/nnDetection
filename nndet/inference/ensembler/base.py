@@ -14,27 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from os import PathLike
-from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union, TypeVar
+from os import PathLike
+from pathlib import Path
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import torch
 
 from nndet.io.load import save_pickle
 from nndet.utils.tensor import to_numpy
-from nndet.utils.info import maybe_verbose_iterable
 
 
 class BaseEnsembler(ABC):
     ID = "abstract"
 
-    def __init__(self,
-                 properties: Dict[str, Any],
-                 parameters: Dict[str, Any],
-                 device: Optional[Union[torch.device, str]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        properties: Dict[str, Any],
+        parameters: Dict[str, Any],
+        device: Optional[Union[torch.device, str]] = None,
+        **kwargs,
+    ):
         """
         Base class to containerize and ensemble the predictions of a single case.
         Call :method:`process_batch` to add batched predictions of a case
@@ -59,7 +60,7 @@ class BaseEnsembler(ABC):
 
         self.parameters = parameters
         self.parameters.update(kwargs)
-        
+
         if device is None:
             self.device = torch.device("cpu")
         elif isinstance(device, str):
@@ -70,27 +71,45 @@ class BaseEnsembler(ABC):
             raise ValueError(f"Wrong type {type(device)} for device argument.")
 
     @classmethod
-    def from_case(cls,
-                  case: Dict,
-                  properties: Optional[Dict] = None,
-                  parameters: Optional[Dict] = None,
-                  **kwargs,
-                  ):
+    def constructor(
+        cls,
+        parameters: Optional[Dict] = None,
+        **kwargs,
+    ):
         """
-        Primary way to instantiate this class. Automatically extracts all
+        Get a contructor for this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
 
         Args:
-            case: case which is predicted
-            properties: Additional properties. Defaults to None.
             parameters: Additional parameters. Defaults to None.
-        """
-        return cls(properties=properties, parameters=parameters, **kwargs)
 
-    def add_model(self,
-                  name: Optional[str] = None,
-                  model_weight: Optional[float] = None,
-                  ) -> str:
+        Returns:
+            Callable: callable to isntantiate ensembler class with two
+                input variable:
+                    `case`: input data from case (e.g. 'data' to extract shape
+                        information)
+                    `properties`: additional properties of case
+            str: identifier of ensembler class. This needs to be used as the
+                key when construction the ensembler dict for the predictor!
+        """
+
+        def create(
+            case: Dict,
+            properties: Dict,
+            *args,
+            **kwargs2,
+        ):
+            return cls(
+                properties=properties, parameters=parameters, *args, **kwargs, **kwargs2
+            )
+
+        return create, cls.ID
+
+    def add_model(
+        self,
+        name: Optional[str] = None,
+        model_weight: Optional[float] = None,
+    ) -> str:
         """
         This functions signales the ensembler to add a new model for internal
         processing
@@ -173,11 +192,12 @@ class BaseEnsembler(ABC):
         """
         raise NotImplementedError
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name
@@ -223,8 +243,15 @@ class BaseEnsembler(ABC):
 
     @classmethod
     def get_case_ids(cls, base_dir: PathLike):
-        return [c.stem.rsplit(f"_{cls.ID}", 1)[0] 
-                for c in Path(base_dir).glob(f"*_{cls.ID}.pt")]
+        return [
+            c.stem.rsplit(f"_{cls.ID}", 1)[0]
+            for c in Path(base_dir).glob(f"*_{cls.ID}.pt")
+        ]
+
+    @classmethod
+    def save_result(cls, data: Dict, target_dir: Path, case_name: str) -> None:
+        # name without extension!
+        save_pickle(to_numpy(data), target_dir / f"{case_name}_{cls.ID}.pkl")
 
 
 class OverlapMap:
@@ -236,8 +263,9 @@ class OverlapMap:
             data_shape: spatial dimensions of data (
                 no batch dim and no channel dim!)
         """
-        self.overlap_map: torch.Tensor = \
-            torch.zeros(*data_shape, requires_grad=False, dtype=torch.float)
+        self.overlap_map: torch.Tensor = torch.zeros(
+            *data_shape, requires_grad=False, dtype=torch.float
+        )
 
     def add_overlap(self, crop: Sequence[slice]):
         """
@@ -249,7 +277,7 @@ class OverlapMap:
         """
         # discard leading indexes which could be due to batches and channels
         if len(crop) > self.overlap_map.ndim:
-            crop = crop[-self.overlap_map.ndim:]
+            crop = crop[-self.overlap_map.ndim :]
 
         # clip crop to data shape
         slicer = []
@@ -285,9 +313,9 @@ class OverlapMap:
         Returns:
             Tensor: mean number of overlaps per box [N]
         """
-        return torch.tensor(
-            [self.mean_num_overlap_of_box(box) for box in boxes]).to(
-            dtype=torch.float, device=boxes.device)
+        return torch.tensor([self.mean_num_overlap_of_box(box) for box in boxes]).to(
+            dtype=torch.float, device=boxes.device
+        )
 
     def avg(self) -> torch.Tensor:
         """
@@ -303,31 +331,4 @@ class OverlapMap:
         self.overlap_map = float(val)
 
 
-def extract_results(source_dir: PathLike,
-                    target_dir: PathLike,
-                    ensembler_cls: Callable,
-                    restore: bool,
-                    **params,
-                    ) -> None:
-    """
-    Compute case result from ensembler and save it
-
-    Args:
-        source_dir: directory which contains the saved predictions/state from
-            the ensembler class
-        target_dir: directory to save results
-        ensembler_cls: ensembler class for prediction
-        restore: if true, the results are converted into the opriginal image
-            space
-    """
-    Path(target_dir).mkdir(parents=True, exist_ok=True)
-    for case_id in maybe_verbose_iterable(ensembler_cls.get_case_ids(source_dir)):
-        ensembler = ensembler_cls.from_checkpoint(base_dir=source_dir, case_id=case_id)
-        ensembler.update_parameters(**params)
-
-        pred = to_numpy(ensembler.get_case_result(restore=restore))
-
-        save_pickle(pred, Path(target_dir) / f"{case_id}_{ensembler_cls.ID}.pkl")
-
-
-BaseEnsemblerType = TypeVar('BaseEnsemblerType', bound=BaseEnsembler)
+BaseEnsemblerType = TypeVar("BaseEnsemblerType", bound=BaseEnsembler)

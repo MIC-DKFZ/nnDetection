@@ -14,21 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from itertools import product
 from pathlib import Path
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 import SimpleITK as sitk
-from itertools import product
 
 
-from typing import Sequence, Union, Tuple
-
-
-def create_circle_mask_itk(image_itk: sitk.Image,
-                           world_centers: Sequence[Sequence[float]],
-                           world_rads: Sequence[float],
-                           ndim: int = 3,
-                           ) -> sitk.Image:
+def create_circle_mask_itk(
+    image_itk: sitk.Image,
+    world_centers: Sequence[Sequence[float]],
+    world_rads: Sequence[float],
+    ndim: int = 3,
+) -> sitk.Image:
     """
     Creates an itk image with circles defined by center points and radii
 
@@ -48,20 +47,26 @@ def create_circle_mask_itk(image_itk: sitk.Image,
         image_np = image_np[0]
     mask_np = np.zeros_like(image_np).astype(np.uint8)
 
-    for _id, (world_center, world_rad) in enumerate(zip(world_centers, world_rads), start=1):
+    for _id, (world_center, world_rad) in enumerate(
+        zip(world_centers, world_rads), start=1
+    ):
         check_rad = (world_rad / min_spacing) * 1.5  # add some buffer to it
         bounds = []
         center = image_itk.TransformPhysicalPointToContinuousIndex(world_center)[::-1]
         for ax, c in enumerate(center):
-            bounds.append((
-                max(0, int(c - check_rad)),
-                min(mask_np.shape[ax], int(c + check_rad)),
-            ))
+            bounds.append(
+                (
+                    max(0, int(c - check_rad)),
+                    min(mask_np.shape[ax], int(c + check_rad)),
+                )
+            )
         coord_box = product(*[list(range(b[0], b[1])) for b in bounds])
 
         # loop over every pixel position
         for coord in coord_box:
-            world_coord = image_itk.TransformIndexToPhysicalPoint(tuple(reversed(coord)))  # reverse order to x, y, z for sitk
+            world_coord = image_itk.TransformIndexToPhysicalPoint(
+                tuple(reversed(coord))
+            )  # reverse order to x, y, z for sitk
             dist = np.linalg.norm(np.array(world_coord) - np.array(world_center))
             if dist <= world_rad:
                 mask_np[tuple(coord)] = _id

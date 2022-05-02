@@ -15,18 +15,16 @@ limitations under the License.
 """
 
 from abc import abstractmethod
-from typing import Optional, Union, Callable
-
-from loguru import logger
+from typing import Callable, Optional, Union
 
 import torch
-from torch.optim.lr_scheduler import _LRScheduler
+from loguru import logger
 from pytorch_lightning.callbacks import StochasticWeightAveraging
 from pytorch_lightning.trainer.optimizers import _get_default_scheduler_config
 from pytorch_lightning.utilities import rank_zero_warn
+from torch.optim.lr_scheduler import _LRScheduler
 
 from nndet.training.learning_rate import CycleLinear
-
 
 _AVG_FN = Callable[[torch.Tensor, torch.Tensor, torch.LongTensor], torch.FloatTensor]
 
@@ -45,11 +43,11 @@ class BaseSWA(StochasticWeightAveraging):
         Args:
             swa_epoch_start: Epoch to start SWA weight saving.
             avg_fn: Function to average saved weights. Defaults to None.
-            device: Device to save averaged model. Defaults to 
+            device: Device to save averaged model. Defaults to
                 torch.device("cpu").
             update_statistics: Perform a final update of the normalization
                 layers. Defaults to None.
-                
+
         Notes: Does not support updating of norm weights after training
         """
         super().__init__(
@@ -63,25 +61,32 @@ class BaseSWA(StochasticWeightAveraging):
         self.update_statistics = update_statistics
         logger.info(f"Initialize SWA with swa epoch start {self.swa_start}")
 
-    def pl_module_contains_batch_norm(self, pl_module: 'pl.LightningModule'):
+    def pl_module_contains_batch_norm(
+        self, pl_module: "pl.LightningModule"  # noqa: F821
+    ):
         if self.update_statistics:
-            raise NotImplementedError("Updating the statistis of the "
-                                      "normalization layer is not suported yet.")
+            raise NotImplementedError(
+                "Updating the statistis of the "
+                "normalization layer is not suported yet."
+            )
         else:
             return self.update_statistics
 
-    def on_train_epoch_start(self,
-                             trainer: 'pl.Trainer',
-                             pl_module: 'pl.LightningModule',
-                             ):
+    def on_train_epoch_start(
+        self,
+        trainer: "pl.Trainer",  # noqa: F821
+        pl_module: "pl.LightningModule",  # noqa: F821
+    ):
         """
         Repalce current lr scheduler with SWA scheduler
         """
         if trainer.current_epoch == self.swa_start:
             optimizer = trainer.optimizers[0]
-            
+
             # move average model to request device.
-            self._average_model = self._average_model.to(self._device or pl_module.device)
+            self._average_model = self._average_model.to(
+                self._device or pl_module.device
+            )
 
             _scheduler = self.get_swa_scheduler(optimizer)
             self._swa_scheduler = _get_default_scheduler_config()
@@ -91,7 +96,9 @@ class BaseSWA(StochasticWeightAveraging):
 
             if trainer.lr_schedulers:
                 lr_scheduler = trainer.lr_schedulers[0]["scheduler"]
-                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}")
+                rank_zero_warn(
+                    f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}"
+                )
                 trainer.lr_schedulers[0] = self._swa_scheduler
             else:
                 trainer.lr_schedulers.append(self._swa_scheduler)
@@ -99,7 +106,9 @@ class BaseSWA(StochasticWeightAveraging):
             self.n_averaged = torch.tensor(0, dtype=torch.long, device=pl_module.device)
 
         if self.swa_start <= trainer.current_epoch <= self.swa_end:
-            self.update_parameters(self._average_model, pl_module, self.n_averaged, self.avg_fn)
+            self.update_parameters(
+                self._average_model, pl_module, self.n_averaged, self.avg_fn
+            )
 
         if trainer.current_epoch == self.swa_end + 1:
             raise NotImplementedError("This should never happen (yet)")
@@ -121,15 +130,16 @@ class BaseSWA(StochasticWeightAveraging):
 
 
 class SWACycleLinear(BaseSWA):
-    def __init__(self,
-                 swa_epoch_start: int,
-                 cycle_initial_lr: float,
-                 cycle_final_lr: float,
-                 num_iterations_per_epoch: int,
-                 avg_fn: Optional[_AVG_FN] = None,
-                 device: Optional[Union[torch.device, str]] = torch.device("cpu"),
-                 update_statistics: Optional[bool] = None,
-                 ):
+    def __init__(
+        self,
+        swa_epoch_start: int,
+        cycle_initial_lr: float,
+        cycle_final_lr: float,
+        num_iterations_per_epoch: int,
+        avg_fn: Optional[_AVG_FN] = None,
+        device: Optional[Union[torch.device, str]] = torch.device("cpu"),
+        update_statistics: Optional[bool] = None,
+    ):
         """
         SWA based on :class:`CycleLinear`
 
@@ -139,7 +149,7 @@ class SWACycleLinear(BaseSWA):
             cycle_final_lr: final learning rate of cycle
             num_iterations_per_epoch: number of train iterations per epoch
             avg_fn: Function to average saved weights. Defaults to None.
-            device: Device to save averaged model. Defaults to 
+            device: Device to save averaged model. Defaults to
                 torch.device("cpu").
             update_statistics: Perform a final update of the normalization
                 layers. Defaults to None.
@@ -149,7 +159,7 @@ class SWACycleLinear(BaseSWA):
             avg_fn=avg_fn,
             device=device,
             update_statistics=update_statistics,
-            )
+        )
         self.cycle_initial_lr = cycle_initial_lr
         self.cycle_final_lr = cycle_final_lr
         self.num_iterations_per_epoch = num_iterations_per_epoch
@@ -161,6 +171,6 @@ class SWACycleLinear(BaseSWA):
                 cycle_num_iterations=self.num_iterations_per_epoch,
                 cycle_initial_lr=self.cycle_initial_lr,
                 cycle_final_lr=self.cycle_final_lr,
-                ),
+            ),
             "interval": "step",
         }

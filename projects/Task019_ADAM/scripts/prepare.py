@@ -1,26 +1,27 @@
 import os
 import shutil
-from typing import Sequence, Dict, Optional
+from pathlib import Path
+from typing import Dict, Optional, Sequence
 
 import SimpleITK as sitk
-from pathlib import Path
 from loguru import logger
 
 from nndet.io import save_json
 from nndet.io.prepare import instances_from_segmentation
 from nndet.utils.check import env_guard
+from nndet.utils.clustering import remove_classes, reorder_classes, seg_to_instances
 from nndet.utils.info import maybe_verbose_iterable
-from nndet.utils.clustering import seg_to_instances, remove_classes, reorder_classes
 
 
 def instances_from_segmentation(
-    source_file: Path, output_folder: Path,
+    source_file: Path,
+    output_folder: Path,
     rm_classes: Sequence[int] = None,
     ro_classes: Dict[int, int] = None,
     subtract_one_of_classes: bool = True,
     fg_vs_bg: bool = False,
-    file_name: Optional[str] = None
-    ):
+    file_name: Optional[str] = None,
+):
     """
     1. Optionally removes classes from the segmentation (
     e.g. organ segmentation's which are not useful for detection)
@@ -43,8 +44,10 @@ def instances_from_segmentation(
         file_name: name of saved file (without file type!)
     """
     if subtract_one_of_classes and fg_vs_bg:
-        logger.info("subtract_one_of_classes will be ignored because fg_vs_bg is "
-                    "active and all foreground classes ill be mapped to 0")
+        logger.info(
+            "subtract_one_of_classes will be ignored because fg_vs_bg is "
+            "active and all foreground classes ill be mapped to 0"
+        )
 
     seg_itk = sitk.ReadImage(str(source_file))
     seg_npy = sitk.GetArrayFromImage(seg_itk)
@@ -62,8 +65,10 @@ def instances_from_segmentation(
         instances, instance_classes = seg_to_instances(seg_npy)
         num_instances = len(instance_classes)
         if num_instances != num_instances_check:
-            logger.warning(f"Lost instance: Found {num_instances} instances before "
-                           f"fg_vs_bg but {num_instances_check} instances after it")
+            logger.warning(
+                f"Lost instance: Found {num_instances} instances before "
+                f"fg_vs_bg but {num_instances_check} instances after it"
+            )
 
     if subtract_one_of_classes:
         for key in instance_classes.keys():
@@ -87,35 +92,38 @@ def instances_from_segmentation(
 
 
 def run_prep_fg_v_bg(
-        case_id: str,
-        source_data: Path,
-        target_data_dir,
-        target_label_dir: Path,
-        struct="pre/struct_aligned.nii.gz",  # bias field corrected and aligned
-        tof="pre/TOF.nii.gz",  # tof image
-        ):
+    case_id: str,
+    source_data: Path,
+    target_data_dir,
+    target_label_dir: Path,
+    struct="pre/struct_aligned.nii.gz",  # bias field corrected and aligned
+    tof="pre/TOF.nii.gz",  # tof image
+):
     struct_path = source_data / case_id / struct
     tof_path = source_data / case_id / tof
     mask_path = source_data / case_id / "aneurysms.nii.gz"
 
     shutil.copy(struct_path, target_data_dir / f"{case_id}_0000.nii.gz")
     shutil.copy(tof_path, target_data_dir / f"{case_id}_0001.nii.gz")
-    instances_from_segmentation(mask_path,
-                                target_label_dir,
-                                fg_vs_bg=True,
-                                file_name=f"{case_id}",
-                                )
+    instances_from_segmentation(
+        mask_path,
+        target_label_dir,
+        fg_vs_bg=True,
+        file_name=f"{case_id}",
+    )
 
 
 @env_guard
 def main():
-    det_data_dir = Path(os.getenv('det_data'))
+    det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / "Task019FG_ADAM"
-    
+
     # setup raw paths
     source_data_dir = task_data_dir / "raw" / "ADAM_release_subjs"
     if not source_data_dir.is_dir():
-        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
+        raise RuntimeError(
+            f"{source_data_dir} should contain the raw data but does not exist."
+        )
 
     # setup raw splitted dirs
     target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"
@@ -129,7 +137,9 @@ def main():
         "task": "Task019FG_ADAM",
         "target_class": None,
         "test_labels": False,
-        "labels": {"0": "Aneurysm"}, # since we are running FG vs BG this is not completely correct
+        "labels": {
+            "0": "Aneurysm"
+        },  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "Structured", "1": "TOF"},
         "dim": 3,
     }
@@ -144,7 +154,7 @@ def main():
             source_data=source_data_dir,
             target_data_dir=target_data_dir,
             target_label_dir=target_label_dir,
-            )
+        )
 
 
 if __name__ == "__main__":

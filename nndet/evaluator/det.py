@@ -14,40 +14,52 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pathlib import Path
 from functools import partial
-from typing import Optional, Sequence, Callable, Dict, List, Tuple
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
-from nndet.evaluator.detection.matching import matching_batch
 from nndet.core.boxes import box_iou_np
+from nndet.core.masks.ops_np import bin_mask_iou_np
+from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
-
+from nndet.evaluator.detection.matching import matching_batch
+from nndet.utils.info import experimental
 
 __all__ = ["DetectionEvaluator"]
 
 
 class DetectionEvaluator(AbstractEvaluator):
-    def __init__(self,
-                 metrics: Sequence[DetectionMetric],
-                 iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
-                 max_detections: int = 100,
-                 ):
+    similarity_fn = box_iou_np
+
+    def __init__(
+        self,
+        metrics: Sequence[DetectionMetric],
+        iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
+        max_detections: int = 100,
+        match_fn: Callable = matching_batch,
+        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
+    ):
         """
         Class for evaluate detection metrics
 
         Args:
-            metrics (Sequence[DetectionMetric]: detection metrics to evaluate
-            iou_fn (Callable[[np.ndarray, np.ndarray], np.ndarray]): compute overlap for each pair
-            max_detections (int): number of maximum detections per image (reduces computation)
+            metrics: detection metrics to evaluate
+            iou_fn: compute overlap for each pair
+            max_detections: number of maximum detections per image
+                (reduces computation)
+            filter_keys: define keys which need to be filtered by the IoU value
         """
         self.iou_fn = iou_fn
+        self.match_fn = match_fn
+
         self.max_detections = max_detections
         self.metrics = metrics
+        self.filter_keys = filter_keys
+
         self.results_list = []  # store results of each image
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
@@ -66,16 +78,21 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Find indices of iou thresholds for each metric
         """
-        return [[self.iou_thresholds.index(th) for th in m.get_iou_thresholds()]
-                for m in self.metrics]
+        return [
+            [self.iou_thresholds.index(th) for th in m.get_iou_thresholds()]
+            for m in self.metrics
+        ]
 
-    def run_online_evaluation(self,
-                              pred_boxes: Sequence[np.ndarray],
-                              pred_classes: Sequence[np.ndarray],
-                              pred_scores: Sequence[np.ndarray],
-                              gt_boxes: Sequence[np.ndarray],
-                              gt_classes: Sequence[np.ndarray],
-                              gt_ignore: Sequence[Sequence[bool]] = None) -> Dict:
+    def run_online_evaluation(
+        self,
+        pred_boxes: Sequence[np.ndarray],
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_boxes: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+        gt_ignore: Sequence[Sequence[bool]] = None,
+        case_id: Optional[str] = None,
+    ) -> Dict:
         """
         Preprocess batch results for final evaluation
 
@@ -91,22 +108,38 @@ class DetectionEvaluator(AbstractEvaluator):
             gt_ignore (Sequence[Sequence[bool]]): specified if which ground truth boxes are not counted as true
                 positives (detections which match theses boxes are not counted as false positives either);
                 List[[G]], G number of ground truth
+            case_id: optionally provide a case id which will be return to
+                identify the matching result
 
         Returns
             dict: empty dict... detection metrics can only be evaluated at the end
         """
         if gt_ignore is None:
-            n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
+            n = [
+                0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0]
+                for gt_boxes_img in gt_boxes
+            ]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
-        self.results_list.extend(matching_batch(
-            self.iou_fn, self.iou_thresholds, pred_boxes=pred_boxes, pred_classes=pred_classes,
-            pred_scores=pred_scores, gt_boxes=gt_boxes, gt_classes=gt_classes, gt_ignore=gt_ignore,
-            max_detections=self.max_detections))
-
+        self.results_list.extend(
+            self.match_fn(
+                self.iou_fn,
+                self.iou_thresholds,
+                pred_boxes=pred_boxes,
+                pred_classes=pred_classes,
+                pred_scores=pred_scores,
+                gt_boxes=gt_boxes,
+                gt_classes=gt_classes,
+                gt_ignore=gt_ignore,
+                max_detections=self.max_detections,
+                case_id=case_id,
+            )
+        )
         return {}
 
-    def finish_online_evaluation(self) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Accumulate results of individual batches and compute final metrics
 
@@ -117,44 +150,49 @@ class DetectionEvaluator(AbstractEvaluator):
         metric_scores = {}
         metric_curves = {}
         for metric_idx, metric in enumerate(self.metrics):
-            _filter = partial(self.iou_filter, iou_idx=self.iou_mapping[metric_idx])
+            _filter = partial(
+                self.iou_filter,
+                iou_idx=self.iou_mapping[metric_idx],
+                filter_keys=self.filter_keys,
+            )
             iou_filtered_results = list(map(_filter, self.results_list))
-            
+
             score, curve = metric(iou_filtered_results)
-            
+
             if score is not None:
                 metric_scores.update(score)
-            
+
             if curve is not None:
                 metric_curves.update(curve)
         return metric_scores, metric_curves
 
     @staticmethod
-    def iou_filter(image_dict: Dict[int, Dict[str, np.ndarray]], iou_idx: List[int],
-                   filter_keys: Sequence[str] = ('dtMatches', 'gtMatches', 'dtIgnore')):
+    def iou_filter(
+        image_dict: Dict[int, Dict[str, np.ndarray]],
+        iou_idx: List[int],
+        filter_keys: Sequence[str],
+    ):
         """
         This functions can be used to filter specific IoU values from the results
         to make sure that the correct IoUs are passed to metric
-        
-        Parameters
-        ----------
-        image_dict : dict
-            dictionary containin :param:`filter_keys` which contains IoUs in the first dimension
-        iou_idx : List[int]
-            indices of IoU values to filter from keys
-        filter_keys : tuple, optional
-            keys to filter, by default ('dtMatches', 'gtMatches', 'dtIgnore')
-        
+
+        Args:
+            image_dict: dictionary containin :param:`filter_keys`
+                which contains IoUs in the first dimension
+            iou_idx: indices of IoU values to filter from keys
+            filter_keys: keys to filter, by default
+                ('dtMatches', 'gtMatches', 'dtIgnore')
+
         Returns
-        -------
-        dict
-            filtered dictionary
+            dict: filtered dictionary
         """
         iou_idx = list(iou_idx)
         filtered = {}
         for cls_key, cls_item in image_dict.items():
-            filtered[cls_key] = {key: item[iou_idx] if key in filter_keys else item
-                                 for key, item in cls_item.items()}
+            filtered[cls_key] = {
+                key: item[iou_idx] if key in filter_keys else item
+                for key, item in cls_item.items()
+            }
         return filtered
 
     def reset(self):
@@ -163,15 +201,14 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         self.results_list = []
 
-
-class BoxEvaluator(DetectionEvaluator):
     @classmethod
-    def create(cls,
-               classes: Sequence[str],
-               fast: bool = True,
-               verbose: bool = False,
-               save_dir: Optional[Path] = None,
-               ):
+    def create(
+        cls,
+        classes: Sequence[str],
+        fast: bool = True,
+        verbose: bool = False,
+        save_dir: Optional[Path] = None,
+    ):
         """
         Create an box evaluator object
 
@@ -186,36 +223,123 @@ class BoxEvaluator(DetectionEvaluator):
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        iou_fn = box_iou_np
+        # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
         per_class = False if fast else True
 
         metrics = []
         metrics.append(
-            FROCMetric(classes,
-                       iou_thresholds=iou_thresholds,
-                       fpi_thresholds=(1/8, 1/4, 1/2, 1, 2, 4, 8),
-                       per_class=per_class,
-                       verbose=verbose,
-                       save_dir= None if fast else save_dir
-                       )
+            FROCMetric(
+                classes,
+                iou_thresholds=iou_thresholds,
+                fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
+                per_class=per_class,
+                verbose=verbose,
+                save_dir=None if fast else save_dir,
             )
+        )
         metrics.append(
-            COCOMetric(classes,
-                       iou_list=iou_thresholds,
-                       iou_range=iou_range,
-                       max_detection=(100, ),
-                       per_class=per_class,
-                       verbose=verbose,
-                       )
+            COCOMetric(
+                classes,
+                iou_list=iou_thresholds,
+                iou_range=iou_range,
+                max_detection=(100,),
+                per_class=per_class,
+                verbose=verbose,
             )
+        )
 
         if not fast:
             metrics.append(
-                PredictionHistogram(classes=classes,
-                                    save_dir=save_dir,
-                                    iou_thresholds=(0.1, 0.5),
-                                    )
+                PredictionHistogram(
+                    classes=classes,
+                    save_dir=save_dir,
+                    iou_thresholds=(0.1, 0.5),
                 )
-        return cls(metrics=tuple(metrics), iou_fn=iou_fn)
+            )
+        return cls(metrics=tuple(metrics), iou_fn=cls.similarity_fn)
+
+
+class BoxEvaluator(DetectionEvaluator):
+    similarity_fn = box_iou_np
+
+
+class MaskEvaluator(DetectionEvaluator):
+    similarity_fn = bin_mask_iou_np
+
+
+class CountDifferenceEvaluator(AbstractEvaluator):
+    @experimental
+    def __init__(self, min_prob: float = 0.5):
+        super().__init__()
+        self.min_prob = min_prob
+
+        self.num_gt = []
+        self.num_pred = []
+
+    def run_online_evaluation(
+        self,
+        pred_scores: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+    ) -> Dict:
+        """
+        Preprocess batch results for final evaluation
+
+        Args:
+            pred_scores: predicted score for each bounding box; List[[D]],
+                D number of predictions
+            gt_classes: ground truth classes; List[[G]], G number of ground
+                truth
+
+        Returns
+            dict: empty dict
+        """
+        assert len(pred_scores) == len(gt_classes)
+        for p, g in zip(pred_scores, gt_classes):
+            if p.size > 0:
+                self.num_pred.append((p > self.min_prob).sum())
+            else:
+                self.num_pred.append(0)
+            self.num_gt.append(len(g))
+        return {}
+
+    def finish_online_evaluation(
+        self,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        """
+        Accumulate results of individual batches and compute final metrics
+
+        Returns:
+            Dict[str, float]: dictionary with scalar values for evaluation
+                `mean`: mean number of count differences
+                `median`: median number of count differences
+                `max`: max number of count differences
+                `min`: min number of count differences
+            Dict[str, np.ndarray]: absolute difference per case
+                `diff_per_case`: count difference per case
+                `diff_per_case_sign`: count difference per case signed
+                    computed as: #gt - #pred
+        """
+        gts = np.asarray(self.num_gt)
+        preds = np.asarray(self.num_pred)
+
+        diff_per_case = gts - preds
+        metric_scores = {
+            "mean": np.mean(np.absolute(diff_per_case)),
+            "median": np.median(np.absolute(diff_per_case)),
+            "max": np.max(np.absolute(diff_per_case)),
+            "min": np.min(np.absolute(diff_per_case)),
+        }
+        metric_curves = {
+            "diff_per_case": np.absolute(diff_per_case),
+            "diff_per_case_sign": diff_per_case,
+        }
+        return metric_scores, metric_curves
+
+    def reset(self):
+        """
+        Reset internal state of evaluator
+        """
+        self.num_gt = []
+        self.num_pred = []

@@ -14,43 +14,65 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
-import sys
 import copy
-import pathlib
-import warnings
-import functools
-
-from collections.abc import MutableMapping
-from subprocess import PIPE, run
-from omegaconf.omegaconf import OmegaConf
-
-from tqdm import tqdm
-from typing import Mapping, Sequence, Union, Callable, Any, Iterable
-from loguru import logger
-from contextlib import contextmanager
-from typing import Union, Optional
-from pathlib import Path
-from git import Repo, InvalidGitRepositoryError
-
 import functools
 import inspect
+import os
+import pathlib
+import sys
+from collections.abc import MutableMapping
+from contextlib import contextmanager
+from pathlib import Path
+from subprocess import PIPE, run
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple, Union
+
+from git import InvalidGitRepositoryError, Repo
+from loguru import logger
+from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
+from pytorch_lightning.utilities.model_summary import _format_summary_table
+from tqdm import tqdm
+
+from nndet.io.load import save_txt
+
 
 class SuppressPrint:
     def __enter__(self):
         self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
 
+class ModelSummary(_ModelSummary):
+    def summarize(
+        self,
+        summary_data: List[Tuple[str, List[str]]],
+        total_parameters: int,
+        trainable_parameters: int,
+        model_size: float,
+    ) -> None:
+        super().summarize(
+            summary_data=summary_data,
+            total_parameters=total_parameters,
+            trainable_parameters=trainable_parameters,
+            model_size=model_size,
+        )
+        summary_table = _format_summary_table(
+            total_parameters,
+            trainable_parameters,
+            model_size,
+            *summary_data,
+        )
+        save_txt(summary_table, "./network")
+
+
 def deprecate(
     replacement: Optional[str] = None,
     deprecate: Optional[str] = None,
     remove: Optional[str] = None,
-    ):
+):
     """
     Deprecate functions and classes
 
@@ -61,28 +83,31 @@ def deprecate(
         deprecate: Optional version from when element is deprecated.
         remove: Optional version from when element will be removed.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if inspect.isclass(func):
                 func_name = func.__class__.__name__
             else:
-                func_name = func.__name__
+                func_name = func.__qualname__
 
             time_str = "now" if deprecate is None else deprecate
 
             s = f"{func_name} is deprecated from {time_str}!"
 
             if remove is not None:
-                s += f" It will be removed from nnDetection from {remove}"
+                s += f" It will be removed from nnDetection {remove}"
             if replacement is not None:
                 s += f" The replacement is {replacement}."
             else:
-                s += f" There will be no replacement."
+                s += " There will be no replacement."
 
             logger.warning(s)
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -93,10 +118,13 @@ def experimental(func):
             func_name = func.__class__.__name__
         else:
             func_name = func.__qualname__
-        
-        logger.warning(f"This feature ({func_name}) is experimental! "
-                       "It might not implement all features or is only a simplification!")
+
+        logger.warning(
+            f"This feature ({func_name}) is experimental! "
+            "It might not implement all features or is only a simplification!"
+        )
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -107,7 +135,7 @@ def get_requirements():
     Returns:
         str: list with all requirements
     """
-    command = ['pip', 'list']
+    command = ["pip", "list"]
     result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
     assert not result.stderr, "stderr not empty"
     return result.stdout
@@ -135,6 +163,7 @@ def get_repo_info(path: Union[str, Path]):
     Returns:
         dict: contains the current hash, gitdir and active branch
     """
+
     def find_repo(findpath):
         p = Path(findpath).absolute()
         for p in [p, *p.parents]:
@@ -146,15 +175,18 @@ def get_repo_info(path: Union[str, Path]):
         else:
             raise InvalidGitRepositoryError
         return repo
+
     repo = find_repo(path)
-    return {"hash": repo.head.commit.hexsha,
-            "gitdir": repo.git_dir,
-            "active_branch": repo.active_branch.name}
+    return {
+        "hash": repo.head.commit.hexsha,
+        "gitdir": repo.git_dir,
+        "active_branch": repo.active_branch.name,
+    }
 
 
 def maybe_verbose_iterable(data: Iterable, **kwargs) -> Iterable:
     """
-    If verbose flag of nndet is enabled, uses tqdm to create a 
+    If verbose flag of nndet is enabled, uses tqdm to create a
     progress bar
 
     Args:
@@ -170,8 +202,7 @@ def maybe_verbose_iterable(data: Iterable, **kwargs) -> Iterable:
         return data
 
 
-def find_name(tdir: Union[str, Path], name: str,
-              postfix: Optional[str] = None) -> Path:
+def find_name(tdir: Union[str, Path], name: str, postfix: Optional[str] = None) -> Path:
     """
     Generates non exisitng names for files and dirs by adding a counter to
     the end
@@ -194,7 +225,7 @@ def find_name(tdir: Union[str, Path], name: str,
     if postfix is None:
         postfix = ""
 
-    i=0
+    i = 0
     while True:
         output_dir = tdir / f"{name}{i:03d}{postfix}"
         if not output_dir.exists():
@@ -210,13 +241,15 @@ def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
     Use python logging module to log git information
 
     Args:
-        repo_path (Union[pathlib.Path, str]): path to repo or file inside repository (repository is recursively searched)
+        repo_path: path to repo or file inside repository (repository is recursively searched)
     """
     try:
         git_info = get_repo_info(repo_path)
         return git_info
     except Exception:
-        logger.error("Was not able to read git information, trying to continue without.")
+        logger.error(
+            "Was not able to read git information, trying to continue without."
+        )
         return {}
 
 
@@ -233,11 +266,11 @@ def get_cls_name(obj: Any, package_name: bool = True) -> str:
     """
     cls_name = str(obj.__class__)
     # remove class prefix
-    cls_name = cls_name.split('\'')[1]
+    cls_name = cls_name.split("'")[1]
     # split modules
-    cls_split = cls_name.split('.')
+    cls_split = cls_name.split(".")
     if len(cls_split) > 1:
-        cls_name = cls_split[0] + '.' + cls_split[-1] if package_name else cls_split[-1]
+        cls_name = cls_split[0] + "." + cls_split[-1] if package_name else cls_split[-1]
     else:
         cls_name = cls_split[0]
     return cls_name
@@ -253,12 +286,14 @@ def log_error(fn: Callable) -> Any:
     Returns:
         Any
     """
+
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
             logger.error(str(e))
             raise e
+
     return wrapper
 
 
@@ -266,11 +301,11 @@ def log_error(fn: Callable) -> Any:
 def file_logger(path: Union[str, Path], level: str = "DEBUG", overwrite: bool = True):
     """
     context manager to automatically clean up file logger
-    
+
     Args:
         path: path to output file
         level: logging level. Defaults to "Debug".
-    
+
     Yields:
         None
     """
@@ -304,7 +339,7 @@ def stringify_nested_dict(data: dict):
 def flatten_mapping(
     nested_mapping: Mapping,
     sep: str = ".",
-    ) -> Mapping[str, Any]:
+) -> Mapping[str, Any]:
     _mapping = {}
     for key, item in nested_mapping.items():
         if isinstance(item, MutableMapping):

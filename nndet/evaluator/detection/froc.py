@@ -15,38 +15,38 @@ limitations under the License.
 """
 
 import time
-import numpy as np
-
-from loguru import logger
-from typing import Sequence, List, Dict, Optional, Union, Tuple
+from collections import defaultdict
 from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
+from loguru import logger
 from matplotlib.ticker import FuncFormatter
+from sklearn.metrics import roc_curve
 
 from nndet.evaluator import DetectionMetric
-from sklearn.metrics import roc_curve
-from collections import defaultdict
-
 from nndet.utils.info import experimental
 
 
 class FROCMetric(DetectionMetric):
     @experimental
-    def __init__(self,
-                 classes: Sequence[str],
-                 iou_thresholds: Sequence[float] = (0.1, 0.5),
-                 fpi_thresholds: Sequence[float] = (1/8, 1/4, 1/2, 1, 2, 4, 8),
-                 per_class: bool = False, verbose: bool = True,
-                 save_dir: Optional[Union[str, Path]] = None,
-                 ):
+    def __init__(
+        self,
+        classes: Sequence[str],
+        iou_thresholds: Sequence[float] = (0.1, 0.5),
+        fpi_thresholds: Sequence[float] = (1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
+        per_class: bool = False,
+        verbose: bool = True,
+        save_dir: Optional[Union[str, Path]] = None,
+    ):
         """
         Class to compute FROC
-        
+
         Multiclass FROC: This implementation performs the FROC over all
         objects regardless of their class which assigns each object the
         same "weight".
-        
+
         Note this implementation is experimental and might change in the
         future. Please prefer the AP metric for now.
 
@@ -60,6 +60,10 @@ class FROCMetric(DetectionMetric):
                 the mean of the computed sens values at these positions)
             per_class: additional FROC curves are computed per class
             verbose: log time needed for evaluation
+
+        Notes:
+            c_FROC_num_images should stay constant across all classes since the
+            number of images doesn't change across the data set.
         """
         self.classes = classes
         self.iou_thresholds = iou_thresholds
@@ -81,8 +85,10 @@ class FROCMetric(DetectionMetric):
         """
         return self.iou_thresholds
 
-    def compute(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> Tuple[
-            Dict[str, float], Dict[str, np.ndarray]]:
+    def compute(
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC
 
@@ -107,7 +113,7 @@ class FROCMetric(DetectionMetric):
                 (key: FROC_curve@IoU:{key:2f})
         """
         if self.verbose:
-            logger.info('Start FROC metric computation...')
+            logger.info("Start FROC metric computation...")
             tic = time.time()
 
         scores = {}
@@ -118,7 +124,7 @@ class FROCMetric(DetectionMetric):
 
         if self.verbose:
             toc = time.time()
-            logger.info(f'FROC finished (t={(toc - tic):0.2f}s).')
+            logger.info(f"FROC finished (t={(toc - tic):0.2f}s).")
 
         if self.per_class:
             _score, _curve = self.compute_froc_mul_iou_per_class(results_list)
@@ -127,14 +133,15 @@ class FROCMetric(DetectionMetric):
 
             if self.verbose:
                 toc = time.time()
-                logger.info(f'FROC per class finished (t={(toc - tic):0.2f}s).')
+                logger.info(f"FROC per class finished (t={(toc - tic):0.2f}s).")
 
         if self.save_dir is not None:
             self.plot_froc_curves(curves)
         return scores, curves
 
-    def compute_froc_mul_iou(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> Tuple[
-            Dict[str, float], Dict[str, np.ndarray]]:
+    def compute_froc_mul_iou(
+        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC curve for multiple IoU values
 
@@ -154,57 +161,76 @@ class FROCMetric(DetectionMetric):
 
         Returns:
             Dict[str, float]: FROC score per IoU
-            Dict[str,np.ndarray]: FROC curve computed at specified fps 
+            Dict[str,np.ndarray]: FROC curve computed at specified fps
                 thresholds per IoU; [R] R is the number of fps thresholds
         """
         num_images = len(results_list)
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"WARNING, no results found for froc computation")
-            return ({"froc_score": 0},
-                    {"froc_curve": np.zeros(len(self.fpi_thresholds))})
+            logger.warning("WARNING, no results found for froc computation")
+            return (
+                {"froc_score": 0},
+                {
+                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
+                    "FROC_fpi_thresholds": self.fpi_thresholds,
+                    "FROC_num_images": num_images,
+                    "FROC_num_gt": 0,
+                },
+            )
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
-        dt_matches = np.concatenate([r['dtMatches'] for r in results], axis=1)
-        dt_ignores = np.concatenate([r['dtIgnore'] for r in results], axis=1)
-        dt_scores = np.concatenate([r['dtScores'] for r in results])
-        gt_ignore = np.concatenate([r['gtIgnore'] for r in results])
-        
+        dt_matches = np.concatenate([r["dtMatches"] for r in results], axis=1)
+        dt_ignores = np.concatenate([r["dtIgnore"] for r in results], axis=1)
+        dt_scores = np.concatenate([r["dtScores"] for r in results])
+        gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
+
         self.check_number_of_iou(dt_matches, dt_ignores)
-        
-        num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
+
+        num_gt = np.count_nonzero(
+            gt_ignore == 0
+        )  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning 0 in FROC.")
-            return ({"froc_score": 0},
-                    {"froc_curve": np.zeros(len(self.fpi_thresholds))})
+            return (
+                {"froc_score": 0},
+                {
+                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
+                    "FROC_fpi_thresholds": self.fpi_thresholds,
+                    "FROC_num_images": num_images,
+                    "FROC_num_gt": num_gt,
+                },
+            )
 
         # keep shape in case of 1 threshold
         old_shape = dt_matches.shape
         dt_matches = dt_matches[np.logical_not(dt_ignores)].reshape(old_shape)
-        
+
         curves = {}
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
             # filter scores with ignores detections
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
-            
-            _fps, _sens, _th = (self.compute_froc_curve_one_iou(
-                dt_matches[iou_idx], _scores, num_images, num_gt))
-            
+
+            _fps, _sens, _th = self.compute_froc_curve_one_iou(
+                dt_matches[iou_idx], _scores, num_images, num_gt
+            )
+
             # interpolate at defined fpr thresholds
             curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)
-
 
         # linearly interpolate curves for needed fps values
         scores = {f"FROC_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
         curves = {f"FROC_curve_IoU_{key:.2f}": c for key, c in curves.items()}
         curves["FROC_fpi_thresholds"] = self.fpi_thresholds
+        curves["FROC_num_images"] = num_images
+        curves["FROC_num_gt"] = num_gt
         return scores, curves
 
     @staticmethod
-    def compute_froc_curve_one_iou(dt_matches: np.ndarray, dt_scores: np.ndarray,
-                                   num_images: int, num_gt: int):
+    def compute_froc_curve_one_iou(
+        dt_matches: np.ndarray, dt_scores: np.ndarray, num_images: int, num_gt: int
+    ):
         """
         Compute FROC curve for a single IoU value
 
@@ -241,8 +267,8 @@ class FROCMetric(DetectionMetric):
         return fps, sens, thresholds
 
     def compute_froc_mul_iou_per_class(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]) -> (
-            Dict[str, float], Dict[str, np.ndarray]):
+        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC curve for multiple classes
 
@@ -269,12 +295,18 @@ class FROCMetric(DetectionMetric):
         froc_curves_cls = {}
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
+            results_by_cls = [
+                {0: r[cls_idx]} if cls_idx in r else {} for r in results_list
+            ]
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
 
-                froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
-                froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
+                froc_scores_cls.update(
+                    {f"{cls_str}_{key}": item for key, item in cls_scores.items()}
+                )
+                froc_curves_cls.update(
+                    {f"{cls_str}_{key}": item for key, item in cls_curves.items()}
+                )
         return froc_scores_cls, froc_curves_cls
 
     def plot_froc_curves(self, curves: Dict[str, Sequence[float]]) -> None:
@@ -287,33 +319,40 @@ class FROCMetric(DetectionMetric):
                 {cls_name}_FROC_score_IoU_{key:.2f}: for class specific froc
         """
         # plot normal froc curves
-        selection = select_froc_curves(curves)
+        _, frocs, ious, num_images, num_gt = select_froc_curves(curves)
         fig, ax = get_froc_ax(self.fpi_thresholds)
-        for _, froc, iou in zip(*selection):
-            ax.plot(self.fpi_thresholds, froc, 'o-', label=f"IoU:{iou:.2f}")
-        ax.set_title("FROC")
-        ax.legend(loc='lower right')
+        for froc, iou in zip(frocs, ious):
+            ax.plot(self.fpi_thresholds, froc, "o-", label=f"IoU:{iou:.2f}")
+        ax.set_title(f"FROC N_img={num_images} N_gt={num_gt}")
+        ax.legend(loc="lower right")
         fig.savefig(self.save_dir / "FROC.png")
         plt.close(fig)
 
         # plot cls frocs
         selection = select_froc_curves_cls(curves)
         reordered = defaultdict(list)
-        for class_name, (names, frocs, ious) in selection.items():
+        for class_name, (names, frocs, ious, ni, ng) in selection.items():
             for froc, iou in zip(frocs, ious):
-                reordered[iou].append((class_name, froc))
+                reordered[iou].append((class_name, froc, ni, ng))
+
         for iou, frocs in reordered.items():
             fig, ax = get_froc_ax(self.fpi_thresholds)
-            for class_name, froc in frocs:
-                ax.plot(self.fpi_thresholds, froc, 'o-', label=f"{class_name}")
+
             title = f"FROC_cls_IoU_{iou:.2f}"
-            ax.set_title(title)
-            ax.legend(loc='lower right')
+            ax_title = title
+
+            for class_name, froc, ni, ng in frocs:
+                ax.plot(self.fpi_thresholds, froc, "o-", label=f"{class_name}")
+                ax_title = ax_title + f" N_img_{class_name}={ni} N_gt_{class_name}={ng}"
+            ax.set_title(ax_title)
+            ax.legend(loc="lower right")
             fig.savefig(self.save_dir / f"{title.replace('.', '_')}.png")
             plt.close(fig)
 
 
-def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figure, plt.Axes]:
+def get_froc_ax(
+    fpi_values: Optional[Sequence[float]] = None,
+) -> Tuple[plt.Figure, plt.Axes]:
     """
     Create preconfigured figure and axes object for froc curves
 
@@ -326,22 +365,25 @@ def get_froc_ax(fpi_values: Optional[Sequence[float]] = None) -> Tuple[plt.Figur
     """
     fig, ax = plt.subplots()
     ax.set_xscale("log", base=2)
-    
+    # ax.set_xscale("linear")
+
     if fpi_values is not None:
         ax.set_xlim(min(fpi_values), max(fpi_values))
         ax.set_xticks(fpi_values)
     ax.set_ylim(0, 1)
-    ax.set_xlabel('Avg number of false positives per scan')
-    ax.set_ylabel('Sensitivity')
+    ax.set_xlabel("Avg number of false positives per scan")
+    ax.set_ylabel("Sensitivity")
     ax.grid(True)
 
-    formatter = FuncFormatter(lambda y, _: '{:.3f}'.format(y))
+    formatter = FuncFormatter(lambda y, _: "{:.3f}".format(y))
     ax.xaxis.set_major_formatter(formatter)
     return fig, ax
 
 
-def select_froc_curves(curves: Dict[str, np.ndarray], prefix: Optional[str] = None) -> \
-        Tuple[List[str], List[np.ndarray], List[float]]:
+def select_froc_curves(
+    curves: Dict[str, np.ndarray],
+    prefix: Optional[str] = None,
+) -> Tuple[List[str], List[np.ndarray], List[float]]:
     """
     Select froc curves
 
@@ -356,16 +398,32 @@ def select_froc_curves(curves: Dict[str, np.ndarray], prefix: Optional[str] = No
     """
     if prefix is None:
         prefix = ""
-    froc_keys = [str(c) for c in curves.keys()
-                 if str(c).startswith(f"{prefix}FROC_") and
-                 not str(c).endswith("_thresholds")]
+    froc_keys = [
+        str(c)
+        for c in curves.keys()
+        if str(c).startswith(f"{prefix}FROC_")
+        and not (
+            str(c).endswith("_thresholds")
+            or str(c).endswith("_num_images")
+            or str(c).endswith("_num_gt")
+        )
+    ]
     frocs = [curves[c] for c in froc_keys]
-    ious = [float(c.rsplit('_', 1)[1]) for c in froc_keys]
-    return froc_keys, frocs, ious
+    ious = [float(c.rsplit("_", 1)[1]) for c in froc_keys]
+    if (n := f"{prefix}FROC_num_images") in curves:
+        num_images = curves[n]
+    else:
+        num_images = np.nan
+    if (n := f"{prefix}FROC_num_gt") in curves:
+        num_gt = curves[n]
+    else:
+        num_gt = np.nan
+    return froc_keys, frocs, ious, num_images, num_gt
 
 
-def select_froc_curves_cls(curves: Dict[str, np.ndarray]) -> \
-        Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
+def select_froc_curves_cls(
+    curves: Dict[str, np.ndarray],
+) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
     """
     Select class specific froc curves
 
@@ -378,9 +436,16 @@ def select_froc_curves_cls(curves: Dict[str, np.ndarray]) -> \
             dict defines the classes, tuple is output from
             :method:`select_froc_curves_cls`
     """
-    all_classes = [str(c).split('_', 1)[0] for c in curves.keys()
-                   if not str(c).startswith("FROC_") and
-                   not str(c).endswith("_thresholds")]
+    all_classes = [
+        str(c).split("_", 1)[0]
+        for c in curves.keys()
+        if not (
+            str(c).startswith("FROC_")
+            or str(c).endswith("_thresholds")
+            or str(c).endswith("_num_images")
+            or str(c).endswith("_num_gt")
+        )
+    ]
     all_classes = list(set(all_classes))
     output = {}
     for cls_name in all_classes:

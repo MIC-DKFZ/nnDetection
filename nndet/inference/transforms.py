@@ -14,16 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Sequence, Tuple
+
 from loguru import logger
-from typing import List, Tuple, Sequence
 
 from nndet.io.transforms import Mirror, NoOp
-
 from nndet.io.transforms.base import AbstractTransform
 
 
-def get_tta_transforms(num_tta_transforms: int, seg: bool = True) -> Tuple[
-        List[AbstractTransform], List[AbstractTransform]]:
+def get_tta_transforms(
+    num_tta_transforms: int,
+    inverse_boxes: bool = True,
+    inverse_masks: bool = False,
+    inverse_seg: bool = False,
+) -> Tuple[List[AbstractTransform], List[AbstractTransform]]:
     """
     Get tta transformations
 
@@ -37,22 +41,26 @@ def get_tta_transforms(num_tta_transforms: int, seg: bool = True) -> Tuple[
     """
     transforms = [NoOp()]
     inverse_transforms = [NoOp()]
-    mirror_keys = ["data"]
-    pred_mirror_keys = ["pred_seg"] if seg else ["pred_seg"]
-    boxes_mirror_keys = ["pred_boxes"]
 
+    mirror_keys = ["data"]
+    box_mirror_keys = ["pred_boxes"] if inverse_boxes else ()
+    mask_mirror_keys = ["pred_masks"] if inverse_masks else ()
+    seg_mirror_keys = ["pred_seg"] if inverse_seg else ()
+
+    inverese_kwargs = {
+        "box_keys": box_mirror_keys,
+        "mask_keys": mask_mirror_keys,
+        "keys": seg_mirror_keys,
+    }
     if num_tta_transforms >= 4:
         logger.info("Adding 2D Mirror TTA for prediction.")
         transforms.append(Mirror(keys=mirror_keys, dims=(0,)))
         transforms.append(Mirror(keys=mirror_keys, dims=(1,)))
         transforms.append(Mirror(keys=mirror_keys, dims=(0, 1)))
 
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(0,)))
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(1,)))
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(0, 1)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(0,)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(1,)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(0, 1)))
 
     if num_tta_transforms >= 8:
         logger.info("Adding 3D Mirror TTA for prediction.")
@@ -61,21 +69,18 @@ def get_tta_transforms(num_tta_transforms: int, seg: bool = True) -> Tuple[
         transforms.append(Mirror(keys=mirror_keys, dims=(1, 2)))
         transforms.append(Mirror(keys=mirror_keys, dims=(0, 1, 2)))
 
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(2,)))
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(0, 2)))
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(1, 2)))
-        inverse_transforms.append(Mirror(keys=pred_mirror_keys,
-                                         box_keys=boxes_mirror_keys, dims=(0, 1, 2)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(2,)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(0, 2)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(1, 2)))
+        inverse_transforms.append(Mirror(**inverese_kwargs, dims=(0, 1, 2)))
     return transforms, inverse_transforms
 
 
 class Inference2D(AbstractTransform):
-    def __init__(self,
-                 keys: Sequence[str],
-                 ):
+    def __init__(
+        self,
+        keys: Sequence[str],
+    ):
         """
         Helper transform to run inference with 2d models
 

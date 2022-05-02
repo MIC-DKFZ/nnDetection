@@ -5,13 +5,13 @@ from pathlib import Path
 import numpy as np
 from sklearn.model_selection import GroupKFold
 
-from nndet.utils.check import env_guard
 from nndet.io import get_case_ids_from_dir, save_pickle
+from nndet.utils.check import env_guard
 
 
 @env_guard
 def main():
-    det_data_dir = Path(os.getenv('det_data'))
+    det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / "Task019FG_ADAM"
 
     target_label_dir = task_data_dir / "raw_splitted" / "labelsTr"
@@ -26,16 +26,18 @@ def main():
 
     splits = []
     kfold = GroupKFold(n_splits=5)
-    for i, (train_idx, test_idx) in enumerate(kfold.split(case_ids, groups=case_ids_pat)):
+    for i, (train_idx, test_idx) in enumerate(
+        kfold.split(case_ids, groups=case_ids_pat)
+    ):
         train_keys = np.array(case_ids)[train_idx]
         test_keys = np.array(case_ids)[test_idx]
 
         splits.append(OrderedDict())
-        splits[-1]['train'] = train_keys
-        splits[-1]['val'] = test_keys
+        splits[-1]["train"] = train_keys
+        splits[-1]["val"] = test_keys
         print(f"Generated split: {splits[-1]}")
     save_pickle(splits, splits_file)
-   
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

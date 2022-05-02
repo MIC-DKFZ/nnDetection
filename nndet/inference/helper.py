@@ -13,33 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import os
 from pathlib import Path
-from typing import Sequence, List, Dict, Callable, Optional
+from typing import Callable, Optional, Sequence
 
 import numpy as np
 from loguru import logger
 
-from nndet.utils.tensor import to_numpy
-from nndet.io.load import load_pickle, save_pickle
-from nndet.io.paths import Pathlike, get_case_id_from_path
-from nndet.inference.loading import load_final_model
+from nndet.io.load import load_pickle
+from nndet.utils.info import maybe_verbose_iterable
 
 
 def predict_dir(
-    source_dir: Pathlike,
-    target_dir: Pathlike,
+    source_dir: os.PathLike,
+    target_dir: os.PathLike,
     cfg: dict,
     plan: dict,
     source_models: Path,
-    model_fn: Callable[[Path, dict, dict, int], Sequence[dict]] = load_final_model,
+    model_fn: Callable[[Path, dict, dict, int], Sequence[dict]],
     num_models: int = None,
     num_tta_transforms: int = None,
     restore: bool = False,
     case_ids: Optional[Sequence[str]] = None,
     save_state: bool = False,
-    **kwargs
-    ):
+    **kwargs,
+):
     """
     Predict all preprocessed(!) cases inside a directory
 
@@ -76,7 +74,7 @@ def predict_dir(
     )
 
     if case_ids is None:
-        case_paths = list(source_dir.glob('*.npz'))
+        case_paths = list(source_dir.glob("*.npz"))
         case_paths = [cp for cp in case_paths if "_gt.npz" not in str(cp)]
     else:
         case_paths = [source_dir / f"{cid}.npz" for cid in case_ids]
@@ -84,28 +82,64 @@ def predict_dir(
 
     for idx, path in enumerate(case_paths, start=1):
         logger.info(f"Predicting case {idx} of {len(case_paths)}.")
-        case_id = get_case_id_from_path(str(path), remove_modality=False)
+        case_id = path.stem
         if path.is_file():
-            case = np.load(str(path), allow_pickle=True)['data']
+            case = np.load(str(path), allow_pickle=True)["data"]
         else:
             case = np.load(str(path)[:-4] + ".npy", allow_pickle=True)
         properties = load_pickle(path.parent / f"{case_id}.pkl")
         properties["transpose_backward"] = plan["transpose_backward"]
 
         if save_state:
-            _ = predictor.predict_case({"data": case},
-                                       properties,
-                                       save_dir=target_dir,
-                                       case_id=case_id,
-                                       restore=restore,
-                                       )
+            _ = predictor.predict_case(
+                {"data": case},
+                properties,
+                save_dir=target_dir,
+                case_id=case_id,
+                restore=restore,
+            )
         else:
-            result = predictor.predict_case({"data": case},
-                                            properties,
-                                            save_dir=None,
-                                            case_id=None,
-                                            restore=restore,
-                                            )
-            for key, item in to_numpy(result).items():
-                save_pickle(item, target_dir / f"{case_id}_{key}.pkl")
+            result = predictor.predict_case(
+                {"data": case},
+                properties,
+                save_dir=None,
+                case_id=None,
+                restore=restore,
+            )
+            predictor.save_case(
+                result=result,
+                target_dir=target_dir,
+                case_id=case_id,
+            )
     return predictor
+
+
+def extract_results(
+    source_dir: os.PathLike,
+    target_dir: os.PathLike,
+    ensembler_cls: Callable,
+    restore: bool,
+    **params,
+) -> None:
+    """
+    Compute case result from ensembler and save it
+
+    Args:
+        source_dir: directory which contains the saved predictions/state from
+            the ensembler class
+        target_dir: directory to save results
+        ensembler_cls: ensembler class for prediction
+        restore: if true, the results are converted into the opriginal image
+            space
+    """
+    Path(target_dir).mkdir(parents=True, exist_ok=True)
+    for case_id in maybe_verbose_iterable(ensembler_cls.get_case_ids(source_dir)):
+        ensembler = ensembler_cls.from_checkpoint(base_dir=source_dir, case_id=case_id)
+        ensembler.update_parameters(**params)
+
+        pred = ensembler.get_case_result(restore=restore)
+        ensembler.save_result(
+            data=pred,
+            target_dir=Path(target_dir),
+            case_name=case_id,
+        )

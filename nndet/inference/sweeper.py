@@ -14,29 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-import time
-from typing import Callable, Tuple, Dict, Sequence, Any, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
 
 import numpy as np
 from loguru import logger
 
-from nndet.io.paths import Pathlike
-from nndet.io.load import save_json
-from nndet.utils.info import maybe_verbose_iterable
-from nndet.utils import to_numpy
+from nndet.evaluator.det import MaskEvaluator
 from nndet.evaluator.registry import BoxEvaluator
+from nndet.io.load import save_json
+from nndet.io.transforms.instances import instances_to_binary_masks_np
+from nndet.utils import to_numpy
+from nndet.utils.info import maybe_verbose_iterable
 
 
 class Sweeper(ABC):
-    def __init__(self,
-                 classes: Sequence[str],
-                 pred_dir: Pathlike,
-                 gt_dir: Pathlike,
-                 target_metric: str,
-                 save_dir: Optional[Pathlike] = None,
-                 ):
+    evaluator_cls = None
+
+    def __init__(
+        self,
+        classes: Sequence[str],
+        pred_dir: os.PathLike,
+        gt_dir: os.PathLike,
+        target_metric: str,
+        save_dir: Optional[os.PathLike] = None,
+    ):
         """
         Sweep multiple parameters and compute evaluation metrics
         to determine the best set of parameters
@@ -58,9 +63,10 @@ class Sweeper(ABC):
         self.gt_dir = Path(gt_dir)
 
     @abstractmethod
-    def run_postprocessing_sweep(self,
-                                 restore: bool = True,
-                                 ) -> Tuple[Dict, Dict]:
+    def run_postprocessing_sweep(
+        self,
+        restore: bool = True,
+    ) -> Tuple[Dict, Dict]:
         """
         Run parameter sweeps to determine best parameters
         accoring to target metric
@@ -76,33 +82,35 @@ class Sweeper(ABC):
 
 
 class BoxSweeper(Sweeper):
-    def __init__(self,
-                 classes: Sequence[str],
-                 pred_dir: Pathlike,
-                 gt_dir: Pathlike,
-                 target_metric: str,
-                 ensembler_cls: Callable,
-                 save_dir: Optional[Pathlike] = None,
-                 ) -> None:
+    evaluator_cls = BoxEvaluator
+
+    def __init__(
+        self,
+        classes: Sequence[str],
+        pred_dir: os.PathLike,
+        gt_dir: os.PathLike,
+        target_metric: str,
+        ensembler_cls: Callable,
+        save_dir: Optional[os.PathLike] = None,
+    ) -> None:
         """
         Run sweep over parameters and select the best
 
         Args:
-            classes: classes present in dataset 
+            classes: classes present in dataset
             pred_dir: directory where predictions are saved
             gt_dir: directory where ground truth is saved
             target_metric: metric to optimize
             ensembler_cls: ensembler class used during prediction
             save_dir: Directory to save results. Defaults to None.
         """
-        super().__init__(classes=classes,
-                         pred_dir=pred_dir,
-                         gt_dir=gt_dir,
-                         target_metric=target_metric,
-                         save_dir=save_dir,
-                         )
-
-        self.evaluator_cls = BoxEvaluator
+        super().__init__(
+            classes=classes,
+            pred_dir=pred_dir,
+            gt_dir=gt_dir,
+            target_metric=target_metric,
+            save_dir=save_dir,
+        )
         self.ensembler_cls = ensembler_cls
 
     def run_postprocessing_sweep(self):
@@ -117,35 +125,44 @@ class BoxSweeper(Sweeper):
         """
         state, sweep_params = self.ensembler_cls.sweep_parameters()
         num_cases = self.ensembler_cls.get_case_ids(self.pred_dir)
-        logger.info(f"Running parameter sweep on {num_cases} cases to optimize "
-                    f"{self.target_metric} with initial state {state}.")
+        logger.info(
+            f"Running parameter sweep on {num_cases} cases to optimize "
+            f"{self.target_metric} with initial state {state}."
+        )
 
-        best_score = float('-inf')
+        best_score = float("-inf")
+        tic = time.perf_counter()
         for param_name, values in sweep_params.items():
             best_value, _best_score = self.run_parameter(
                 values=values,
                 param_name=param_name,
                 state=state,
-                )
+            )
             state[param_name] = best_value
 
             if _best_score < best_score:
-                logger.error("ERROR: Something went wrong during sweeping. "
-                             "Results were modified inplace! "
-                             f"Previous: {best_score} now {_best_score}")
+                logger.error(
+                    "ERROR: Something went wrong during sweeping. "
+                    "Results were modified inplace! "
+                    f"Previous: {best_score} now {_best_score}"
+                )
             best_score = _best_score
-
-        logger.info(f"\n\n Determined {state} with best sweeping score {best_score} {self.target_metric}\n\n")
+        toc = time.perf_counter()
+        logger.info(
+            f"\n\n Determined {state} with best sweeping score {best_score} {self.target_metric}\n\n"
+        )
+        logger.info(f"Sweep took {toc - tic} s total")
         return state
 
-    def run_parameter(self,
-                      values: Sequence[Any],
-                      param_name: str,
-                      state: Dict[str, Any],
-                      ):
+    def run_parameter(
+        self,
+        values: Sequence[Any],
+        param_name: str,
+        state: Dict[str, Any],
+    ):
         """
         Evaluate parameters and select the best
-        
+
         Args:
             values: values to evaluate
             param_name: name of parameter
@@ -164,21 +181,25 @@ class BoxSweeper(Sweeper):
             }
             cache.append(metric_scores[self.target_metric])
             toc = time.perf_counter()
-            logger.info(f"Sweep took {toc - tic} s")
+            logger.info(f"Sweep param took {toc - tic} s")
 
         best_idx = np.argmax(cache)
         best_value = values[best_idx]
         best_score = cache[best_idx]
 
         if self.save_dir is not None:
-            overview[f"best_{param_name}"] = {"value": str(best_value), "score": str(best_score)}
+            overview[f"best_{param_name}"] = {
+                "value": str(best_value),
+                "score": str(best_score),
+            }
             save_json(overview, self.save_dir / f"sweep_{param_name}.json")
         return best_value, best_score
 
-    def _evaluate_value(self,
-                        state: Dict[str, Any],
-                        **overwrite,
-                        ):
+    def _evaluate_value(
+        self,
+        state: Dict[str, Any],
+        **overwrite,
+    ):
         """
         Evalaute a single value
 
@@ -189,30 +210,104 @@ class BoxSweeper(Sweeper):
         Returns:
             Dict: scalar metrics
         """
-        evaluator = self.evaluator_cls.create(classes=self.classes,
-                                              fast=True,
-                                              verbose=False,
-                                              save_dir=None,
-                                              )
+        evaluator = self.evaluator_cls.create(
+            classes=self.classes,
+            fast=True,
+            verbose=False,
+            save_dir=None,
+        )
 
-        for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
+        for case_id in maybe_verbose_iterable(
+            self.ensembler_cls.get_case_ids(self.pred_dir)
+        ):
             ensembler = self.ensembler_cls.from_checkpoint(
-                base_dir=self.pred_dir, case_id=case_id, device=self.device,
-                )
+                base_dir=self.pred_dir,
+                case_id=case_id,
+                device=self.device,
+            )
             ensembler.update_parameters(**state)
             ensembler.update_parameters(**overwrite)
 
             pred = to_numpy(ensembler.get_case_result(restore=False))
-            gt = np.load(str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
+            gt = np.load(
+                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
+            )
 
             evaluator.run_online_evaluation(
-                pred_boxes=[pred["pred_boxes"]], pred_classes=[pred["pred_labels"]],
-                pred_scores=[pred["pred_scores"]], gt_boxes=[gt["boxes"]],
-                gt_classes=[gt["classes"]], gt_ignore=None,
+                pred_boxes=[pred["pred_boxes"]],
+                pred_classes=[pred["pred_labels"]],
+                pred_scores=[pred["pred_scores"]],
+                gt_boxes=[gt["boxes"]],
+                gt_classes=[gt["classes"]],
+                gt_ignore=None,
             )
 
         metric_scores, _ = evaluator.finish_online_evaluation()
         return metric_scores
 
 
-SweeperType = TypeVar('SweeperType', bound=Sweeper)
+class MaskSweeper(BoxSweeper):
+    evaluator_cls = MaskEvaluator
+
+    def _evaluate_value(
+        self,
+        state: Dict[str, Any],
+        **overwrite,
+    ):
+        """
+        Evalaute a single value
+
+        Args:
+            state: state for ensembler
+            overwrite: state overwrites
+
+        Returns:
+            Dict: scalar metrics
+        """
+        evaluator = self.evaluator_cls.create(
+            classes=self.classes,
+            fast=True,
+            verbose=False,
+            save_dir=None,
+        )
+
+        for case_id in maybe_verbose_iterable(
+            self.ensembler_cls.get_case_ids(self.pred_dir)
+        ):
+            ensembler = self.ensembler_cls.from_checkpoint(
+                base_dir=self.pred_dir,
+                case_id=case_id,
+                device=self.device,
+            )
+            ensembler.update_parameters(**state)
+            ensembler.update_parameters(**overwrite)
+
+            pred = to_numpy(ensembler.get_case_result(restore=False))
+            gt = np.load(
+                str(self.gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
+            )
+            # FIXME
+            gt_boxes = np.load(
+                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
+            )
+
+            pred_masks = pred["pred_masks"]
+            if gt["instances"].ndim < (pred_masks.ndim - 1):
+                gt_instances = gt["instances"][None]
+            else:
+                gt_instances = gt["instances"]
+
+            evaluator.run_online_evaluation(
+                pred_boxes=[pred_masks],
+                pred_classes=[pred["pred_labels"]],
+                pred_scores=[pred["pred_scores"]],
+                gt_boxes=[instances_to_binary_masks_np(gt_instances)],
+                gt_classes=[gt_boxes["classes"]],  # FIXME
+                gt_ignore=None,
+            )
+
+        metric_scores, _ = evaluator.finish_online_evaluation()
+        return metric_scores
+
+
+SweeperType = TypeVar("SweeperType", bound=Sweeper)

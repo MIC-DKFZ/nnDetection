@@ -15,11 +15,8 @@ limitations under the License.
 """
 
 import os
-
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
-
-Pathlike = Union[Path, str]
 
 
 def subfiles(dir_path: Path, identifier: str, join: bool) -> List[str]:
@@ -40,9 +37,9 @@ def subfiles(dir_path: Path, identifier: str, join: bool) -> List[str]:
     return paths
 
 
-def get_paths_raw_to_split(data_dir: Path, output_dir: Path,
-                           subdirs: tuple = ("imagesTr", "imagesTs")) -> Tuple[
-        List[Path], List[Path]]:
+def get_paths_raw_to_split(
+    data_dir: Path, output_dir: Path, subdirs: tuple = ("imagesTr", "imagesTs")
+) -> Tuple[List[Path], List[Path]]:
     """
     Search subdirs for all *.nii.gz files which need to be splitted and
     create lists with source and target paths of all files
@@ -65,8 +62,8 @@ def get_paths_raw_to_split(data_dir: Path, output_dir: Path,
             sub_output_dir.mkdir(parents=True)
 
         sub_data_dir = data_dir / subdir
-        nii_files = list(sub_data_dir.glob('*.nii.gz'))
-        nii_files = list(filter(lambda x: not x.name.startswith('.'), nii_files))
+        nii_files = list(sub_data_dir.glob("*.nii.gz"))
+        nii_files = list(filter(lambda x: not x.name.startswith("."), nii_files))
         nii_files.sort()
         for n in nii_files:
             source_files.append(n)
@@ -80,7 +77,7 @@ def get_paths_from_splitted_dir(
     test: bool = False,
     labels: bool = True,
     remove_ids: Optional[Sequence[str]] = None,
-    ) -> List[List[Path]]:
+) -> List[List[Path]]:
     """
     Create list to all cases (data and label; label is at last position) inside splitted data dir
 
@@ -101,7 +98,7 @@ def get_paths_from_splitted_dir(
     training_ids = get_case_ids_from_dir(
         splitted_4d_output_dir / data_subdir,
         remove_modality=True,
-        )
+    )
     if remove_ids is not None:
         training_ids = [t for t in training_ids if t not in remove_ids]
 
@@ -112,16 +109,23 @@ def get_paths_from_splitted_dir(
 
         for mod in range(num_modalities):
             case_paths.append(
-                splitted_4d_output_dir / data_subdir / f"{case_id}_{mod:04d}.nii.gz")
+                splitted_4d_output_dir / data_subdir / f"{case_id}_{mod:04d}.nii.gz"
+            )
         if labels:
-            case_paths.append((splitted_4d_output_dir / labels_subdir) / f"{case_id}.nii.gz")
+            case_paths.append(
+                (splitted_4d_output_dir / labels_subdir) / f"{case_id}.nii.gz"
+            )
         all_cases.append(case_paths)
     return all_cases
 
 
-def get_case_ids_from_dir(dir_path: Path, unique: bool = True,
-                          remove_modality: bool = True, join: bool = False,
-                          pattern="*.nii.gz") -> List[str]:
+def get_case_ids_from_dir(
+    dir_path: Path,
+    unique: bool = True,
+    remove_modality: bool = True,
+    join: bool = False,
+    pattern="*.nii.gz",
+) -> List[str]:
     """
     Get all case ids from a single folder
 
@@ -136,7 +140,9 @@ def get_case_ids_from_dir(dir_path: Path, unique: bool = True,
         List[str]: all case ids inside the folder
     """
     files = map(str, list(Path(dir_path).glob(pattern)))
-    case_ids = [get_case_id_from_path(f, remove_modality=remove_modality) for f in files]
+    case_ids = [
+        get_case_id_from_path(f, remove_modality=remove_modality) for f in files
+    ]
     if unique:
         case_ids = list(set(case_ids))
     if join:
@@ -144,7 +150,7 @@ def get_case_ids_from_dir(dir_path: Path, unique: bool = True,
     return case_ids
 
 
-def get_case_id_from_path(file_path: Pathlike, remove_modality: bool = True) -> str:
+def get_case_id_from_path(file_path: os.PathLike, remove_modality: bool = True) -> str:
     """
     Get case of from path to file
 
@@ -171,13 +177,19 @@ def get_case_id_from_file(file_name: str, remove_modality: bool = True) -> str:
     Returns:
         str: name of file without ending
     """
-    file_name = file_name.split('.')[0]
+    if file_name.endswith(".nii.gz"):
+        file_name = file_name.rsplit(".", 2)[0]
+    else:
+        file_name = file_name.rsplit(".", 1)[0]
+
     if remove_modality:
         file_name = file_name[:-5]
     return file_name
 
 
-def get_task(task_id: str, name: bool = False, models: bool = False) -> Union[Path, str]:
+def get_task(
+    task_id: str, name: bool = False, models: bool = False
+) -> Union[Path, str]:
     """
     Resolve task name/dir
 
@@ -198,8 +210,10 @@ def get_task(task_id: str, name: bool = False, models: bool = False) -> Union[Pa
     else:
         t = os.getenv("det_data")
     if t is None:
-        raise ValueError("Framework not configured correctly! "
-                         "Please set `det_data` and `det_models` as environment variables!")
+        raise ValueError(
+            "Framework not configured correctly! "
+            "Please set `det_data` and `det_models` as environment variables!"
+        )
     det_data = Path(t)
     all_tasks = [d.stem for d in det_data.iterdir() if d.is_dir() and "Task" in d.name]
 
@@ -208,8 +222,8 @@ def get_task(task_id: str, name: bool = False, models: bool = False) -> Union[Pa
     all_tasks = [tn[4:] for tn in all_tasks]
 
     task_options_exact = [d for d in all_tasks if task_id in d]
-    task_number_id = [tn for tn in all_tasks if tn.split('_', 1)[0] == task_id]
-    task_name_id = [tn for tn in all_tasks if tn.split('_', 1)[1] == task_id]
+    task_number_id = [tn for tn in all_tasks if tn.split("_", 1)[0] == task_id]
+    task_name_id = [tn for tn in all_tasks if tn.split("_", 1)[1] == task_id]
 
     if len(task_options_exact) == 1:
         result = det_data / f"Task{task_options_exact[0]}"
@@ -218,14 +232,13 @@ def get_task(task_id: str, name: bool = False, models: bool = False) -> Union[Pa
     elif len(task_name_id) == 1:
         result = det_data / f"Task{task_name_id[0]}"
     else:
-        raise ValueError(f"Did not find task id {task_id}."
-                         f"Options are: {all_tasks}")
+        raise ValueError(f"Did not find task id {task_id}." f"Options are: {all_tasks}")
     if name:
         result = result.stem
     return result
 
 
-def get_training_dir(model_dir: Pathlike, fold: int) -> Path:
+def get_training_dir(model_dir: os.PathLike, fold: int) -> Path:
     """
     Find training dir from a specific model dir
 
@@ -242,4 +255,6 @@ def get_training_dir(model_dir: Pathlike, fold: int) -> Path:
     if len(candidates) == 1:
         return candidates[0]
     else:
-        raise ValueError(f"Found wrong number of training dirs {candidates} in {model_dir}")
+        raise ValueError(
+            f"Found wrong number of training dirs {candidates} in {model_dir}"
+        )

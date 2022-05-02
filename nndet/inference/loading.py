@@ -17,13 +17,10 @@ limitations under the License.
 import os
 from functools import partial
 from pathlib import Path
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import torch
 from loguru import logger
-
-from nndet.ptmodule import MODULE_REGISTRY
-from nndet.io.paths import Pathlike
 
 
 def get_loader_fn(mode: str, **kwargs):
@@ -34,7 +31,7 @@ def get_loader_fn(mode: str, **kwargs):
     return load_fn
 
 
-def get_latest_model(base_dir: Pathlike, fold: int = 0) -> Optional[Path]:
+def get_latest_model(base_dir: os.PathLike, fold: int = 0) -> Optional[Path]:
     """
     Get the latest training dir in a given base dir
     E.g. ../RetinaUNetV0/fold0__0, ../RetinaUNetV0/fold0__1
@@ -63,7 +60,7 @@ def load_final_model(
     plan: dict,
     num_models: int = 1,
     identifier: str = "last",
-    ) -> Sequence[dict]:
+) -> Sequence[dict]:
     """
     Load final model from training
 
@@ -80,34 +77,49 @@ def load_final_model(
             `model`: loaded model
             `rank`: rank is always 0
     """
-    assert num_models == 1, f"load_final_model only supports num_models=1, found {num_models}"
+    from nndet.ptmodule import MODULE_REGISTRY
+
+    assert (
+        num_models == 1
+    ), f"load_final_model only supports num_models=1, found {num_models}"
     logger.info(f"Loading {identifier} model")
 
-    model_names = list(source_models.glob('*.ckpt'))
+    model_names = list(source_models.glob("*.ckpt"))
+    if not model_names:
+        logger.info(
+            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
+        )
+        model_names = list(source_models.glob("*.model"))
+        if model_names:
+            logger.info("Found models with '.model' ending.")
+
     model_names = [m for m in model_names if identifier in str(m.stem)]
-    assert len(model_names) == 1, f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
+    assert (
+        len(model_names) == 1
+    ), f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
 
     path = model_names[0]
     model = MODULE_REGISTRY[cfg["module"]](
         model_cfg=cfg["model_cfg"],
         trainer_cfg=cfg["trainer_cfg"],
         plan=plan,
-        )
-    state_dict = torch.load(path, map_location="cpu")["state_dict"]
-    t = model.load_state_dict(state_dict)
-    logger.info(f"Loaded {path} with {t}")
+    )
+    checkpoint = torch.load(path, map_location="cpu")
+    t = model.load_state_dict(checkpoint["state_dict"])
+    epoch = checkpoint.get("epoch")
+    logger.info(f"Loaded {path}  from epoch {epoch} with {t}")
     model.float()
     model.eval()
     return [{"model": model, "rank": 0}]
 
 
 def load_all_models(
-    source_models: Path, 
-    cfg: dict, 
+    source_models: Path,
+    cfg: dict,
     plan: dict,
-    *args, 
+    *args,
     **kwargs,
-    ):
+):
     """
     Load all models to ensemble
 
@@ -123,7 +135,17 @@ def load_all_models(
             `model`: loaded model
             `rank`: rank of model
     """
-    model_names = list(source_models.glob('*.ckpt'))
+    from nndet.ptmodule import MODULE_REGISTRY
+
+    model_names = list(source_models.glob("*.ckpt"))
+    if not model_names:
+        logger.info(
+            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
+        )
+        model_names = list(source_models.glob("*.model"))
+        if model_names:
+            logger.info("Found models with '.model' ending.")
+
     if not model_names:
         raise RuntimeError(f"Did not find any models in {source_models}")
     logger.info(f"Found {len(model_names)} models to ensemble")
@@ -134,10 +156,12 @@ def load_all_models(
             model_cfg=cfg["model_cfg"],
             trainer_cfg=cfg["trainer_cfg"],
             plan=plan,
-            )
-        state_dict = torch.load(path, map_location="cpu")["state_dict"]
-        t = model.load_state_dict(state_dict)
-        logger.info(f"Loaded {path} with {t}")
+        )
+
+        checkpoint = torch.load(path, map_location="cpu")
+        t = model.load_state_dict(checkpoint["state_dict"])
+        epoch = checkpoint.get("epoch")
+        logger.info(f"Loaded {path} from epoch {epoch} with {t}")
         model.float()
         model.eval()
         models.append({"model": model.cpu()})

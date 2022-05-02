@@ -14,10 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Sequence, List
 from abc import ABC, abstractmethod
+from typing import List, Sequence
 
 import numpy as np
+from batchgenerators.transforms.abstract_transforms import Compose
+
+
+class ComposePretty(Compose):
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s
 
 
 def get_patch_size(
@@ -26,7 +36,7 @@ def get_patch_size(
     rot_y: float,
     rot_z: float,
     scale_range: Sequence[float],
-    ) -> np.ndarray:
+) -> np.ndarray:
     """
     Compute enlarged patch size for augmentations to reduce
     artifacts at the borders before final cropping
@@ -48,38 +58,48 @@ def get_patch_size(
     if isinstance(rot_z, (tuple, list)):
         rot_z = max(np.abs(rot_z))
 
-    rot_x = min(90 / 360 * 2. * np.pi, rot_x)
-    rot_y = min(90 / 360 * 2. * np.pi, rot_y)
-    rot_z = min(90 / 360 * 2. * np.pi, rot_z)
+    rot_x = min(90 / 360 * 2.0 * np.pi, rot_x)
+    rot_y = min(90 / 360 * 2.0 * np.pi, rot_y)
+    rot_z = min(90 / 360 * 2.0 * np.pi, rot_z)
 
-    from batchgenerators.augmentations.utils import rotate_coords_3d, rotate_coords_2d
+    from batchgenerators.augmentations.utils import rotate_coords_2d, rotate_coords_3d
+
     coords = np.array(patch_size)
     final_shape = np.copy(coords)
     if len(coords) == 3:
-        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, rot_x, 0, 0)), final_shape)), 0)
-        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, 0, rot_y, 0)), final_shape)), 0)
-        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, 0, 0, rot_z)), final_shape)), 0)
+        final_shape = np.max(
+            np.vstack((np.abs(rotate_coords_3d(coords, rot_x, 0, 0)), final_shape)), 0
+        )
+        final_shape = np.max(
+            np.vstack((np.abs(rotate_coords_3d(coords, 0, rot_y, 0)), final_shape)), 0
+        )
+        final_shape = np.max(
+            np.vstack((np.abs(rotate_coords_3d(coords, 0, 0, rot_z)), final_shape)), 0
+        )
     elif len(coords) == 2:
-        final_shape = np.max(np.vstack((np.abs(rotate_coords_2d(coords, rot_x)), final_shape)), 0)
+        final_shape = np.max(
+            np.vstack((np.abs(rotate_coords_2d(coords, rot_x)), final_shape)), 0
+        )
     final_shape /= min(scale_range)
     return final_shape.astype(np.int32)
 
 
 class AugmentationSetup(ABC):
-    def __init__(self, 
-                 patch_size: Sequence[int],
-                 params: dict,
-                 ) -> None:
+    def __init__(
+        self,
+        patch_size: Sequence[int],
+        params: dict,
+    ) -> None:
         """
         Helper class for augmenation setup
 
         Args:
             patch_size: output patch size of augmentations
             params: augmentation parameters
-        
+
         Notes:
             The needed keys of :attr:`params` depend on the exact
-            transformations which should be used. 
+            transformations which should be used.
         """
         self.patch_size = patch_size
         self.params = params
@@ -105,10 +125,12 @@ class AugmentationSetup(ABC):
         Compute patch size to extract from volume to avoid augmentation
         artifacts
         """
-        return list(get_patch_size(
-            patch_size=self.patch_size,
-            rot_x=self.params['rotation_x'],
-            rot_y=self.params['rotation_y'],
-            rot_z=self.params['rotation_z'],
-            scale_range=self.params['scale_range'],
-        ))
+        return list(
+            get_patch_size(
+                patch_size=self.patch_size,
+                rot_x=self.params["rotation_x"],
+                rot_y=self.params["rotation_y"],
+                rot_z=self.params["rotation_z"],
+                scale_range=self.params["scale_range"],
+            )
+        )

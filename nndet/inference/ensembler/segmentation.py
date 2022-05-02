@@ -16,10 +16,10 @@ limitations under the License.
 
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Sequence, Any
+from typing import Any, Dict, Optional, Sequence, Tuple
 
-import torch
 import numpy as np
+import torch
 from loguru import logger
 from scipy.ndimage import gaussian_filter
 from torch import Tensor
@@ -33,11 +33,12 @@ class SegmentationEnsembler(BaseEnsembler):
     ID = "seg"
 
     @experimental
-    def __init__(self,
-                 seg_key: str = 'pred_seg',
-                 data_key: str = 'data',
-                 **kwargs,
-                 ):
+    def __init__(
+        self,
+        seg_key: str = "pred_seg",
+        data_key: str = "data",
+        **kwargs,
+    ):
         """
         Ensemble segmentation predictions from tta and model ensembling
 
@@ -59,60 +60,84 @@ class SegmentationEnsembler(BaseEnsembler):
         self.cache_crop_weight: Dict[Tuple, torch.Tensor] = {}
 
     @classmethod
-    def from_case(cls,
-                  case: Dict,
-                  properties: Dict,
-                  parameters: Optional[Dict] = None,
-                  seg_key: str = 'pred_seg',
-                  data_key: str = 'data',
-                  **kwargs,
-                  ):
+    def constructor(
+        cls,
+        parameters: Optional[Dict] = None,
+        seg_key: str = "pred_seg",
+        data_key: str = "data",
+        **kwargs,
+    ):
         """
-        Primary way to instantiate this class. Automatically extracts all
+        Get a contructor for this class. Automatically extracts all
         properties and uses a default set of parameters for ensembling.
 
         Args:
-            case: case which is predicted.
             mode: operation mode of ensembler (defines which network was used)
                 e.g. '2d' | '3d'
-            properties: Additional properties.
-                Required keys:
-                    `transpose_backward`
-                    `spacing_after_resampling`
-                    `crop_bbox`
             parameters: Additional parameters. Defaults to None.
             seg_key: key where segmentation is located inside prediction dict
             data_key: key where data is located inside batch dict
+
+        Returns:
+            Callable: callable to isntantiate ensembler class with two
+                input variable:
+                    `case`: input data from case (e.g. 'data' to extract shape
+                        information)
+                    `properties`: additional properties of case
+                        Required keys:
+                            `transpose_backward`
+                            `spacing_after_resampling`
+                            `crop_bbox`
+                            `original_size_of_raw_data`
+                            `itk_origin`
+                            `itk_spacing`
+                            `itk_direction`
+            str: identifier of ensembler class. This needs to be used as the
+                key when construction the ensembler dict for the predictor!
         """
-        parameters = parameters if parameters is not None else {}
-        _parameters = {"use_gaussian": True, "argmax": True}
-        _parameters.update(parameters)
 
-        _properties = {
-            "shape": case[data_key].shape[1:],  # remove channel dim
-            "transpose_backward": properties["transpose_backward"],
-            "original_spacing": properties["original_spacing"],
-            "spacing_after_resampling": properties["spacing_after_resampling"],
-            "crop_bbox": properties["crop_bbox"],
-            "size_after_cropping": properties["size_after_cropping"],
-            "original_size_before_cropping": properties["original_size_of_raw_data"],
-            "itk_origin": properties["itk_origin"],
-            "itk_spacing": properties["itk_spacing"],
-            "itk_direction": properties["itk_direction"],
-        }
+        def create(
+            case: Dict,
+            properties: Dict,
+            *args,
+            **kwargs2,
+        ):
+            _parameters = parameters if parameters is not None else {}
+            init_parameters = {"use_gaussian": True, "argmax": True}
+            init_parameters.update(_parameters)
 
-        return cls(
-            properties=_properties,
-            parameters=_parameters,
-            seg_key=seg_key,
-            data_key=data_key,
-            **kwargs,
+            _properties = {
+                "shape": case[data_key].shape[1:],  # remove channel dim
+                "transpose_backward": properties["transpose_backward"],
+                "original_spacing": properties["original_spacing"],
+                "spacing_after_resampling": properties["spacing_after_resampling"],
+                "crop_bbox": properties["crop_bbox"],
+                "size_after_cropping": properties["size_after_cropping"],
+                "original_size_before_cropping": properties[
+                    "original_size_of_raw_data"
+                ],
+                "itk_origin": properties["itk_origin"],
+                "itk_spacing": properties["itk_spacing"],
+                "itk_direction": properties["itk_direction"],
+            }
+
+            return cls(
+                properties=_properties,
+                parameters=init_parameters,
+                seg_key=seg_key,
+                data_key=data_key,
+                *args,
+                **kwargs,
+                **kwargs2,
             )
 
-    def add_model(self,
-                  name: Optional[str] = None,
-                  model_weight: Optional[float] = None,
-                  ) -> str:
+        return create, cls.ID
+
+    def add_model(
+        self,
+        name: Optional[str] = None,
+        model_weight: Optional[float] = None,
+    ) -> str:
         """
         This functions signales the ensembler to add a new model for internal
         processing
@@ -162,11 +187,16 @@ class SegmentationEnsembler(BaseEnsembler):
         crops = batch["crop"]
 
         weight = self.get_weighting(tuple(seg_batch.shape[2:])).to(seg_batch)
-        seg_batch = seg_batch * weight[None].to(seg_batch) * self.model_weights[self.model_current]
+        seg_batch = (
+            seg_batch
+            * weight[None].to(seg_batch)
+            * self.model_weights[self.model_current]
+        )
 
         if self.model_results is None:
             self.model_results = torch.zeros(
-                (int(seg_batch.shape[1]), *self.properties["shape"])).to(seg_batch)
+                (int(seg_batch.shape[1]), *self.properties["shape"])
+            ).to(seg_batch)
 
         for seg, crop in zip(seg_batch, zip(*crops)):
             _weight = weight.clone()
@@ -185,7 +215,7 @@ class SegmentationEnsembler(BaseEnsembler):
             Sequence[slice]: crop in case to save segmentation
         """
         if len(crop) > self.model_results.ndim - 1:
-            crop = crop[-(self.model_results.ndim - 1):]
+            crop = crop[-(self.model_results.ndim - 1) :]
 
         crop_slicer = []
         case_slicer = []
@@ -193,9 +223,13 @@ class SegmentationEnsembler(BaseEnsembler):
             case_start = max(0, c.start)
             case_stop = min(self.model_results.shape[dim + 1], c.stop)
 
-            diff_stop = c.stop - self.model_results.shape[dim + 1]
-            crop_start = max(0, 0 - (c.start - 0))  # 0 added for completeness of pattern
-            crop_stop = min(seg.shape[dim + 1], seg.shape[dim + 1] - diff_stop)
+            crop_start = max(
+                0, 0 - (c.start - 0)
+            )  # 0 added for completeness of pattern
+            crop_stop = min(
+                seg.shape[dim + 1],
+                seg.shape[dim + 1] - (c.stop - self.model_results.shape[dim + 1]),
+            )
 
             crop_slicer.append(slice(crop_start, crop_stop, c.step))
             case_slicer.append(slice(case_start, case_stop, c.step))
@@ -214,18 +248,22 @@ class SegmentationEnsembler(BaseEnsembler):
         """
         if crop_size not in self.cache_crop_weight:
             if self.parameters["use_gaussian"]:
-                logger.info(f"Creating new gaussian weight matrix for crop size {crop_size}")
+                logger.info(
+                    f"Creating new gaussian weight matrix for crop size {crop_size}"
+                )
                 tmp = np.zeros(crop_size)
                 center_coords = [i // 2 for i in crop_size]
                 sigmas = [i // 8 for i in crop_size]
                 tmp[tuple(center_coords)] = 1
-                tmp_smooth = gaussian_filter(tmp, sigmas, 0, mode='constant', cval=0)
+                tmp_smooth = gaussian_filter(tmp, sigmas, 0, mode="constant", cval=0)
                 tmp_smooth = tmp_smooth / tmp_smooth.max() * 1
                 weighting = tmp_smooth + 1e-8
                 self.cache_crop_weight[crop_size] = torch.from_numpy(weighting).float()
             else:
                 logger.info(f"Creating new weight matrix for crop size {crop_size}")
-                self.cache_crop_weight[crop_size] = torch.ones(crop_size, dtype=torch.float)
+                self.cache_crop_weight[crop_size] = torch.ones(
+                    crop_size, dtype=torch.float
+                )
 
         return self.cache_crop_weight[crop_size]
 
@@ -242,24 +280,24 @@ class SegmentationEnsembler(BaseEnsembler):
         """
         _old_dtype = logit_maps.dtype
         logit_maps_np = restore_fmap(
-                fmap=logit_maps.detach().cpu().numpy(),
-                transpose_backward=self.properties["transpose_backward"],
-                original_spacing=self.properties["original_spacing"],
-                spacing_after_resampling=self.properties["spacing_after_resampling"],
-                original_size_before_cropping=self.properties["original_size_before_cropping"],
-                size_after_cropping=self.properties["size_after_cropping"],
-                crop_bbox=self.properties["crop_bbox"],
-                interpolation_order=1,
-                interpolation_order_z=0,
-                do_separate_z=None,
+            fmap=logit_maps.detach().cpu().numpy(),
+            transpose_backward=self.properties["transpose_backward"],
+            original_spacing=self.properties["original_spacing"],
+            spacing_after_resampling=self.properties["spacing_after_resampling"],
+            original_size_before_cropping=self.properties[
+                "original_size_before_cropping"
+            ],
+            size_after_cropping=self.properties["size_after_cropping"],
+            crop_bbox=self.properties["crop_bbox"],
+            interpolation_order=1,
+            interpolation_order_z=0,
+            do_separate_z=None,
         )
         logit_maps = torch.from_numpy(logit_maps_np).to(dtype=_old_dtype)
         return logit_maps
 
     @torch.no_grad()
-    def get_case_result(self,
-                        restore: bool = False, **kwargs
-                        ) -> Dict[str, Tensor]:
+    def get_case_result(self, restore: bool = False, **kwargs) -> Dict[str, Tensor]:
         """
         Get final result for case after ensembling and TTA
 
@@ -288,13 +326,14 @@ class SegmentationEnsembler(BaseEnsembler):
             "itk_origin": self.properties["itk_origin"],
             "itk_spacing": self.properties["itk_spacing"],
             "itk_direction": self.properties["itk_direction"],
-            }
+        }
 
-    def save_state(self,
-                   target_dir: Path,
-                   name: str,
-                   **kwargs,
-                   ):
+    def save_state(
+        self,
+        target_dir: Path,
+        name: str,
+        **kwargs,
+    ):
         """
         Save case result as pickle file. Identifier of ensembler will
         be added to the name

@@ -17,27 +17,28 @@ limitations under the License.
 """
 Don't use these. Next nnDetection Version will introduce better/fixed implementations.
 """
+from functools import reduce
+from typing import Callable, Optional, Sequence
+
 import torch
 import torch.nn as nn
-
-from typing import Sequence, Callable, Optional
-from functools import reduce 
 from loguru import logger
 
 from nndet.arch.conv import nd_pool
-from nndet.arch.conv import NdParam
+from nndet.utils.typing import ND_INT
 
 
-class ResBasic(nn.Module):
-    def __init__(self,
-                 conv: Callable,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: NdParam,
-                 stride: NdParam,
-                 padding: NdParam,
-                 attention: Optional[nn.Module] = None,
-                 ):
+class ResPlain(nn.Module):
+    def __init__(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        attention: Optional[nn.Module] = None,
+    ):
         """
         Build a plan residual block
         Zero init norm according to https://arxiv.org/abs/1706.02677
@@ -53,22 +54,37 @@ class ResBasic(nn.Module):
             attention: additional attention layer applied after convolutions
         """
         super().__init__()
-        logger.warning("ResidualBlock uses normal relu! This might not be "
-                       "desired if conv uses a different non linearity")
+        logger.warning(
+            "ResidualBlock uses normal relu! This might not be "
+            "desired if conv uses a different non linearity"
+        )
 
-        self.conv1 = conv(in_channels, out_channels, kernel_size=kernel_size,
-                          padding=padding, stride=stride)
-        self.conv2 = conv(out_channels, out_channels, kernel_size=kernel_size,
-                          padding=padding, relu=None)
+        self.conv1 = conv(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        )
+        self.conv2 = conv(
+            out_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            add_act=False,
+        )
         self.relu = nn.ReLU(inplace=True)
 
-        stride_prod = (reduce((lambda x, y: x * y), stride)
-                       if isinstance(stride, Sequence) else stride)
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
-                conv(in_channels, out_channels, kernel_size=1, relu=None),
-                )
+                conv(in_channels, out_channels, kernel_size=1, add_act=False),
+            )
         else:
             self.shortcut = None
 
@@ -101,21 +117,22 @@ class ResBasic(nn.Module):
     def init_weights(self) -> None:
         try:
             torch.nn.init.zeros_(self.conv2.norm.weight)
-        except:
+        except BaseException:
             logger.info(f"Zero init of last norm layer {self.conv2.norm} failed")
 
 
 class ResBottleneck(nn.Module):
-    def __init__(self,
-                 conv: Callable,
-                 in_channels: int,
-                 internal_channels: int,
-                 kernel_size: NdParam,
-                 stride: NdParam,
-                 padding: NdParam,
-                 expansion: int = 1,
-                 attention: Optional[nn.Module] = None,
-                 ):
+    def __init__(
+        self,
+        conv: Callable,
+        in_channels: int,
+        internal_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        expansion: int = 1,
+        attention: Optional[nn.Module] = None,
+    ):
         """
         Build a bottleneck residual block
         Zero init norm according to https://arxiv.org/abs/1706.02677
@@ -138,29 +155,47 @@ class ResBottleneck(nn.Module):
             attention: additional attention layer applied after convolutions
         """
         super().__init__()
-        logger.warning("ResidualBlock uses normal relu! This might not be "
-                       "desired if conv uses a different non linearity")
+        logger.warning(
+            "ResidualBlock uses normal relu! This might not be "
+            "desired if conv uses a different non linearity"
+        )
 
         out_channels = internal_channels * expansion
-        self.conv1 = conv(in_channels, internal_channels,
-                          kernel_size=1, padding=0, stride=1,
-                          )
-        self.conv2 = conv(internal_channels, internal_channels,
-                          kernel_size=kernel_size, padding=padding, stride=stride,
-                          )
-        self.conv3 = conv(internal_channels, out_channels,
-                          kernel_size=1, padding=0, relu=None, stride=1,
-                          )
+        self.conv1 = conv(
+            in_channels,
+            internal_channels,
+            kernel_size=1,
+            padding=0,
+            stride=1,
+        )
+        self.conv2 = conv(
+            internal_channels,
+            internal_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            stride=stride,
+        )
+        self.conv3 = conv(
+            internal_channels,
+            out_channels,
+            kernel_size=1,
+            padding=0,
+            add_act=False,
+            stride=1,
+        )
         self.relu = nn.ReLU(inplace=True)
 
         # downsampling path
-        stride_prod = (reduce((lambda x, y: x * y), stride)
-                       if isinstance(stride, Sequence) else stride)
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
-                conv(in_channels, out_channels, kernel_size=1, relu=None),
-                )
+                conv(in_channels, out_channels, kernel_size=1, add_act=False),
+            )
         else:
             self.shortcut = None
 
@@ -194,5 +229,5 @@ class ResBottleneck(nn.Module):
     def init_weights(self) -> None:
         try:
             torch.nn.init.zeros_(self.conv2.norm.weight)
-        except:
+        except BaseException:
             logger.info(f"Zero init of last norm layer {self.conv2.norm} failed")

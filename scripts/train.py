@@ -14,36 +14,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
-import sys
-import socket
 import argparse
-from pathlib import Path
+import importlib
+import os
+import socket
+import sys
 from datetime import datetime
-from typing import List
+from pathlib import Path
+from typing import List, Union
 
-import torch
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import MLFlowLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-
-from loguru import logger
+import torch
 from hydra import initialize_config_module
+from loguru import logger
 from omegaconf.omegaconf import OmegaConf
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.loggers import (
+    LightningLoggerBase,
+    MLFlowLogger,
+    TensorBoardLogger,
+)
 
 import nndet
-from nndet.utils.config import compose, load_dataset_info
-from nndet.utils.info import log_git, write_requirements_to_file, \
-    create_debug_plan, flatten_mapping
-from nndet.utils.check import env_guard
-from nndet.utils.analysis import run_analysis_suite
-from nndet.io.datamodule.bg_module import Datamodule
-from nndet.io.paths import get_task, get_training_dir
+from nndet.evaluator.registry import (
+    evaluate_box_dir,
+    evaluate_case_dir,
+    evaluate_mask_dir,
+    evaluate_seg_dir,
+    save_metric_output,
+)
+from nndet.inference.helper import extract_results
+from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_pickle, save_json, save_pickle
-from nndet.evaluator.registry import save_metric_output, evaluate_box_dir, \
-    evaluate_case_dir, evaluate_seg_dir
-from nndet.inference.ensembler.base import extract_results
+from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
+from nndet.utils.analysis import run_analysis_suite
+from nndet.utils.check import env_guard
+from nndet.utils.config import compose, load_dataset_info
+from nndet.utils.info import ModelSummary, create_debug_plan, flatten_mapping, log_git
 
 
 @env_guard
@@ -52,25 +61,38 @@ def train():
     Training entry
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str,
-                        help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False)
-    parser.add_argument('--sweep',
-                        help="Run empirical parameter optimization",
-                        action='store_true',
-                        )
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
+    parser.add_argument(
+        "--sweep",
+        help="Run empirical parameter optimization",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--no_summary",
+        help="Turn of model summary for clearner output",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     task = args.task
     ov = args.overwrites
     do_sweep = args.sweep
+    no_summary = args.no_summary
+
     _train(
         task=task,
         ov=ov,
         do_sweep=do_sweep,
-        )
+        no_summary=no_summary,
+    )
 
 
 @env_guard
@@ -79,43 +101,64 @@ def sweep():
     Sweep entry
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str,
-                        help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('model', type=str,
-                        help="full name of experiment to sweep e.g. RetinaUNetV0_D3V001_3d")
-    parser.add_argument('fold', type=int,
-                        help="experiment fold")
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "model",
+        type=str,
+        help="full name of experiment to sweep e.g. RetinaUNetV0_D3V001_3d",
+    )
+    parser.add_argument("fold", type=int, help="experiment fold")
+    parser.add_argument(
+        "--no_pred",
+        help="Turn of model prediction",
+        action="store_true",
+    )
     args = parser.parse_args()
     task = args.task
     model = args.model
     fold = args.fold
+    run_prediction = bool(not args.no_pred)
     _sweep(
         task=task,
         model=model,
         fold=fold,
-        )
+        run_prediction=run_prediction,
+    )
 
 
 @env_guard
-def evaluate(): 
+def evaluate():
     """
     Evaluation entry
 
     seg, instances are not supported yet
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('task', type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument('model', type=str, help="model name, e.g. RetinaUNetV0_D3V001_3d")
-    parser.add_argument('fold', type=int, help="fold, -1 => consolidated")
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "model", type=str, help="model name, e.g. RetinaUNetV0_D3V001_3d"
+    )
+    parser.add_argument("fold", type=int, help="fold, -1 => consolidated")
 
-    parser.add_argument('--test',
-                        help="Evaluate test predictions -> uses different folder",
-                        action='store_true')
-    parser.add_argument('--case', help="Run Case Evaluation", action='store_true')
-    parser.add_argument('--boxes', help="Run Box Evaluation", action='store_true')
-    parser.add_argument('--seg', help="Run Box Evaluation", action='store_true')
-    parser.add_argument('--instances', help="Run Box Evaluation", action='store_true')
-    parser.add_argument('--analyze_boxes', help="Run Box Evaluation", action='store_true')
+    parser.add_argument(
+        "--test",
+        help="Evaluate test predictions -> uses different folder",
+        action="store_true",
+    )
+    parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
+    parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
+    parser.add_argument(
+        "--seg", help="Run Semantic Segmentation Evaluation", action="store_true"
+    )
+    parser.add_argument("--masks", help="Run Mask Evaluation", action="store_true")
+    parser.add_argument(
+        "--analyze_boxes", help="Analyze Box Results", action="store_true"
+    )
+    parser.add_argument(
+        "--eval_preprocessed",
+        help="Additionally run evaluation on preprocessed data",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     model = args.model
@@ -123,13 +166,15 @@ def evaluate():
     task = args.task
     test = args.test
 
-    do_boxes_eval = args.boxes    
+    do_boxes_eval = args.boxes
     do_case_eval = args.case
     do_seg_eval = args.seg
-    do_instances_eval = args.instances
+    do_masks_eval = args.masks
 
     do_analyze_boxes = args.analyze_boxes
-    
+
+    eval_preprocessed = args.eval_preprocessed
+
     _evaluate(
         task=task,
         model=model,
@@ -138,8 +183,9 @@ def evaluate():
         do_boxes_eval=do_boxes_eval,
         do_case_eval=do_case_eval,
         do_seg_eval=do_seg_eval,
-        do_instances_eval=do_instances_eval,
+        do_masks_eval=do_masks_eval,
         do_analyze_boxes=do_analyze_boxes,
+        eval_preprocessed=eval_preprocessed,
     )
 
 
@@ -148,25 +194,101 @@ def init_train_dir(cfg) -> Path:
     Initialize training directory and make it the current working directory
     """
     # determine folder for experiment
-    output_dir = Path(cfg.host.parent_results) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
+    output_dir = (
+        Path(cfg.host.parent_results)
+        / str(cfg.task)
+        / str(cfg.exp.id)
+        / f"fold{cfg.exp.fold}"
+    )
 
-    if cfg["train"]["mode"].lower() == "overwrite":
+    if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
-            print(f"Found existing folder {output_dir}, this run will overwrite "
-                  f"the results inside that folder")
+            print(
+                f"Found existing folder {output_dir}, this run will overwrite "
+                f"the results inside that folder"
+            )
         output_dir.mkdir(parents=True, exist_ok=True)
     else:
         if not output_dir.is_dir():
-            raise ValueError(f"{output_dir} is not a valid training dir and thus can not be resumed")
+            raise ValueError(
+                f"{output_dir} is not a valid training dir and thus can not be resumed"
+            )
     os.chdir(str(output_dir))
     return output_dir
+
+
+def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
+    """
+    Instantiate a logger to monitor metrics/losses during training
+
+    Args:
+        cfg: config
+            'logger': define logger type
+
+    Returns:
+        LightningLoggerBase: Instantiated logger
+    """
+    logger_name = cfg["exec"].get("logger", "mlflow")
+    if isinstance(logger_name, str):
+        logger_name = logger_name.lower()
+
+    pl_logger = False
+    save_dir = os.getenv("det_logging", None)
+
+    # logger not defined
+    if logger_name.lower() == "none":
+        return pl_logger
+
+    if logger_name == "mlflow":
+        if save_dir is not None:
+            save_dir = Path(save_dir)
+            if not save_dir.name == "mlruns":
+                save_dir = save_dir / "mlruns"
+        else:
+            save_dir = os.getenv("MLFLOW_TRACKING_URI", "./mlruns")
+
+        run_name = cfg["exp"]["id"]
+        tags = {
+            "host": socket.gethostname(),
+            "fold": cfg["exp"]["fold"],
+            "task": cfg["task"],
+            "job_id": os.getenv("LSB_JOBID", "no_id"),
+            "mlflow.runName": run_name,
+        }
+        pl_logger = MLFlowLogger(
+            experiment_name=cfg["task"],
+            tags=tags,
+            save_dir=save_dir,
+        )
+        if (
+            ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])
+        ) is not None:
+            exp_id = ml_exp.experiment_id
+            runs = pl_logger._mlflow_client.search_runs(
+                [exp_id], filter_string=f'tag.mlflow.runName="{run_name}"'
+            )
+            if len(runs) > 0:
+                pl_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
+    elif logger_name == "tensorboard":
+        if save_dir is not None:
+            save_dir = Path(save_dir) / "tbruns" / cfg["task"]
+        else:
+            save_dir = "./logging"
+
+        pl_logger = TensorBoardLogger(
+            save_dir=save_dir,
+            name=f"{cfg['exp']['id']}_fold{cfg['exp']['fold']}",
+            default_hp_metric=True,
+        )
+    return pl_logger
 
 
 def _train(
     task: str,
     ov: List[str],
     do_sweep: bool,
-    ):
+    no_summary: bool = False,
+):
     """
     Run training
 
@@ -179,26 +301,25 @@ def _train(
     initialize_config_module(config_module="nndet.conf")
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
 
-    assert cfg.host.parent_data is not None, 'Parent data can not be None'
-    assert cfg.host.parent_results is not None, 'Output dir can not be None'
+    assert cfg.host.parent_data is not None, "Parent data can not be None"
+    assert cfg.host.parent_results is not None, "Output dir can not be None"
 
     train_dir = init_train_dir(cfg)
-
-    pl_logger = MLFlowLogger(
-        experiment_name=cfg["task"],
-        tags={
-            "host": socket.gethostname(),
-            "fold": cfg["exp"]["fold"],
-            "task": cfg["task"],
-            "job_id": os.getenv('LSB_JOBID', 'no_id'),
-            "mlflow.runName": cfg["exp"]["id"],
-            },
-        save_dir=os.getenv("MLFLOW_TRACKING_URI", "./mlruns"),
-    )
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}))
-    pl_logger.log_hyperparams(flatten_mapping(
-        {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}))
+    pl_logger = get_pl_logger(cfg)
+    if pl_logger:
+        params = {
+            "module": cfg["module"],
+            "plan": cfg["plan"],
+            "aug_name": cfg["augment_cfg"]["name"],
+            "aug_transforms": cfg["augment_cfg"]["transforms"],
+            **flatten_mapping(
+                {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}
+            ),
+            **flatten_mapping(
+                {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}
+            ),
+        }
+        pl_logger.log_hyperparams(params)
 
     logger.remove()
     logger.add(
@@ -206,7 +327,7 @@ def _train(
         format="<level>{level} {message}</level>",
         level="INFO",
         colorize=True,
-        )
+    )
     log_file = Path(os.getcwd()) / "train.log"
     logger.add(log_file, level="INFO")
     logger.info(f"Log file at {log_file}")
@@ -215,56 +336,93 @@ def _train(
     meta_data["torch_version"] = str(torch.__version__)
     meta_data["date"] = str(datetime.now())
     meta_data["git"] = log_git(nndet.__path__[0], repo_name="nndet")
+    meta_data["overwrites"] = str(ov)
     save_json(meta_data, "./meta.json")
-    try:
-        write_requirements_to_file("requirements.txt")
-    except Exception as e:
-        logger.error(f"Could not log req: {e}")
+    # try:
+    #     write_requirements_to_file("requirements.txt")
+    # except Exception as e:
+    #     logger.error(f"Could not log req: {e}")
 
     plan_path = Path(str(cfg.host["plan_path"]))
     plan = load_pickle(plan_path)
     save_json(create_debug_plan(plan), "./plan_debug.json")
 
-    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    data_dir = (
+        Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    )
 
     datamodule = Datamodule(
-            augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
-            plan=plan,
-            data_dir=data_dir,
-            fold=cfg["exp"]["fold"],
-        )
+        io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
+        augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
+        plan=plan,
+        data_dir=data_dir,
+        fold=cfg["exp"]["fold"],
+    )
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
-        )
+    )
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
-        filename='model_best',
+        filename="model_best",
         save_last=True,
-        save_top_k=1,
+        save_top_k=cfg["trainer_cfg"].get("save_top_k", 1),
         monitor=cfg["trainer_cfg"]["monitor_key"],
         mode=cfg["trainer_cfg"]["monitor_mode"],
     )
-    checkpoint_cb.CHECKPOINT_NAME_LAST = 'model_last'
+    checkpoint_cb.CHECKPOINT_NAME_LAST = "model_last"
     callbacks.append(checkpoint_cb)
     callbacks.append(LearningRateMonitor(logging_interval="epoch"))
 
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config.yaml"))
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
-    save_pickle(plan, train_dir / "plan.pkl") # backup plan
-    splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
+    save_pickle(plan, train_dir / "plan.pkl")  # backup plan
+    splits = load_pickle(
+        Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file
+    )
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
-    if cfg["train"]["mode"].lower() == "resume":
+    if cfg["exec"]["mode"].lower() == "resume":
+        logger.info("Found train mode: resume -> will load checkpoint")
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
+    elif cfg["exec"]["mode"].lower() == "transfer":
+        logger.info("Found train mode: transfer -> loading model weights")
+        module.load_state_dict(
+            torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True
+        )
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
-    plugins = cfg["trainer_cfg"].get("plugins", None)
+
+    plugins = []
+    if p := cfg["trainer_cfg"].get("plugins", None):
+        plugins.append(p)
     logger.info(f"Using {plugins} plugins for training")
+
+    if not no_summary:
+        callbacks.append(ModelSummary(max_depth=10))
+
+    if "terminate_on_nan" in cfg["trainer_cfg"]:
+        detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
+    elif "detect_anomaly" in cfg["trainer_cfg"]:
+        detect_anomaly = cfg["trainer_cfg"]["detect_anomaly"]
+    else:
+        detect_anomaly = False
+
+    if (
+        cfg["trainer_cfg"]["precision"] == 16
+        and cfg["trainer_cfg"]["amp_backend"] == "native"
+    ):
+        device = "cuda" if num_gpus > 0 else "cpu"
+        precision_plugin = ExposedNativeMixedPrecisionPlugin(
+            precision=16,
+            device=device,
+            init_scale=8192.0,
+        )
+        plugins.append(precision_plugin)
 
     trainer = pl.Trainer(
         gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
@@ -280,18 +438,23 @@ def _train(
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
-        weights_summary='full',
         plugins=plugins,
-        terminate_on_nan=True,  # TODO: make modular
+        detect_anomaly=detect_anomaly,
         move_metrics_to_cpu=False,
-        **trainer_kwargs
+        **trainer_kwargs,
     )
     trainer.fit(module, datamodule=datamodule)
 
     if do_sweep:
         case_ids = splits[cfg["exp"]["fold"]]["val"]
-        if "debug" in cfg and "num_cases_val" in cfg["debug"]:
-            case_ids = case_ids[:cfg["debug"]["num_cases_val"]]
+        if (
+            "debug" in cfg["trainer_cfg"]
+            and "num_cases_val" in cfg["trainer_cfg"]["debug"]
+        ):
+            logger.warning(
+                "[!!!] Detected debug mode for sweep using reduced set of cases"
+            )
+            case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
 
         inference_plan = module.sweep(
             cfg=OmegaConf.to_container(cfg, resolve=True),
@@ -304,25 +467,33 @@ def _train(
         plan["inference_plan"] = inference_plan
         save_pickle(plan, train_dir / "plan_inference.pkl")
 
-        ensembler_cls = module.get_ensembler_cls(
-            key="boxes", dim=plan["network_dim"]) # TODO: make this configurable    
+        ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
         for restore in [True, False]:
-            target_dir = train_dir / "val_predictions" if restore else \
-                train_dir / "val_predictions_preprocessed"
-            extract_results(source_dir=train_dir / "sweep_predictions",
-                            target_dir=target_dir,
-                            ensembler_cls=ensembler_cls,
-                            restore=restore,
-                            **inference_plan,
-                            )
-
+            target_dir = (
+                train_dir / "val_predictions"
+                if restore
+                else train_dir / "val_predictions_preprocessed"
+            )
+            extract_results(
+                source_dir=train_dir / "sweep_predictions",
+                target_dir=target_dir,
+                ensembler_cls=ensembler_cls,
+                restore=restore,
+                **inference_plan,
+            )
         _evaluate(
             task=cfg["task"],
             model=cfg["exp"]["id"],
             fold=cfg["exp"]["fold"],
             test=False,
-            do_boxes_eval=True, # TODO: make this configurable
-            do_analyze_boxes=True, # TODO: make this configurable
+            do_case_eval=(
+                module.requires_case_eval and (cfg["data"]["target_class"] is not None)
+            ),
+            do_boxes_eval=module.requires_box_eval(),
+            do_analyze_boxes=module.requires_box_eval(),
+            do_masks_eval=module.requires_mask_eval(),
+            do_analyze_masks=module.requires_mask_eval(),
+            do_seg_eval=module.requires_seg_eval(),
         )
 
 
@@ -330,7 +501,8 @@ def _sweep(
     task: str,
     model: str,
     fold: int,
-    ):
+    run_prediction: bool,
+):
     """
     Determine best postprocessing parameters for a trained model
 
@@ -340,12 +512,16 @@ def _sweep(
             e.g. RetinaUNetV001_D3V001_3d
         fold: current fold
     """
-    nndet_data_dir = Path(os.getenv("det_models"))
+    nndet_model_dir = Path(os.getenv("det_models"))
     task = get_task(task, name=True, models=True)
-    train_dir = nndet_data_dir / task / model / f"fold{fold}"
+    train_dir = nndet_model_dir / task / model / f"fold{fold}"
 
     cfg = OmegaConf.load(str(train_dir / "config.yaml"))
     os.chdir(str(train_dir))
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="INFO")
@@ -354,46 +530,63 @@ def _sweep(
     logger.info(f"Log file at {log_file}")
 
     plan = load_pickle(train_dir / "plan.pkl")
-    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    data_dir = (
+        Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    )
 
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
-        )
+    )
 
     splits = load_pickle(train_dir / "splits.pkl")
     case_ids = splits[cfg["exp"]["fold"]]["val"]
+
+    if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
+        logger.warning("Detected debug mode for sweep using reduced set of cases!")
+        case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
+    # case_ids = case_ids[:10]
+
     inference_plan = module.sweep(
         cfg=OmegaConf.to_container(cfg, resolve=True),
         save_dir=train_dir,
         train_data_dir=data_dir,
         case_ids=case_ids,
-        run_prediction=True, # TODO: add commmand line arg
+        run_prediction=run_prediction,
     )
 
     plan["inference_plan"] = inference_plan
     save_pickle(plan, train_dir / "plan_inference.pkl")
 
-    ensembler_cls = module.get_ensembler_cls(
-        key="boxes", dim=plan["network_dim"]) # TODO: make this configurable    
+    ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
     for restore in [True, False]:
-        target_dir = train_dir / "val_predictions" if restore else \
-            train_dir / "val_predictions_preprocessed"
-        extract_results(source_dir=train_dir / "sweep_predictions",
-                        target_dir=target_dir,
-                        ensembler_cls=ensembler_cls,
-                        restore=restore,
-                        **inference_plan,
-                        )
+        target_dir = (
+            train_dir / "val_predictions"
+            if restore
+            else train_dir / "val_predictions_preprocessed"
+        )
+        extract_results(
+            source_dir=train_dir / "sweep_predictions",
+            target_dir=target_dir,
+            ensembler_cls=ensembler_cls,
+            restore=restore,
+            **inference_plan,
+        )
 
     _evaluate(
         task=cfg["task"],
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
-        do_boxes_eval=True, # TODO: make this configurable
-        do_analyze_boxes=True, # TODO: make this configurable
+        do_case_eval=(
+            module.requires_case_eval and (cfg["data"]["target_class"] is not None)
+        ),
+        do_boxes_eval=module.requires_box_eval(),
+        do_analyze_boxes=module.requires_box_eval(),
+        do_masks_eval=module.requires_mask_eval(),
+        do_analyze_masks=module.requires_mask_eval(),
+        do_seg_eval=module.requires_seg_eval(),
     )
 
 
@@ -404,13 +597,15 @@ def _evaluate(
     test: bool = False,
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
+    do_masks_eval: bool = False,
     do_seg_eval: bool = False,
-    do_instances_eval: bool = False,
     do_analyze_boxes: bool = False,
+    do_analyze_masks: bool = False,
+    eval_preprocessed: bool = False,
 ):
     """
     This entrypoint runs the evaluation
-    
+
     Args:
         task: current task
         model: full name of the model run determine empricial parameters for
@@ -419,9 +614,10 @@ def _evaluate(
         test: use test split
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
+        do_masks_eval: perform instance segmentation evaluation
         do_seg_eval: perform semantic segmentation evaluation
-        do_instances_eval: perform instance segmentation evaluation
         do_analyze_boxes: run analysis of box results
+        do_analyze_masks: run analysis of mask results
     """
     # prepare paths
     task = get_task(task, name=True)
@@ -433,7 +629,14 @@ def _evaluate(
 
     prefix = "test" if test else "val"
 
-    modes = [True] if test else [True, False]
+    modes = [True]
+    if not test and eval_preprocessed:
+        modes.append(False)
+    if test and eval_preprocessed:
+        logger.warning(
+            "Evaluation of preprocessed data only supported on validation data."
+        )
+
     for restore in modes:
         if restore:
             pred_dir_name = f"{prefix}_predictions"
@@ -442,11 +645,16 @@ def _evaluate(
         else:
             plan = load_pickle(training_dir / "plan.pkl")
             pred_dir_name = f"{prefix}_predictions_preprocessed"
-            gt_dir = data_dir_task / "preprocessed" / plan["data_identifier"] / "labelsTr"
+            gt_dir = (
+                data_dir_task / "preprocessed" / plan["data_identifier"] / "labelsTr"
+            )
 
         pred_dir = training_dir / pred_dir_name
-        save_dir = training_dir / f"{prefix}_results" if restore else \
-            training_dir / f"{prefix}_results_preprocessed"
+        save_dir = (
+            training_dir / f"{prefix}_results"
+            if restore
+            else training_dir / f"{prefix}_results_preprocessed"
+        )
 
         # compute metrics
         if do_boxes_eval:
@@ -456,36 +664,53 @@ def _evaluate(
                 gt_dir=gt_dir,
                 classes=list(data_cfg["labels"].keys()),
                 save_dir=save_dir / "boxes",
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_boxes")
+
         if do_case_eval:
             logger.info(f"Computing case metrics: restore {restore}")
             scores, curves = evaluate_case_dir(
-                pred_dir=pred_dir, 
-                gt_dir=gt_dir, 
-                classes=list(data_cfg["labels"].keys()), 
+                pred_dir=pred_dir,
+                gt_dir=gt_dir,
+                classes=list(data_cfg["labels"].keys()),
                 target_class=data_cfg["target_class"],
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_case")
+
         if do_seg_eval:
+            raise NotImplementedError()
             logger.info(f"Computing seg metrics: restore {restore}")
             scores, curves = evaluate_seg_dir(
                 pred_dir=pred_dir,
                 gt_dir=gt_dir,
-                )
+            )
             save_metric_output(scores, curves, save_dir, "results_seg")
-        if do_instances_eval:
-            raise NotImplementedError
+
+        if do_masks_eval:
+            logger.info(f"Computing mask metrics: restore {restore}")
+            scores, curves = evaluate_mask_dir(
+                pred_dir=pred_dir,
+                gt_dir=gt_dir,
+                classes=list(data_cfg["labels"].keys()),
+                save_dir=save_dir / "masks",
+            )
+            save_metric_output(scores, curves, save_dir, "results_masks")
 
         # run analysis
-        save_dir = training_dir / f"{prefix}_analysis" if restore else \
-            training_dir / f"{prefix}_analysis_preprocessed"
+        save_dir = (
+            training_dir / f"{prefix}_analysis"
+            if restore
+            else training_dir / f"{prefix}_analysis_preprocessed"
+        )
         if do_analyze_boxes:
             logger.info(f"Analyze box predictions: restore {restore}")
-            run_analysis_suite(prediction_dir=pred_dir,
-                               gt_dir=gt_dir,
-                               save_dir=save_dir / "boxes",
-                               )
+            run_analysis_suite(
+                prediction_dir=pred_dir,
+                gt_dir=gt_dir,
+                save_dir=save_dir / "boxes",
+            )
+        if do_analyze_masks:
+            logger.info("Analyze mask predictions is not implemented yet.")
 
 
 if __name__ == "__main__":

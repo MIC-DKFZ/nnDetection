@@ -1,7 +1,8 @@
 include README.md
 include LICENSE
 
+recursive-include requirements *.txt
+recursive-include nndet/conf *
+
 global-exclude *.pyc
 global-exclude __pycache__
-
-recursive-include nndet/conf *

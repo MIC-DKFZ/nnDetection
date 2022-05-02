@@ -1,0 +1,45 @@
+backbone_kwargs: {} # keyword arguments passed to encoder
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
+
+head_kwargs: {} # keyword arguments to passed to head
+
+head_classifier_kwargs: # keyword arguments passed to classifier in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "mean"
+  loss_weight: 1.
+  prior_prob: 0.01
+
+head_regressor_kwargs: # keyword arguments passed to regressor in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "sum"
+  loss_weight: 1.
+  learn_scale: True
+
+head_sampler_kwargs: # keyword arguments passed to sampler
+  batch_size_per_image: 32 # number of anchors sampled per image
+  positive_fraction: 0.33 # defines ratio between positive and negative anchors
+  # hard negatives are sampled from a pool of size:
+  # batch_size_per_image * (1 - positive_fraction) * pool_size
+  pool_size: 20
+  min_neg: 1 # minimum number of negative anchors sampled per image
+
+matcher_kwargs: # keyword arguments passed to matcher
+  num_candidates: 4
+  center_in_gt: False
+
+plan_arch_overwrites: {} # overwrite arguments of architecture
+plan_anchors_overwrites: {} # overwrite arguments of anchors

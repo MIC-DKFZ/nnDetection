@@ -14,18 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import copy
-import os
 import argparse
+import copy
 import sys
-
 from pathlib import Path
 
-from loguru import logger
-from omegaconf import OmegaConf
 from hydra import initialize_config_module
-
+from loguru import logger
 from nnunet.paths import nnUNet_raw_data
+from omegaconf import OmegaConf
 
 from nndet.io import get_task
 from nndet.utils.config import compose
@@ -42,31 +39,47 @@ def run(cfg, target_dir, stuff: bool):
     else:
         ts_image_dir = None
 
-    exporter = Exporter(data_info=OmegaConf.to_container(cfg.data),
-                        tr_image_dir=base_dir / "imagesTr",
-                        ts_image_dir=ts_image_dir,
-                        label_dir=base_dir / "labelsTr",
-                        target_dir=target_dir,
-                        export_stuff=stuff,
-                        ).export()
+    _ = Exporter(
+        data_info=OmegaConf.to_container(cfg.data),
+        tr_image_dir=base_dir / "imagesTr",
+        ts_image_dir=ts_image_dir,
+        label_dir=base_dir / "labelsTr",
+        target_dir=target_dir,
+        export_stuff=stuff,
+    ).export()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="Single or multiple task identifiers to process consecutively",
-                        )
-    parser.add_argument('-nt', '--new_tasks', type=str, nargs='+',
-                        help="Rename the tasks.",
-                        required=False, default=None,
-                        )
-    parser.add_argument("--stuff", action='store_true',
-                        help="Export stuff and things classes."
-                             "The final detection evaluation will be performed on things classes only.")
-    parser.add_argument('-o', '--overwrites', type=str, nargs='+',
-                        help="overwrites for config file",
-                        required=False,
-                        )
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
+    parser.add_argument(
+        "-nt",
+        "--new_tasks",
+        type=str,
+        nargs="+",
+        help="Rename the tasks.",
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "--stuff",
+        action="store_true",
+        help="Export stuff and things classes."
+        "The final detection evaluation will be performed on things classes only.",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        help="overwrites for config file",
+        required=False,
+    )
 
     args = parser.parse_args()
     tasks = args.tasks
@@ -83,7 +96,7 @@ if __name__ == '__main__':
         task = get_task(task, name=True)
 
         if nnUNet_raw_data is None:
-            raise RuntimeError(f"Please set `nnUNet_raw_data` for nnUNet!")
+            raise RuntimeError("Please set `nnUNet_raw_data` for nnUNet!")
         target_dir = Path(nnUNet_raw_data) / new_task
 
         logger.remove()

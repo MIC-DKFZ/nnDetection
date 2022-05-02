@@ -15,25 +15,25 @@ limitations under the License.
 """
 
 from nndet.planning.properties import (
-    get_sizes_and_spacings_after_cropping,
-    get_size_reduction_by_cropping,
-    get_modalities,
-    analyze_segmentations,
-    analyze_intensities,
     analyze_instances,
+    analyze_intensities,
+    analyze_segmentations,
+    get_modalities,
+    get_size_reduction_by_cropping,
+    get_sizes_and_spacings_after_cropping,
 )
 
 
 def medical_segmentation_props(intensity_properties: bool = True):
     """
     Default set for analysis of medical segmentation images
-    
+
     Args:
         intensity_properties (optional): analyze intensity properties. Defaults to True.
-    
+
     Returns:
         Sequence[Callable]: properties to calculate. Results can be summarized as follows:
-    
+
     See Also:
         :func:`nndet.planning.medical.get_sizes_and_spacings_after_cropping`,
         :func:`nndet.planning.medical.get_size_reduction_by_cropping`,
@@ -51,7 +51,7 @@ def medical_segmentation_props(intensity_properties: bool = True):
     if intensity_properties:
         props.append(analyze_intensities)
     else:
-        props.append(lambda x: {'intensity_properties': None})
+        props.append(lambda x: {"intensity_properties": None})
     return props
 
 
@@ -82,5 +82,5 @@ def medical_instance_props(intensity_properties: bool = True):
     if intensity_properties:
         props.append(analyze_intensities)
     else:
-        props.append(lambda x: {'intensity_properties': None})
+        props.append(lambda x: {"intensity_properties": None})
     return props

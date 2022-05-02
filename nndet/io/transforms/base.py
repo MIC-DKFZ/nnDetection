@@ -37,7 +37,7 @@ class Compose(AbstractTransform):
     def __init__(self, *transforms):
         """
         Compose multiple transforms to one
-        
+
         Args:
             transforms: transformations to compose
         """
@@ -54,3 +54,10 @@ class Compose(AbstractTransform):
         for t in self.transforms:
             batch = t(**batch)
         return batch
+
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s

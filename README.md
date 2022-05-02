@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=docs/source/nnDetection.svg width="600px">
+<img src=docs/source/_static/nnDetection.svg width="600px">
 
 ![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
@@ -62,7 +62,8 @@ When running a training inside the container it is necessary to [increase the sh
     - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
     - `det_num_threads`: [recommended] Number processes to use for augmentation (at least 6, default 12)
     - `det_verbose`: [optional] Can be used to deactivate progress bars (activated by default)
-    - `MLFLOW_TRACKING_URI`: [optional] Specify the logging directory of mlflow. Refer to the [mlflow documentation](https://www.mlflow.org/docs/latest/tracking.html) for more information.
+    - `det_logging`: [optional] Specify the logging directory. nnDetection supports [MLFlow]((https://www.mlflow.org/docs/latest/tracking.html)) or [Tensorboard](https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard). If not set, logs will be saved to current training directory.
+    - `det_logger`: [optional] Define logger type. One of tensorboard | mlflow | none.
 
 Note: nnDetection was developed on Linux => Windows is not supported.
 
@@ -86,14 +87,14 @@ To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.
 
 # nnDetection
 <div align="center">
-    <img src=docs/source/nnDetectionFunctional.svg width="600px">
+    <img src=docs/source/_static/nnDetectionFunctional.svg width="600px">
 </div>
 
 <details close>
 <summary>nnDetection Module Overview</summary>
 <br>
     <div align="center">
-        <img src=docs/source/nnDetectionModule.svg width="600px">
+        <img src=docs/source/_static/nnDetectionModule.svg width="600px">
     </div>
 
 nnDetection uses multiple Registries to keep track of different modules and easily switch between them via the config files.
@@ -124,7 +125,7 @@ It can be imported from `nndet.ptmodule` and examples can be found in `nndet.ptm
 <summary>nnDetection Functional Details</summary>
 <br>
     <div align="center">
-        <img src=docs/source/nnDetectionFunctionalDetails.svg width="600px">
+        <img src=docs/source/_static/nnDetectionFunctionalDetails.svg width="600px">
     </div>
 </details>
 
@@ -369,10 +370,10 @@ The following command will copy all the models and predictions from the folds. B
 This will generate a unified plan for all models which will be used during inference.
 
 ```bash
-nndet_consolidate [task] [model] [--overwrites] [--consolidate] [--num_folds] [--no_model] [--sweep_boxes] [--sweep_instances]
+nndet_consolidate [task] [model] [--overwrites] [--consolidate] [--num_folds] [--no_model] [--sweep]
 
 # Example
-nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep_boxes
+nndet_consolidate 000 RetinaUNetV001_D3V001_3d --sweep
 
 # Script
 # /scripts/consolidate.py - main()
@@ -384,7 +385,7 @@ Data which is located in `raw_splitted/imagesTs` will be automatically preproces
 nndet_predict [task] [model] [--fold] [--num_tta] [--no_preprocess] [--check] [-npp / --num_processes_preprocessing] [--force_args]
 
 # Example
-nndet_predict 000 RetinaUNetV001_D3V001_3d --fold -1
+nndet_predict 000 RetinaUNetV001_D3V001_3d -1
 
 # Script
 # /scripts/predict.py - main()
@@ -422,6 +423,40 @@ Use `--simple` flag to switch to the `nnU-Net` basic configuration.
 
 ## Pretrained models
 **Coming Soon**
+
+
+## Guidelines and Continuous Integration
+To run the CI please install nnDetection via the `[dev]` option.
+The installation command could look like this:
+```bash
+pip install -e .[dev] -v
+```
+
+The documentation of nnDetection can be built by running
+
+```bash
+make html
+```
+
+in the `docs` folder and opening `/docs/build/html/index.html` inside your browser.
+
+Install pre-commit hooks to automatically run tests and formatting via:
+
+```bash
+pre-commit install
+```
+
+inside the base directoty of nnDetection.
+The pre-commit hooks will be executed every time a new commit is added or manually by running:
+
+```bash
+pre-commit run --all-files
+```
+
+Running individual components:
+- unittests with converage: `pytest --cov=nndet` from the base diretory
+- code formatting: `black .` from the base directory
+
 
 # FAQ & Common Issues
 <details close>

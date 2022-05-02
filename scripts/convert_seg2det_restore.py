@@ -20,8 +20,8 @@ from pathlib import Path
 
 from hydra import initialize_config_module
 
-from nndet.utils.config import compose
 from nndet.utils.check import env_guard
+from nndet.utils.config import compose
 
 
 @env_guard
@@ -31,9 +31,12 @@ def main():
     the orignal segmentations
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('tasks', type=str, nargs='+',
-                        help="Single or multiple task identifiers to process consecutively",
-                        )
+    parser.add_argument(
+        "tasks",
+        type=str,
+        nargs="+",
+        help="Single or multiple task identifiers to process consecutively",
+    )
 
     args = parser.parse_args()
     tasks = args.tasks
@@ -58,5 +61,5 @@ def main():
                 print(f"{p} is not a dir. Skipping.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

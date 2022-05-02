@@ -1,5 +1,6 @@
 defaults:
-    - train: v001
+    - _self_
+    - train: retinaunet_v001_mod
     - prep: process
 
 exp:
@@ -7,9 +8,9 @@ exp:
   fold: 0
   id: ${module}_${plan}${exp.tag}
 
-train:
+exec:
+  logger: ${oc.env:det_logger,mlflow} # one of None | mlflow | tensorboard
   mode: "overwrite" # can be either `overwrite` or `resume`
-  val_test: True # run testing on validation data to get final training results
 
 host:
   # DO NOT CHANGE THESE

@@ -13,33 +13,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from typing import Callable, Optional
 
-from loguru import logger
 import torch
-import torch.nn as nn
+from loguru import logger
 from torch import Tensor
-from typing import Callable
+from torch.cuda.amp import autocast
+
+from nndet.losses.classification import BCEWithLogitsLoss, CrossEntropyLoss
+from nndet.losses.ops import Loss, reduction_helper
 
 
 def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):
     shape = data.shape
-    targets = torch.empty(size=(shape[0], num_classes, *shape[1:]), device=data.device)\
-        .fill_(smoothing / num_classes)\
-        .scatter_(1, data.long().unsqueeze(1), 1. - smoothing)
+    targets = (
+        torch.empty(size=(shape[0], num_classes, *shape[1:]), device=data.device)
+        .fill_(smoothing / num_classes)
+        .scatter_(1, data.long().unsqueeze(1), 1.0 - smoothing)
+    )
     return targets
 
 
 def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     """
     net_output must be (b, c, x, y(, z)))
-    gt must be a label map (shape (b, 1, x, y(, z)) OR shape (b, x, y(, z))) or one hot encoding (b, c, x, y(, z))
-    if mask is provided it must have shape (b, 1, x, y(, z)))
-    :param net_output:
-    :param gt:
-    :param axes:
-    :param mask: mask must be 1 for valid pixels and 0 for invalid pixels
-    :param square: if True then fp, tp and fn will be squared before summation
-    :return:
+    gt must be a label map (shape (b, 1, x, y(, z)) OR shape (b, x, y(, z)))
+    or one hot encoding (b, c, x, y(, z))
+    if mask is provided it must have shape (b, 1, x, y(, z))
+
+        - `net_output`
+        - `gt`
+        - `axes`
+        - `mask` : mask must be 1 for valid pixels and 0 for invalid pixels
+        - `square` : if True then fp, tp and fn will be squared before summation
     """
     if axes is None:
         axes = tuple(range(2, len(net_output.size())))
@@ -66,14 +72,20 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     fn = (1 - net_output) * y_onehot
 
     if mask is not None:
-        tp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1)
-        fp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1)
-        fn = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1)
+        tp = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1
+        )
+        fp = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1
+        )
+        fn = torch.stack(
+            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1
+        )
 
     if square:
-        tp = tp ** 2
-        fp = fp ** 2
-        fn = fn ** 2
+        tp = tp**2
+        fp = fp**2
+        fn = fn**2
 
     tp = tp.sum(dim=axes, keepdim=False)
     fp = fp.sum(dim=axes, keepdim=False)
@@ -81,82 +93,140 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     return tp, fp, fn
 
 
-class SoftDiceLoss(nn.Module):
-    def __init__(self,
-                 nonlin: Callable = None,
-                 batch_dice: bool = False, 
-                 do_bg: bool = False,
-                 smooth_nom: float = 1e-5,
-                 smooth_denom: float = 1e-5,
-                 ):
+def soft_dice(
+    inp: Tensor,
+    target: Tensor,
+    do_bg: bool = False,
+    batch_dice: bool = False,
+    nonlin: Optional[Callable] = None,
+    smooth_nom: float = 1e-5,
+    smooth_denom: float = 1e-5,
+    loss_mask: Optional[Tensor] = None,
+    reduction: str = "mean",
+) -> Tensor:
+    shp_x = inp.shape
+
+    if batch_dice:
+        axes = [0] + list(range(2, len(shp_x)))
+    else:
+        axes = list(range(2, len(shp_x)))
+
+    if nonlin is not None:
+        inp = nonlin(inp)
+
+    tp, fp, fn = get_tp_fp_fn(inp, target, axes, loss_mask, False)
+
+    nominator = 2 * tp + smooth_nom
+    denominator = 2 * tp + fp + fn + smooth_denom
+
+    dc = nominator / denominator
+
+    if not do_bg:
+        if batch_dice:
+            dc = dc[1:]
+        else:
+            dc = dc[:, 1:]
+    return reduction_helper(dc, reduction=reduction) * (-1)
+
+
+class SoftDiceLoss(Loss):
+    def __init__(
+        self,
+        nonlin: Callable = None,
+        batch_dice: bool = False,
+        do_bg: bool = False,
+        smooth_nom: float = 1e-5,
+        smooth_denom: float = 1e-5,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = True,
+        reduction: str = "mean",
+    ):
         """
         Soft dice loss
-        
+
         Args:
             nonlin: treat batch as pseudo volume. Defaults to False.
             do_bg: include background for dice computation. Defaults to True.
             smooth_nom: smoothing for nominator
             smooth_denom: smoothing for denominator
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            reduction: 'mean' | 'sum'
+                - 'mean': The output will be averaged.
+                - 'sum': The output will be summed.
+                - 'none': NOT supported
         """
-        super().__init__()
+        super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
+        )
 
         self.do_bg = do_bg
         self.batch_dice = batch_dice
         self.nonlin = nonlin
         self.smooth_nom = smooth_nom
         self.smooth_denom = smooth_denom
-        logger.info(f"Running batch dice {self.batch_dice} and "
-                    f"do bg {self.do_bg} in dice loss.")
+        logger.info(
+            f"Running batch dice {self.batch_dice} and "
+            f"do bg {self.do_bg} in dice loss."
+        )
+        if self.reduction.lower() == "none":
+            raise ValueError(f"SoftDice does not support reduction {reduction}.")
 
-    def forward(self,
-                inp: torch.Tensor,
-                target: torch.Tensor,
-                loss_mask: torch.Tensor=None,
-                ):
+    def forward(
+        self,
+        inp: torch.Tensor,
+        target: torch.Tensor,
+        loss_mask: Optional[torch.Tensor] = None,
+    ):
         """
         Compute loss
-        
+
         Args:
-            inp (torch.Tensor): predictions
-            target (torch.Tensor): ground truth
-            loss_mask ([torch.Tensor], optional): binary mask. Defaults to None.
-        
+            inp: predictions [N, C, dims]
+            target: ground truth [N, dims]
+            loss_mask: binary mask. Defaults to None.
+
         Returns:
             torch.Tensor: soft dice loss
         """
-        shp_x = inp.shape
-
-        if self.batch_dice:
-            axes = [0] + list(range(2, len(shp_x)))
+        if self.loss_fp32:
+            with autocast(enabled=False):
+                loss = self.loss_weight * soft_dice(
+                    inp.float(),
+                    target.float(),
+                    do_bg=self.do_bg,
+                    batch_dice=self.batch_dice,
+                    nonlin=self.nonlin,
+                    smooth_nom=self.smooth_nom,
+                    smooth_denom=self.smooth_denom,
+                    reduction=self.reduction,
+                    loss_mask=loss_mask,
+                )
         else:
-            axes = list(range(2, len(shp_x)))
-
-        if self.nonlin is not None:
-            inp = self.nonlin(inp)
-
-        tp, fp, fn = get_tp_fp_fn(inp, target, axes, loss_mask, False)
-
-        nominator = 2 * tp + self.smooth_nom
-        denominator = 2 * tp + fp + fn + self.smooth_denom
-
-        dc = nominator / denominator
-
-        if not self.do_bg:
-            if self.batch_dice:
-                dc = dc[1:]
-            else:
-                dc = dc[:, 1:]
-        dc = dc.mean()
-
-        return 1 - dc
+            loss = self.loss_weight * soft_dice(
+                inp,
+                target,
+                do_bg=self.do_bg,
+                batch_dice=self.batch_dice,
+                nonlin=self.nonlin,
+                smooth_nom=self.smooth_nom,
+                smooth_denom=self.smooth_denom,
+                reduction=self.reduction,
+                loss_mask=loss_mask,
+            )
+        return loss
 
 
-class TopKLoss(torch.nn.CrossEntropyLoss):
-    def __init__(self,
-                 topk: float,
-                 loss_weight: float = 1.,
-                 **kwargs,
-                 ):
+class TopKLoss(CrossEntropyLoss):
+    def __init__(
+        self,
+        topk: float,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Uses topk percent of values to compute CE loss
         (expects pre softmax logits!)
@@ -164,45 +234,52 @@ class TopKLoss(torch.nn.CrossEntropyLoss):
         Args:
             topk: percentage of all entries to use for loss computation
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss."
-                             "This will always return the mean!")
+            raise ValueError(
+                "Reduction is not supported in TopKLoss."
+                "This will always return the mean!"
+            )
         super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
             reduction="none",
             **kwargs,
         )
         if topk < 0 or topk > 1:
             raise ValueError("topk needs to be in the range [0, 1].")
         self.topk = topk
-        self.loss_weight = loss_weight
+        logger.info(f"TopK loss uses topk: {self.topk:.2f}")
 
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         """
         Compute CE loss and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground classes [N, C, *]
+            input: logits for all foreground classes [N, C, * ]
             target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [N, *]
+                treated as foreground classes. [N, * ]
 
         Returns:
             Tensor: final loss
         """
         losses = super().forward(input, target)
 
-        k = int(losses.numel() * self.topk)
-        return self.loss_weight * losses.view(-1).topk(k=k, sorted=False)[0].mean()
+        k = int(max(losses.numel() * self.topk, 1))
+        return losses.view(-1).topk(k=k, sorted=False)[0].mean()
 
 
-class TopKLossSigmoid(torch.nn.BCEWithLogitsLoss):
-    def __init__(self,
-                 num_classes: int,
-                 topk: float,
-                 smoothing: float = 0.0,
-                 loss_weight: float = 1.,
-                 **kwargs,
-                 ):
+class TopKLossSigmoid(BCEWithLogitsLoss):
+    def __init__(
+        self,
+        num_classes: int,
+        topk: float,
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
         """
         Uses topk percent of values to compute BCE loss with one hot
         (support multi class through one hot, expects pre sigmoid logits!)
@@ -212,11 +289,16 @@ class TopKLossSigmoid(torch.nn.BCEWithLogitsLoss):
             topk: percentage of all entries to use for loss computation
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss."
-                             "This will always return the mean!")
+            raise ValueError(
+                "Reduction is not supported in TopKLoss."
+                "This will always return the mean!"
+            )
         super().__init__(
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
             reduction="none",
             **kwargs,
         )
@@ -226,7 +308,6 @@ class TopKLossSigmoid(torch.nn.BCEWithLogitsLoss):
         self.num_classes = num_classes
 
         self.topk = topk
-        self.loss_weight = loss_weight
 
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         """
@@ -234,18 +315,18 @@ class TopKLossSigmoid(torch.nn.BCEWithLogitsLoss):
         and uses mean of topk percent of the entries
 
         Args:
-            input: logits for all foreground(!) classes [N, C, *]
-            target: target classes [N, *]. Targets will be encoded with one
+            input: logits for all foreground(!) classes [N, C, * ]
+            target: target classes [N, * ]. Targets will be encoded with one
                 hot and 0 is treated as the background class and removed.
 
         Returns:
             Tensor: final loss
         """
         target_one_hot = one_hot_smooth_batch(
-            target, num_classes=self.num_classes + 1, smoothing=self.smoothing)  # [N, C + 1]
+            target, num_classes=self.num_classes + 1, smoothing=self.smoothing
+        )  # [N, C + 1]
         target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
         losses = super().forward(input, target_one_hot.float())
 
-        k = int(losses.numel() * self.topk)
-        return self.loss_weight * losses.view(-1).topk(k=k, sorted=False)[0].mean()
-
+        k = int(max(losses.numel() * self.topk, 1))
+        return losses.view(-1).topk(k=k, sorted=False)[0].mean()

@@ -14,14 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from abc import abstractmethod
+from functools import reduce
+from typing import Callable, Sequence, Tuple, Union
+
 import torch
 import torch.nn as nn
 
-from abc import abstractmethod
-from typing import Sequence, Callable, Union, Tuple
-
-from nndet.arch.conv import NdParam
-from nndet.arch.blocks.res import ResBasic
+from nndet.arch.blocks.mbconv import MyFusedMBConv
+from nndet.arch.blocks.res import ResBottleneck, ResPlain
+from nndet.arch.conv import nd_pool
+from nndet.utils.typing import ND_INT
 
 
 class AbstractBlock(nn.Module):
@@ -45,47 +48,52 @@ class AbstractBlock(nn.Module):
 class StackedBlock(AbstractBlock):
     expansion = 2
 
-    def __init__(self,
-                 conv: Callable[[], nn.Module],
-                 in_channels: int,
-                 conv_kernel: NdParam,
-                 stride: NdParam = None,
-                 out_channels: int = None,
-                 max_out_channels: int = None,
-                 num_blocks: int = 1,
-                 **kwargs):
+    def __init__(
+        self,
+        conv: Callable[[], nn.Module],
+        in_channels: int,
+        conv_kernel: ND_INT,
+        stride: ND_INT = None,
+        out_channels: int = None,
+        max_out_channels: int = None,
+        num_blocks: int = 1,
+        **kwargs,
+    ):
         """
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
-        channels to :param:`out_channels`.
-        
+        channels to `out_channels`.
+
         Args:
             conv: conv generator to use for internal convolutions
             in_channels: number of input channels
             conv_kernel: kernel size of convolution
             stride: Stride of first convolution. If None stride=1 will be used.
                 Defaults to None.
-            out_channels: If given, then number of output channels will be set 
-                to this value. Otherwise the number of the input channels are 
+            out_channels: If given, then number of output channels will be set
+                to this value. Otherwise the number of the input channels are
                 doubled. Defaults to None.
             max_out_channels: Maximum number of output channels.
                 Defaults to None.
             num_blocks: Number of blocks. Defaults to 1.
-        
+
         Raises:
             ValueError: raise if given output channels are larger than max
                 output channels
         """
-        super().__init__(out_channels=None) # out_channels will be overwritten later
-        if (out_channels is not None and
-            max_out_channels is not None and
-            out_channels > max_out_channels):
-            raise ValueError("Output channels can not be larger"
-                             "than max output channels")
+        super().__init__(out_channels=None)  # out_channels will be overwritten later
+        if (
+            out_channels is not None
+            and max_out_channels is not None
+            and out_channels > max_out_channels
+        ):
+            raise ValueError(
+                "Output channels can not be larger" "than max output channels"
+            )
         if out_channels is None:
             out_channels = in_channels * self.expansion
         if max_out_channels is not None and out_channels > max_out_channels:
-            out_channels = max_out_channels 
+            out_channels = max_out_channels
         if stride is None:
             stride = 1
 
@@ -94,13 +102,29 @@ class StackedBlock(AbstractBlock):
         padding = tuple([(i - 1) // 2 for i in conv_kernel])
 
         _convs = []
-        _convs.append(self.build_block(
-            conv=conv, in_channels=in_channels, out_channels=out_channels,
-            kernel_size=conv_kernel, stride=stride, padding=padding, **kwargs))
+        _convs.append(
+            self.build_block(
+                conv=conv,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=conv_kernel,
+                stride=stride,
+                padding=padding,
+                **kwargs,
+            )
+        )
         for _ in range(num_blocks - 1):
-            _convs.append(self.build_block(
-                conv=conv, in_channels=out_channels, out_channels=out_channels,
-                kernel_size=conv_kernel, stride=1, padding=padding, **kwargs))
+            _convs.append(
+                self.build_block(
+                    conv=conv,
+                    in_channels=out_channels,
+                    out_channels=out_channels,
+                    kernel_size=conv_kernel,
+                    stride=1,
+                    padding=padding,
+                    **kwargs,
+                )
+            )
 
         self.convs = nn.Sequential(*_convs)
         self.out_channels = out_channels
@@ -108,27 +132,36 @@ class StackedBlock(AbstractBlock):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward tensor
-        
+
         Returns:
             torch.Tensor: output tensor
         """
         return self.convs(x)
 
     @abstractmethod
-    def build_block(self, conv: Callable[[], nn.Module],
-                    in_channels: int, out_channels: int,
-                    kernel_size: NdParam,
-                    stride: NdParam,
-                    padding: NdParam,
-                    ) -> nn.Module:
+    def build_block(
+        self,
+        conv: Callable[[], nn.Module],
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+    ) -> nn.Module:
         raise NotImplementedError
 
 
 class StackedConvBlock2(StackedBlock):
-    def build_block(self, conv: Callable, in_channels: int,
-                    out_channels: int, kernel_size: NdParam,
-                    stride: NdParam, padding: NdParam,
-                    **kwargs) -> nn.Module:
+    def build_block(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
         """
         Build 2 consequtive convolutions
 
@@ -144,18 +177,100 @@ class StackedConvBlock2(StackedBlock):
             nn.Module: stacked convolutions
         """
         return torch.nn.Sequential(
-            conv(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                 stride=stride, padding=padding, **kwargs),
-            conv(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size,
-                 stride=1, padding=padding, **kwargs),
+            conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                **kwargs,
+            ),
+            conv(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+            ),
         )
+
+
+class StackedConvBlock2Max(StackedBlock):
+    def build_block(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
+        """
+        Build 2 consequtive convolutions
+
+        Args:
+            conv: generator for convolutions
+            in_channels: number of input channels
+            out_channels: number of output channels
+            kernel_size: kernel size oh convolutions
+            stride: stride of first convolution
+            padding: padding of convolutions
+
+        Returns:
+            nn.Module: stacked convolutions
+        """
+        stride_prod = (
+            reduce((lambda x, y: x * y), stride)
+            if isinstance(stride, Sequence)
+            else stride
+        )
+        if stride_prod > 1:
+            modules = [
+                nd_pool(
+                    "Max",
+                    conv.dim,
+                    kernel_size=kernel_size,
+                    stride=stride,
+                    padding=padding,
+                )
+            ]
+        else:
+            modules = []
+
+        modules += [
+            conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+            ),
+            conv(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+            ),
+        ]
+        return torch.nn.Sequential(*modules)
 
 
 class StackedConvBlock3(StackedBlock):
-    def build_block(self, conv: Callable, in_channels: int,
-                    out_channels: int, kernel_size: NdParam,
-                    stride: NdParam, padding: NdParam,
-                    **kwargs) -> nn.Module:
+    def build_block(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
         """
         Build 2 consequtive convolutions
 
@@ -171,20 +286,44 @@ class StackedConvBlock3(StackedBlock):
             nn.Module: stacked convolutions
         """
         return torch.nn.Sequential(
-            conv(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                 stride=stride, padding=padding, **kwargs),
-            conv(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size,
-                 stride=1, padding=padding, **kwargs),
-            conv(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size,
-                 stride=1, padding=padding, **kwargs),
+            conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                **kwargs,
+            ),
+            conv(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+            ),
+            conv(
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=padding,
+                **kwargs,
+            ),
         )
 
 
-class StackedResidualBlock(StackedBlock):
-    def build_block(self, conv: Callable[[], nn.Module], in_channels: int,
-                    out_channels: int, kernel_size: NdParam,
-                    stride: NdParam, padding: NdParam,
-                    **kwargs) -> nn.Module:
+class StackedResPlain(StackedBlock):
+    def build_block(
+        self,
+        conv: Callable[[], nn.Module],
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
         """
         Build Residual Block
 
@@ -199,56 +338,145 @@ class StackedResidualBlock(StackedBlock):
         Returns:
             nn.Module: stacked convolutions
         """
-        return ResBasic(conv=conv, in_channels=in_channels,
-                                  out_channels=out_channels,
-                                  kernel_size=kernel_size, stride=stride,
-                                  padding=padding, **kwargs)
+        return ResPlain(
+            conv=conv,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            **kwargs,
+        )
+
+
+class StackedResBottleneck(StackedBlock):
+    def build_block(
+        self,
+        conv: Callable[[], nn.Module],
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
+        """
+        Build Residual Block
+
+        Args:
+            conv: generator for convolutions
+            in_channels: number of input channels
+            out_channels: number of output channels
+            kernel_size: kernel size oh convolutions
+            stride: stride of first convolution
+            padding: padding of convolutions
+
+        Returns:
+            nn.Module: stacked convolutions
+        """
+        return ResBottleneck(
+            conv=conv,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            **kwargs,
+        )
+
+
+class MySEBlockExp2(StackedBlock):
+    expansion = 2
+
+    def build_block(
+        self,
+        conv: Callable,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: ND_INT,
+        stride: ND_INT,
+        padding: ND_INT,
+        **kwargs,
+    ) -> nn.Module:
+        """
+        Fused MB Conv block
+
+        Args:
+            conv: generator for convolutions
+            in_channels: number of input channels
+            out_channels: number of output channels
+            kernel_size: kernel size oh convolutions
+            stride: stride of first convolution
+            padding: padding of convolutions
+
+        Returns:
+            nn.Module: stacked convolutions
+        """
+        return MyFusedMBConv(
+            conv=conv,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            expansion=self.expansion,
+            **kwargs,
+        )
+
+
+class MySEBlockExp4(MySEBlockExp2):
+    expansion = 4
 
 
 class StackedConvBlock(AbstractBlock):
     expansion = 2
 
-    def __init__(self,
-                 conv: Callable[[], nn.Module],
-                 in_channels: int,
-                 conv_kernel: Union[Tuple[int], int],
-                 stride: Union[Tuple[int], int] = None,
-                 out_channels: int = None,
-                 max_out_channels: int = None,
-                 num_blocks: int = 2,
-                 **kwargs):
+    def __init__(
+        self,
+        conv: Callable[[], nn.Module],
+        in_channels: int,
+        conv_kernel: Union[Tuple[int], int],
+        stride: Union[Tuple[int], int] = None,
+        out_channels: int = None,
+        max_out_channels: int = None,
+        num_blocks: int = 2,
+        **kwargs,
+    ):
         """
         Plain stack of convolutions. Strides > 1 are applied at the beginning
         by a strided convolution and the first convolution raises the number of
-        channels to :param:`out_channels`.
-        
+        channels to `out_channels`.
+
         Args:
             conv: conv generator to use for internal convolutions
             in_channels: number of input channels
             conv_kernel: kernel size of convolution
             stride: Stride of first convolution. If None stride=1 will be used.
                 Defaults to None.
-            out_channels: If given, then number of output channels will be set 
-                to this value. Otherwise the number of the input channels are 
+            out_channels: If given, then number of output channels will be set
+                to this value. Otherwise the number of the input channels are
                 doubled. Defaults to None.
             max_out_channels: Maximum number of output channels.
                 Defaults to None.
             num_blocks: Number of convolutions. Defaults to 2.
-        
+
         Raises:
             ValueError: raise if given output channels are larger than max
                 output channels
         """
-        super().__init__(out_channels=None) # out_channels will be overwritten later
-        if (out_channels is not None and
-            max_out_channels is not None and
-            out_channels > max_out_channels):
-            raise ValueError("Output channels can not be larger"
-                             "than max output channels")
+        super().__init__(out_channels=None)  # out_channels will be overwritten later
+        if (
+            out_channels is not None
+            and max_out_channels is not None
+            and out_channels > max_out_channels
+        ):
+            raise ValueError(
+                "Output channels can not be larger" "than max output channels"
+            )
         if out_channels is None:
             out_channels = in_channels * self.expansion
         if max_out_channels is not None and out_channels > max_out_channels:
-            out_channels = max_out_channels 
+            out_channels = max_out_channels
         if stride is None:
             stride = 1
 
@@ -257,19 +485,27 @@ class StackedConvBlock(AbstractBlock):
         padding = tuple([(i - 1) // 2 for i in conv_kernel])
 
         _convs = []
-        _convs.append(conv(in_channels=in_channels,
-                           out_channels=out_channels,
-                           kernel_size=conv_kernel,
-                           stride=stride,
-                           padding=padding,
-                           **kwargs))
+        _convs.append(
+            conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=conv_kernel,
+                stride=stride,
+                padding=padding,
+                **kwargs,
+            )
+        )
         for _ in range(num_blocks - 1):
-            _convs.append(conv(in_channels=out_channels,
-                               out_channels=out_channels,
-                               kernel_size=conv_kernel,
-                               stride=1,
-                               padding=padding,
-                               **kwargs))
+            _convs.append(
+                conv(
+                    in_channels=out_channels,
+                    out_channels=out_channels,
+                    kernel_size=conv_kernel,
+                    stride=1,
+                    padding=padding,
+                    **kwargs,
+                )
+            )
 
         self.convs = nn.Sequential(*_convs)
         self.out_channels = out_channels
@@ -277,7 +513,7 @@ class StackedConvBlock(AbstractBlock):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward tensor
-        
+
         Returns:
             torch.Tensor: output tensor
         """

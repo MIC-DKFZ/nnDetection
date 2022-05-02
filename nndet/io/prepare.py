@@ -14,19 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import shutil
-import numpy as np
-import SimpleITK as sitk
-
 from pathlib import Path
 from typing import List, Sequence
 
+import numpy as np
+import SimpleITK as sitk
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
-from nndet.io.paths import Pathlike
 from nndet.io.paths import get_case_ids_from_dir
-
 
 __all__ = ["maybe_split_4d_nifti"]
 
@@ -49,15 +47,21 @@ def maybe_split_4d_nifti(source_file: Path, output_folder: Path):
     filename = source_file.name
     if dim == 3:
         # -7 cuts the .nii.gz part
-        shutil.copy(str(source_file), str(output_folder / (filename[:-7] + "_0000.nii.gz")))
+        shutil.copy(
+            str(source_file), str(output_folder / (filename[:-7] + "_0000.nii.gz"))
+        )
         return
     elif dim == 4:
         imgs_splitted = split_4d_itk(img_itk)
-        
+
         for idx, img in enumerate(imgs_splitted):
-            sitk.WriteImage(img, str(output_folder / (filename[:-7] + "_%04.0d.nii.gz" % idx)))
+            sitk.WriteImage(
+                img, str(output_folder / (filename[:-7] + "_%04.0d.nii.gz" % idx))
+            )
     else:
-        raise TypeError(f"Unexpected dimensionality: {dim} of file {source_file}, cannot split")
+        raise TypeError(
+            f"Unexpected dimensionality: {dim} of file {source_file}, cannot split"
+        )
 
 
 def split_4d_itk(img_itk: sitk.Image) -> List[sitk.Image]:
@@ -84,15 +88,19 @@ def split_4d_itk(img_itk: sitk.Image) -> List[sitk.Image]:
 
     images_new = []
     for i, t in enumerate(range(img_npy.shape[0])):
-            img = img_npy[t]
-            images_new.append(
-                create_itk_image_spatial_props(img, spacing, origin, direction))
+        img = img_npy[t]
+        images_new.append(
+            create_itk_image_spatial_props(img, spacing, origin, direction)
+        )
     return images_new
 
 
 def create_itk_image_spatial_props(
-        data: np.ndarray, spacing: Sequence[float], origin: Sequence[float],
-        direction: Sequence[Sequence[float]]) -> sitk.Image:
+    data: np.ndarray,
+    spacing: Sequence[float],
+    origin: Sequence[float],
+    direction: Sequence[Sequence[float]],
+) -> sitk.Image:
     """
     Create new sitk image and set spatial tags
 
@@ -112,12 +120,13 @@ def create_itk_image_spatial_props(
     return data_itk
 
 
-def create_test_split(splitted_dir: Pathlike,
-                      num_modalities: int,
-                      test_size: float = 0.3,
-                      random_state: int = 0,
-                      shuffle: bool = True,
-                      ):
+def create_test_split(
+    splitted_dir: os.PathLike,
+    num_modalities: int,
+    test_size: float = 0.3,
+    random_state: int = 0,
+    shuffle: bool = True,
+):
     """
     Helper function to create an artificial test split from the splitted data
 
@@ -146,13 +155,16 @@ def create_test_split(splitted_dir: Pathlike,
     logger.info(f"Found {len(case_ids)} to split")
 
     train_ids, test_ids = train_test_split(
-        case_ids, test_size=test_size, random_state=random_state, shuffle=shuffle)
+        case_ids, test_size=test_size, random_state=random_state, shuffle=shuffle
+    )
     logger.info(f"Using {train_ids} for training and {test_ids} for testing.")
 
     for cid in test_ids:
         for modality in range(num_modalities):
-            shutil.move(images_tr / f"{cid}_{modality:04d}.nii.gz",
-                        images_ts / f"{cid}_{modality:04d}.nii.gz")
+            shutil.move(
+                images_tr / f"{cid}_{modality:04d}.nii.gz",
+                images_ts / f"{cid}_{modality:04d}.nii.gz",
+            )
         shutil.move(labels_tr / f"{cid}.nii.gz", labels_ts / f"{cid}.nii.gz")
         if (labels_tr / f"{cid}.json").is_file():
             shutil.move(labels_tr / f"{cid}.json", labels_ts / f"{cid}.json")

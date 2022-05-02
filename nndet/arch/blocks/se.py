@@ -21,16 +21,16 @@ Don't use these. Next nnDetection Version will introduce better/fixed implementa
 import torch
 import torch.nn as nn
 
-
-from nndet.arch.conv import nd_pool, nd_conv
+from nndet.arch.conv import nd_conv, nd_pool
 
 
 class SELayer(nn.Module):
-    def __init__(self,
-                 dim: int,
-                 in_channels: int,
-                 reduction: int = 16,
-                 ):
+    def __init__(
+        self,
+        dim: int,
+        in_channels: int,
+        reduction: int = 16,
+    ):
         """
         Squeeze and Excitation Layer
         https://arxiv.org/abs/1709.01507
@@ -41,13 +41,25 @@ class SELayer(nn.Module):
             reduction: channel reduction for internal computations
         """
         super(SELayer, self).__init__()
-        self.pool = nd_pool("AdaptiveAvg", dim, 1)
+        self.pool = nd_pool("AdaptiveAvg", dim, tuple([1] * dim))
         self.fc = nn.Sequential(
-            nd_conv(dim, in_channels, in_channels // reduction,
-                    kernel_size=1, stride=1, bias=False),
-            nn.ReLU(inplace=True),
-            nd_conv(dim, in_channels // reduction, in_channels,
-                    kernel_size=1, stride=1, bias=False),
+            nd_conv(
+                dim,
+                in_channels,
+                in_channels // reduction,
+                kernel_size=1,
+                stride=1,
+                bias=False,
+            ),
+            nn.ReLU(inplace=False),
+            nd_conv(
+                dim,
+                in_channels // reduction,
+                in_channels,
+                kernel_size=1,
+                stride=1,
+                bias=False,
+            ),
             nn.Sigmoid(),
         )
 

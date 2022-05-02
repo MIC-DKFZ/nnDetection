@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import argparse
 import os
 import random
-import argparse
-from pathlib import Path
-from multiprocessing import Pool
 from itertools import repeat
+from multiprocessing import Pool
+from pathlib import Path
 
 import numpy as np
 import SimpleITK as sitk
@@ -28,20 +28,17 @@ from loguru import logger
 from nndet.io import save_json
 from nndet.utils.check import env_guard
 
+modalities = 1
 
 # # 2D example
-# [Ignore, Not supported]
 # dim = 2
-# image_size = [512, 512]
+# image_size = [256, 256]
 # object_size = [32, 64]
-# object_width = 6
-# num_images_tr = 100
-# num_images_ts = 100
+# object_width = 8
 
 # 3D example
-
 dim = 3
-image_size = [256, 256, 256]
+image_size = [512, 512, 512]
 object_size = [16, 32]
 object_width = 4
 
@@ -52,22 +49,25 @@ def generate_image(image_dir, label_dir, idx):
 
     logger.info(f"Generating case_{idx}")
     selected_size = np.random.randint(object_size[0], object_size[1])
-    selected_class = np.random.randint(0, 2)
+    selected_class = np.random.randint(0, 3)
 
     data = np.random.rand(*image_size)
     mask = np.zeros_like(data)
 
     top_left = [np.random.randint(0, image_size[i] - selected_size) for i in range(dim)]
 
-    if selected_class == 0:
+    if selected_class == 1:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
         data[slicing] = data[slicing] + 0.4
         data = data.clip(0, 1)
         mask[slicing] = 1
-    elif selected_class == 1:
+    elif selected_class == 2:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
 
-        inner_slicing = [slice(tp + object_width, tp + selected_size - object_width) for tp in top_left]
+        inner_slicing = [
+            slice(tp + object_width, tp + selected_size - object_width)
+            for tp in top_left
+        ]
         if len(inner_slicing) == 3:
             inner_slicing[0] = slice(0, image_size[0])
         inner_slicing = tuple(inner_slicing)
@@ -79,6 +79,8 @@ def generate_image(image_dir, label_dir, idx):
         data[object_mask] = data[object_mask] + 0.4
         data = data.clip(0, 1)
         mask[object_mask] = 1
+    elif selected_class == 0:
+        pass  # no object in case
     else:
         raise NotImplementedError
 
@@ -88,12 +90,21 @@ def generate_image(image_dir, label_dir, idx):
 
     data_itk = sitk.GetImageFromArray(data)
     mask_itk = sitk.GetImageFromArray(mask)
-    mask_meta = {
-        "instances": {
-            "1": selected_class
-        },
-    }
-    sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_0000.nii.gz"))
+
+    instances_meta = {"1": selected_class - 1} if selected_class > 0 else {}
+    mask_meta = {"instances": instances_meta}
+
+    if modalities > 1:
+        sc = np.random.randint(0, modalities)
+
+        for i in range(modalities):
+            if i == sc:
+                sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_000{i}.nii.gz"))
+            else:
+                noise_itk = sitk.GetImageFromArray(np.random.rand(*image_size))
+                sitk.WriteImage(noise_itk, str(image_dir / f"case_{idx}_000{i}.nii.gz"))
+    else:
+        sitk.WriteImage(data_itk, str(image_dir / f"case_{idx}_0000.nii.gz"))
     sitk.WriteImage(mask_itk, str(label_dir / f"case_{idx}.nii.gz"))
     save_json(mask_meta, label_dir / f"case_{idx}.json")
 
@@ -106,32 +117,32 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--full',
+        "--full",
         help="Increase size of dataset. "
         "Default sizes train/test 10/10 and full 1000/1000.",
-        action='store_true',
-        )
+        action="store_true",
+    )
     parser.add_argument(
-        '--num_processes',
+        "--num_processes",
         help="Use multiprocessing to create dataset.",
         type=int,
         default=0,
-        )
+    )
     args = parser.parse_args()
 
     full = args.full
     num_processes = args.num_processes
 
-    num_images_tr = 1000 if full else 10
+    num_images_tr = 1000 if full else 20
     num_images_ts = 1000 if full else 10
 
     meta = {
-        "task": f"Task000D{dim}_Example",
+        "task": f"Task000D{dim}M{modalities}_Example",
         "name": "Example",
-        "target_class": None,
+        "target_class": 0,
         "test_labels": True,
         "labels": {"0": "Square", "1": "SquareHole"},
-        "modalities": {"0": "MRI"},
+        "modalities": {str(i): "MRI" for i in range(modalities)},
         "dim": dim,
     }
 
@@ -156,14 +167,14 @@ def main():
                 images_tr_dir,
                 labels_tr_dir,
                 idx,
-                )
+            )
 
         for idx in range(num_images_tr, num_images_tr + num_images_ts):
             generate_image(
                 images_ts_dir,
                 labels_ts_dir,
                 idx,
-                )
+            )
     else:
         logger.info("Using multiprocessing to create example dataset.")
         with Pool(processes=num_processes) as p:
@@ -173,7 +184,7 @@ def main():
                     repeat(images_tr_dir),
                     repeat(labels_tr_dir),
                     range(num_images_tr),
-                )
+                ),
             )
         with Pool(processes=num_processes) as p:
             p.starmap(
@@ -182,9 +193,9 @@ def main():
                     repeat(images_ts_dir),
                     repeat(labels_ts_dir),
                     range(num_images_tr, num_images_tr + num_images_ts),
-                )
+                ),
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -14,18 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Dict, Optional, Sequence, Tuple, Union
+
 import numpy as np
-
 from scipy.ndimage import label
-from typing import Dict, Sequence, Union, Tuple, Optional
 
-from nndet.io.transforms.instances import get_bbox_np
+from nndet.io.transforms.instances import (
+    get_instance_class_from_properties_seq,
+    instances_to_boxes_np,
+)
 
 
 def seg_to_instances(
     seg: np.ndarray,
     min_num_voxel: int = 0,
-    ) -> Tuple[np.ndarray, Dict[int, int]]:
+) -> Tuple[np.ndarray, Dict[int, int]]:
     """
     Use connected components with ones matrix to created
     instances from segmentation
@@ -39,7 +42,7 @@ def seg_to_instances(
         Dict[int, int]: mapping from instances to classes
     """
     structure = np.ones([3] * seg.ndim)
-    
+
     unique_classes = np.unique(seg)
     unique_classes = unique_classes[unique_classes > 0]
 
@@ -48,7 +51,7 @@ def seg_to_instances(
 
     i = 1
     for uc in unique_classes:
-        binary_class_mask = (seg == uc)
+        binary_class_mask = seg == uc
         instances_temp, _ = label(binary_class_mask, structure=structure)
 
         instance_ids = np.unique(instances_temp)
@@ -56,7 +59,7 @@ def seg_to_instances(
 
         for iid in instance_ids:
             instance_binary_mask = instances_temp == iid
-            
+
             if min_num_voxel > 0:
                 if instance_binary_mask.sum() < min_num_voxel:  # remove small instances
                     continue
@@ -70,7 +73,7 @@ def seg_to_instances(
 def seg_to_instances_voted(
     seg: np.ndarray,
     min_num_voxel: int = 0,
-    ) -> Tuple[np.ndarray, Dict[int, int]]:
+) -> Tuple[np.ndarray, Dict[int, int]]:
     """
     Conntected component analysis is performed on foreground
     (independent of exact class) and the final class
@@ -98,15 +101,18 @@ def seg_to_instances_voted(
     i = 1
     for iid in instance_ids:
         instance_binary_mask = instances_temp == iid
-        
+
         if min_num_voxel > 0:
             if instance_binary_mask.sum() < min_num_voxel:  # remove small instances
                 continue
 
         instances[instance_binary_mask] = i  # save instance to final mask
         cls_id, cls_count = np.unique(
-            seg[instance_binary_mask], return_counts=True) # count classes in region
-        majority_voted_class = cls_id[np.argmax(cls_count)] # select class with most votes
+            seg[instance_binary_mask], return_counts=True
+        )  # count classes in region
+        majority_voted_class = cls_id[
+            np.argmax(cls_count)
+        ]  # select class with most votes
 
         assert 0 not in cls_id
         assert majority_voted_class > 0
@@ -121,7 +127,7 @@ def remove_classes(
     rm_classes: Sequence[int],
     classes: Dict[int, int] = None,
     background: int = 0,
-    ) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
+) -> Union[np.ndarray, Tuple[np.ndarray, Dict[int, int]]]:
     """
     Remove classes from segmentation (also works on instances
     but instance ids may not be consecutive anymore)
@@ -149,7 +155,7 @@ def remove_classes(
 def reorder_classes(
     seg: np.ndarray,
     class_mapping: Dict[int, int],
-    ) -> np.ndarray:
+) -> np.ndarray:
     """
     Reorders classes in segmentation
 
@@ -170,7 +176,7 @@ def compute_score_from_seg(
     instance_classes: Dict[int, int],
     probs: np.ndarray,
     aggregation: str = "max",
-    ) -> np.ndarray:
+) -> Dict[int, float]:
     """
     Combine scores for each instance given an instance mask and instance logits
 
@@ -188,7 +194,7 @@ def compute_score_from_seg(
     """
     instance_classes = {int(key): int(item) for key, item in instance_classes.items()}
     instance_ids = list(instance_classes.keys())
-    instance_scores = []
+    instance_scores = {}
     for iid in instance_ids:
         ic = instance_classes[iid]
         instance_mask = instances == iid
@@ -204,8 +210,8 @@ def compute_score_from_seg(
             _score = np.percentile(instance_probs, 95)
         else:
             raise ValueError(f"Aggregation {aggregation} is not aggregation")
-        instance_scores.append(_score)
-    return np.asarray(instance_scores)
+        instance_scores[int(iid)] = _score
+    return instance_scores
 
 
 def softmax_to_instances(
@@ -214,7 +220,7 @@ def softmax_to_instances(
     stuff: Optional[Sequence[int]] = None,
     min_num_voxel: int = 0,
     min_threshold: Optional[float] = None,
-    ) -> dict:
+) -> dict:
     """
     Compute instance segmentation results from a semantic segmentation
     argmax -> remove stuff classes -> connected components ->
@@ -258,19 +264,30 @@ def softmax_to_instances(
         for s in stuff:
             seg[seg == s] = 0
 
-    instances, instance_classes = seg_to_instances_voted(seg, min_num_voxel=min_num_voxel)
+    instances, instance_classes = seg_to_instances_voted(
+        seg, min_num_voxel=min_num_voxel
+    )
 
     instance_scores = compute_score_from_seg(
-        instances, instance_classes, probs, aggregation=aggregation,
-        )
-    instance_classes = {int(key): int(item) - 1 for key, item in instance_classes.items()}
-    tmp = get_bbox_np(instances[None], instance_classes)
-    instance_boxes = tmp["boxes"]
-    instance_classes_seq = tmp["classes"]
+        instances,
+        instance_classes,
+        probs,
+        aggregation=aggregation,
+    )
+    instance_classes = {
+        int(key): int(item) - 1 for key, item in instance_classes.items()
+    }
+
+    instance_boxes, instance_idx = instances_to_boxes_np(seg=instances, dim=seg.ndim)
+    instance_classes_seq = get_instance_class_from_properties_seq(
+        instance_idx=instance_idx,
+        map_dict=instance_classes,
+    )
+    instance_scores_seq = np.array([instance_scores[int(i)] for i in instance_idx])
 
     return {
         "pred_instances": instances,
         "pred_boxes": instance_boxes,
         "pred_labels": instance_classes_seq,
-        "pred_scores": instance_scores,
-        }
+        "pred_scores": instance_scores_seq,
+    }

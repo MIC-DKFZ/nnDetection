@@ -1,0 +1,87 @@
+name: "base_insane"
+transforms: "BaseInsaneAug"
+transforms_kwargs: {}
+
+selected_data_channels:
+selected_seg_channels:
+
+p_eldef: 0.2
+do_elastic: True
+elastic_deform_alpha: [0., 1300.]
+elastic_deform_sigma: [9., 15.]
+
+p_scale: 0.2
+do_scaling: True
+scale_range: [0.65, 1.6]
+independent_scale_factor_for_each_axis: False
+
+p_rot: 0.2
+do_rotation: True
+rotation_x: [-30, 30]
+rotation_y: [-30, 30]
+rotation_z: [-30, 30]
+
+# GaussianNoiseTransform
+p_per_sample_gaussian_noise: 0.15
+
+# GaussianBlurTransform
+p_per_sample_gaussian_blur: 0.2
+p_per_channel_gaussian_blur: 0.5
+gaussian_blur_sigma: [0.5, 1.5]
+gaussian_blur_sigma_per_channel: True
+
+# BrightnessMultiplicativeTransform
+p_per_sample_brightness_mul: 0.15
+brightness_mul_multiplier_range: [0.75, 1.25]
+
+# BrightnessTransform
+do_additive_brightness: False
+additive_brightness_p_per_sample: 0.15
+additive_brightness_p_per_channel: 0.5
+additive_brightness_mu: 0.0
+additive_brightness_sigma: 0.1
+additive_brightness_per_channel: True
+
+# ContrastAugmentationTransform
+p_per_sample_contrast: 0.15
+contrast_range: [0.65, 1.5]
+
+# SimulateLowResolutionTransform
+do_sim_low_res: True
+p_per_sample_sim_low_res: 0.25
+p_per_channel_sim_low_res: 0.5
+sim_low_res_zoom_range: [0.5, 1]
+sim_low_res_per_channel: True
+sim_low_res_order_downsample: 0
+sim_low_res_order_upsample: 3
+
+# GammaTransform
+do_gamma: True
+do_gamma_inverted: True
+p_gamma: 0.3
+p_gamma_inverted: 0.1
+gamma_retain_stats: True
+gamma_range: [0.7, 1.5]
+
+# MirrorTransform
+do_mirror: True
+mirror_axes: [0, 1, 2]
+
+order_data: 3
+border_mode_data: "constant"
+border_cval_data: 0
+order_seg: 0
+border_cval_seg: -1
+border_mode_seg: "constant"
+
+random_crop: False
+random_crop_dist_to_border:
+
+2d_overwrites:
+  elastic_deform_alpha: [0., 200.]
+  elastic_deform_sigma: [9., 13.]
+  rotation_x: [-180, 180]
+  rotation_y: [0, 0]
+  rotation_z: [0, 0]
+  dummy_2D: False
+  mirror_axes: [0, 1]

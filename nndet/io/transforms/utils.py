@@ -24,8 +24,8 @@ class AddProps2Data(AbstractTransform):
         """
         Move properties from property dict to data dict
 
-        Args
-            props_key: key where properties and :param:`map_key` key is located;
+        Args:
+            props_key: key where properties and `map_key` key is located;
             key_mapping: maps properties(key) to new keys in data dict(item)
         """
         super().__init__(grad=False, **kwargs)
@@ -75,6 +75,6 @@ class FilterKeys(AbstractTransform):
     def __init__(self, keys: Sequence[Hashable]):
         super().__init__(grad=False)
         self.keys = keys
-    
+
     def forward(self, **data) -> dict:
         return {k: data[k] for k in self.keys}
