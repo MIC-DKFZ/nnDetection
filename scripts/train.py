@@ -454,8 +454,11 @@ def _train(
     train_start = time.time()
     trainer.fit(module, datamodule=datamodule)
     train_end = time.time()
+    train_time = train_end - train_start
 
-    sweep_start = time.time()
+    run_info = host_and_env_info()
+    run_info["train_s"] = train_time
+    run_info["train_h"] = train_time / 3600
     if do_sweep:
         case_ids = splits[cfg["exp"]["fold"]]["val"]
         if (
@@ -467,6 +470,7 @@ def _train(
             )
             case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
 
+        sweep_start = time.time()
         inference_plan = module.sweep(
             cfg=OmegaConf.to_container(cfg, resolve=True),
             save_dir=train_dir,
@@ -474,10 +478,15 @@ def _train(
             case_ids=case_ids,
             run_prediction=True,
         )
+        sweep_end = time.time()
+        sweep_time = sweep_end - sweep_start
+        run_info["sweep_s"] = sweep_time
+        run_info["sweep_h"] = sweep_time / 3600
 
         plan["inference_plan"] = inference_plan
         save_pickle(plan, train_dir / "plan_inference.pkl")
 
+        eval_start = time.time()
         ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
         for restore in [True, False]:
             target_dir = (
@@ -506,14 +515,10 @@ def _train(
             do_analyze_masks=module.requires_mask_eval(),
             do_seg_eval=module.requires_seg_eval(),
         )
-    sweep_end = time.time()
-    train_time = train_end - train_start
-    sweep_time = sweep_end - sweep_start
-    run_info = host_and_env_info()
-    run_info["train_s"] = train_time
-    run_info["train_h"] = train_time / 3600
-    run_info["sweep_s"] = sweep_time
-    run_info["sweep_h"] = sweep_time / 3600
+        eval_end = time.time()
+        eval_time = eval_end - eval_start
+        run_info["eval_s"] = eval_time
+        run_info["eval_h"] = eval_time / 3600
     save_json(run_info, "./run_info.json")
 
 
