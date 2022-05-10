@@ -268,17 +268,3 @@ class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
             iou_thresh=self.nms_thresh,
         )
         return res[:3]
-
-
-# class NoNMSCrossLevelPostprocessing(CrossLevelBoxPostprocessing):
-#     def nms(
-#         self,
-#         img_reps: torch.Tensor,
-#         img_probs: torch.Tensor,
-#         img_labels: torch.Tensor,
-#     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-#         return (
-#             img_reps,
-#             img_probs,
-#             img_labels,
-#         )
