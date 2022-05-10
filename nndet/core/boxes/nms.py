@@ -142,12 +142,12 @@ def batched_nms(
         masks: predicted masks
 
     Returns:
-        Tensor: postprocessed boxes
-        Tensor: postprocessed masks. Only returned if masks is not None.
+        Tensor: (sorted) postprocessed boxes
+        Tensor: (sorted) postprocessed masks. Only returned if masks is not None.
             Skipped otherwise!
-        Tensor: postprocessed scores (descending)
-        Tensor: postprocessed labels
-        Tensor: if weights is not None, corresponding weights, None otherwise
+        Tensor: (sorted) postprocessed scores (descending)
+        Tensor: (sorted) postprocessed labels
+        Tensor: (sorted) if weights is not None, corresponding weights, None otherwise
     """
     keep = _batched_nms(
         boxes=boxes,
@@ -177,7 +177,7 @@ def batched_weighted_nms(
 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     """
     Uses scores and weights to compute NMS suppression
-    Returned scores are the original ones
+    Returned scores are the original ones and weights are set to one
     (NMS is always performed on the boxes!)
 
     Args:
@@ -189,11 +189,11 @@ def batched_weighted_nms(
         masks: predicted masks
 
     Returns:
-        Tensor: postprocessed boxes
-        Tensor: postprocessed masks. Only returned if masks is not None.
+        Tensor: (sorted) postprocessed boxes
+        Tensor: (sorted) postprocessed masks. Only returned if masks is not None.
             Skipped otherwise!
-        Tensor: kept scores.
-        Tensor: postprocessed labels
+        Tensor: (sorted) kept scores.
+        Tensor: (sorted) postprocessed labels
         Tensor: vector filled with ones.
     """
     _scores = scores * weights

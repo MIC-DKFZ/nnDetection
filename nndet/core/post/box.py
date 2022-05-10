@@ -103,9 +103,10 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         Adapted from torchvision https://github.com/pytorch/vision
 
         Args:
-            boxes: predicted deltas for proposals [N, dim * 2]
-            probs: predicted logits for boxes [N, C]
-            image_shape: shape of image
+            img_reps: predicted deltas for proposals [N, dim * 2]
+            img_probs: predicted logits for boxes [N, C]
+            img_shape: shape of image
+            num_anchors_per_level: number of anchors per level
 
         Returns:
             Tensor: final boxes [R, dim * 2]
@@ -161,6 +162,109 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             boxes=img_reps,
             scores=img_probs,
             labels=img_labels,
+            iou_thresh=self.nms_thresh,
+        )
+        return res[:3]
+
+
+class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
+    """
+    Warning:
+        Only use this with a single class. otherwise the results will be off.
+    """
+
+    def process_image_class_agnostic(
+        self,
+        img_reps: torch.Tensor,
+        img_probs: torch.Tensor,
+        img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Postprocess bounding box deltas and probabilities for a single image
+        Adapted from torchvision https://github.com/pytorch/vision
+        (Note: in contrast to torchvision this performs some
+        operations per image which could be parallelized across the batch)
+
+        Args:
+            img_reps: predicted deltas for proposals [N, dim * 2]
+            img_probs: predicted logits for boxes [N, C]
+            img_shape: shape of image
+            num_anchors_per_level: number of anchors per level
+
+        Returns:
+            Tensor: final boxes [R, dim * 2]
+            Tensor: final scores (for final class) [R]
+            Tensor: final class label [R]
+        """
+        assert img_reps.shape[0] == img_probs.shape[0]
+        if img_probs.shape[1] != 1:
+            raise ValueError(
+                "PerLevelBoxPostprocessing is only supported with a "
+                f"single class but found {img_probs.shape[1]} classes"
+            )
+        boxes = clip_boxes_to_image_(img_reps, img_shape)
+        probs = img_probs.flatten()
+        levels = [
+            torch.full(
+                (n,), fill_value=level_idx, dtype=torch.long, device=probs.device
+            )
+            for level_idx, n in enumerate(num_anchors_per_level)
+        ]
+        levels = torch.cat(levels, 0)
+
+        if self.topk_candidates is not None:
+            idx = self.topk_per_level(probs, num_anchors_per_level)
+        else:
+            idx = torch.arange(probs.numel())
+
+        boxes = boxes[idx]
+        probs = probs[idx]
+        levels = levels[idx]
+
+        if self.score_thresh is not None:
+            keep_mask = probs > self.score_thresh
+            probs, boxes, levels = probs[keep_mask], boxes[keep_mask], levels[keep_mask]
+
+        if self.remove_small_boxes is not None:
+            keep = fn_remove_small_boxes(boxes, min_size=self.remove_small_boxes)
+            boxes, probs, levels = boxes[keep], probs[keep], levels[keep]
+        boxes, probs, _ = self.nms(boxes, probs, levels)
+
+        if self.detections_per_img is not None:
+            boxes = boxes[: self.detections_per_img]
+            probs = probs[: self.detections_per_img]
+
+        labels = torch.ones(probs.shape, dtype=torch.long, device=probs.device)
+        return boxes, probs, labels
+
+    def topk_per_level(
+        self,
+        probs: torch.Tensor,
+        num_anchors_per_level: Sequence[int],
+    ) -> torch.Tensor:
+        all_idx = []
+        idx_offset = 0
+        for probs_per_level in probs.split(num_anchors_per_level):
+            # select topk
+            _topk = min(self.topk_candidates, probs_per_level.shape[0])
+            _, sorted_idx_level = probs_per_level.topk(_topk)
+
+            all_idx.append(sorted_idx_level + idx_offset)
+            idx_offset = idx_offset + probs_per_level.shape[0]
+
+        return torch.cat(all_idx)
+
+    def nms(
+        self,
+        img_reps: torch.Tensor,
+        img_probs: torch.Tensor,
+        levels: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        res = batched_nms(
+            boxes=img_reps,
+            scores=img_probs,
+            labels=levels,
             iou_thresh=self.nms_thresh,
         )
         return res[:3]

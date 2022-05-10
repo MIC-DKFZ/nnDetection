@@ -166,3 +166,8 @@ class MaskURCNNC002FullMask(MaskURCNNC002):
             Type[Sweeper]: return class of sweeper to use for this class
         """
         return MaskSweeper
+
+
+@MODULE_REGISTRY.register
+class MaskURCNNC002PerLevelPost(MaskURCNNC002):
+    pass  # TODO: add support for postprocessor to retina unet
