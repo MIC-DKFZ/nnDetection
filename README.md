@@ -16,9 +16,9 @@ Following nnU-Net’s agenda, in this work we systematize and automate the confi
 The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
 We demonstrate the effectiveness of nnDetection on two public benchmarks, ADAM and LUNA16, and propose 10 further public data sets for a comprehensive evaluation of medical object detection methods.
 
-If you use nnDetection please cite our [paper](https://arxiv.org/abs/2106.00817):
+**If you use nnDetection please cite our [paper](https://miccai2021.org/openaccess/paperlinks/2021/09/01/341-Paper1836.html)**:
 ```
-Baumgartner, M., Jaeger, P. F., Isensee, F., & Maier-Hein, K. H. (2021). nnDetection: A Self-configuring Method for Medical Object Detection. arXiv preprint arXiv:2106.00817
+Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
 ```
 :tada: nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21) :tada:
 
@@ -49,6 +49,9 @@ When running a training inside the container it is necessary to [increase the sh
 
 
 ## Source
+
+*Please note that nndetection requires Python 3.8+.*
+
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
 3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+) and [torchvision](https://github.com/pytorch/vision)(make sure to match the versions!).
@@ -186,7 +189,7 @@ Note: Please avoid `.` inside file names since it can influence how paths/names 
 ${det_data}
     [Task000_Example]
         - dataset.yaml # dataset.json works too
-        [raw_splitted_data]
+        [raw_splitted]
             [imagesTr]
                 - case0000_0000.nii.gz # case0000 modality 0
                 - case0000_0001.nii.gz # case0000 modality 1
@@ -454,7 +457,80 @@ Running individual components:
 - unittests with converage: `pytest --cov=nndet` from the base diretory
 - code formatting: `black .` from the base directory
 
-# FAQ
+
+# FAQ & Common Issues
+<details close>
+<summary>Installation & Initial Setup Errors</summary>
+<br>
+
+1. Error: Undefined CUDA symbols when importing `nndet._C` or other import related Errors from `nndet._C` or CUDA related ARCH errors
+nnDetection includes additional CUDA code which needs to compiled upon installation and thus requires correct configuration of the CUDA dependencies.
+Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build.
+This can be done by running `nndet_env` if the installation succeeded  or by running `python scripts/utils.py`.
+An example output of the command is shown below:
+
+```bash
+----- PyTorch Information -----
+PyTorch Version: 1.11.0+cu113
+PyTorch Debug: False
+PyTorch CUDA: 11.3
+PyTorch Backend cudnn: 8200
+PyTorch CUDA Arch List: ['sm_37', 'sm_50', 'sm_60', 'sm_70', 'sm_75', 'sm_80', 'sm_86']
+PyTorch Current Device Capability: (7, 5)
+PyTorch CUDA available: True
+
+----- System Information -----
+System NVCC: nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2021 NVIDIA Corporation
+Built on Sun_Aug_15_21:14:11_PDT_2021
+Cuda compilation tools, release 11.4, V11.4.120
+Build cuda_11.4.r11.4/compiler.30300941_0
+
+System Arch List: None
+System OMP_NUM_THREADS: 1
+System CUDA_HOME is None: True
+System CPU Count: 8
+Python Version: 3.8.11 (default, Aug  3 2021, 15:09:35)
+[GCC 7.5.0]
+
+----- nnDetection Information -----
+det_num_threads 6
+det_data is set True
+det_models is set True
+```
+Things to look out for:
+
+Make sure that the versions of PyTorch CUDA and NVCC CUDA match (minor version mismatch as in this case, will work without error but could potentially introduce bugs.)
+
+`OMP_NUM_THREADS` should always be set to 1 and `det_num_threads` should always be lower or equal `Systemm CPU Count`.
+
+2. Error persists even after fixing the environment
+Make sure to delete the `build` folder before rerunning the installation since it won't recompile the code otherwise.
+
+3. Error: No kernel image is available for execution
+
+You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
+
+Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
+approriately (e.g. check Dockefile for example).
+As before make sure to delete the `build` folder when rerunning the installation process.
+
+3. Please open an Issue and provide your environment as obtained by `nndet_env`.
+
+</details>
+
+<details close>
+<summary>Training doesn't start or is stuck</summary>
+<br>
+
+1. Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
+
+2. Try running the training without multiprocessing as a sanity check: `nndet_train XXX -o augment_cfg.multiprocessing=False`. Don't use this for the full training, this is just one step of the debugging process.
+
+3. Please open an Issue and provide your environment as obtained by `nndet_env` and report if the training without multiprocessing started correctly.
+
+</details>
+
 <details close>
 <summary>GPU requirements</summary>
 <br>
@@ -464,22 +540,6 @@ While the memory can be adjusted by manipulating the correct setting we recommen
 Future releases will refactor the planning stage to improve the VRAM estimation and add support for different memory budgets.
 </details>
 
-<details close>
-<summary>Error: Undefined CUDA symbols when importing `nndet._C`</summary>
-<br>
-Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build!
-Follow the installation instruction at the beginning!
-</details>
-
-<details close>
-<summary>Error: No kernel image is available for execution"</summary>
-<br>
-You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
-
-Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
-approriately (e.g. check Dockefile for example).
-Make sure to delete all caches before rebulding!
-</details>
 
 <details close>
 <summary>Training with bounding boxes</summary>

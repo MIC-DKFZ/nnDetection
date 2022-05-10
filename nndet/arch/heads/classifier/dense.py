@@ -7,11 +7,14 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.arch.heads.abstract import CONV_TYPES, Classifier
-from nndet.losses.classification import (
+from nndet.losses.classification.ce import BCEWithLogitsLossOneHot, CrossEntropyLoss
+from nndet.losses.classification.focal import (
     AsymmetricFocalLossWithLogits,
-    BCEWithLogitsLossOneHot,
-    CrossEntropyLoss,
     FocalLossWithLogits,
+)
+from nndet.losses.classification.poly1 import (
+    Poly1BCEWithLogits,
+    Poly1FocalLossWithLogits,
 )
 
 
@@ -247,7 +250,6 @@ class BCECLassifier(DenseClassifier):
         )
 
         self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -276,7 +278,7 @@ class CEClassifier(DenseClassifier):
         **kwargs,
     ):
         """
-        Classifier Head with sigmoid based BCE loss computation and prio
+        Classifier Head with softmax based CE loss computation and prio
         prob weight init
         conv(in, internal) -> num_convs x conv(internal, internal) ->
         conv(internal, out)
@@ -348,12 +350,13 @@ class FocalClassifier(DenseClassifier):
         gamma: float = 2,
         alpha: float = -1,
         reduction: str = "sum",
+        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         """
-        Classifier Head with sigmoid based BCE loss computation and
+        Classifier Head with sigmoid based Focal loss computation and
         prio prob weight init
         conv(in, internal) -> num_convs x conv(internal, internal) ->
         conv(internal, out)
@@ -373,6 +376,7 @@ class FocalClassifier(DenseClassifier):
             gamma: focal loss gamma
             alpha: focal loss alpha
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
@@ -393,9 +397,10 @@ class FocalClassifier(DenseClassifier):
         self.loss = FocalLossWithLogits(
             gamma=gamma,
             alpha=alpha,
-            reduction=reduction,
-            loss_weight=loss_weight,
             loss_fp32=loss_fp32,
+            loss_weight=loss_weight,
+            reduction=reduction,
+            smoothing=smoothing,
         )
         self.logits_convert_fn = nn.Sigmoid()
 
@@ -415,12 +420,13 @@ class AsymmetricFocalClassifier(FocalClassifier):
         gamma: float = 2,
         alpha: float = -1,
         reduction: str = "sum",
+        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
     ):
         """
-        Classifier Head with sigmoid based BCE loss computation and
+        Classifier Head with sigmoid based Asym Focal loss computation and
         prio prob weight init
         conv(in, internal) -> num_convs x conv(internal, internal) ->
         conv(internal, out)
@@ -440,6 +446,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
             gamma: focal loss gamma
             alpha: focal loss alpha
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             kwargs: keyword arguments passed to first and internal convolutions
@@ -460,9 +467,153 @@ class AsymmetricFocalClassifier(FocalClassifier):
         self.loss = AsymmetricFocalLossWithLogits(
             gamma=gamma,
             alpha=alpha,
-            reduction=reduction,
-            loss_weight=loss_weight,
             loss_fp32=loss_fp32,
+            loss_weight=loss_weight,
+            reduction=reduction,
+            smoothing=smoothing,
+        )
+        self.logits_convert_fn = nn.Sigmoid()
+
+
+class Poly1BCECLassifier(DenseClassifier):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        alpha: float = -1,
+        epsilon: float = -1,
+        reduction: str = "mean",
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
+        """
+        Classifier Head with sigmoid based Poly1 BCE loss computation and prio
+        prob weight init
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            anchors_per_pos: number of anchors per position
+            num_levels: number of decoder levels which are passed through the
+                classifier
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            prior_prob: initialize final conv with given prior probability
+            alpha: balance positive and negative samples [0, 1] (increasing
+                alpha increase weight of foreground classes (better recall))
+            epsilon: epsilon of poly term.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
+        self.prior_prob = prior_prob
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            num_convs=num_convs,
+            add_norm=add_norm,
+            internal_channels=internal_channels,
+            num_classes=num_classes,
+            anchors_per_pos=anchors_per_pos,
+            num_levels=num_levels,
+            **kwargs,
+        )
+        self.loss = Poly1BCEWithLogits(
+            alpha=alpha,
+            epsilon=epsilon,
+            loss_fp32=loss_fp32,
+            loss_weight=loss_weight,
+            reduction=reduction,
+            smoothing=smoothing,
+        )
+        self.logits_convert_fn = nn.Sigmoid()
+
+
+class Poly1FocalClassifier(DenseClassifier):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        num_classes: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        prior_prob: Optional[float] = None,
+        gamma: float = 2,
+        alpha: float = -1,
+        epsilon: float = -1,
+        reduction: str = "sum",
+        smoothing: float = 0.0,
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        **kwargs,
+    ):
+        """
+        Classifier Head with sigmoid based Poly1 Focal loss computation and
+        prio prob weight init
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            anchors_per_pos: number of anchors per position
+            num_levels: number of decoder levels which are passed through the
+                classifier
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            prior_prob: initialize final conv with given prior probability
+            gamma: focal loss gamma
+            alpha: focal loss alpha
+            epsilon: epsilon of poly term.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
+        self.prior_prob = prior_prob
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            num_convs=num_convs,
+            add_norm=add_norm,
+            internal_channels=internal_channels,
+            num_classes=num_classes,
+            anchors_per_pos=anchors_per_pos,
+            num_levels=num_levels,
+            **kwargs,
+        )
+
+        self.loss = Poly1FocalLossWithLogits(
+            gamma=gamma,
+            alpha=alpha,
+            epsilon=epsilon,
+            loss_fp32=loss_fp32,
+            loss_weight=loss_weight,
+            reduction=reduction,
+            smoothing=smoothing,
         )
         self.logits_convert_fn = nn.Sigmoid()
 

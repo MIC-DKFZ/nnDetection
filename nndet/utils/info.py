@@ -17,15 +17,18 @@ limitations under the License.
 import copy
 import functools
 import inspect
+import multiprocessing
 import os
 import pathlib
+import socket
 import sys
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from pathlib import Path
 from subprocess import PIPE, run
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
+import torch
 from git import InvalidGitRepositoryError, Repo
 from loguru import logger
 from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
@@ -348,3 +351,21 @@ def flatten_mapping(
         else:
             _mapping[str(key)] = item
     return _mapping
+
+
+def host_and_env_info() -> Dict[str, Union[str, float, int]]:
+    info = {}
+
+    # host info
+    info["hostname"] = socket.gethostname()
+    info["job_id"] = os.getenv("LSB_JOBID", "no_id")
+    try:
+        info["cpu_count"] = multiprocessing.cpu_count()
+    except NotImplementedError:
+        info["cpu_count"] = -1
+    for i in range(torch.cuda.device_count()):
+        info[f"gpu{i}"] = torch.cuda.get_device_name(i)
+
+    # env info
+    info["det_num_threads"] = os.environ.get("det_num_threads", -1)
+    return info

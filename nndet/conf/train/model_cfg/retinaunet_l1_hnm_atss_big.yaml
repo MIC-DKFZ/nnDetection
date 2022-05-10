@@ -1,4 +1,6 @@
-backbone_kwargs: {} # keyword arguments passed to encoder
+backbone_kwargs: # keyword arguments passed to encoder
+  max_channels: 384
+
 neck_kwargs: # keyword arguments passed to decoder
   min_out_channels: 8
   upsampling_mode: "transpose"
@@ -14,16 +16,21 @@ neck_kwargs: # keyword arguments passed to decoder
 head_kwargs:  # keyword arguments to passed to head
   reg_mode: "encode"
 
+head_sampler_kwargs: # keyword arguments passed to sampler
+  batch_size_per_image: 32 # number of anchors sampled per image
+  positive_fraction: 0.33 # defines ratio between positive and negative anchors
+  # hard negatives are sampled from a pool of size:
+  # batch_size_per_image * (1 - positive_fraction) * pool_size
+  pool_size: 20
+  min_neg: 1 # minimum number of negative anchors sampled per image
+
 head_classifier_kwargs: # keyword arguments passed to classifier in head
   num_convs: 1
   norm_channels_per_group: 16
   norm_affine: True
-  reduction: "sum"
-  gamma: 1.
-  alpha: 0.75
-  loss_weight: 0.3
+  reduction: "mean"
+  loss_weight: 1.
   prior_prob: 0.01
-  loss_fp32: True # requried for focal loss, jit won't work otherwise
 
 head_regressor_kwargs: # keyword arguments passed to regressor in head
   num_convs: 1
@@ -42,5 +49,8 @@ matcher_kwargs: # keyword arguments passed to matcher
   num_candidates: 4
   center_in_gt: False
 
-plan_arch_overwrites: {} # overwrite arguments of architecture
+plan_arch_overwrites: # overwrite arguments of architecture
+  start_channels: 48
+  fpn_channels: 192
+  head_channels: 192
 plan_anchors_overwrites: {} # overwrite arguments of anchors

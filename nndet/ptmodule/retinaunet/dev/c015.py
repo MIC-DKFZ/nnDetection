@@ -1,5 +1,3 @@
-from typing import Type
-
 from nndet.arch.conv import (
     ConvBatchLReLU,
     ConvGroupLReLU,
@@ -8,12 +6,11 @@ from nndet.arch.conv import (
     ConvInstanceMish,
 )
 from nndet.arch.heads.classifier import FocalClassifier
+from nndet.arch.heads.classifier.dense import Poly1BCECLassifier, Poly1FocalClassifier
 from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMV2
 from nndet.arch.heads.regressor import L1Regressor
 from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
-from nndet.inference.ensembler.base import BaseEnsembler
-from nndet.inference.ensembler.detection import BoxEnsemblerSelectiveV2
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 
@@ -78,32 +75,16 @@ class RetinaUNetC015Focal(RetinaUNetCV001Focal):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC015Poly1Focal(RetinaUNetC015Focal):
+    head_classifier_cls = Poly1FocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015Poly1BCE(RetinaUNetC015):
+    head_classifier_cls = Poly1BCECLassifier
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC015BNFocal(RetinaUNetC015Focal):
     backbone_conv_cls = ConvBatchLReLU
     neck_conv_cls = ConvBatchLReLU
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetC015InfV2(RetinaUNetC015):
-    @classmethod
-    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
-        """
-        Returns:
-            Type[BaseEnsembler]: return class of ensembler to use for this
-                class
-        """
-        return BoxEnsemblerSelectiveV2
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetC015MishHeadInfV2(RetinaUNetC015):
-    head_conv_cls = ConvGroupMish
-
-    @classmethod
-    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
-        """
-        Returns:
-            Type[BaseEnsembler]: return class of ensembler to use for this
-                class
-        """
-        return BoxEnsemblerSelectiveV2

@@ -190,7 +190,6 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
             **kwargs,
         )
         self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -255,7 +254,6 @@ class BCEFCRoIClassifier(FCRoIClassifier):
             **kwargs,
         )
         self.loss = BCEWithLogitsLossOneHot(
-            num_classes=num_classes,
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,

@@ -8,7 +8,8 @@ assignees: ''
 ---
 
 ### :skull: Bug
-<!-- Please provide a short and cleaer describtion of the bug. What happens? What should happen? If applicable, please include the full error message. -->
+<!-- Please read the FAQ and comming Issues section in the Readme before opening an Issue.
+Please provide a short and cleaer describtion of the bug. What happens? What should happen? If applicable, please include the full error message. -->
 
 ### Environment
 Please provide some information about the used environment.
