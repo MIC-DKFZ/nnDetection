@@ -194,11 +194,16 @@ from nndet.core.rois.pooler.roi_align import (  # roi_align,; roi_align_3d,
 
 
 @pytest.fixture
-def pooler():
+def pooler_naive():
     return RoIAlignNaiveAssign((3, 3, 3))
 
 
-def test_roi_align_narive_assign(pooler):
+@pytest.fixture
+def pooler_orig():
+    return RoIAlignOrigAssign((3, 3, 3))
+
+
+def test_roi_align_naive_assign(pooler_naive):
     boxes = torch.tensor(
         [
             [0, 0, 2, 2, 0, 2],
@@ -212,17 +217,35 @@ def test_roi_align_narive_assign(pooler):
         ]
     )
 
-    # Orig assign
-    # tensor([0, 0, 0, 1, 2, 3, 4, 4], dtype=torch.int32)
-
-    # New assign
-    # tensor([0, 0, 0, 1, 2, 3, 3, 4], dtype=torch.int32)
-
     features = [0, 1, 2, 3]
     image_size = (128, 128, 128)
-    levels = pooler._find_pyramid_level(
+    levels = pooler_naive._find_pyramid_level(
         boxes,
         features,
         image_size,
     )
-    assert levels.allclose(torch.tensor([0, 0, 0, 1, 2, 3, 3, 4]).int())
+    assert levels.allclose(torch.tensor([0, 0, 0, 1, 2, 3, 3, 4]))
+
+
+def test_roi_align_orig_assign(pooler_orig):
+    boxes = torch.tensor(
+        [
+            [0, 0, 2, 2, 0, 2],
+            [0, 0, 4, 4, 0, 4],
+            [0, 0, 8, 8, 0, 8],
+            [0, 0, 16, 16, 0, 16],
+            [0, 0, 32, 32, 0, 32],
+            [0, 0, 64, 64, 0, 64],
+            [0, 0, 96, 96, 0, 96],
+            [0, 0, 128, 128, 0, 128],
+        ]
+    )
+
+    features = [0, 1, 2, 3]
+    image_size = (128, 128, 128)
+    levels = pooler_orig._find_pyramid_level(
+        boxes,
+        features,
+        image_size,
+    )
+    assert levels.allclose(torch.tensor([0, 0, 0, 1, 2, 3, 4, 4]))

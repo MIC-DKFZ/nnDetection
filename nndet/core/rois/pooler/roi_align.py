@@ -161,7 +161,7 @@ class RoIAlignOrigAssign(RoIAlignBase):
             (num_levels + torch.log2(torch.sqrt(d2 * d3)))
             .round()
             .clamp_(min=0, max=num_levels)
-            .to(dtype=torch.int)
+            .to(dtype=torch.long)
         )
         return level
 
@@ -205,5 +205,5 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         else:
             raise ValueError(f"Image size needs to be 2D or 3d, received {image_size}.")
 
-        level = (v + num_levels).clamp_(min=0, max=len(features)).to(dtype=torch.int)
+        level = (v + num_levels).clamp_(min=0, max=len(features)).to(dtype=torch.long)
         return level
