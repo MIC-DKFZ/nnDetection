@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 import torch
-from hiplot import ExperimentFetcherDoesntApply
 from torchvision.ops.boxes import nms as nms_torchvision
 
 from nndet.core.boxes.nms import batched_nms, nms
