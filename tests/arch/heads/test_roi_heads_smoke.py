@@ -14,7 +14,8 @@ from nndet.nn.heads.regressor.roi import (
     L1ConvRoIRegressor,
     L1FCRoIRegressor,
 )
-from nndet.nn.layers.conv import ConvInstanceRelu, Generator
+from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.wrapper import Generator
 
 INPUT_SIZE_TENSOR = (10, 16, 4, 4, 4)
 INPUT_SIZE_CONFIG = (4, 4, 4)

@@ -2,7 +2,7 @@ from typing import Sequence
 
 import torch
 
-from nndet.arch.ops.norm import GroupNorm
+from nndet.nn.ops.norm import GroupNorm
 from nndet.utils.typing import ND_INT
 
 

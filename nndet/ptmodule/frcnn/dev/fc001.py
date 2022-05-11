@@ -1,4 +1,4 @@
-# from nndet.arch.heads.segmenter import DiCESegmenterFgBg
+# from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,

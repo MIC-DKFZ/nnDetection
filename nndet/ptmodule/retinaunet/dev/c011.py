@@ -19,7 +19,8 @@ from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegA
 from nndet.nn.heads.comb.base import AnchorHeadType
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.heads.regressor.dense import DenseRegressorType, DualRegressor
-from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU, Generator
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.ema import EMAWeightsCB
