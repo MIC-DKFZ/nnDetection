@@ -1,7 +1,7 @@
-from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
-from nndet.arch.heads.classifier import FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.regressor import L1Regressor
+from nndet.nn.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.regressor import L1Regressor
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 

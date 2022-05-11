@@ -1,7 +1,8 @@
 import torch
 from loguru import logger
 
-from nndet.arch.conv import (
+from nndet.core.boxes.coder import CoderType
+from nndet.nn.conv import (
     ConvGroupLReLU,
     ConvGroupMish,
     ConvGroupRelu,
@@ -12,17 +13,16 @@ from nndet.arch.conv import (
     ConvInstanceSiLU,
     ConvInstanceSwish,
 )
-from nndet.arch.decoder.base import SmallerUFPN, SmallUFPN
-from nndet.arch.heads.classifier import (
+from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
+from nndet.nn.heads.classifier import (
     AsymmetricFocalClassifier,
     DenseClassifierType,
     FocalClassifier,
     FullyConntectedBCECLassifier,
 )
-from nndet.arch.heads.comb import AnchorHeadType, BoxHeadAll
-from nndet.arch.heads.regressor import DenseRegressorType
-from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
-from nndet.core.boxes.coder import CoderType
+from nndet.nn.heads.comb import AnchorHeadType, BoxHeadAll
+from nndet.nn.heads.regressor import DenseRegressorType
+from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.learning_rate import LinearWarmupPolyLR

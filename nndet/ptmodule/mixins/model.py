@@ -4,20 +4,6 @@ from typing import Callable, Optional, Type
 
 from loguru import logger
 
-from nndet.arch.blocks.basic import AbstractBlock
-from nndet.arch.conv import Generator
-from nndet.arch.decoder.base import BaseUFPN, DecoderType
-from nndet.arch.encoder.abstract import AbstractEncoder, EncoderType
-from nndet.arch.heads.classifier import DenseClassifierType
-from nndet.arch.heads.classifier.dense import DenseClassifier
-from nndet.arch.heads.classifier.roi import RoIClassifier
-from nndet.arch.heads.comb.base import AnchorHead, AnchorHeadType
-from nndet.arch.heads.comb.roi import RoIBoxHead
-from nndet.arch.heads.masker.base import Masker
-from nndet.arch.heads.regressor import DenseRegressorType
-from nndet.arch.heads.regressor.dense import DenseRegressor
-from nndet.arch.heads.regressor.roi import RoIRegressor
-from nndet.arch.heads.segmenter import Segmenter, SegmenterType
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
 from nndet.core.boxes.coder import BoxCoderND, CoderType
@@ -28,6 +14,20 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import RoIModule
 from nndet.core.rois.pooler import RoIPooler
+from nndet.nn.blocks.basic import AbstractBlock
+from nndet.nn.conv import Generator
+from nndet.nn.decoder.base import BaseUFPN, DecoderType
+from nndet.nn.encoder.abstract import AbstractEncoder, EncoderType
+from nndet.nn.heads.classifier import DenseClassifierType
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.classifier.roi import RoIClassifier
+from nndet.nn.heads.comb.base import AnchorHead, AnchorHeadType
+from nndet.nn.heads.comb.roi import RoIBoxHead
+from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.regressor import DenseRegressorType
+from nndet.nn.heads.regressor.dense import DenseRegressor
+from nndet.nn.heads.regressor.roi import RoIRegressor
+from nndet.nn.heads.segmenter import Segmenter, SegmenterType
 from nndet.utils.typing import CONVSEQ
 
 

@@ -1,20 +1,5 @@
 from typing import Optional, Type
 
-from nndet.arch.blocks import StackedConvBlock2
-from nndet.arch.blocks.basic import AbstractBlock
-from nndet.arch.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
-from nndet.arch.decoder.base import BaseUFPN, UFPNModular
-from nndet.arch.encoder import Encoder
-from nndet.arch.encoder.abstract import AbstractEncoder
-from nndet.arch.heads.classifier.dense import BCECLassifier, DenseClassifier
-from nndet.arch.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
-from nndet.arch.heads.comb import BoxHeadHNM
-from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.comb.roi import RoIBoxHead
-from nndet.arch.heads.masker.base import BCESingleMasker, Masker
-from nndet.arch.heads.regressor.dense import DenseRegressor, L1Regressor
-from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
@@ -28,6 +13,21 @@ from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.ensembler.detection import BoxEnsemblerSelective
 from nndet.inference.ensembler.mask import MaskViaBoxesSelectiveEnsembler
 from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
+from nndet.nn.blocks import StackedConvBlock2
+from nndet.nn.blocks.basic import AbstractBlock
+from nndet.nn.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
+from nndet.nn.decoder.base import BaseUFPN, UFPNModular
+from nndet.nn.encoder import Encoder
+from nndet.nn.encoder.abstract import AbstractEncoder
+from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
+from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
+from nndet.nn.heads.comb import BoxHeadHNM
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.comb.roi import RoIBoxHead
+from nndet.nn.heads.masker.base import BCESingleMasker, Masker
+from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
+from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
+from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin

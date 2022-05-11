@@ -3,8 +3,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import torch
 from loguru import logger
 
-from nndet.arch.heads.comb import RoIHeadType
-from nndet.arch.heads.masker.base import MaskerType
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import SamplerType
@@ -12,6 +10,8 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPoolerType
+from nndet.nn.heads.comb import RoIHeadType
+from nndet.nn.heads.masker.base import MaskerType
 
 # TODO: cleanup
 

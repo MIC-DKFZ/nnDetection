@@ -1,20 +1,3 @@
-from nndet.arch.blocks.basic import StackedConvBlock2
-from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU
-from nndet.arch.decoder.base import UFPNModular
-from nndet.arch.encoder.modular import Encoder
-from nndet.arch.heads.classifier.dense import BCECLassifier
-from nndet.arch.heads.classifier.roi import (
-    BCEConvRoIClassifier,
-    BCEFCRoIClassifier,
-    CEConvRoIClassifier,
-)
-from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNM
-from nndet.arch.heads.comb.roi import RoIBoxHead
-from nndet.arch.heads.masker import BCESingleMasker
-from nndet.arch.heads.masker.base import DiceBCESingleMasker
-from nndet.arch.heads.regressor.dense import L1Regressor
-from nndet.arch.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
@@ -26,6 +9,23 @@ from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
+from nndet.nn.blocks.basic import StackedConvBlock2
+from nndet.nn.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.decoder.base import UFPNModular
+from nndet.nn.encoder.modular import Encoder
+from nndet.nn.heads.classifier.dense import BCECLassifier
+from nndet.nn.heads.classifier.roi import (
+    BCEConvRoIClassifier,
+    BCEFCRoIClassifier,
+    CEConvRoIClassifier,
+)
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
+from nndet.nn.heads.comb.roi import RoIBoxHead
+from nndet.nn.heads.masker import BCESingleMasker
+from nndet.nn.heads.masker.base import DiceBCESingleMasker
+from nndet.nn.heads.regressor.dense import L1Regressor
+from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
+from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mrcnn.m001 import MaskURCNNModule
 

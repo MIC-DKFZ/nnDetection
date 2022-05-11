@@ -15,21 +15,21 @@ limitations under the License.
 """
 from typing import Optional, Type
 
-from nndet.arch.blocks.basic import AbstractBlock, StackedConvBlock2, StackedConvBlock3
-from nndet.arch.conv import BaseConvNormAct, ConvGroupLReLU, ConvInstanceLReLU
-from nndet.arch.decoder.base import BaseUFPN, UFPNModular
-from nndet.arch.encoder.abstract import AbstractEncoder
-from nndet.arch.encoder.modular import Encoder
-from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
-from nndet.arch.heads.classifier.dense import DenseClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.heads.regressor.dense import DenseRegressor
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
+from nndet.nn.blocks.basic import AbstractBlock, StackedConvBlock2, StackedConvBlock3
+from nndet.nn.conv import BaseConvNormAct, ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.decoder.base import BaseUFPN, UFPNModular
+from nndet.nn.encoder.abstract import AbstractEncoder
+from nndet.nn.encoder.modular import Encoder
+from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
 from nndet.utils.typing import CONVSEQ

@@ -1,10 +1,10 @@
-from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
-from nndet.arch.heads.classifier.dense import BCECLassifier, FocalClassifier
-from nndet.arch.heads.comb.anchor_all import BoxHeadAll
-from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMNative
-from nndet.arch.heads.regressor.dense import GIoURegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
+from nndet.nn.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.nn.heads.classifier.dense import BCECLassifier, FocalClassifier
+from nndet.nn.heads.comb.anchor_all import BoxHeadAll
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMNative
+from nndet.nn.heads.regressor.dense import GIoURegressor
+from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.dev.c010 import RetinaUNetC010LReLU
 

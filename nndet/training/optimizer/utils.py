@@ -19,7 +19,7 @@ from typing import Dict, Sequence
 import torch
 import torch.nn as nn
 
-import nndet.arch.ops.norm as an
+import nndet.nn.ops.norm as an
 
 NORM_TYPES = [
     nn.BatchNorm1d,

@@ -16,16 +16,16 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from nndet.arch.blocks.basic import AbstractBlock
-from nndet.arch.decoder.base import BaseUFPN
-from nndet.arch.encoder.abstract import AbstractEncoder
-from nndet.arch.heads.classifier.dense import DenseClassifier
-from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.regressor.dense import DenseRegressor
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.retina import BaseRetinaNet
+from nndet.nn.blocks.basic import AbstractBlock
+from nndet.nn.decoder.base import BaseUFPN
+from nndet.nn.encoder.abstract import AbstractEncoder
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin

@@ -1,15 +1,15 @@
 import pytest
 import torch
 
-from nndet.arch.conv import ConvInstanceRelu, Generator
-from nndet.arch.heads.abstract import RoIConv1x1View
-from nndet.arch.heads.classifier.roi import (
+from nndet.nn.conv import ConvInstanceRelu, Generator
+from nndet.nn.heads.abstract import RoIConv1x1View
+from nndet.nn.heads.classifier.roi import (
     BCEConvRoIClassifier,
     BCEFCRoIClassifier,
     CEConvRoIClassifier,
     CEFCRoIClassifier,
 )
-from nndet.arch.heads.regressor.roi import (
+from nndet.nn.heads.regressor.roi import (
     GIoUConvRoIRegressor,
     GIoUFCRoIRegressor,
     L1ConvRoIRegressor,
