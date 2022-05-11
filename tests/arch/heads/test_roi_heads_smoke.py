@@ -1,7 +1,6 @@
 import pytest
 import torch
 
-from nndet.nn.conv import ConvInstanceRelu, Generator
 from nndet.nn.heads.abstract import RoIConv1x1View
 from nndet.nn.heads.classifier.roi import (
     BCEConvRoIClassifier,
@@ -15,6 +14,7 @@ from nndet.nn.heads.regressor.roi import (
     L1ConvRoIRegressor,
     L1FCRoIRegressor,
 )
+from nndet.nn.layers.conv import ConvInstanceRelu, Generator
 
 INPUT_SIZE_TENSOR = (10, 16, 4, 4, 4)
 INPUT_SIZE_CONFIG = (4, 4, 4)

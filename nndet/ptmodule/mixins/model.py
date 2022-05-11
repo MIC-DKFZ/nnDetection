@@ -15,7 +15,6 @@ from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import RoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.blocks.basic import AbstractBlock
-from nndet.nn.conv import Generator
 from nndet.nn.decoder.base import BaseUFPN, DecoderType
 from nndet.nn.encoder.abstract import AbstractEncoder, EncoderType
 from nndet.nn.heads.classifier import DenseClassifierType
@@ -28,6 +27,7 @@ from nndet.nn.heads.regressor import DenseRegressorType
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter, SegmenterType
+from nndet.nn.layers.wrapper import Generator
 from nndet.utils.typing import CONVSEQ
 
 

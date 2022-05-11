@@ -4,7 +4,7 @@ from typing import Sequence
 import torch
 
 from nndet.nn.blocks.se import SELayer
-from nndet.nn.conv import nd_pool
+from nndet.nn.layers.wrapper import nd_pool
 
 
 class MyFusedMBConv(torch.nn.Module):

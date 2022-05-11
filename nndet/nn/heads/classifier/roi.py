@@ -8,8 +8,8 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.losses.classification import BCEWithLogitsLossOneHot, CrossEntropyLoss
-from nndet.nn.conv import nd_pool
 from nndet.nn.heads.abstract import CONV_TYPES, Classifier, RoIConv1x1View
+from nndet.nn.layers.wrapper import nd_pool
 
 
 class RoIClassifier(Classifier):

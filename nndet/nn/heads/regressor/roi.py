@@ -6,8 +6,8 @@ import torch
 from torch import Tensor
 
 from nndet.losses import GIoULoss, SmoothL1Loss
-from nndet.nn.conv import nd_pool
 from nndet.nn.heads.abstract import Regressor, RoIConv1x1View
+from nndet.nn.layers.wrapper import nd_pool
 
 
 class RoIRegressor(Regressor):

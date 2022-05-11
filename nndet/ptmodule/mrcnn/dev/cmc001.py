@@ -12,7 +12,6 @@ from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import CascadeRoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign
 from nndet.nn.blocks.basic import StackedConvBlock2
-from nndet.nn.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.decoder.base import UFPNModular
 from nndet.nn.encoder.modular import Encoder
 from nndet.nn.heads.classifier.dense import BCECLassifier
@@ -23,6 +22,7 @@ from nndet.nn.heads.masker import BCESingleMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mrcnn.cm001 import CascadeMaskURCNNModule
 

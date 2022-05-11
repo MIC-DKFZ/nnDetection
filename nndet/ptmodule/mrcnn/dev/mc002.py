@@ -15,7 +15,6 @@ from nndet.inference.ensembler.mask import MaskViaBoxesSelectiveEnsembler
 from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
 from nndet.nn.blocks import StackedConvBlock2
 from nndet.nn.blocks.basic import AbstractBlock
-from nndet.nn.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
 from nndet.nn.decoder.base import BaseUFPN, UFPNModular
 from nndet.nn.encoder import Encoder
 from nndet.nn.encoder.abstract import AbstractEncoder
@@ -28,6 +27,7 @@ from nndet.nn.heads.masker.base import BCESingleMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin

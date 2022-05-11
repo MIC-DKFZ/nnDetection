@@ -24,7 +24,7 @@ import torch
 import torch.nn as nn
 from loguru import logger
 
-from nndet.nn.conv import nd_pool
+from nndet.nn.layers.wrapper import nd_pool
 from nndet.utils.typing import ND_INT
 
 

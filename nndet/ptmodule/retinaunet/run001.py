@@ -23,7 +23,6 @@ from nndet.core.boxes.matcher import IoUMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.blocks.basic import AbstractBlock, StackedConvBlock2
-from nndet.nn.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu
 from nndet.nn.decoder.base import BaseUFPN, UFPNModular
 from nndet.nn.encoder.abstract import AbstractEncoder
 from nndet.nn.encoder.modular import Encoder
@@ -34,6 +33,7 @@ from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.segmenter import DiCESegmenter, Segmenter
+from nndet.nn.layers.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin

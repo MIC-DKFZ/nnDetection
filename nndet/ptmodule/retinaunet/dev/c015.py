@@ -1,15 +1,15 @@
-from nndet.nn.conv import (
+from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.classifier.dense import Poly1BCECLassifier, Poly1FocalClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
+from nndet.nn.layers.conv import (
     ConvBatchLReLU,
     ConvGroupLReLU,
     ConvGroupMish,
     ConvInstanceLReLU,
     ConvInstanceMish,
 )
-from nndet.nn.heads.classifier import FocalClassifier
-from nndet.nn.heads.classifier.dense import Poly1BCECLassifier, Poly1FocalClassifier
-from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.nn.heads.regressor import L1Regressor
-from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 

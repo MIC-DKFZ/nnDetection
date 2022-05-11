@@ -23,7 +23,7 @@ import torch.nn as nn
 
 from nndet.nn.blocks.mbconv import MyFusedMBConv
 from nndet.nn.blocks.res import ResBottleneck, ResPlain
-from nndet.nn.conv import nd_pool
+from nndet.nn.layers.wrapper import nd_pool
 from nndet.utils.typing import ND_INT
 
 

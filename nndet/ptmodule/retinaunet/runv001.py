@@ -20,13 +20,13 @@ from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.blocks.basic import StackedConvBlock2
-from nndet.nn.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.nn.decoder.base import UFPNModular
 from nndet.nn.encoder.modular import Encoder
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNMNative
 from nndet.nn.heads.regressor import GIoURegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
+from nndet.nn.layers.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
