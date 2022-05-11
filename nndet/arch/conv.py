@@ -20,15 +20,15 @@ import torch
 import torch.nn as nn
 from loguru import logger
 
-from nndet.arch.layers.activation import Swish
-from nndet.arch.layers.norm import GroupNorm
+from nndet.arch.ops.activation import Swish
+from nndet.arch.ops.norm import GroupNorm
 
 try:
     from torch.nn import Mish
 
     torch_mish = True
 except ImportError:
-    from nndet.arch.layers.activation import Mish
+    from nndet.arch.ops.activation import Mish
 
     torch_mish = False
 

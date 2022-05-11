@@ -6,7 +6,7 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.arch.heads.abstract import CONV_TYPES, Regressor
-from nndet.arch.layers.scale import Scale
+from nndet.arch.ops.scale import Scale
 from nndet.losses import GIoULoss, SmoothL1Loss
 
 

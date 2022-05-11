@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 
 from nndet.arch.conv import compute_padding_for_kernel
-from nndet.arch.layers.interpolation import InterpolateToShapes
+from nndet.arch.ops.interpolation import InterpolateToShapes
 from nndet.losses.classification import CrossEntropyLoss
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
 
