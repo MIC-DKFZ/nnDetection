@@ -1,12 +1,12 @@
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.core.boxes.ops import distance_box_iou_3d_paired
+from nndet.core.boxes.ops import generalized_box_iou_3d_paired
 from nndet.losses.ops import reduction_helper
 
 
 @autocast(enabled=False)
-def distance_iou_loss(
+def generalized_box_iou_loss(
     pred_boxes: torch.Tensor,
     target_boxes: torch.Tensor,
     reduction: str,
@@ -37,7 +37,7 @@ def distance_iou_loss(
     if pred_boxes.shape[-1] == 4:
         raise NotImplementedError("DIoU Loss not implemented for 2D")
     else:
-        loss = distance_box_iou_3d_paired(
+        loss = generalized_box_iou_3d_paired(
             boxes1=pred_boxes.float(),
             boxes2=target_boxes.float(),
             eps=eps,

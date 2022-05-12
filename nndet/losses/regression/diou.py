@@ -1,7 +1,7 @@
 import torch
 
 from nndet.losses.ops import Loss
-from nndet.losses.regression.functional.diou import distance_iou_loss_3d
+from nndet.losses.regression.functional.diou import distance_iou_loss
 
 
 class DIoULoss(Loss):
@@ -54,8 +54,9 @@ class DIoULoss(Loss):
         Returns:
             Tensor: loss
         """
-        return self.loss_weight * distance_iou_loss_3d(
+        return self.loss_weight * distance_iou_loss(
             pred_boxes=pred_boxes,
             target_boxes=target_boxes,
             eps=self.eps,
+            reduction=self.reduction,
         )

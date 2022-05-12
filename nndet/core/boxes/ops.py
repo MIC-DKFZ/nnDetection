@@ -284,6 +284,37 @@ def generalized_box_iou_3d_paired(
     return iou - (vol - union) / vol
 
 
+def distance_box_iou_3d_paired(
+    boxes1: torch.Tensor,
+    boxes2: torch.Tensor,
+    eps: float = 0.0,
+) -> torch.Tensor:
+    """
+    Distance IoU Loss
+    L = 1 - IoU + d^2(c, c_gt) / diag_enclosing^2
+
+    Args:
+        boxes1: predicted boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        boxes2: target boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        eps: small constant for numerical stability
+
+    Returns:
+        torch.Tensor: computed loss
+    """
+    iou, _ = box_iou_union_3d_paired(boxes1, boxes2, eps=eps)  # [N]
+    dc = (box_center(boxes1) - box_center(boxes2)).pow(2).sum(dim=1)  # [N]
+
+    # enclosing box
+    x1 = torch.min(boxes1[:, 0], boxes2[:, 0])  # [N]
+    y1 = torch.min(boxes1[:, 1], boxes2[:, 1])  # [N]
+    x2 = torch.max(boxes1[:, 2], boxes2[:, 2])  # [N]
+    y2 = torch.max(boxes1[:, 3], boxes2[:, 3])  # [N]
+    z1 = torch.min(boxes1[:, 4], boxes2[:, 4])  # [N]
+    z2 = torch.max(boxes1[:, 5], boxes2[:, 5])  # [N]
+    diag = (x2 - x1).pow(2) + (y2 - y1).pow(2) + (z2 - z1).pow(2) + eps
+    return 1 - iou + (dc / diag)
+
+
 def box_iou_union_2d(
     boxes1: Tensor,
     boxes2: Tensor,
