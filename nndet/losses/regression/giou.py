@@ -1,6 +1,6 @@
 import torch
 
-from nndet.core.boxes.ops import generalized_box_iou
+from nndet.core.boxes.ops import generalized_box_iou_3d_paired
 from nndet.losses.ops import Loss, reduction_helper
 
 
@@ -41,7 +41,9 @@ class GIoULoss(Loss):
         self.eps = eps
 
     def forward(
-        self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor
+        self,
+        pred_boxes: torch.Tensor,
+        target_boxes: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute generalized iou loss
@@ -54,9 +56,15 @@ class GIoULoss(Loss):
             Tensor: loss
         """
         loss = reduction_helper(
-            torch.diag(
-                generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0
+            generalized_box_iou_3d_paired(
+                boxes1=pred_boxes,
+                boxes2=target_boxes,
+                eps=self.eps,
             ),
             reduction=self.reduction,
         )
         return self.loss_weight * -1 * loss
+
+        # torch.diag(
+        #     generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0
+        # ),
