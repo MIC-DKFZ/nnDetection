@@ -369,6 +369,7 @@ def _train(
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
+        patch_size_ov=list(datamodule.patch_size),
     )
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
