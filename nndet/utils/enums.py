@@ -27,3 +27,12 @@ class EnsembleNMS(Enum):
 class DimBoxMerger(Enum):
     GREEDYIOU = "GreedyIoUBoxMerger"
     VOTELABELGREEDYIOU = "VoteLabelGreedyIoUBoxMerger"
+
+
+class PoolingMode(Enum):
+    CONV_KERNEL = "conv_kernel"
+    CONV_STRIDE = "conv_stride"
+    MAX_KERNEL = "max_kernel"
+    MAX_STRIDE = "max_stride"
+    AVG_KERNEL = "avg_kernel"
+    AVG_STRIDE = "avg_stride"
