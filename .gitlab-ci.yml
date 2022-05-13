@@ -6,20 +6,20 @@ stages:
   - build
   - docs
 
-format-job:
-  stage: format
-  script:
-    - echo "Check Versions"
-    - python --version
-    - python -c "import torch"
-    - pip --version
-    - echo "Install"
-    - pip install pre-commit
-    - echo "Check Install"
-    - pre-commit --version
-    - pre-commit install
-    - echo "Run pre-commit hooks"
-    - pre-commit run --all-files --show-diff-on-failure
+# format-job:
+#   stage: format
+#   script:
+#     - echo "Check Versions"
+#     - python --version
+#     - python -c "import torch"
+#     - pip --version
+#     - echo "Install"
+#     - pip install pre-commit
+#     - echo "Check Install"
+#     - pre-commit --version
+#     - pre-commit install
+#     - echo "Run pre-commit hooks"
+#     - pre-commit run --all-files --show-diff-on-failure
 
 build-job:
   stage: build
@@ -35,9 +35,9 @@ build-job:
     - coverage run -m pytest -v
     - coverage report
     - coverage xml
-  # artifacts:
-  #   reports:
-  #     cobertura: coverage.xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
   coverage: '/TOTAL.*\s+(\d+\%)/'
 
 build-docs:
@@ -54,6 +54,6 @@ build-docs:
     - mkdir public
     - cd docs && make html
     - cp -r ./build/html/* ../public
-  # artifacts:
-  #   paths:
-  #     - public
+  artifacts:
+    paths:
+      - public
