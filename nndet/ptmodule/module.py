@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict, Optional, Sequence, TypeVar
 
 import pytorch_lightning as pl
 import torch
@@ -31,7 +31,14 @@ from nndet.training.swa import SWACycleLinear
 
 
 class LightningBaseModule(pl.LightningModule):
-    def __init__(self, model_cfg: dict, trainer_cfg: dict, plan: dict, **kwargs):
+    def __init__(
+        self,
+        model_cfg: dict,
+        trainer_cfg: dict,
+        plan: dict,
+        patch_size_ov: Optional[Sequence[int]] = None,
+        **kwargs,
+    ):
         """
         Provides a base module which is used inside of nnDetection.
         All lightning modules of nnDetection should be derifed from this!
@@ -43,16 +50,17 @@ class LightningBaseModule(pl.LightningModule):
             plan: contains parameters which were derived from the planning
                 stage
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.model_cfg = model_cfg
         self.trainer_cfg = trainer_cfg
         self.plan = plan
 
+        _patch_size = patch_size_ov if patch_size_ov is not None else plan["patch_size"]
         # determine shape for network visualisation
         self.example_input_array_shape = (
             1,
             plan["architecture"]["in_channels"],
-            *plan["patch_size"],
+            *_patch_size,
         )
 
         # initialize model

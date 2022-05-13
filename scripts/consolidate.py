@@ -150,11 +150,10 @@ def main():
     num_folds = args.num_folds
     do_model_consolidation = args.no_model
 
-    sweep_boxes = args.sweep_boxes
-    sweep_instances = args.sweep_instances
+    sweep = args.sweep
     ckpt = args.ckpt
 
-    if consolidate == "export" and not (sweep_boxes or sweep_instances):
+    if consolidate == "export" and not sweep:
         raise ValueError(
             "Export needs new parameter sweep! Actiate one of the sweep "
             "arguments or change to copy mode"
@@ -219,7 +218,7 @@ def main():
     module = MODULE_REGISTRY[cfg["module"]]
     ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
 
-    if sweep_boxes:
+    if sweep:
         logger.info("Sweeping box predictions")
 
         target_metric = cfg["trainer_cfg"]["sweep_key"]
@@ -234,8 +233,6 @@ def main():
             save_dir=target_dir / "sweep",
         )
         inference_plan = sweeper.run_postprocessing_sweep()
-    elif sweep_instances:
-        raise NotImplementedError
 
     plan = load_pickle(target_dir / "plan.pkl")
     if consolidate != "copy":
