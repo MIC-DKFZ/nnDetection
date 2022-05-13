@@ -54,6 +54,6 @@ build-docs:
     - mkdir public
     - cd docs && make html
     - cp -r ./build/html/* ../public
-  artifacts:
-    paths:
-      - public
+  # artifacts:
+  #   paths:
+  #     - public
