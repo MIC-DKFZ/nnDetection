@@ -35,9 +35,9 @@ build-job:
     - coverage run -m pytest -v
     - coverage report
     - coverage xml
-  artifacts:
-    reports:
-      cobertura: coverage.xml
+  # artifacts:
+  #   reports:
+  #     cobertura: coverage.xml
   coverage: '/TOTAL.*\s+(\d+\%)/'
 
 build-docs:
