@@ -10,7 +10,7 @@ from nndet.nn.backbone.blueprints.level import (
 )
 from nndet.nn.layers.wrapper import compute_padding_for_kernel, nd_pool
 from nndet.utils.enums import PoolingMode
-from nndet.utils.typing import CONV_GENERATOR, ND_INT
+from nndet.utils.typing import CONVGEN, ND_INT
 
 
 class ConvBackbone(LevelBackbone):
@@ -18,7 +18,7 @@ class ConvBackbone(LevelBackbone):
 
     def __init__(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         in_channels: int,
         start_channels: int,
         max_channels: int = 320,
@@ -71,7 +71,7 @@ class ConvBackbone(LevelBackbone):
     @classmethod
     def from_config_plan(
         cls,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         backbone_cfg: dict,
         plan_arch: dict,
     ):
@@ -79,13 +79,46 @@ class ConvBackbone(LevelBackbone):
         Instantiate Backbone from given configs
 
         Args
+            conv: conv generator to use for internal convolutions
             backbone_cfg: backbone configuration
+
+                ``"num_conv"`` int
+                    [optional] number of convolutions per level. Default 2.
+
+                ``"max_channels"`` int
+                    [optional] provide maximum number of channels inside
+                    network. If not provided, value from plan will be used.
+
+                ``"pooling_mode"`` str
+                    [optional] define a different pooling type. Please refer
+                    to the `init` documentation for mor information.
+
+                ``"backbone_kwargs"`` dict
+                    [optional] keyword arguments passed to every level of the
+                    backbone
+
             plan_arch: arguments provided plan
-            #TODO: docs
+
+                ``"conv_kernels"`` List[ND_INT]
+                    kernel size of each level [N]
+
+                ``"strides"`` List[ND_INT]
+                    stride for each level [N - 1]
+
+                ``"in_channels"`` List[ND_INT]
+                    Number of input channels, usually equal to number of
+                    modalities.
+
+                ``"start_channels"`` int
+                    number of start channels, i.e. number of channels after
+                    first conv. Can be overwritten via config.
+
+                ``"max_channels"`` int
+                    maximum number of channels inside model, usually 320.
+                    Can be overwritten via config.
+
         """
-        logger.info(
-            f"Building:: backbone {cls.__name__}: {backbone_cfg['backbone_kwargs']} "
-        )
+        logger.info(f"Building:: backbone {cls.__name__}: {backbone_cfg} ")
         # parse config and plan
         num_levels = len(plan_arch["conv_kernels"])
         num_conv = backbone_cfg.get("num_conv", 2)
@@ -99,7 +132,13 @@ class ConvBackbone(LevelBackbone):
             logger.info(f"Found max_channels {max_channels} in backbone config.")
         else:
             max_channels = plan_arch["max_channels"]
-        pooling_type = backbone_cfg.get("pooling_type", "conv_kernel")
+        pooling_mode = backbone_cfg.get("pooling_mode", "conv_kernel")
+
+        if "start_channels" in backbone_cfg:
+            start_channels = backbone_cfg["start_channels"]
+            logger.info(f"Found start_channels {start_channels} in backbone config.")
+        else:
+            start_channels = plan_arch["start_channels"]
 
         # build backbone config
         stem_cfg = {}  # no stem to configure
@@ -108,7 +147,7 @@ class ConvBackbone(LevelBackbone):
             _cfg = {
                 "kernel": plan_arch["conv_kernels"][i],
                 "num_conv": num_conv[i],
-                "kwargs": backbone_cfg["backbone_kwargs"],
+                "kwargs": backbone_cfg.get("backbone_kwargs", {}),
             }
             if i > 0:
                 _cfg["stride"] = plan_arch["strides"][i - 1]
@@ -117,8 +156,8 @@ class ConvBackbone(LevelBackbone):
         backbone = cls(
             conv=conv,
             in_channels=plan_arch["in_channels"],
-            start_channels=plan_arch["start_channels"],
-            pooling_type=pooling_type,
+            start_channels=start_channels,
+            pooling_mode=pooling_mode,
             max_channels=max_channels,
             stem_cfg=stem_cfg,
             level_cfgs=level_cfgs,
@@ -127,7 +166,7 @@ class ConvBackbone(LevelBackbone):
 
     def _build_stem(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         in_channels: int,
         stem_cfg: Dict,
     ) -> Tuple[int, None]:
@@ -147,7 +186,7 @@ class ConvBackbone(LevelBackbone):
 
     def _build_level(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         level_idx: int,
         level_cfg: Dict,
     ) -> Tuple[int, ND_INT, BackboneLevel]:
@@ -224,7 +263,7 @@ class ConvBackbone(LevelBackbone):
 
     def _build_pooling(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         in_channels: int,
         out_channels: int,
         kernel: ND_INT,
@@ -262,9 +301,10 @@ class ConvBackbone(LevelBackbone):
             )
         else:
             _padding_orig_kernel = compute_padding_for_kernel(kernel)
+            _pool_type = self.pooling_mode.value.split("_")[0].capitalize()
             _module = torch.nn.Sequential(
                 nd_pool(
-                    pooling_type=self.pooling_mode.value.split("_")[0].uppercase(),
+                    pooling_type=_pool_type,
                     dim=conv.dim,
                     kernel_size=_kernel,
                     stride=stride,

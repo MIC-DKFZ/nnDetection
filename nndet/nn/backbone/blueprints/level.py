@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import torch
 
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.utils.typing import CONV_GENERATOR, ND_INT, ND_TUPLE_INT
+from nndet.utils.typing import CONVGEN, ND_INT, ND_TUPLE_INT
 
 
 def to_nd_tuple(x: Any, dim: int) -> Tuple:
@@ -90,7 +90,7 @@ class NoOpBackboneLevel(BackboneLevel):
 class LevelBackbone(AbstractBackbone):
     def __init__(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         in_channels: int,
         stem_cfg: Dict,
         level_cfgs: List[Dict],
@@ -107,7 +107,18 @@ class LevelBackbone(AbstractBackbone):
             stem_cfg: configuration parameters of stem. If None, an empty
                 dict will be passed.
             level_cfgs: configuration for each level. If None, an empty
-                dict will be passed.
+                dict will be passed. Each element can contain the following
+                information:
+
+                    ``"kernel"`` ND_INT
+                        kernel size for level
+
+                    ``"stride"`` ND_INT
+                        stride for level (execept level 0)
+
+                    ``"kwargs"`` Dict
+                        keyword arguments passed to conv
+
         """
         super().__init__()
         self.dim = conv.dim
@@ -181,7 +192,7 @@ class LevelBackbone(AbstractBackbone):
     @abstractmethod
     def _build_stem(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         stem_cfg: Dict,
     ) -> Tuple[int, Optional[torch.nn.Module]]:
         """
@@ -200,7 +211,7 @@ class LevelBackbone(AbstractBackbone):
     @abstractmethod
     def _build_level(
         self,
-        conv: CONV_GENERATOR,
+        conv: CONVGEN,
         level_idx: int,
         level_cfg: Dict,
     ) -> Tuple[int, ND_INT, BackboneLevel]:
@@ -229,6 +240,7 @@ class LevelBackbone(AbstractBackbone):
 
         Returns:
             List[torch.Tensor]: output features from each level
+                (ordered from highest to lowest resolution)
         """
         if self.stem is not None:
             x = self.stem(batch)
