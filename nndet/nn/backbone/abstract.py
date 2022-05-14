@@ -1,5 +1,5 @@
 from abc import abstractclassmethod, abstractmethod
-from typing import List
+from typing import List, Sequence
 
 import torch
 
@@ -51,10 +51,42 @@ class AbstractBackbone(torch.nn.Module):
     def get_strides(self) -> List[ND_TUPLE_INT]:
         """
         Retrieve absolute strides of the backbone feature maps
-        (ordered from lowest to highest strides)
+        (ordered from lowest to highest strides -> i.e. highest to
+        lowest resolution)
 
         Returns
             List[List[int]]: defines the absolute stride for each output
                 feature map with respect to input size
         """
         raise NotImplementedError
+
+    def check_patch_size(self, patch_size: Sequence[int]) -> bool:
+        """
+        Check if the provided patch_size works with this network config
+
+        Args:
+            patch_size: patch size to check
+
+        Raises:
+            ValueError: raised only if network dimensions and patch size
+                dimensions are not consistent (e.g. 2D net with 3D patch)
+
+        Returns:
+            bool: `True` if patch size is compatible with network config,
+                `False` otherwise.
+        """
+        absolute_strides = self.get_strides()
+        max_stride = absolute_strides[-1]
+
+        patch_dim = len(patch_size)
+        if isinstance(max_stride, int):
+            per_axis = [(ps % max_stride) == 0 for ps in patch_size]
+        else:
+            stride_dim = len(max_stride)
+            if patch_dim != stride_dim:
+                raise ValueError(
+                    "Found inconsistent patch and stride dimensions: "
+                    f"max stride {max_stride} and patch size {patch_size}"
+                )
+            per_axis = [(ps % ms) == 0 for ps, ms in zip(patch_size, max_stride)]
+        return all(per_axis)
