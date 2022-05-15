@@ -95,7 +95,7 @@ class BaseModule(pl.LightningDataModule):
             self._splits_file = f + ".pkl"
 
     @property
-    def patch_size(self):
+    def patch_size(self) -> np.ndarray:
         """
         Get patch size which can be (optionally) overwritten in the
         io config
@@ -108,7 +108,7 @@ class BaseModule(pl.LightningDataModule):
             return np.array(self.plan["patch_size"]).astype(np.int32)
 
     @property
-    def batch_size(self):
+    def batch_size(self) -> int:
         """
         Get batch size which can be (optionally) overwritten in the
         io config
