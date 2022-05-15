@@ -146,7 +146,7 @@ class Predictor:
             case_id: name of case to save result
         """
         for key, item in result.items():
-            self.ensembler_fns[key].save_result(
+            self.ensembler[key].save_result(
                 data=item,
                 target_dir=target_dir,
                 case_name=case_id,
@@ -176,6 +176,7 @@ class Predictor:
             dict: result of each ensembler (converted to numpy)
         """
         tic = time.perf_counter()
+        self.ensembler = {}  # clear any previous ensembler classes
         for name, fn in self.ensembler_fns.items():
             if name in self.ensembler:
                 raise ValueError(
@@ -204,7 +205,6 @@ class Predictor:
             save_pickle(properties, save_dir / f"{case_id}_properties.pkl")
         toc = time.perf_counter()
         logger.info(f"Prediction took {toc - tic} s")
-        self.ensembler = {}
         return result
 
     def tile_case(
