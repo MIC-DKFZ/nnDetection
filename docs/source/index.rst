@@ -11,20 +11,6 @@
 |
 |
 
-**If you used nnDetection for your project please cite the following publication(s):**
-
-.. code-block::
-
-   Just testing here
-
-TODOs
-=====
-- application limited to 3D
-- Pointer to Projects and Plugins
-- Improvements
-   - select best model for evaluation
-   - run inference on CPU (inference_kwargs.device=cpu)
-   - run segmentation of RetinaU-Net
 
 What is nnDetection?
 ====================
@@ -40,6 +26,12 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
    :alt: nnDetection functional overview
 
 |
+
+.. note::
+   **If you used nnDetection for your project please cite the following publication(s):**
+   
+   Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
+
 
 Contents:
 =========
@@ -108,3 +100,13 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+TODOs
+=====
+- application limited to 3D
+- Pointer to Projects and Plugins
+- Improvements
+   - select best model for evaluation
+   - run inference on CPU (inference_kwargs.device=cpu)
+   - run segmentation of RetinaU-Net
