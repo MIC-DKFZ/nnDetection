@@ -33,6 +33,27 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
    Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
 
 
+Features
+========
+While nnDetection consists of many different configurations of each module to allow for free customization by providing high modularity, some model are provided via standardized configs and can be used out-of-the-box.
+
++--------------------------+--------------------------------+----------------------------------+-----------------------+
+| Models                   | Trainig Signals                | Prediction Output                | Config                |
++--------------------------+--------------------------------+----------------------------------+-----------------------+
++--------------------------+--------------------------------+----------------------------------+-----------------------+
+| Box Detection            |                                | Boxes                            |                       |
++--------------------------+--------------------------------+----------------------------------+-----------------------+
+|| Retina U-Net V001       | BB + SS                        | Boxes                            |                       |
+|| RetinaNet V002          | BB                             | Boxes                            |                       |
+|| Retina U-Net V002       | BB + SS                        | Boxes                            |                       |
++--------------------------+--------------------------------+----------------------------------+-----------------------+
+|| Faster RCNN V002        | BB                             | Boxes                            |                       |
+|| Box Mask RCNN V002      | BB + BI                        | Boxes                            |                       |
+|| Box Mask U-RCNN V002    | BB + BI + SS                   | Boxes                            |                       |
++--------------------------+--------------------------------+----------------------------------+-----------------------+
+
+
+
 Contents:
 =========
 
