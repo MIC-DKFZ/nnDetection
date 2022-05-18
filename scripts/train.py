@@ -352,7 +352,6 @@ def _train(
 
     plan_path = Path(str(cfg.host["plan_path"]))
     plan = load_pickle(plan_path)
-    save_json(create_debug_plan(plan), "./plan_debug.json")
 
     data_dir = (
         Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
@@ -365,6 +364,10 @@ def _train(
         data_dir=data_dir,
         fold=cfg["exp"]["fold"],
     )
+    # copy IO config overwrites to plan
+    plan["patch_size"] = list(datamodule.patch_size)
+    plan["batch_size"] = int(datamodule.batch_size)
+
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
@@ -386,6 +389,7 @@ def _train(
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config.yaml"))
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
     save_pickle(plan, train_dir / "plan.pkl")  # backup plan
+    save_json(create_debug_plan(plan), "./plan_debug.json")  # easy read backup
     splits = load_pickle(
         Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file
     )

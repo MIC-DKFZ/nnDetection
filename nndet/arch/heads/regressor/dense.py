@@ -8,6 +8,8 @@ from torch import Tensor
 from nndet.arch.heads.abstract import CONV_TYPES, Regressor
 from nndet.arch.layers.scale import Scale
 from nndet.losses import GIoULoss, SmoothL1Loss
+from nndet.losses.regression.diou import DIoULoss
+from nndet.losses.regression.giou import GIoULossPaired
 
 
 class DenseRegressor(Regressor):
@@ -282,6 +284,125 @@ class GIoURegressor(DenseRegressor):
             **kwargs,
         )
         self.loss = GIoULoss(
+            reduction=reduction,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+        )
+
+
+class GIoUPRegressor(DenseRegressor):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
+        """
+        Build regressor heads with typical conv structure and generalized
+        IoU loss
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        (only compute GIoU on paired bounding boxes, this should be more
+        efficient than the previous regressor implemenetation)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            anchors_per_pos: number of anchors per position
+            num_levels: number of decoder levels which are passed through the
+                regressor
+            num_convs: number of convolutions
+                in conv -> num convs -> final conv
+            add_norm: en-/disable normalization layers in internal layers
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: IGNORED, loss is always computed in fp32. This argument
+                is only added here to have a uniform API.
+            learn_scale: learn additional single scalar values per feature
+                pyramid level
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            internal_channels=internal_channels,
+            anchors_per_pos=anchors_per_pos,
+            num_levels=num_levels,
+            num_convs=num_convs,
+            add_norm=add_norm,
+            learn_scale=learn_scale,
+            **kwargs,
+        )
+        self.loss = GIoULossPaired(
+            reduction=reduction,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+        )
+
+
+class DIoURegressor(DenseRegressor):
+    def __init__(
+        self,
+        conv,
+        in_channels: int,
+        internal_channels: int,
+        anchors_per_pos: int,
+        num_levels: int,
+        num_convs: int = 3,
+        add_norm: bool = True,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        learn_scale: bool = False,
+        **kwargs,
+    ):
+        """
+        Build regressor heads with typical conv structure and generalized
+        IoU loss
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            anchors_per_pos: number of anchors per position
+            num_levels: number of decoder levels which are passed through the
+                regressor
+            num_convs: number of convolutions
+                in conv -> num convs -> final conv
+            add_norm: en-/disable normalization layers in internal layers
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: IGNORED, loss is always computed in fp32. This argument
+                is only added here to have a uniform API.
+            learn_scale: learn additional single scalar values per feature
+                pyramid level
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
+        super().__init__(
+            conv=conv,
+            in_channels=in_channels,
+            internal_channels=internal_channels,
+            anchors_per_pos=anchors_per_pos,
+            num_levels=num_levels,
+            num_convs=num_convs,
+            add_norm=add_norm,
+            learn_scale=learn_scale,
+            **kwargs,
+        )
+        self.loss = DIoULoss(
             reduction=reduction,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
