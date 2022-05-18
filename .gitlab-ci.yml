@@ -57,3 +57,5 @@ build-docs:
   artifacts:
     paths:
       - public
+  only:
+    - main
