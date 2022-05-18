@@ -79,7 +79,7 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
 
 html_logo = "_static/nnDetectionText.svg"
-html_title = 'nnDetection Documentation'
+html_title = "nnDetection Documentation"
 
 # options
 html_theme_options = {
