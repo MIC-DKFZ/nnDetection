@@ -84,7 +84,7 @@ Different optimizers can be registered in the optimizer registry and selected vi
 Overview
 ********
 
-.. image:: ../_static/nnDetectionModule.svg
+.. image:: _static/nnDetectionModule.svg
    :width: 600
    :align: center
    :alt: nnDetection Module Overview
