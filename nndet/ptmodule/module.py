@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, Optional, Sequence, TypeVar
+from typing import Any, Dict, TypeVar
 
 import pytorch_lightning as pl
 import torch
@@ -36,7 +36,6 @@ class LightningBaseModule(pl.LightningModule):
         model_cfg: dict,
         trainer_cfg: dict,
         plan: dict,
-        patch_size_ov: Optional[Sequence[int]] = None,
         **kwargs,
     ):
         """
@@ -55,12 +54,11 @@ class LightningBaseModule(pl.LightningModule):
         self.trainer_cfg = trainer_cfg
         self.plan = plan
 
-        _patch_size = patch_size_ov if patch_size_ov is not None else plan["patch_size"]
         # determine shape for network visualisation
         self.example_input_array_shape = (
             1,
             plan["architecture"]["in_channels"],
-            *_patch_size,
+            *plan["patch_size"],
         )
 
         # initialize model
