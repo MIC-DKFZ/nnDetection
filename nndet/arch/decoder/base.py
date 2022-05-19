@@ -517,7 +517,7 @@ class SmallerUFPN(UFPNModular):
         return out_channels
 
 
-class PAUFPN(UFPNModular):
+class UPAN(UFPNModular):
     @experimental
     def __init__(
         self,
@@ -617,7 +617,7 @@ class PAUFPN(UFPNModular):
         )
 
         logger.info(
-            f"Building PAUFPN with lateral_kwargs {self._get_kwargs('lateral')}, "
+            f"Building UPAN with lateral_kwargs {self._get_kwargs('lateral')}, "
             f"fusion kwargs {self._get_kwargs('fusion')} and "
             f"out_kwargs {self._get_kwargs('out')}"
         )
