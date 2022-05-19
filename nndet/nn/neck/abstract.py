@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from abc import abstractclassmethod, abstractmethod
-from typing import Dict
 
 import torch
+
+from nndet.utils.structures import BodyOutput
 
 
 class AbstractNeck(torch.nn.Module):
     @abstractmethod
-    def forward(self, inp: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def forward(self, backbone_output: BodyOutput) -> BodyOutput:
         """
         Forward input through network
 
@@ -23,7 +26,7 @@ class AbstractNeck(torch.nn.Module):
         cls,
         backbone_cfg: dict,
         plan_arch: dict,
-    ):
+    ) -> AbstractNeck:
         """
         Instantiate Backbone from given configs
 

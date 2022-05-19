@@ -3,12 +3,13 @@ from typing import List, Sequence
 
 import torch
 
+from nndet.utils.structures import BodyOutput
 from nndet.utils.typing import ND_TUPLE_INT
 
 
 class AbstractBackbone(torch.nn.Module):
     @abstractmethod
-    def forward(self, x) -> List[torch.Tensor]:
+    def forward(self, x) -> BodyOutput:
         """
         Forward input through network
 
