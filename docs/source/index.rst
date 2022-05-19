@@ -35,23 +35,26 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 
 Features
 ========
-While nnDetection consists of many different configurations of each module to allow for free customization by providing high modularity, some model are provided via standardized configs and can be used out-of-the-box.
+While nnDetection consists of many different configurations of each module to allow for free customization by providing high modularity, some official models are provided via standardized configs and can be used out-of-the-box.
 
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
-| Models                   | Trainig Signals                | Prediction Output                | Config                |
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
-| Box Detection            |                                | Boxes                            |                       |
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
-|| Retina U-Net V001       | BB + SS                        | Boxes                            |                       |
-|| RetinaNet V002          | BB                             | Boxes                            |                       |
-|| Retina U-Net V002       | BB + SS                        | Boxes                            |                       |
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
-|| Faster RCNN V002        | BB                             | Boxes                            |                       |
-|| Box Mask RCNN V002      | BB + BI                        | Boxes                            |                       |
-|| Box Mask U-RCNN V002    | BB + BI + SS                   | Boxes                            |                       |
-+--------------------------+--------------------------------+----------------------------------+-----------------------+
++--------------------------+------------------------+---------------------------+-----------------------+
+| **Models**               | **Trainig**            | **Prediction**            | **Config**            |
++--------------------------+------------------------+---------------------------+-----------------------+
++--------------------------+------------------------+---------------------------+-----------------------+
+|| RetinaNet V002          | BB                     | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
+|| Faster RCNN V002        | BB                     | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
+|| Retina U-Net V001       | BB + SS                | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
+|| Retina U-Net V002       | BB + SS                | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
+|| Box Mask RCNN V002      | BB + BI                | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
+|| Box Mask U-RCNN V002    | BB + BI + SS           | BB                        |                       |
++--------------------------+------------------------+---------------------------+-----------------------+
 
+Legend: BB = Bounding Boxes, SS = Semantic Segmentation, BI = Binary Mask
 
 
 Contents:
@@ -74,7 +77,7 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
-   dev/index
+   dev
 
 .. toctree::
    :maxdepth: 2
