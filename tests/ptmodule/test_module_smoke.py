@@ -35,6 +35,7 @@ def example_plan():
             "decoder_levels": (2, 3, 4),
             "conv_kernels": [3, 3, 3, 3, 3],
             "strides": [2, 2, 2, 2],
+            "max_channels": 320,
         },
         "anchors": {
             "width": [

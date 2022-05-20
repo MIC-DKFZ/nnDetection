@@ -2,7 +2,8 @@ import torch
 from loguru import logger
 
 from nndet.core.boxes.coder import CoderType
-from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
+
+# from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
 from nndet.nn.heads.classifier import (
     AsymmetricFocalClassifier,
     DenseClassifierType,
@@ -373,11 +374,11 @@ class RetinaUNetC010LReLUMishHead(RetinaUNetC010LReLU):
     head_conv_cls = ConvGroupMish
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
-    decoder_cls = SmallUFPN
+# @MODULE_REGISTRY.register
+# class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
+#     decoder_cls = SmallUFPN
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
-    decoder_cls = SmallerUFPN
+# @MODULE_REGISTRY.register
+# class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
+#     decoder_cls = SmallerUFPN

@@ -13,11 +13,8 @@ from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.ensembler.detection import BoxEnsemblerSelective
 from nndet.inference.ensembler.mask import MaskViaBoxesSelectiveEnsembler
 from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
-from nndet.nn.blocks import StackedConvBlock2
-from nndet.nn.blocks.basic import AbstractBlock
-from nndet.nn.decoder.base import BaseUFPN, UFPNModular
-from nndet.nn.encoder import Encoder
-from nndet.nn.encoder.abstract import AbstractEncoder
+from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
 from nndet.nn.heads.comb import BoxHeadHNM
@@ -28,6 +25,8 @@ from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
+from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
@@ -60,13 +59,10 @@ class MaskURCNNC002(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = Encoder  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = StackedConvBlock2  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = UFPNModular  # define class for neck
+    neck_cls: Type[AbstractNeck] = UFPN  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head

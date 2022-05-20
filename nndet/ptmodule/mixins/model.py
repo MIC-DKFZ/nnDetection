@@ -15,9 +15,6 @@ from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import RoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.blocks.basic import AbstractBlock
-from nndet.nn.decoder.base import BaseUFPN, DecoderType
-from nndet.nn.encoder.abstract import AbstractEncoder
 from nndet.nn.heads.classifier import DenseClassifierType
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
@@ -66,13 +63,10 @@ class SingleStageMixin(ModelMixin):
 
     detector_cls: Type[AbstractOneStageDetector] = ...  #: define detector cls
 
-    backbone_cls: Type[AbstractEncoder] = ...  #: define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  #: define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  #: define class for neck
+    neck_cls: Type[AbstractNeck] = ...  #: define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  #: conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  #: define class for head
@@ -466,7 +460,7 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        neck: DecoderType,
+        neck: AbstractNeck,
     ) -> SegmenterType:
         """
         Build segmenter head

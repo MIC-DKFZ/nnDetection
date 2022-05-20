@@ -7,9 +7,7 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.rois.module import CascadeRoIModule
 from nndet.core.rois.pooler import RoIPooler
-from nndet.nn.blocks.basic import AbstractBlock
-from nndet.nn.decoder.base import BaseUFPN
-from nndet.nn.encoder.abstract import AbstractEncoder
+from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.base import AnchorHead
@@ -17,6 +15,7 @@ from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter
+from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin
@@ -42,13 +41,10 @@ class CascadeFasterRCNNModule(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head

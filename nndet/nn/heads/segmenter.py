@@ -21,7 +21,7 @@ import torch.nn as nn
 
 from nndet.losses.classification import CrossEntropyLoss
 from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
-from nndet.nn.conv import compute_padding_for_kernel
+from nndet.nn.layers.wrapper import compute_padding_for_kernel
 from nndet.nn.ops.interpolation import InterpolateToShapes
 
 
