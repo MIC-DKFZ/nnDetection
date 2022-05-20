@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractclassmethod, abstractmethod
+from abc import abstractmethod
 from typing import List
 
 import torch
@@ -24,17 +24,14 @@ class AbstractNeck(torch.nn.Module):
         """
         raise NotImplementedError
 
-    @abstractclassmethod
-    def from_config_plan(
-        cls,
-        backbone_cfg: dict,
-        plan_arch: dict,
-    ) -> AbstractNeck:
+    @abstractmethod
+    def get_channels(self) -> List[int]:
         """
-        Instantiate Backbone from given configs
+        Compute number of channels for each returned feature map
+        inside the forward pass
 
-        Args
-            backbone_cfg: backbone configuration
-            plan_arch: arguments provided plan
+        Returns
+            List[int]: list with number of channels corresponding to
+                returned feature maps
         """
         raise NotImplementedError

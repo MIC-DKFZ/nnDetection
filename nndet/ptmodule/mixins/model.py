@@ -14,9 +14,10 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import RoIModule
 from nndet.core.rois.pooler import RoIPooler
+from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.blocks.basic import AbstractBlock
 from nndet.nn.decoder.base import BaseUFPN, DecoderType
-from nndet.nn.encoder.abstract import AbstractEncoder, EncoderType
+from nndet.nn.encoder.abstract import AbstractEncoder
 from nndet.nn.heads.classifier import DenseClassifierType
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
@@ -28,6 +29,7 @@ from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter, SegmenterType
 from nndet.nn.layers.wrapper import Generator
+from nndet.nn.neck.abstract import AbstractNeck
 from nndet.utils.typing import CONVSEQ
 
 
@@ -265,7 +267,7 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-    ) -> EncoderType:
+    ) -> AbstractBackbone:
         """
         Build backbone network
 
@@ -274,30 +276,13 @@ class SingleStageMixin(ModelMixin):
             model_cfg: additional architecture settings
 
         Returns:
-            EncoderType: backbone instance
+            AbstractBackbone: backbone instance
         """
         conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
-
-        logger.info(
-            f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
-        )
-
-        _kwargs = copy.deepcopy(model_cfg["backbone_kwargs"])
-        if "max_channels" in _kwargs:
-            max_channels = _kwargs.pop("max_channels")
-        else:
-            max_channels = plan_arch.get("max_channels", 320)
-
-        backbone = cls.backbone_cls(
+        backbone = cls.backbone_cls.from_config_plan(
             conv=conv,
-            conv_kernels=plan_arch["conv_kernels"],
-            strides=plan_arch["strides"],
-            block_cls=cls.backbone_block,
-            in_channels=plan_arch["in_channels"],
-            start_channels=plan_arch["start_channels"],
-            stage_kwargs=None,
-            max_channels=max_channels,
-            **_kwargs,
+            backbone_cfg=model_cfg,
+            plan_arch=plan_arch,
         )
         return backbone
 
@@ -306,8 +291,8 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        backbone: EncoderType,
-    ) -> DecoderType:
+        backbone: AbstractBackbone,
+    ) -> AbstractNeck:
         """
         Build neck network
 
@@ -316,19 +301,22 @@ class SingleStageMixin(ModelMixin):
             model_cfg: additional architecture settings
 
         Returns:
-            DecoderType: neck instance
+            AbstractNeck: neck instance
         """
         conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
         logger.info(
             f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
         )
+
+        decoder_levels = plan_arch["decoder_levels"]
         neck = cls.neck_cls(
             conv=conv,
             conv_kernels=plan_arch["conv_kernels"],
-            strides=backbone.get_strides(),
+            relative_strides=backbone.get_relative_strides(),
             in_channels=backbone.get_channels(),
-            decoder_levels=plan_arch["decoder_levels"],
-            fixed_out_channels=plan_arch["fpn_channels"],
+            first_decoder_level=min(decoder_levels),
+            last_decoder_level=max(decoder_levels),
+            fpn_out_channels=plan_arch["fpn_channels"],
             **model_cfg["neck_kwargs"],
         )
         return neck

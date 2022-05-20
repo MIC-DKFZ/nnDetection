@@ -3,6 +3,7 @@ from typing import Sequence
 import torch
 
 from nndet.nn.ops.norm import GroupNorm
+from nndet.utils.enums import InterpolationMode
 from nndet.utils.typing import ND_INT
 
 
@@ -247,3 +248,27 @@ def compute_padding_for_kernel(
     else:
         padding = (kernel_size - 1) // 2
     return padding
+
+
+def torch_interpolation(mode: InterpolationMode, dim: int) -> str:
+    """
+    Map enum interpolation modes to torch string interpolation modes
+
+    Args:
+        mode: desired interpolation mode
+        dim: number of spatial dimensions
+
+    Raises:
+        ValueError: Unsupported mode
+
+    Returns:
+        str: string for interpolation mode
+    """
+    if mode == InterpolationMode.NEAREST:
+        return "nearest"
+    elif mode == InterpolationMode.LINEAR:
+        return "bilinear" if dim == 2 else "trilinear"
+    elif mode == InterpolationMode.CUBIC:
+        return "bicubic" if dim == 2 else "tricubic"
+    else:
+        raise ValueError(f"Interpolation mode {mode} not compatible with torch.")

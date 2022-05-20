@@ -36,3 +36,10 @@ class PoolingMode(Enum):
     MAX_STRIDE = "max_stride"
     AVG_KERNEL = "avg_kernel"
     AVG_STRIDE = "avg_stride"
+
+
+class InterpolationMode(Enum):
+    TRANSPOSE = "transpose"
+    NEAREST = "nearest"
+    LINEAR = "linear"
+    CUBIC = "cubic"

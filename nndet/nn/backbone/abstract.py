@@ -49,17 +49,41 @@ class AbstractBackbone(torch.nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def get_strides(self) -> List[ND_TUPLE_INT]:
+    def get_relative_strides(self) -> List[ND_TUPLE_INT]:
         """
-        Retrieve absolute strides of the backbone feature maps
-        (ordered from lowest to highest strides -> i.e. highest to
-        lowest resolution)
+        Retrieve relative strides of the backbone feature maps.
+        Starting with the highest resolution feature map to the lowest
+        resolution feature map. Usually the first feature map will have stride
+        1.
 
         Returns
-            List[List[int]]: defines the absolute stride for each output
+            List[Tuple[int]]: defines the absolute stride for each output
                 feature map with respect to input size
         """
         raise NotImplementedError
+
+    def get_absolute_strides(self) -> List[ND_TUPLE_INT]:
+        """
+        Retrieve absolute strides of the backbone feature maps
+        (ordered from lowest to highest strides -> highest to
+        lowest resolution)
+
+        Returns
+            List[Tuple[int]]: defines the absolute stride for each output
+                feature map with respect to input size
+        """
+        relative_strides = self.get_relative_strides()
+
+        absolute_strides = []
+        for level_idx in range(len(relative_strides)):
+            if level_idx == 0:
+                new_stride = relative_strides[0]
+            else:
+                new_stride = [
+                    ns * s for ns, s in zip(new_stride, relative_strides[level_idx])
+                ]
+            absolute_strides.append(tuple(new_stride))
+        return absolute_strides
 
     def check_patch_size(self, patch_size: Sequence[int]) -> bool:
         """

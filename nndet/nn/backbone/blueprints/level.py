@@ -162,32 +162,18 @@ class LevelBackbone(AbstractBackbone):
         """
         return self.out_channels
 
-    def get_strides(self) -> List[ND_TUPLE_INT]:
+    def get_relative_strides(self) -> List[ND_TUPLE_INT]:
         """
-        Retrieve absolute strides of the backbone feature maps
-        (ordered from lowest to highest strides)
+        Retrieve relative strides of the backbone feature maps.
+        Starting with the highest resolution feature map to the lowest
+        resolution feature map. Usually the first feature map will have stride
+        1.
 
         Returns
-            List[List[int]]: defines the absolute stride for each output
+            List[Tuple[int]]: defines the absolute stride for each output
                 feature map with respect to input size
         """
-        out_strides = []
-        for level_idx in range(self.num_levels):
-            if level_idx == 0:
-                out_strides.append(
-                    to_nd_tuple(self.relative_strides[level_idx], self.dim)
-                )
-            else:
-                _stride = to_nd_tuple(self.relative_strides[level_idx], self.dim)
-                absolute_stride = [
-                    prev_stride * rel_stride
-                    for prev_stride, rel_stride in zip(
-                        out_strides[level_idx - 1],
-                        _stride,
-                    )
-                ]
-                out_strides.append(absolute_stride)
-        return out_strides
+        return [to_nd_tuple(i, dim=self.dim) for i in self.relative_strides]
 
     @abstractmethod
     def _build_stem(
