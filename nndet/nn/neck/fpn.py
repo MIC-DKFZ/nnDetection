@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.utils import to_dtype
-from nndet.utils.typing import CONVGEN, ND_TUPLE_INT
+from nndet.utils.typing import CONVGEN, ND_INT
 
 
 class FPN(AbstractNeck):
@@ -13,7 +13,7 @@ class FPN(AbstractNeck):
         conv: CONVGEN,
         in_channels: Sequence[int],
         strides: Sequence[Sequence[int]],
-        conv_kernels: ND_TUPLE_INT,
+        conv_kernels: ND_INT,
         first_decoder_level: int,
         last_decoder_level: int,
         fpn_out_channels: int,

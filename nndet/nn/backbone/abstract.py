@@ -3,13 +3,12 @@ from typing import List, Sequence
 
 import torch
 
-from nndet.utils.structures import BodyOutput
 from nndet.utils.typing import ND_TUPLE_INT
 
 
 class AbstractBackbone(torch.nn.Module):
     @abstractmethod
-    def forward(self, x) -> BodyOutput:
+    def forward(self, x) -> List[torch.Tensor]:
         """
         Forward input through network
 
@@ -18,6 +17,7 @@ class AbstractBackbone(torch.nn.Module):
 
         Returns
             list: list with feature maps from multiple resolutions
+                Sorted from P0 (highest res) to PX (lowest res)
         """
         raise NotImplementedError
 
