@@ -28,12 +28,17 @@ class AnchorHead(BaseHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the
+
+                ``'decode'``
+                    uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
-                `encode`: uses the matched ground truth to encode the
+
+                ``'encode'``
+                    uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
+
         """
         super().__init__(
             classifier=classifier,
@@ -56,12 +61,17 @@ class AnchorHead(BaseHead):
 
         Returns:
             Dict[str, torch.Tensor]: predictions
-                `box_deltas`(Tensor): bounding box offsets
+
+                ``'box_deltas'`` (Tensor)
+                    bounding box offsets
                     [Num_Anchors_Batch, (num_classes), dim * 2];
                     num classes is only present if anchors were regressed
                     for each class individually
-                `box_logits`(Tensor): classification logits
+
+                ``'box_logits'`` (Tensor)
+                    classification logits
                     [Num_Anchors_Batch, num_classes]
+
         """
         logits, offsets = [], []
         for level, p in enumerate(fmaps):
@@ -92,9 +102,14 @@ class AnchorHead(BaseHead):
 
         Args:
             Dict[str, torch.Tensor]: predictions from this head
-                `box_logits`: classification logits for each anchor [N]
-                `box_deltas`: offsets for each anchor
+
+                ``'box_logits'``
+                    classification logits for each anchor [N]
+
+                ``'box_deltas'``
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             List[torch.Tensor]: anchors per image
         """
         postprocess_predictions = {
@@ -146,10 +161,15 @@ class AnchorHead(BaseHead):
 
         Args:
             prediction: detection predictions for loss computation
-                `box_logits`: classification logits for each anchor
+
+                ``'box_logits'``
+                    classification logits for each anchor
                     [N, num_classes]
-                `box_deltas`: offsets for each anchor
+
+                ``'box_deltas'``
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels: target labels for each anchor (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]]
@@ -180,12 +200,15 @@ class RoIHead(BaseHead):
 
         Returns:
             Dict[str, torch.Tensor]: predictions
-                `box_deltas`(Tensor): bounding box offsets
+
+                ``'box_deltas'`` (Tensor)
+                    bounding box offsets
                     [num_proposals, (num_classes), dim * 2];
                     num classes is only present if anchors were regressed
                     for each class individually
-                `box_logits`(Tensor): classification logits
-                    [num_proposals, num_classes]
+
+                ``'box_logits'`` (Tensor)
+                    classification logits [num_proposals, num_classes]
         """
         if self.shared is not None:
             intermediate = self.shared(fmaps)
@@ -212,9 +235,14 @@ class RoIHead(BaseHead):
 
         Args:
             Dict[str, torch.Tensor]: predictions from this head
-                `box_logits`: classification logits for each anchor [N]
-                `box_deltas`: offsets for each anchor
+
+                ``'box_logits'``
+                    classification logits for each anchor [N]
+
+                ``'box_deltas'``
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             List[torch.Tensor]: anchors per image
         """
         postprocess_predictions = {
@@ -236,10 +264,15 @@ class RoIHead(BaseHead):
 
         Args:
             prediction: detection predictions for loss computation
-                `box_logits`: classification logits for each proposal
+
+                ``'box_logits'``
+                    classification logits for each proposal
                     [N, num_classes]
-                `box_deltas`: offsets for each anchor
+
+                ``'box_deltas'``
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels: target labels for each proposal [N]
             matched_gt_boxes: matched gt box for each proposal
                 [N, dim *  2]

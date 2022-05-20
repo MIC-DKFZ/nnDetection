@@ -12,8 +12,8 @@ from nndet.training.ema import EMA
 class RoIBoxHead(RoIHead):
     def __init__(
         self,
-        classifier,  # : DenseClassifierType,
-        regressor,  # : DenseRegressorType,
+        classifier,
+        regressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
         ema_loss_norm: bool = False,
@@ -48,6 +48,9 @@ class RoIBoxHead(RoIHead):
         matched_gt_boxes: Tensor,
         proposals: Tensor,
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, Optional[torch.Tensor]]:
+        """
+        TODO
+        """
         # TODO: might save additional computation by passing pos indices
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 

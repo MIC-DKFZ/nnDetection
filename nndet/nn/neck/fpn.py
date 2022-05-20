@@ -34,15 +34,17 @@ class FPN(AbstractNeck):
         """
         Modular Implementation of Feature Pyramid Network (FPN)
 
-        P0
-        P1
-        P2 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P3 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P4 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P5 - lateral -   X   - out ----------------------->
+        Overview::
+
+            P0
+            P1
+            P2 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P3 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P4 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P5 - lateral -   X   - out ----------------------->
 
         Args:
             conv: convolution module to use internally
@@ -372,17 +374,19 @@ class UFPN(FPN):
         """
         Modular Implementation of Feature Pyramid Network (FPN)
 
-        P1 - lateral -  X/4  - out/4 --------------------->
-                         | upsample + optional conv fusion
-        P1 - lateral -  X/2  - out/2 --------------------->
-                         | upsample + optional conv fusion
-        P2 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P3 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P4 - lateral -   X   - out ----------------------->
-                         | upsample + optional conv fusion
-        P5 - lateral -   X   - out ----------------------->
+        Overview::
+
+            P1 - lateral -  X/4  - out/4 --------------------->
+                            | upsample + optional conv fusion
+            P1 - lateral -  X/2  - out/2 --------------------->
+                            | upsample + optional conv fusion
+            P2 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P3 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P4 - lateral -   X   - out ----------------------->
+                            | upsample + optional conv fusion
+            P5 - lateral -   X   - out ----------------------->
 
         Reduction set to two in this example.
 

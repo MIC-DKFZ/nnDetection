@@ -38,25 +38,45 @@ class ConvBackbone(LevelBackbone):
                 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' |
                 'avg_stride'
 
-                'conv_kernel': uses strided consolutions with same kernel
+                ``'conv_kernel'``
+                    uses strided consolutions with same kernel
                     size as respective layer for pooling.
-                'conv_stride': uses strided convolutions with kernel size
+
+                ``'conv_stride'``
+                    uses strided convolutions with kernel size
                     matching the stride (non overlapping) for pooling
-                'max_kernel': max pooling where pooling kernal equals conv
+
+                ``'max_kernel'``
+                    max pooling where pooling kernal equals conv
                     kernel of respective layer
-                'max_stride': max pooling with kernel size matching the
+
+                ``'max_stride'``
+                    max pooling with kernel size matching the
                     stride (non overlapping)
-                'avg_kernel': same as max with average pooling
-                'avg_stride': same as max with average pooling
+
+                ``'avg_kernel'``
+                    same as max with average pooling
+
+                ``'avg_stride'``
+                    same as max with average pooling
+
             stem_cfg: configuration parameters of stem. If None, an empty
                 dict will be passed.
             level_cfgs: configuration for each level. If None, an empty
                 dict will be passed.
 
-                'kernel': kernel size for each level
-                'stride': stride for levels starting from 1
-                'num_conv': number of convs per level
-                'kwargs': keyword arguments passed to conv in level
+                ``'kernel'``
+                    kernel size for each level
+
+                ``'stride'``
+                    stride for levels starting from 1
+
+                ``'num_conv'``
+                    number of convs per level
+
+                ``'kwargs'``
+                    keyword arguments passed to conv in level
+
         """
         self.start_channels = start_channels
         self.max_channels = max_channels

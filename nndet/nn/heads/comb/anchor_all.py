@@ -32,12 +32,17 @@ class BoxHeadAll(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the
+
+                ``'decode'``
+                    uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
-                `encode`: uses the matched ground truth to encode the
+
+                ``'encode'``
+                    uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
+
             ema_loss_norm: use ema to normalize denominator of losses
         """
         super().__init__(
@@ -68,10 +73,14 @@ class BoxHeadAll(AnchorHead):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
+
+                ``'box_logits'`` (Tensor)
+                    classification logits for each anchor [N, num_classes]
+
+                ``'box_deltas'`` (Tensor)
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels: target labels for each anchor (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
                 List[[N, dim *  2]], N=number of anchors per image

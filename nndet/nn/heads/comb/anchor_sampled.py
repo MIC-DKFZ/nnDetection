@@ -37,10 +37,12 @@ class BoxHeadHNM(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the
+
+                ``"decode"``: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
-                `encode`: uses the matched ground truth to encode the
+
+                ``"encode"``: uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
 
@@ -74,10 +76,14 @@ class BoxHeadHNM(AnchorHead):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
+
+                ``"box_logits"`` (Tensor)
+                    classification logits for each anchor [N, num_classes]
+
+                ``"box_deltas"`` (Tensor)
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
@@ -186,12 +192,15 @@ class BoxHeadHNMV2(AnchorHead):
             shared: optional shared module which is applied to before the
                 classifier and regression head
             reg_mode: define regression mode. One of `decode` | `encode`
-                `decode`: uses the predicted box deltas to decode the
+
+                ``"decode"``: uses the predicted box deltas to decode the
                     predicted boxes which are passed to the regression loss
                     in combination with the matched ground truth boxes
-                `encode`: uses the matched ground truth to encode the
+
+                `"encode"`: uses the matched ground truth to encode the
                     expected box deltas which are passed to the regression loss
                     in combination with the predicted box deltas
+
             ema_loss_norm: use ema to normalize denominator of losses
 
         Notes:
@@ -229,10 +238,13 @@ class BoxHeadHNMV2(AnchorHead):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
+
+                ``"box_logits"`` (Tensor): classification logits for each anchor
                     [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
+
+                ``"box_deltas"`` (Tensor): offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
@@ -340,10 +352,14 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
+
+                ``'box_logits'`` (Tensor)
+                    classification logits for each anchor [N, num_classes]
+
+                ``"box_deltas"`` (Tensor)
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
@@ -431,10 +447,14 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
+
+                ``'box_logits'`` (Tensor)
+                    classification logits for each anchor [N, num_classes]
+
+                ``'box_deltas'`` (Tensor)
+                    offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
@@ -497,6 +517,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
         remove="v0.2",
     )
     def __init__(self, *args, **kwargs):
+        """ """
         super().__init__(*args, **kwargs)
 
     def compute_loss(
@@ -515,10 +536,6 @@ class BoxHeadHNMNative(BoxHeadHNM):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
@@ -566,6 +583,7 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
         remove="v0.2",
     )
     def __init__(self, *args, **kwargs):
+        """ """
         super().__init__(*args, **kwargs)
 
     def compute_loss(
@@ -584,10 +602,6 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
 
         Args:
             prediction: detection predictions for loss computation
-                box_logits (Tensor): classification logits for each anchor
-                    [N, num_classes]
-                box_deltas (Tensor): offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
             target_labels (List[Tensor]): target labels for each anchor
                 (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
