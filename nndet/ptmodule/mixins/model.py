@@ -275,7 +275,7 @@ class SingleStageMixin(ModelMixin):
         conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
         backbone = cls.backbone_cls.from_config_plan(
             conv=conv,
-            backbone_cfg=model_cfg,
+            backbone_cfg=model_cfg["backbone_kwargs"],
             plan_arch=plan_arch,
         )
         return backbone

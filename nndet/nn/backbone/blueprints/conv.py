@@ -148,7 +148,7 @@ class ConvBackbone(LevelBackbone):
             assert len(num_conv) == num_levels
 
         if "max_channels" in backbone_cfg:
-            max_channels = backbone_cfg["max_channels"]
+            max_channels = backbone_cfg.pop("max_channels")
             logger.info(f"Found max_channels {max_channels} in backbone config.")
         else:
             max_channels = plan_arch["max_channels"]
@@ -167,7 +167,7 @@ class ConvBackbone(LevelBackbone):
             _cfg = {
                 "kernel": plan_arch["conv_kernels"][i],
                 "num_conv": num_conv[i],
-                "kwargs": backbone_cfg.get("backbone_kwargs", {}),
+                "kwargs": backbone_cfg.get("kwargs", {}),
             }
             if i > 0:
                 _cfg["stride"] = plan_arch["strides"][i - 1]
