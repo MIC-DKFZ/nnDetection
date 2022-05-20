@@ -70,8 +70,8 @@ napoleon_custom_sections = [("Returns", "params_style")]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = "pydata_sphinx_theme"
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+# html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -79,22 +79,23 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 html_logo = "_static/nnDetectionText.svg"
+html_title = "nnDetection Documentation"
 
 # options
 html_theme_options = {
-    # "show_prev_next": False,
-    # "collapse_navigation": False,
-    # "navigation_depth": 4,
-    # "icon_links": [
-    #     {
-    #         "name": "GitHub",
-    #         "url": "https://github.com/MIC-DKFZ/nnDetection",
-    #         "icon": "fab fa-github-square",
-    #     },
-    #     {
-    #         "name": "Twitter",
-    #         "url": "https://twitter.com/mic_dkfz",
-    #         "icon": "fab fa-twitter-square",
-    #     },
-    # ],
+    "show_prev_next": False,
+    "collapse_navigation": False,
+    "navigation_depth": 4,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/MIC-DKFZ/nnDetection",
+            "icon": "fab fa-github-square",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/mic_dkfz",
+            "icon": "fab fa-twitter-square",
+        },
+    ],
 }
