@@ -160,7 +160,7 @@ class FPN(AbstractNeck):
         """
         out_channels = [
             None if level_idx < self.first_decoder_level else self.fpn_out_channels
-            for level_idx in len(self.num_all_levels)
+            for level_idx in range(self.num_all_levels)
         ]
         return out_channels
 
