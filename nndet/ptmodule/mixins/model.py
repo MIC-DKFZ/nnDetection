@@ -278,6 +278,7 @@ class SingleStageMixin(ModelMixin):
             backbone_cfg=model_cfg["backbone_kwargs"],
             plan_arch=plan_arch,
         )
+        print(backbone)
         return backbone
 
     @classmethod

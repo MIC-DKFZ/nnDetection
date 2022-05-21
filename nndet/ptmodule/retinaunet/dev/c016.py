@@ -2,6 +2,7 @@ from typing import Type
 
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.regressor import L1Regressor
@@ -26,8 +27,13 @@ class RetinaUNetC016(RetinaUNetV001):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC016Up(RetinaUNetV001):
+class RetinaUNetC016Up(RetinaUNetC016):
     neck_cls: Type[AbstractNeck] = UpFPN
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016Res(RetinaUNetC016):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone
 
 
 @MODULE_REGISTRY.register
