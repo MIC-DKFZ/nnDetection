@@ -39,7 +39,7 @@ class ConvBackbone(LevelBackbone):
                 'avg_stride'
 
                 ``'conv_kernel'``
-                    uses strided consolutions with same kernel
+                    uses strided convolutions with same kernel
                     size as respective layer for pooling.
 
                 ``'conv_stride'``

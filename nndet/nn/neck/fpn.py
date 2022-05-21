@@ -19,7 +19,7 @@ class FPN(AbstractNeck):
         first_decoder_level: int,
         last_decoder_level: int,
         fpn_out_channels: int,
-        upsampling_mode: Union[str, InterpolationMode] = "nearest",
+        upsampling_mode: Union[str, InterpolationMode] = "linear",
         num_lateral: int = 1,
         norm_lateral: bool = False,
         activation_lateral: bool = False,
@@ -71,7 +71,8 @@ class FPN(AbstractNeck):
             norm_fusion: en-/disable normalization in fusion connections
             activation_fusion: en-/disable non linearity in fusion connections
             interpolation_kwargs: interpolation kwargs, only used if the
-                interpolation mode is not `transpose`
+                interpolation mode is not `transpose`. If None, `align_corners`
+                will be set to `True` per default.
             kwargs: enables usage of U-Like configs without modification,
                 not used in this module
         """
@@ -110,7 +111,9 @@ class FPN(AbstractNeck):
         # upsampling layers
         self.interpolation_mode = InterpolationMode(upsampling_mode)
         self.interpolation_kwargs = (
-            {} if interpolation_kwargs is None else interpolation_kwargs
+            {"align_corners": True}
+            if interpolation_kwargs is None
+            else interpolation_kwargs
         )
 
         # create conv params
@@ -360,7 +363,7 @@ class UFPN(FPN):
         first_decoder_level: int,
         last_decoder_level: int,
         fpn_out_channels: int,
-        upsampling_mode: str = "nearest",
+        upsampling_mode: str = "linear",
         num_lateral: int = 1,
         norm_lateral: bool = False,
         activation_lateral: bool = False,
@@ -517,7 +520,7 @@ class UpFPN(FPN):
         first_decoder_level: int,
         last_decoder_level: int,
         fpn_out_channels: int,
-        upsampling_mode: Union[str, InterpolationMode] = "nearest",
+        upsampling_mode: Union[str, InterpolationMode] = "linear",
         num_lateral: int = 1,
         norm_lateral: bool = False,
         activation_lateral: bool = False,
