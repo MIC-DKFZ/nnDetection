@@ -7,7 +7,7 @@ from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
-from nndet.nn.neck.fpn import UFPN
+from nndet.nn.neck.fpn import UFPN, UpFPN
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 
@@ -23,6 +23,11 @@ class RetinaUNetC016(RetinaUNetV001):
     head_cls = BoxHeadHNM
     head_conv_cls = ConvGroupLReLU
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016Up(RetinaUNetV001):
+    neck_cls: Type[AbstractNeck] = UpFPN
 
 
 @MODULE_REGISTRY.register
