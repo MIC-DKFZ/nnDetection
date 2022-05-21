@@ -180,8 +180,8 @@ TEST_CASES_UFPN = [
 @pytest.mark.parametrize("network_cfg", TEST_CASES_FPN)
 @pytest.mark.parametrize("test_cfg", TEST_CONFIGS)
 def test_fpn_like(network_cfg, test_cfg):
-    expected_patch_size = test_cfg.pop("expected_patch_size")
-    expected_shapes = test_cfg.pop("expected_shapes")
+    expected_patch_size = test_cfg["expected_patch_size"]
+    expected_shapes = test_cfg["expected_shapes"]
 
     conv = Generator(ConvInstanceLReLU, 3)
     backbone = network_cfg["backbone_cls"].from_config_plan(
@@ -220,8 +220,8 @@ def test_fpn_like(network_cfg, test_cfg):
 @pytest.mark.parametrize("network_cfg", TEST_CASES_UFPN)
 @pytest.mark.parametrize("test_cfg", TEST_CONFIGS)
 def test_ufpn_like(network_cfg, test_cfg):
-    expected_patch_size = test_cfg.pop("expected_patch_size")
-    expected_shapes = test_cfg.pop("expected_shapes")
+    expected_patch_size = test_cfg["expected_patch_size"]
+    expected_shapes = test_cfg["expected_shapes"]
 
     conv = Generator(ConvInstanceLReLU, 3)
     backbone = network_cfg["backbone_cls"].from_config_plan(
