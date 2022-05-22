@@ -83,7 +83,7 @@ def train():
         action="store_true",
     )
     parser.add_argument(
-        "--no_summary",
+        "--log_net",
         help="Turn of model summary for clearner output",
         action="store_true",
     )
@@ -92,13 +92,13 @@ def train():
     task = args.task
     ov = args.overwrites
     do_sweep = args.sweep
-    no_summary = args.no_summary
+    log_net = args.log_net
 
     _train(
         task=task,
         ov=ov,
         do_sweep=do_sweep,
-        no_summary=no_summary,
+        log_net=log_net,
     )
 
 
@@ -294,7 +294,7 @@ def _train(
     task: str,
     ov: List[str],
     do_sweep: bool,
-    no_summary: bool = False,
+    log_net: bool = False,
 ):
     """
     Run training
@@ -413,8 +413,7 @@ def _train(
         plugins.append(p)
     logger.info(f"Using {plugins} plugins for training")
 
-    if not no_summary:
-        callbacks.append(ModelSummary(max_depth=10))
+    callbacks.append(ModelSummary(max_depth=10, log_net=log_net))
 
     if "terminate_on_nan" in cfg["trainer_cfg"]:
         detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
