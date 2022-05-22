@@ -239,6 +239,7 @@ class FPN(AbstractNeck):
                 transposed=True,
                 add_norm=False,
                 add_act=False,
+                bias=False,
             )
         else:
             up = nn.Upsample(
@@ -489,6 +490,7 @@ class UFPN(FPN):
                 transposed=True,
                 add_norm=False,
                 add_act=False,
+                bias=False,
             )
         else:
             up = torch.nn.Upsample(
