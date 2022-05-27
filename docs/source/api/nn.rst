@@ -23,6 +23,16 @@ Backbones
    conv
 
 
+.. currentmodule:: nndet.nn.backbone.statics
+
+.. autosummary::
+   :toctree: Backbones
+   :nosignatures:
+
+   resnet
+   swin
+
+
 Necks
 -----
 
