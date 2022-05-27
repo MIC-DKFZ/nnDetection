@@ -16,7 +16,7 @@ from nndet.utils.typing import CONVGEN, ND_INT, ND_TUPLE_INT
 
 if BaseResNet is not None:
 
-    class ResNet(AbstractBackbone, BaseResNet):
+    class ResNet(BaseResNet, AbstractBackbone):
         """
         Please refer to the MONAI documentation for an overview of all args.
 
@@ -40,18 +40,19 @@ if BaseResNet is not None:
             block_inplanes: List[int],
             widen_factor: float = 1.0,
             conv1_t_stride: ND_INT = 1,
-            spatial_dims: int = 3,
+            dim: int = 3,
             **kwargs,
         ):
             self.planes = [int(x * widen_factor) for x in block_inplanes]
             self.stride1 = conv1_t_stride
-            self.dim = spatial_dims
+            self.dim = dim
             self.expansion = block.expansion
             super().__init__(
                 block=block,
                 block_inplanes=block_inplanes,
                 widen_factor=widen_factor,
                 conv1_t_stride=conv1_t_stride,
+                spatial_dims=dim,
                 **kwargs,
             )
 
@@ -76,7 +77,7 @@ if BaseResNet is not None:
                 block=block,
                 layers=layers,
                 block_inplanes=planes,
-                spatial_dims=dim,
+                dim=dim,
                 n_input_channels=plan_arch["in_channels"],
                 conv1_t_size=3,
                 conv1_t_stride=2,

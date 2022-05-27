@@ -2,9 +2,10 @@ import pytest
 import torch
 
 from nndet.nn.backbone.statics.resnet import ResNet10, ResNet18, ResNet34, ResNet50
+from nndet.nn.backbone.statics.swin import USwinTM
 from nndet.nn.layers.conv import ConvInstanceLReLU
 from nndet.nn.layers.wrapper import Generator
-from nndet.nn.neck.fpn import FPN, UpFPN
+from nndet.nn.neck.fpn import FPN, UFPN, UpFPN
 
 TEST_CONFIGS = [
     {
@@ -63,6 +64,13 @@ TEST_CASES_FPN = [
         "neck_cls": FPN,
         "neck_kwargs": {},
     },
+    {
+        "requires": "monai,einops",
+        "backbone_cls": USwinTM,
+        "backbone_kwargs": {},
+        "neck_cls": FPN,
+        "neck_kwargs": {},
+    },
 ]
 
 
@@ -81,6 +89,20 @@ TEST_CASES_UFPN = [
         "backbone_kwargs": {},
         "neck_cls": UpFPN,
         "neck_kwargs": {"upsampling_mode": "transpose"},
+    },
+    {
+        "requires": "monai,einops",
+        "backbone_cls": USwinTM,
+        "backbone_kwargs": {},
+        "neck_cls": UpFPN,
+        "neck_kwargs": {},
+    },
+    {
+        "requires": "monai,einops",
+        "backbone_cls": USwinTM,
+        "backbone_kwargs": {},
+        "neck_cls": UFPN,
+        "neck_kwargs": {},
     },
 ]
 

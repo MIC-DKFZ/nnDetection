@@ -466,6 +466,9 @@ class UFPN(FPN):
                 self.fpn_out_channels / (self.reduction_out_channels**_diff)
             )
             out_channels[i] = max(_out_channels_reduced, self.min_out_channels)
+
+        for i in range(self.last_decoder_level + 1, self.num_all_levels):
+            out_channels[i] = None
         return out_channels
 
     def build_up(
