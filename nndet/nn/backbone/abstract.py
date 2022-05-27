@@ -90,7 +90,7 @@ class AbstractBackbone(torch.nn.Module):
         Check if the provided patch_size works with this network config
 
         Args:
-            patch_size: patch size to check
+            patch_size: patch size to check (without channels and batch dim)
 
         Raises:
             ValueError: raised only if network dimensions and patch size
@@ -100,7 +100,7 @@ class AbstractBackbone(torch.nn.Module):
             bool: `True` if patch size is compatible with network config,
                 `False` otherwise.
         """
-        absolute_strides = self.get_strides()
+        absolute_strides = self.get_absolute_strides()
         max_stride = absolute_strides[-1]
 
         patch_dim = len(patch_size)
