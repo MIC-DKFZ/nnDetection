@@ -32,7 +32,7 @@ build-job:
     - echo "Install Package"
     - pip install .[dev]
     - echo "Run Tests"
-    - coverage run -m pytest -v
+    - coverage run -m pytest -vrs
     - coverage report
     - coverage xml
   artifacts:

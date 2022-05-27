@@ -165,7 +165,10 @@ class FPN(AbstractNeck):
             List[int]: number of output channels for each level
         """
         out_channels = [
-            None if level_idx < self.first_decoder_level else self.fpn_out_channels
+            None
+            if level_idx < self.first_decoder_level
+            or level_idx > self.last_decoder_level
+            else self.fpn_out_channels
             for level_idx in range(self.num_all_levels)
         ]
         return out_channels
@@ -661,13 +664,14 @@ class UpFPN(FPN):
         scale_factor = [1 for _ in range(self.dim)]
         for level_idx in range(self.first_decoder_level + 1):
             _relative_level_stride = self.relative_strides[level_idx]
-            if not isinstance(_relative_level_stride, Sequence):
-                scale_factor = [s * _relative_level_stride for s in scale_factor]
-            else:
-                assert len(_relative_level_stride) == len(scale_factor)
-                scale_factor = [
-                    s * r for s, r in zip(scale_factor, _relative_level_stride)
-                ]
+            if _relative_level_stride is not None:  # account for skipped levels
+                if not isinstance(_relative_level_stride, Sequence):
+                    scale_factor = [s * _relative_level_stride for s in scale_factor]
+                else:
+                    assert len(_relative_level_stride) == len(scale_factor)
+                    scale_factor = [
+                        s * r for s, r in zip(scale_factor, _relative_level_stride)
+                    ]
 
         up_modules.append(
             nn.Upsample(
