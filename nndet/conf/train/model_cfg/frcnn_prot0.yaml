@@ -97,7 +97,6 @@ roi_matcher_kwargs:
   high_threshold: 0.2
   allow_low_quality_matches: False
 
-# TODO: try other sampler
 roi_sampler_kwargs:
   batch_size_per_image: 32
   positive_fraction: 0.5

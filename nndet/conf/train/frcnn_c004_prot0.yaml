@@ -1,0 +1,10 @@
+# @package __global__
+defaults:
+  - augment_cfg: more_modular
+  - io_cfg: offsetV2_obj_bal_bs6
+  - trainer_cfg: sgd_base
+  - model_cfg: frcnn_prot0
+
+module: FasterURCNNC004
+plan: D3V001_3d # plan used for training
+planner: D3V001 # planner used for preprocessing
