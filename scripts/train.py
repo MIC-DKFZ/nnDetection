@@ -84,7 +84,12 @@ def train():
     )
     parser.add_argument(
         "--log_net",
-        help="Turn of model summary for clearner output",
+        help="Log network structure in console",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--log_aug",
+        help="Log augmentation in console",
         action="store_true",
     )
 
@@ -93,12 +98,14 @@ def train():
     ov = args.overwrites
     do_sweep = args.sweep
     log_net = args.log_net
+    log_aug = args.log_aug
 
     _train(
         task=task,
         ov=ov,
         do_sweep=do_sweep,
         log_net=log_net,
+        log_aug=log_aug,
     )
 
 
@@ -295,6 +302,7 @@ def _train(
     ov: List[str],
     do_sweep: bool,
     log_net: bool = False,
+    log_aug: bool = False,
 ):
     """
     Run training
@@ -363,6 +371,7 @@ def _train(
         plan=plan,
         data_dir=data_dir,
         fold=cfg["exp"]["fold"],
+        log_aug=log_aug,
     )
     # copy IO config overwrites to plan
     plan["patch_size"] = list(datamodule.patch_size)
