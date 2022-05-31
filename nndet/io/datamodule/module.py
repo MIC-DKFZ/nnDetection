@@ -160,7 +160,7 @@ class BaseDatamodule(BaseModule):
         """
         dataloader_kwargs = self.plan.get("dataloader_kwargs", {})
         if dl_kwargs := self.io_cfg.get("dataloader_kwargs", {}):
-            logger.warning(f"Dataloader Kwargs Overwrite Found: {dl_kwargs}")
+            # logger.warning(f"Dataloader Kwargs Overwrite Found: {dl_kwargs}")
             dataloader_kwargs.update(dl_kwargs)
         return dataloader_kwargs
 
@@ -231,10 +231,11 @@ class BaseDatamodule(BaseModule):
             num_batches_per_epoch=self.io_cfg["num_train_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
-
+        tr_transforms = self.augmentation.get_training_transforms()
+        self.log_augmentation(tr_transforms)
         tr_gen = self.get_augmenter(
             dataloader=dl_tr,
-            transform=self.augmentation.get_training_transforms(),
+            transform=tr_transforms,
             # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
             num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),
@@ -265,10 +266,10 @@ class BaseDatamodule(BaseModule):
             num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
-
+        val_transforms = self.augmentation.get_validation_transforms()
         val_gen = self.get_augmenter(
             dataloader=dl_val,
-            transform=self.augmentation.get_validation_transforms(),
+            transform=val_transforms,
             # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
             num_processes=get_allowed_n_proc_DA(),
             num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),

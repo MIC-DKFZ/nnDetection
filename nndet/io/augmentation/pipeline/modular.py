@@ -35,7 +35,6 @@ from batchgenerators.transforms.utility_transforms import (
     RemoveLabelTransform,
     RenameTransform,
 )
-from loguru import logger
 
 from nndet.io.augmentation.base import ComposePretty
 from nndet.io.augmentation.pipeline.noaug import NoAug
@@ -218,7 +217,7 @@ class AugModular(NoAug):
         tr_transforms.append(RenameTransform("seg", "target", True))
         tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         transforms = ComposePretty(tr_transforms)
-        logger.info(f"Training Transforms: \n{transforms}")
+        # logger.info(f"Training Transforms: \n{transforms}")
         return transforms
 
 
@@ -545,5 +544,5 @@ class AugModularV2(NoAug):
         tr_transforms.append(RenameTransform("seg", "target", True))
         tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         transforms = ComposePretty(tr_transforms)
-        logger.info(f"Training Transforms: \n{transforms}")
+        # logger.info(f"Training Transforms: \n{transforms}")
         return transforms
