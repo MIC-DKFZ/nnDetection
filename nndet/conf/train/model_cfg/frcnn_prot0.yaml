@@ -77,12 +77,12 @@ roi_pooling:
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 2
-  add_norm: False
+  add_norm: True
   reduction: sum
 
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 2
-  add_norm: False
+  add_norm: True
   reduction: sum
 
 roi_head_kwargs:
@@ -97,6 +97,7 @@ roi_matcher_kwargs:
   high_threshold: 0.2
   allow_low_quality_matches: False
 
+# TODO: try other sampler
 roi_sampler_kwargs:
   batch_size_per_image: 32
   positive_fraction: 0.5

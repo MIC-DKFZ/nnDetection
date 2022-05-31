@@ -1,7 +1,7 @@
 # @package __global__
 defaults:
   - augment_cfg: more_modular
-  - io_cfg: offsetV2_obj_bal
+  - io_cfg: offsetV2_obj_bal_fg
   - trainer_cfg: sgd_base
   - model_cfg: frcnn_prot0
 
