@@ -174,7 +174,7 @@ def check_data_and_label_splitted(
                                 "mask info path but it does not exist.")
             mask_info = load_json(mask_info_path)
 
-            _type_check_instances_json(mask_info, mask_info_path)
+            _type_check_instances_json(mask_info, mask_info_path, expected_labels=cfg["labels"])
 
             # check presence / absence of instances in json and mask
             if mask_info["instances"]:
@@ -195,7 +195,7 @@ def check_data_and_label_splitted(
     print("Data and label check complete.")
 
 
-def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]):
+def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path], expected_labels: list):
     """
     Check types of json files
 
@@ -203,11 +203,14 @@ def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]
         mask_info: contains information loaded from the label json file.
             Specifically the `instances` key is checked for a "str":"int" type
         mask_info_path: path to json file where information was loaded from
+        expected_labels: list with the expected labels
 
     Raises:
         ValueError: raised if instance ids are not typed as str
         ValueError: raised if instance classes are not typed as int
     """
+    # transform expected labels to integer
+    exp_labs = [int(lab) for lab in expected_labels]
     # type check instances key
     for key_instance_id, item_instance_cls in mask_info["instances"].items():
         if not isinstance(key_instance_id, str):
@@ -216,6 +219,8 @@ def _type_check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path]
         if not isinstance(item_instance_cls, int):
             raise ValueError(f"Instance classes needs to be an int, found {type(item_instance_cls)} "
                                 f"of instance {key_instance_id} in {mask_info_path}")
+        if not item_instance_cls in exp_labs:
+            raise ValueError(f"Instance class {item_instance_cls} not defined in dataset.yml")
 
 
 def _full_check(
