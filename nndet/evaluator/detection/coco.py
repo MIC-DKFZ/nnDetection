@@ -97,7 +97,6 @@ class COCOMetric(DetectionMetric):
 
         results = {}
         results.update(self.compute_ap(dataset_statistics))
-        results.update(self.compute_ar(dataset_statistics))
 
         if self.verbose:
             toc = time.time()
@@ -109,15 +108,14 @@ class COCOMetric(DetectionMetric):
         Compute AP metrics
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            dataset_statistics (dict): computed statistics over dataset
+                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
+                    detection thresholds
+                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
+                `precision`: Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
+                `scores`: Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
         """
         results = {}
         if self.iou_range:  # mAP
@@ -144,47 +142,6 @@ class COCOMetric(DetectionMetric):
                            f"MaxDet_{self.max_detections[-1]}")
                     results[key] = self.select_ap(dataset_statistics,
                                                   iou_idx=[idx], cls_idx=cls_idx, max_det_idx=-1)
-        return results
-
-    def compute_ar(self, dataset_statistics: dict) -> dict:
-        """
-        Compute AR metrics
-
-        Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
-        """
-        results = {}
-        for max_det_idx, max_det in enumerate(self.max_detections):  # mAR
-            key = f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_MaxDet_{max_det}"
-            results[key] = self.select_ar(dataset_statistics, max_det_idx=max_det_idx)
-
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                           f"MaxDet_{max_det}")
-                    results[key] = self.select_ar(dataset_statistics,
-                                                  cls_idx=cls_idx, max_det_idx=max_det_idx)
-
-        for idx in self.iou_list_idx:   # AR@IoU
-            key = f"AR_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
-            results[key] = self.select_ar(dataset_statistics, iou_idx=idx, max_det_idx=-1)
-
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"AR_IoU_{self.iou_thresholds[idx]:.2f}_"
-                           f"MaxDet_{self.max_detections[-1]}")
-                    results[key] = self.select_ar(dataset_statistics, iou_idx=idx,
-                                                  cls_idx=cls_idx, max_det_idx=-1)
         return results
 
     @staticmethod
@@ -216,42 +173,6 @@ class COCOMetric(DetectionMetric):
             prec = prec[..., cls_idx, :]
         prec = prec[..., max_det_idx]
         return np.mean(prec)
-
-    @staticmethod
-    def select_ar(dataset_statistics: dict, iou_idx: Union[int, Sequence[int]] = None,
-                  cls_idx: Union[int, Sequence[int]] = None,
-                  max_det_idx: int = -1) -> np.ndarray:
-        """
-        Compute average recall
-
-        Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            iou_idx: index of IoU values to select for evaluation(if None, all values are used)
-            cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
-
-        Returns:
-            np.ndarray: recall value
-        """
-        rec = dataset_statistics["recall"]
-        if iou_idx is not None:
-            rec = rec[iou_idx]
-        if cls_idx is not None:
-            rec = rec[..., cls_idx, :]
-        rec = rec[..., max_det_idx]
-
-        if len(rec[rec > -1]) == 0:
-            rec = -1
-        else:
-            rec = np.mean(rec[rec > -1])
-        return rec
 
     def compute_statistics(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
                            ) -> Dict[str, Union[np.ndarray, List]]:
