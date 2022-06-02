@@ -283,15 +283,15 @@ def _check_itk_params(
         ValueError: raised if spacing does not match
     """
     for idx, img in enumerate(img_seq[1:], start=1):
-        if not (np.asarray(img_seq[0].GetDimension()) == \
-            np.asarray(img.GetDimension())).all():
+        if not (np.allclose(np.asarray(img_seq[0].GetDimension()) == \
+            np.asarray(img.GetDimension()))):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
-        if not (np.asarray(img_seq[0].GetOrigin()) == \
-            np.asarray(img.GetOrigin())).all():
+        if not (np.allclose(np.asarray(img_seq[0].GetOrigin()) == \
+            np.asarray(img.GetOrigin()))):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same origin!")
-        if not (np.asarray(img_seq[0].GetDirection()) == \
-            np.asarray(img.GetDirection())).all():
+        if not (np.allclose(np.asarray(img_seq[0].GetDirection()) == \
+            np.asarray(img.GetDirection()))):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same direction!")
-        if not (np.asarray(img_seq[0].GetSpacing()) == \
-            np.asarray(img.GetSpacing())).all():
+        if not (np.allclose(np.asarray(img_seq[0].GetSpacing()) == \
+            np.asarray(img.GetSpacing()))):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same spacing!")
