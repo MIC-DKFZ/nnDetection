@@ -406,7 +406,6 @@ The following section contains some additional information regarding the metrics
 - `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image are allows. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
 - `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
 - `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
-- `AR`: is only added for additional information. Since most AR metrics refer to a single IoU threshold it only reflects the max recall.
 - `FROC_score_IoU_0.10` *experimental*: Experimental FROC score. The implementation is still undergoing additional testing and might be subject to change. Also see the docstring for additional information on the multi class case. Additional featuers might be added in the future.
 - case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
 
