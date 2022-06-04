@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
 num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
 
