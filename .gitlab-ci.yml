@@ -15,7 +15,7 @@ format-job:
     - pip --version
     - echo "Install"
     - pip install pre-commit
-    - pip install reuse
+    - pip install git+https://github.com/mibaumgartner/reuse-tool.git
     - echo "Check Install"
     - pre-commit --version
     - pre-commit install

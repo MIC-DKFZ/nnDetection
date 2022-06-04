@@ -581,5 +581,10 @@ The Medical Detection Toolkit introduced the first codebase for 3D Object Detect
 ## [Torchvision](https://github.com/pytorch/vision)
 nnDetection tried to follow the interfaces of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used based our implementations of some of the core modules of the torchvision implementation.
 
+
+## License
+This project is licensed under multiple licenses, please refer to the `LICENSES` directory for an overview of the licenses. 
+
+
 ## Funding
 Part of this work was funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – 410981386 and the Helmholtz Imaging Platform (HIP), a platform of the Helmholtz Incubator on Information and Data Science.
