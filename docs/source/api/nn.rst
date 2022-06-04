@@ -21,6 +21,7 @@ Backbones
 
    level
    conv
+   resconv
 
 
 .. currentmodule:: nndet.nn.backbone.statics

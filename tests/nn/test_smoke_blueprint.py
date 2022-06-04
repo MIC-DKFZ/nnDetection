@@ -10,6 +10,7 @@ import pytest
 import torch
 
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.layers.conv import ConvInstanceLReLU
 from nndet.nn.layers.wrapper import Generator
 from nndet.nn.neck.fpn import FPN, UFPN, UpFPN
@@ -102,6 +103,30 @@ TEST_CASES_FPN = [
     {
         "backbone_cls": ConvBackbone,
         "backbone_kwargs": {"num_conv": 2, "pooling_mode": "avg_kernel"},
+        "neck_cls": FPN,
+        "neck_kwargs": {},
+    },
+    {
+        "backbone_cls": ResConvBackbone,
+        "backbone_kwargs": {"num_conv": 2, "res_p0": False},
+        "neck_cls": FPN,
+        "neck_kwargs": {},
+    },
+    {
+        "backbone_cls": ResConvBackbone,
+        "backbone_kwargs": {"num_conv": 4, "res_p0": False},
+        "neck_cls": FPN,
+        "neck_kwargs": {},
+    },
+    {
+        "backbone_cls": ResConvBackbone,
+        "backbone_kwargs": {"num_conv": 2, "res_p0": False, "num_conv_stem": 3},
+        "neck_cls": FPN,
+        "neck_kwargs": {},
+    },
+    {
+        "backbone_cls": ResConvBackbone,
+        "backbone_kwargs": {"num_conv": 2, "res_p0": True},
         "neck_cls": FPN,
         "neck_kwargs": {},
     },

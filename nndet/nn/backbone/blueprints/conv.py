@@ -64,7 +64,7 @@ class ConvBackbone(LevelBackbone):
                     same as max with average pooling
 
             stem_cfg: configuration parameters of stem. If None, an empty
-                dict will be passed.
+                dict will be passed. Ignored, since no stem is used here.
             level_cfgs: configuration for each level. If None, an empty
                 dict will be passed.
 
@@ -105,7 +105,7 @@ class ConvBackbone(LevelBackbone):
             conv: conv generator to use for internal convolutions
             backbone_cfg: backbone configuration
 
-                ``"num_conv"`` int
+                ``"num_conv"`` Union[int, Sequence[int]]
                     [optional] number of convolutions per level. Default 2.
 
                 ``"max_channels"`` int
@@ -190,7 +190,6 @@ class ConvBackbone(LevelBackbone):
     def _build_stem(
         self,
         conv: CONVGEN,
-        in_channels: int,
         stem_cfg: Dict,
     ) -> Tuple[int, None]:
         """

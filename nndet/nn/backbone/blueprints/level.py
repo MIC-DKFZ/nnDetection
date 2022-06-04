@@ -128,7 +128,6 @@ class LevelBackbone(AbstractBackbone):
         # build stem
         _start_channels, _stem = self._build_stem(
             conv=conv,
-            in_channels=in_channels,
             stem_cfg=stem_cfg,
         )
         self.start_channels: int = _start_channels
