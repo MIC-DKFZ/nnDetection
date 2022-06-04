@@ -34,7 +34,6 @@ class FROCMetric(DetectionMetric):
         classes: Sequence[str],
         iou_thresholds: Sequence[float] = (0.1, 0.5),
         fpi_thresholds: Sequence[float] = (1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
-        per_class: bool = False,
         verbose: bool = True,
         save_dir: Optional[Union[str, Path]] = None,
     ):
@@ -45,8 +44,9 @@ class FROCMetric(DetectionMetric):
         objects regardless of their class which assigns each object the
         same "weight".
 
-        Note this implementation is experimental and might change in the
-        future. Please prefer the AP metric for now.
+        Update: Added support for equal class weighted FROC score.
+        Curves are still only supported with pool version or for each class
+        individually!
 
         Args:
             classes: name of each class
@@ -56,7 +56,6 @@ class FROCMetric(DetectionMetric):
             fpi_thresholds: false positive per image
                 thresholds (curve is interpolated at these values, score is
                 the mean of the computed sens values at these positions)
-            per_class: additional FROC curves are computed per class
             verbose: log time needed for evaluation
 
         Notes:
@@ -66,7 +65,6 @@ class FROCMetric(DetectionMetric):
         self.classes = classes
         self.iou_thresholds = iou_thresholds
         self.fpi_thresholds = fpi_thresholds
-        self.per_class = per_class
         self.verbose = verbose
 
         if save_dir is None:
@@ -124,14 +122,13 @@ class FROCMetric(DetectionMetric):
             toc = time.time()
             logger.info(f"FROC finished (t={(toc - tic):0.2f}s).")
 
-        if self.per_class:
-            _score, _curve = self.compute_froc_mul_iou_per_class(results_list)
-            scores.update(_score)
-            curves.update(_curve)
+        _score, _curve = self.compute_froc_mul_iou_per_class(results_list)
+        scores.update(_score)
+        curves.update(_curve)
 
-            if self.verbose:
-                toc = time.time()
-                logger.info(f"FROC per class finished (t={(toc - tic):0.2f}s).")
+        if self.verbose:
+            toc = time.time()
+            logger.info(f"FROC per class finished (t={(toc - tic):0.2f}s).")
 
         if self.save_dir is not None:
             self.plot_froc_curves(curves)
@@ -291,6 +288,7 @@ class FROCMetric(DetectionMetric):
         """
         froc_scores_cls = {}
         froc_curves_cls = {}
+        froc_scores_cache = defaultdict(list)  # per metric cache
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
             results_by_cls = [
@@ -299,12 +297,21 @@ class FROCMetric(DetectionMetric):
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
 
+                for key, item in cls_scores.items():
+                    froc_scores_cache[key].append(item)
+
                 froc_scores_cls.update(
                     {f"{cls_str}_{key}": item for key, item in cls_scores.items()}
                 )
                 froc_curves_cls.update(
                     {f"{cls_str}_{key}": item for key, item in cls_curves.items()}
                 )
+
+        for metric_str, metric_cache in froc_scores_cache.items():
+            froc_scores_cls[f"mc_{metric_str}"] = float(
+                sum(metric_cache) / len(self.classes)
+            )
+
         return froc_scores_cls, froc_curves_cls
 
     def plot_froc_curves(self, curves: Dict[str, Sequence[float]]) -> None:

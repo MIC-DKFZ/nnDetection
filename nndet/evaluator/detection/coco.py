@@ -22,7 +22,6 @@ class COCOMetric(DetectionMetric):
         iou_list: Sequence[float] = (0.1, 0.5, 0.75),
         iou_range: Sequence[float] = (0.1, 0.5, 0.05),
         max_detection: Sequence[int] = (1, 5, 100),
-        per_class: bool = True,
         verbose: bool = True,
     ):
         """
@@ -41,7 +40,6 @@ class COCOMetric(DetectionMetric):
         """
         self.verbose = verbose
         self.classes = classes
-        self.per_class = per_class
 
         iou_list = np.array(iou_list)
         _iou_range = np.linspace(
@@ -145,19 +143,18 @@ class COCOMetric(DetectionMetric):
                 max_det_idx=-1,
             )
 
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (
-                        f"{cls_str}_"
-                        f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                        f"MaxDet_{self.max_detections[-1]}"
-                    )
-                    results[key] = self.select_ap(
-                        dataset_statistics,
-                        iou_idx=self.iou_range_idx,
-                        cls_idx=cls_idx,
-                        max_det_idx=-1,
-                    )
+            for cls_idx, cls_str in enumerate(self.classes):  # per class results
+                key = (
+                    f"{cls_str}_"
+                    f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                    f"MaxDet_{self.max_detections[-1]}"
+                )
+                results[key] = self.select_ap(
+                    dataset_statistics,
+                    iou_idx=self.iou_range_idx,
+                    cls_idx=cls_idx,
+                    max_det_idx=-1,
+                )
 
         for idx in self.iou_list_idx:  # AP@IoU
             key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
@@ -165,19 +162,18 @@ class COCOMetric(DetectionMetric):
                 dataset_statistics, iou_idx=[idx], max_det_idx=-1
             )
 
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (
-                        f"{cls_str}_"
-                        f"AP_IoU_{self.iou_thresholds[idx]:.2f}_"
-                        f"MaxDet_{self.max_detections[-1]}"
-                    )
-                    results[key] = self.select_ap(
-                        dataset_statistics,
-                        iou_idx=[idx],
-                        cls_idx=cls_idx,
-                        max_det_idx=-1,
-                    )
+            for cls_idx, cls_str in enumerate(self.classes):  # per class results
+                key = (
+                    f"{cls_str}_"
+                    f"AP_IoU_{self.iou_thresholds[idx]:.2f}_"
+                    f"MaxDet_{self.max_detections[-1]}"
+                )
+                results[key] = self.select_ap(
+                    dataset_statistics,
+                    iou_idx=[idx],
+                    cls_idx=cls_idx,
+                    max_det_idx=-1,
+                )
         return results
 
     @staticmethod
