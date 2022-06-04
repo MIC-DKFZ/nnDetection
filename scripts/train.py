@@ -455,11 +455,11 @@ def _train(
         logger=pl_logger,
         max_epochs=module.max_epochs,
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
-        reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
         plugins=plugins,
         detect_anomaly=detect_anomaly,
         move_metrics_to_cpu=False,
+        enable_model_summary=False,
         **trainer_kwargs,
     )
 

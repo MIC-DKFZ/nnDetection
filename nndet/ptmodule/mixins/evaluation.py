@@ -158,9 +158,8 @@ class BoxEvalMixin(EvalMixin):
             f"Box mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
             f"Box AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
             f"Box AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"Box AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"Box AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
             f"Box FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"Box FROC@0.5: {box_scores['FROC_score_IoU_0.50']:0.3f} "
         )
 
         # log own scores
@@ -268,9 +267,8 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
             f"RPN Box mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
             f"RPN Box AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
             f"RPN Box AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN Box AR@0.1: {rpn_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN Box AR@0.5: {rpn_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
             f"RPN Box FROC@0.1: {rpn_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"RPN Box FROC@0.5: {rpn_scores['FROC_score_IoU_0.50']:0.3f} "
         )
 
         # log own scores
@@ -558,9 +556,8 @@ class ScoreMasksEvalMixin(EvalMixin):
             f"Mask mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
             f"Mask AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
             f"Mask AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"Mask AR@0.1: {box_scores['AR_IoU_0.10_MaxDet_100']:0.3f} "
-            f"Mask AR@0.5: {box_scores['AR_IoU_0.50_MaxDet_100']:0.3f} "
             f"Mask FROC@0.1: {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"Mask FROC@0.5: {box_scores['FROC_score_IoU_0.50']:0.3f} "
         )
 
         # log own scores
