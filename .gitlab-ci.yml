@@ -21,7 +21,7 @@ format-job:
     - pre-commit install
     - echo "Run pre-commit hooks"
     - pre-commit run --all-files --show-diff-on-failure
-    - reuse --root nndet lint
+    # - reuse --root nndet lint
 
 build-job:
   stage: build
