@@ -50,10 +50,10 @@ class EpochTimerCallback(Callback):
 
         self.train_tic = 0
 
-    def on_train_start(self, *args, **kwargs) -> None:
+    def on_fit_start(self, *args, **kwargs) -> None:
         self.train_tic = time.time()
 
-    def on_train_end(self, *args, **kwargs) -> None:
+    def on_fit_end(self, *args, **kwargs) -> None:
         train_toc = time.time()
         measured_time = train_toc - self.train_tic
         logger.info(f"### Training took {(measured_time / 3600):.2f} hours. ###")

@@ -213,7 +213,6 @@ class DetectionEvaluator(AbstractEvaluator):
         # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
-        per_class = False if fast else True
 
         metrics = []
         metrics.append(
@@ -221,7 +220,6 @@ class DetectionEvaluator(AbstractEvaluator):
                 classes,
                 iou_thresholds=iou_thresholds,
                 fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
-                per_class=per_class,
                 verbose=verbose,
                 save_dir=None if fast else save_dir,
             )
@@ -232,7 +230,6 @@ class DetectionEvaluator(AbstractEvaluator):
                 iou_list=iou_thresholds,
                 iou_range=iou_range,
                 max_detection=(100,),
-                per_class=per_class,
                 verbose=verbose,
             )
         )

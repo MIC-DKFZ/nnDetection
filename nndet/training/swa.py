@@ -7,7 +7,6 @@ from typing import Callable, Optional, Union
 import torch
 from loguru import logger
 from pytorch_lightning.callbacks import StochasticWeightAveraging
-from pytorch_lightning.trainer.optimizers import _get_default_scheduler_config
 from pytorch_lightning.utilities import rank_zero_warn
 from torch.optim.lr_scheduler import _LRScheduler
 
@@ -76,7 +75,16 @@ class BaseSWA(StochasticWeightAveraging):
             )
 
             _scheduler = self.get_swa_scheduler(optimizer)
-            self._swa_scheduler = _get_default_scheduler_config()
+            self._swa_scheduler = {
+                "scheduler": None,
+                "name": None,
+                "interval": "epoch",
+                "frequency": 1,
+                "reduce_on_plateau": False,
+                "monitor": None,
+                "strict": True,
+                "opt_idx": None,
+            }
             if not isinstance(_scheduler, dict):
                 _scheduler = {"scheduler": _scheduler}
             self._swa_scheduler.update(_scheduler)

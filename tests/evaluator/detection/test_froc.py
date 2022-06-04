@@ -16,7 +16,6 @@ def metric():
     return FROCMetric(
         ["benign", "malignant"],
         iou_thresholds=[0.1],
-        per_class=True,
         # due to wrong defaults in an earilier version, the tests use these values
         fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 2, 4, 8),
     )
@@ -124,7 +123,11 @@ class TestFROC:
 
         froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list)
 
-        assert {"benign_froc_score": 1, "malignant_froc_score": 1} == froc_score
+        assert {
+            "benign_froc_score": 1,
+            "malignant_froc_score": 1,
+            "mc_froc_score": 1,
+        } == froc_score
         assert {"benign_froc_curve": 2, "malignant_froc_curve": 2} == froc_curve
 
         froc_mul_iou_mock.assert_has_calls(
