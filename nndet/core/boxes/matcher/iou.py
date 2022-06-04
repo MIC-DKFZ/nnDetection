@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Parts of this code are from torchvision (https://github.com/pytorch/vision) licensed under
-# SPDX-FileCopyrightText: Soumith Chintala 2016
+# SPDX-FileCopyrightText: 2016 Soumith Chintala
 # SPDX-License-Identifier: BSD-3-Clause
 
 
