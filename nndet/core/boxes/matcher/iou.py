@@ -43,7 +43,10 @@ class IoUMatcher(Matcher):
         self.allow_low_quality_matches = allow_low_quality_matches
 
     def compute_matches(
-        self, boxes: torch.Tensor, anchors: torch.Tensor, **kwargs
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to given iou thresholds

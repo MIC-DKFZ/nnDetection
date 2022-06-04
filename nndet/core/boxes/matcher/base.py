@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC
-from typing import Callable, Sequence, Tuple, TypeVar
+from typing import Callable, Optional, Sequence, Tuple, TypeVar
 
 import torch
 from torch import Tensor
@@ -21,6 +21,12 @@ class Matcher(ABC):
         Args:
             similarity_fn: function for similarity computation between
                 boxes and anchors
+
+        Notes:
+            Dense detector modules will provide `num_anchors_per_level` to
+            be used while RoI modules won't provide it. Some matcher, such
+            as `ATSS`, require these arguments to work correctly and are
+            thus not compatible with RoI module matching!
         """
         self.similarity_fn = similarity_fn
 
@@ -28,8 +34,8 @@ class Matcher(ABC):
         self,
         boxes: torch.Tensor,
         anchors: torch.Tensor,
-        num_anchors_per_level: Sequence[int],
-        num_anchors_per_loc: int,
+        num_anchors_per_level: Optional[Sequence[int]] = None,
+        num_anchors_per_loc: Optional[int] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches for a single image
@@ -39,7 +45,11 @@ class Matcher(ABC):
                 [N, dims * 2](x1, y1, x2, y2, (z1, z2))
             anchors: anchors to match [M, dims * 2](x1, y1, x2, y2, (z1, z2))
             num_anchors_per_level: number of anchors per feature pyramid level
+                Dense detector modules will provide `num_anchors_per_level` to
+                be used while RoI modules won't provide it.
             num_anchors_per_loc: number of anchors per position
+                Dense detector modules will provide `num_anchors_per_level` to
+                be used while RoI modules won't provide it.
 
         Returns:
             Tensor: matrix which contains the similarity from each boxes
