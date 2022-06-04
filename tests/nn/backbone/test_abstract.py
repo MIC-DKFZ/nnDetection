@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import pytest
 
@@ -7,7 +7,7 @@ from nndet.utils.typing import ND_TUPLE_INT
 
 
 class StaticStrideSeqBackbone(AbstractBackbone):
-    def get_strides(self) -> List[ND_TUPLE_INT]:
+    def get_absolute_strides(self) -> List[ND_TUPLE_INT]:
         return [
             (16, 32, 64),
             (32, 47, 128),
@@ -15,11 +15,16 @@ class StaticStrideSeqBackbone(AbstractBackbone):
 
 
 class StaticStrideIntBackbone(AbstractBackbone):
-    def get_strides(self) -> List[ND_TUPLE_INT]:
+    def get_absolute_strides(self) -> List[ND_TUPLE_INT]:
         return [
             (16, 32, 64),
             55,
         ]
+
+
+class RelStrideBackbone(AbstractBackbone):
+    def get_relative_strides(self) -> List[Optional[ND_TUPLE_INT]]:
+        return [None, (2, 4, 8), (2, 2, 2), (2, 2, 2), (2, 2, 2)]
 
 
 CASES_SEQ = [
@@ -56,3 +61,14 @@ def test_check_patch_size_error():
     backbone = StaticStrideSeqBackbone()
     with pytest.raises(ValueError):
         compat = backbone.check_patch_size((64, 94))
+
+
+def test_check_abs_stride():
+    backbone = RelStrideBackbone()
+    abs_strides = backbone.get_absolute_strides()
+
+    expected_strides = [None, (2, 4, 8), (4, 8, 16), (8, 16, 32), (16, 32, 64)]
+    assert len(abs_strides) == len(expected_strides)
+
+    for exp, abs in zip(expected_strides, abs_strides):
+        assert exp == abs

@@ -2,20 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 
 from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.utils.format import to_nd_tuple
 from nndet.utils.typing import CONVGEN, ND_INT, ND_TUPLE_INT
-
-
-def to_nd_tuple(x: Any, dim: int) -> Tuple:
-    if not isinstance(x, Sequence):
-        return tuple([x] * dim)
-    else:
-        assert len(x) == dim
-        return tuple(x)
 
 
 class BackboneLevel(torch.nn.Module):
@@ -222,7 +215,7 @@ class LevelBackbone(AbstractBackbone):
 
     def forward(self, batch: torch.Tensor) -> List[torch.Tensor]:
         """
-        Foward batch through all stem and all levels
+        Foward batch through stem and all levels
 
         Args:
             batch: input batch [N, C, dims]

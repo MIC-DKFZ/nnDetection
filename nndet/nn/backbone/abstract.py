@@ -1,5 +1,5 @@
 from abc import abstractclassmethod, abstractmethod
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 import torch
 
@@ -37,19 +37,19 @@ class AbstractBackbone(torch.nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def get_channels(self) -> List[int]:
+    def get_channels(self) -> List[Optional[int]]:
         """
         Compute number of channels for each returned feature map
         inside the forward pass
 
         Returns
             List[int]: list with number of channels corresponding to
-                returned feature maps
+                returned feature maps. Undefined levels will be `None`.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_relative_strides(self) -> List[ND_TUPLE_INT]:
+    def get_relative_strides(self) -> List[Optional[ND_TUPLE_INT]]:
         """
         Retrieve relative strides of the backbone feature maps.
         Starting with the highest resolution feature map to the lowest
@@ -58,11 +58,12 @@ class AbstractBackbone(torch.nn.Module):
 
         Returns
             List[Tuple[int]]: defines the absolute stride for each output
-                feature map with respect to input size
+                feature map with respect to input size. Undefined levels
+                will be `None`.
         """
         raise NotImplementedError
 
-    def get_absolute_strides(self) -> List[ND_TUPLE_INT]:
+    def get_absolute_strides(self) -> List[Optional[ND_TUPLE_INT]]:
         """
         Retrieve absolute strides of the backbone feature maps
         (ordered from lowest to highest strides -> highest to
@@ -70,19 +71,26 @@ class AbstractBackbone(torch.nn.Module):
 
         Returns
             List[Tuple[int]]: defines the absolute stride for each output
-                feature map with respect to input size
+                feature map with respect to input size. Undefined levels
+                will be `None`.
         """
         relative_strides = self.get_relative_strides()
 
         absolute_strides = []
+        new_stride = None
         for level_idx in range(len(relative_strides)):
-            if level_idx == 0:
-                new_stride = relative_strides[0]
+            if relative_strides[level_idx] is None:
+                absolute_strides.append(None)
+                continue
+
+            if new_stride is None:
+                new_stride = relative_strides[level_idx]
             else:
                 new_stride = [
                     ns * s for ns, s in zip(new_stride, relative_strides[level_idx])
                 ]
             absolute_strides.append(tuple(new_stride))
+        assert len(relative_strides) == len(absolute_strides)
         return absolute_strides
 
     def check_patch_size(self, patch_size: Sequence[int]) -> bool:
@@ -90,7 +98,7 @@ class AbstractBackbone(torch.nn.Module):
         Check if the provided patch_size works with this network config
 
         Args:
-            patch_size: patch size to check
+            patch_size: patch size to check (without channels and batch dim)
 
         Raises:
             ValueError: raised only if network dimensions and patch size
@@ -100,7 +108,7 @@ class AbstractBackbone(torch.nn.Module):
             bool: `True` if patch size is compatible with network config,
                 `False` otherwise.
         """
-        absolute_strides = self.get_strides()
+        absolute_strides = self.get_absolute_strides()
         max_stride = absolute_strides[-1]
 
         patch_dim = len(patch_size)

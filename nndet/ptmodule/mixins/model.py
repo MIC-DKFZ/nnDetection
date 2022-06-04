@@ -3,7 +3,7 @@
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Sequence, Type
 
 from loguru import logger
 
@@ -41,6 +41,7 @@ class ModelMixin(ABC):
         model_cfg: dict,
         plan_arch: dict,
         plan_anchors: dict,
+        patch_size: Optional[Sequence[int]] = None,
         **kwargs,
     ):
         """
@@ -53,6 +54,8 @@ class ModelMixin(ABC):
                 Exact parameters depend on subclass.
             plan_anchors: parameters for anchors
                 Exact parameters depend on subclass.
+            patch_size: optionally provide the patch size
+                to check compatibility with backbone
             **kwargs: ignored
         """
         raise NotImplementedError
@@ -94,6 +97,7 @@ class SingleStageMixin(ModelMixin):
         model_cfg: dict,
         plan_arch: dict,
         plan_anchors: dict,
+        patch_size: Optional[Sequence[int]] = None,
         **kwargs,
     ):
         """
@@ -149,6 +153,8 @@ class SingleStageMixin(ModelMixin):
                 ``"zsizes"``
                     (optional) additional z sizes for 3d # FIXME
 
+            patch_size: optionally provide the patch size
+                to check compatibility with backbone
             **kwargs: ignored
         """
         logger.info(
@@ -181,6 +187,7 @@ class SingleStageMixin(ModelMixin):
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
+            patch_size=patch_size,
         )
         neck = cls._build_neck(
             backbone=backbone,
@@ -264,6 +271,7 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
     ) -> AbstractBackbone:
         """
         Build backbone network
@@ -271,16 +279,27 @@ class SingleStageMixin(ModelMixin):
         Args:
             plan_arch: architecture settings
             model_cfg: additional architecture settings
+            patch_size: optionally provide the patch size
+                to check compatibility with backbone
 
         Returns:
             AbstractBackbone: backbone instance
         """
         conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
-        backbone = cls.backbone_cls.from_config_plan(
+        backbone: AbstractBackbone = cls.backbone_cls.from_config_plan(
             conv=conv,
             backbone_cfg=model_cfg["backbone_kwargs"],
             plan_arch=plan_arch,
         )
+        if patch_size is not None:
+            if not backbone.check_patch_size(patch_size):
+                raise ValueError(
+                    f"Backbone {cls.backbone_cls.__name__} with absolute "
+                    f"strides {backbone.get_absolute_strides()} is not compatible "
+                    f"with patch size {patch_size}"
+                )
+            else:
+                logger.info("Patch size check complete, backbone is compatible.")
         return backbone
 
     @classmethod
@@ -784,6 +803,7 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         model_cfg: dict,
         plan_arch: dict,
         plan_anchors: dict,
+        patch_size: Optional[Sequence[int]] = None,
         **kwargs,
     ):
         """
@@ -794,6 +814,7 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
             plan_anchors=plan_anchors,
+            patch_size=patch_size,
             **kwargs,
         )
 
@@ -882,6 +903,7 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
         model_cfg: dict,
         plan_arch: dict,
         plan_anchors: dict,
+        patch_size: Optional[Sequence[int]] = None,
         **kwargs,
     ):
         """
@@ -892,6 +914,7 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
             model_cfg=model_cfg,
             plan_arch=plan_arch,
             plan_anchors=plan_anchors,
+            patch_size=patch_size,
             **kwargs,
         )
 

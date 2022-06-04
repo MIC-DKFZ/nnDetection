@@ -53,6 +53,7 @@ class LightningBaseModule(pl.LightningModule):
             model_cfg=self.model_cfg,
             plan_arch=self.plan["architecture"],
             plan_anchors=self.plan["anchors"],
+            patch_size=plan["patch_size"],
         )
 
         # initialize pre transforms from ModeMixin
