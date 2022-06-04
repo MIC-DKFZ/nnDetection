@@ -17,19 +17,23 @@ limitations under the License.
 import copy
 import functools
 import inspect
+import multiprocessing
 import os
 import pathlib
+import socket
 import sys
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from pathlib import Path
 from subprocess import PIPE, run
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Union
 
+import pytorch_lightning as pl
+import torch
 from git import InvalidGitRepositoryError, Repo
 from loguru import logger
 from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
-from pytorch_lightning.utilities.model_summary import _format_summary_table
+from pytorch_lightning.utilities.model_summary import _format_summary_table, summarize
 from tqdm import tqdm
 
 from nndet.io.load import save_txt
@@ -46,26 +50,42 @@ class SuppressPrint:
 
 
 class ModelSummary(_ModelSummary):
-    def summarize(
+    def __init__(
         self,
-        summary_data: List[Tuple[str, List[str]]],
-        total_parameters: int,
-        trainable_parameters: int,
-        model_size: float,
+        max_depth: int = 1,
+        log_net: bool = True,
     ) -> None:
-        super().summarize(
-            summary_data=summary_data,
-            total_parameters=total_parameters,
-            trainable_parameters=trainable_parameters,
-            model_size=model_size,
-        )
-        summary_table = _format_summary_table(
-            total_parameters,
-            trainable_parameters,
-            model_size,
-            *summary_data,
-        )
-        save_txt(summary_table, "./network")
+        super().__init__(max_depth=max_depth)
+        self.log_net = log_net
+
+    def on_pretrain_routine_start(
+        self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
+    ) -> None:
+        if not self._max_depth:
+            return None
+
+        model_summary = summarize(pl_module, max_depth=self._max_depth)
+        summary_data = model_summary._get_summary_data()
+        total_parameters = model_summary.total_parameters
+        trainable_parameters = model_summary.trainable_parameters
+        model_size = model_summary.model_size
+
+        if trainer.is_global_zero:
+            summary_table = _format_summary_table(
+                total_parameters,
+                trainable_parameters,
+                model_size,
+                *summary_data,
+            )
+
+            summary_full = (
+                f"+++ Network Summary +++ \n\n{summary_table} \n\n{pl_module}"
+            )
+            Path("./network.txt").unlink(missing_ok=True)
+            save_txt(summary_full, "./network")
+
+            if self.log_net:
+                logger.info(summary_full)
 
 
 def deprecate(
@@ -348,3 +368,21 @@ def flatten_mapping(
         else:
             _mapping[str(key)] = item
     return _mapping
+
+
+def host_and_env_info() -> Dict[str, Union[str, float, int]]:
+    info = {}
+
+    # host info
+    info["hostname"] = socket.gethostname()
+    info["job_id"] = os.getenv("LSB_JOBID", "no_id")
+    try:
+        info["cpu_count"] = multiprocessing.cpu_count()
+    except NotImplementedError:
+        info["cpu_count"] = -1
+    for i in range(torch.cuda.device_count()):
+        info[f"gpu{i}"] = torch.cuda.get_device_name(i)
+
+    # env info
+    info["det_num_threads"] = os.environ.get("det_num_threads", -1)
+    return info

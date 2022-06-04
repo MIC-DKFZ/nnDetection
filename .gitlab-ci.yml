@@ -4,7 +4,7 @@ default:
 stages:
   - format
   - build
-  - docs
+  - deploy
 
 format-job:
   stage: format
@@ -37,11 +37,13 @@ build-job:
     - coverage xml
   artifacts:
     reports:
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml 
   coverage: '/TOTAL.*\s+(\d+\%)/'
 
-build-docs:
-  stage: docs
+pages:
+  stage: deploy
   script:
     - echo "Check Versions"
     - python --version

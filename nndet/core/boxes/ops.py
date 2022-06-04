@@ -183,6 +183,42 @@ def box_iou_union_3d(
     return inter / union, union
 
 
+def box_iou_union_3d_paired(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tuple[Tensor, Tensor]:
+    """
+    Return intersection-over-union (Jaccard index) and Union of boxes.
+    Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        eps: optional small constant for numerical stability
+
+    Returns:
+        Tensor: vector [N] containing the boxes between box sets
+        Tensor: vector [N] containing the union between the box sets
+    """
+    vol1 = box_area_3d(boxes1)  # [N]
+    vol2 = box_area_3d(boxes2)  # [N]
+
+    x1 = torch.max(boxes1[:, 0], boxes2[:, 0])  # [N]
+    y1 = torch.max(boxes1[:, 1], boxes2[:, 1])  # [N]
+    x2 = torch.min(boxes1[:, 2], boxes2[:, 2])  # [N]
+    y2 = torch.min(boxes1[:, 3], boxes2[:, 3])  # [N]
+    z1 = torch.max(boxes1[:, 4], boxes2[:, 4])  # [N]
+    z2 = torch.min(boxes1[:, 5], boxes2[:, 5])  # [N]
+
+    inter = (
+        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
+    ) + eps  # [N]
+
+    union = vol1 + vol2 - inter  # [N]
+    return inter / union, union  # [N]
+
+
 def generalized_box_iou_3d(
     boxes1: Tensor,
     boxes2: Tensor,
@@ -213,6 +249,70 @@ def generalized_box_iou_3d(
         (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
     ) + eps  # [N, M]
     return iou - (vol - union) / vol
+
+
+def generalized_box_iou_3d_paired(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
+    """
+    Computes the generalized box iou between given bounding boxes
+    in a paired fashion
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        eps: optional small constant for numerical stability
+
+    Returns:
+        Tensor: vector [N] containing the pairwise generalized IoU values
+            for every element in boxes1 and boxes2
+    """
+    iou, union = box_iou_union_3d_paired(boxes1, boxes2)  # [N], [N]
+
+    x1 = torch.min(boxes1[:, 0], boxes2[:, 0])  # [N]
+    y1 = torch.min(boxes1[:, 1], boxes2[:, 1])  # [N]
+    x2 = torch.max(boxes1[:, 2], boxes2[:, 2])  # [N]
+    y2 = torch.max(boxes1[:, 3], boxes2[:, 3])  # [N]
+    z1 = torch.min(boxes1[:, 4], boxes2[:, 4])  # [N]
+    z2 = torch.max(boxes1[:, 5], boxes2[:, 5])  # [N]
+
+    vol = (
+        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
+    ) + eps  # [N]
+    return iou - (vol - union) / vol
+
+
+def distance_box_iou_3d_paired(
+    boxes1: torch.Tensor,
+    boxes2: torch.Tensor,
+    eps: float = 0.0,
+) -> torch.Tensor:
+    """
+    Distance IoU Loss
+    L = 1 - IoU + d^2(c, c_gt) / diag_enclosing^2
+
+    Args:
+        boxes1: predicted boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        boxes2: target boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        eps: small constant for numerical stability
+
+    Returns:
+        torch.Tensor: computed loss
+    """
+    iou, _ = box_iou_union_3d_paired(boxes1, boxes2, eps=eps)  # [N]
+    dc = (box_center(boxes1) - box_center(boxes2)).pow(2).sum(dim=1)  # [N]
+
+    # enclosing box
+    x1 = torch.min(boxes1[:, 0], boxes2[:, 0])  # [N]
+    y1 = torch.min(boxes1[:, 1], boxes2[:, 1])  # [N]
+    x2 = torch.max(boxes1[:, 2], boxes2[:, 2])  # [N]
+    y2 = torch.max(boxes1[:, 3], boxes2[:, 3])  # [N]
+    z1 = torch.min(boxes1[:, 4], boxes2[:, 4])  # [N]
+    z2 = torch.max(boxes1[:, 5], boxes2[:, 5])  # [N]
+    diag = (x2 - x1).pow(2) + (y2 - y1).pow(2) + (z2 - z1).pow(2) + eps
+    return 1 - iou + (dc / diag)
 
 
 def box_iou_union_2d(

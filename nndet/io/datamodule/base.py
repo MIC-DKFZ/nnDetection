@@ -18,13 +18,14 @@ import copy
 import os
 from collections import OrderedDict
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytorch_lightning as pl
 from loguru import logger
 from sklearn.model_selection import KFold
 
-from nndet.io.load import load_pickle, save_pickle
+from nndet.io.load import load_pickle, save_pickle, save_txt
 from nndet.io.utils import load_dataset_id
 
 
@@ -36,6 +37,7 @@ class BaseModule(pl.LightningDataModule):
         augment_cfg: dict,
         data_dir: os.PathLike,
         fold: int = 0,
+        log_aug: bool = False,
         **kwargs,
     ):
         """
@@ -71,6 +73,7 @@ class BaseModule(pl.LightningDataModule):
         self.augment_cfg = augment_cfg
         self.data_dir = Path(data_dir)
         self.fold = fold
+        self.log_aug = log_aug
 
         self.preprocessed_dir = self.data_dir.parent.parent
         self.splits_file = self.io_cfg.get("splits", "splits_final")
@@ -95,7 +98,7 @@ class BaseModule(pl.LightningDataModule):
             self._splits_file = f + ".pkl"
 
     @property
-    def patch_size(self):
+    def patch_size(self) -> np.ndarray:
         """
         Get patch size which can be (optionally) overwritten in the
         io config
@@ -108,7 +111,7 @@ class BaseModule(pl.LightningDataModule):
             return np.array(self.plan["patch_size"]).astype(np.int32)
 
     @property
-    def batch_size(self):
+    def batch_size(self) -> int:
         """
         Get batch size which can be (optionally) overwritten in the
         io config
@@ -119,6 +122,17 @@ class BaseModule(pl.LightningDataModule):
             return bs
         else:
             return self.plan["batch_size"]
+
+    def log_augmentation(self, pipeline: Any) -> None:
+        """
+        Log augmentation pipeline into file and logger
+        """
+        pipeline_str = f"+++ Augmentation Pipeline +++ \n\n{str(pipeline)}"
+        Path("./augmentation.txt").unlink(missing_ok=True)
+        save_txt(pipeline_str, "./augmentation")
+
+        if self.log_aug:
+            logger.info(pipeline_str)
 
     def do_split(self) -> None:
         """
