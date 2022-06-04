@@ -26,11 +26,9 @@ from matplotlib.ticker import FuncFormatter
 from sklearn.metrics import roc_curve
 
 from nndet.evaluator import DetectionMetric
-from nndet.utils.info import experimental
 
 
 class FROCMetric(DetectionMetric):
-    @experimental
     def __init__(
         self,
         classes: Sequence[str],
