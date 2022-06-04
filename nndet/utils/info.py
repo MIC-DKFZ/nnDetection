@@ -58,8 +58,10 @@ class ModelSummary(_ModelSummary):
         super().__init__(max_depth=max_depth)
         self.log_net = log_net
 
-    def on_pretrain_routine_start(
-        self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
+    def on_fit_start(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
     ) -> None:
         if not self._max_depth:
             return None

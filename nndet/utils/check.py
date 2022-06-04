@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+
 import functools
 import os
 import warnings
@@ -359,25 +363,25 @@ def _check_itk_params(
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
             )
-        if not (np.asarray(img_seq[0].GetSize()) == np.asarray(img.GetSize())).all():
+        if not ((np.asarray(img_seq[0].GetSize()) == np.asarray(img.GetSize()))).all():
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
             )
-        if not (
-            np.asarray(img_seq[0].GetOrigin()) == np.asarray(img.GetOrigin())
-        ).all():
+        if not np.allclose(
+            np.asarray(img_seq[0].GetOrigin()), np.asarray(img.GetOrigin())
+        ):
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same origin!"
             )
-        if not (
-            np.asarray(img_seq[0].GetDirection()) == np.asarray(img.GetDirection())
-        ).all():
+        if not np.allclose(
+            np.asarray(img_seq[0].GetDirection()), np.asarray(img.GetDirection())
+        ):
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same direction!"
             )
-        if not (
-            np.asarray(img_seq[0].GetSpacing()) == np.asarray(img.GetSpacing())
-        ).all():
+        if not np.allclose(
+            np.asarray(img_seq[0].GetSpacing()), np.asarray(img.GetSpacing())
+        ):
             raise ValueError(
                 f"Expected {paths[idx]} and {paths[0]} to have same spacing!"
             )

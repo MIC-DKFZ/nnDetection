@@ -313,7 +313,7 @@ def _train(
         do_sweep: determine best emprical parameters for run
     """
     print(f"Overwrites: {ov}")
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
 
     assert cfg.host.parent_data is not None, "Parent data can not be None"
@@ -455,11 +455,11 @@ def _train(
         logger=pl_logger,
         max_epochs=module.max_epochs,
         progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
-        reload_dataloaders_every_epoch=False,
         num_sanity_val_steps=10,
         plugins=plugins,
         detect_anomaly=detect_anomaly,
         move_metrics_to_cpu=False,
+        enable_model_summary=False,
         **trainer_kwargs,
     )
 
