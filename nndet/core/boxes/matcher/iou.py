@@ -10,19 +10,21 @@
 from typing import Callable, Tuple
 
 import torch
-from torch import Tensor
 from loguru import logger
+from torch import Tensor
 
-from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.matcher.base import Matcher
+from nndet.core.boxes.ops import box_iou
 
 
 class IoUMatcher(Matcher):
-    def __init__(self,
-                 low_threshold: float,
-                 high_threshold: float,
-                 allow_low_quality_matches: bool,
-                 similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou):
+    def __init__(
+        self,
+        low_threshold: float,
+        high_threshold: float,
+        allow_low_quality_matches: bool,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+    ):
         """
         Compute IoU based matching for a single image
 
@@ -40,10 +42,9 @@ class IoUMatcher(Matcher):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self, boxes: torch.Tensor, anchors: torch.Tensor, **kwargs
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to given iou thresholds
         Adapted from
@@ -78,13 +79,15 @@ class IoUMatcher(Matcher):
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
         between_thresholds = (matched_vals >= self.low_threshold) & (
-                matched_vals < self.high_threshold
+            matched_vals < self.high_threshold
         )
         matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            matches = self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            matches = self.set_low_quality_matches_(
+                matches, all_matches, match_quality_matrix
+            )
 
         # self._debug_logging(match_quality_matrix, matches, matched_vals,
         #                     below_low_threshold, between_thresholds)
@@ -107,16 +110,27 @@ class IoUMatcher(Matcher):
         return matches
 
     @staticmethod
-    def _debug_logging(match_quality_matrix, matches, matched_vals,
-                       below_low_threshold, between_thresholds):
+    def _debug_logging(
+        match_quality_matrix,
+        matches,
+        matched_vals,
+        below_low_threshold,
+        between_thresholds,
+    ):
         logger.info("########## Matcher ##############")
         logger.info(f"Max IoU: {match_quality_matrix.max()}")
         logger.info(f"Foreground IoUs: {matched_vals[matches > -1]}")
         logger.info(f"Num GT: {match_quality_matrix.shape[0]}")
-        match_bet_min = matched_vals[between_thresholds].min() if \
-            matched_vals[between_thresholds].nelement() > 0 else None
-        match_bet_max = matched_vals[between_thresholds].max() if \
-            matched_vals[between_thresholds].nelement() > 0 else None
+        match_bet_min = (
+            matched_vals[between_thresholds].min()
+            if matched_vals[between_thresholds].nelement() > 0
+            else None
+        )
+        match_bet_max = (
+            matched_vals[between_thresholds].max()
+            if matched_vals[between_thresholds].nelement() > 0
+            else None
+        )
         logger.info(f"Inbetween IoU ranging from {match_bet_min} to {match_bet_max}")
         logger.info(f"Max background IoU: {matched_vals[below_low_threshold].max()}")
         logger.info("#################################")

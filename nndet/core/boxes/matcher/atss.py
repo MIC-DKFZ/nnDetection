@@ -7,24 +7,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-from typing import Sequence, Callable, Tuple
+from typing import Callable, Sequence, Tuple
 
 import torch
-from torch import Tensor
 from loguru import logger
+from torch import Tensor
 
-from nndet.core.boxes.ops import box_iou, box_center_dist, center_in_boxes
 from nndet.core.boxes.matcher.base import Matcher
+from nndet.core.boxes.ops import box_center_dist, box_iou, center_in_boxes
 
 INF = 100  # not really inv but here it is sufficient
 
 
 class ATSSMatcher(Matcher):
-    def __init__(self,
-                 num_candidates: int,
-                 similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
-                 center_in_gt: bool = True,
-                 ):
+    def __init__(
+        self,
+        num_candidates: int,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        center_in_gt: bool = True,
+    ):
         """
         Compute matching based on ATSS
         https://arxiv.org/abs/1912.02424
@@ -42,14 +43,18 @@ class ATSSMatcher(Matcher):
         self.num_candidates = num_candidates
         self.min_dist = 0.01
         self.center_in_gt = center_in_gt
-        logger.info(f"Running ATSS Matching with num_candidates={self.num_candidates} "
-                    f"and center_in_gt {self.center_in_gt}.")
+        logger.info(
+            f"Running ATSS Matching with num_candidates={self.num_candidates} "
+            f"and center_in_gt {self.center_in_gt}."
+        )
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        num_anchors_per_level: Sequence[int],
-                        num_anchors_per_loc: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        num_anchors_per_level: Sequence[int],
+        num_anchors_per_loc: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches according to ATTS for a single image
         Adapted from
@@ -74,7 +79,9 @@ class ATSSMatcher(Matcher):
         num_gt = boxes.shape[0]
         num_anchors = anchors.shape[0]
 
-        distances, _, anchors_center = box_center_dist(boxes, anchors)  # num_boxes x anchors
+        distances, _, anchors_center = box_center_dist(
+            boxes, anchors
+        )  # num_boxes x anchors
 
         # select candidates based on center distance
         candidate_idx = []
@@ -83,7 +90,9 @@ class ATSSMatcher(Matcher):
             end_idx = start_idx + apl
 
             selectable_k = min(self.num_candidates * num_anchors_per_loc, apl)
-            _, idx = distances[:, start_idx: end_idx].topk(selectable_k, dim=1, largest=False)
+            _, idx = distances[:, start_idx:end_idx].topk(
+                selectable_k, dim=1, largest=False
+            )
             # idx shape [num_boxes x selectable_k]
             candidate_idx.append(idx + start_idx)
 
@@ -91,21 +100,35 @@ class ATSSMatcher(Matcher):
         # [num_boxes x num_candidates] (index of candidate anchors)
         candidate_idx = torch.cat(candidate_idx, dim=1)
 
-        match_quality_matrix = self.similarity_fn(boxes, anchors)  # [num_boxes x anchors]
-        candidate_overlaps = match_quality_matrix.gather(1, candidate_idx)  # [num_boxes, n_candidates]
+        match_quality_matrix = self.similarity_fn(
+            boxes, anchors
+        )  # [num_boxes x anchors]
+        candidate_overlaps = match_quality_matrix.gather(
+            1, candidate_idx
+        )  # [num_boxes, n_candidates]
 
         # compute adaptive iou threshold
         overlaps_mean_per_gt = candidate_overlaps.mean(dim=1)  # [num_boxes]
         overlaps_std_per_gt = candidate_overlaps.std(dim=1)  # [num_boxes]
         overlaps_thr_per_gt = overlaps_mean_per_gt + overlaps_std_per_gt  # [num_boxes]
-        is_pos = candidate_overlaps >= overlaps_thr_per_gt[:, None]  # [num_boxes x n_candidates]
+        is_pos = (
+            candidate_overlaps >= overlaps_thr_per_gt[:, None]
+        )  # [num_boxes x n_candidates]
 
-        if self.center_in_gt:  # can discard all candidates in case of very small objects :/
+        if (
+            self.center_in_gt
+        ):  # can discard all candidates in case of very small objects :/
             # center point of selected anchors needs to lie within the ground truth
-            boxes_idx = torch.arange(num_gt, device=boxes.device, dtype=torch.long)[:, None]\
-                .expand_as(candidate_idx).contiguous()  # [num_boxes x n_candidates]
+            boxes_idx = (
+                torch.arange(num_gt, device=boxes.device, dtype=torch.long)[:, None]
+                .expand_as(candidate_idx)
+                .contiguous()
+            )  # [num_boxes x n_candidates]
             is_in_gt = center_in_boxes(
-                anchors_center[candidate_idx.view(-1)], boxes[boxes_idx.view(-1)], eps=self.min_dist)
+                anchors_center[candidate_idx.view(-1)],
+                boxes[boxes_idx.view(-1)],
+                eps=self.min_dist,
+            )
             is_pos = is_pos & is_in_gt.view_as(is_pos)  # [num_boxes x n_candidates]
 
         # in case on anchor is assigned to multiple boxes, use box with highest IoU

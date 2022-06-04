@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Sequence, Callable, Tuple, TypeVar
 from abc import ABC
+from typing import Callable, Sequence, Tuple, TypeVar
 
 import torch
 from torch import Tensor
@@ -24,12 +24,13 @@ class Matcher(ABC):
         """
         self.similarity_fn = similarity_fn
 
-    def __call__(self,
-                 boxes: torch.Tensor,
-                 anchors: torch.Tensor,
-                 num_anchors_per_level: Sequence[int],
-                 num_anchors_per_loc: int,
-                 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        num_anchors_per_level: Sequence[int],
+        num_anchors_per_loc: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches for a single image
 
@@ -52,22 +53,26 @@ class Matcher(ABC):
             # no ground truth
             num_anchors = anchors.shape[0]
             match_quality_matrix = torch.tensor([]).to(anchors)
-            matches = torch.empty(num_anchors, dtype=torch.int64).fill_(self.BELOW_LOW_THRESHOLD)
+            matches = torch.empty(num_anchors, dtype=torch.int64).fill_(
+                self.BELOW_LOW_THRESHOLD
+            )
             return match_quality_matrix, matches
         else:
             # at least one ground truth
             return self.compute_matches(
-                boxes=boxes, anchors=anchors,
+                boxes=boxes,
+                anchors=anchors,
                 num_anchors_per_level=num_anchors_per_level,
                 num_anchors_per_loc=num_anchors_per_loc,
-                )
+            )
 
-    def compute_matches(self,
-                        boxes: torch.Tensor,
-                        anchors: torch.Tensor,
-                        num_anchors_per_level: Sequence[int],
-                        num_anchors_per_loc: int,
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_matches(
+        self,
+        boxes: torch.Tensor,
+        anchors: torch.Tensor,
+        num_anchors_per_level: Sequence[int],
+        num_anchors_per_loc: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute matches
 
@@ -88,4 +93,5 @@ class Matcher(ABC):
         """
         raise NotImplementedError
 
-MatcherType = TypeVar('MatcherType', bound=Matcher)
+
+MatcherType = TypeVar("MatcherType", bound=Matcher)
