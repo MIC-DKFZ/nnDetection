@@ -29,9 +29,6 @@ class TestCOCOMetric:
 
     def test_compute(self, mocker: MockerFixture, metric):
         mocker.patch(
-            "nndet.evaluator.detection.coco.COCOMetric.select_ar", return_value=2
-        )
-        mocker.patch(
             "nndet.evaluator.detection.coco.COCOMetric.select_ap", return_value=1
         )
         mocker.patch(
@@ -44,8 +41,6 @@ class TestCOCOMetric:
         assert score["mAP_IoU_0.10_0.20_0.10_MaxDet_10"] == 1
         assert score["AP_IoU_0.10_MaxDet_10"] == 1
         assert score["AP_IoU_0.30_MaxDet_10"] == 1
-        assert score["mAR_IoU_0.10_0.20_0.10_MaxDet_1"] == 2
-        assert score["mAR_IoU_0.10_0.20_0.10_MaxDet_10"] == 2
 
     def test_select_ap(self, metric):
         stats = {
@@ -57,15 +52,6 @@ class TestCOCOMetric:
         ap = metric.select_ap(stats)
         assert math.isclose(ap0, 0.5)
         assert math.isclose(ap, 1.0)
-
-    def test_select_ar(self, metric):
-        stats = {
-            "recall": np.array([[0.0, 0.5, 1.0], [1.0, 1.0, 1.0], [1.0, 0.5, 3.0]])[
-                :, :, None
-            ],
-        }
-        rc = metric.select_ar(stats)
-        assert math.isclose(rc, 1.0)
 
     def test_compute_statistics(self, mocker: MockerFixture, metric):
         metric.iou_thresholds = np.array([[0.1]])
@@ -112,6 +98,6 @@ class TestCOCOMetric:
             tp, fp, dt_scores_sorted, recall_thresholds, num_gt
         )
 
-        assert math.isclose(rc, 3.0)
+        assert math.isclose(rc, 3.0)  # used different num_gt so number are nice
         assert np.isclose(prec, [1.0, 0.75, 0.75]).all()
         assert np.isclose(ths, [0.9, 0.8, 0.8]).all()
