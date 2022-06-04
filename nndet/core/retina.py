@@ -11,15 +11,15 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from torch import Tensor
 
-from nndet.arch.decoder.base import DecoderType
-from nndet.arch.encoder.abstract import EncoderType
-from nndet.arch.heads.comb import AnchorHeadType
-from nndet.arch.heads.segmenter import SegmenterType
 from nndet.core import boxes as box_utils
 from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.post import post_image_single_class_regression
+from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.heads.comb import AnchorHeadType
+from nndet.nn.heads.segmenter import SegmenterType
+from nndet.nn.neck.abstract import AbstractNeck
 
 
 class BaseRetinaNet(AbstractDetector):
@@ -27,8 +27,8 @@ class BaseRetinaNet(AbstractDetector):
         self,
         dim: int,
         # modules
-        backbone: EncoderType,
-        neck: DecoderType,
+        backbone: AbstractBackbone,
+        neck: AbstractNeck,
         head: AnchorHeadType,
         num_classes: int,
         anchor_generator: AnchorGeneratorType,

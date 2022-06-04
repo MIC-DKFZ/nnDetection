@@ -5,22 +5,22 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-from nndet.arch.blocks.basic import AbstractBlock, StackedConvBlock2
-from nndet.arch.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu
-from nndet.arch.decoder.base import BaseUFPN, UFPNModular
-from nndet.arch.encoder.abstract import AbstractEncoder
-from nndet.arch.encoder.modular import Encoder
-from nndet.arch.heads.classifier import CEClassifier
-from nndet.arch.heads.classifier.dense import DenseClassifier
-from nndet.arch.heads.comb import BoxHeadHNM
-from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.heads.regressor.dense import DenseRegressor
-from nndet.arch.heads.segmenter import DiCESegmenter, Segmenter
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import IoUMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.retina import BaseRetinaNet
+from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.heads.classifier import CEClassifier
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.comb import BoxHeadHNM
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.heads.regressor.dense import DenseRegressor
+from nndet.nn.heads.segmenter import DiCESegmenter, Segmenter
+from nndet.nn.layers.conv import BaseConvNormAct, ConvGroupRelu, ConvInstanceRelu
+from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
@@ -41,13 +41,10 @@ class RetinaUNetModule(
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
@@ -69,15 +66,12 @@ class RetinaUNetBase(RetinaUNetModule):
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
-    backbone_cls: Type[AbstractEncoder] = Encoder  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
     backbone_conv_cls: Type[
         BaseConvNormAct
     ] = ConvInstanceRelu  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = StackedConvBlock2  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = UFPNModular  # define class for neck
+    neck_cls: Type[AbstractNeck] = UFPN  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head

@@ -3,17 +3,16 @@
 
 from __future__ import annotations
 
-from nndet.arch.blocks.basic import StackedConvBlock2
-from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
-from nndet.arch.decoder.base import UFPNModular
-from nndet.arch.encoder.modular import Encoder
-from nndet.arch.heads.classifier import BCECLassifier, FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNMNative
-from nndet.arch.heads.regressor import GIoURegressor
-from nndet.arch.heads.segmenter import DiCESegmenterFgBg
 from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
 from nndet.core.retina import BaseRetinaNet
+from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNMNative
+from nndet.nn.heads.regressor import GIoURegressor
+from nndet.nn.heads.segmenter import DiCESegmenterFgBg
+from nndet.nn.layers.conv import ConvGroupRelu, ConvInstanceRelu
+from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
@@ -38,11 +37,10 @@ class RetinaUNetV001(
     # define detector cls
     detector_cls = BaseRetinaNet
 
-    backbone_cls = Encoder  # define class for backbone
+    backbone_cls = ConvBackbone  # define class for backbone
     backbone_conv_cls = ConvInstanceRelu
-    backbone_block = StackedConvBlock2  # define central building block of backbone
 
-    neck_cls = UFPNModular  # define class for neck
+    neck_cls = UFPN  # define class for neck
     neck_conv_cls = ConvInstanceRelu
 
     head_cls = BoxHeadHNMNative

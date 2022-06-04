@@ -34,9 +34,9 @@ release = "0.1.3-dirty"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary

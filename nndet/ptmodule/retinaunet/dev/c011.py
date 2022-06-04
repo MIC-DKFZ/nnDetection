@@ -1,28 +1,29 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-import copy
-
 import torch
 from loguru import logger
 
-from nndet.arch.blocks.basic import (
-    MySEBlockExp2,
-    MySEBlockExp4,
-    StackedConvBlock2,
-    StackedConvBlock2Max,
-    StackedConvBlock3,
-    StackedResPlain,
-)
-from nndet.arch.conv import ConvGroupLReLU, ConvInstanceLReLU, Generator
-from nndet.arch.heads.classifier import AsymmetricFocalClassifier, FocalClassifier
-from nndet.arch.heads.classifier.dense import DenseClassifierType
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
-from nndet.arch.heads.comb.base import AnchorHeadType
-from nndet.arch.heads.regressor import L1Regressor
-from nndet.arch.heads.regressor.dense import DenseRegressorType, DualRegressor
 from nndet.core.boxes.coder import CoderType
+
+# from nndet.nn.blocks.basic import (
+#     MySEBlockExp2,
+#     MySEBlockExp4,
+#     StackedConvBlock2,
+#     StackedConvBlock2Max,
+#     StackedConvBlock3,
+#     StackedResPlain,
+# )
+from nndet.nn.heads.classifier import AsymmetricFocalClassifier, FocalClassifier
+from nndet.nn.heads.classifier.dense import DenseClassifierType
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
+from nndet.nn.heads.comb.base import AnchorHeadType
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.heads.regressor.dense import DenseRegressorType, DualRegressor
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
+
+# from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.ema import EMAWeightsCB
@@ -57,9 +58,9 @@ class RetinaUNetC011DualReg(RetinaUNetC011):
     head_regressor_cls = DualRegressor
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011L1MaxF(RetinaUNetC011L1):
-    block = StackedConvBlock2Max
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011L1MaxF(RetinaUNetC011L1):
+#     block = StackedConvBlock2Max
 
 
 @MODULE_REGISTRY.register
@@ -108,75 +109,75 @@ class RetinaUNetC011AsymFocal(RetinaUNetC011Focal):
     head_classifier_cls = AsymmetricFocalClassifier
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011C3AsymFocal(RetinaUNetC011AsymFocal):
-    block = StackedConvBlock3
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011C3AsymFocal(RetinaUNetC011AsymFocal):
+#     block = StackedConvBlock3
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011C3Focal(RetinaUNetC011Focal):
-    block = StackedConvBlock3
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011C3Focal(RetinaUNetC011Focal):
+#     block = StackedConvBlock3
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011C3(RetinaUNetV001):
-    block = StackedConvBlock3
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011C3(RetinaUNetV001):
+#     block = StackedConvBlock3
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011MySE2(RetinaUNetV001):
-    block = MySEBlockExp2
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011MySE2(RetinaUNetV001):
+#     block = MySEBlockExp2
 
-    @classmethod
-    def _build_encoder(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-    ):
-        """
-        Build encoder network
+#     @classmethod
+#     def _build_encoder(
+#         cls,
+#         plan_arch: dict,
+#         model_cfg: dict,
+#     ):
+#         """
+#         Build encoder network
 
-        Args:
-            plan_arch: architecture settings
-            model_cfg: additional architecture settings
+#         Args:
+#             plan_arch: architecture settings
+#             model_cfg: additional architecture settings
 
-        Returns:
-            EncoderType: encoder instance
-        """
-        _kwargs = copy.deepcopy(model_cfg["encoder_kwargs"])
-        num_blocks = _kwargs.pop("num_blocks", None)
-        if num_blocks is not None:
-            i = len(plan_arch["conv_kernels"]) - 1
-            _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [
-                {"num_blocks": num_blocks}
-            ] * i
+#         Returns:
+#             EncoderType: encoder instance
+#         """
+#         _kwargs = copy.deepcopy(model_cfg["encoder_kwargs"])
+#         num_blocks = _kwargs.pop("num_blocks", None)
+#         if num_blocks is not None:
+#             i = len(plan_arch["conv_kernels"]) - 1
+#             _kwargs["stage_kwargs"] = [{"num_blocks": 1}] + [
+#                 {"num_blocks": num_blocks}
+#             ] * i
 
-        conv = Generator(cls.base_conv_cls, plan_arch["dim"])
-        logger.info(
-            f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
-        )
-        encoder = cls.encoder_cls(
-            conv=conv,
-            conv_kernels=plan_arch["conv_kernels"],
-            strides=plan_arch["strides"],
-            block_cls=cls.block,
-            in_channels=plan_arch["in_channels"],
-            start_channels=plan_arch["start_channels"],
-            max_channels=plan_arch.get("max_channels", 320),
-            first_block_cls=StackedConvBlock2,
-            **_kwargs,
-        )
-        return encoder
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetC011MySE4(RetinaUNetV001):
-    block = MySEBlockExp4
+#         conv = Generator(cls.base_conv_cls, plan_arch["dim"])
+#         logger.info(
+#             f"Building:: encoder {cls.encoder_cls.__name__}: {model_cfg['encoder_kwargs']} "
+#         )
+#         encoder = cls.encoder_cls(
+#             conv=conv,
+#             conv_kernels=plan_arch["conv_kernels"],
+#             strides=plan_arch["strides"],
+#             block_cls=cls.block,
+#             in_channels=plan_arch["in_channels"],
+#             start_channels=plan_arch["start_channels"],
+#             max_channels=plan_arch.get("max_channels", 320),
+#             first_block_cls=StackedConvBlock2,
+#             **_kwargs,
+#         )
+#         return encoder
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC011ResPlain(RetinaUNetC011MySE2):
-    block = StackedResPlain
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011MySE4(RetinaUNetV001):
+#     block = MySEBlockExp4
+
+
+# @MODULE_REGISTRY.register
+# class RetinaUNetC011ResPlain(RetinaUNetC011MySE2):
+#     block = StackedResPlain
 
 
 @MODULE_REGISTRY.register

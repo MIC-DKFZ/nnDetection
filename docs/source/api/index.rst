@@ -11,6 +11,7 @@ a time limitation of an active research project.
 
    core
    ptmodule
+   nn
    io
    losses
    training
