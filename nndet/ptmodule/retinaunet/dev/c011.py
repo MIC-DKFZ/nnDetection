@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import copy
 
 import torch
@@ -24,8 +27,10 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.ema import EMAWeightsCB
 from nndet.training.learning_rate import LinearWarmupPolyLR
-from nndet.training.optimizer.sam import SAM
 from nndet.training.optimizer.utils import get_params_no_wd_on_norm
+
+# from nndet.training.optimizer.sam import SAM
+SAM = None
 
 
 @MODULE_REGISTRY.register

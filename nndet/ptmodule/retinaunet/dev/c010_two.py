@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from nndet.arch.conv import ConvGroupRelu, ConvInstanceRelu
 from nndet.arch.heads.classifier.dense import BCECLassifier, FocalClassifier
 from nndet.arch.heads.comb.anchor_all import BoxHeadAll

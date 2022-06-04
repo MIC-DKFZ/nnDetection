@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-This is prototype code ... Use at your own risk
-This was initially part of a notebook but I needed to move it into
-this scriptish functions to run it in my default pipeline
-"""
+
+# This is prototype code ... Use at your own risk
+# This was initially part of a notebook but I needed to move it into
+# this scriptish functions to run it in my default pipeline
+
 
 import pickle
 from collections import defaultdict
