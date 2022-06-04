@@ -15,11 +15,13 @@ format-job:
     - pip --version
     - echo "Install"
     - pip install pre-commit
+    - pip install reuse
     - echo "Check Install"
     - pre-commit --version
     - pre-commit install
     - echo "Run pre-commit hooks"
     - pre-commit run --all-files --show-diff-on-failure
+    - reuse --root nndet lint
 
 build-job:
   stage: build
