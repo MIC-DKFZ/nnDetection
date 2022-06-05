@@ -76,6 +76,7 @@ class EvalMixin(ABC):
         Notes:
             make sure to call the super classes here!
         """
+        # logger.info("--- Online Evaluation ---")
         return {}
 
 
@@ -158,12 +159,13 @@ class BoxEvalMixin(EvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"Box mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"Box AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"Box AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"Box FROC@0.1: {box_scores['mc_FROC_score_IoU_0.10']:0.3f} "
-            f"Box FROC@0.5: {box_scores['mc_FROC_score_IoU_0.50']:0.3f} "
-            f"Box FROC@0.1 (pool): {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            "Box::   "
+            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"FROC@0.1: {box_scores['mc_FROC_score_IoU_0.10']:0.3f} "
+            f"FROC@0.5: {box_scores['mc_FROC_score_IoU_0.50']:0.3f} "
+            f"FROC@0.1 (pool): {box_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores
@@ -268,11 +270,12 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"RPN Box mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"RPN Box AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
-            f"RPN Box AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"RPN Box FROC@0.1: {rpn_scores['mc_FROC_score_IoU_0.10']:0.3f} "
-            f"RPN Box FROC@0.5: {rpn_scores['mc_FROC_score_IoU_0.50']:0.3f} "
+            "RPN Box::   "
+            f"mAP@0.1:0.5:0.05: {rpn_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"AP@0.1: {rpn_scores['AP_IoU_0.10_MaxDet_100']:0.3f} "
+            f"AP@0.5: {rpn_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"FROC@0.1: {rpn_scores['mc_FROC_score_IoU_0.10']:0.3f} "
+            f"FROC@0.5: {rpn_scores['mc_FROC_score_IoU_0.50']:0.3f} "
         )
 
         # log own scores
@@ -357,7 +360,7 @@ class SemanticEvalMixin(EvalMixin):
         metric_scores.update(seg_scores)
 
         # [optional] log own scores
-        logger.info(f"Proxy FG Dice: {seg_scores['seg_dice']:0.3f}")
+        logger.info(f"SS::   (Prox) Dice: {seg_scores['seg_dice']:0.3f}")
 
         # log own scores
         for key, item in seg_scores.items():
@@ -443,7 +446,7 @@ class SemanticFgEvalMixin(EvalMixin):
         metric_scores.update(seg_scores)
 
         # [optional] log own scores
-        logger.info(f"Proxy FG Dice (fg_mode=True): {seg_scores['seg_dice']:0.3f}")
+        logger.info(f"SS FG::   (Prox) Dice: {seg_scores['seg_dice']:0.3f}")
 
         # log own scores
         for key, item in seg_scores.items():
@@ -557,12 +560,13 @@ class ScoreMasksEvalMixin(EvalMixin):
 
         # [optional] log own scores
         logger.info(
-            f"Mask mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"Mask AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"Mask AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"Mask FROC@0.1: {box_scores['mc_FROC_score_IoU_0.10']:0.3f} "
-            f"Mask FROC@0.5: {box_scores['mc_FROC_score_IoU_0.50']:0.3f} "
-            f"Mask FROC@0.1 (pool): {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            "Mask::   "
+            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
+            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
+            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
+            f"FROC@0.1: {box_scores['mc_FROC_score_IoU_0.10']:0.3f} "
+            f"FROC@0.5: {box_scores['mc_FROC_score_IoU_0.50']:0.3f} "
+            f"FROC@0.1 (pool): {box_scores['FROC_score_IoU_0.10']:0.3f} "
         )
 
         # log own scores

@@ -35,7 +35,7 @@ class CheckWeightsNaN(Callback):
 class EpochTimerCallback(Callback):
     def __init__(self) -> None:
         """
-        Simple callback to print epoch times.
+        Simple callback to print epoch times and epoch info.
         This is useful in cluster environmens where the progress bar is
         deactivated
         """
@@ -63,6 +63,7 @@ class EpochTimerCallback(Callback):
         trainer,
         pl_module: LightningModule,
     ) -> None:
+        logger.info(f"+++ Epoch {trainer.current_epoch} +++")
         self.train_epoch_tic = time.time()
         return super().on_train_epoch_start(trainer, pl_module)
 
@@ -97,3 +98,11 @@ class EpochTimerCallback(Callback):
             f"{val_time:.2f} s and val time EMA is {self.val_time_ema.get():.2f} s"
         )
         return super().on_validation_epoch_end(trainer, pl_module)
+
+    def on_sanity_check_start(
+        self,
+        trainer,
+        pl_module: LightningModule,
+    ) -> None:
+        logger.info("+++ Sanity Check +++")
+        return super().on_train_epoch_start(trainer, pl_module)
