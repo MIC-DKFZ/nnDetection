@@ -419,7 +419,7 @@ def main():
     num_processes = args.num_processes
     num_processes_preprocessing = args.num_processes_preprocessing
 
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     # perform preprocessing checks first
     if not no_check:
         for task in tasks:
@@ -486,7 +486,7 @@ def main_prep_labels():
     ov = args.overwrites
     num_processes = args.num_processes
 
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     for task in tasks:
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=_ov)

@@ -127,7 +127,7 @@ def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device)
     module_cls, ov = case
 
     GlobalHydra.instance().clear()  # clear hydra
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose("config.yaml", overrides=[f"train={ov}"])
     OmegaConf.set_struct(cfg, False)
     cfg["task"] = "Task000_TEST"

@@ -418,7 +418,7 @@ if __name__ == "__main__":
         task = get_task(task, name=True)
 
     task_dir = Path(os.getenv("det_models")) / task
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=[])
 
     logger.remove()

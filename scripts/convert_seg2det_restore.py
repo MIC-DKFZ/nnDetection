@@ -40,7 +40,7 @@ def main():
 
     args = parser.parse_args()
     tasks = args.tasks
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
 
     for task in tasks:
         cfg = compose(task, "config.yaml", overrides=[])

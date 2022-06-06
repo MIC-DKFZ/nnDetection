@@ -87,7 +87,7 @@ if __name__ == "__main__":
     ov = args.overwrites
     stuff = args.stuff
     print(f"Overwrites: {ov}")
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
 
     if new_tasks is None:
         new_tasks = tasks
