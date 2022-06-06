@@ -88,7 +88,7 @@ def main():
     tasks = args.tasks
     ov = args.overwrites
     overwrite = args.overwrite
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
 
     for task in tasks:
         convert_raw(task, overwrite, ov)

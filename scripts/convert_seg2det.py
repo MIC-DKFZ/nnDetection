@@ -164,7 +164,7 @@ def main():
     ov = args.overwrites
     do_volume_ranking = args.volume_ranking
     num_processes = args.num_processes
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
 
     for task in tasks:
         cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
