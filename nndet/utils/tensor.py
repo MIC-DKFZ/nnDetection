@@ -13,6 +13,20 @@ from torch._six import string_classes
 np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
 
+def ensure_min_float32(data: torch.Tensor) -> torch.Tensor:
+    if data.dtype == torch.float16:
+        return data.float()
+    else:
+        return data
+
+
+def ensure_min_float32_np(data: np.ndarray) -> np.ndarray:
+    if data.dtype == np.float16:
+        return data.astype(float)
+    else:
+        return data
+
+
 def to_dtype(inp: Any, dtype: Callable) -> Any:
     """
     helper function to convert a sequence of arguments to a specific type
@@ -35,7 +49,7 @@ def to_device(
     inp: Union[Sequence[torch.Tensor], torch.Tensor, Mapping[str, torch.Tensor]],
     device: Union[torch.device, str],
     detach: bool = False,
-    **kwargs
+    **kwargs,
 ) -> Union[Sequence[torch.Tensor], torch.Tensor, Mapping[str, torch.Tensor]]:
     """
     Push tensor or sequence of tensors to device
