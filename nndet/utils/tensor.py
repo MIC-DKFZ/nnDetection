@@ -13,26 +13,6 @@ from torch._six import string_classes
 np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
 
-def make_onehot_batch(labels: torch.Tensor, n_classes: torch.Tensor) -> torch.Tensor:
-    """
-    Create onehot encoding of labels
-
-    Args:
-        labels: label tensor to enode [N, dims]
-        n_classes: number of classes
-
-    Returns:
-        Tensor: onehot encoded tensor [N, C, dims]; N: batch size,
-            C: number of classes, dims: spatial dimensions
-    """
-    idx = labels.to(dtype=torch.long)
-
-    new_shape = [labels.shape[0], n_classes, *labels.shape[1:]]
-    labels_onehot = torch.zeros(*new_shape, device=labels.device, dtype=labels.dtype)
-    labels_onehot.scatter_(1, idx.unsqueeze(dim=1), 1)
-    return labels_onehot
-
-
 def to_dtype(inp: Any, dtype: Callable) -> Any:
     """
     helper function to convert a sequence of arguments to a specific type
