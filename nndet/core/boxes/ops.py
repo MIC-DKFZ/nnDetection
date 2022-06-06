@@ -8,45 +8,10 @@ from numpy import ndarray
 from torch import Tensor
 from torch.cuda.amp import autocast
 
-
-def box_area_3d(
-    boxes: Tensor,
-) -> Tensor:
-    """
-    Computes the area of a set of bounding boxes, which are specified by its
-    (x1, y1, x2, y2, z1, z2) coordinates.
-
-    Args:
-        boxes: boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2, z1, z2) format. [N, 6]
-
-    Returns:
-        Tensor: area for each box [N]
-    """
-    return (
-        (boxes[:, 2] - boxes[:, 0])
-        * (boxes[:, 3] - boxes[:, 1])
-        * (boxes[:, 5] - boxes[:, 4])
-    )
+from nndet.utils.tensor import ensure_min_float32
 
 
-def box_area_2d(
-    boxes: Tensor,
-) -> Tensor:
-    """
-    Computes the area of a set of bounding boxes, which are specified by its
-    (x1, y1, x2, y2) coordinates.
-
-    Args:
-        boxes: boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2) format. [N, 4]
-
-    Returns:
-        Tensor: area for each box [N]
-    """
-    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
-
-
+@autocast(enabled=False)
 def box_area(
     boxes: Tensor,
 ) -> Tensor:
@@ -62,10 +27,11 @@ def box_area(
     See Also:
         :func:`box_area_3d`, :func:`torchvision.ops.boxes.box_area`
     """
+    _boxes = ensure_min_float32(boxes)
     if boxes.shape[-1] == 4:
-        return box_area_2d(boxes)
+        return box_area_2d(_boxes)
     else:
-        return box_area_3d(boxes)
+        return box_area_3d(_boxes)
 
 
 @autocast(enabled=False)
@@ -76,7 +42,6 @@ def box_iou(
 ) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
-    (Works for Tensors and Numpy Arrays)
 
     Args:
         boxes1: boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
@@ -94,13 +59,16 @@ def box_iou(
         Need to compute IoU in float32 (autocast=False) because the
         volume/area can be to large
     """
-    # TODO: think about adding additional assert statements to check coordinates x1 <= x2, y1 <= y2, z1 <= z2
     if boxes1.numel() == 0 or boxes2.numel() == 0:
         return torch.tensor([]).to(boxes1)
+
+    _boxes1 = ensure_min_float32(boxes1)
+    _boxes2 = ensure_min_float32(boxes2)
+
     if boxes1.shape[-1] == 4:
-        return box_iou_union_2d(boxes1.float(), boxes2.float(), eps=eps)[0]
+        return box_iou_union_2d(_boxes1, _boxes2, eps=eps)[0]
     else:
-        return box_iou_union_3d(boxes1.float(), boxes2.float(), eps=eps)[0]
+        return box_iou_union_3d(_boxes1, _boxes2, eps=eps)[0]
 
 
 @autocast(enabled=False)
@@ -127,10 +95,162 @@ def generalized_box_iou(
     """
     if boxes1.nelement() == 0 or boxes2.nelement() == 0:
         return torch.tensor([]).to(boxes1)
+
+    _boxes1 = ensure_min_float32(boxes1)
+    _boxes2 = ensure_min_float32(boxes2)
+
     if boxes1.shape[-1] == 4:
-        return generalized_box_iou_2d(boxes1.float(), boxes2.float(), eps=eps)
+        return generalized_box_iou_2d(_boxes1, _boxes2, eps=eps)
     else:
-        return generalized_box_iou_3d(boxes1.float(), boxes2.float(), eps=eps)
+        return generalized_box_iou_3d(_boxes1, _boxes2, eps=eps)
+
+
+@autocast(enabled=False)
+def box_iou_paired(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
+    """
+    Return intersection-over-union (Jaccard index) and Union of boxes.
+    Both sets of boxes are expected to be in (x1, y1, x2, y2, z1, z2) format.
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        eps: optional small constant for numerical stability
+
+    Returns:
+        Tensor: vector [N] containing the boxes between box sets
+        Tensor: vector [N] containing the union between the box sets
+
+    Notes:
+        Need to compute IoU in float32 (autocast=False) because the
+        volume/area can be to large
+    """
+    if boxes1.numel() == 0 or boxes2.numel() == 0:
+        return torch.tensor([]).to(boxes1)
+
+    _boxes1 = ensure_min_float32(boxes1)
+    _boxes2 = ensure_min_float32(boxes2)
+
+    if boxes1.shape[-1] == 4:
+        raise NotImplementedError("2D case not implemented")
+    else:
+        return box_iou_union_3d_paired(_boxes1, _boxes2, eps=eps)[0]
+
+
+@autocast(enabled=False)
+def generalized_box_iou_paired(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
+    """
+    Computes the generalized box iou between given bounding boxes
+    in a paired fashion
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        eps: optional small constant for numerical stability
+
+    Returns:
+        Tensor: vector [N] containing the pairwise generalized IoU values
+            for every element in boxes1 and boxes2
+
+    Notes:
+        Need to compute IoU in float32 (autocast=False) because the
+        volume/area can be to large
+    """
+    if boxes1.numel() == 0 or boxes2.numel() == 0:
+        return torch.tensor([]).to(boxes1)
+
+    _boxes1 = ensure_min_float32(boxes1)
+    _boxes2 = ensure_min_float32(boxes2)
+
+    if boxes1.shape[-1] == 4:
+        raise NotImplementedError("2D case not implemented")
+    else:
+        return generalized_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)[0]
+
+
+@autocast(enabled=False)
+def distance_box_iou_paired(
+    boxes1: Tensor,
+    boxes2: Tensor,
+    eps: float = 0,
+) -> Tensor:
+    """
+    Distance IoU Loss
+    L = 1 - IoU + d^2(c, c_gt) / diag_enclosing^2
+
+    Args:
+        boxes1: predicted boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        boxes2: target boxes [N, dims] (x1, y1, x2, y2, z1, z2)
+        eps: small constant for numerical stability
+
+    Returns:
+        torch.Tensor: computed loss [N]
+
+    Notes:
+        Need to compute IoU in float32 (autocast=False) because the
+        volume/area can be to large
+    """
+    if boxes1.numel() == 0 or boxes2.numel() == 0:
+        return torch.tensor([]).to(boxes1)
+
+    _boxes1 = ensure_min_float32(boxes1)
+    _boxes2 = ensure_min_float32(boxes2)
+
+    if boxes1.shape[-1] == 4:
+        raise NotImplementedError("2D case not implemented")
+    else:
+        return distance_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)[0]
+
+
+def box_area_3d(
+    boxes: Tensor,
+) -> Tensor:
+    """
+    Computes the area of a set of bounding boxes, which are specified by its
+    (x1, y1, x2, y2, z1, z2) coordinates.
+
+    Args:
+        boxes: boxes for which the area will be computed. They
+            are expected to be in (x1, y1, x2, y2, z1, z2) format. [N, 6]
+
+    Returns:
+        Tensor: area for each box [N]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+    """
+    return (
+        (boxes[:, 2] - boxes[:, 0])
+        * (boxes[:, 3] - boxes[:, 1])
+        * (boxes[:, 5] - boxes[:, 4])
+    )
+
+
+def box_area_2d(
+    boxes: Tensor,
+) -> Tensor:
+    """
+    Computes the area of a set of bounding boxes, which are specified by its
+    (x1, y1, x2, y2) coordinates.
+
+    Args:
+        boxes: boxes for which the area will be computed. They
+            are expected to be in (x1, y1, x2, y2) format. [N, 4]
+
+    Returns:
+        Tensor: area for each box [N]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+    """
+    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
 def box_iou_union_3d(
@@ -152,6 +272,9 @@ def box_iou_union_3d(
             IoU values for every element in boxes1 and boxes2, shape [N, M]
         Tensor: the nxM matrix containing the pairwise union
             values, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     vol1 = box_area_3d(boxes1)
     vol2 = box_area_3d(boxes2)
@@ -187,6 +310,9 @@ def box_iou_union_3d_paired(
     Returns:
         Tensor: vector [N] containing the boxes between box sets
         Tensor: vector [N] containing the union between the box sets
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     vol1 = box_area_3d(boxes1)  # [N]
     vol2 = box_area_3d(boxes2)  # [N]
@@ -222,6 +348,9 @@ def generalized_box_iou_3d(
     Returns:
         Tensor: the NxM matrix containing the pairwise generalized IoU values
             for every element in boxes1 and boxes2, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     iou, union = box_iou_union_3d(boxes1, boxes2)
 
@@ -255,6 +384,9 @@ def generalized_box_iou_3d_paired(
     Returns:
         Tensor: vector [N] containing the pairwise generalized IoU values
             for every element in boxes1 and boxes2
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     iou, union = box_iou_union_3d_paired(boxes1, boxes2)  # [N], [N]
 
@@ -287,6 +419,9 @@ def distance_box_iou_3d_paired(
 
     Returns:
         torch.Tensor: computed loss
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     iou, _ = box_iou_union_3d_paired(boxes1, boxes2, eps=eps)  # [N]
     dc = (box_center(boxes1) - box_center(boxes2)).pow(2).sum(dim=1)  # [N]
@@ -321,6 +456,9 @@ def box_iou_union_2d(
             IoU values for every element in boxes1 and boxes2, shape [N, M]
         Tensor: union NxM matrix containing the pairwise union
             values, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     area1 = box_area_2d(boxes1)
     area2 = box_area_2d(boxes2)
@@ -351,6 +489,9 @@ def generalized_box_iou_2d(
     Returns:
         Tensor: the NxM matrix containing the pairwise generalized IoU values
             for every element in boxes1 and boxes2, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     iou, union = box_iou_union_2d(boxes1, boxes2)
 
@@ -361,6 +502,11 @@ def generalized_box_iou_2d(
 
     area = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0)) + eps  # [N, M]
     return iou - (area - union) / area
+
+
+###
+# Other Ops
+###
 
 
 def remove_small_boxes(

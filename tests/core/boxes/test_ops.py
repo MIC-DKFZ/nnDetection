@@ -4,7 +4,11 @@ import pytest
 import torch
 
 from nndet.core.boxes import *
-from nndet.core.boxes.ops import cat_and_index, distance_box_iou_3d_paired
+from nndet.core.boxes.ops import (
+    cat_and_index,
+    distance_box_iou_paired,
+    generalized_box_iou_paired,
+)
 
 
 @pytest.fixture
@@ -80,14 +84,14 @@ def test_generalized_box_iou_3d(boxes0_3d, boxes1_3d):
 
 
 def test_generalized_box_iou_3d_paired(boxes0_3d, boxes1_3d):
-    ious = generalized_box_iou(boxes0_3d, boxes1_3d[1:])
+    ious = generalized_box_iou_paired(boxes0_3d, boxes1_3d[1:])
     assert all([a == b for a, b in zip(ious.shape, (2, 2))])
     expected = torch.empty_like(ious).fill_((1.0 / 15.0) - (12.0 / 27.0))
     assert ious.allclose(expected)
 
 
 def test_distance_box_iou_3d_paired(boxes0_3d, boxes1_3d):
-    ious = distance_box_iou_3d_paired(boxes0_3d, boxes1_3d[1:])
+    ious = distance_box_iou_paired(boxes0_3d, boxes1_3d[1:])
     assert all([a == b for a, b in zip(ious.shape, (2, 2))])
 
     # iou = 1 / 15

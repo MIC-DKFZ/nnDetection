@@ -4,24 +4,33 @@
 import numpy as np
 from numpy import ndarray
 
+from nndet.utils.tensor import ensure_min_float32_np
+
 
 def box_area_np(
     boxes: ndarray,
 ) -> ndarray:
     """
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+
     See Also:
         :func:`nndet.core.boxes.ops.box_area`
     """
+    _boxes = ensure_min_float32_np(boxes)
     if boxes.shape[-1] == 4:
-        return box_area_2d_np(boxes)
+        return box_area_2d_np(_boxes)
     else:
-        return box_area_3d_np(boxes)
+        return box_area_3d_np(_boxes)
 
 
 def box_area_3d_np(
     boxes: np.ndarray,
 ) -> np.ndarray:
     """
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+
     See Also:
         `nndet.core.boxes.ops.box_area_3d`
     """
@@ -36,6 +45,9 @@ def box_area_2d_np(
     boxes: np.ndarray,
 ) -> np.ndarray:
     """
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+
     See Also:
         `nndet.core.boxes.ops.box_area_2d`
     """
@@ -61,11 +73,12 @@ def box_iou_np(
     See Also:
         :func:`box_iou_3d`, :func:`torchvision.ops.boxes.box_iou`
     """
-    # TODO: think about adding additional assert statements to check coordinates x1 <= x2, y1 <= y2, z1 <= z2
+    _boxes1 = ensure_min_float32_np(boxes1)
+    _boxes2 = ensure_min_float32_np(boxes2)
     if boxes1.shape[-1] == 4:
-        return box_iou_2d_np(boxes1, boxes2)
+        return box_iou_2d_np(_boxes1, _boxes2)
     else:
-        return box_iou_3d_np(boxes1, boxes2)
+        return box_iou_3d_np(_boxes1, _boxes2)
 
 
 def box_iou_2d_np(
@@ -83,6 +96,9 @@ def box_iou_2d_np(
     Returns:
         ndarray: the NxM iou matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     area1 = box_area_2d_np(boxes1)
     area2 = box_area_2d_np(boxes2)
@@ -113,6 +129,9 @@ def box_iou_3d_np(
     Returns:
         ndarray: the NxM iou matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
     """
     area1 = box_area_3d_np(boxes1)
     area2 = box_area_3d_np(boxes2)
