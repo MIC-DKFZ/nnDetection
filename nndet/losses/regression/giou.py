@@ -124,4 +124,4 @@ class GIoULossPaired(Loss):
             eps=self.eps,
             reduction=self.reduction,
         )
-        return self.loss_weight * (1 - loss)
+        return self.loss_weight * -1 * loss

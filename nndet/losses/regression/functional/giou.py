@@ -36,8 +36,8 @@ def generalized_box_iou_loss(
         volume/area can be to large
     """
     loss = generalized_box_iou_paired(
-        boxes1=pred_boxes.float(),
-        boxes2=target_boxes.float(),
+        boxes1=pred_boxes,
+        boxes2=target_boxes,
         eps=eps,
     )
     return reduction_helper(loss, reduction=reduction)

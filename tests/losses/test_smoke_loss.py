@@ -52,7 +52,6 @@ TEST_REGRESSION_LOSSES = [
 ]
 TEST_REGRESSION_LOSSES_WITH_SANITY = [
     SmoothL1Loss(beta=1.0, reduction="mean"),
-    GIoULossPaired(reduction="mean", eps=1e-12),
     DIoULoss(reduction="mean", eps=1e-12),
 ]
 TEST_CLASSIFICATION_LABEL_LOSSES = [

@@ -172,7 +172,7 @@ def generalized_box_iou_paired(
     if boxes1.shape[-1] == 4:
         raise NotImplementedError("2D case not implemented")
     else:
-        return generalized_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)[0]
+        return generalized_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)
 
 
 @autocast(enabled=False)
@@ -206,7 +206,7 @@ def distance_box_iou_paired(
     if boxes1.shape[-1] == 4:
         raise NotImplementedError("2D case not implemented")
     else:
-        return distance_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)[0]
+        return distance_box_iou_3d_paired(_boxes1, _boxes2, eps=eps)
 
 
 def box_area_3d(
