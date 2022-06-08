@@ -79,7 +79,7 @@ class EpsPreprocessor(GenericPreprocessor):
         target_spacing = np.array(target_spacing)
         data[np.isnan(data)] = 0
 
-        rel_spacing = (target_spacing - original_spacing).abs() / target_spacing
+        rel_spacing = np.abs(target_spacing - original_spacing) / target_spacing
         if (rel_spacing <= self.resample_eps).all():
             logger.info("Spacing difference below eps, skipping reampling.")
             after = {
