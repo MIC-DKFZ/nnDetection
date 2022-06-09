@@ -93,7 +93,8 @@ class LightningBaseModule(pl.LightningModule):
 
         # initialize evaluation
         self.evaluators = self.evaluation_init(plan=plan)
-        logger.info(f"Lightningmodule running evaluators: {self.evaluators}")
+        _tmp = {key: item.__class__.__name__ for key, item in self.evaluators.items()}
+        logger.info(f"Lightningmodule running evaluators: {_tmp}")
 
         # define key for sweeping
         self.sweep_key = self.trainer_cfg["sweep_key"]
