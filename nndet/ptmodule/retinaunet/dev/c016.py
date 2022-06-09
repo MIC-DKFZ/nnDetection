@@ -743,6 +743,28 @@ class Encoder(AbstractEncoder):
                 out_channels.append(self.out_channels[stage_id])
         return out_channels
 
+    def get_strides(self) -> List[List[int]]:
+        """
+        Compute number backbone strides for 2d and 3d case and all options of network
+
+        Returns
+            List[List[int]]: defines the absolute stride for each output
+                feature map with respect to input size
+        """
+        out_strides = []
+        for stage_id in range(self.num_stages):
+            if stage_id == 0:
+                out_strides.append([1] * self.dim)
+            else:
+                new_stride = [
+                    prev_stride * pool_size
+                    for prev_stride, pool_size in zip(
+                        out_strides[stage_id - 1], self.strides[stage_id - 1]
+                    )
+                ]
+                out_strides.append(new_stride)
+        return out_strides
+
     def get_relative_strides(self) -> List[List[int]]:
         """
         Compute number backbone strides for 2d and 3d case and all options of network
@@ -987,3 +1009,84 @@ class RetinaUNetC016OldEncoder(RetinaUNetV001):
             **_kwargs,
         )
         return backbone
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016OldOld(RetinaUNetV001):
+    backbone_cls: Type[AbstractBackbone] = Encoder
+    neck_cls: Type[AbstractNeck] = UFPNModular
+    backbone_block = StackedConvBlock2
+
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        **kwargs,
+    ):
+        """
+        Build backbone network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            EncoderType: backbone instance
+        """
+        conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
+
+        logger.info(
+            f"Building:: backbone {cls.backbone_cls.__name__}: {model_cfg['backbone_kwargs']} "
+        )
+
+        _kwargs = copy.deepcopy(model_cfg["backbone_kwargs"])
+        if "max_channels" in _kwargs:
+            max_channels = _kwargs.pop("max_channels")
+        else:
+            max_channels = plan_arch.get("max_channels", 320)
+
+        backbone = cls.backbone_cls(
+            conv=conv,
+            conv_kernels=plan_arch["conv_kernels"],
+            strides=plan_arch["strides"],
+            block_cls=cls.backbone_block,
+            in_channels=plan_arch["in_channels"],
+            start_channels=plan_arch["start_channels"],
+            stage_kwargs=None,
+            max_channels=max_channels,
+            **_kwargs,
+        )
+        return backbone
+
+    @classmethod
+    def _build_neck(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        backbone,
+    ):
+        """
+        Build neck network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            DecoderType: neck instance
+        """
+        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
+        logger.info(
+            f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
+        )
+        neck = cls.neck_cls(
+            conv=conv,
+            conv_kernels=plan_arch["conv_kernels"],
+            strides=backbone.get_strides(),
+            in_channels=backbone.get_channels(),
+            decoder_levels=plan_arch["decoder_levels"],
+            fixed_out_channels=plan_arch["fpn_channels"],
+            **model_cfg["neck_kwargs"],
+        )
+        return neck
