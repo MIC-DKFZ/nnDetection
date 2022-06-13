@@ -54,16 +54,15 @@ class RetinaUNetC016Focal(RetinaUNetCV001Focal):
     head_classifier_cls = FocalClassifier
 
 
-
 from typing import Callable, List, Sequence, Tuple, TypeVar, Union
 
 import torch
 import torch.nn as nn
 from loguru import logger
 
+from nndet.nn.layers.wrapper import Generator
 from nndet.utils import to_dtype
 from nndet.utils.info import experimental
-from nndet.nn.layers.wrapper import Generator
 
 
 def conv_kwargs_helper(norm: bool, activation: bool):
@@ -529,43 +528,6 @@ class UFPNModular(BaseUFPN):
         return self.forward_out(reversed(out_list))
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC016OldUFPN(RetinaUNetV001):
-    neck_cls: Type[AbstractNeck] = UFPNModular
-
-    @classmethod
-    def _build_neck(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        backbone,
-    ):
-        """
-        Build neck network
-
-        Args:
-            plan_arch: architecture settings
-            model_cfg: additional architecture settings
-
-        Returns:
-            DecoderType: neck instance
-        """
-        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
-        logger.info(
-            f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
-        )
-        neck = cls.neck_cls(
-            conv=conv,
-            conv_kernels=plan_arch["conv_kernels"],
-            strides=backbone.get_absolute_strides(),
-            in_channels=backbone.get_channels(),
-            decoder_levels=plan_arch["decoder_levels"],
-            fixed_out_channels=plan_arch["fpn_channels"],
-            **model_cfg["neck_kwargs"],
-        )
-        return neck
-
-
 from abc import abstractmethod
 from typing import Dict, List, TypeVar, Union
 
@@ -641,7 +603,7 @@ class Encoder(AbstractEncoder):
         stage_kwargs: Sequence[dict] = None,
         out_stages: Sequence[int] = None,
         max_channels: int = None,
-        first_block_cls = None,
+        first_block_cls=None,
     ):
         """
         Build a modular encoder model with specified blocks
@@ -963,8 +925,9 @@ class StackedConvBlock2(StackedBlock):
 
 import copy
 
+
 @MODULE_REGISTRY.register
-class RetinaUNetC016OldEncoder(RetinaUNetV001):
+class RetinaUNetC016OldEncoderFixed(RetinaUNetC016):
     backbone_cls: Type[AbstractBackbone] = Encoder
     backbone_block = StackedConvBlock2
 
@@ -1012,7 +975,44 @@ class RetinaUNetC016OldEncoder(RetinaUNetV001):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC016OldOld(RetinaUNetV001):
+class RetinaUNetC016OldUFPNFixed(RetinaUNetC016):
+    neck_cls: Type[AbstractNeck] = UFPNModular
+
+    @classmethod
+    def _build_neck(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        backbone,
+    ):
+        """
+        Build neck network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            DecoderType: neck instance
+        """
+        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
+        logger.info(
+            f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
+        )
+        neck = cls.neck_cls(
+            conv=conv,
+            conv_kernels=plan_arch["conv_kernels"],
+            strides=backbone.get_absolute_strides(),
+            in_channels=backbone.get_channels(),
+            decoder_levels=plan_arch["decoder_levels"],
+            fixed_out_channels=plan_arch["fpn_channels"],
+            **model_cfg["neck_kwargs"],
+        )
+        return neck
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016OldOldFixed(RetinaUNetC016):
     backbone_cls: Type[AbstractBackbone] = Encoder
     neck_cls: Type[AbstractNeck] = UFPNModular
     backbone_block = StackedConvBlock2
