@@ -210,8 +210,8 @@ def main():
     cfg["exp"] = set_arg(cfg["exp"], "id", model, force_args=force_args)
 
     overwrites = ov if ov is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
+    overwrites.append("host.parent_data=${oc.env:det_data}")
+    overwrites.append("host.parent_results=${oc.env:det_models}")
     cfg.merge_with_dotlist(overwrites)
 
     for imp in cfg.get("additional_imports", []):
