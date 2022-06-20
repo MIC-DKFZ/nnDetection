@@ -59,8 +59,8 @@ def boxes2nii():
     training_dir = get_training_dir(task_dir / model, fold)
 
     overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
+    overwrites.append("host.parent_data=${oc.env:det_data}")
+    overwrites.append("host.parent_results=${oc.env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" \
         if test else training_dir / "val_predictions"
@@ -150,8 +150,8 @@ def seg2nii():
     training_dir = get_training_dir(task_dir / model, fold)
 
     overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
+    overwrites.append("host.parent_data=${oc.env:det_data}")
+    overwrites.append("host.parent_results=${oc.env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" \
         if test else training_dir / "val_predictions"
