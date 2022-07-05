@@ -35,12 +35,13 @@ from nndet.utils.check import check_data_and_label_splitted, env_guard
 def run(
     cfg: dict,
     training_dir: Path,
-    run_process: bool = True,
-    run_predict: bool = True,
-    num_models: int = None,
-    num_tta_transforms: int = None,
-    test_split: bool = False,
-    num_processes: int = 3,
+    run_process: bool,
+    run_predict: bool,
+    num_models: int,
+    num_tta_transforms: int,
+    test_split: bool,
+    num_processes: int,
+    batch_size: int,
 ):
     """
     Run inference pipeline
@@ -58,9 +59,9 @@ def run(
             this option! Predict an already preprocessed split of the original
             training data. The 'test' split needs to be located in fold 0
             of a manually created split file.
+        batch_size: batch size to use for inference. If 0, batch size
+            from plan is used.
     """
-    plan = load_pickle(training_dir / "plan_inference.pkl")
-
     preprocessed_output_dir = Path(cfg["host"]["preprocessed_output_dir"])
     prediction_dir = training_dir / "test_predictions"
 
@@ -72,6 +73,13 @@ def run(
         colorize=True,
     )
     logger.add(Path(training_dir) / "inference.log", level="INFO")
+
+    plan = load_pickle(training_dir / "plan_inference.pkl")
+    if batch_size > 0:
+        logger.info(
+            f"Found batch size provided by script, running inference with batch size {batch_size}"
+        )
+        plan["batch_size"] = batch_size
 
     if run_process:
         planner_cls = PLANNER_REGISTRY.get(plan["planner_id"])
@@ -175,6 +183,14 @@ def main():
         required=False,
     )
     parser.add_argument(
+        "-bs",
+        "--batch_size",
+        type=int,
+        default=0,
+        help="Batch size to use for inference. If 0, batch size from plan is used.",
+        required=False,
+    )
+    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -239,6 +255,7 @@ def main():
     test_split = args.test_split
     check = args.check
     num_processes = args.num_processes_preprocessing
+    batch_size = args.batch_size
 
     task_name = get_task(task, name=True)
     task_model_dir = Path(os.getenv("det_models"))
@@ -296,6 +313,7 @@ def main():
         num_tta_transforms=num_tta_transforms,
         test_split=test_split,
         num_processes=num_processes,
+        batch_size=batch_size,
     )
 
 
