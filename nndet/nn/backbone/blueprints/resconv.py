@@ -363,7 +363,7 @@ class ResConvBackbone(ConvBackbone):
         num_conv_stem = backbone_cfg.get("num_conv_stem", num_conv[0])
 
         if "max_channels" in backbone_cfg:
-            max_channels = backbone_cfg.pop("max_channels")
+            max_channels = backbone_cfg.get("max_channels")
             logger.info(f"Found max_channels {max_channels} in backbone config.")
         else:
             max_channels = plan_arch["max_channels"]

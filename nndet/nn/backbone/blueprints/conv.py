@@ -151,7 +151,7 @@ class ConvBackbone(LevelBackbone):
             assert len(num_conv) == num_levels
 
         if "max_channels" in backbone_cfg:
-            max_channels = backbone_cfg.pop("max_channels")
+            max_channels = backbone_cfg.get("max_channels")
             logger.info(f"Found max_channels {max_channels} in backbone config.")
         else:
             max_channels = plan_arch["max_channels"]
