@@ -221,6 +221,80 @@ class AugModular(NoAug):
         return transforms
 
 
+# Helpers AugV2
+
+
+class HelperBrightnessScaleV2:
+    def __init__(self, scale_param) -> None:
+        self.scale_param = scale_param
+
+    def __call__(self, x, y):
+        return np.exp(
+            np.random.uniform(
+                np.log(x[y] // self.scale_param[0]),
+                np.log(x[y] / self.scale_param[1]),
+            )
+        )
+
+
+class HelperBrightnessStrengthV2:
+    def __init__(self, strength_param) -> None:
+        self.strength_param = strength_param
+
+    def __call__(self, x, y):
+        if np.random.uniform() < 0.5:
+            return np.random.uniform(-self.strength_param[1], -self.strength_param[0])
+        else:
+            return np.random.uniform(self.strength_param[0], self.strength_param[1])
+
+
+# def _brightness_strength(x, y):
+#     if np.random.uniform() < 0.5:
+#         return np.random.uniform(-_strength_param[1], -_strength_param[0])
+#     else:
+#         return np.random.uniform(_strength_param[0], _strength_param[1])
+
+
+class HelperGammaScaleV2:
+    def __init__(self, scale_param) -> None:
+        self.scale_param = scale_param
+
+    def __call__(self, x, y):
+        return np.exp(
+            np.random.uniform(
+                np.log(x[y] // self.scale_param[0]),
+                np.log(x[y] // self.scale_param[1]),
+            )
+        )
+
+
+class HelperGammaStrengthV2:
+    def __init__(self, strength_low, strength_high) -> None:
+        self.strength_low = strength_low
+        self.strength_high = strength_high
+
+    def __call__(self):
+        if np.random.uniform() < 0.5:
+            return np.random.uniform(self.strength_low[0], self.strength_low[1])
+        else:
+            return np.random.uniform(self.strength_high[0], self.strength_high[1])
+
+
+# def _gamma_scale(x, y):
+#     return np.exp(
+#         np.random.uniform(
+#             np.log(x[y] // _scale_param[0]),
+#             np.log(x[y] // _scale_param[1]),
+#         )
+#     )
+
+# def _gamma_strength():
+#     if np.random.uniform() < 0.5:
+#         return np.random.uniform(_strength_low[0], _strength_low[1])
+#     else:
+#         return np.random.uniform(_strength_high[0], _strength_high[1])
+
+
 @AUGMENTATION_REGISTRY.register
 class AugModularV2(NoAug):
     """
@@ -456,27 +530,12 @@ class AugModularV2(NoAug):
 
         if self.params["do_brightness_gradient"]:
             _scale_param = self.params["brightness_gradient"]["scale"]
-
-            def _brightness_scale(x, y):
-                return np.exp(
-                    np.random.uniform(
-                        np.log(x[y] // _scale_param[0]),
-                        np.log(x[y] / _scale_param[1]),
-                    )
-                )
-
             _strength_param = self.params["brightness_gradient"]["strength"]
-
-            def _brightness_strength(x, y):
-                if np.random.uniform() < 0.5:
-                    return np.random.uniform(-_strength_param[1], -_strength_param[0])
-                else:
-                    return np.random.uniform(_strength_param[0], _strength_param[1])
 
             tr_transforms.append(
                 BrightnessGradientAdditiveTransform(
-                    scale=_brightness_scale,
-                    max_strength=_brightness_strength,
+                    scale=HelperBrightnessScaleV2(_scale_param),
+                    max_strength=HelperBrightnessStrengthV2(_strength_param),
                     loc=self.params["brightness_gradient"]["loc"],
                     mean_centered=self.params["brightness_gradient"]["mean_centered"],
                     same_for_all_channels=self.params["brightness_gradient"][
@@ -492,24 +551,10 @@ class AugModularV2(NoAug):
             _strength_low = self.params["local_gamma"]["strength_low"]
             _strength_high = self.params["local_gamma"]["strength_high"]
 
-            def _gamma_scale(x, y):
-                return np.exp(
-                    np.random.uniform(
-                        np.log(x[y] // _scale_param[0]),
-                        np.log(x[y] // _scale_param[1]),
-                    )
-                )
-
-            def _gamma_strength():
-                if np.random.uniform() < 0.5:
-                    return np.random.uniform(_strength_low[0], _strength_low[1])
-                else:
-                    return np.random.uniform(_strength_high[0], _strength_high[1])
-
             tr_transforms.append(
                 LocalGammaTransform(
-                    scale=_gamma_scale,
-                    gamma=_gamma_strength,
+                    scale=HelperGammaScaleV2(_scale_param),
+                    gamma=HelperGammaStrengthV2(_strength_low, _strength_high),
                     loc=self.params["local_gamma"]["loc"],
                     same_for_all_channels=self.params["local_gamma"][
                         "same_for_all_channels"
