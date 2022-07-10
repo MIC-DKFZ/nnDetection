@@ -63,23 +63,26 @@ import subprocess
 
 # TODO: remove this! do something different
 def get_allowed_n_proc_DA():
-    # return 8
-    hostname = subprocess.getoutput(["hostname"])
-    if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
-        return 16
-    if hostname.startswith("hdf19-gpu") or hostname.startswith("e071-gpu"):
-        return 12
-    elif hostname.startswith("e230-dgx1"):
-        return 10
-    elif hostname.startswith("hdf18-gpu") or hostname.startswith("e132-comp"):
-        return 16
-    elif hostname.startswith("e230-dgx2"):
-        return 6
-    elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf-"):
-        # return 32
-        return 16
+    p = os.getenv("det_num_threads", None)
+    if p is None:
+        hostname = subprocess.getoutput(["hostname"])
+        if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
+            return 16
+        if hostname.startswith("hdf19-gpu") or hostname.startswith("e071-gpu"):
+            return 12
+        elif hostname.startswith("e230-dgx1"):
+            return 10
+        elif hostname.startswith("hdf18-gpu") or hostname.startswith("e132-comp"):
+            return 16
+        elif hostname.startswith("e230-dgx2"):
+            return 6
+        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf-"):
+            # return 32
+            return 30
+        else:
+            raise RuntimeError(f"Could not determine det_num_threads, env: {p}")
     else:
-        return int(os.getenv("det_num_threads", 12))
+        return int(p)
 
 
 class BaseDatamodule(BaseModule):
