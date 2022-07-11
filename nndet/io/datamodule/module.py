@@ -76,8 +76,8 @@ import subprocess
 
 # TODO: remove this! do something different
 def get_allowed_n_proc_DA():
-    p = os.getenv("det_num_threads", None)
-    if p is None:
+    dnt = os.getenv("det_num_threads", None)
+    if dnt is None:
         hostname = subprocess.getoutput(["hostname"])
         if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
             return 16
@@ -89,13 +89,14 @@ def get_allowed_n_proc_DA():
             return 16
         elif hostname.startswith("e230-dgx2"):
             return 6
-        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf-"):
-            # return 32
-            return 30
+        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-"):
+            return 24  # max 32
         else:
-            raise RuntimeError(f"Could not determine det_num_threads, env: {p}")
+            raise RuntimeError(
+                f"Could not determine det_num_threads, env: {dnt} hostname {hostname}"
+            )
     else:
-        return int(p)
+        return int(dnt)
 
 
 class BaseDatamodule(BaseModule):
