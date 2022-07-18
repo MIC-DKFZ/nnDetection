@@ -84,6 +84,7 @@ def boxes2nii():
     save_dir.mkdir(exist_ok=True)
 
     case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
+    case_ids.sort()
     for cid in maybe_verbose_iterable(case_ids):
         res = load_pickle(prediction_dir / f"{cid}_boxes.pkl")
 
@@ -121,7 +122,9 @@ def boxes2nii():
                 "box": list(map(int, pbox)),
             }
 
-        logger.info(f"Created instance mask with {instance_mask.max()} instances.")
+        logger.info(
+            f"Created instance mask {cid} with {instance_mask.max()} instances."
+        )
 
         instance_mask_itk = sitk.GetImageFromArray(instance_mask)
         instance_mask_itk.SetOrigin(res["itk_origin"])
