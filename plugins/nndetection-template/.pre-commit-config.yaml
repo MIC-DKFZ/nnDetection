@@ -1,0 +1,53 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    - id: check-yaml
+      exclude: .*
+    - id: check-json
+      exclude: .*
+    - id: end-of-file-fixer
+      files: .*\.py
+    - id: trailing-whitespace
+      files: .*\.py
+    - id: name-tests-test
+      args: ['--django']
+    # - id: check-docstring-first
+
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+    - id: black
+      name: Black Code Formatting
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+        name: isort Import Handling
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 3.9.2  # pick a git hash / tag to point to
+    hooks:
+    - id: flake8
+      name: Flake8
+      args: [
+        '--config=setup.cfg',
+        '--ignore=W503,W504,E203,E402,E262'
+        ]
+      exclude: |
+        (?x)(
+          ^tests/|
+          ^projects/
+        )
+
+  # - repo: local
+  #   hooks:
+  #     - id: pytest-check
+  #       name: pytest-check
+  #       entry: pytest
+  #       language: system
+  #       pass_filenames: false
+  #       always_run: true
+  #       verbose: True

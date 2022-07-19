@@ -1,0 +1,44 @@
+default:
+  image: nvcr.io/nvidia/pytorch:22.01-py3
+
+stages:
+  - format
+  - build
+
+format-job:
+  stage: format
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - echo "Install"
+    - pip install pre-commit
+    - pip install git+https://github.com/mibaumgartner/reuse-tool.git
+    - echo "Check Install"
+    - pre-commit --version
+    - pre-commit install
+    - echo "Run pre-commit hooks"
+    - pre-commit run --all-files --show-diff-on-failure
+    - reuse --root nndet_[project] lint
+
+build-job:
+  stage: build
+  script:
+    - echo "Check Versions"
+    - python --version
+    - python -c "import torch"
+    - pip --version
+    - pip uninstall torchtext -y
+    - echo "Install Package"
+    - pip install .[dev]
+    - echo "Run Tests"
+    - coverage run -m pytest -vrs
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml 
+  coverage: '/TOTAL.*\s+(\d+\%)/'
