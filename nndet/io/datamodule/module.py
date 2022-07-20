@@ -3,6 +3,7 @@
 
 import os
 import random
+import subprocess
 from abc import abstractstaticmethod
 from typing import Dict, Iterable, List, Optional, Sequence, Type
 
@@ -58,10 +59,6 @@ def skipped_collate_fn(batch):
     return batch[0]
 
 
-import subprocess
-
-
-# TODO: remove this! do something different
 def get_allowed_n_proc_DA():
     dnt = os.getenv("det_num_threads", None)
     if dnt is None:
@@ -76,8 +73,8 @@ def get_allowed_n_proc_DA():
             return 16
         elif hostname.startswith("e230-dgx2"):
             return 6
-        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-"):
-            return 24  # max 32
+        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-gpu"):
+            return 24
         else:
             raise RuntimeError(
                 f"Could not determine det_num_threads, env: {dnt} hostname {hostname}"
