@@ -83,7 +83,12 @@ class ScalePerDim(nn.Module):
             )[None, None]
         else:
             _scale = torch.stack(
-                [self.scale[0], self.scale[1], self.scale[0], self.scale[1]],
+                [
+                    self.scale[0],
+                    self.scale[1],
+                    self.scale[0],
+                    self.scale[1],
+                ],
             )[None, None]
         return inp * _scale
 
