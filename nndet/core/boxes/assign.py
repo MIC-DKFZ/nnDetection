@@ -1,3 +1,11 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from torchvision (https://github.com/pytorch/vision) licensed under
+# SPDX-FileCopyrightText: Soumith Chintala 2016
+# SPDX-License-Identifier: BSD-3-Clause
+
 from typing import List, Tuple
 
 import torch

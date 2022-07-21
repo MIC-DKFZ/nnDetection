@@ -1,7 +1,22 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import torch
 from loguru import logger
 
-from nndet.arch.conv import (
+from nndet.core.boxes.coder import CoderType
+
+# from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
+from nndet.nn.heads.classifier import (
+    AsymmetricFocalClassifier,
+    DenseClassifierType,
+    FocalClassifier,
+    FullyConntectedBCECLassifier,
+)
+from nndet.nn.heads.comb import AnchorHeadType, BoxHeadAll
+from nndet.nn.heads.regressor import DenseRegressorType
+from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg
+from nndet.nn.layers.conv import (
     ConvGroupLReLU,
     ConvGroupMish,
     ConvGroupRelu,
@@ -12,17 +27,6 @@ from nndet.arch.conv import (
     ConvInstanceSiLU,
     ConvInstanceSwish,
 )
-from nndet.arch.decoder.base import SmallerUFPN, SmallUFPN
-from nndet.arch.heads.classifier import (
-    AsymmetricFocalClassifier,
-    DenseClassifierType,
-    FocalClassifier,
-    FullyConntectedBCECLassifier,
-)
-from nndet.arch.heads.comb import AnchorHeadType, BoxHeadAll
-from nndet.arch.heads.regressor import DenseRegressorType
-from nndet.arch.heads.segmenter import DiceTopKSegmenterFgBg
-from nndet.core.boxes.coder import CoderType
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.training.learning_rate import LinearWarmupPolyLR
@@ -373,11 +377,11 @@ class RetinaUNetC010LReLUMishHead(RetinaUNetC010LReLU):
     head_conv_cls = ConvGroupMish
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
-    decoder_cls = SmallUFPN
+# @MODULE_REGISTRY.register
+# class RetinaUNetC010LReLUSmallU(RetinaUNetC010LReLU):
+#     decoder_cls = SmallUFPN
 
 
-@MODULE_REGISTRY.register
-class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
-    decoder_cls = SmallerUFPN
+# @MODULE_REGISTRY.register
+# class RetinaUNetC010LReLUSmallerU(RetinaUNetC010LReLU):
+#     decoder_cls = SmallerUFPN

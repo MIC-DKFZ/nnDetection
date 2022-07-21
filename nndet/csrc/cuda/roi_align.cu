@@ -1,3 +1,11 @@
+// Modifications licensed under:
+// SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
+// SPDX-License-Identifier: Apache-2.0
+//
+// Parts of this code are from torchvision licensed under
+// SPDX-FileCopyrightText: 2016 Soumith Chintala
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*
 ROIAlign implementation in CUDA from pytorch framework
 (https://github.com/pytorch/vision/tree/master/torchvision/csrc/cuda on Nov 14 2019)

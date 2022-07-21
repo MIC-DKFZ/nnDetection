@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from enum import Enum
 
 
@@ -27,3 +30,19 @@ class EnsembleNMS(Enum):
 class DimBoxMerger(Enum):
     GREEDYIOU = "GreedyIoUBoxMerger"
     VOTELABELGREEDYIOU = "VoteLabelGreedyIoUBoxMerger"
+
+
+class PoolingMode(Enum):
+    CONV_KERNEL = "conv_kernel"
+    CONV_STRIDE = "conv_stride"
+    MAX_KERNEL = "max_kernel"
+    MAX_STRIDE = "max_stride"
+    AVG_KERNEL = "avg_kernel"
+    AVG_STRIDE = "avg_stride"
+
+
+class InterpolationMode(Enum):
+    TRANSPOSE = "transpose"
+    NEAREST = "nearest"
+    LINEAR = "linear"
+    CUBIC = "cubic"

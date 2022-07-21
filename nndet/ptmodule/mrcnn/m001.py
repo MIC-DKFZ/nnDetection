@@ -1,16 +1,8 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Optional, Type
 
-from nndet.arch.blocks.basic import AbstractBlock
-from nndet.arch.decoder.base import BaseUFPN
-from nndet.arch.encoder.abstract import AbstractEncoder
-from nndet.arch.heads.classifier.dense import DenseClassifier
-from nndet.arch.heads.classifier.roi import RoIClassifier
-from nndet.arch.heads.comb.base import AnchorHead
-from nndet.arch.heads.comb.roi import RoIBoxHead
-from nndet.arch.heads.masker.base import Masker
-from nndet.arch.heads.regressor.dense import DenseRegressor
-from nndet.arch.heads.regressor.roi import RoIRegressor
-from nndet.arch.heads.segmenter import Segmenter
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import SamplerType
@@ -19,6 +11,16 @@ from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIPooler
+from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.classifier.roi import RoIClassifier
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.comb.roi import RoIBoxHead
+from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.regressor.dense import DenseRegressor
+from nndet.nn.heads.regressor.roi import RoIRegressor
+from nndet.nn.heads.segmenter import Segmenter
+from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
@@ -59,13 +61,10 @@ class MaskRCNNModule(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
@@ -132,13 +131,10 @@ class MaskURCNNModule(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
@@ -197,13 +193,10 @@ class BoxMaskRCNNModule(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head
@@ -267,13 +260,10 @@ class BoxMaskURCNNModule(
     ###################
     # RPN Configuration
     ###################
-    backbone_cls: Type[AbstractEncoder] = ...  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    backbone_block: Type[
-        AbstractBlock
-    ] = ...  # define central building block of backbone
 
-    neck_cls: Type[BaseUFPN] = ...  # define class for neck
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
 
     head_cls: Type[AnchorHead] = ...  # define class for head

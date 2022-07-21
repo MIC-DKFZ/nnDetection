@@ -1,21 +1,24 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Callable, Hashable
 
 from loguru import logger
 
-from nndet.arch.conv import (
-    ConvGroupLReLU,
-    ConvGroupMish,
-    ConvInstanceLReLU,
-    ConvInstanceMish,
-)
-from nndet.arch.heads.classifier import FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.regressor import L1Regressor
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelective2D,
     BoxEnsemblerSelectiveFaster,
 )
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
+from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.layers.conv import (
+    ConvGroupLReLU,
+    ConvGroupMish,
+    ConvInstanceLReLU,
+    ConvInstanceMish,
+)
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 

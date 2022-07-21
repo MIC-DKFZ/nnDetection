@@ -2,7 +2,7 @@ pytorch_lightning>=1.5.0, <= 1.6.0
 batchgenerators>=0.24
 nnunet==1.7.0
 PyYAML>=5.1, !=5.4.*
-hydra-core>=1.2.0
+hydra-core>=1.1.0,<=1.2.0
 SimpleITK
 scipy
 scikit-learn

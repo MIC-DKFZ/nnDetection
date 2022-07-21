@@ -13,24 +13,18 @@ from torch._six import string_classes
 np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
 
-def make_onehot_batch(labels: torch.Tensor, n_classes: torch.Tensor) -> torch.Tensor:
-    """
-    Create onehot encoding of labels
+def ensure_min_float32(data: torch.Tensor) -> torch.Tensor:
+    if data.dtype == torch.float16:
+        return data.float()
+    else:
+        return data
 
-    Args:
-        labels: label tensor to enode [N, dims]
-        n_classes: number of classes
 
-    Returns:
-        Tensor: onehot encoded tensor [N, C, dims]; N: batch size,
-            C: number of classes, dims: spatial dimensions
-    """
-    idx = labels.to(dtype=torch.long)
-
-    new_shape = [labels.shape[0], n_classes, *labels.shape[1:]]
-    labels_onehot = torch.zeros(*new_shape, device=labels.device, dtype=labels.dtype)
-    labels_onehot.scatter_(1, idx.unsqueeze(dim=1), 1)
-    return labels_onehot
+def ensure_min_float32_np(data: np.ndarray) -> np.ndarray:
+    if data.dtype == np.float16:
+        return data.astype(float)
+    else:
+        return data
 
 
 def to_dtype(inp: Any, dtype: Callable) -> Any:
@@ -55,7 +49,7 @@ def to_device(
     inp: Union[Sequence[torch.Tensor], torch.Tensor, Mapping[str, torch.Tensor]],
     device: Union[torch.device, str],
     detach: bool = False,
-    **kwargs
+    **kwargs,
 ) -> Union[Sequence[torch.Tensor], torch.Tensor, Mapping[str, torch.Tensor]]:
     """
     Push tensor or sequence of tensors to device

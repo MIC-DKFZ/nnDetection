@@ -1,8 +1,11 @@
-from nndet.arch.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
-from nndet.arch.heads.classifier import FocalClassifier
-from nndet.arch.heads.comb import BoxHeadAll, BoxHeadHNM
-from nndet.arch.heads.regressor import L1Regressor
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from nndet.core.boxes.matcher import IoUMatcher
+from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.regressor import L1Regressor
+from nndet.nn.layers.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 

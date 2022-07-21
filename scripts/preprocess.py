@@ -1,18 +1,5 @@
-"""
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import copy
@@ -419,7 +406,7 @@ def main():
     num_processes = args.num_processes
     num_processes_preprocessing = args.num_processes_preprocessing
 
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     # perform preprocessing checks first
     if not no_check:
         for task in tasks:
@@ -486,7 +473,7 @@ def main_prep_labels():
     ov = args.overwrites
     num_processes = args.num_processes
 
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     for task in tasks:
         _ov = copy.deepcopy(ov) if ov is not None else []
         cfg = compose(task, "config.yaml", overrides=_ov)

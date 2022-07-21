@@ -15,13 +15,13 @@ format-job:
     - pip --version
     - echo "Install"
     - pip install pre-commit
-    - pip install reuse
+    - pip install git+https://github.com/mibaumgartner/reuse-tool.git
     - echo "Check Install"
     - pre-commit --version
     - pre-commit install
     - echo "Run pre-commit hooks"
     - pre-commit run --all-files --show-diff-on-failure
-    # - reuse --root nndet lint
+    - reuse --root nndet lint
 
 build-job:
   stage: build
@@ -34,7 +34,7 @@ build-job:
     - echo "Install Package"
     - pip install .[dev]
     - echo "Run Tests"
-    - coverage run -m pytest -v
+    - coverage run -m pytest -vrs
     - coverage report
     - coverage xml
   artifacts:

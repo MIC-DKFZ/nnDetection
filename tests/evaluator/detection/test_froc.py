@@ -92,7 +92,6 @@ class TestFROC:
     def test_compute_froc_mul_iou(self, mocker: MockerFixture, metric):
         mock = mocker.Mock(return_value=([0, 1], [0, 1], 0))
         metric.compute_froc_curve_one_iou = mock
-        metric.per_class = False
 
         results_list = []
         results_list += [
@@ -107,7 +106,9 @@ class TestFROC:
         ] * 3
 
         froc_score, froc_curve = metric(results_list)
-        assert {"FROC_score_IoU_0.10": 3.875 / 6} == froc_score
+        assert math.isclose(3.875 / 6, froc_score["FROC_score_IoU_0.10"])
+        assert math.isclose(3.875 / 6, froc_score["benign_FROC_score_IoU_0.10"])
+        assert math.isclose(3.875 / 12, froc_score["mc_FROC_score_IoU_0.10"])
         assert np.isclose(
             froc_curve["FROC_curve_IoU_0.10"],
             np.array([0.125, 0.25, 0.5, 1.0, 1.0, 1.0]),

@@ -114,7 +114,7 @@ def _pretrain(
         do_sweep: determine best emprical parameters for run
     """
     print(f"Overwrites: {ov}")
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(pretask, "config.yaml", overrides=ov if ov is not None else [])
 
     pretask = get_task(pretask, name=True)

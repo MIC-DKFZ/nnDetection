@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.core.boxes.ops import generalized_box_iou_3d_paired
+from nndet.core.boxes.ops import generalized_box_iou_paired
 from nndet.losses.ops import reduction_helper
 
 
@@ -32,14 +35,9 @@ def generalized_box_iou_loss(
         Need to compute IoU in float32 (autocast=False) because the
         volume/area can be to large
     """
-    if pred_boxes.nelement() == 0 or target_boxes.nelement() == 0:
-        return torch.tensor([]).to(pred_boxes)
-    if pred_boxes.shape[-1] == 4:
-        raise NotImplementedError("DIoU Loss not implemented for 2D")
-    else:
-        loss = generalized_box_iou_3d_paired(
-            boxes1=pred_boxes.float(),
-            boxes2=target_boxes.float(),
-            eps=eps,
-        )
+    loss = generalized_box_iou_paired(
+        boxes1=pred_boxes,
+        boxes2=target_boxes,
+        eps=eps,
+    )
     return reduction_helper(loss, reduction=reduction)

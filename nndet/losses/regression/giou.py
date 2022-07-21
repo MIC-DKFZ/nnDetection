@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import torch
 
 from nndet.core.boxes.ops import generalized_box_iou
@@ -121,4 +124,4 @@ class GIoULossPaired(Loss):
             eps=self.eps,
             reduction=self.reduction,
         )
-        return self.loss_weight * (1 - loss)
+        return self.loss_weight * -1 * loss

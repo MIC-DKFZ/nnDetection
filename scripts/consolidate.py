@@ -1,18 +1,5 @@
-"""
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import importlib
@@ -202,8 +189,8 @@ def main():
     # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
     ov = ov if ov is not None else []
-    ov.append("host.parent_data=${env:det_data}")
-    ov.append("host.parent_results=${env:det_models}")
+    ov.append("host.parent_data=${oc.env:det_data}")
+    ov.append("host.parent_results=${oc.env:det_models}")
     if ov is not None:
         cfg.merge_with_dotlist(ov)
 

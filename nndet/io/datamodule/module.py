@@ -1,21 +1,9 @@
-"""
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import random
+import subprocess
 from abc import abstractstaticmethod
 from typing import Dict, Iterable, List, Optional, Sequence, Type
 
@@ -71,28 +59,28 @@ def skipped_collate_fn(batch):
     return batch[0]
 
 
-import subprocess
-
-
-# TODO: remove this! do something different
 def get_allowed_n_proc_DA():
-    # return 8
-    hostname = subprocess.getoutput(["hostname"])
-    if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
-        return 16
-    if hostname.startswith("hdf19-gpu") or hostname.startswith("e071-gpu"):
-        return 12
-    elif hostname.startswith("e230-dgx1"):
-        return 10
-    elif hostname.startswith("hdf18-gpu") or hostname.startswith("e132-comp"):
-        return 16
-    elif hostname.startswith("e230-dgx2"):
-        return 6
-    elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf-"):
-        # return 32
-        return 16
+    dnt = os.getenv("det_num_threads", None)
+    if dnt is None:
+        hostname = subprocess.getoutput(["hostname"])
+        if hostname in ["hdf19-gpu16", "hdf19-gpu17", "e230-AMDworkstation"]:
+            return 16
+        if hostname.startswith("hdf19-gpu") or hostname.startswith("e071-gpu"):
+            return 12
+        elif hostname.startswith("e230-dgx1"):
+            return 10
+        elif hostname.startswith("hdf18-gpu") or hostname.startswith("e132-comp"):
+            return 16
+        elif hostname.startswith("e230-dgx2"):
+            return 6
+        elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-gpu"):
+            return 24
+        else:
+            raise RuntimeError(
+                f"Could not determine det_num_threads, env: {dnt} hostname {hostname}"
+            )
     else:
-        return int(os.getenv("det_num_threads", 12))
+        return int(dnt)
 
 
 class BaseDatamodule(BaseModule):
