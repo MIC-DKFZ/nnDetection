@@ -2,7 +2,7 @@ import torch.nn as nn
 
 import nndet.nn.ops.norm as an
 
-NORM_TYPES = [
+NORM_TYPES = (
     nn.BatchNorm1d,
     nn.BatchNorm2d,
     nn.BatchNorm3d,
@@ -14,13 +14,13 @@ NORM_TYPES = [
     nn.SyncBatchNorm,
     nn.LocalResponseNorm,
     an.GroupNorm,
-]
+)
 
-CONV_TYPES = [
+CONV_TYPES = (
     nn.Conv1d,
     nn.Conv2d,
     nn.Conv3d,
     nn.ConvTranspose1d,
     nn.ConvTranspose2d,
     nn.ConvTranspose3d,
-]
+)

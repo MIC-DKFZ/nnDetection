@@ -25,6 +25,8 @@ class InitHe(object):
                 relu and leaky relu
         """
         self.neg_slope = neg_slope
+        self.mode = mode
+        self.nonlinearity = nonlinearity
 
     def __call__(self, module: nn.Module):
         """
@@ -34,7 +36,12 @@ class InitHe(object):
             module: module to initialize weights of (only inits wights of convs)
         """
         if isinstance(module, CONV_TYPES):
-            module.weight = nn.init.kaiming_normal_(module.weight, a=self.neg_slope)
+            module.weight = nn.init.kaiming_normal_(
+                module.weight,
+                a=self.neg_slope,
+                mode=self.mode,
+                nonlinearity=self.nonlinearity,
+            )
             if module.bias is not None:
                 module.bias = nn.init.constant_(module.bias, 0)
 
@@ -58,6 +65,8 @@ class InitHeV2(object):
                 relu and leaky relu
         """
         self.neg_slope = neg_slope
+        self.mode = mode
+        self.nonlinearity = nonlinearity
 
     def __call__(self, module: nn.Module):
         """
@@ -67,7 +76,12 @@ class InitHeV2(object):
             module: module to initialize weights of (only inits wights of convs)
         """
         if isinstance(module, CONV_TYPES):
-            module.weight = nn.init.kaiming_normal_(module.weight, a=self.neg_slope)
+            module.weight = nn.init.kaiming_normal_(
+                module.weight,
+                a=self.neg_slope,
+                mode=self.mode,
+                nonlinearity=self.nonlinearity,
+            )
             if module.bias is not None:
                 module.bias = nn.init.constant_(module.bias, 0)
         elif isinstance(module, NORM_TYPES):

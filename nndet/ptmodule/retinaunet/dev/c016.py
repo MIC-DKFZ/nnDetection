@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from functools import partial
 from typing import Type
 
 from nndet.nn.backbone.abstract import AbstractBackbone
@@ -10,6 +11,7 @@ from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN, UpFPN
 from nndet.ptmodule import MODULE_REGISTRY
@@ -27,6 +29,12 @@ class RetinaUNetC016(RetinaUNetV001):
     head_cls = BoxHeadHNM
     head_conv_cls = ConvGroupLReLU
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016HeV2(RetinaUNetV001):
+    backbone_conv_cls = partial(ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out"))
+    head_conv_cls = partial(ConvGroupLReLU, initializer=InitHeV2(mode="fan_out"))
 
 
 @MODULE_REGISTRY.register
