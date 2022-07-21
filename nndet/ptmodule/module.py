@@ -90,6 +90,7 @@ class LightningBaseModule(pl.LightningModule):
         logger.info(
             f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring."
         )
+        self.mean_val_loss = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -181,6 +182,10 @@ class LightningBaseModule(pl.LightningModule):
             if _key == "loss":
                 logger.info(f"Train loss reached: {mean_val:0.5f}")
             self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
+
+        # print validation loss here for nicer log
+        if self.mean_val_loss is not None:
+            logger.info(f"Val loss reached: {self.mean_val_loss:0.5f}")
         return super().training_epoch_end(training_step_outputs)
 
     def validation_epoch_end(self, validation_step_outputs):
@@ -196,7 +201,7 @@ class LightningBaseModule(pl.LightningModule):
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
             if _key == "loss":
-                logger.info(f"Val loss reached: {mean_val:0.5f}")
+                self.mean_val_loss = mean_val
             self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
 
         # process and log metrics
