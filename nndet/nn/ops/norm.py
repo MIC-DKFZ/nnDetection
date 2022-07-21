@@ -7,7 +7,7 @@ import torch.nn as nn
 
 """
 Note: register new normalization layers in
-nndet.training.optimizer.NORM_TYPES to exclude them from weight decay
+nndet.utils.collections to exclude them from weight decay
 """
 
 

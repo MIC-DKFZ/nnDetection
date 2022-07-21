@@ -4,23 +4,8 @@
 from typing import Dict, Sequence
 
 import torch
-import torch.nn as nn
 
-import nndet.nn.ops.norm as an
-
-NORM_TYPES = [
-    nn.BatchNorm1d,
-    nn.BatchNorm2d,
-    nn.BatchNorm3d,
-    nn.InstanceNorm1d,
-    nn.InstanceNorm2d,
-    nn.InstanceNorm3d,
-    nn.LayerNorm,
-    nn.GroupNorm,
-    nn.SyncBatchNorm,
-    nn.LocalResponseNorm,
-    an.GroupNorm,
-]
+from nndet.utils.collections import NORM_TYPES
 
 
 def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float):
