@@ -12,7 +12,7 @@ from nndet.losses import GIoULoss, SmoothL1Loss
 from nndet.losses.regression.diou import DIoULoss
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.nn.heads.abstract import CONV_TYPES, Regressor
-from nndet.nn.ops.scale import Scale
+from nndet.nn.ops.scale import Scale, ScalePerDim
 
 
 class DenseRegressor(Regressor):
@@ -26,6 +26,7 @@ class DenseRegressor(Regressor):
         num_convs: int = 3,
         add_norm: bool = True,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -45,6 +46,8 @@ class DenseRegressor(Regressor):
             add_norm: en-/disable normalization layers in internal layers
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__()
@@ -52,6 +55,7 @@ class DenseRegressor(Regressor):
         self.num_levels = num_levels
         self.num_convs = num_convs
         self.learn_scale = learn_scale
+        self.scale_per_dim = scale_per_dim
 
         self.anchors_per_pos = anchors_per_pos
 
@@ -117,8 +121,16 @@ class DenseRegressor(Regressor):
         """
         Build additionales scalar values per level
         """
-        logger.info("Learning level specific scalar in regressor")
-        return nn.ModuleList([Scale() for _ in range(self.num_levels)])
+        logger.info(
+            f"Learning level specific scalar in regressor with scale per dim {self.scale_per_dim}"
+        )
+        if self.scale_per_dim:
+            scale = [1.0 for _ in range(self.dim)]
+            return nn.ModuleList(
+                [ScalePerDim(scale=scale) for _ in range(self.num_levels)]
+            )
+        else:
+            return nn.ModuleList([Scale() for _ in range(self.num_levels)])
 
     def forward(self, x: torch.Tensor, level: int, **kwargs) -> torch.Tensor:
         """
@@ -133,13 +145,14 @@ class DenseRegressor(Regressor):
         """
         bb_logits = self.conv_out(self.conv_internal(x))
 
-        if self.learn_scale:
-            bb_logits = self.scales[level](bb_logits)
-
         axes = (0, 2, 3, 1) if self.dim == 2 else (0, 2, 3, 4, 1)
         bb_logits = bb_logits.permute(*axes)
         bb_logits = bb_logits.contiguous()
         bb_logits = bb_logits.view(x.size()[0], -1, self.dim * 2)
+
+        if self.learn_scale:
+            bb_logits = self.scales[level](bb_logits)
+
         return bb_logits
 
     def compute_loss(
@@ -190,6 +203,7 @@ class L1Regressor(DenseRegressor):
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -214,6 +228,8 @@ class L1Regressor(DenseRegressor):
             loss_fp32: If True, loss is forced to be computed in float32
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -225,6 +241,7 @@ class L1Regressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
+            scale_per_dim=scale_per_dim,
             **kwargs,
         )
         self.loss = SmoothL1Loss(
@@ -249,6 +266,7 @@ class GIoURegressor(DenseRegressor):
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -273,6 +291,8 @@ class GIoURegressor(DenseRegressor):
                 is only added here to have a uniform API.
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -284,6 +304,7 @@ class GIoURegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
+            scale_per_dim=scale_per_dim,
             **kwargs,
         )
         self.loss = GIoULoss(
@@ -307,6 +328,7 @@ class GIoUPRegressor(DenseRegressor):
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -334,6 +356,8 @@ class GIoUPRegressor(DenseRegressor):
                 is only added here to have a uniform API.
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -345,6 +369,7 @@ class GIoUPRegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
+            scale_per_dim=scale_per_dim,
             **kwargs,
         )
         self.loss = GIoULossPaired(
@@ -368,6 +393,7 @@ class DIoURegressor(DenseRegressor):
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -392,6 +418,8 @@ class DIoURegressor(DenseRegressor):
                 is only added here to have a uniform API.
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -403,6 +431,7 @@ class DIoURegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
+            scale_per_dim=scale_per_dim,
             **kwargs,
         )
         self.loss = DIoULoss(
@@ -428,6 +457,7 @@ class DualRegressor(DenseRegressor):
         loss_weight_giou: float = 2.0,
         loss_fp32: bool = False,
         learn_scale: bool = False,
+        scale_per_dim: bool = False,
         **kwargs,
     ):
         """
@@ -455,6 +485,8 @@ class DualRegressor(DenseRegressor):
             loss_fp32: If True, l1 loss is forced to be computed in float32
             learn_scale: learn additional single scalar values per feature
                 pyramid level
+            scale_per_dim: if `learn_scale` is `True`, the scale is learned
+                for each spatial dimension separately
             kwargs: keyword arguments passed to first and internal convolutions
         """
         super().__init__(
@@ -467,6 +499,7 @@ class DualRegressor(DenseRegressor):
             add_norm=add_norm,
             learn_scale=learn_scale,
             loss_fp32=loss_fp32,
+            scale_per_dim=scale_per_dim,
             **kwargs,
         )
         self.loss_weight_l1 = loss_weight_l1
