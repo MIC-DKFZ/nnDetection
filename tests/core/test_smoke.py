@@ -2,11 +2,11 @@
 
 # from nndet.core.rois.head import RoIModule
 # from nndet.core.rois.pooler import RoIAlignNaiveAssign
-# from nndet.arch.heads.classifier.roi import RoIClassifierTwoMLP
-# from nndet.arch.heads.regressor.roi_single import RoIRegressorConv
-# from nndet.arch.heads.comb.roi import RoIBoxHead
+# from nndet.nn.heads.classifier.roi import RoIClassifierTwoMLP
+# from nndet.nn.heads.regressor.roi_single import RoIRegressorConv
+# from nndet.nn.heads.comb.roi import RoIBoxHead
 # from nndet.core.boxes.coder import BoxCoderND
-# from nndet.arch.conv import Generator, ConvInstanceRelu, ConvGroupRelu
+# from nndet.nn.conv import Generator, ConvInstanceRelu, ConvGroupRelu
 # from nndet.core.boxes.ops import box_iou
 # from nndet.core.boxes.matcher import IoUMatcher
 # from nndet.core.boxes.sampler import NegativeSampler
