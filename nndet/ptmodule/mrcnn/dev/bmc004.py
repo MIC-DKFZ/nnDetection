@@ -11,6 +11,7 @@ from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign, RoIPooler
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
@@ -128,3 +129,8 @@ class BoxMaskURCNNC004Focal(BoxMaskURCNNC004):
 @MODULE_REGISTRY.register
 class BoxMaskURCNNC004PerLevelPost(BoxMaskURCNNC004):
     pass  # TODO: add support for postprocessor to retina unet
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004ResEnc(BoxMaskURCNNC004):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone
