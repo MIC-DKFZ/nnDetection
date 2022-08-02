@@ -358,6 +358,12 @@ class ResConvBackbone(ConvBackbone):
         if isinstance(num_conv, int):
             num_conv = [num_conv] * num_levels
         else:
+            if len(num_conv) < num_levels:
+                logger.info(
+                    f"Found {num_conv} convolutions which is less "
+                    "than num levels, filling up with last number."
+                )
+                num_conv = num_conv + [num_conv[-1]] * (num_levels - len(num_conv))
             assert len(num_conv) == num_levels
 
         num_conv_stem = backbone_cfg.get("num_conv_stem", num_conv[0])
