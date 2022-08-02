@@ -38,6 +38,11 @@ class RetinaUNetC016HeV2(RetinaUNetV001):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetC016ResHeV2(RetinaUNetC016HeV2):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetC016Up(RetinaUNetC016):
     neck_cls: Type[AbstractNeck] = UpFPN
 
