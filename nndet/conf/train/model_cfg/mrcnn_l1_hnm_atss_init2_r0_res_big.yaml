@@ -1,0 +1,121 @@
+# RPN Parameters
+################
+backbone_kwargs: # keyword arguments passed to encoder
+  max_channels: 384
+  num_conv: [2, 4, 4, 8] # 1 res full res, 2 lower res, 4 det res
+  num_conv_stem: 1 # 1 conv init
+
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
+
+head_kwargs:  # keyword arguments to passed to head
+  reg_mode: "encode"
+
+head_sampler_kwargs: # keyword arguments passed to sampler
+  batch_size_per_image: 32 # number of anchors sampled per image
+  positive_fraction: 0.33 # defines ratio between positive and negative anchors
+  # hard negatives are sampled from a pool of size:
+  # batch_size_per_image * (1 - positive_fraction) * pool_size
+  pool_size: 20
+  min_neg: 1 # minimum number of negative anchors sampled per image
+
+head_classifier_kwargs: # keyword arguments passed to classifier in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "mean"
+  loss_weight: 1.
+  prior_prob: 0.01
+
+head_regressor_kwargs: # keyword arguments passed to regressor in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "sum"
+  loss_weight: 1.
+  learn_scale: True
+
+segmenter_kwargs:
+  dice_kwargs:
+    batch_dice: True
+    smooth_nom: 0.
+
+matcher_kwargs: # keyword arguments passed to matcher
+  num_candidates: 4
+  center_in_gt: False
+
+plan_arch_overwrites: # overwrite arguments of architecture
+  start_channels: 48
+  fpn_channels: 192
+  head_channels: 192
+plan_anchors_overwrites: {} # overwrite arguments of anchors
+
+# RoI (Cascading) Parameters
+############################
+rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
+
+roi_channel_multiplier: 3  # scale number of channels of RoI head (wrt to FPN channels)
+roi_mask_channel_multiplier : 2  # scale number of channels of RoI Mask head (wrt to FPN channels)
+
+roi_pooling:
+  # box branch
+  roi_box_size: [4, 4, 4] # overwrite roi size for box branch
+  roi_box_feature_kwargs:  # keyword arguments passed to box pooler
+    aligned: False
+    sampling_ratio: 0
+
+  # mask branch
+  roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
+  roi_mask_feature_kwargs:  # keyword arguments passed to mask pooler
+    aligned: False
+    sampling_ratio: 0
+  roi_mask_gt_kwargs:  # keyword arguments passed to mask pooler
+    aligned: False
+    sampling_ratio: -1
+
+roi_classifier_kwargs: # keyword arguments passed to RoI classifier
+  num_convs: 3
+  add_norm: True
+  reduction: sum
+
+roi_regressor_kwargs: # keyword arguments passed to RoI regressor
+  num_convs: 3
+  add_norm: True
+  reduction: sum
+
+roi_head_kwargs:
+  ema_loss_norm: True
+
+roi_masker_kwargs:
+  num_convs: 3
+  add_norm: True
+
+roi_matcher_kwargs:
+  low_threshold: 0.2
+  high_threshold: 0.3
+  allow_low_quality_matches: False
+
+roi_sampler_kwargs:
+  batch_size_per_image: 32
+  positive_fraction: 0.5
+
+roi_module_kwargs:
+  gt_to_proposals: True
+
+# this parameters are used for online val and a pre-reduction during inference.
+# the predictor will apply a different set of parameters during pat val / inference.
+roi_box_post_kwargs: # keyword arguments passed to roi box postprocessing
+  detections_per_img: 50
+  nms_thresh: 0.6 # choose conservative threshold here
+  remove_small_boxes: 1 # only keep non empty boxes
+
+roi_mask_post_kwargs: {}
