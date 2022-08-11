@@ -12,11 +12,12 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from nndet.inference.helper import predict_dir
-from nndet.inference.loading import load_all_models
+from nndet.inference.loading import load_all_models, load_best_model, load_last_model
 from nndet.io import get_task, get_training_dir
 from nndet.io.load import load_pickle
 from nndet.planning import PLANNER_REGISTRY
 from nndet.utils.check import check_data_and_label_splitted, env_guard
+from nndet.utils.enums import LoadModels
 
 
 def run(
@@ -29,6 +30,7 @@ def run(
     test_split: bool,
     num_processes: int,
     batch_size: int,
+    load_models: LoadModels,
 ):
     """
     Run inference pipeline
@@ -86,6 +88,15 @@ def run(
             source_dir = preprocessed_output_dir / plan["data_identifier"] / "imagesTs"
             case_ids = None
 
+        if load_models == LoadModels.ALL:
+            load_models_fn = load_all_models
+        elif load_models == LoadModels.LAST:
+            load_models_fn = load_last_model
+        elif load_models == LoadModels.BEST:
+            load_models_fn = load_best_model
+        else:
+            raise ValueError(f"load_models {load_models} is not supported!")
+
         predict_dir(
             source_dir=source_dir,
             target_dir=prediction_dir,
@@ -94,7 +105,7 @@ def run(
             source_models=training_dir,
             num_models=num_models,
             num_tta_transforms=num_tta_transforms,
-            model_fn=load_all_models,
+            model_fn=load_models_fn,
             restore=True,
             case_ids=case_ids,
             **cfg.get("inference_kwargs", {}),
@@ -223,6 +234,13 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--load_models",
+        type=str,
+        help="Define model loading mode, one of all | last | best",
+        default="all",
+        required=False,
+    )
+    parser.add_argument(
         "-npp",
         "--num_processes_preprocessing",
         type=int,
@@ -243,6 +261,7 @@ def main():
     check = args.check
     num_processes = args.num_processes_preprocessing
     batch_size = args.batch_size
+    load_models = args.load_models
 
     task_name = get_task(task, name=True)
     task_model_dir = Path(os.getenv("det_models"))
@@ -259,7 +278,9 @@ def main():
             "When using the test split option raw data is not "
             "supported. Need to add --no_preprocess flag!"
         )
-    if test_split and fold != -1:
+
+    load_models = LoadModels(load_models)
+    if test_split and fold != -1 and load_models == LoadModels.ALL:
         raise ValueError(
             "Test split on individual folds it not poible by "
             "default since the best and last model would be used "
@@ -301,6 +322,7 @@ def main():
         test_split=test_split,
         num_processes=num_processes,
         batch_size=batch_size,
+        load_models=load_models,
     )
 
 

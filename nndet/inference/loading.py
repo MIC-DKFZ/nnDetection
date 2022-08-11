@@ -153,3 +153,133 @@ def load_all_models(
         model.eval()
         models.append({"model": model.cpu()})
     return models
+
+
+def load_selective_models(
+    source_models: Path,
+    cfg: dict,
+    plan: dict,
+    selector: str,
+    num_expected_models: Optional[int] = None,
+    *args,
+    **kwargs,
+):
+    """
+    Load a selection of models to (potentially) ensemble
+
+    Args:
+        source_models: path to directory where models are saved
+        cfg: config used for experiment
+            `model`: name of model in DETECTION_REGISTRY
+        plan: plan used for training
+        kwargs: not used
+
+    Returns:
+        Sequence[dict]: loaded models
+            `model`: loaded model
+            `rank`: rank of model
+    """
+    from nndet.ptmodule import MODULE_REGISTRY
+
+    model_names = list(source_models.glob(f"*{selector}.ckpt"))
+    if not model_names:
+        logger.info(
+            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
+        )
+        model_names = list(source_models.glob(f"*{selector}.model"))
+        if model_names:
+            logger.info("Found models with '.model' ending.")
+
+    if not model_names:
+        raise RuntimeError(f"Did not find any models in {source_models}")
+    num_models_found = len(model_names)
+    logger.info(f"Found {num_models_found} models to load")
+
+    if num_expected_models is not None and num_models_found != num_expected_models:
+        raise RuntimeError(
+            "Found unexpected number of models: "
+            f"expected {num_expected_models} found {num_models_found}"
+        )
+
+    models = []
+    for path in model_names:
+        model = MODULE_REGISTRY[cfg["module"]](
+            model_cfg=cfg["model_cfg"],
+            trainer_cfg=cfg["trainer_cfg"],
+            plan=plan,
+        )
+
+        checkpoint = torch.load(path, map_location="cpu")
+        t = model.load_state_dict(checkpoint["state_dict"])
+        epoch = checkpoint.get("epoch")
+        logger.info(f"Loaded {path} from epoch {epoch} with {t}")
+        model.float()
+        model.eval()
+        models.append({"model": model.cpu()})
+    return models
+
+
+def load_last_model(
+    source_models: Path,
+    cfg: dict,
+    plan: dict,
+    *args,
+    **kwargs,
+):
+    """
+    Load last model of training. Checkpoint name "*_last.ckpt"
+
+    Args:
+        source_models: path to directory where models are saved
+        cfg: config used for experiment
+            `model`: name of model in DETECTION_REGISTRY
+        plan: plan used for training
+        kwargs: not used
+
+    Returns:
+        Sequence[dict]: loaded models
+            `model`: loaded model
+            `rank`: rank of model
+    """
+    return load_selective_models(
+        source_models=source_models,
+        cfg=cfg,
+        plan=plan,
+        selector="_last",
+        num_expected_models=1,
+        *args,
+        **kwargs,
+    )
+
+
+def load_best_model(
+    source_models: Path,
+    cfg: dict,
+    plan: dict,
+    *args,
+    **kwargs,
+):
+    """
+    Load best model of training. Checkpoint name "*_best.ckpt"
+
+    Args:
+        source_models: path to directory where models are saved
+        cfg: config used for experiment
+            `model`: name of model in DETECTION_REGISTRY
+        plan: plan used for training
+        kwargs: not used
+
+    Returns:
+        Sequence[dict]: loaded models
+            `model`: loaded model
+            `rank`: rank of model
+    """
+    return load_selective_models(
+        source_models=source_models,
+        cfg=cfg,
+        plan=plan,
+        selector="_best",
+        num_expected_models=1,
+        *args,
+        **kwargs,
+    )

@@ -46,3 +46,9 @@ class InterpolationMode(Enum):
     NEAREST = "nearest"
     LINEAR = "linear"
     CUBIC = "cubic"
+
+
+class LoadModels(Enum):
+    ALL = "all"
+    BEST = "best"
+    LAST = "last"
