@@ -11,7 +11,7 @@ from nndet.preprocessing.resampling import resample_patient
 
 
 class EpsPreprocessor(GenericPreprocessor):
-    DATA_ID = "Generic"
+    DATA_ID = "EpsGeneric"
 
     def __init__(
         self,
