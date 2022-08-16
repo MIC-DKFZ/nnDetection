@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
-# SPDX-License-Identifier: Apache-2.0from abc import abstractmethod
+# SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
 from typing import Dict, List, Optional, Tuple, Union
