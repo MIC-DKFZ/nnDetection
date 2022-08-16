@@ -83,6 +83,13 @@ def get_allowed_n_proc_DA():
         return int(dnt)
 
 
+def get_allowed_num_cached(num_processes: int):
+    if num_processes > 16:
+        return 1
+    else:
+        return 2
+
+
 class BaseDatamodule(BaseModule):
     def __init__(
         self,
@@ -221,12 +228,14 @@ class BaseDatamodule(BaseModule):
         )
         tr_transforms = self.augmentation.get_training_transforms()
         self.log_augmentation(tr_transforms)
+        num_processes = get_allowed_n_proc_DA()
+        num_cached = get_allowed_num_cached(num_processes)
+
         tr_gen = self.get_augmenter(
             dataloader=dl_tr,
             transform=tr_transforms,
-            # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
-            num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),
+            num_processes=num_processes,
+            num_cached_per_queue=num_cached,
             multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
@@ -254,13 +263,15 @@ class BaseDatamodule(BaseModule):
             num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
+
         val_transforms = self.augmentation.get_validation_transforms()
+        num_processes = get_allowed_n_proc_DA()
+        num_cached = get_allowed_num_cached(num_processes)
         val_gen = self.get_augmenter(
             dataloader=dl_val,
             transform=val_transforms,
-            # num_processes=min(int(self.io_cfg.get('num_threads', 12)), 16) - 1,
-            num_processes=get_allowed_n_proc_DA(),
-            num_cached_per_queue=self.io_cfg.get("num_cached_per_thread", 2),
+            num_processes=num_processes,
+            num_cached_per_queue=num_cached,
             multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
