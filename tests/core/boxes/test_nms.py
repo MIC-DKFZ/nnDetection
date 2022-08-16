@@ -114,12 +114,19 @@ class TestNMS:
         computed = nms_pytorch(boxes, scores, th)
         assert (computed == expected).all()
 
-    def test_nms_pytorch_2d_random(self, th):
-        np.random.seed(0)
-        boxes, scores = generate_boxes(1000)
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_nms_pytorch_2d_random(self, th, seed):
+        np.random.seed(seed)
+        boxes, scores = generate_boxes(1000, seed=seed)
         computed_vision = nms_torchvision(boxes, scores, th)
         computed_pytorch = nms_pytorch(boxes, scores, th)
         assert (computed_vision == computed_pytorch).all()
+
+    def test_nms_cuda_3d_fixed_cpu(self, th):
+        boxes, scores, expected = generate_3d_fixed()
+        boxes, scores, expected = boxes.cpu(), scores.cpu(), expected.cpu()
+        computed_cpu = nms(boxes, scores, th)
+        assert (computed_cpu == expected).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     @pytest.mark.skipif(
@@ -127,21 +134,37 @@ class TestNMS:
     )
     def test_nms_cuda_3d_fixed(self, th):
         boxes, scores, expected = generate_3d_fixed()
-        boxes, scores, expected = boxes.cuda(), scores.cuda(), expected.cuda()
-        computed = nms(boxes, scores, th)
-        assert (computed == expected).all()
+
+        computed_cuda = nms(boxes.cuda(), scores.cuda(), th)
+        computed_cpu = nms(boxes.cpu(), scores.cpu(), th)
+
+        assert (computed_cuda == expected.cuda()).all()
+        assert (computed_cpu == expected.cpu()).all()
+
+    def test_nms_cuda_3d_random_cpu(self, th):
+        np.random.seed(0)
+        boxes, scores = generate_boxes(1000, dim=3)
+        boxes, scores = boxes.cpu(), scores.cpu()
+        computed_cpu = nms(boxes, scores, th)
+        computed_pytorch = nms_pytorch(boxes, scores, th)
+        assert (computed_cpu == computed_pytorch).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
     @pytest.mark.skipif(
         nms_gpu is None, reason="nnDetection was not build with GPU support"
     )
-    def test_nms_cuda_3d_random(self, th):
-        np.random.seed(0)
-        boxes, scores = generate_boxes(1000, dim=3)
-        boxes, scores = boxes.cuda(), scores.cuda()
-        computed_cuda = nms(boxes, scores, th)
-        computed_pytorch = nms_pytorch(boxes, scores, th)
-        assert (computed_cuda == computed_pytorch).all()
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_nms_cuda_3d_random(self, th, seed):
+        np.random.seed(seed)
+        boxes, scores = generate_boxes(1000, dim=3, seed=seed)
+        computed_cuda = nms(boxes.cuda(), scores.cuda(), th)
+        computed_cpu = nms(boxes.cpu(), scores.cpu(), th)
+
+        computed_pytorch_cuda = nms_pytorch(boxes.cuda(), scores.cuda(), th)
+        computed_pytorch_cpu = nms_pytorch(boxes.cpu(), scores.cpu(), th)
+        assert (computed_cuda == computed_pytorch_cuda).all()
+        assert (computed_cpu == computed_pytorch_cpu).all()
+        assert (computed_pytorch_cuda.cpu() == computed_pytorch_cpu).all()
 
     def test_batched_nms(self, th):
         boxes, scores, _ = generate_2d_fixed()

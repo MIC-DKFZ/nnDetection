@@ -4,7 +4,8 @@ from unittest.mock import Mock, call, patch
 import numpy as np
 import pytest
 
-from nndet.io.datamodule.mixins.fgcrop import OffsetFGCrop3DV2
+from nndet.io.datamodule.mixins.fgcrop import OffsetFGCrop3D, OffsetFGCrop3DV2
+from nndet.io.patching import save_get_crop
 
 SEEDS = [0, 1, 2, 3, 4, 5]
 
@@ -256,3 +257,36 @@ class TestOffsetFGCrop3DV2:
             ps=128, ntp=72, spatial_size=256, box_lower=95, box_upper=105
         )
         assert idx == 0
+
+    @pytest.mark.parametrize("test_cls", [OffsetFGCrop3D, OffsetFGCrop3DV2])
+    def test_issue_72(self, test_cls):
+        cropper = test_cls()
+        cropper.offset_prob = 1.0
+        cropper.offset_magn = 1.0
+        cropper.patch_size_generator = [352, 114, 114]
+        cropper.patch_size_final = [256, 64, 64]
+        cropper.need_to_pad = [6, 6, 12]
+        cropper.max_size_pct = 1.0
+
+        data = np.zeros((1, 332, 80, 294))
+        candidates = {
+            "boxes": np.array([[162, 6, 204, 48, 42, 126]]),
+            "instances": [1],
+            "labels": [0],
+        }
+
+        crop = cropper.get_fg_crop(
+            case_data=data,
+            case_seg=None,
+            properties={},
+            case_id="test0",
+            candidates=candidates,
+            instance_id=1,
+        )
+
+        patch = save_get_crop(
+            data,
+            crop=crop,
+            mode="constant",
+        )[0]
+        assert tuple(patch.shape) == (1, 352, 114, 114)

@@ -23,7 +23,7 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
 
@@ -61,6 +61,68 @@ class FasterRCNNModule(
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     # Not supprted here; see `MaskRCNN`
     segmenter_cls: Optional[Type[Segmenter]] = None
+
+    ########################
+    # RoI Head Configuration
+    ########################
+    # RoI classes
+    roi_conv_cls = ...  # conv class used for RoI head
+    roi_module_cls: Type[RoIModule] = ...  # class of RoI module
+    roi_head_cls: Type[RoIBoxHead] = ...  # class of box head of RoI module
+    roi_classifier_cls: Type[RoIClassifier] = ...  # box head classifier class
+    roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
+
+    roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
+    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
+    roi_box_post_cls: Type[
+        BoxPostprocessing
+    ] = ...  # define roi box postprocessing strategy
+
+    # Not supprted here; see `MaskRCNN`
+    roi_masker_cls = None  # class of RoI mask head
+    roi_mask_pooler_cls = None  # class of RoI mask pooler
+    roi_mask_post_cls = None
+
+
+@MODULE_REGISTRY.register
+class FasterURCNNModule(
+    LightningBaseModule,  # Detection Base
+    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
+    BoxesPrepareMixin,  # prepare batch for box training
+    BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
+    TwoStageMixin,  # Single Stage Detector
+    BoxPredictionMixin,  # Bounding Box Sweep
+):
+    """
+    This is similar to RetinaU-Net 2 Stage if trained with Retina U-Net as RPN
+    """
+
+    full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
+    # Use `detector_cls` to set RPN module class
+    # define RPN cls
+    detector_cls: Type[AbstractOneStageDetector] = ...
+
+    ###################
+    # RPN Configuration
+    ###################
+    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
+    backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
+
+    neck_cls: Type[AbstractNeck] = ...  # define class for neck
+    neck_conv_cls: Type[CONVSEQ] = ...  # conv class used for neck
+
+    head_cls: Type[AnchorHead] = ...  # define class for head
+    head_conv_cls: Type[CONVSEQ] = ...  # conv class used for head
+    head_classifier_cls: Type[DenseClassifier] = ...  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
+    # [optional] sampler class for negative mining
+    # if None: no sampler will be given to the head
+    head_sampler_cls: Type[SamplerType] = ...
+
+    matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    # Segmentation for head for RPN
+    segmenter_cls: Optional[Type[Segmenter]] = ...
 
     ########################
     # RoI Head Configuration

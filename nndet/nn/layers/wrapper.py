@@ -176,7 +176,7 @@ def nd_norm(
                 * :class:`torch.nn.InstanceNorm2d`
                 * :class:`torch.nn.InstanceNorm3d`
                 * :class:`torch.nn.LocalResponseNorm`
-                * :class:`nndet.arch.layers.norm.GroupNorm`
+                * :class:`nndet.nn.layers.norm.GroupNorm`
     """
     if dim is None:
         dim_str = ""

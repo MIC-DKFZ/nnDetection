@@ -12,33 +12,26 @@ from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign, RoIPooler
-from nndet.inference.ensembler.base import BaseEnsembler
-from nndet.inference.ensembler.detection import BoxEnsemblerSelective
-from nndet.inference.ensembler.mask import MaskViaBoxesSelectiveEnsembler
-from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
-from nndet.nn.heads.classifier.dense import (
-    BCECLassifier,
-    DenseClassifier,
-    FocalClassifier,
-)
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
+from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
-from nndet.nn.heads.comb import BoxHeadHNM
-from nndet.nn.heads.comb.anchor_all import BoxHeadAll
+from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.base import BCESingleMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
-from nndet.nn.layers.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import MaskViaBoxPredictionMixin
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -49,16 +42,19 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class MaskURCNNC002(
+class BoxMaskURCNNC004(
     LightningBaseModule,  # Detection Base
     BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
+    BoxPredictionMixin,  # Bounding Box Sweep
 ):
+    """
+    MaskRCNNModule with Box Output
+    """
+
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
     # define RPN cls
@@ -123,27 +119,9 @@ class MaskURCNNC002(
         MaskPostprocessing
     ] = NoMaskPostprocessing  # define roi mask postprocessing strategy
 
-    @classmethod
-    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
-        """
-        Returns:
-            Type[BaseEnsembler]: return class of ensembler to use for this
-                class
-        """
-        return BoxEnsemblerSelective
-
-    @classmethod
-    def get_sweeper_cls(cls) -> Type[Sweeper]:
-        return BoxSweeper
-
 
 @MODULE_REGISTRY.register
-class MaskURCNNC002MishRoI(MaskURCNNC002):
-    roi_conv_cls: Type[CONVSEQ] = ConvGroupMish  # conv class used for RoI head
-
-
-@MODULE_REGISTRY.register
-class MaskURCNNC002Focal(MaskURCNNC002):
+class BoxMaskURCNNC004Focal(BoxMaskURCNNC004):
     head_cls = BoxHeadAll
     head_sampler_cls = None
 
@@ -152,25 +130,10 @@ class MaskURCNNC002Focal(MaskURCNNC002):
 
 
 @MODULE_REGISTRY.register
-class MaskURCNNC002FullMask(MaskURCNNC002):
-    @classmethod
-    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
-        """
-        Returns:
-            Type[BaseEnsembler]: return class of ensembler to use for this
-                class
-        """
-        return MaskViaBoxesSelectiveEnsembler
-
-    @classmethod
-    def get_sweeper_cls(cls) -> Type[Sweeper]:
-        """
-        Returns:
-            Type[Sweeper]: return class of sweeper to use for this class
-        """
-        return MaskSweeper
+class BoxMaskURCNNC004PerLevelPost(BoxMaskURCNNC004):
+    pass  # TODO: add support for postprocessor to retina unet
 
 
 @MODULE_REGISTRY.register
-class MaskURCNNC002PerLevelPost(MaskURCNNC002):
-    pass  # TODO: add support for postprocessor to retina unet
+class BoxMaskURCNNC004ResEnc(BoxMaskURCNNC004):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone

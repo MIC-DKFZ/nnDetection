@@ -4,6 +4,7 @@
 from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.classifier.dense import Poly1BCECLassifier, Poly1FocalClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMV2
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg, DiCETopKSegmenterFgBg
 from nndet.nn.layers.conv import (
@@ -29,6 +30,11 @@ class RetinaUNetC015(RetinaUNetV001):
 
     head_cls = BoxHeadHNM
     head_regressor_cls = L1Regressor
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC015HeadV2(RetinaUNetC015):
+    head_cls = BoxHeadHNMV2
 
 
 @MODULE_REGISTRY.register

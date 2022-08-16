@@ -188,7 +188,7 @@ The `ModelMixin` introduces several class attributes which can be used to exchan
 `Binary Cross Entropy Loss`
  .. code:: python  
                           
-    from nndet.arch.heads.classifier import BCECLassifier
+    from nndet.nn.heads.classifier import BCECLassifier
                                  
     class SingleStageDetectorBCELoss(
         ...
@@ -200,7 +200,7 @@ The `ModelMixin` introduces several class attributes which can be used to exchan
 `Cross Entropy Loss`
  .. code:: python 
                            
-    from nndet.arch.heads.classifier import CECLassifier
+    from nndet.nn.heads.classifier import CECLassifier
                                  
     class SingleStageDetectorCELoss(
         ...

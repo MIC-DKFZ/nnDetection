@@ -3,7 +3,11 @@
 
 # RPN Parameters
 ################
-backbone_kwargs: {} # keyword arguments passed to encoder
+backbone_kwargs: # keyword arguments passed to encoder
+  max_channels: 384
+  num_conv: [2, 4, 4, 8] # 1 res full res, 2 lower res, 4 det res
+  num_conv_stem: 1 # 1 conv init
+
 neck_kwargs: # keyword arguments passed to decoder
   min_out_channels: 8
   upsampling_mode: "transpose"
@@ -52,7 +56,10 @@ matcher_kwargs: # keyword arguments passed to matcher
   num_candidates: 4
   center_in_gt: False
 
-plan_arch_overwrites: {} # overwrite arguments of architecture
+plan_arch_overwrites: # overwrite arguments of architecture
+  start_channels: 48
+  fpn_channels: 192
+  head_channels: 192
 plan_anchors_overwrites: {} # overwrite arguments of anchors
 
 # RoI (Cascading) Parameters
@@ -63,8 +70,20 @@ roi_channel_multiplier: 3  # scale number of channels of RoI head (wrt to FPN ch
 roi_mask_channel_multiplier : 2  # scale number of channels of RoI Mask head (wrt to FPN channels)
 
 roi_pooling:
+  # box branch
   roi_box_size: [4, 4, 4] # overwrite roi size for box branch
+  roi_box_feature_kwargs:  # keyword arguments passed to box pooler
+    aligned: False
+    sampling_ratio: 0
+
+  # mask branch
   roi_mask_size: [8, 8, 8] # overwrite roi size for mask branch
+  roi_mask_feature_kwargs:  # keyword arguments passed to mask pooler
+    aligned: False
+    sampling_ratio: 0
+  roi_mask_gt_kwargs:  # keyword arguments passed to mask pooler
+    aligned: False
+    sampling_ratio: -1
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 3
@@ -90,7 +109,7 @@ roi_matcher_kwargs:
 
 roi_sampler_kwargs:
   batch_size_per_image: 32
-  positive_fraction: 0.5
+  positive_fraction: 0.125
 
 roi_module_kwargs:
   gt_to_proposals: True
