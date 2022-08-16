@@ -129,8 +129,14 @@ class BaseModule(pl.LightningDataModule):
         """
         splits_file = self.preprocessed_dir / self.splits_file
 
-        if not splits_file.is_file():
-            self.create_new_split(splits_file)
+        if self.splits_file == "splits_final.pkl":
+            if not splits_file.is_file():
+                self.create_new_split(splits_file)
+        else:
+            if not splits_file.is_file():
+                raise RuntimeError(
+                    f"Provided split file does not exist {self.splits_file}."
+                )
         logger.info(f"Using splits {splits_file} with fold {self.fold}")
         splits = load_pickle(splits_file)
 
