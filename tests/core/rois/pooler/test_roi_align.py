@@ -15,7 +15,7 @@ from nndet.core.rois.pooler.roi_align import (  # RoIAlignBase,
     reason="No cuda gpu available",
 )
 @pytest.mark.skipif(
-    roi_align is None,
+    roi_align_3d is None,
     reason="nnDetection was not build with GPU support",
 )
 @pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
@@ -140,6 +140,10 @@ def test_roi_align_3d_smoke(
         ([[1.0, 1.0, 4.0, 4.0, 8.0, 8.0, 13.0]], False),
         # ([[1.0, 1.0, 4.0, 4.0, 8.0, 7.0, 13.0]], False), # TODO check this; since last point is outside this shouldn't be one?
     ],
+)
+@pytest.mark.skipif(
+    roi_align_3d is None,
+    reason="nnDetection was not build with GPU support",
 )
 def test_roi_align_3d(proposal, match_expected):
     boxes = torch.tensor(proposal)
