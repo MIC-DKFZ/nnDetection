@@ -819,6 +819,13 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         """
         # TODO
         """
+        plan_arch.update(model_cfg["plan_arch_overwrites"])
+        logger.info(
+            f"Start channels: {plan_arch['start_channels']}; "
+            f"head channels: {plan_arch['head_channels']}; "
+            f"fpn channels: {plan_arch['fpn_channels']}"
+        )
+
         # build RPN
         rpn = cls._build_rpn(
             plan_arch=plan_arch,
