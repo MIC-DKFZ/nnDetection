@@ -19,7 +19,7 @@ io_cfg:
   dataloader_kwargs: {}
 
   num_threads: ${oc.env:det_num_threads, "12"}
-  num_cached_per_thread: 2
+  # num_cached_per_thread: 2
   multiprocessing: True # only deactivate this if debugging
 
   # Additional overwrites
