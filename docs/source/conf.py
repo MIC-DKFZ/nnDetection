@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
+    "sphinx_toolbox.collapse",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 # autoclass_content = 'both'

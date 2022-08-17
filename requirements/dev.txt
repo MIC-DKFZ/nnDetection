@@ -4,3 +4,4 @@ pytest-mock
 pre-commit
 sphinx
 pydata-sphinx-theme
+sphinx-toolbox
