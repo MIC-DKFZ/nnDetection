@@ -53,7 +53,12 @@ def predict_dir(
     source_dir = Path(source_dir)
     target_dir = Path(target_dir)
 
-    models = model_fn(source_models, cfg, plan, num_models)
+    models = model_fn(
+        source_models=source_models,
+        cfg=cfg,
+        plan=plan,
+        num_models=num_models,
+    )
     predictor = models[0]["model"].get_predictor(
         plan=plan,
         models=[m["model"] for m in models],

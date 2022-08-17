@@ -223,7 +223,6 @@ def load_last_model(
     source_models: Path,
     cfg: dict,
     plan: dict,
-    *args,
     **kwargs,
 ):
     """
@@ -247,7 +246,6 @@ def load_last_model(
         plan=plan,
         selector="_last",
         num_expected_models=1,
-        *args,
         **kwargs,
     )
 
@@ -256,7 +254,6 @@ def load_best_model(
     source_models: Path,
     cfg: dict,
     plan: dict,
-    *args,
     **kwargs,
 ):
     """
@@ -280,6 +277,5 @@ def load_best_model(
         plan=plan,
         selector="_best",
         num_expected_models=1,
-        *args,
         **kwargs,
     )
