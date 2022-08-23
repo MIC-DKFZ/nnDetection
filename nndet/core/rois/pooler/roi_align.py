@@ -46,8 +46,17 @@ def roi_align(
 
     boxes = boxes.to(dtype=input.dtype)
 
+    # bfloat handling
+    if boxes.dtype == torch.bfloat16 or input.dtype == torch.bfloat16:
+        # FIXME: handle correctly
+        recast_bfloat = True
+        boxes = boxes.float()
+        input = input.float()
+    else:
+        recast_bfloat = False
+
     # print(boxes)
-    return pool_fn(
+    res = pool_fn(
         input.contiguous(),
         boxes.contiguous(),
         spatial_scale,
@@ -56,6 +65,10 @@ def roi_align(
         output_size[2],
         sampling_ratio,
     )
+
+    if recast_bfloat:
+        res = res.to(dtype=torch.bfloat16)
+    return res
 
 
 class RoIAlignBase(RoIPooler):
