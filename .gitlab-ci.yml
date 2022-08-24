@@ -6,58 +6,68 @@ stages:
   - build
   - deploy
 
-format-job:
-  stage: format
-  script:
-    - echo "Check Versions"
-    - python --version
-    - python -c "import torch"
-    - pip --version
-    - echo "Install"
-    - pip install pre-commit
-    - pip install git+https://github.com/mibaumgartner/reuse-tool.git
-    - echo "Check Install"
-    - pre-commit --version
-    - pre-commit install
-    - echo "Run pre-commit hooks"
-    - pre-commit run --all-files --show-diff-on-failure
-    - reuse --root nndet lint
+# format-job:
+#   stage: format
+#   script:
+#     - echo "Check Versions"
+#     - python --version
+#     - python -c "import torch"
+#     - pip --version
+#     - echo "Install"
+#     - pip install pre-commit
+#     - pip install git+https://github.com/mibaumgartner/reuse-tool.git
+#     - echo "Check Install"
+#     - pre-commit --version
+#     - pre-commit install
+#     - echo "Run pre-commit hooks"
+#     - pre-commit run --all-files --show-diff-on-failure
+#     - reuse --root nndet lint
 
-build-job:
-  stage: build
-  script:
-    - echo "Check Versions"
-    - python --version
-    - python -c "import torch"
-    - pip --version
-    - pip uninstall torchtext -y
-    - echo "Install Package"
-    - pip install .[dev]
-    - echo "Run Tests"
-    - coverage run -m pytest -vrs
-    - coverage report
-    - coverage xml
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml 
-  coverage: '/TOTAL.*\s+(\d+\%)/'
+# build-job:
+#   stage: build
+#   script:
+#     - echo "Check Versions"
+#     - python --version
+#     - python -c "import torch"
+#     - pip --version
+#     - pip uninstall torchtext -y
+#     - echo "Install Package"
+#     - pip install .[dev]
+#     - echo "Run Tests"
+#     - coverage run -m pytest -vrs
+#     - coverage report
+#     - coverage xml
+#   artifacts:
+#     reports:
+#       coverage_report:
+#         coverage_format: cobertura
+#         path: coverage.xml 
+#   coverage: '/TOTAL.*\s+(\d+\%)/'
 
-pages:
+# pages:
+#   stage: deploy
+#   script:
+#     - echo "Check Versions"
+#     - python --version
+#     - python -c "import torch"
+#     - pip --version
+#     - pip uninstall torchtext -y
+#     - echo "Install Package"
+#     - pip install .[dev]
+#     - echo "Building Docs"
+#     - mkdir public
+#     - cd docs && make html
+#     - cp -r ./build/html/* ../public
+#   artifacts:
+#     paths:
+#       - public
+
+wheel:
   stage: deploy
   script:
-    - echo "Check Versions"
-    - python --version
-    - python -c "import torch"
-    - pip --version
-    - pip uninstall torchtext -y
-    - echo "Install Package"
-    - pip install .[dev]
-    - echo "Building Docs"
-    - mkdir public
-    - cd docs && make html
-    - cp -r ./build/html/* ../public
-  artifacts:
-    paths:
-      - public
+    - curl -sSL https://install.python-poetry.org | python3 - --version 1.2.0b2
+    - poetry install
+    - poetry build
+    - poetry config repositories.gitlab "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
+    - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
+    - poetry publish --repository gitlab

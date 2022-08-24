@@ -1,0 +1,159 @@
+[[package]]
+name = "certifi"
+version = "2022.6.15"
+description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
+name = "charset-normalizer"
+version = "2.1.1"
+description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
+category = "main"
+optional = false
+python-versions = ">=3.6.0"
+
+[package.extras]
+unicode_backport = ["unicodedata2"]
+
+[[package]]
+name = "idna"
+version = "3.3"
+description = "Internationalized Domain Names in Applications (IDNA)"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
+name = "numpy"
+version = "1.23.2"
+description = "NumPy is the fundamental package for array computing with Python."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[[package]]
+name = "pillow"
+version = "9.2.0"
+description = "Python Imaging Library (Fork)"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-issues (>=3.0.1)", "sphinx-removed-in", "sphinxext-opengraph"]
+tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
+
+[[package]]
+name = "requests"
+version = "2.28.1"
+description = "Python HTTP for Humans."
+category = "main"
+optional = false
+python-versions = ">=3.7, <4"
+
+[package.dependencies]
+certifi = ">=2017.4.17"
+charset-normalizer = ">=2,<3"
+idna = ">=2.5,<4"
+urllib3 = ">=1.21.1,<1.27"
+
+[package.extras]
+socks = ["PySocks (>=1.5.6,!=1.5.7)"]
+use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
+
+[[package]]
+name = "torch"
+version = "1.11.0+cu113"
+description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
+category = "main"
+optional = false
+python-versions = ">=3.7.0"
+
+[package.dependencies]
+typing-extensions = "*"
+
+[package.source]
+type = "legacy"
+url = "https://download.pytorch.org/whl/cu113"
+reference = "torch"
+
+[[package]]
+name = "torchvision"
+version = "0.12.0+cu113"
+description = "image and video datasets and models for torch deep learning"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+numpy = "*"
+pillow = ">=5.3.0,<8.3.0 || >=8.4.0"
+requests = "*"
+torch = "1.11.0"
+typing-extensions = "*"
+
+[package.extras]
+scipy = ["scipy"]
+
+[package.source]
+type = "legacy"
+url = "https://download.pytorch.org/whl/cu113"
+reference = "torch"
+
+[[package]]
+name = "typing-extensions"
+version = "4.3.0"
+description = "Backported and Experimental Type Hints for Python 3.7+"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "urllib3"
+version = "1.26.12"
+description = "HTTP library with thread-safe connection pooling, file post, and more."
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+
+[package.extras]
+brotli = ["brotlicffi (>=0.8.0)", "brotli (>=1.0.9)", "brotlipy (>=0.6.0)"]
+secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "urllib3-secure-extra", "ipaddress"]
+socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "~3.8"
+content-hash = "447803d38f9d2989e46f34e467b004deba8f6ea2bdfb73515a1b46ac3185b99d"
+
+[metadata.files]
+certifi = []
+charset-normalizer = []
+idna = []
+numpy = []
+pillow = []
+requests = []
+torch = [
+    {file = "torch-1.11.0+cu113-cp310-cp310-linux_x86_64.whl", hash = "sha256:a68c33657a546131eb9bc44e2a98d2fa704aafae861460b051b82813852ccb44"},
+    {file = "torch-1.11.0+cu113-cp310-cp310-win_amd64.whl", hash = "sha256:ddc57495195aa2456e78bfc7d8d3f45dabbb8b7b268b3b5dbed4f0e4db492f33"},
+    {file = "torch-1.11.0+cu113-cp37-cp37m-linux_x86_64.whl", hash = "sha256:f56333470daea3c97078b37607e0035cccf72fc5c36fd84546e1a4b8d9944f2b"},
+    {file = "torch-1.11.0+cu113-cp37-cp37m-win_amd64.whl", hash = "sha256:e9df65c1fb2d80283b276114878fd38f411b70880e0b406c451d000e6159f451"},
+    {file = "torch-1.11.0+cu113-cp38-cp38-linux_x86_64.whl", hash = "sha256:b6a799bdb6ee3d914e5e62bddb4276d4a10248c1af4f2d217738e5f9ee27485b"},
+    {file = "torch-1.11.0+cu113-cp38-cp38-win_amd64.whl", hash = "sha256:7fd4751bbf39bbb04ec6116c7243ce6528aded4197afcf380537340e1eebd19a"},
+    {file = "torch-1.11.0+cu113-cp39-cp39-linux_x86_64.whl", hash = "sha256:e9126b0a5d95704bee40a9d0ef1cbd82d8dc7863e4638a376bef702dfd659370"},
+    {file = "torch-1.11.0+cu113-cp39-cp39-win_amd64.whl", hash = "sha256:e4bb14d953db9aad5bdb945a328410638721d77e3e622d0a8d77063c01daf40b"},
+]
+torchvision = [
+    {file = "torchvision-0.12.0+cu113-cp310-cp310-linux_x86_64.whl", hash = "sha256:a1cb063876bdebb1dc64657ed68983ff1307b9f9a88b5eba620d87afe48485f1"},
+    {file = "torchvision-0.12.0+cu113-cp310-cp310-win_amd64.whl", hash = "sha256:ffc6467294a418a8c0d0c68bc98bfbacf97299360ddc8a461f2ec4e821cf8636"},
+    {file = "torchvision-0.12.0+cu113-cp37-cp37m-linux_x86_64.whl", hash = "sha256:8bfaa4b594fee47418423b531edc4e57be750dcb0ff401ccb1257dfecbec1b30"},
+    {file = "torchvision-0.12.0+cu113-cp37-cp37m-win_amd64.whl", hash = "sha256:b2b5fae217ff0972e6494fa6f32d0a4f757e8c9280d6a3bf55373d42765250f0"},
+    {file = "torchvision-0.12.0+cu113-cp38-cp38-linux_x86_64.whl", hash = "sha256:37133e8c5b0ec2f01999e59116f6d0e36d9afb1c7f8f58bd0c3dc8996f835419"},
+    {file = "torchvision-0.12.0+cu113-cp38-cp38-win_amd64.whl", hash = "sha256:fc4b4f12f50749c12637261e9efa1cced008753b6ecc8d1c2681fde9dd52b675"},
+    {file = "torchvision-0.12.0+cu113-cp39-cp39-linux_x86_64.whl", hash = "sha256:6c63b9abe2849efed27b199b6d459a21bb01708c720db2fca5ebd941b2f00db8"},
+    {file = "torchvision-0.12.0+cu113-cp39-cp39-win_amd64.whl", hash = "sha256:2d7e794a1f8949ef9a280a4d94a6f15053d4e697c12f9678893e0908f34ca733"},
+]
+typing-extensions = []
+urllib3 = []
