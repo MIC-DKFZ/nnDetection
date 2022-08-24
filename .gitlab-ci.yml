@@ -69,6 +69,6 @@ wheel:
     - poetry --version
     - poetry install -vv
     - poetry build
-    - poetry config repositories.gitlab "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
+    - poetry config repositories.gitlab "https://git.dkfz.de/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
     - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
     - poetry publish --repository gitlab
