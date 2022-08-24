@@ -5,7 +5,6 @@ stages:
   - format
   - build
   - deploy
-  - package
 
 format-job:
   stage: format
@@ -63,14 +62,14 @@ pages:
     paths:
       - public
 
-wheel:
-  stage: package
-  script:
-    - pip install poetry==1.2.0b2
-    - poetry --version
-    - poetry install -vv
-    - poetry build
-    - poetry config repositories.gitlab "https://git.dkfz.de/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
-    - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
-    - poetry publish --repository gitlab
-  when: never
+# wheel:
+#   stage: deploy
+#   script:
+#     - pip install poetry==1.2.0b2
+#     - poetry --version
+#     - poetry install -vv
+#     - poetry build
+#     - poetry config repositories.gitlab "https://git.dkfz.de/api/v4/projects/$CI_PROJECT_ID/packages/pypi"
+#     - poetry config http-basic.gitlab gitlab-ci-token "$CI_JOB_TOKEN"
+#     - poetry publish --repository gitlab
+#   when: never
