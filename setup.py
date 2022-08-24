@@ -112,6 +112,7 @@ setup(
     name="nndet",
     version="0.1",
     packages=find_packages(),
+    # package_data={"nndet": {"*.so"}},
     # include_package_data=True,
     long_description=readme,
     long_description_content_type="text/markdown",
