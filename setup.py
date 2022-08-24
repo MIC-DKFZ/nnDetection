@@ -139,6 +139,7 @@ setup(
             "nndet_eval = scripts.train:evaluate",
             "nndet_predict = scripts.predict:main",
             "nndet_consolidate = scripts.consolidate:main",
+            "nndet_split = scripts.utils:create_split",
             "nndet_boxes2nii = scripts.utils:boxes2nii",
             "nndet_boxes2nii2 = scripts.utils:boxes2nii2",
             "nndet_masks2nii = scripts.utils:masks2nii",

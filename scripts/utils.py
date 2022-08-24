@@ -550,6 +550,138 @@ def create_test_split():
     )
 
 
+@env_guard
+def create_split():
+    """
+    Utility function to create (best effort splits)
+
+    This function will automatically generate splits which can be used
+    inside nndetection. In order to properly do this, the case names need to
+    follow this convention:
+
+        {patient id}_{session id}_{modality id}.{data extension}
+
+        Alterantive if only a single session is avaialble:
+        {patient id}_{modality id}.{data extension}
+
+    - patient id: this represents a patient identifier, e.g. one patient who
+        was scanned two times will have the same patient id
+    - session id: the session id is an identifier to differentiate multiple
+        scans of the same patient
+    - modality id [only for data images]: identify the modality (or sequence)
+        of the data channel
+    - data extension: refers to the data type: .nii.gz for data and
+        segmentation files, json for label files
+
+    The case id = patient id + session id need to unique across the whole
+    dataset! The patient names are not allowed to contain any other underscores
+    "_"!
+
+    (if not manually disabled) the splits will automatically ensure that the
+    same patient is only present in a single fold. Furthermore, it will
+    try to stratify the classes between folds (priority will be given to
+    rare classes -> this is necessary e.g. when patients can contain more
+    than one class)
+    """
+    import argparse
+    import os
+    import sys
+    from pathlib import Path
+
+    import numpy as np
+    from loguru import logger
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    from nndet.io import load_json, save_json, save_pickle
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("--num_folds", type=int, default=5, help="Number of folds")
+
+    args = parser.parse_args()
+    task = args.task
+    num_folds = args.num_folds
+
+    task_name = get_task(task, name=True)
+    task_dir = Path(os.getenv("det_data")) / task_name
+
+    if not task_dir.is_dir():
+        raise ValueError(f"{task_dir} is not a valid task directory!")
+
+    preprocessed_dir = task_dir / "preprocessed"
+    preprocessed_dir.mkdir(exist_ok=True)
+
+    raw_splitted_dir = task_dir / "raw_splitted"
+    if not raw_splitted_dir.is_dir():
+        raise ValueError(f"{raw_splitted_dir} is not a directory!")
+    label_dir = raw_splitted_dir / "labelsTr"
+    if not label_dir.is_dir():
+        raise ValueError(f"{label_dir} is not a directory!")
+
+    splits_path_json = preprocessed_dir / "splits_final.json"
+    splits_path_pkl = preprocessed_dir / "splits_final.pkl"
+
+    if splits_path_json.is_file():
+        raise ValueError(f"{splits_path_json} already exists.")
+    if splits_path_pkl.is_file():
+        raise ValueError(f"{splits_path_pkl} already exists.")
+
+    # setup logging
+    logger.remove()
+    logger.add(sys.stdout, level="INFO")
+    logger.add(task_dir / "split.log", level="DEBUG")
+
+    # parse case ids
+    case_ids = [p.stem for p in label_dir.glob("*") if p.suffix == ".json"]
+    case_ids = sorted(case_ids)
+
+    # split into pid and sid
+    for cid in case_ids:
+        if len(cid.split("_")) > 2:
+            raise ValueError(
+                f"{cid} does not follow the naming convention please read the docs."
+            )
+    patient_ids = [cid.split("_")[0] for cid in case_ids]
+    # session_ids = [cid.split("_")[1] for cid in case_ids]
+
+    logger.info(
+        f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}"
+    )
+
+    # derive class info
+    case_classes = []
+    all_classes = []
+    for cid in case_ids:
+        case_instances = load_json(label_dir / f"{cid}.json")
+        case_instances = [int(i) for i in case_instances["instances"].values()]
+
+        case_classes.append(case_instances)
+        all_classes.extend(case_instances)
+
+    _, class_counts = np.unique(all_classes, return_counts=True)
+    logger.info(f"Class count: {class_counts}")
+
+    reduced_classes = []
+    for cc in case_classes:
+        if len(cc) == 0:
+            reduced_classes.append(-1)
+        else:
+            rarest_class_index = np.argmin([class_counts[_cc] for _cc in cc])
+            reduced_classes.append(cc[rarest_class_index])
+
+    # create stratified group k fold
+    splits = []
+    cv = StratifiedGroupKFold(n_splits=num_folds, shuffle=True, random_state=0)
+    for train_idx, val_idx in cv.split(case_ids, reduced_classes, patient_ids):
+        train_cids = [case_ids[_i] for _i in train_idx]
+        val_cids = [case_ids[_i] for _i in val_idx]
+        splits.append({"train": train_cids, "val": val_cids})
+
+    # save splits
+    save_json(splits, splits_path_json)
+    save_pickle(splits, splits_path_pkl)
+
+
 if __name__ == "__main__":
     # env()
     masks2nii()
