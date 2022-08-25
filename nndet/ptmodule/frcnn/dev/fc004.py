@@ -5,11 +5,7 @@ from typing import Optional, Type
 
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher, Matcher
-from nndet.core.boxes.sampler import (
-    HardNegativeSampler,
-    HardNegativeSamplerBatched,
-    SamplerType,
-)
+from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
@@ -17,15 +13,15 @@ from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign, RoIPooler
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
-from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
-from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.comb import BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
-from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN
@@ -33,7 +29,7 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
 
@@ -107,94 +103,5 @@ class FasterRCNNC004(
 
 
 @MODULE_REGISTRY.register
-class FasterURCNNC004(
-    LightningBaseModule,  # Detection Base
-    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
-    BoxesPrepareMixin,  # prepare batch for box training
-    BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
-    TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
-):
-    full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
-    # Use `detector_cls` to set RPN module class
-    # define RPN cls
-    detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
-
-    ###################
-    # RPN Configuration
-    ###################
-    backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for backbone
-
-    neck_cls: Type[AbstractNeck] = UFPN  # define class for neck
-    neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
-
-    head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
-    head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = BCECLassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
-    # [optional] sampler class for negative mining
-    # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
-
-    matcher_cls: Type[
-        Matcher
-    ] = ATSSMatcher  # define class to match anchors to ground truth
-    # Segmentation for head for RPN
-    segmenter_cls: Optional[Type[Segmenter]] = DiCESegmenterFgBg
-
-    ########################
-    # RoI Head Configuration
-    ########################
-    # RoI classes
-    roi_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for RoI head
-    roi_module_cls: Type[RoIModule] = RoIModule  # class of RoI module
-    roi_head_cls: Type[RoIBoxHead] = RoIBoxHead  # class of box head of RoI module
-    roi_classifier_cls: Type[
-        RoIClassifier
-    ] = BCEConvRoIClassifier  # box head classifier class
-    roi_regressor_cls: Type[
-        RoIRegressor
-    ] = L1ConvRoIRegressor  # box head regressor class
-
-    roi_matcher_cls: Type[Matcher] = IoUMatcher  # class of RoI matcher
-    roi_sampler_cls: Type[
-        SamplerType
-    ] = HardNegativeSamplerBatched  # class of RoI sampler
-    roi_box_pooler_cls: Type[RoIPooler] = RoIAlignNaiveAssign  # class of RoI box pooler
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define roi box postprocessing strategy
-
-    # Not supprted here; see `MaskRCNN`
-    roi_masker_cls = None  # class of RoI mask head
-    roi_mask_pooler_cls = None  # class of RoI mask pooler
-    roi_mask_post_cls = None
-
-
-@MODULE_REGISTRY.register
-class FasterRCNNC004HNM(FasterRCNNC004):
-    roi_sampler_cls: Type[SamplerType] = HardNegativeSampler  # class of RoI sampler
-
-
-@MODULE_REGISTRY.register
-class FasterURCNNC004HNM(FasterURCNNC004):
-    roi_sampler_cls: Type[SamplerType] = HardNegativeSampler  # class of RoI sampler
-
-
-@MODULE_REGISTRY.register
-class FasterRCNNC004Focal(FasterRCNNC004):
-    head_cls = BoxHeadAll
-    head_sampler_cls = None
-
-    head_regressor_cls = L1Regressor
-    head_classifier_cls = FocalClassifier
-
-
-@MODULE_REGISTRY.register
-class FasterRCNNC004PerLevelPost(FasterRCNNC004):
-    pass  # TODO: add support for postprocessor to retina unet
+class FasterRCNNC004ResEnc(FasterRCNNC004):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone
