@@ -137,3 +137,12 @@ class BoxMaskURCNNC004PerLevelPost(BoxMaskURCNNC004):
 @MODULE_REGISTRY.register
 class BoxMaskURCNNC004ResEnc(BoxMaskURCNNC004):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone
+
+
+@MODULE_REGISTRY.register
+class BoxFasterURCNNC004ResEnc(BoxMaskURCNNC004ResEnc):
+    roi_masker_cls: Type[Masker] = None  # class of RoI mask head
+    roi_mask_pooler_cls: Type[RoIPooler] = None  # class of RoI mask pooler
+    roi_mask_post_cls: Type[
+        MaskPostprocessing
+    ] = None  # define roi mask postprocessing strategy
