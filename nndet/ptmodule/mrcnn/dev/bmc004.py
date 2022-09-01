@@ -17,13 +17,21 @@ from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
-from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
+from nndet.nn.heads.classifier.roi import (
+    BCEConvRoIClassifier,
+    BCEFCRoIClassifier,
+    RoIClassifier,
+)
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.base import BCESingleMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
+from nndet.nn.heads.regressor.roi import (
+    L1ConvRoIRegressor,
+    L1FCRoIRegressor,
+    RoIRegressor,
+)
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
@@ -137,6 +145,20 @@ class BoxMaskURCNNC004PerLevelPost(BoxMaskURCNNC004):
 @MODULE_REGISTRY.register
 class BoxMaskURCNNC004ResEnc(BoxMaskURCNNC004):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004ResEncFCReg(BoxMaskURCNNC004):
+    # according to paper worse results with fc reg
+    roi_regressor_cls: Type[RoIRegressor] = L1FCRoIRegressor  # box head regressor class
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004ResEncFCCls(BoxMaskURCNNC004):
+    # according to paper better than conv
+    roi_classifier_cls: Type[
+        RoIClassifier
+    ] = BCEFCRoIClassifier  # box head classifier class
 
 
 @MODULE_REGISTRY.register
