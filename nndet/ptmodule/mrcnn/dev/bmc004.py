@@ -33,7 +33,7 @@ from nndet.nn.heads.regressor.roi import (
     RoIRegressor,
 )
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
-from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.layers.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import FPN, UFPN
 from nndet.ptmodule import MODULE_REGISTRY
@@ -159,6 +159,11 @@ class BoxMaskURCNNC004ResEncFCCls(BoxMaskURCNNC004):
     roi_classifier_cls: Type[
         RoIClassifier
     ] = BCEFCRoIClassifier  # box head classifier class
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004ResEncRoIBN(BoxMaskURCNNC004):
+    roi_conv_cls: Type[CONVSEQ] = ConvBatchLReLU
 
 
 @MODULE_REGISTRY.register
