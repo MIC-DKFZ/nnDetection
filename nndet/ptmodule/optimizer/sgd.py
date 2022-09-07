@@ -71,6 +71,7 @@ class SGDLWPoly:
             weight_decay=trainer_cfg["weight_decay"],
             momentum=trainer_cfg["sgd_momentum"],
             nesterov=trainer_cfg["sgd_nesterov"],
+            # foreach=True,
         )
 
         # configure lr scheduler
