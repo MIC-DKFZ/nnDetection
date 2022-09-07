@@ -561,8 +561,10 @@ def create_split():
 
         {patient id}_{session id}_{modality id}.{data extension}
 
-        Alterantive if only a single session is avaialble:
+        Alterantive if if `with_patients` is not used the
         {patient id}_{modality id}.{data extension}
+
+        notation can be used as well
 
     - patient id: this represents a patient identifier, e.g. one patient who
         was scanned two times will have the same patient id
@@ -586,6 +588,7 @@ def create_split():
     import argparse
     import os
     import sys
+    from copy import deepcopy
     from pathlib import Path
 
     import numpy as np
@@ -597,10 +600,16 @@ def create_split():
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("--num_folds", type=int, default=5, help="Number of folds")
+    parser.add_argument(
+        "--with_patients",
+        action="store_true",
+        help="Derive patient information from names.",
+    )
 
     args = parser.parse_args()
     task = args.task
     num_folds = args.num_folds
+    with_patients = args.with_patients
 
     task_name = get_task(task, name=True)
     task_dir = Path(os.getenv("det_data")) / task_name
@@ -641,8 +650,12 @@ def create_split():
             raise ValueError(
                 f"{cid} does not follow the naming convention please read the docs."
             )
-    patient_ids = [cid.split("_")[0] for cid in case_ids]
-    # session_ids = [cid.split("_")[1] for cid in case_ids]
+
+    if with_patients:
+        patient_ids = [cid.split("_")[0] for cid in case_ids]
+        # session_ids = [cid.split("_")[1] for cid in case_ids]
+    else:
+        patient_ids = deepcopy(case_ids)
 
     logger.info(
         f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}"
