@@ -561,7 +561,7 @@ def create_split():
 
         {patient id}_{session id}_{modality id}.{data extension}
 
-        Alterantive if if `with_patients` is not used the
+        Alterantivly, if `with_patients` is not used the
         {patient id}_{modality id}.{data extension}
 
         notation can be used as well
@@ -588,7 +588,6 @@ def create_split():
     import argparse
     import os
     import sys
-    from copy import deepcopy
     from pathlib import Path
 
     import numpy as np
@@ -654,12 +653,12 @@ def create_split():
     if with_patients:
         patient_ids = [cid.split("_")[0] for cid in case_ids]
         # session_ids = [cid.split("_")[1] for cid in case_ids]
+        logger.info(
+            f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}"
+        )
     else:
-        patient_ids = deepcopy(case_ids)
-
-    logger.info(
-        f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}"
-    )
+        patient_ids = None
+        logger.info(f"Parsed {len(case_ids)} case ids \n{case_ids}")
 
     # derive class info
     case_classes = []
