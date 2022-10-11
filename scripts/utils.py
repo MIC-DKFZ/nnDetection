@@ -553,18 +553,17 @@ def create_test_split():
 @env_guard
 def create_split():
     """
-    Utility function to create (best effort splits)
+    Utility function to create (best effort) splits
 
     This function will automatically generate splits which can be used
     inside nndetection. In order to properly do this, the case names need to
     follow this convention:
 
+        if `with_patients` is used:
         {patient id}_{session id}_{modality id}.{data extension}
 
-        Alterantivly, if `with_patients` is not used the
+        otherwise:
         {patient id}_{modality id}.{data extension}
-
-        notation can be used as well
 
     - patient id: this represents a patient identifier, e.g. one patient who
         was scanned two times will have the same patient id
@@ -575,11 +574,11 @@ def create_split():
     - data extension: refers to the data type: .nii.gz for data and
         segmentation files, json for label files
 
-    The case id = patient id + session id need to unique across the whole
-    dataset! The patient names are not allowed to contain any other underscores
-    "_"!
+    The case id (which is equal to patient id + session id) needs to be unique
+    across the entire dataset! The patient names are not allowed to contain
+    any other underscores "_"!
 
-    (if not manually disabled) the splits will automatically ensure that the
+    If `with_patients` is used, the splits will automatically ensure that the
     same patient is only present in a single fold. Furthermore, it will
     try to stratify the classes between folds (priority will be given to
     rare classes -> this is necessary e.g. when patients can contain more
