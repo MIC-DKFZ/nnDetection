@@ -592,7 +592,7 @@ def create_split():
 
     import numpy as np
     from loguru import logger
-    from sklearn.model_selection import StratifiedGroupKFold
+    from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 
     from nndet.io import load_json, save_json, save_pickle
 
@@ -683,10 +683,24 @@ def create_split():
 
     # create stratified group k fold
     splits = []
-    cv = StratifiedGroupKFold(n_splits=num_folds, shuffle=True, random_state=0)
-    for train_idx, val_idx in cv.split(case_ids, reduced_classes, patient_ids):
+    if with_patients:
+        cv = StratifiedGroupKFold(n_splits=num_folds, shuffle=True, random_state=0)
+    else:
+        cv = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=0)
+    for fold_idx, (train_idx, val_idx) in enumerate(
+        cv.split(case_ids, reduced_classes, patient_ids)
+    ):
         train_cids = [case_ids[_i] for _i in train_idx]
         val_cids = [case_ids[_i] for _i in val_idx]
+        intersection_cids = set(train_cids).intersection(val_cids)
+
+        assert not intersection_cids
+        logger.info(
+            f"Generated fold {fold_idx} with {len(train_cids)} "
+            f"train {len(val_cids)} val cases. "
+            f"Intersection {intersection_cids} (should be empty)"
+        )
+
         splits.append({"train": train_cids, "val": val_cids})
 
     # save splits
