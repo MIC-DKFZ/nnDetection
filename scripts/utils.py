@@ -683,10 +683,11 @@ def create_split():
 
     # create stratified group k fold
     splits = []
-    if with_patients:
+    if patient_ids is not None:
         cv = StratifiedGroupKFold(n_splits=num_folds, shuffle=True, random_state=0)
     else:
         cv = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=0)
+
     for fold_idx, (train_idx, val_idx) in enumerate(
         cv.split(case_ids, reduced_classes, patient_ids)
     ):
