@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+from abc import ABC
+from typing import List
+
+from nndet.io.transforms import AbstractTransform, FindInstances
+
+
+class PrepareMixin(ABC):
+    def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
+        """
+        Perform a sequence of transformations to the intput before passing it
+        to the network. These transforamtions need to support pytorch tensors
+        and are executed on the GPU.
+
+        Returns:
+            List[AbstractTransform]: return a list of transformations
+
+        Notes:
+            make sure to call the super classes here!
+        """
+        transforms = [
+            FindInstances(
+                instance_key="target",
+                save_key="present_instances",
+            ),
+        ]
+        return transforms
