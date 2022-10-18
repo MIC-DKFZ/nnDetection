@@ -42,6 +42,7 @@ class BaseRoIModule(torch.nn.Module):
         roi_score_thresh: float = None,
         roi_detections_per_img: int = 100,
         roi_nms_thresh: float = 0.6,
+        inference_prob_rpn: bool = False,
     ) -> None:
         super().__init__()
         # Box Setup
@@ -101,6 +102,11 @@ class BaseRoIModule(torch.nn.Module):
         self.roi_score_thresh = roi_score_thresh
         self.roi_detections_per_img = roi_detections_per_img
         self.roi_nms_thresh = roi_nms_thresh
+        self.inference_prob_rpn = inference_prob_rpn
+
+        # logging
+        logger.info(f"RoI Module: gt_to_proposals {self.gt_to_proposals}")
+        logger.info(f"RoI Module: inference_prob_rpn {self.inference_prob_rpn}")
 
     @abstractmethod
     def train_step(
@@ -312,6 +318,7 @@ class BaseRoIModule(torch.nn.Module):
         images: torch.Tensor,
         features: List[torch.Tensor],
         proposal_boxes: List[torch.Tensor],
+        proposal_scores: Optional[List[torch.Tensor]] = None,
         stage: int = 0,
     ) -> Dict[str, List[torch.Tensor]]:
         _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
@@ -344,6 +351,8 @@ class BaseRoIModule(torch.nn.Module):
                 proposal_boxes=proposal_boxes,
                 image_shapes=image_shapes,
                 stage=stage,
+                proposal_scores=proposal_scores,
+                apply_inference_prob_rpn=self.inference_prob_rpn,
             )
         prediction = {
             "pred_boxes": boxes,
@@ -410,6 +419,8 @@ class BaseRoIModule(torch.nn.Module):
         proposal_boxes: List[torch.Tensor],
         image_shapes: List[Tuple[int]],
         stage: int,
+        proposal_scores: Optional[List[torch.Tensor]] = None,
+        apply_inference_prob_rpn: bool = False,
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposal_boxes]
 
@@ -420,6 +431,11 @@ class BaseRoIModule(torch.nn.Module):
             pred_detection["pred_boxes"],
             pred_detection["pred_probs"],
         )
+
+        if apply_inference_prob_rpn:
+            assert proposal_scores is not None
+            pred_probs = pred_probs * cat(proposal_scores).unsqueeze_(-1)
+
         pred_boxes = pred_boxes.split(boxes_per_image, 0)
         pred_probs = pred_probs.split(boxes_per_image, 0)
 
@@ -602,6 +618,7 @@ class RoIModule(BaseRoIModule):
             images=images,
             features=_features,
             proposal_boxes=proposals["pred_boxes"],
+            proposal_scores=proposals["pred_scores"],
         )
 
         if self.mask_mode:
