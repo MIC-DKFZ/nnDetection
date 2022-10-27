@@ -117,6 +117,46 @@ def cosine_annealing_lr(
     )
 
 
+class PolyLR(_LRScheduler):
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        poly_gamma: float,
+        num_iterations: int,
+        last_epoch: int = -1,
+    ) -> None:
+        """
+        Linear Warm Up LR -> Poly LR
+
+        Args:
+            optimizer: optimizer for lr scheduling
+            poly_gamma: gamma of poly lr
+            num_iterations: total number of iterations
+            last_epoch: The index of the last epoch. Defaults to -1.
+        """
+
+        # poly lr
+        self.num_iterations = num_iterations
+        self.poly_gamma = poly_gamma
+        super().__init__(optimizer, last_epoch=last_epoch)
+
+    def get_lr(self) -> List[float]:
+        """
+        Compute current learning rate for each param group
+        """
+        # poly lr phase
+        lrs = [
+            poly_lr(
+                iteration=self._step_count,
+                initial_lr=base_lr,
+                num_iterations=self.num_iterations,
+                gamma=self.poly_gamma,
+            )
+            for idx, base_lr in enumerate(self.base_lrs)
+        ]
+        return lrs
+
+
 class LinearWarmupPolyLR(_LRScheduler):
     def __init__(
         self,
@@ -128,7 +168,7 @@ class LinearWarmupPolyLR(_LRScheduler):
         last_epoch: int = -1,
     ) -> None:
         """
-        Linear Warm Up LR -> Poly LR -> Cycle LR
+        Linear Warm Up LR -> Poly LR
 
         Args:
             optimizer: optimizer for lr scheduling
