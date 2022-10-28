@@ -7,6 +7,6 @@ from nndet.inference.ensembler import (
     BoxEnsembler,
     SegmentationEnsembler,
 )
-from nndet.inference.predictor import Predictor, PredictorType
+from nndet.inference.predictor import Predictor
 from nndet.inference.restore import restore_boxes, restore_fmap
-from nndet.inference.sweeper import BoxSweeper, Sweeper, SweeperType
+from nndet.inference.sweeper import BoxSweeper, Sweeper

@@ -3,69 +3,16 @@
 
 import os
 import time
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.det import MaskEvaluator
 from nndet.evaluator.registry import BoxEvaluator
+from nndet.inference.sweeper.base import Sweeper
 from nndet.io.load import save_json
-from nndet.io.transforms.instances import instances_to_binary_masks_np
 from nndet.utils import to_numpy
 from nndet.utils.info import maybe_verbose_iterable
-
-
-class Sweeper(ABC):
-    evaluator_cls = None
-
-    def __init__(
-        self,
-        classes: Sequence[str],
-        pred_dir: os.PathLike,
-        gt_dir: os.PathLike,
-        target_metric: str,
-        save_dir: Optional[os.PathLike] = None,
-    ):
-        """
-        Sweep multiple parameters and compute evaluation metrics
-        to determine the best set of parameters
-
-        Args:
-            evaluation: reference to an evaluation objects
-            pred_dir: directory where predicted data is saved
-            device: device to use for internal computations
-        """
-        self.classes = classes
-        self.save_dir = save_dir if save_dir is None else Path(save_dir)
-        if self.save_dir is not None:
-            self.save_dir.mkdir(parents=True, exist_ok=True)
-        self.target_metric = target_metric
-
-        self.device = "cpu"
-
-        self.pred_dir = Path(pred_dir)
-        self.gt_dir = Path(gt_dir)
-
-    @abstractmethod
-    def run_postprocessing_sweep(
-        self,
-        restore: bool = True,
-    ) -> Tuple[Dict, Dict]:
-        """
-        Run parameter sweeps to determine best parameters
-        accoring to target metric
-
-        Args:
-            target_metric: metric to optimize
-
-        Returns:
-            Dict: determined parameters
-            Dict: final results with parameters
-        """
-        raise NotImplementedError
 
 
 class BoxSweeper(Sweeper):
@@ -231,70 +178,3 @@ class BoxSweeper(Sweeper):
 
         metric_scores, _ = evaluator.finish_online_evaluation()
         return metric_scores
-
-
-class MaskSweeper(BoxSweeper):
-    evaluator_cls = MaskEvaluator
-
-    def _evaluate_value(
-        self,
-        state: Dict[str, Any],
-        **overwrite,
-    ):
-        """
-        Evalaute a single value
-
-        Args:
-            state: state for ensembler
-            overwrite: state overwrites
-
-        Returns:
-            Dict: scalar metrics
-        """
-        evaluator = self.evaluator_cls.create(
-            classes=self.classes,
-            fast=True,
-            verbose=False,
-            save_dir=None,
-        )
-
-        for case_id in maybe_verbose_iterable(
-            self.ensembler_cls.get_case_ids(self.pred_dir)
-        ):
-            ensembler = self.ensembler_cls.from_checkpoint(
-                base_dir=self.pred_dir,
-                case_id=case_id,
-                device=self.device,
-            )
-            ensembler.update_parameters(**state)
-            ensembler.update_parameters(**overwrite)
-
-            pred = to_numpy(ensembler.get_case_result(restore=False))
-            gt = np.load(
-                str(self.gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
-            )
-            # FIXME
-            gt_boxes = np.load(
-                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
-            )
-
-            pred_masks = pred["pred_masks"]
-            if gt["instances"].ndim < (pred_masks.ndim - 1):
-                gt_instances = gt["instances"][None]
-            else:
-                gt_instances = gt["instances"]
-
-            evaluator.run_online_evaluation(
-                pred_boxes=[pred_masks],
-                pred_classes=[pred["pred_labels"]],
-                pred_scores=[pred["pred_scores"]],
-                gt_boxes=[instances_to_binary_masks_np(gt_instances)],
-                gt_classes=[gt_boxes["classes"]],  # FIXME
-                gt_ignore=None,
-            )
-
-        metric_scores, _ = evaluator.finish_online_evaluation()
-        return metric_scores
-
-
-SweeperType = TypeVar("SweeperType", bound=Sweeper)

@@ -4,7 +4,7 @@
 import collections
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -381,6 +381,3 @@ def slice_collate(batch: List[Any]):
         return [slice_collate(samples) for samples in transposed]
     else:
         return torch.utils.data._utils.collate.default_collate(batch)
-
-
-PredictorType = TypeVar("PredictorType", bound=Predictor)
