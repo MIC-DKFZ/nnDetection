@@ -8,6 +8,7 @@ from typing import Optional, Type
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier.dense import DenseClassifier
@@ -49,5 +50,7 @@ class RetinaNetModule(
     head_sampler_cls: Optional[Type[SamplerType]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
+
     # Not suported here; See `RetinaUNet`
     segmenter_cls = None

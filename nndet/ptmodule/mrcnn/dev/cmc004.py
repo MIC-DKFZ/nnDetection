@@ -79,6 +79,9 @@ class BoxCascadeMaskURCNNC004(
     matcher_cls: Type[
         Matcher
     ] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[
+        BoxPostprocessing
+    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls: Optional[
         Type[Segmenter]
     ] = DiCESegmenterFgBg  # segmentation head as in RetinaUNet

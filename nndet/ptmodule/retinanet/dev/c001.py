@@ -6,6 +6,7 @@ from typing import Optional, Type
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher, Matcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
+from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
@@ -51,10 +52,13 @@ class RetinaNetC001(RetinaNetModule):
     matcher_cls: Type[
         Matcher
     ] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[
+        BoxPostprocessing
+    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
 
 @MODULE_REGISTRY.register
-class RetinaNetC001Focal(RetinaNetModule):
+class RetinaNetC001Focal(RetinaNetC001):
     """
     Focal Loss based V001 RetinaNet
     (only intended for easy subclassing and not used in nnDetection V0.1)

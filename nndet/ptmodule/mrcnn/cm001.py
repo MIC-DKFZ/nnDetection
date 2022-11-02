@@ -69,6 +69,7 @@ class CascadeMaskURCNNModule(
     head_sampler_cls: Type[SamplerType] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
     segmenter_cls: Optional[
         Type[Segmenter]

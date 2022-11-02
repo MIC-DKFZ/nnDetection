@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # from nndet.nn.heads.segmenter import DiCESegmenterFgBg
+from typing import Type
+
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher
 from nndet.core.boxes.sampler import (
     BalancedHardNegativeSampler,
     HardNegativeSamplerBatched,
 )
-from nndet.core.post.box import CrossLevelBoxPostprocessing
+from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.retina import BaseRetinaNet
 from nndet.core.rois.module import RoIModule
@@ -51,6 +53,9 @@ class FasterRCNNC001(FasterRCNNModule):
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[
+        BoxPostprocessing
+    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     # RoI classes

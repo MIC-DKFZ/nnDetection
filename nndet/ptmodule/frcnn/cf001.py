@@ -59,6 +59,7 @@ class CascadeFasterRCNNModule(
     head_sampler_cls: Type[SamplerType] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     # Not supprted here; see `CascadeMaskRCNN`
     segmenter_cls: Optional[Type[Segmenter]] = None
 

@@ -12,6 +12,7 @@ from nndet.core.boxes.coder import BoxCoderND, CoderType
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.sampler import SamplerType
+from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier import DenseClassifierType
 from nndet.nn.heads.classifier.dense import DenseClassifier
@@ -51,6 +52,8 @@ class SingleStageMixin(ModelMixin):
     ] = None  #: [optional] sampler class for negative mining. None = no sampling.
 
     matcher_cls: Type[Matcher] = ...  #: define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  #: define box postprocessing strategy
+
     segmenter_cls: Optional[
         Type[Segmenter]
     ] = None  #: [optional] segmentation head as in RetinaUNet
@@ -158,10 +161,6 @@ class SingleStageMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
-        matcher = cls.matcher_cls(
-            similarity_fn=box_iou,
-            **model_cfg["matcher_kwargs"],
-        )
 
         classifier = cls._build_head_classifier(
             plan_arch=plan_arch,
@@ -181,26 +180,13 @@ class SingleStageMixin(ModelMixin):
             coder=coder,
         )
 
-        if "detections_per_img" in model_cfg:
-            detections_per_img = model_cfg["detections_per_img"]
-        else:
-            detections_per_img = plan_arch.get("detections_per_img", 100)  # FIXME
-        score_thresh = plan_arch.get("score_thresh", 0)
-        topk_candidates = plan_arch.get("topk_candidates", 10000)
-        remove_small_boxes = plan_arch.get("remove_small_boxes", 0.01)
-        if "rpn_nms_thresh" in model_cfg:
-            nms_thresh = model_cfg["rpn_nms_thresh"]
-            logger.info(f"Found RPN NMS thresh in config, using {nms_thresh}")
-        else:
-            nms_thresh = plan_arch.get("nms_thresh", 0.6)
-
-        logger.info(
-            f"Model Inference Summary: \n"
-            f"detections_per_img: {detections_per_img} \n"
-            f"score_thresh: {score_thresh} \n"
-            f"topk_candidates: {topk_candidates} \n"
-            f"remove_small_boxes: {remove_small_boxes} \n"
-            f"nms_thresh: {nms_thresh}",
+        matcher = cls.matcher_cls(
+            similarity_fn=box_iou,
+            **model_cfg["matcher_kwargs"],
+        )
+        box_post = cls._build_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
         )
 
         # optional modules
@@ -219,14 +205,8 @@ class SingleStageMixin(ModelMixin):
             head=head,
             anchor_generator=anchor_generator,
             matcher=matcher,
-            num_classes=plan_arch["classifier_classes"],
             decoder_levels=plan_arch["decoder_levels"],
-            # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
-            detections_per_img=detections_per_img,
-            score_thresh=score_thresh,
-            topk_candidates=topk_candidates,
-            remove_small_boxes=remove_small_boxes,
-            nms_thresh=nms_thresh,
+            box_post=box_post,
             **detector_kwargs,
         )
 
@@ -430,6 +410,41 @@ class SingleStageMixin(ModelMixin):
 
         logger.info(f"Building:: sampler {sampler_name}: {sampler_kwargs}")
         return cls.head_sampler_cls(**sampler_kwargs)
+
+    @classmethod
+    def _build_box_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        kwargs = {}
+
+        # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
+        if "detections_per_img" in model_cfg:
+            kwargs["detections_per_img"] = model_cfg["detections_per_img"]
+        else:
+            kwargs["detections_per_img"] = plan_arch.get(
+                "detections_per_img", 100
+            )  # FIXME
+
+        kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
+        kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)
+        kwargs["remove_small_boxes"] = plan_arch.get("remove_small_boxes", 0.01)
+        if "rpn_nms_thresh" in model_cfg:
+            kwargs["nms_thresh"] = model_cfg["rpn_nms_thresh"]
+            logger.info(f"Found RPN NMS thresh in config, using {kwargs['nms_thresh']}")
+        else:
+            kwargs["nms_thresh"] = plan_arch.get("nms_thresh", 0.6)
+
+        name = cls.box_post_cls.__name__
+        logger.info(f"Building:: box postprocessing {name}: {kwargs}")
+
+        box_post = cls.box_post_cls(
+            num_foreground_classes=plan_arch["classifier_classes"],
+            class_agnostic=cls.head_regressor_cls.class_agnostic(),
+            **kwargs,
+        )
+        return box_post
 
     @classmethod
     def has_segmenter(cls):

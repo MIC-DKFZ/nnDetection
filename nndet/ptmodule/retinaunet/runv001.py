@@ -3,8 +3,11 @@
 
 from __future__ import annotations
 
+from typing import Type
+
 from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.core.boxes.sampler import HardNegativeSamplerBatched
+from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
@@ -52,6 +55,10 @@ class RetinaUNetV001(
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher
+    box_post_cls: Type[
+        BoxPostprocessing
+    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+
     segmenter_cls = DiCESegmenterFgBg
 
 

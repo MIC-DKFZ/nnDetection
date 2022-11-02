@@ -15,7 +15,7 @@ from nndet.core import boxes as box_utils
 from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.post import post_image_single_class_regression
+from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.comb import AnchorHeadType
 from nndet.nn.heads.segmenter import SegmenterType
@@ -30,17 +30,10 @@ class BaseRetinaNet(AbstractDetector):
         backbone: AbstractBackbone,
         neck: AbstractNeck,
         head: AnchorHeadType,
-        num_classes: int,
         anchor_generator: AnchorGeneratorType,
         matcher: box_utils.MatcherType,
+        box_post: BoxPostprocessing,
         decoder_levels: tuple = (2, 3, 4, 5),
-        # post-processing
-        score_thresh: float = None,
-        detections_per_img: int = 100,
-        topk_candidates: int = 10000,
-        remove_small_boxes: float = 1e-2,
-        nms_thresh: float = 0.9,
-        # optional
         segmenter: Optional[SegmenterType] = None,
     ):
         """
@@ -52,15 +45,11 @@ class BaseRetinaNet(AbstractDetector):
             backbone: encoder module
             neck: decoder module
             head: head module
-            num_classes: number of foreground classes
             anchor_generator: generate anchors
             matcher: match ground truth boxes and anchors
+            box_post: module responsible to postprocess the boxes (clipping,
+                nms, ...) and generate the class labels
             decoder_levels: decoder levels to use for detection prediciton
-            score_thresh: minimum output probability
-            detections_per_img: max detections per image
-            topk_candidates: select only topk candidates for nms computation
-            remove_small_boxes: remove small bounding boxes
-            nms_thresh: non maximum suppression threshold
             segmenter: segmentation module
         """
         super().__init__()
@@ -71,16 +60,10 @@ class BaseRetinaNet(AbstractDetector):
         self.backbone = backbone
         self.neck = neck
         self.head = head
-        self.num_foreground_classes = num_classes
 
         self.anchor_generator = anchor_generator
         self.proposal_matcher = matcher
-
-        self.score_thresh = score_thresh
-        self.topk_candidates = topk_candidates
-        self.detections_per_img = detections_per_img
-        self.remove_small_boxes = remove_small_boxes
-        self.nms_thresh = nms_thresh
+        self.box_post = box_post
 
         self.segmenter = segmenter
 
@@ -224,18 +207,12 @@ class BaseRetinaNet(AbstractDetector):
 
             List[torch.Tensor]: feature maps from decoder
         """
-        # import napari
-        # with napari.gui_qt():
-        #     viewer = napari.view_image(images.detach().cpu().numpy())
-        #     viewer.add_labels(seg_targets[:, None].detach().cpu().numpy())
-
         target_boxes: List[Tensor] = targets["target_boxes"]
         target_classes: List[Tensor] = targets["target_classes"]
         target_seg: Tensor = targets.get("target_seg", None)
 
         pred_detection, anchors, pred_seg, features = self(images)
 
-        # with torch.no_grad():
         labels, matched_gt_boxes, _ = assign_targets_to_anchors(
             proposal_matcher=self.proposal_matcher,
             anchors=anchors,
@@ -264,10 +241,6 @@ class BaseRetinaNet(AbstractDetector):
             )
         else:
             prediction = None
-
-        # self.save_matched_anchors(images=images, target_boxes=target_boxes,
-        #                             anchors=anchors, pos_idx=pos_idx,
-        #                             neg_idx=neg_idx, seg=seg_targets)
         return losses, prediction, features
 
     def inference_step_with_features(
@@ -307,7 +280,6 @@ class BaseRetinaNet(AbstractDetector):
         )
         return prediction, features
 
-    # TODO: refactor this with new postprocessor object
     @torch.no_grad()
     def postprocess_for_inference(
         self,
@@ -342,48 +314,9 @@ class BaseRetinaNet(AbstractDetector):
 
         """
         image_shapes = [images.shape[2:]] * images.shape[0]
-        boxes, probs, labels = self.postprocess_detections(
-            pred_detection=pred_detection,
-            anchors=anchors,
-            image_shapes=image_shapes,
-        )
-        prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
-
-        if self.segmenter is not None:
-            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)[
-                "pred_seg"
-            ]
-        return prediction
-
-    def postprocess_detections(
-        self,
-        pred_detection: Dict[str, Tensor],
-        anchors: List[Tensor],
-        image_shapes: List[Tuple[int]],
-    ) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]:
-        """
-        Postprocess bounding box deltas and logits to generate final boxes and
-        scores
-        Adapted from torchvision https://github.com/pytorch/vision
-
-        Args:
-            pred_detection: detection predictions for loss computation
-
-                ``"box_logits"`` Tensor
-                    classification logits for each anchor [N]
-
-                ``"box_deltas"`` Tensor
-                    offsets for each anchor (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
-
-            anchors: proposals for each image
-            image_shapes: shape of each image
-
-        Returns:
-            List[Tensor]: final boxes [R, dim * 2]
-            List[Tensor]: final scores (for final class) [R]
-            List[Tensor]: final class label [R]
-        """
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in anchors]
+
+        # handle boxes (e.g. apply deltas when L1 loss is used), convert logits into probs
         pred_detection = self.head.postprocess_for_inference(pred_detection, anchors)
         pred_boxes, pred_probs = (
             pred_detection["pred_boxes"],
@@ -394,31 +327,16 @@ class BaseRetinaNet(AbstractDetector):
         pred_boxes = pred_boxes.split(boxes_per_image, 0)
         pred_probs = pred_probs.split(boxes_per_image, 0)
 
-        all_boxes, all_probs, all_labels = [], [], []
-        # iterate over images
-        for boxes, probs, image_shape in zip(pred_boxes, pred_probs, image_shapes):
-            if self.head.class_agnostic:
-                _boxes, _probs, _labels = post_image_single_class_regression(
-                    boxes=boxes,
-                    probs=probs,
-                    num_foreground_classes=self.num_foreground_classes,
-                    image_shape=image_shape,
-                    nms_thresh=self.nms_thresh,
-                    topk_candidates=self.topk_candidates,
-                    score_thresh=self.score_thresh,
-                    remove_small_boxes=self.remove_small_boxes,
-                    detections_per_img=self.detections_per_img,
-                )
-            else:
-                raise NotImplementedError
+        # postprocess predictions -> topk, nms etc. + label creation
+        boxes, probs, labels = self.box_post.process_batch(
+            reps=pred_boxes,
+            probs=pred_probs,
+            image_shapes=image_shapes,
+        )
 
-            all_boxes.append(_boxes)
-            all_probs.append(_probs)
-            all_labels.append(_labels)
-        return all_boxes, all_probs, all_labels
-
-    # @torch.no_grad()
-    # def save_matched_anchors(self, **kwargs):
-    #     logger = get_logger("mllogger")
-    #     logger.save_pickle("anchor_matching",
-    #                        to_device(kwargs, device="cpu", detach=True))
+        prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
+        if self.segmenter is not None:
+            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)[
+                "pred_seg"
+            ]
+        return prediction

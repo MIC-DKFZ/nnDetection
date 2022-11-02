@@ -138,11 +138,12 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
 
         anchor_idxs = torch.div(idx, self.num_foreground_classes, rounding_mode="floor")
         labels = idx % self.num_foreground_classes
-
         boxes = boxes[anchor_idxs]
+
         if self.remove_small_boxes is not None:
             keep = fn_remove_small_boxes(boxes, min_size=self.remove_small_boxes)
             boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
+
         boxes, probs, labels = self.nms(boxes, probs, labels)
 
         if self.detections_per_img is not None:
