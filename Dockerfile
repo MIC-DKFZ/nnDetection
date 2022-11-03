@@ -33,7 +33,10 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && apt-get install -
  gdb \
  ninja-build
 
-RUN pip install numpy
+# updating requests and urllib3 fixed compatibility with my docker version
+RUN pip install numpy \
+  && pip install --upgrade requests \
+  && pip install --upgrade urllib3
 
 # Install own code
 COPY ./requirements.txt .
