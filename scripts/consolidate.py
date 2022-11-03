@@ -172,8 +172,8 @@ def main():
     # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
     ov = ov if ov is not None else []
-    ov.append("host.parent_data=${env:det_data}")
-    ov.append("host.parent_results=${env:det_models}")
+    ov.append("host.parent_data=${oc.env:det_data}")
+    ov.append("host.parent_results=${oc.env:det_models}")
     if ov is not None:
         cfg.merge_with_dotlist(ov)
 

@@ -497,6 +497,27 @@ As before make sure to delete the `build` folder when rerunning the installation
 </details>
 
 <details close>
+<summary>(Slow) Training Speed</summary>
+<br>
+
+The training time of nnDetection should be roughly equal for most data sets: 2 days (1-2 hours per epoch) with mixed precision 3d speed up and 4 days without (this number refers to RTX 2080TI, newer GPUs can be significantly faster, on high end configuration training takes 1 day). It is highly recommended to use GPUs with Tensor Cores to enable fast mixed precision training for reasonable turnaround times. There can be several reasons for slow training:
+
+1) PyTorch < 1.9 did not provide training speedup for mixed-precision 3d convs in their pip installable version and it was necessary to build it from source. (the docker build of nnDetection also provides the speedup). Newer versions like 1.10 and 1.11 provide the mixed precision speedup in their pip version (only tested with CUDA 11.X).
+
+
+2) There is a bottleneck in the setup. This can be identified as follows:
+    1) Check the GPU Util -> it should be high for most of the time if it isn't, there is either a CPU or IO bottleneck. If it is high it is the missing pytorch speed up.
+    2) Check CPU util: if the CPU util is high (and the GPU util isn't) more cpu threads are needed for augmentation (can be adjusted via det_num_threads and depends on your CPU).
+If GPU and CPU util are low, it is an IO bottleneck, it is quite hard to do anything about this (a typical SSD with ~500mb/s read speed ran fine for my experiments). If the CPU util is maxed out it is an CPU bottleneck: Adjust det_num_threads (similar to num workers in the normal pytorch dataloaders) for the available CPU resources (set this as high as possible but not more than available CPU threads) otherwise. Increasing the number of workers will increase the required RAM consumption -> make sure not to run out of memory there otherwise the training will be extreeemly slow and the workstation might crash.
+
+Example for det_num_threads:
+- CPUs with less cores but high clock speed: Needs a lower det_num_threads value. On an Intel i7 9700 (non k) det_num_threads=6 reaches 90+ % GPU usage.
+- CPUs with many cores but lower clock speed: Needs a high det_num_threads value. In cluster environments det_num_threads=12 reaches ~80+% GPU usage.
+
+
+</details>
+
+<details close>
 <summary>GPU requirements</summary>
 <br>
 nnDetection v0.1 was developed for GPUs with at least 11GB of VRAM (e.g. RTX2080TI, TITAN RTX).
