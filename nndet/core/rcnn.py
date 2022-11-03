@@ -15,6 +15,13 @@ class RCNN(AbstractDetector):
         rpn: AbstractOneStageDetector,
         roi_module: RoIModule,
     ) -> None:
+        """
+
+
+        Args:
+            rpn:
+            roi_module:
+        """
         super().__init__()
         self.rpn = rpn
         self.roi_module = roi_module
