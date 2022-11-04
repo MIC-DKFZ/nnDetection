@@ -13,7 +13,7 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
@@ -48,7 +48,7 @@ class RetinaUNetV002(
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
-    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = partial(
         ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out")
     )  # conv class used for backbone
