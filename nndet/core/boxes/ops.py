@@ -726,3 +726,89 @@ def cat_and_index(
     for i, b in enumerate(boxes):
         indices.append(torch.full((b.shape[0],), i, dtype=b.dtype, device=b.device))
     return torch.cat(boxes, dim=0), torch.cat(indices, dim=0)
+
+
+def box_center_normalized_to_edges_original(x, im_shape):
+    """
+    Converts network output in center and size and normalized form to box edges in pixel values
+
+    Args:
+        x: Tensor[..., 6] with normalized cx, xy, w, h, cy, d coordinates
+        im_shape: Tuple(px, py, pz) Shape of the original patches to calculate original box coordinates
+    Returns:
+        Tensor[..., 6] with converted boxes
+    """
+    px, py, pz = im_shape
+    x_c, y_c, w, h, z_c, d = x.clone().unbind(-1)
+    x_c *= px
+    y_c *= py
+    z_c *= pz
+    w *= px
+    h *= py
+    d *= pz
+    b = [
+        (x_c - 0.5 * w),
+        (y_c - 0.5 * h),
+        (x_c + 0.5 * w),
+        (y_c + 0.5 * h),
+        (z_c - 0.5 * d),
+        (z_c + 0.5 * d),
+    ]
+    return torch.stack(b, dim=-1)
+
+
+def box_edges_pixel_to_center_normalized(x, im_shape):
+    """
+    Converts box edges to the center-size normalized format for L1 loss calculation
+    Args:
+        x: Tensor[..., 6] containing the box coordinates
+        im_shape: Tuple(px, py, pz) Shape of original Patches
+    Returns:
+        Tensor[..., 6] with converted boxes
+
+    """
+    px, py, pz = im_shape
+    x0, y0, x1, y1, z0, z1 = x.clone().unbind(-1)
+    x0 /= px
+    x1 /= px
+    y0 /= py
+    y1 /= py
+    z0 /= pz
+    z1 /= pz
+    b = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0), (z0 + z1) / 2, (z1 - z0)]
+    return torch.stack(b, dim=-1)
+
+
+def box_cxcywhczd_to_xyxyzz(x):
+    """
+    Converts center and size format box format (center x, center y, width, height, center z, depth) to corner format
+    (x1, y1, x2, y2, z1, z2)
+    Args:
+        x: Tensor[..., 6] containing the box coordinates in center format
+    Returns:
+        Tensor[..., 6] with converted boxes
+    """
+    x_c, y_c, w, h, z_c, d = x.unbind(-1)
+    b = [
+        (x_c - 0.5 * w),
+        (y_c - 0.5 * h),
+        (x_c + 0.5 * w),
+        (y_c + 0.5 * h),
+        (z_c - 0.5 * d),
+        (z_c + 0.5 * d),
+    ]
+    return torch.stack(b, dim=-1)
+
+
+def box_xyxyzz_to_cxcywhczd(x):
+    """
+    Converts corner format (x1, y1, x2, y2, z1, z2) to center and size format box format
+    (center x, center y, width, height, center z, depth)
+    Args:
+        x: Tensor[..., 6] containing the box coordinates in center format
+    Returns:
+        Tensor[..., 6] with converted boxes
+    """
+    x0, y0, x1, y1, z0, z1 = x.unbind(-1)
+    b = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0), (z0 + z1) / 2, (z1 - z0)]
+    return torch.stack(b, dim=-1)
