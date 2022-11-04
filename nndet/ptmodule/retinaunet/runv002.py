@@ -13,7 +13,7 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.backbone.blueprints.resconv import ConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ConvBackbone, ResConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
@@ -97,3 +97,12 @@ class RetinaUNetV002Focal(RetinaUNetV002):
     ] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[SamplerType]] = None
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetV002Res(RetinaUNetV002):
+    """
+    Residual Conv Backbone
+    """
+
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

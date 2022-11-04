@@ -40,3 +40,6 @@ Detection Zoo
 +--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
 
 Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
+
+Trainning Different Versions of RetinaU-Net:
+# TODO: focal loss training
