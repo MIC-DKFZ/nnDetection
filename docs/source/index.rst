@@ -40,6 +40,7 @@ nnDetection can be used in two different ways:
 
 1. As an out-of-the box detection baseline: nnDetection contains a self-configuring method which can be applied to new medical datasets without modifications.
 In many applications, it can serve as a strong baseline without manual modifications.
+
 2. As a medical object detection framework: While many features didn't make it into the final self-configuring pipeline, nnDetection comprises many additional options such as Static Backbone networks, a Detection Zoo and much more.
 More information on the Detection Zoo can be found :ref:`here<Detection Zoo>` and the :ref:`developer guide<Developer Guide>` porivdes the best entrypoint for any further modifications.
 
