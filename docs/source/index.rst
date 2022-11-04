@@ -35,26 +35,13 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 
 Features
 ========
-While nnDetection consists of many different configurations of each module to allow for free customization by providing high modularity, some official models are provided via standardized configs and can be used out-of-the-box.
 
-+--------------------------+------------------------+---------------------------+-----------------------+
-| **Models**               | **Trainig**            | **Prediction**            | **Config**            |
-+--------------------------+------------------------+---------------------------+-----------------------+
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| RetinaNet V002          | BB                     | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| Faster RCNN V002        | BB                     | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| Retina U-Net V001       | BB + SS                | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| Retina U-Net V002       | BB + SS                | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| Box Mask RCNN V002      | BB + BI                | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
-|| Box Mask U-RCNN V002    | BB + BI + SS           | BB                        |                       |
-+--------------------------+------------------------+---------------------------+-----------------------+
+nnDetection can be used in two different ways:
 
-Legend: BB = Bounding Boxes, SS = Semantic Segmentation, BI = Binary Mask
+1. As an out-of-the box detection baseline: nnDetection contains a self-configuring method which can be applied to new medical datasets without modifications.
+In many applications, it can serve as a strong baseline without manual modifications.
+2. As a medical object detection framework: While many features didn't make it into the final self-configuring pipeline, nnDetection comprises many additional options such as Static Backbone networks, a Detection Zoo and much more.
+More information on the Detection Zoo can be found :ref:`here<Detection Zoo>` and the :ref:`developer guide<Developer Guide>` porivdes the best entrypoint for any further modifications.
 
 
 Contents:

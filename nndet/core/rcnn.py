@@ -16,7 +16,7 @@ class RCNN(AbstractDetector):
         roi_module: RoIModule,
     ) -> None:
         """
-
+        Two stage detection module
 
         Args:
             rpn:
