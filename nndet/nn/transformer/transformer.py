@@ -21,16 +21,16 @@ class TransformerFacebook(nn.Module):
     """
 
     def __init__(
-            self,
-            d_model: int = 512,
-            nhead: int = 8,
-            num_encoder_layers: int = 6,
-            num_decoder_layers: int = 6,
-            dim_feedforward: int = 2048,
-            dropout: float = 0.1,
-            activation: str = "relu",
-            normalize_before: bool = False,
-            return_intermediate_dec: bool = True,
+        self,
+        d_model: int = 512,
+        nhead: int = 8,
+        num_encoder_layers: int = 6,
+        num_decoder_layers: int = 6,
+        dim_feedforward: int = 2048,
+        dropout: float = 0.1,
+        activation: str = "relu",
+        normalize_before: bool = False,
+        return_intermediate_dec: bool = True,
     ):
         super().__init__()
 

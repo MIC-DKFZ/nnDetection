@@ -5,12 +5,14 @@ Modules to compute the matching cost and solve the corresponding LSAP.
 from typing import Dict, List
 
 import torch
-from nndet.nn.heads.detr.matcher.matcher_funcs import FocalLossforMatcher, SimpleClassLossforMatcher
-from nndet.core.boxes import box_cxcywhczd_to_xyxyzz
 from scipy.optimize import linear_sum_assignment
 from torch import Tensor, nn
 
-from nndet.core.boxes import generalized_box_iou
+from nndet.core.boxes import box_cxcywhczd_to_xyxyzz, generalized_box_iou
+from nndet.nn.heads.detr.matcher.matcher_funcs import (
+    FocalLossforMatcher,
+    SimpleClassLossforMatcher,
+)
 
 
 class SimpleHungarianMatcher(nn.Module):

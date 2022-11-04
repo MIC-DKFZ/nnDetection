@@ -5,7 +5,6 @@ Various positional encodings for the transformer.
 """
 import math
 
-import numpy as np
 import torch
 from torch import nn
 

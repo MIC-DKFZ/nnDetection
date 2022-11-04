@@ -1,1 +1,1 @@
-from nndet.ptmodule.detr.detr import DETRModule, DETR
+from nndet.ptmodule.detr.detr import DETR, DETRModule
