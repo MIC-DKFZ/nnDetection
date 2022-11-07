@@ -4,7 +4,7 @@
 # RPN Parameters
 ################
 backbone_kwargs: # keyword arguments passed to encoder
-  num_conv: [1, 1, 2, 2] # 2x1 res, rest 2xres
+  num_conv: [2, 2, 4, 4] # 2x1 res, rest 2xres [Note: each res block contains 2 convs]
   num_conv_stem: 1 # 1 conv init
   max_channels: 384
 
