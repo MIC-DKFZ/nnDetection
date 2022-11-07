@@ -13,7 +13,7 @@ from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ConvBackbone, ResConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
@@ -48,7 +48,7 @@ class RetinaUNetV002(
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
-    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = partial(
         ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out")
     )  # conv class used for backbone
@@ -60,26 +60,16 @@ class RetinaUNetV002(
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = BCECLassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
+    head_classifier_cls: Type[DenseClassifier] = BCECLassifier  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
 
-    matcher_cls: Type[
-        Matcher
-    ] = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    segmenter_cls: Type[
-        Segmenter
-    ] = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Type[Segmenter] = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
@@ -92,8 +82,15 @@ class RetinaUNetV002Focal(RetinaUNetV002):
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = FocalClassifier  # define class for head classifier
+    head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[SamplerType]] = None
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetV002Res(RetinaUNetV002):
+    """
+    Residual Conv Backbone
+    """
+
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

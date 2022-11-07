@@ -66,9 +66,7 @@ def compute_anchors_for_strides(
         stride_formatted = [stride[0], stride[1], stride[0], stride[1]]
         if dim == 3:
             stride_formatted.extend([stride[2], stride[2]])
-        anchors_with_stride.append(
-            anchors * torch.tensor(stride_formatted)[None].float()
-        )
+        anchors_with_stride.append(anchors * torch.tensor(stride_formatted)[None].float())
     if cat:
         anchors_with_stride = torch.cat(anchors_with_stride, dim=0)
     return anchors_with_stride
@@ -146,9 +144,7 @@ class AnchorGenerator2D(torch.nn.Module):
             List[int]: number of anchors per level
         """
         assert len(grid_sizes) == len(strides), "Every fm size needs strides"
-        assert len(grid_sizes) == len(
-            self.cell_anchors
-        ), "Every fm size needs cell anchors"
+        assert len(grid_sizes) == len(self.cell_anchors), "Every fm size needs cell anchors"
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -161,21 +157,15 @@ class AnchorGenerator2D(torch.nn.Module):
             stride0, stride1 = stride
             device = base_anchors.device
 
-            shifts_x = (
-                torch.arange(0, size0, dtype=torch.float, device=device) * stride0
-            )
-            shifts_y = (
-                torch.arange(0, size1, dtype=torch.float, device=device) * stride1
-            )
+            shifts_x = torch.arange(0, size0, dtype=torch.float, device=device) * stride0
+            shifts_y = torch.arange(0, size1, dtype=torch.float, device=device) * stride1
 
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
 
-            _anchors = (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(
-                -1, 4
-            )
+            _anchors = (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
             anchors.append(_anchors)
             anchor_per_level.append(_anchors.shape[0])
             logger.debug(
@@ -256,14 +246,9 @@ class AnchorGenerator2D(torch.nn.Module):
         device = image_list.device
         grid_sizes = list([feature_map.shape[2:] for feature_map in feature_maps])
         image_size = image_list.shape[2:]
-        strides = [
-            list((int(i / s) for i, s in zip(image_size, fm_size)))
-            for fm_size in grid_sizes
-        ]
+        strides = [list((int(i / s) for i, s in zip(image_size, fm_size))) for fm_size in grid_sizes]
 
-        self.set_cell_anchors(
-            dtype=feature_maps[0].dtype, device=feature_maps[0].device
-        )
+        self.set_cell_anchors(dtype=feature_maps[0].dtype, device=feature_maps[0].device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
 
         anchors = []
@@ -273,9 +258,7 @@ class AnchorGenerator2D(torch.nn.Module):
             for anchors_per_feature_map in anchors_over_all_feature_maps:
                 anchors_in_image.append(anchors_per_feature_map)
             anchors.append(anchors_in_image)
-        anchors = [
-            torch.cat(anchors_per_image).to(device) for anchors_per_image in anchors
-        ]
+        anchors = [torch.cat(anchors_per_image).to(device) for anchors_per_image in anchors]
 
         # TODO: check with torchvision if this makes sense (if enabled, anchors are newly generated for each run)
         # # Clear the cache in case that memory leaks.
@@ -299,10 +282,7 @@ class AnchorGenerator2D(torch.nn.Module):
             List[int]: number of anchors per positions for each resolution
         """
         if self.num_anchors_per_level is None:
-            raise RuntimeError(
-                "Need to forward features maps before "
-                "get_num_acnhors_per_level can be called"
-            )
+            raise RuntimeError("Need to forward features maps before " "get_num_acnhors_per_level can be called")
         return self.num_anchors_per_level
 
 
@@ -353,9 +333,7 @@ class AnchorGenerator3D(AnchorGenerator2D):
 
         cell_anchors = [
             self.generate_anchors(sizes, aspect_ratios, zsizes, dtype, device)
-            for sizes, aspect_ratios, zsizes in zip(
-                self.sizes, self.aspect_ratios, self.zsizes
-            )
+            for sizes, aspect_ratios, zsizes in zip(self.sizes, self.aspect_ratios, self.zsizes)
         ]
         self.cell_anchors = cell_anchors
 
@@ -380,21 +358,12 @@ class AnchorGenerator3D(AnchorGenerator2D):
         Returns:
             Tensor: anchors of shape [n(scales) * n(ratios) * n(zscales) , dim * 2]
         """
-        base_anchors_2d = AnchorGenerator2D.generate_anchors(
-            scales, aspect_ratios, dtype=dtype, device=device
-        )
+        base_anchors_2d = AnchorGenerator2D.generate_anchors(scales, aspect_ratios, dtype=dtype, device=device)
         zanchors = torch.cat(
-            [
-                torch.as_tensor([-z, z], dtype=dtype, device=device).repeat(
-                    base_anchors_2d.shape[0], 1
-                )
-                for z in zsizes
-            ],
+            [torch.as_tensor([-z, z], dtype=dtype, device=device).repeat(base_anchors_2d.shape[0], 1) for z in zsizes],
             dim=0,
         )
-        base_anchors_3d = torch.cat(
-            [base_anchors_2d.repeat(len(zsizes), 1), (zanchors / 2.0).round()], dim=1
-        )
+        base_anchors_3d = torch.cat([base_anchors_2d.repeat(len(zsizes), 1), (zanchors / 2.0).round()], dim=1)
         return base_anchors_3d
 
     def grid_anchors(
@@ -427,19 +396,13 @@ class AnchorGenerator3D(AnchorGenerator2D):
             shifts_y = torch.arange(0, size1, dtype=dtype, device=device) * stride1
             shifts_z = torch.arange(0, size2, dtype=dtype, device=device) * stride2
 
-            shift_x, shift_y, shift_z = torch.meshgrid(
-                shifts_x, shifts_y, shifts_z, indexing="ij"
-            )
+            shift_x, shift_y, shift_z = torch.meshgrid(shifts_x, shifts_y, shifts_z, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shift_z = shift_z.reshape(-1)
-            shifts = torch.stack(
-                (shift_x, shift_y, shift_x, shift_y, shift_z, shift_z), dim=1
-            )
+            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y, shift_z, shift_z), dim=1)
 
-            _anchors = (shifts.view(-1, 1, 6) + base_anchors.view(1, -1, 6)).reshape(
-                -1, 6
-            )
+            _anchors = (shifts.view(-1, 1, 6) + base_anchors.view(1, -1, 6)).reshape(-1, 6)
             anchors.append(_anchors)
             anchor_per_level.append(_anchors.shape[0])
             logger.debug(
@@ -457,10 +420,7 @@ class AnchorGenerator3D(AnchorGenerator2D):
         Returns:
             List[int]: number of anchors per positions for each resolution
         """
-        return [
-            len(s) * len(a) * len(z)
-            for s, a, z in zip(self.sizes, self.aspect_ratios, self.zsizes)
-        ]
+        return [len(s) * len(a) * len(z) for s, a, z in zip(self.sizes, self.aspect_ratios, self.zsizes)]
 
 
 class AnchorGenerator2DS(AnchorGenerator2D):
@@ -512,10 +472,7 @@ class AnchorGenerator2DS(AnchorGenerator2D):
         if self.cell_anchors is not None:
             return
 
-        cell_anchors = [
-            self.generate_anchors(w, h, dtype, device)
-            for w, h in zip(self.width, self.height)
-        ]
+        cell_anchors = [self.generate_anchors(w, h, dtype, device) for w, h in zip(self.width, self.height)]
         self.cell_anchors = cell_anchors
 
     @staticmethod
@@ -535,9 +492,7 @@ class AnchorGenerator2DS(AnchorGenerator2D):
         Returns:
             Tensor: anchors of shape [n(width) * n(height), dim * 2]
         """
-        all_sizes = (
-            torch.tensor(list(product(width, height)), dtype=dtype, device=device) / 2
-        )
+        all_sizes = torch.tensor(list(product(width, height)), dtype=dtype, device=device) / 2
         anchors = torch.stack(
             [-all_sizes[:, 0], -all_sizes[:, 1], all_sizes[:, 0], all_sizes[:, 1]],
             dim=1,
@@ -608,8 +563,7 @@ class AnchorGenerator3DS(AnchorGenerator3D):
             return
 
         cell_anchors = [
-            self.generate_anchors(w, h, d, dtype, device)
-            for w, h, d in zip(self.width, self.height, self.depth)
+            self.generate_anchors(w, h, d, dtype, device) for w, h, d in zip(self.width, self.height, self.depth)
         ]
         self.cell_anchors = cell_anchors
 
@@ -632,12 +586,7 @@ class AnchorGenerator3DS(AnchorGenerator3D):
         Returns:
             Tensor: anchors of shape [n(width) * n(height) * n(depth) , dim * 2]
         """
-        all_sizes = (
-            torch.tensor(
-                list(product(width, height, depth)), dtype=dtype, device=device
-            )
-            / 2
-        )
+        all_sizes = torch.tensor(list(product(width, height, depth)), dtype=dtype, device=device) / 2
         anchors = torch.stack(
             [
                 -all_sizes[:, 0],
@@ -658,7 +607,4 @@ class AnchorGenerator3DS(AnchorGenerator3D):
         Returns:
             List[int]: number of anchors per positions for each resolution
         """
-        return [
-            len(w) * len(h) * len(d)
-            for w, h, d in zip(self.width, self.height, self.depth)
-        ]
+        return [len(w) * len(h) * len(d) for w, h, d in zip(self.width, self.height, self.depth)]

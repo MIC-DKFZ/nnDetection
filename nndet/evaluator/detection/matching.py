@@ -139,9 +139,7 @@ def _matching_no_gt(
         "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
         "gtMatches": gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
         "dtScores": dt_scores,  # [D] detection scores
-        "gtIgnore": np.array([]).reshape(
-            -1
-        ),  # [G] indicate whether ground truth should be ignored
+        "gtIgnore": np.array([]).reshape(-1),  # [G] indicate whether ground truth should be ignored
         "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
         "case_id": case_id,
     }
@@ -186,9 +184,7 @@ def _matching_no_pred(
         "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
         "gtMatches": gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
         "dtScores": dt_scores,  # [D] detection scores
-        "gtIgnore": gt_ignore.reshape(
-            -1
-        ),  # [G] indicate whether ground truth should be ignored
+        "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
         "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
         "case_id": case_id,
     }
@@ -255,9 +251,7 @@ def _matching_single_image_single_class(
     dt_ignore = np.zeros((len(iou_thresholds), num_preds))
 
     for tind, t in enumerate(iou_thresholds):
-        for dind, _d in enumerate(
-            pred_boxes
-        ):  # iterate detections starting from highest scoring one
+        for dind, _d in enumerate(pred_boxes):  # iterate detections starting from highest scoring one
             # information about best match so far (m=-1 -> unmatched)
             iou = min([t, 1 - 1e-10])
             m = -1
@@ -292,9 +286,7 @@ def _matching_single_image_single_class(
         "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
         "gtMatches": gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
         "dtScores": pred_scores,  # [D] detection scores
-        "gtIgnore": gt_ignore.reshape(
-            -1
-        ),  # [G] indicate whether ground truth should be ignored
+        "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
         "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
         "case_id": case_id,
     }

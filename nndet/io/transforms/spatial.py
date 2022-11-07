@@ -266,9 +266,7 @@ def points2boxes(points: Tensor) -> Tensor:
     """
     if points.nelement() > 0:
         points0, points1 = points.split(points.shape[0] // 2)
-        boxes = torch.zeros(points.shape[0] // 2, points.shape[1] * 2).to(
-            device=points.device, dtype=points.dtype
-        )
+        boxes = torch.zeros(points.shape[0] // 2, points.shape[1] * 2).to(device=points.device, dtype=points.dtype)
         boxes[:, 0] = torch.min(points0[:, 0], points1[:, 0])
         boxes[:, 1] = torch.min(points0[:, 1], points1[:, 1])
         boxes[:, 2] = torch.max(points0[:, 0], points1[:, 0])

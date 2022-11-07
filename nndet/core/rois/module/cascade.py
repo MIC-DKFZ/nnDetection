@@ -69,10 +69,7 @@ class CascadeRoIModule(BaseRoIModule):
                     f"Found {loss_weight_stage} but {self.num_stages} stages."
                 )
             self.loss_weight_stage = list(map(float, loss_weight_stage))
-        logger.info(
-            f"Running Cascade RoI Module with {self.num_stages} stages and "
-            f"train mask {self.mask_mode}"
-        )
+        logger.info(f"Running Cascade RoI Module with {self.num_stages} stages and " f"train mask {self.mask_mode}")
         self.mask_interleaved_execution = mask_interleaved_execution
 
     def train_step(
@@ -99,11 +96,7 @@ class CascadeRoIModule(BaseRoIModule):
                 proposals = self.detach_proposals(new_proposals)  # noqa: F821
                 proposal_boxes = proposals["pred_boxes"]
                 # match proposals to ground truth
-                (
-                    matched_gt_labels,
-                    matched_gt_boxes,
-                    matched_gt_idx,
-                ) = assign_targets_to_anchors(
+                (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
                     proposal_matcher=self.matcher[0],
                     anchors=proposal_boxes,
                     target_boxes=targets["target_boxes"],
@@ -128,11 +121,7 @@ class CascadeRoIModule(BaseRoIModule):
                 if self.mask_interleaved_execution:  # use new boxes for mask
                     proposals = self.detach_proposals(new_proposals)
                     proposal_boxes = proposals["pred_boxes"]
-                    (
-                        matched_gt_labels,
-                        matched_gt_boxes,
-                        matched_gt_idx,
-                    ) = assign_targets_to_anchors(
+                    (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
                         proposal_matcher=self.matcher[0],
                         anchors=proposal_boxes,
                         target_boxes=targets["target_boxes"],
@@ -150,9 +139,7 @@ class CascadeRoIModule(BaseRoIModule):
                     predict=False,
                 )
                 for k, i in mask_losses.items():
-                    losses[f"roi_s{stage_idx}_{k}"] = (
-                        i * self.loss_weight_stage[stage_idx]
-                    )
+                    losses[f"roi_s{stage_idx}_{k}"] = i * self.loss_weight_stage[stage_idx]
         return losses
 
     @torch.no_grad()

@@ -58,22 +58,14 @@ class FasterRCNNC004(
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = BCECLassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
+    head_classifier_cls: Type[DenseClassifier] = BCECLassifier  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
 
-    matcher_cls: Type[
-        Matcher
-    ] = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls: Optional[Type[Segmenter]] = None
 
     ########################
@@ -83,21 +75,13 @@ class FasterRCNNC004(
     roi_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = RoIModule  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = RoIBoxHead  # class of box head of RoI module
-    roi_classifier_cls: Type[
-        RoIClassifier
-    ] = BCEConvRoIClassifier  # box head classifier class
-    roi_regressor_cls: Type[
-        RoIRegressor
-    ] = L1ConvRoIRegressor  # box head regressor class
+    roi_classifier_cls: Type[RoIClassifier] = BCEConvRoIClassifier  # box head classifier class
+    roi_regressor_cls: Type[RoIRegressor] = L1ConvRoIRegressor  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = IoUMatcher  # class of RoI matcher
-    roi_sampler_cls: Type[
-        SamplerType
-    ] = HardNegativeSamplerBatched  # class of RoI sampler
+    roi_sampler_cls: Type[SamplerType] = HardNegativeSamplerBatched  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = RoIAlignNaiveAssign  # class of RoI box pooler
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define roi box postprocessing strategy
+    roi_box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define roi box postprocessing strategy
 
     # Not supprted here; see `MaskRCNN`
     roi_masker_cls = None  # class of RoI mask head

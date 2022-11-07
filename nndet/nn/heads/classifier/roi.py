@@ -36,9 +36,7 @@ class RoIClassifier(Classifier):
         self.internal_channels = internal_channels
         self.input_size = input_size
 
-        self.module_internal = self._build_module_internal(
-            conv=conv, add_norm=add_norm, **kwargs
-        )
+        self.module_internal = self._build_module_internal(conv=conv, add_norm=add_norm, **kwargs)
         self.module_out = self._build_module_out(conv=conv)
 
         self.loss: Optional[torch.nn.Module] = None
@@ -139,8 +137,7 @@ class FCRoIClassifier(RoIClassifier):
         _conv_internal.add_module(
             name="c_in",
             module=conv(
-                self.in_channels
-                * functools.reduce(lambda a, b: a * b, self.input_size),
+                self.in_channels * functools.reduce(lambda a, b: a * b, self.input_size),
                 self.internal_channels,
                 kernel_size=1,
                 stride=1,

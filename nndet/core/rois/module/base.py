@@ -71,15 +71,9 @@ class BaseRoIModule(torch.nn.Module):
 
         # Mask Setup
         if mask_head is not None and mask_pooler is None:
-            raise ValueError(
-                "Mask mode requires head and pooler to be set! "
-                "Mask Pooler was not porovided."
-            )
+            raise ValueError("Mask mode requires head and pooler to be set! " "Mask Pooler was not porovided.")
         if mask_pooler is not None and mask_head is None:
-            raise ValueError(
-                "Mask mode requires head and pooler to be set! "
-                "Mask Head was not porovided."
-            )
+            raise ValueError("Mask mode requires head and pooler to be set! " "Mask Head was not porovided.")
         self.mask_mode = mask_head is not None and mask_pooler is not None
         if self.mask_mode:
             logger.info("Running mask branch for training")
@@ -190,9 +184,7 @@ class BaseRoIModule(torch.nn.Module):
         # compute mask loss on positive proposals
         pos_matched_gt_idx = []
         pos_proposal_boxes = []
-        for gt_l, gt_idx, prop_b in zip(
-            matched_gt_labels, matched_gt_idx, proposal_boxes
-        ):
+        for gt_l, gt_idx, prop_b in zip(matched_gt_labels, matched_gt_idx, proposal_boxes):
             pos_idx = torch.where(gt_l > 0)[0]
             pos_matched_gt_idx.append(gt_idx[pos_idx])
             pos_proposal_boxes.append(prop_b[pos_idx])
@@ -213,9 +205,7 @@ class BaseRoIModule(torch.nn.Module):
         )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
 
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
-        target_masks_prepared_batched = torch.cat(
-            target_masks_prepared, dim=0
-        ).unsqueeze(dim=1)
+        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0).unsqueeze(dim=1)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
         losses = self.mask_head[stage].compute_loss(
             pred_masks,
@@ -294,23 +284,17 @@ class BaseRoIModule(torch.nn.Module):
         """
         for i in range(len(targets["target_boxes"])):
             if targets["target_boxes"][i].numel() > 0:
-                proposals["pred_boxes"][i] = cat(
-                    [proposals["pred_boxes"][i], targets["target_boxes"][i]], dim=0
-                )
+                proposals["pred_boxes"][i] = cat([proposals["pred_boxes"][i], targets["target_boxes"][i]], dim=0)
 
                 tc = targets["target_roi_classes"][i]
-                proposals["pred_labels"][i] = cat(
-                    [proposals["pred_labels"][i], tc], dim=0
-                )
+                proposals["pred_labels"][i] = cat([proposals["pred_labels"][i], tc], dim=0)
 
                 add_scores = torch.ones(
                     tc.shape[0],
                     device=proposals["pred_scores"][i].device,
                     dtype=proposals["pred_scores"][i].dtype,
                 )
-                proposals["pred_scores"][i] = cat(
-                    [proposals["pred_scores"][i], add_scores], dim=0
-                )
+                proposals["pred_scores"][i] = cat([proposals["pred_scores"][i], add_scores], dim=0)
         return proposals
 
     def _inference_step_boxes(
@@ -328,13 +312,8 @@ class BaseRoIModule(torch.nn.Module):
             dtype = proposal_boxes[0].dtype
             device = proposal_boxes[0].device
             boxes = [torch.zeros_like(proposal_boxes[b]) for b in range(batch_size)]
-            probs = [
-                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
-            ]
-            labels = [
-                torch.tensor([], dtype=torch.int64, device=device)
-                for b in range(batch_size)
-            ]
+            probs = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
+            labels = [torch.tensor([], dtype=torch.int64, device=device) for b in range(batch_size)]
         else:
             roi_features = self.box_pooler(
                 features=features,
@@ -376,16 +355,9 @@ class BaseRoIModule(torch.nn.Module):
             batch_size = len(pred_boxes)
             dtype = pred_boxes[0].dtype
             device = pred_boxes[0].device
-            masks = [
-                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
-            ]
-            probs = [
-                torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)
-            ]
-            labels = [
-                torch.tensor([], dtype=torch.int64, device=device)
-                for b in range(batch_size)
-            ]
+            masks = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
+            probs = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
+            labels = [torch.tensor([], dtype=torch.int64, device=device) for b in range(batch_size)]
         else:
             roi_features = self.mask_pooler(
                 features=features,
@@ -424,9 +396,7 @@ class BaseRoIModule(torch.nn.Module):
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposal_boxes]
 
-        pred_detection = self.box_head[stage].postprocess_for_inference(
-            pred_detection, proposal_boxes
-        )
+        pred_detection = self.box_head[stage].postprocess_for_inference(pred_detection, proposal_boxes)
         pred_boxes, pred_probs = (
             pred_detection["pred_boxes"],
             pred_detection["pred_probs"],

@@ -254,9 +254,7 @@ class MaskEnsembler(BaseEnsembler):
                 (x1, y1, x2, y2, (z1, z2))
             Tensor: masks in image space [N, image_dims]
         """
-        assert (
-            masks.ndim == (boxes.shape[1] // 2) + 1
-        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
+        assert masks.ndim == (boxes.shape[1] // 2) + 1, f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
         image_masks = roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
@@ -497,10 +495,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         labels = [r.float().cpu() for r in result[self.label_key]]
         boxes = [r.float().cpu() for r in result[self.box_key]]
         centers = [
-            box_center(img_boxes)
-            if img_boxes.numel() > 0
-            else torch.Tensor([]).to(img_boxes)
-            for img_boxes in boxes
+            box_center(img_boxes) if img_boxes.numel() > 0 else torch.Tensor([]).to(img_boxes) for img_boxes in boxes
         ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
@@ -599,9 +594,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
             Tensor: postprocessed labels
             Tensor: postprocessed weights
         """
-        assert (
-            masks.ndim == (boxes.shape[1] // 2) + 1
-        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
+        assert masks.ndim == (boxes.shape[1] // 2) + 1, f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
         p_sorted, idx_sorted = probs.sort(descending=True)
         idx_sorted = idx_sorted[: self.parameters["model_topk"]]
         p_sorted = p_sorted[: self.parameters["model_topk"]]
@@ -671,9 +664,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         labels = cat(labels, dim=0)
         weights = cat(weights, dim=0)
 
-        assert (
-            masks.ndim == (boxes.shape[1] // 2) + 1
-        ), f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
+        assert masks.ndim == (boxes.shape[1] // 2) + 1, f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
 
         _, idx = probs.sort(descending=True)
         idx = idx[: self.parameters["ensemble_topk"]]

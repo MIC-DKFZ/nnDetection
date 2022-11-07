@@ -18,9 +18,7 @@ def resolve_requirements(file):
         req = f.read().splitlines()
         for r in req:
             if r.startswith("-r"):
-                requirements += resolve_requirements(
-                    os.path.join(os.path.dirname(file), r.split(" ")[1])
-                )
+                requirements += resolve_requirements(os.path.join(os.path.dirname(file), r.split(" ")[1]))
             else:
                 requirements.append(r)
     return requirements
@@ -49,9 +47,7 @@ def get_extensions():
     extensions_dir = this_dir / "nndet" / "csrc"
 
     main_file = list(extensions_dir.glob("*.cpp"))
-    source_cpu = (
-        []
-    )  # list((extensions_dir/'cpu').glob('*.cpp')) temporary until I added header files ...
+    source_cpu = []  # list((extensions_dir/'cpu').glob('*.cpp')) temporary until I added header files ...
     source_cuda = list((extensions_dir / "cuda").glob("*.cu"))
     print("main_file {}".format(main_file))
     print("source_cpu {}".format(source_cpu))
@@ -63,9 +59,7 @@ def get_extensions():
     define_macros = []
     extra_compile_args = {"cxx": []}
 
-    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv(
-        "FORCE_CUDA", "0"
-    ) == "1":
+    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv("FORCE_CUDA", "0") == "1":
         print("Adding CUDA csrc to build")
         print("CUDA ARCH {}".format(os.getenv("TORCH_CUDA_ARCH_LIST")))
         extension = CUDAExtension

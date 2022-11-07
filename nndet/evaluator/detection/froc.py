@@ -169,9 +169,7 @@ class FROCMetric(DetectionMetric):
 
         self.check_number_of_iou(dt_matches, dt_ignores)
 
-        num_gt = np.count_nonzero(
-            gt_ignore == 0
-        )  # number of ground truth boxes (non ignored)
+        num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning 0 in FROC.")
             return (
@@ -194,9 +192,7 @@ class FROCMetric(DetectionMetric):
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
 
-            _fps, _sens, _th = self.compute_froc_curve_one_iou(
-                dt_matches[iou_idx], _scores, num_images, num_gt
-            )
+            _fps, _sens, _th = self.compute_froc_curve_one_iou(dt_matches[iou_idx], _scores, num_images, num_gt)
 
             # interpolate at defined fpr thresholds
             curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)
@@ -210,9 +206,7 @@ class FROCMetric(DetectionMetric):
         return scores, curves
 
     @staticmethod
-    def compute_froc_curve_one_iou(
-        dt_matches: np.ndarray, dt_scores: np.ndarray, num_images: int, num_gt: int
-    ):
+    def compute_froc_curve_one_iou(dt_matches: np.ndarray, dt_scores: np.ndarray, num_images: int, num_gt: int):
         """
         Compute FROC curve for a single IoU value
 
@@ -278,26 +272,18 @@ class FROCMetric(DetectionMetric):
         froc_scores_cache = defaultdict(list)  # per metric cache
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [
-                {0: r[cls_idx]} if cls_idx in r else {} for r in results_list
-            ]
+            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
 
                 for key, item in cls_scores.items():
                     froc_scores_cache[key].append(item)
 
-                froc_scores_cls.update(
-                    {f"{cls_str}_{key}": item for key, item in cls_scores.items()}
-                )
-                froc_curves_cls.update(
-                    {f"{cls_str}_{key}": item for key, item in cls_curves.items()}
-                )
+                froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
+                froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
 
         for metric_str, metric_cache in froc_scores_cache.items():
-            froc_scores_cls[f"mc_{metric_str}"] = float(
-                sum(metric_cache) / len(self.classes)
-            )
+            froc_scores_cls[f"mc_{metric_str}"] = float(sum(metric_cache) / len(self.classes))
 
         return froc_scores_cls, froc_curves_cls
 
@@ -394,11 +380,7 @@ def select_froc_curves(
         str(c)
         for c in curves.keys()
         if str(c).startswith(f"{prefix}FROC_")
-        and not (
-            str(c).endswith("_thresholds")
-            or str(c).endswith("_num_images")
-            or str(c).endswith("_num_gt")
-        )
+        and not (str(c).endswith("_thresholds") or str(c).endswith("_num_images") or str(c).endswith("_num_gt"))
     ]
     frocs = [curves[c] for c in froc_keys]
     ious = [float(c.rsplit("_", 1)[1]) for c in froc_keys]

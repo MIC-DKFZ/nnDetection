@@ -76,9 +76,7 @@ class FasterRCNNModule(
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
     roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = ...  # define roi box postprocessing strategy
+    roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
     # Not supprted here; see `MaskRCNN`
     roi_masker_cls = None  # class of RoI mask head
@@ -138,9 +136,7 @@ class FasterURCNNModule(
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
     roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = ...  # define roi box postprocessing strategy
+    roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
     # Not supprted here; see `MaskRCNN`
     roi_masker_cls = None  # class of RoI mask head

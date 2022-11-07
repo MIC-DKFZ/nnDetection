@@ -35,15 +35,7 @@ class GroupNorm(nn.GroupNorm):
         """
         if channels_per_group is not None:
             if num_groups is not None:
-                raise ValueError(
-                    "Can only use `channels_per_group` OR `num_groups` in GroupNorm"
-                )
+                raise ValueError("Can only use `channels_per_group` OR `num_groups` in GroupNorm")
             num_groups = num_channels // channels_per_group
 
-        super().__init__(
-            num_channels=num_channels,
-            num_groups=num_groups,
-            eps=eps,
-            affine=affine,
-            **kwargs
-        )
+        super().__init__(num_channels=num_channels, num_groups=num_groups, eps=eps, affine=affine, **kwargs)

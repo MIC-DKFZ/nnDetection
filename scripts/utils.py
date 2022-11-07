@@ -60,14 +60,8 @@ def boxes2nii():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = (
-        training_dir / "test_predictions" if test else training_dir / "val_predictions"
-    )
-    save_dir = (
-        training_dir / "test_predictions_nii"
-        if test
-        else training_dir / "val_predictions_nii"
-    )
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
     save_dir.mkdir(exist_ok=True)
 
     case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
@@ -92,9 +86,7 @@ def boxes2nii():
         labels = labels[idx]
 
         prediction_meta = {}
-        for instance_id, (pbox, pscore, plabel) in enumerate(
-            zip(boxes, scores, labels), start=1
-        ):
+        for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
             mask_slicing = [
                 slice(int(pbox[0]) + 1, int(pbox[2])),
                 slice(int(pbox[1]) + 1, int(pbox[3])),
@@ -109,9 +101,7 @@ def boxes2nii():
                 "box": list(map(int, pbox)),
             }
 
-        logger.info(
-            f"Created instance mask {cid} with {instance_mask.max()} instances."
-        )
+        logger.info(f"Created instance mask {cid} with {instance_mask.max()} instances.")
 
         instance_mask_itk = sitk.GetImageFromArray(instance_mask)
         instance_mask_itk.SetOrigin(res["itk_origin"])
@@ -178,14 +168,8 @@ def boxes2nii2():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = (
-        training_dir / "test_predictions" if test else training_dir / "val_predictions"
-    )
-    save_dir = (
-        training_dir / "test_predictions_nii2"
-        if test
-        else training_dir / "val_predictions_nii2"
-    )
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii2" if test else training_dir / "val_predictions_nii2"
     save_dir.mkdir(exist_ok=True)
 
     case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
@@ -210,12 +194,8 @@ def boxes2nii2():
         num_preds = len(scores)
 
         if num_preds > 0:
-            instance_mask = np.zeros(
-                (num_preds, *res["original_size_of_raw_data"]), dtype=np.uint8
-            )
-            for instance_id, (pbox, pscore, plabel) in enumerate(
-                zip(boxes, scores, labels), start=0
-            ):
+            instance_mask = np.zeros((num_preds, *res["original_size_of_raw_data"]), dtype=np.uint8)
+            for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=0):
                 mask_slicing = [
                     slice(instance_id, instance_id + 1),
                     slice(int(pbox[0]) + 1, int(pbox[2])),
@@ -231,9 +211,7 @@ def boxes2nii2():
                     "box": list(map(int, pbox)),
                 }
         else:
-            instance_mask = np.zeros(
-                (1, *res["original_size_of_raw_data"]), dtype=np.uint8
-            )
+            instance_mask = np.zeros((1, *res["original_size_of_raw_data"]), dtype=np.uint8)
 
         logger.info(f"Created instance mask with {num_preds} instances.")
 
@@ -301,14 +279,8 @@ def masks2nii():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = (
-        training_dir / "test_predictions" if test else training_dir / "val_predictions"
-    )
-    save_dir = (
-        training_dir / "test_predictions_nii"
-        if test
-        else training_dir / "val_predictions_nii"
-    )
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
     save_dir.mkdir(exist_ok=True)
 
     case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_masks.npz")]
@@ -397,14 +369,8 @@ def seg2nii():
     overwrites.append("host.parent_data=${env:det_data}")
     overwrites.append("host.parent_results=${env:det_models}")
 
-    prediction_dir = (
-        training_dir / "test_predictions" if test else training_dir / "val_predictions"
-    )
-    save_dir = (
-        training_dir / "test_predictions_nii"
-        if test
-        else training_dir / "val_predictions_nii"
-    )
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
     save_dir.mkdir(exist_ok=True)
 
     case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_seg.pkl")]
@@ -427,9 +393,7 @@ def unpack():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("path", type=Path, help="Path to folder to unpack")
-    parser.add_argument(
-        "num_processes", type=int, help="number of processes to use for unpacking"
-    )
+    parser.add_argument("num_processes", type=int, help="number of processes to use for unpacking")
     args = parser.parse_args()
     p = args.path
     num_processes = args.num_processes
@@ -477,9 +441,7 @@ def print_reg():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "registry", type=str, help="Name of registry, e.g. augmentation"
-    )
+    parser.add_argument("registry", type=str, help="Name of registry, e.g. augmentation")
 
     args = parser.parse_args()
     registry_name = args.registry
@@ -645,16 +607,12 @@ def create_split():
     # split into pid and sid
     for cid in case_ids:
         if len(cid.split("_")) > 2:
-            raise ValueError(
-                f"{cid} does not follow the naming convention please read the docs."
-            )
+            raise ValueError(f"{cid} does not follow the naming convention please read the docs.")
 
     if with_patients:
         patient_ids = [cid.split("_")[0] for cid in case_ids]
         # session_ids = [cid.split("_")[1] for cid in case_ids]
-        logger.info(
-            f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}"
-        )
+        logger.info(f"Parsed {len(case_ids)} case ids and {len(set(patient_ids))} unique patient ids \n{case_ids}")
     else:
         patient_ids = None
         logger.info(f"Parsed {len(case_ids)} case ids \n{case_ids}")
@@ -687,9 +645,7 @@ def create_split():
     else:
         cv = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=0)
 
-    for fold_idx, (train_idx, val_idx) in enumerate(
-        cv.split(case_ids, reduced_classes, patient_ids)
-    ):
+    for fold_idx, (train_idx, val_idx) in enumerate(cv.split(case_ids, reduced_classes, patient_ids)):
         train_cids = [case_ids[_i] for _i in train_idx]
         val_cids = [case_ids[_i] for _i in val_idx]
         intersection_cids = set(train_cids).intersection(val_cids)

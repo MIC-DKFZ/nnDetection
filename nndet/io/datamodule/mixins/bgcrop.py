@@ -66,15 +66,11 @@ class RandomBGCrop3D(BGCrop):
         data_shape = case_data.shape[1:]
 
         crop = []
-        for ps, ds, _pad in zip(
-            self.patch_size_generator, data_shape, self.need_to_pad
-        ):
+        for ps, ds, _pad in zip(self.patch_size_generator, data_shape, self.need_to_pad):
             pad = _pad
             if pad + ds < ps:
                 pad = ps - ds
-            origin = np.random.randint(
-                -(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1
-            )
+            origin = np.random.randint(-(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1)
             crop.append(slice(origin, origin + ps))
         return crop
 
@@ -106,14 +102,10 @@ class RandomBGCrop2D(BGCrop):
 
         slice_idx = np.random.randint(0, case_data.shape[1])
         crop = [slice(slice_idx, slice_idx + 1)]
-        for ps, ds, _pad in zip(
-            self.patch_size_generator, data_shape, self.need_to_pad
-        ):
+        for ps, ds, _pad in zip(self.patch_size_generator, data_shape, self.need_to_pad):
             pad = _pad
             if pad + ds < ps:
                 pad = ps - ds
-            origin = np.random.randint(
-                -(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1
-            )
+            origin = np.random.randint(-(pad // 2), ds + (pad // 2) + (pad % 2) - ps + 1)
             crop.append(slice(origin, origin + ps))
         return crop

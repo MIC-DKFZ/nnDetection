@@ -42,9 +42,7 @@ class SingleStageMixin(ModelMixin):
 
     head_cls: Type[AnchorHead] = ...  #: define class for head
     head_conv_cls: Type[CONVSEQ] = ...  #: conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = ...  #: define class for head classifier
+    head_classifier_cls: Type[DenseClassifier] = ...  #: define class for head classifier
     head_regressor_cls: Type[DenseRegressor] = ...  #: define class for head regressor
 
     head_sampler_cls: Optional[
@@ -54,9 +52,7 @@ class SingleStageMixin(ModelMixin):
     matcher_cls: Type[Matcher] = ...  #: define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  #: define box postprocessing strategy
 
-    segmenter_cls: Optional[
-        Type[Segmenter]
-    ] = None  #: [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Optional[Type[Segmenter]] = None  #: [optional] segmentation head as in RetinaUNet
 
     @classmethod
     def from_config_plan(
@@ -128,9 +124,7 @@ class SingleStageMixin(ModelMixin):
             f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
             f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}"
         )
-        logger.info(
-            f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}"
-        )
+        logger.info(f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}")
         plan_arch.update(model_cfg["plan_arch_overwrites"])
         plan_anchors.update(model_cfg["plan_anchors_overwrites"])
         logger.info(
@@ -141,15 +135,8 @@ class SingleStageMixin(ModelMixin):
 
         _plan_anchors = copy.deepcopy(plan_anchors)
         coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
-        s_param = (
-            False
-            if ("aspect_ratios" in _plan_anchors)
-            and (_plan_anchors["aspect_ratios"] is not None)
-            else True
-        )
-        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(
-            **_plan_anchors
-        )
+        s_param = False if ("aspect_ratios" in _plan_anchors) and (_plan_anchors["aspect_ratios"] is not None) else True
+        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(**_plan_anchors)
 
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
@@ -264,9 +251,7 @@ class SingleStageMixin(ModelMixin):
             AbstractNeck: neck instance
         """
         conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
-        logger.info(
-            f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}"
-        )
+        logger.info(f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}")
 
         decoder_levels = plan_arch["decoder_levels"]
         neck = cls.neck_cls(
@@ -377,9 +362,7 @@ class SingleStageMixin(ModelMixin):
 
         # optional sampler
         if cls.has_sampler():
-            head_kwargs["sampler"] = cls._build_sampler(
-                plan_arch=plan_arch, model_cfg=model_cfg
-            )
+            head_kwargs["sampler"] = cls._build_sampler(plan_arch=plan_arch, model_cfg=model_cfg)
 
         head = cls.head_cls(
             classifier=classifier,
@@ -423,9 +406,7 @@ class SingleStageMixin(ModelMixin):
         if "detections_per_img" in model_cfg:
             kwargs["detections_per_img"] = model_cfg["detections_per_img"]
         else:
-            kwargs["detections_per_img"] = plan_arch.get(
-                "detections_per_img", 100
-            )  # FIXME
+            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME
 
         kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
         kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)

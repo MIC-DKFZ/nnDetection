@@ -61,15 +61,9 @@ class SegmentationEvaluator(AbstractEvaluator):
         fn_hard = np.zeros((target.shape[0], num_classes - 1))
 
         for c in range(1, num_classes):
-            tp_hard[:, c - 1] = (
-                (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
-            ).sum(axis=1)
-            fp_hard[:, c - 1] = (
-                (output_seg == c).astype(np.float32) * (target != c).astype(np.float32)
-            ).sum(axis=1)
-            fn_hard[:, c - 1] = (
-                (output_seg != c).astype(np.float32) * (target == c).astype(np.float32)
-            ).sum(axis=1)
+            tp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
+            fp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target != c).astype(np.float32)).sum(axis=1)
+            fn_hard[:, c - 1] = ((output_seg != c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
 
         tp_hard = tp_hard.sum(axis=0)
         fp_hard = fp_hard.sum(axis=0)
@@ -99,9 +93,7 @@ class SegmentationEvaluator(AbstractEvaluator):
             fn = np.sum(self.results_list["fn"], 0)
 
             global_dc_per_class = [
-                i
-                for i in [2 * i / (2 * i + j + k) for i, j, k in zip(tp, fp, fn)]
-                if not np.isnan(i)
+                i for i in [2 * i / (2 * i + j + k) for i, j, k in zip(tp, fp, fn)] if not np.isnan(i)
             ]
             if self.per_class:
                 for cls_idx, dc in enumerate(global_dc_per_class):
@@ -170,20 +162,12 @@ class PerCaseSegmentationEvaluator(AbstractEvaluator):
         fg_present = np.zeros((target.shape[0], num_classes - 1))  # N, FG
 
         for c in range(1, num_classes):
-            tp_hard[:, c - 1] = (
-                (output_seg == c).astype(np.float32) * (target == c).astype(np.float32)
-            ).sum(axis=1)
-            fp_hard[:, c - 1] = (
-                (output_seg == c).astype(np.float32) * (target != c).astype(np.float32)
-            ).sum(axis=1)
-            fn_hard[:, c - 1] = (
-                (output_seg != c).astype(np.float32) * (target == c).astype(np.float32)
-            ).sum(axis=1)
+            tp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
+            fp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target != c).astype(np.float32)).sum(axis=1)
+            fn_hard[:, c - 1] = ((output_seg != c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
             fg_present[:, c - 1] = (target == c).any(axis=1).astype(np.int32)
 
-        dice = np.where(
-            fg_present, 2.0 * tp_hard / (2 * tp_hard + fp_hard + fn_hard), np.nan
-        )  # N, FG
+        dice = np.where(fg_present, 2.0 * tp_hard / (2 * tp_hard + fp_hard + fn_hard), np.nan)  # N, FG
         self.results.append(dice)
         return {}
 

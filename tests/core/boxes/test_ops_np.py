@@ -21,9 +21,7 @@ def boxes0_3d():
 
 @pytest.fixture
 def boxes1_3d():
-    return np.array(
-        [[1, 1, 3, 3, 1, 3], [1, 1, 3, 3, 1, 3], [1, 1, 3, 3, 1, 3]]
-    ).astype(float)
+    return np.array([[1, 1, 3, 3, 1, 3], [1, 1, 3, 3, 1, 3], [1, 1, 3, 3, 1, 3]]).astype(float)
 
 
 def test_box_size_2d(boxes0_2d, boxes1_2d):

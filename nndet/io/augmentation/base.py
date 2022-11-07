@@ -54,19 +54,11 @@ def get_patch_size(
     coords = np.array(patch_size)
     final_shape = np.copy(coords)
     if len(coords) == 3:
-        final_shape = np.max(
-            np.vstack((np.abs(rotate_coords_3d(coords, rot_x, 0, 0)), final_shape)), 0
-        )
-        final_shape = np.max(
-            np.vstack((np.abs(rotate_coords_3d(coords, 0, rot_y, 0)), final_shape)), 0
-        )
-        final_shape = np.max(
-            np.vstack((np.abs(rotate_coords_3d(coords, 0, 0, rot_z)), final_shape)), 0
-        )
+        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, rot_x, 0, 0)), final_shape)), 0)
+        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, 0, rot_y, 0)), final_shape)), 0)
+        final_shape = np.max(np.vstack((np.abs(rotate_coords_3d(coords, 0, 0, rot_z)), final_shape)), 0)
     elif len(coords) == 2:
-        final_shape = np.max(
-            np.vstack((np.abs(rotate_coords_2d(coords, rot_x)), final_shape)), 0
-        )
+        final_shape = np.max(np.vstack((np.abs(rotate_coords_2d(coords, rot_x)), final_shape)), 0)
     final_shape /= min(scale_range)
     return final_shape.astype(np.int32)
 

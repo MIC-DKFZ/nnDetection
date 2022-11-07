@@ -56,14 +56,10 @@ def prepare_detection_label(
     things_seg = np.copy(seg)
     things_seg[stuff_seg > 0] = 0  # remove all stuff classes from segmentation
 
-    instances_not_filtered, instances_not_filtered_classes = seg_to_instances(
-        things_seg
-    )
+    instances_not_filtered, instances_not_filtered_classes = seg_to_instances(things_seg)
     final_mapping = {}
     if instances_not_filtered.max() > 0:
-        boxes, instance_ids = instances_to_boxes_np(
-            seg=instances_not_filtered, dim=instances_not_filtered.ndim
-        )
+        boxes, instance_ids = instances_to_boxes_np(seg=instances_not_filtered, dim=instances_not_filtered.ndim)
         box_sizes = box_size_np(boxes)
 
         assert len(instance_ids) == len(boxes)
@@ -177,16 +173,13 @@ def main():
         logger.add(splitted_dir / "convert_seg2det.log", level="DEBUG")
         logger.info(f"+++++ Running covnersion: {datetime.now()} +++++")
         logger.info(
-            f"Running min_size {cfg['data'].get('min_size', 0)} and "
-            f"min_vol {cfg['data'].get('min_vol', 0)}"
+            f"Running min_size {cfg['data'].get('min_size', 0)} and " f"min_vol {cfg['data'].get('min_vol', 0)}"
         )
 
         for postfix in ["Tr", "Ts"]:
             label_dir = splitted_dir / f"labels{postfix}"
             case_ids = [f.name[:-7] for f in label_dir.glob("*.nii.gz")]
-            logger.info(
-                f"Found {len(case_ids)} cases for conversion with postfix {postfix}."
-            )
+            logger.info(f"Found {len(case_ids)} cases for conversion with postfix {postfix}.")
 
             # for cid in case_ids:
             #     prepare_detection_label(case_id=cid,
@@ -215,16 +208,9 @@ def main():
                 if (label_dir := splitted_dir / f"labels{postfix}").is_dir():
                     ranking = []
                     for case_id in tqdm([f.stem for f in label_dir.glob("*.json")]):
-                        instances = load_sitk_as_array(label_dir / f"{case_id}.nii.gz")[
-                            0
-                        ]
-                        instance_ids, instance_counts = np.unique(
-                            instances, return_counts=True
-                        )
-                        cps = [
-                            np.argwhere(instances == iid)[0].tolist()
-                            for iid in instance_ids[1:]
-                        ]
+                        instances = load_sitk_as_array(label_dir / f"{case_id}.nii.gz")[0]
+                        instance_ids, instance_counts = np.unique(instances, return_counts=True)
+                        cps = [np.argwhere(instances == iid)[0].tolist() for iid in instance_ids[1:]]
                         assert len(instance_ids) - 1 == len(cps)
                         tmp = [
                             {
@@ -233,9 +219,7 @@ def main():
                                 "vol": int(vol),
                                 "cp": list(cp)[::-1],
                             }
-                            for iid, vol, cp in zip(
-                                instance_ids[1:], instance_counts[1:], cps
-                            )
+                            for iid, vol, cp in zip(instance_ids[1:], instance_counts[1:], cps)
                         ]
                         ranking.extend(tmp)
                     ranking = sorted(ranking, key=lambda x: x["vol"])

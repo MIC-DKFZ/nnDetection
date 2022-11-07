@@ -122,14 +122,10 @@ class PredictionMixin(ABC):
             inverse_masks=cls.requires_mask_eval(),
             inverse_seg=cls.requires_seg_eval(),
         )
-        logger.info(
-            f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo)."
-        )
+        logger.info(f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo).")
 
         ensembler_cls = cls.get_ensembler_cls(dim=plan["network_dim"])
-        _ensembler, _ensembler_key = ensembler_cls.constructor(
-            parameters=inference_plan
-        )
+        _ensembler, _ensembler_key = ensembler_cls.constructor(parameters=inference_plan)
         ensembler = {_ensembler_key: _ensembler}
 
         predictor = Predictor(

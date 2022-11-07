@@ -89,28 +89,16 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes=num_processes,
         )
 
-        for identifier, spacing, nump in zip(
-            identifiers, target_spacings, num_processes
-        ):
+        for identifier, spacing, nump in zip(identifiers, target_spacings, num_processes):
             logger.info(f"+++ Preprocessing {identifier} +++")
             output_dir_stage = preprocessed_output_dir / identifier / "imagesTr"
             output_dir_stage.mkdir(parents=True, exist_ok=True)
 
             if not overwrite:
-                case_ids_npz_present = get_case_ids_from_dir(
-                    output_dir_stage, remove_modality=False, pattern="*.npz"
-                )
-                case_ids_pkl_present = get_case_ids_from_dir(
-                    output_dir_stage, remove_modality=False, pattern="*.pkl"
-                )
-                case_ids_present = list(
-                    set.intersection(
-                        set(case_ids_npz_present), set(case_ids_pkl_present)
-                    )
-                )
-                logger.info(
-                    f"Skipping case ids which are already present {case_ids_present}"
-                )
+                case_ids_npz_present = get_case_ids_from_dir(output_dir_stage, remove_modality=False, pattern="*.npz")
+                case_ids_pkl_present = get_case_ids_from_dir(output_dir_stage, remove_modality=False, pattern="*.pkl")
+                case_ids_present = list(set.intersection(set(case_ids_npz_present), set(case_ids_pkl_present)))
+                logger.info(f"Skipping case ids which are already present {case_ids_present}")
                 _case_ids = list(filter(lambda x: x not in case_ids_present, case_ids))
             else:
                 _case_ids = case_ids
@@ -158,9 +146,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             if modality in self.norm_schemes:
                 logger.info(f"Found normalization scheme for {modality}")
             else:
-                logger.info(
-                    f"No normalization scheme for {modality} using zero mean unit std."
-                )
+                logger.info(f"No normalization scheme for {modality} using zero mean unit std.")
         preprocessed_output_dir.mkdir(parents=True, exist_ok=True)
 
         num_stages = len(target_spacings)
@@ -168,9 +154,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes = [num_processes] * num_stages
         assert len(num_processes) == num_stages
 
-        case_ids = get_case_ids_from_dir(
-            cropped_data_dir, pattern="*.npz", remove_modality=False
-        )
+        case_ids = get_case_ids_from_dir(cropped_data_dir, pattern="*.npz", remove_modality=False)
         return case_ids, num_processes
 
     def run_process(
@@ -193,9 +177,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         data, seg, properties = load_case_cropped(cropped_data_dir, case_id)
         seg = seg[None]
 
-        data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg
-        )
+        data, seg, properties = self.apply_process(data, target_spacing, properties, seg)
         properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
 
         data = data.astype(np.float32)
@@ -390,9 +372,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert (
-            self.intensity_properties is not None
-        ), "ERROR: if there is a CT then we need intensity properties"
+        assert self.intensity_properties is not None, "ERROR: if there is a CT then we need intensity properties"
         mean_intensity = self.intensity_properties[modality]["mean"]
         std_intensity = self.intensity_properties[modality]["std"]
         lower_bound = self.intensity_properties[modality]["percentile_00_5"]
@@ -423,9 +403,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert (
-            self.intensity_properties is not None
-        ), "ERROR: if there is a CT then we need intensity properties"
+        assert self.intensity_properties is not None, "ERROR: if there is a CT then we need intensity properties"
         lower_bound = self.intensity_properties[modality]["percentile_00_5"]
         upper_bound = self.intensity_properties[modality]["percentile_99_5"]
         mask = (data[modality] > lower_bound) & (data[modality] < upper_bound)
@@ -460,23 +438,13 @@ class GenericPreprocessor(AbstractPreprocessor):
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert (
-            self.intensity_properties is not None
-        ), "ERROR: if there is a CT then we need intensity properties"
-        mean_intensity = np.mean(
-            [k["mean"] for k in self.intensity_properties.values()]
-        )
+        assert self.intensity_properties is not None, "ERROR: if there is a CT then we need intensity properties"
+        mean_intensity = np.mean([k["mean"] for k in self.intensity_properties.values()])
         # the intensity values are not independent but we do not have enough information here
-        std_intensity = np.sqrt(
-            np.sum([k["std"] ** 2 for k in self.intensity_properties.values()])
-        )
+        std_intensity = np.sqrt(np.sum([k["std"] ** 2 for k in self.intensity_properties.values()]))
 
-        lower_bound = np.mean(
-            [k["percentile_00_5"] for k in self.intensity_properties.values()]
-        )
-        upper_bound = np.mean(
-            [k["percentile_99_5"] for k in self.intensity_properties.values()]
-        )
+        lower_bound = np.mean([k["percentile_00_5"] for k in self.intensity_properties.values()])
+        upper_bound = np.mean([k["percentile_99_5"] for k in self.intensity_properties.values()])
 
         data[modality] = np.clip(data[modality], lower_bound, upper_bound)
         data[modality] = (data[modality] - mean_intensity) / std_intensity
@@ -564,9 +532,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         instances_props = properties["instances"]
         labels = [int(instances_props[str(i)]) for i in instances]
 
-        assert (len(boxes) == len(instances)) or (
-            (boxes.size == 0) and (len(instances) == 0)
-        )
+        assert (len(boxes) == len(instances)) or ((boxes.size == 0) and (len(instances) == 0))
         assert len(labels) == len(instances)
         return {
             "boxes": boxes,
@@ -616,9 +582,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             np.ndarray: preprocessed segmentation
             dict: updated properties
         """
-        data, seg, properties = ImageCropper.load_crop_from_list_of_files(
-            data_files, seg_file
-        )
+        data, seg, properties = ImageCropper.load_crop_from_list_of_files(data_files, seg_file)
         data, seg, properties = self.apply_process(
             data=data,
             target_spacing=target_spacing,
@@ -649,9 +613,7 @@ class DynDTypePreprocessor(GenericPreprocessor):
         data, seg, properties = load_case_cropped(cropped_data_dir, case_id)
         seg = seg[None]
 
-        data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg
-        )
+        data, seg, properties = self.apply_process(data, target_spacing, properties, seg)
         properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
 
         data = data.astype(np.float16)

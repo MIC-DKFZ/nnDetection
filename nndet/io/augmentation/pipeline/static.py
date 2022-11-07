@@ -45,20 +45,14 @@ from nndet.io.augmentation import AUGMENTATION_REGISTRY
 @AUGMENTATION_REGISTRY.register
 class DefaultAug(NoAug):
     def get_training_transforms(self):
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
 
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         if self.params.get("dummy_2D", False):
             # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
@@ -87,9 +81,7 @@ class DefaultAug(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -112,9 +104,7 @@ class DefaultAug(NoAug):
 
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -139,19 +129,13 @@ class BaseMoreAug(NoAug):
         - MirrorTransform
         - UtilTransforms
         """
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -184,9 +168,7 @@ class BaseMoreAug(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -204,11 +186,7 @@ class BaseMoreAug(NoAug):
                 p_per_channel=0.5,
             )
         )
-        tr_transforms.append(
-            BrightnessMultiplicativeTransform(
-                multiplier_range=(0.75, 1.25), p_per_sample=0.15
-            )
-        )
+        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25), p_per_sample=0.15))
         if self.params.get("do_additive_brightness"):
             tr_transforms.append(
                 BrightnessTransform(
@@ -245,9 +223,7 @@ class BaseMoreAug(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -260,20 +236,14 @@ class BaseMoreAug(NoAug):
 @AUGMENTATION_REGISTRY.register
 class MoreAug(NoAug):
     def get_training_transforms(self):
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -305,9 +275,7 @@ class MoreAug(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -325,11 +293,7 @@ class MoreAug(NoAug):
                 p_per_channel=0.5,
             )
         )
-        tr_transforms.append(
-            BrightnessMultiplicativeTransform(
-                multiplier_range=(0.75, 1.25), p_per_sample=0.15
-            )
-        )
+        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25), p_per_sample=0.15))
         if self.params.get("do_additive_brightness"):
             tr_transforms.append(
                 BrightnessTransform(
@@ -376,9 +340,7 @@ class MoreAug(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -389,20 +351,14 @@ class MoreAug(NoAug):
 @AUGMENTATION_REGISTRY.register
 class InsaneAug(NoAug):
     def get_training_transforms(self):
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
 
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -434,9 +390,7 @@ class InsaneAug(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -454,11 +408,7 @@ class InsaneAug(NoAug):
                 p_per_channel=0.5,
             ),
         )
-        tr_transforms.append(
-            BrightnessMultiplicativeTransform(
-                multiplier_range=(0.75, 1.3), p_per_sample=0.15
-            )
-        )
+        tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.3), p_per_sample=0.15))
         if self.params.get("do_additive_brightness"):
             tr_transforms.append(
                 BrightnessTransform(
@@ -469,9 +419,7 @@ class InsaneAug(NoAug):
                     p_per_channel=self.params.get("additive_brightness_p_per_channel"),
                 )
             )
-        tr_transforms.append(
-            ContrastAugmentationTransform(contrast_range=(0.65, 1.5), p_per_sample=0.15)
-        )
+        tr_transforms.append(ContrastAugmentationTransform(contrast_range=(0.65, 1.5), p_per_sample=0.15))
         tr_transforms.append(
             SimulateLowResolutionTransform(
                 zoom_range=(0.5, 1),
@@ -507,9 +455,7 @@ class InsaneAug(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -534,19 +480,13 @@ class BaseInsaneAug(NoAug):
         - [optional] MirrorTransform
         - UtilTransforms
         """
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -578,9 +518,7 @@ class BaseInsaneAug(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -601,9 +539,7 @@ class BaseInsaneAug(NoAug):
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
-                different_sigma_per_channel=self.params.get(
-                    "gaussian_blur_sigma_per_channel"
-                ),
+                different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
                 p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
             ),
@@ -675,9 +611,7 @@ class BaseInsaneAug(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))

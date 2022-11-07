@@ -53,9 +53,7 @@ class BaseDETR(AbstractDetector):
 
         # For future multi feature
         if num_feature_levels == 1:
-            self.input_proj = nn.ModuleList(
-                [nn.Conv3d(channels[-1], self.hidden_dim, kernel_size=1)]
-            )
+            self.input_proj = nn.ModuleList([nn.Conv3d(channels[-1], self.hidden_dim, kernel_size=1)])
         else:
             raise NotImplementedError
 
@@ -169,9 +167,7 @@ class BaseDETR(AbstractDetector):
             List[torch.Tensor]: feature maps from decoder
         """
         pred_detection, pred_seg, features = self(images)
-        pred_losses, _ = self.head.compute_loss(
-            pred_detection, targets, images.shape[2:]
-        )
+        pred_losses, _ = self.head.compute_loss(pred_detection, targets, images.shape[2:])
         if predict:
             # postprocessing
             prediction = self.head.postprocess_for_inference(images, pred_detection)
@@ -238,14 +234,10 @@ class BaseDETR(AbstractDetector):
         # Compute feature list from backbone
         features = self.backbone(inp)  # [l] (N, C_i, px, py, pz)
         # Reduce channel dimension with 1x1 convolution to hidden_dim
-        srcs_sequence = self.input_proj[0](features[-1]).unsqueeze(
-            dim=1
-        )  # (N, 1, C, px, py, pz)
+        srcs_sequence = self.input_proj[0](features[-1]).unsqueeze(dim=1)  # (N, 1, C, px, py, pz)
         # Get Position Embedding and pass through transformer
         pos_embed = self.pos_embed(srcs_sequence.squeeze(dim=1))  # (N, C, px, py, pz)
-        out_sequence, memory, reference = self.transformer(
-            srcs_sequence, self.query_pos.weight, pos_embed
-        )
+        out_sequence, memory, reference = self.transformer(srcs_sequence, self.query_pos.weight, pos_embed)
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation

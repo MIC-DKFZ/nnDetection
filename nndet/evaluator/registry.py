@@ -51,11 +51,7 @@ def evaluate_box_dir(
     gt_dir = Path(gt_dir)
     if save_dir is not None:
         save_dir.mkdir(parents=True, exist_ok=True)
-    case_ids = [
-        p.stem.rsplit("_boxes", 1)[0]
-        for p in pred_dir.iterdir()
-        if p.is_file() and p.stem.endswith("_boxes")
-    ]
+    case_ids = [p.stem.rsplit("_boxes", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_boxes")]
     logger.info(f"Found {len(case_ids)} for box evaluation in {pred_dir}")
 
     evaluator = BoxEvaluator.create(
@@ -109,9 +105,7 @@ def evaluate_mask_dir(
     if save_dir is not None:
         save_dir.mkdir(parents=True, exist_ok=True)
     case_ids = [
-        p.stem.rsplit("_masks", 1)[0]
-        for p in pred_dir.iterdir()
-        if p.is_file() and p.name.endswith("_masks.npz")
+        p.stem.rsplit("_masks", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.name.endswith("_masks.npz")
     ]
     logger.info(f"Found {len(case_ids)} for masks evaluation in {pred_dir}")
 
@@ -123,12 +117,8 @@ def evaluate_mask_dir(
     )
 
     for case_id in case_ids:
-        gt_boxes = np.load(
-            str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
-        )  # FIXME
-        gt = np.load(
-            str(gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
-        )  # FIXME
+        gt_boxes = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)  # FIXME
+        gt = np.load(str(gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True)  # FIXME
         pred = np.load(pred_dir / f"{case_id}_masks.npz")
 
         pred_masks = pred["pred_masks"]
@@ -174,11 +164,7 @@ def evaluate_case_dir(
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
-    case_ids = [
-        p.stem.rsplit("_boxes", 1)[0]
-        for p in pred_dir.iterdir()
-        if p.is_file() and p.stem.endswith("_boxes")
-    ]
+    case_ids = [p.stem.rsplit("_boxes", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_boxes")]
     logger.info(f"Found {len(case_ids)} for case evaluation in {pred_dir}")
 
     evaluator = CaseEvaluator.create(
@@ -219,19 +205,13 @@ def evaluate_seg_dir(
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
-    case_ids = [
-        p.stem.rsplit("_seg", 1)[0]
-        for p in pred_dir.iterdir()
-        if p.is_file() and p.stem.endswith("_seg")
-    ]
+    case_ids = [p.stem.rsplit("_seg", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_seg")]
     logger.info(f"Found {len(case_ids)} for seg evaluation in {pred_dir}")
 
     evaluator = PerCaseSegmentationEvaluator.create(classes=classes)
 
     for case_id in case_ids:
-        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)[
-            "seg"
-        ]  # 1, dims
+        gt = np.load(str(gt_dir / f"{case_id}_seg_gt.npz"), allow_pickle=True)["seg"]  # 1, dims
         pred = load_pickle(pred_dir / f"{case_id}_seg.pkl")
         evaluator.run_online_evaluation(
             seg=pred[None],

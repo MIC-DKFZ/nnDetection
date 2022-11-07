@@ -124,12 +124,8 @@ class AbstractPlanner(ABC):
         Returns:
             dict: loaded properties
         """
-        data_properties_path = (
-            self.preprocessed_output_dir / "properties" / "dataset_properties.pkl"
-        )
-        assert (
-            data_properties_path.is_file()
-        ), "data properties need to exist. Run data analysis first"
+        data_properties_path = self.preprocessed_output_dir / "properties" / "dataset_properties.pkl"
+        assert data_properties_path.is_file(), "data properties need to exist. Run data analysis first"
         data_properties = load_pickle(data_properties_path)
         return data_properties
 
@@ -167,12 +163,8 @@ class AbstractPlanner(ABC):
                 `transpose_backward`: transpose back order
                 `list_of_npz_files`: files used to preprocessing
         """
-        use_nonzero_mask_for_normalization = (
-            self.determine_whether_to_use_mask_for_norm()
-        )
-        logger.info(
-            f"Are we using the nonzero maks for normalization? {use_nonzero_mask_for_normalization}"
-        )
+        use_nonzero_mask_for_normalization = self.determine_whether_to_use_mask_for_norm()
+        logger.info(f"Are we using the nonzero maks for normalization? {use_nonzero_mask_for_normalization}")
         target_spacing = self.determine_target_spacing(mode=mode)
         logger.info(f"Base target spacing is {target_spacing}")
         self.determine_forward_backward_permutation(mode=mode)
@@ -226,9 +218,7 @@ class AbstractPlanner(ABC):
         spacings = self.data_properties["all_spacings"]
         sizes = self.data_properties["all_sizes"]
 
-        new_shapes = [
-            np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)
-        ]
+        new_shapes = [np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)]
         median_shape = np.median(np.vstack(new_shapes), 0)
         logger.info(f"The median shape of the dataset is {median_shape}")
         max_shape = np.max(np.vstack(new_shapes), 0)
@@ -238,9 +228,7 @@ class AbstractPlanner(ABC):
 
         target_spacing_transposed = np.array(target_spacing)[self.transpose_forward]
         median_shape_transposed = np.array(median_shape)[self.transpose_forward]
-        logger.info(
-            f"The transposed median shape of the dataset is {median_shape_transposed}"
-        )
+        logger.info(f"The transposed median shape of the dataset is {median_shape_transposed}")
 
         architecture_planner = self.create_architecture_planner(
             model_name=model_name,
@@ -255,9 +243,7 @@ class AbstractPlanner(ABC):
         )
 
         patch_size = architecture_plan["patch_size"]
-        do_dummy_2d_data_aug = (
-            max(patch_size) / min(patch_size)
-        ) > self.anisotropy_threshold
+        do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) > self.anisotropy_threshold
 
         base_plan.update(architecture_plan)
         base_plan["target_spacing_transposed"] = target_spacing_transposed
@@ -319,9 +305,7 @@ class AbstractPlanner(ABC):
             if "CT" in modalities[i]:
                 use_mask_for_norm[i] = False
             else:
-                all_size_reductions = list(
-                    self.data_properties["size_reductions"].values()
-                )
+                all_size_reductions = list(self.data_properties["size_reductions"].values())
 
                 if np.median(all_size_reductions) < 3 / 4.0:
                     logger.info("using nonzero mask for normalization")
@@ -372,8 +356,7 @@ class AbstractPlanner(ABC):
             num_processes=num_processes,
         )
         self.create_labels_tr_preprocessed(
-            preprocessed_plan_dir=self.preprocessed_output_dir
-            / plan["data_identifier"],
+            preprocessed_plan_dir=self.preprocessed_output_dir / plan["data_identifier"],
             dim=3,
             num_processes=num_processes,
         )
@@ -437,9 +420,7 @@ class AbstractPlanner(ABC):
         logger.info("Running preprocessing of test cases")
         splitted_4d_output_dir = Path(splitted_4d_output_dir)
 
-        target_dir = (
-            Path(preprocessed_output_dir) / plan["data_identifier"] / "imagesTs"
-        )
+        target_dir = Path(preprocessed_output_dir) / plan["data_identifier"] / "imagesTs"
         target_dir.mkdir(parents=True, exist_ok=True)
 
         cases_processed = get_case_ids_from_dir(

@@ -135,9 +135,7 @@ def collect_overview(
             results[case_id]["fp_score"] = fp_scores[idx]
             results[case_id]["fp_label"] = fp_labels[idx]
             results[case_id]["fp_true_label"] = fp_target_labels[idx]
-            results[case_id]["fp_type"] = [
-                "fp_iou" if tl == -1 else "fp_cls" for tl in fp_target_labels
-            ]
+            results[case_id]["fp_type"] = ["fp_iou" if tl == -1 else "fp_cls" for tl in fp_target_labels]
 
             # Misc
             unmatched_gt = match_quality_matrix.max(axis=1) < iou
@@ -150,19 +148,11 @@ def collect_overview(
 
     analysis_ids = {}
     if "fp_score" in list(df.columns):
-        tmp = (
-            df["fp_score"]
-            .apply(lambda x: np.max(x) if np.any(x) else 0)
-            .nlargest(top_n)
-        )
+        tmp = df["fp_score"].apply(lambda x: np.max(x) if np.any(x) else 0).nlargest(top_n)
         analysis_ids["top_scoring_fp"] = tmp.index.values.tolist()
         tmp = (
             df["fp_score"]
-            .apply(
-                lambda x: len(x)
-                if isinstance(x, Sequence) or isinstance(x, np.ndarray)
-                else 0
-            )
+            .apply(lambda x: len(x) if isinstance(x, Sequence) or isinstance(x, np.ndarray) else 0)
             .nlargest(top_n)
         )
         analysis_ids["top_num_fp"] = tmp.index.values.tolist()
@@ -372,9 +362,7 @@ def plot_sizes(all_pred, all_target, all_boxes, iou, score):
         marker="^",
         label="fn",
     )
-    ax.set_title(
-        f"IoU {iou} and Score Threshold {score}: tp {sum(tp_mask)} fp {sum(fp_mask)} fn {sum(fn_mask)}"
-    )
+    ax.set_title(f"IoU {iou} and Score Threshold {score}: tp {sum(tp_mask)} fp {sum(fp_mask)} fn {sum(fn_mask)}")
     ax.set_xlabel("bounding box size axis 0")
     ax.set_ylabel("bounding box size axis 1")
     ax.set_zlabel("bounding box size axis 2")
@@ -382,9 +370,7 @@ def plot_sizes(all_pred, all_target, all_boxes, iou, score):
     return fig, ax
 
 
-def plot_sizes_bar(
-    all_pred, all_target, all_boxes, iou, score, max_bin: Optional[int] = None
-):
+def plot_sizes_bar(all_pred, all_target, all_boxes, iou, score, max_bin: Optional[int] = None):
     if len(all_pred) == 0 or len(all_target) == 0:
         return None, None
     _all_pred = np.concatenate(all_pred)
@@ -422,9 +408,7 @@ def plot_sizes_bar(
         **kwargs,
     )
 
-    ax.set_title(
-        f"IoU {iou} and Score Threshold {score}: tp {sum(tp_mask)} fp {sum(fp_mask)} fn {sum(fn_mask)}"
-    )
+    ax.set_title(f"IoU {iou} and Score Threshold {score}: tp {sum(tp_mask)} fp {sum(fp_mask)} fn {sum(fn_mask)}")
     ax.set_xlabel("box width + height ( + depth)")
     ax.set_ylabel("Count")
     return fig, ax
@@ -462,28 +446,20 @@ def run_analysis_suite(prediction_dir: Path, gt_dir: Path, save_dir: Path):
         plt.savefig(_save_dir / "joint_iou_score.png")
         plt.close()
 
-        all_pred, all_target, all_boxes = collect_boxes(
-            prediction_dir, gt_dir, iou=iou, score=score
-        )
-        sizes_fig, sizes_ax = plot_sizes(
-            all_pred, all_target, all_boxes, iou=iou, score=score
-        )
+        all_pred, all_target, all_boxes = collect_boxes(prediction_dir, gt_dir, iou=iou, score=score)
+        sizes_fig, sizes_ax = plot_sizes(all_pred, all_target, all_boxes, iou=iou, score=score)
         plt.savefig(_save_dir / "sizes.png")
         with open(str(_save_dir / "sizes.pkl"), "wb") as fp:
             pickle.dump(sizes_fig, fp, protocol=4)
         plt.close()
 
-        sizes_fig, sizes_ax = plot_sizes_bar(
-            all_pred, all_target, all_boxes, iou=iou, score=score
-        )
+        sizes_fig, sizes_ax = plot_sizes_bar(all_pred, all_target, all_boxes, iou=iou, score=score)
         plt.savefig(_save_dir / "sizes_bar.png")
         with open(str(_save_dir / "sizes_bar.pkl"), "wb") as fp:
             pickle.dump(sizes_fig, fp, protocol=4)
         plt.close()
 
-        sizes_fig, sizes_ax = plot_sizes_bar(
-            all_pred, all_target, all_boxes, iou=iou, score=score, max_bin=100
-        )
+        sizes_fig, sizes_ax = plot_sizes_bar(all_pred, all_target, all_boxes, iou=iou, score=score, max_bin=100)
         plt.savefig(_save_dir / "sizes_bar_100.png")
         with open(str(_save_dir / "sizes_bar_100.pkl"), "wb") as fp:
             pickle.dump(sizes_fig, fp, protocol=4)

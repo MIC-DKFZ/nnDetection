@@ -96,9 +96,7 @@ def run_collect_intensity_properties(
     return results
 
 
-def get_voxels_in_foreground(
-    analyzer: DatasetAnalyzer, case_id: str, modality_id: int, subsample: int = 10
-) -> list:
+def get_voxels_in_foreground(analyzer: DatasetAnalyzer, case_id: str, modality_id: int, subsample: int = 10) -> list:
     """
     Get voxels from foreground
 
@@ -115,9 +113,7 @@ def get_voxels_in_foreground(
     data, seg, props = load_case_cropped(analyzer.cropped_data_dir, case_id)
     modality = data[modality_id]
     mask = seg > 0
-    voxels = list(
-        modality[mask.astype(bool)][::subsample]
-    )  # no need to take every voxel
+    voxels = list(modality[mask.astype(bool)][::subsample])  # no need to take every voxel
     return voxels
 
 

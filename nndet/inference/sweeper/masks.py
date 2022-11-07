@@ -37,9 +37,7 @@ class MaskSweeper(BoxSweeper):
             save_dir=None,
         )
 
-        for case_id in maybe_verbose_iterable(
-            self.ensembler_cls.get_case_ids(self.pred_dir)
-        ):
+        for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
             ensembler = self.ensembler_cls.from_checkpoint(
                 base_dir=self.pred_dir,
                 case_id=case_id,
@@ -49,13 +47,9 @@ class MaskSweeper(BoxSweeper):
             ensembler.update_parameters(**overwrite)
 
             pred = to_numpy(ensembler.get_case_result(restore=False))
-            gt = np.load(
-                str(self.gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True
-            )
+            gt = np.load(str(self.gt_dir / f"{case_id}_instances_gt.npz"), allow_pickle=True)
             # FIXME
-            gt_boxes = np.load(
-                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
-            )
+            gt_boxes = np.load(str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
 
             pred_masks = pred["pred_masks"]
             if gt["instances"].ndim < (pred_masks.ndim - 1):

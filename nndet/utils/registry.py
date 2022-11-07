@@ -25,9 +25,7 @@ class Registry(Mapping[KT, VT]):
         if key in self.mapping:
             return self.mapping[key]["fn"]
         else:
-            raise KeyError(
-                f"Key {key} in not registered in registry with keys: {list(self.mapping.keys())}"
-            )
+            raise KeyError(f"Key {key} in not registered in registry with keys: {list(self.mapping.keys())}")
 
     def __iter__(self):
         return self.mapping

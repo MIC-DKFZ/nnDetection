@@ -84,9 +84,7 @@ class BaseDETRHead(nn.Module):
             [
                 t["labels"][J]
                 if t["labels"].shape[0] > 0
-                else torch.as_tensor(
-                    [self.num_classes], dtype=torch.int64, device=t["labels"].device
-                )
+                else torch.as_tensor([self.num_classes], dtype=torch.int64, device=t["labels"].device)
                 for t, (_, J) in zip(targets, indices)
             ]
         )
@@ -122,9 +120,7 @@ class BaseDETRHead(nn.Module):
         """
         pred_logits = outputs["pred_logits"]
         device = pred_logits.device
-        tgt_lengths = torch.as_tensor(
-            [len(v["labels"]) for v in targets], device=device
-        )
+        tgt_lengths = torch.as_tensor([len(v["labels"]) for v in targets], device=device)
         # Count the number of predictions that are NOT "no-object" (which is the last class)
         card_pred = (pred_logits.argmax(-1) != pred_logits.shape[-1] - 1).sum(1)
         card_err = F.l1_loss(card_pred.float(), tgt_lengths.float())
@@ -148,9 +144,7 @@ class BaseDETRHead(nn.Module):
         src_boxes = outputs["pred_boxes"][idx]
 
         # idx = (batch_idx, source_idx)
-        target_boxes = torch.cat(
-            [t["boxes"][i] for t, (_, i) in zip(targets, indices)], dim=0
-        )
+        target_boxes = torch.cat([t["boxes"][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
         loss_bbox = self.l1(src_boxes, target_boxes)
         losses = {
@@ -187,9 +181,7 @@ class BaseDETRHead(nn.Module):
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
 
     @staticmethod
-    def prepare_targets(
-        targets: Dict[str, List[Tensor]], im_shape: Tuple
-    ) -> List[Dict[str, Tensor]]:
+    def prepare_targets(targets: Dict[str, List[Tensor]], im_shape: Tuple) -> List[Dict[str, Tensor]]:
         """
         Turn target Dict from nndetection into a list needed for DETR loss computation functions and converts boxes from
         edge format in pixels to center and width format normalized
@@ -316,24 +308,17 @@ class BaseDETRHead(nn.Module):
             if loss != "boxes":
                 if "labels" in loss:
                     kwargs = {"log": False}
-                losses.update(
-                    self.get_loss(loss, outputs, targets, indices, num_boxes, **kwargs)
-                )
+                losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes, **kwargs))
         return losses
 
     @torch.jit.unused
-    def _set_aux_loss(
-        self, outputs_class: Tensor, outputs_coord: Tensor
-    ) -> List[Dict[str, Tensor]]:
+    def _set_aux_loss(self, outputs_class: Tensor, outputs_coord: Tensor) -> List[Dict[str, Tensor]]:
         """
         this is a workaround to make torchscript happy, as torchscript
         doesn't support dictionary with non-homogeneous values, such
         as a dict having both a Tensor and a list.
         """
-        return [
-            {"pred_logits": a, "pred_boxes": b}
-            for a, b in zip(outputs_class[:-1], outputs_coord[:-1])
-        ]
+        return [{"pred_logits": a, "pred_boxes": b} for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
     def postprocess_for_inference(
         self,
@@ -347,14 +332,10 @@ class BaseDETRHead(nn.Module):
         raise NotImplementedError
 
 
-def _get_src_permutation_idx(
-    indices: List[Tuple[Tensor, Tensor]]
-) -> Tuple[Tensor, Tensor]:
+def _get_src_permutation_idx(indices: List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, Tensor]:
     """
     Permute predictions following indices
     """
-    batch_idx = torch.cat(
-        [torch.full_like(src, i) for i, (src, _) in enumerate(indices)]
-    )
+    batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
     src_idx = torch.cat([src for (src, _) in indices])
     return batch_idx, src_idx

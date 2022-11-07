@@ -75,19 +75,13 @@ class AugModular(NoAug):
         - [optional] MirrorTransform
         - UtilTransforms
         """
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -119,9 +113,7 @@ class AugModular(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -140,9 +132,7 @@ class AugModular(NoAug):
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
-                different_sigma_per_channel=self.params.get(
-                    "gaussian_blur_sigma_per_channel"
-                ),
+                different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
                 p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
                 p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
             ),
@@ -212,9 +202,7 @@ class AugModular(NoAug):
             tr_transforms.append(MirrorTransform(self.params.get("mirror_axes")))
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -244,19 +232,13 @@ class AugModularPlus(NoAug):
         - [optional] MirrorTransform
         - UtilTransforms
         """
-        assert (
-            self.params.get("mirror") is None
-        ), "old version of params, use new keyword do_mirror"
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
         if self.params.get("dummy_2D", False):
@@ -288,9 +270,7 @@ class AugModularPlus(NoAug):
                 p_el_per_sample=self.params.get("p_eldef"),
                 p_scale_per_sample=self.params.get("p_scale"),
                 p_rot_per_sample=self.params.get("p_rot"),
-                independent_scale_for_each_axis=self.params.get(
-                    "independent_scale_factor_for_each_axis"
-                ),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
             )
         )
 
@@ -335,9 +315,7 @@ class AugModularPlus(NoAug):
             tr_transforms.append(
                 GaussianBlurTransform(
                     blur_sigma=self.params.get("gaussian_blur_sigma"),
-                    different_sigma_per_channel=self.params.get(
-                        "gaussian_blur_sigma_per_channel"
-                    ),
+                    different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
                     p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
                     p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
                 ),
@@ -407,9 +385,7 @@ class AugModularPlus(NoAug):
 
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params.get("use_mask_for_norm")
-            tr_transforms.append(
-                MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-            )
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -569,9 +545,7 @@ class AugModularV2(NoAug):
                 p_el_per_sample=self.params["p_eldef"],
                 p_scale_per_sample=self.params["p_scale"],
                 p_rot_per_sample=self.params["p_rot"],
-                independent_scale_for_each_axis=self.params[
-                    "independent_scale_factor_for_each_axis"
-                ],
+                independent_scale_for_each_axis=self.params["independent_scale_factor_for_each_axis"],
             )
         )
 
@@ -608,9 +582,7 @@ class AugModularV2(NoAug):
         if self.params["do_noise"]:
             tr_transforms.append(
                 GaussianNoiseTransform(
-                    noise_variance=tuple(
-                        self.params["gaussian_noise"]["noise_variance"]
-                    ),
+                    noise_variance=tuple(self.params["gaussian_noise"]["noise_variance"]),
                     p_per_sample=self.params["gaussian_noise"]["p_per_sample"],
                 ),
             )
@@ -620,9 +592,7 @@ class AugModularV2(NoAug):
             one_of_blur.append(
                 GaussianBlurTransform(
                     blur_sigma=self.params["gaussian_blur"]["blur_sigma"],
-                    different_sigma_per_channel=self.params["gaussian_blur"][
-                        "different_sigma_per_channel"
-                    ],
+                    different_sigma_per_channel=self.params["gaussian_blur"]["different_sigma_per_channel"],
                     p_per_sample=self.params["gaussian_blur"]["p_per_sample"],
                     p_per_channel=self.params["gaussian_blur"]["p_per_channel"],
                 ),
@@ -630,9 +600,7 @@ class AugModularV2(NoAug):
             one_of_blur.append(
                 MedianFilterTransform(
                     filter_size=tuple(self.params["median_filter"]["filter_size"]),
-                    same_for_each_channel=self.params["median_filter"][
-                        "same_for_each_channel"
-                    ],
+                    same_for_each_channel=self.params["median_filter"]["same_for_each_channel"],
                     p_per_sample=self.params["median_filter"]["p_per_sample"],
                     p_per_channel=self.params["median_filter"]["p_per_channel"],
                 ),
@@ -736,9 +704,7 @@ class AugModularV2(NoAug):
                     max_strength=HelperBrightnessStrengthV2(_strength_param),
                     loc=self.params["brightness_gradient"]["loc"],
                     mean_centered=self.params["brightness_gradient"]["mean_centered"],
-                    same_for_all_channels=self.params["brightness_gradient"][
-                        "same_for_all_channels"
-                    ],
+                    same_for_all_channels=self.params["brightness_gradient"]["same_for_all_channels"],
                     p_per_sample=self.params["brightness_gradient"]["p_per_sample"],
                     p_per_channel=self.params["brightness_gradient"]["p_per_channel"],
                 )
@@ -754,9 +720,7 @@ class AugModularV2(NoAug):
                     scale=HelperGammaScaleV2(_scale_param),
                     gamma=HelperGammaStrengthV2(_strength_low, _strength_high),
                     loc=self.params["local_gamma"]["loc"],
-                    same_for_all_channels=self.params["local_gamma"][
-                        "same_for_all_channels"
-                    ],
+                    same_for_all_channels=self.params["local_gamma"]["same_for_all_channels"],
                     p_per_sample=self.params["local_gamma"]["p_per_sample"],
                     p_per_channel=self.params["local_gamma"]["p_per_channel"],
                 )
@@ -766,9 +730,7 @@ class AugModularV2(NoAug):
             tr_transforms.append(
                 SharpeningTransform(
                     strength=self.params["sharpening"]["strength"],
-                    same_for_each_channel=self.params["sharpening"][
-                        "same_for_each_channel"
-                    ],
+                    same_for_each_channel=self.params["sharpening"]["same_for_each_channel"],
                     p_per_sample=self.params["sharpening"]["p_per_sample"],
                     p_per_channel=self.params["sharpening"]["p_per_channel"],
                 )

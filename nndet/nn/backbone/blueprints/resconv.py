@@ -65,11 +65,7 @@ class ResPlain(nn.Module):
         )
         self.relu = nn.ReLU(inplace=True)
 
-        stride_prod = (
-            reduce((lambda x, y: x * y), stride)
-            if isinstance(stride, Sequence)
-            else stride
-        )
+        stride_prod = reduce((lambda x, y: x * y), stride) if isinstance(stride, Sequence) else stride
         if stride_prod > 1:
             self.shortcut = nn.Sequential(
                 nd_pool("Avg", dim=conv.dim, kernel_size=stride, stride=stride),
@@ -236,9 +232,7 @@ class ResConvBackbone(ConvBackbone):
             BackboneLevel: constructed level
         """
         level_num_blocks = level_cfg["num_conv"] // 2
-        level_in_channels = (
-            self.start_channels if level_idx == 0 else self.out_channels[-1]
-        )
+        level_in_channels = self.start_channels if level_idx == 0 else self.out_channels[-1]
         if level_num_blocks == 0:
             return (
                 level_in_channels,
@@ -360,8 +354,7 @@ class ResConvBackbone(ConvBackbone):
         else:
             if len(num_conv) < num_levels:
                 logger.info(
-                    f"Found {num_conv} convolutions which is less "
-                    "than num levels, filling up with last number."
+                    f"Found {num_conv} convolutions which is less " "than num levels, filling up with last number."
                 )
                 num_conv = num_conv + [num_conv[-1]] * (num_levels - len(num_conv))
             assert len(num_conv) == num_levels

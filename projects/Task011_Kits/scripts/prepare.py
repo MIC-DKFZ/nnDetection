@@ -18,9 +18,7 @@ def main():
     source_data_dir = task_data_dir / "raw"
 
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
 
     splitted_dir = task_data_dir / "raw_splitted"
     target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"

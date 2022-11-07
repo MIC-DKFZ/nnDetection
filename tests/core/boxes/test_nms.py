@@ -8,9 +8,7 @@ from nndet.core.boxes.nms import nms_cpu as nms_pytorch
 from nndet.core.boxes.nms import nms_gpu
 
 
-def generate_boxes(
-    count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=False, seed=0
-):
+def generate_boxes(count, dim=2, h=100, w=100, d=20, normalize=False, on_grid=False, seed=0):
     """
     generate radnom boxes of format [y1, x1, y2, x2, (z1, z2)]
     :param count: nr of boxes
@@ -36,9 +34,7 @@ def generate_boxes(
             upper_z = (np.random.rand(count) + 1.0) * d / 2.0
 
     if dim == 3:
-        boxes = np.array(
-            list(zip(lower_y, lower_x, upper_y, upper_x, lower_z, upper_z))
-        )
+        boxes = np.array(list(zip(lower_y, lower_x, upper_y, upper_x, lower_z, upper_z)))
         # add an extreme box that tests the boundaries
         boxes = np.concatenate((boxes, np.array([[0.0, 0.0, h, w, 0, d]])))
     else:
@@ -76,9 +72,7 @@ def generate_3d_fixed():
         Tensor: scores [N]
         Tensor: expected keep [M] (for threshold 0.01)
     """
-    boxes = torch.tensor(
-        [[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3], [2, 2, 4, 4, 2, 4]]
-    ).float()
+    boxes = torch.tensor([[0, 0, 2, 2, 0, 2], [1, 1, 3, 3, 1, 3], [2, 2, 4, 4, 2, 4]]).float()
     scores = torch.tensor([1, 0.8, 0.6]).float()
     expected = torch.tensor([0, 2])
     return boxes, scores, expected
@@ -98,9 +92,7 @@ class TestNMS:
         assert (computed_vision == expected).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
-    @pytest.mark.skipif(
-        nms_gpu is None, reason="nnDetection was not build with GPU support"
-    )
+    @pytest.mark.skipif(nms_gpu is None, reason="nnDetection was not build with GPU support")
     def test_nms_torchvision_2d_gpu(self, th):
         boxes, scores, expected = generate_2d_fixed()
         boxes, scores, expected = boxes.cuda(), scores.cuda(), expected.cuda()
@@ -129,9 +121,7 @@ class TestNMS:
         assert (computed_cpu == expected).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
-    @pytest.mark.skipif(
-        nms_gpu is None, reason="nnDetection was not build with GPU support"
-    )
+    @pytest.mark.skipif(nms_gpu is None, reason="nnDetection was not build with GPU support")
     def test_nms_cuda_3d_fixed(self, th):
         boxes, scores, expected = generate_3d_fixed()
 
@@ -150,9 +140,7 @@ class TestNMS:
         assert (computed_cpu == computed_pytorch).all()
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
-    @pytest.mark.skipif(
-        nms_gpu is None, reason="nnDetection was not build with GPU support"
-    )
+    @pytest.mark.skipif(nms_gpu is None, reason="nnDetection was not build with GPU support")
     @pytest.mark.parametrize("seed", [0, 1, 2, 3])
     def test_nms_cuda_3d_random(self, th, seed):
         np.random.seed(seed)

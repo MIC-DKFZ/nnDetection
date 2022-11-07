@@ -206,10 +206,7 @@ def instance_class_and_region_sizes(
     ids = np.unique(iseg)
     ids = ids[ids > 0]
     if len(ids) != len(list(instance_classes.keys())):
-        logger.warning(
-            f"Instance lost. Found {instance_classes} in "
-            f"properties but {ids} in seg of {case_id}."
-        )
+        logger.warning(f"Instance lost. Found {instance_classes} in " f"properties but {ids} in seg of {case_id}.")
     volumer_per_instance = {c: np.sum(iseg == c) * vol_per_voxel for c in ids}
 
     for instance_id, instance_vol in volumer_per_instance.items():
@@ -222,9 +219,7 @@ def instance_class_and_region_sizes(
     return volume_per_class, region_volume_per_class, ids
 
 
-def case_ious(
-    boxes: np.ndarray, props: dict
-) -> Tuple[np.ndarray, Dict[int, np.ndarray]]:
+def case_ious(boxes: np.ndarray, props: dict) -> Tuple[np.ndarray, Dict[int, np.ndarray]]:
     """
     Compute IoU values for a single case (Evaluated both settings: all
     bounding boxes and bounding boxes corresponding to a specific class)
@@ -248,9 +243,7 @@ def case_ious(
         case_instances = sorted(list(map(int, props["instance_ids"])))
 
         for _c in case_classes:
-            cls_box_indices = [
-                int(props["instances"][str(ci)]) == _c for ci in case_instances
-            ]
+            cls_box_indices = [int(props["instances"][str(ci)]) == _c for ci in case_instances]
             class_ious[_c] = compute_each_iou(boxes[cls_box_indices])
     else:
         all_ious = np.array([])

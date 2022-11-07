@@ -215,9 +215,7 @@ class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
         boxes = clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
         levels = [
-            torch.full(
-                (n,), fill_value=level_idx, dtype=torch.long, device=probs.device
-            )
+            torch.full((n,), fill_value=level_idx, dtype=torch.long, device=probs.device)
             for level_idx, n in enumerate(num_anchors_per_level)
         ]
         levels = torch.cat(levels, 0)

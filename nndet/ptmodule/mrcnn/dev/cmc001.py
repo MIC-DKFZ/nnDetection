@@ -51,9 +51,7 @@ class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
 
     # RoI classes
@@ -71,6 +69,4 @@ class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
-    roi_mask_post_cls: Type[
-        MaskPostprocessing
-    ] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+    roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy

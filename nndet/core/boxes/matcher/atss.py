@@ -44,8 +44,7 @@ class ATSSMatcher(Matcher):
         self.min_dist = 0.01
         self.center_in_gt = center_in_gt
         logger.info(
-            f"Running ATSS Matching with num_candidates={self.num_candidates} "
-            f"and center_in_gt {self.center_in_gt}."
+            f"Running ATSS Matching with num_candidates={self.num_candidates} " f"and center_in_gt {self.center_in_gt}."
         )
 
     def compute_matches(
@@ -79,9 +78,7 @@ class ATSSMatcher(Matcher):
         num_gt = boxes.shape[0]
         num_anchors = anchors.shape[0]
 
-        distances, _, anchors_center = box_center_dist(
-            boxes, anchors
-        )  # num_boxes x anchors
+        distances, _, anchors_center = box_center_dist(boxes, anchors)  # num_boxes x anchors
 
         # select candidates based on center distance
         candidate_idx = []
@@ -90,9 +87,7 @@ class ATSSMatcher(Matcher):
             end_idx = start_idx + apl
 
             selectable_k = min(self.num_candidates * num_anchors_per_loc, apl)
-            _, idx = distances[:, start_idx:end_idx].topk(
-                selectable_k, dim=1, largest=False
-            )
+            _, idx = distances[:, start_idx:end_idx].topk(selectable_k, dim=1, largest=False)
             # idx shape [num_boxes x selectable_k]
             candidate_idx.append(idx + start_idx)
 
@@ -100,24 +95,16 @@ class ATSSMatcher(Matcher):
         # [num_boxes x num_candidates] (index of candidate anchors)
         candidate_idx = torch.cat(candidate_idx, dim=1)
 
-        match_quality_matrix = self.similarity_fn(
-            boxes, anchors
-        )  # [num_boxes x anchors]
-        candidate_overlaps = match_quality_matrix.gather(
-            1, candidate_idx
-        )  # [num_boxes, n_candidates]
+        match_quality_matrix = self.similarity_fn(boxes, anchors)  # [num_boxes x anchors]
+        candidate_overlaps = match_quality_matrix.gather(1, candidate_idx)  # [num_boxes, n_candidates]
 
         # compute adaptive iou threshold
         overlaps_mean_per_gt = candidate_overlaps.mean(dim=1)  # [num_boxes]
         overlaps_std_per_gt = candidate_overlaps.std(dim=1)  # [num_boxes]
         overlaps_thr_per_gt = overlaps_mean_per_gt + overlaps_std_per_gt  # [num_boxes]
-        is_pos = (
-            candidate_overlaps >= overlaps_thr_per_gt[:, None]
-        )  # [num_boxes x n_candidates]
+        is_pos = candidate_overlaps >= overlaps_thr_per_gt[:, None]  # [num_boxes x n_candidates]
 
-        if (
-            self.center_in_gt
-        ):  # can discard all candidates in case of very small objects :/
+        if self.center_in_gt:  # can discard all candidates in case of very small objects :/
             # center point of selected anchors needs to lie within the ground truth
             boxes_idx = (
                 torch.arange(num_gt, device=boxes.device, dtype=torch.long)[:, None]

@@ -24,16 +24,10 @@ def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
     Returns:
         List[str]: paths to files
     """
-    case_paths = get_case_ids_from_dir(
-        Path(directory), remove_modality=False, join=True, pattern="*.npy"
-    )
+    case_paths = get_case_ids_from_dir(Path(directory), remove_modality=False, join=True, pattern="*.npy")
     if not case_paths:
-        logger.info(
-            f"Did not find any npy files, looking for npz files. Folder: {directory}"
-        )
-        case_paths = get_case_ids_from_dir(
-            Path(directory), remove_modality=False, join=True, pattern="*.npz"
-        )
+        logger.info(f"Did not find any npy files, looking for npz files. Folder: {directory}")
+        case_paths = get_case_ids_from_dir(Path(directory), remove_modality=False, join=True, pattern="*.npz")
         if not case_paths:
             logger.error("Did not find any npz files.")
             raise RuntimeError(f"Did not find any npz files. Folder: {directory}")

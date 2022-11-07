@@ -51,10 +51,7 @@ class InterpolateToShapes(torch.nn.Module):
             squeeze_result = True
 
         new_targets = [
-            F.interpolate(
-                target, size=shape, mode=self.mode, align_corners=self.align_corners
-            )
-            for shape in shapes
+            F.interpolate(target, size=shape, mode=self.mode, align_corners=self.align_corners) for shape in shapes
         ]
 
         if squeeze_result:
@@ -120,10 +117,7 @@ class InterpolateToShape(InterpolateToShapes):
             squeeze_result = True
 
         new_targets = [
-            F.interpolate(
-                pred, size=shape, mode=self.mode, align_corners=self.align_corners
-            )
-            for pred in preds
+            F.interpolate(pred, size=shape, mode=self.mode, align_corners=self.align_corners) for pred in preds
         ]
 
         if squeeze_result:

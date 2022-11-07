@@ -130,18 +130,10 @@ def decode_single(
     pred_w = torch.exp(dw) * widths[:, None]  # [N, n_classes]
     pred_h = torch.exp(dh) * heights[:, None]  # [N, n_classes]
 
-    pred_boxes1 = (
-        pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-    )  # [N, n_classes]
-    pred_boxes2 = (
-        pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
-    )  # [N, n_classes]
-    pred_boxes3 = (
-        pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-    )  # [N, n_classes]
-    pred_boxes4 = (
-        pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
-    )  # [N, n_classes]
+    pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w  # [N, n_classes]
+    pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h  # [N, n_classes]
+    pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w  # [N, n_classes]
+    pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h  # [N, n_classes]
 
     if offset == 6:
         depths = boxes[:, 5] - boxes[:, 4]  # [N]
@@ -157,12 +149,8 @@ def decode_single(
         pred_ctr_z = dz * depths[:, None] + ctr_z[:, None]  # [N, n_classes]
         pred_z = torch.exp(dd) * depths[:, None]  # [N, n_classes]
 
-        pred_boxes5 = (
-            pred_ctr_z - torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z
-        )  # [N]
-        pred_boxes6 = (
-            pred_ctr_z + torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z
-        )  # [N]
+        pred_boxes5 = pred_ctr_z - torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z  # [N]
+        pred_boxes6 = pred_ctr_z + torch.tensor(0.5, dtype=pred_ctr_z.dtype) * pred_z  # [N]
         pred_boxes = torch.stack(
             (
                 pred_boxes1,
@@ -177,9 +165,7 @@ def decode_single(
             1
         )  # [N, 6 * n_classes]
     else:
-        pred_boxes = torch.stack(
-            (pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2
-        ).flatten(
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(
             1
         )  # [N, 4 * n_classes]
     return pred_boxes
@@ -211,12 +197,8 @@ class BoxCoderND(BoxCoder):
         """
         # filter for images which have a foreground class
         filter_min_one_gt = [rb.numel() > 0 for rb in reference_boxes]
-        filtered_ref_boxes = [
-            rb for idx, rb in enumerate(reference_boxes) if filter_min_one_gt[idx]
-        ]
-        filtered_proposals = [
-            pr for idx, pr in enumerate(proposals) if filter_min_one_gt[idx]
-        ]
+        filtered_ref_boxes = [rb for idx, rb in enumerate(reference_boxes) if filter_min_one_gt[idx]]
+        filtered_proposals = [pr for idx, pr in enumerate(proposals) if filter_min_one_gt[idx]]
 
         if any(filter_min_one_gt):
             filtered_encoded = super().encode(filtered_ref_boxes, filtered_proposals)

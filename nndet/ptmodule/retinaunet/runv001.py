@@ -55,9 +55,7 @@ class RetinaUNetV001(
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
     segmenter_cls = DiCESegmenterFgBg
 

@@ -168,9 +168,7 @@ def test_instances_to_segmentation(
 @pytest.mark.parametrize("dtype", [float, int])
 @pytest.mark.parametrize("seg_mapping", SEG_MAPPINGS)
 @pytest.mark.parametrize("seg_result,add_background", EXAMPLES)
-def test_instances_to_segmentation_np(
-    mask, seg_result, add_background, seg_mapping, dtype
-):
+def test_instances_to_segmentation_np(mask, seg_result, add_background, seg_mapping, dtype):
     mask = mask.astype(dtype)
     seg_result = seg_result.astype(dtype)
 

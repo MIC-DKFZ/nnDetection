@@ -86,16 +86,12 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.pad_kwargs_data = pad_kwargs_data if pad_kwargs_data is not None else {}
         if "constant_values" not in self.pad_kwargs_data:
             # this is also the numpy default; to be sure that is won't change we set it manually
-            self.pad_kwargs_data[
-                "constant_values"
-            ] = 0  # pad 0 is used during inference
+            self.pad_kwargs_data["constant_values"] = 0  # pad 0 is used during inference
         self.num_batches_per_epoch = num_batches_per_epoch
 
         # we sample bigger patches and create a center crop during augmentation
         # to cover the boarders of the patient we need to adjust the position
-        self.need_to_pad = (
-            np.array(patch_size_generator) - np.array(patch_size_final)
-        ).astype(np.int32)
+        self.need_to_pad = (np.array(patch_size_generator) - np.array(patch_size_final)).astype(np.int32)
         self.data_shape_batch, self.seg_shape_batch = self.determine_shapes()
         self.cache = self.build_cache()
         self.candidates_key = "boxes_file"
@@ -163,16 +159,10 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(
-            zip(selected_cases, selected_instances)
-        ):
+        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
             # print(case_id, instance_id)
-            case_data = np.load(
-                self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=True
-            )
-            case_seg = np.load(
-                self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=True
-            )
+            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=True)
+            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=True)
             properties = load_pickle(self._data[case_id]["properties_file"])
 
             if instance_id < 0:
@@ -268,15 +258,9 @@ class BaseDataLoader2D(BaseDataLoader3D):
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(
-            zip(selected_cases, selected_instances)
-        ):
-            case_data = np.load(
-                self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=False
-            )
-            case_seg = np.load(
-                self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=False
-            )
+        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
+            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=False)
+            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=False)
             properties = load_pickle(self._data[case_id]["properties_file"])
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
@@ -298,18 +282,12 @@ class BaseDataLoader2D(BaseDataLoader3D):
                     candidates=candidates,
                 )
 
-            data_batch[batch_idx] = save_get_crop(
-                case_data,
-                crop=crop,
-                mode=self.pad_mode,
-                **self.pad_kwargs_data,
-            )[0][:, 0]
-            seg_batch[batch_idx] = save_get_crop(
-                case_seg,
-                crop=crop,
-                mode="constant",
-                constant_values=-1,
-            )[0][:, 0]
+            data_batch[batch_idx] = save_get_crop(case_data, crop=crop, mode=self.pad_mode, **self.pad_kwargs_data,)[
+                0
+            ][:, 0]
+            seg_batch[batch_idx] = save_get_crop(case_seg, crop=crop, mode="constant", constant_values=-1,)[
+                0
+            ][:, 0]
             case_ids_batch.append(case_id)
             instances_batch.append(properties.pop("instances"))
             properties_batch.append(properties)

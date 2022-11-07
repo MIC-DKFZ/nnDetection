@@ -253,9 +253,7 @@ class TestOffsetFGCrop3DV2:
 
     def test_offseet_box_magn0(self, cropper: OffsetFGCrop3DV2):
         cropper.offset_magn = 0.0
-        idx = cropper._offset_box(
-            ps=128, ntp=72, spatial_size=256, box_lower=95, box_upper=105
-        )
+        idx = cropper._offset_box(ps=128, ntp=72, spatial_size=256, box_lower=95, box_upper=105)
         assert idx == 0
 
     @pytest.mark.parametrize("test_cls", [OffsetFGCrop3D, OffsetFGCrop3DV2])

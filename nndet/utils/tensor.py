@@ -70,24 +70,15 @@ def to_device(
             return inp.to(device=device, **kwargs)
     elif isinstance(inp, Sequence):
         old_type = type(inp)
-        return old_type(
-            [to_device(i, device=device, detach=detach, **kwargs) for i in inp]
-        )
+        return old_type([to_device(i, device=device, detach=detach, **kwargs) for i in inp])
     elif isinstance(inp, Mapping):
         old_type = type(inp)
-        return old_type(
-            {
-                key: to_device(item, device=device, detach=detach, **kwargs)
-                for key, item in inp.items()
-            }
-        )
+        return old_type({key: to_device(item, device=device, detach=detach, **kwargs) for key, item in inp.items()})
     else:
         return inp
 
 
-def to_numpy(
-    inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]
-) -> Union[Sequence[np.ndarray], np.ndarray, Any]:
+def to_numpy(inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]) -> Union[Sequence[np.ndarray], np.ndarray, Any]:
     """
     Convert a tensor or sequence of tensors to numpy array/s
 
@@ -125,16 +116,9 @@ def to_tensor(inp: Any) -> Any:
     elem_type = type(inp)
     if isinstance(inp, torch.Tensor):
         return inp
-    elif (
-        elem_type.__module__ == "numpy"
-        and elem_type.__name__ != "str_"
-        and elem_type.__name__ != "string_"
-    ):
+    elif elem_type.__module__ == "numpy" and elem_type.__name__ != "str_" and elem_type.__name__ != "string_":
         # array of string classes and object
-        if (
-            elem_type.__name__ == "ndarray"
-            and np_str_obj_array_pattern.search(inp.dtype.str) is not None
-        ):
+        if elem_type.__name__ == "ndarray" and np_str_obj_array_pattern.search(inp.dtype.str) is not None:
             return inp
         return torch.as_tensor(inp)
     elif isinstance(inp, abc.Mapping):
@@ -159,9 +143,7 @@ def cat(t: Union[List[Tensor], Tensor], *args, **kwrags):
         return torch.cat(t, *args, **kwrags)
 
 
-def detach_all(
-    inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]
-) -> Union[Sequence[np.ndarray], np.ndarray, Any]:
+def detach_all(inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]) -> Union[Sequence[np.ndarray], np.ndarray, Any]:
     """
     Detach
     # TODO: docu
