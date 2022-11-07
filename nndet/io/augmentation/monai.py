@@ -40,11 +40,7 @@ class MonaiTransform(AbstractTransform):
 
         for b in range(batch_size):
             # extract current element from batch dict
-            element_dict = {
-                key: data_dict[key][b]
-                for key in [self.data_key, self.label_key]
-                if key is not None
-            }
+            element_dict = {key: data_dict[key][b] for key in [self.data_key, self.label_key] if key is not None}
 
             # augment
             augmented_element_dict = self.trafo(element_dict)

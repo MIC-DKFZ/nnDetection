@@ -27,9 +27,7 @@ class SemanticEvalMixin(EvalMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "semantic" in evaluators:
-            raise RuntimeError(
-                "Found SegmentationEvaluator in evaluators, can not register a second one!"
-            )
+            raise RuntimeError("Found SegmentationEvaluator in evaluators, can not register a second one!")
 
         evaluators["semantic"] = SegmentationEvaluator.create()
         return evaluators
@@ -113,9 +111,7 @@ class SemanticFgEvalMixin(EvalMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "semantic_fg" in evaluators:
-            raise RuntimeError(
-                "Found SegmentationEvaluator in evaluators, can not register a second one!"
-            )
+            raise RuntimeError("Found SegmentationEvaluator in evaluators, can not register a second one!")
 
         evaluators["semantic_fg"] = SegmentationEvaluator.create(fg_mode=True)
         return evaluators

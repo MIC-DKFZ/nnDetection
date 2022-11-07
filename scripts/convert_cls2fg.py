@@ -23,9 +23,7 @@ def convert_raw(task, overwrite, ov):
     print(cfg)
 
     source_splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
-    target_splitted_dir = Path(
-        str(source_splitted_dir).replace(task_name_full, new_task_name_full)
-    )
+    target_splitted_dir = Path(str(source_splitted_dir).replace(task_name_full, new_task_name_full))
     if target_splitted_dir.is_dir() and overwrite:
         shutil.rmtree(target_splitted_dir)
     target_splitted_dir.mkdir(parents=True)

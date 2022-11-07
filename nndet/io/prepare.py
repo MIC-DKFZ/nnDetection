@@ -34,21 +34,15 @@ def maybe_split_4d_nifti(source_file: Path, output_folder: Path):
     filename = source_file.name
     if dim == 3:
         # -7 cuts the .nii.gz part
-        shutil.copy(
-            str(source_file), str(output_folder / (filename[:-7] + "_0000.nii.gz"))
-        )
+        shutil.copy(str(source_file), str(output_folder / (filename[:-7] + "_0000.nii.gz")))
         return
     elif dim == 4:
         imgs_splitted = split_4d_itk(img_itk)
 
         for idx, img in enumerate(imgs_splitted):
-            sitk.WriteImage(
-                img, str(output_folder / (filename[:-7] + "_%04.0d.nii.gz" % idx))
-            )
+            sitk.WriteImage(img, str(output_folder / (filename[:-7] + "_%04.0d.nii.gz" % idx)))
     else:
-        raise TypeError(
-            f"Unexpected dimensionality: {dim} of file {source_file}, cannot split"
-        )
+        raise TypeError(f"Unexpected dimensionality: {dim} of file {source_file}, cannot split")
 
 
 def split_4d_itk(img_itk: sitk.Image) -> List[sitk.Image]:
@@ -76,9 +70,7 @@ def split_4d_itk(img_itk: sitk.Image) -> List[sitk.Image]:
     images_new = []
     for i, t in enumerate(range(img_npy.shape[0])):
         img = img_npy[t]
-        images_new.append(
-            create_itk_image_spatial_props(img, spacing, origin, direction)
-        )
+        images_new.append(create_itk_image_spatial_props(img, spacing, origin, direction))
     return images_new
 
 
@@ -141,9 +133,7 @@ def create_test_split(
     case_ids = sorted(get_case_ids_from_dir(images_tr, remove_modality=True))
     logger.info(f"Found {len(case_ids)} to split")
 
-    train_ids, test_ids = train_test_split(
-        case_ids, test_size=test_size, random_state=random_state, shuffle=shuffle
-    )
+    train_ids, test_ids = train_test_split(case_ids, test_size=test_size, random_state=random_state, shuffle=shuffle)
     logger.info(f"Using {train_ids} for training and {test_ids} for testing.")
 
     for cid in test_ids:

@@ -86,9 +86,7 @@ class BaseEnsembler(ABC):
             *args,
             **kwargs2,
         ):
-            return cls(
-                properties=properties, parameters=parameters, *args, **kwargs, **kwargs2
-            )
+            return cls(properties=properties, parameters=parameters, *args, **kwargs, **kwargs2)
 
         return create, cls.ID
 
@@ -230,10 +228,7 @@ class BaseEnsembler(ABC):
 
     @classmethod
     def get_case_ids(cls, base_dir: PathLike):
-        return [
-            c.stem.rsplit(f"_{cls.ID}", 1)[0]
-            for c in Path(base_dir).glob(f"*_{cls.ID}.pt")
-        ]
+        return [c.stem.rsplit(f"_{cls.ID}", 1)[0] for c in Path(base_dir).glob(f"*_{cls.ID}.pt")]
 
     @classmethod
     def save_result(cls, data: Dict, target_dir: Path, case_name: str) -> None:
@@ -250,9 +245,7 @@ class OverlapMap:
             data_shape: spatial dimensions of data (
                 no batch dim and no channel dim!)
         """
-        self.overlap_map: torch.Tensor = torch.zeros(
-            *data_shape, requires_grad=False, dtype=torch.float
-        )
+        self.overlap_map: torch.Tensor = torch.zeros(*data_shape, requires_grad=False, dtype=torch.float)
 
     def add_overlap(self, crop: Sequence[slice]):
         """

@@ -53,9 +53,7 @@ def poly1_focal_loss_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-poly1_focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(
-    poly1_focal_loss_with_logits
-)
+poly1_focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(poly1_focal_loss_with_logits)
 
 
 def poly1_bce_with_logits(
@@ -95,6 +93,4 @@ def poly1_bce_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-poly1_bce_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(
-    poly1_bce_with_logits
-)
+poly1_bce_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(poly1_bce_with_logits)

@@ -145,16 +145,12 @@ def test_save_get_borders():
     bottom_left = (slice(10, 30), slice(-10, 10))
     bottom_left_gt = np.zeros((20, 20)) + 2
     bottom_left_gt[:10, 10:] = 0
-    _check_save_get(
-        mask, bottom_left, bottom_left_gt, mode="constant", constant_values=2
-    )
+    _check_save_get(mask, bottom_left, bottom_left_gt, mode="constant", constant_values=2)
 
     bottom_right = (slice(10, 30), slice(10, 30))
     bottom_right_gt = np.zeros((20, 20)) + 2
     bottom_right_gt[:10, :10] = 0
-    _check_save_get(
-        mask, bottom_right, bottom_right_gt, mode="constant", constant_values=2
-    )
+    _check_save_get(mask, bottom_right, bottom_right_gt, mode="constant", constant_values=2)
 
 
 def test_save_get_mode_shift():
@@ -192,9 +188,7 @@ def test_save_get_errors():
 
 def test_save_get_origin_shifted():
     data = np.random.random((3, 10, 10, 10))
-    crop, origin, _ = save_get_crop(
-        data, crop=(slice(-2, 1), slice(-3, 1), slice(1, 4))
-    )
+    crop, origin, _ = save_get_crop(data, crop=(slice(-2, 1), slice(-3, 1), slice(1, 4)))
     assert all([a == b for a, b in zip(origin, [0, 0, 1])])
 
 

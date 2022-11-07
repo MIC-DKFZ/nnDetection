@@ -70,10 +70,7 @@ class RetinaUNetC010Focal(RetinaUNetC010):
         sampler_name = cls.head_sampler_cls.__name__
         sampler_kwargs = model_cfg["head_sampler_kwargs"]
 
-        logger.info(
-            f"Building:: head {head_name}: {head_kwargs} "
-            f"sampler {sampler_name}: {sampler_kwargs}"
-        )
+        logger.info(f"Building:: head {head_name}: {head_kwargs} " f"sampler {sampler_name}: {sampler_kwargs}")
         head = cls.head_cls(
             classifier=classifier,
             regressor=regressor,
@@ -150,9 +147,7 @@ class RetinaUNetC010LK(RetinaUNetC010):
             f"SGD Lookahead with momentum {self.trainer_cfg['sgd_momentum']} and "
             f"nesterov {self.trainer_cfg['sgd_nesterov']}"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
         _optimizer = torch.optim.SGD(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -167,9 +162,7 @@ class RetinaUNetC010LK(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
@@ -189,9 +182,7 @@ class RetinaUNetC010AdamW(RetinaUNetC010):
             f"weight_decay {self.trainer_cfg['weight_decay']} "
             f"AdamW"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
         optimizer = torch.optim.AdamW(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -199,9 +190,7 @@ class RetinaUNetC010AdamW(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
@@ -230,9 +219,7 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
             f"weight_decay {self.trainer_cfg['weight_decay']} "
             f"RAdam"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
         optimizer = optim.RAdam(
             wd_groups,
             lr=self.trainer_cfg["initial_lr"],
@@ -240,9 +227,7 @@ class RetinaUNetC010RAdam(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
@@ -271,9 +256,7 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
             f"weight_decay {self.trainer_cfg['weight_decay']} "
             f"Ranger"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
         optimizer = optim.Ranger(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -281,9 +264,7 @@ class RetinaUNetC010Ranger(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],
@@ -312,9 +293,7 @@ class RetinaUNetC010Madgrad(RetinaUNetC010):
             f"weight_decay {self.trainer_cfg['weight_decay']} "
             f"MADGRAD with momentum {self.trainer_cfg['momentum']}"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
         optimizer = MADGRAD(
             wd_groups,
             self.trainer_cfg["initial_lr"],
@@ -323,9 +302,7 @@ class RetinaUNetC010Madgrad(RetinaUNetC010):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],

@@ -61,9 +61,7 @@ class BoxHeadHNM(AnchorHead):
             reg_mode=reg_mode,
         )
 
-        self.logger = (
-            None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
-        )
+        self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
         self.fg_bg_sampler = sampler
 
     def compute_loss(
@@ -102,9 +100,7 @@ class BoxHeadHNM(AnchorHead):
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         batch_anchors = cat(anchors, dim=0)
@@ -131,9 +127,7 @@ class BoxHeadHNM(AnchorHead):
                 reg_target_sampled,
             ) / max(1, sampled_pos_inds.numel())
 
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds], target_labels[sampled_inds]
-        )
+        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
         return losses, sampled_pos_inds, sampled_neg_inds
 
     def select_indices(
@@ -158,9 +152,7 @@ class BoxHeadHNM(AnchorHead):
         boxes_max_fg_probs = boxes_max_fg_probs.max(dim=1)[0]  # search max of fg probs
 
         # positive and negative anchor indices per image
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(
-            target_labels, boxes_max_fg_probs
-        )
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(target_labels, boxes_max_fg_probs)
         sampled_pos_inds = torch.where(cat(sampled_pos_inds, dim=0))[0]
         sampled_neg_inds = torch.where(cat(sampled_neg_inds, dim=0))[0]
 
@@ -223,9 +215,7 @@ class BoxHeadHNMV2(AnchorHead):
             self.all_ema = EMA(beta=0.95, bias_correction=True)
             self.pos_ema = EMA(beta=0.95, bias_correction=True)
 
-        self.logger = (
-            None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
-        )
+        self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
         self.fg_bg_sampler = sampler
 
     def compute_loss(
@@ -263,9 +253,7 @@ class BoxHeadHNMV2(AnchorHead):
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         batch_anchors = cat(anchors, dim=0)
@@ -328,9 +316,7 @@ class BoxHeadHNMV2(AnchorHead):
         boxes_max_fg_probs = boxes_max_fg_probs.max(dim=1)[0]  # search max of fg probs
 
         # positive and negative anchor indices per image
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(
-            target_labels, boxes_max_fg_probs
-        )
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(target_labels, boxes_max_fg_probs)
         sampled_pos_inds = torch.where(cat(sampled_pos_inds, dim=0))[0]
         sampled_neg_inds = torch.where(cat(sampled_neg_inds, dim=0))[0]
 
@@ -378,15 +364,11 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
         target_labels = cat(target_labels, dim=0)
 
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds], target_labels[sampled_inds]
-        )
+        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
 
         pos_inds = torch.where(target_labels >= 1)[0]
         batch_anchors = cat(anchors, dim=0)
@@ -473,9 +455,7 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
         target_labels = cat(target_labels, dim=0)
 
@@ -488,14 +468,10 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
             batch_anchors[sampled_pos_inds],
         )
         # decode prediction boxes
-        pred_boxes_sampled = self.coder.decode_single(
-            box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds]
-        )
+        pred_boxes_sampled = self.coder.decode_single(box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds])
 
         # compute losses
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds], target_labels[sampled_inds]
-        )
+        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
 
         if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
@@ -555,16 +531,12 @@ class BoxHeadHNMNative(BoxHeadHNM):
 
         losses = {}
         # with torch.no_grad():
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         target_labels = torch.cat(target_labels, dim=0)
         batch_anchors = torch.cat(anchors, dim=0)
-        pred_boxes_sampled = self.coder.decode_single(
-            box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds]
-        )
+        pred_boxes_sampled = self.coder.decode_single(box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds])
 
         target_boxes_sampled = torch.cat(matched_gt_boxes, dim=0)[sampled_pos_inds]
         if sampled_pos_inds.numel() > 0:
@@ -573,9 +545,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
                 target_boxes_sampled,
             ) / max(1, sampled_pos_inds.numel())
 
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds], target_labels[sampled_inds]
-        )
+        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
         return losses, sampled_pos_inds, sampled_neg_inds
 
 
@@ -620,9 +590,7 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(
-            target_labels, box_logits
-        )
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         target_labels = torch.cat(target_labels, dim=0)
@@ -632,14 +600,10 @@ class BoxHeadHNMNativeRegAll(BoxHeadHNM):
         assert len(batch_anchors) == len(box_logits)
         assert len(batch_anchors) == len(target_labels)
 
-        losses["cls"] = self.classifier.compute_loss(
-            box_logits[sampled_inds], target_labels[sampled_inds]
-        )
+        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
 
         pos_inds = torch.where(target_labels >= 1)[0]
-        pred_boxes = self.coder.decode_single(
-            box_deltas[pos_inds], batch_anchors[pos_inds]
-        )
+        pred_boxes = self.coder.decode_single(box_deltas[pos_inds], batch_anchors[pos_inds])
         target_boxes = torch.cat(matched_gt_boxes, dim=0)[pos_inds]
 
         if pos_inds.numel() > 0:

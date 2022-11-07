@@ -165,9 +165,7 @@ def wbc(
     while idx_pool.nelement() > 0:
         # build cluster
         highest_scoring_id = idx_pool[0]
-        matches = torch.where(ious[highest_scoring_id][idx_pool] > iou_thresh)[
-            0
-        ].flatten()
+        matches = torch.where(ious[highest_scoring_id][idx_pool] > iou_thresh)[0].flatten()
         box_idx = idx_pool[matches]
 
         # compute new scores
@@ -185,16 +183,12 @@ def wbc(
         new_scores.append(new_score)
 
         # get all elements that were not matched and discard all others.
-        non_matches = torch.where(ious[highest_scoring_id][idx_pool] <= iou_thresh)[
-            0
-        ].flatten()
+        non_matches = torch.where(ious[highest_scoring_id][idx_pool] <= iou_thresh)[0].flatten()
         idx_pool = idx_pool[non_matches]
     if new_boxes:
         return torch.stack(new_boxes, dim=0), torch.cat(new_scores, dim=0)
     else:
-        return torch.tensor([]).view(-1, boxes.shape[1]).to(boxes), torch.tensor(
-            []
-        ).view(-1).to(scores)
+        return torch.tensor([]).view(-1, boxes.shape[1]).to(boxes), torch.tensor([]).view(-1).to(scores)
 
 
 def compute_cluster_consolidation(
@@ -226,18 +220,11 @@ def compute_cluster_consolidation(
     match_score_weights = ious * weights
     match_scores = match_score_weights * scores
 
-    n_missing_preds = torch.max(
-        torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float()
-    )
-    denom = (
-        match_score_weights.sum()
-        + n_missing_preds * match_score_weights.mean() * missing_weight
-    )
+    n_missing_preds = torch.max(torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float())
+    denom = match_score_weights.sum() + n_missing_preds * match_score_weights.mean() * missing_weight
     consolidated_score = match_scores.sum() / denom
 
-    consolidated_boxes = (boxes * match_scores.reshape(-1, 1)).sum(
-        dim=0
-    ) / match_scores.sum()
+    consolidated_boxes = (boxes * match_scores.reshape(-1, 1)).sum(dim=0) / match_scores.sum()
     return consolidated_boxes, consolidated_score
 
 
@@ -272,16 +259,10 @@ def compute_cluster_consolidation2(
 
     boxes = boxes[topk_idx]
     scores = scores[topk_idx]
-    n_missing_preds = torch.max(
-        torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float()
-    )
+    n_missing_preds = torch.max(torch.tensor([0.0], device=n_expected.device), (n_expected - n_found).float())
 
     # weigh predictions with high ious higher, penalty term for missing predictions
-    consolidated_score = scores.mean() * (
-        1 - missing_weight * n_missing_preds / n_expected
-    )
-    consolidated_boxes = (boxes * topk_weighted_scores.reshape(-1, 1)).sum(
-        dim=0
-    ) / topk_weighted_scores.sum()
+    consolidated_score = scores.mean() * (1 - missing_weight * n_missing_preds / n_expected)
+    consolidated_boxes = (boxes * topk_weighted_scores.reshape(-1, 1)).sum(dim=0) / topk_weighted_scores.sum()
 
     return consolidated_boxes, consolidated_score

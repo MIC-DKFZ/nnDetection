@@ -72,15 +72,9 @@ class InsideFGCrop3D(FGCrop):
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
         box = candidates["boxes"][idx]  # [6]
-        origin0 = np.random.randint(int(box[0]) + 1, int(box[2])) - (
-            self.patch_size_generator[0] // 2
-        )
-        origin1 = np.random.randint(int(box[1]) + 1, int(box[3])) - (
-            self.patch_size_generator[1] // 2
-        )
-        origin2 = np.random.randint(int(box[4]) + 1, int(box[5])) - (
-            self.patch_size_generator[2] // 2
-        )
+        origin0 = np.random.randint(int(box[0]) + 1, int(box[2])) - (self.patch_size_generator[0] // 2)
+        origin1 = np.random.randint(int(box[1]) + 1, int(box[3])) - (self.patch_size_generator[1] // 2)
+        origin2 = np.random.randint(int(box[4]) + 1, int(box[5])) - (self.patch_size_generator[2] // 2)
         return [
             slice(origin0, origin0 + self.patch_size_generator[0]),
             slice(origin1, origin1 + self.patch_size_generator[1]),
@@ -126,9 +120,7 @@ class OffsetFGCrop3D(FGCrop):
         origins = []
         offset_rand = np.random.rand(1)
         for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
-            if (offset_rand > self.offset_prob) or (
-                box_size[i] >= self.patch_size_final[i]
-            ):
+            if (offset_rand > self.offset_prob) or (box_size[i] >= self.patch_size_final[i]):
                 # no offset prob | object is bigger than patch
                 center = np.random.randint(int(box[ilb]) + 1, int(box[ulb]))
                 origins.append(center - (self.patch_size_generator[i] // 2))
@@ -213,9 +205,7 @@ class OffsetFGCrop3DV2(FGCrop):
         origins = []
         offset_rand = np.random.rand(1)
         for i, (ilb, ulb) in enumerate([(0, 2), (1, 3), (4, 5)]):
-            if (offset_rand > self.offset_prob) or (
-                box_size[i] >= (self.max_size_pct * self.patch_size_final[i])
-            ):
+            if (offset_rand > self.offset_prob) or (box_size[i] >= (self.max_size_pct * self.patch_size_final[i])):
                 # no offset prob | object is bigger than patch
                 # print("inbox", box_size, self.patch_size_final)
                 origins.append(
@@ -338,12 +328,8 @@ class OffsetFGCrop3DV2(FGCrop):
         if self.offset_magn < 1.0:
             # if offset margin is smaller 1.0, the bound are moved towards the centralized position
             centered = box_lower - (ps / 2) + (box_upper - box_lower) / 2
-            lower_bound = lower_bound + round(
-                (1.0 - self.offset_magn) * (centered - lower_bound)
-            )
-            upper_bound = upper_bound - round(
-                (1.0 - self.offset_magn) * (upper_bound - centered)
-            )
+            lower_bound = lower_bound + round((1.0 - self.offset_magn) * (centered - lower_bound))
+            upper_bound = upper_bound - round((1.0 - self.offset_magn) * (upper_bound - centered))
         assert upper_bound >= lower_bound
 
         if lower_bound == upper_bound:
@@ -389,14 +375,10 @@ class OffsetFGCrop2D(FGCrop):
 
         origins = []
         for i, (ib, ib2) in enumerate([(1, 3), (4, 5)]):
-            if (
-                spatial_shape[i] <= self.patch_size_generator[i]
-            ):  # patch larger than scan
+            if spatial_shape[i] <= self.patch_size_generator[i]:  # patch larger than scan
                 # we center the slice and pad the rest
                 origins.append(-(self.need_to_pad[i] // 2))
-            elif (
-                box_size[i] >= self.patch_size_final[i]
-            ):  # selected instance is larger than patch
+            elif box_size[i] >= self.patch_size_final[i]:  # selected instance is larger than patch
                 # we can not offset, we select our center point inside the bounding box and hope for the best
                 center = np.random.randint(int(box[ib]) + 1, int(box[ib2]))
                 origins.append(center - (self.patch_size_generator[i] // 2))

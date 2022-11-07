@@ -22,9 +22,7 @@ def create(
 
     case_id = image_source.stem.rsplit("-", 1)[0]
     case_id_check = label_source.stem.rsplit("-", 1)[0]
-    assert (
-        case_id == case_id_check
-    ), f"case ids not matching, found image {case_id} and label {case_id_check}"
+    assert case_id == case_id_check, f"case ids not matching, found image {case_id} and label {case_id_check}"
 
     df_case = df.loc[df["public_id"] == case_id]
     instances = {}
@@ -38,9 +36,7 @@ def create(
         elif _cls == -1:
             _cls = 5
 
-        instances[str(row.label_id)] = (
-            _cls - 1
-        )  # class range from 0 - 4 // if fg only 0
+        instances[str(row.label_id)] = _cls - 1  # class range from 0 - 4 // if fg only 0
         assert 0 < _cls < 6, f"Something strange happened {_cls}"
     save_json({"instances": instances}, label_target_dir / f"{case_id}.json")
 
@@ -55,9 +51,7 @@ def main():
     source_data_dir = task_data_dir / "raw"
 
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
     if not (p := source_data_dir / "imagesTr").is_dir():
         raise ValueError(f"Expected data to be located at {p}")
     if not (p := source_data_dir / "labelsTr").is_dir():
@@ -94,9 +88,7 @@ def main():
         "task": "Task020FG_RibFrac",
         "target_class": None,
         "test_labels": False,
-        "labels": {
-            "0": "fracture"
-        },  # since we are running FG vs BG this is not completely correct
+        "labels": {"0": "fracture"},  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "CT"},
         "dim": 3,
     }

@@ -67,9 +67,7 @@ class ModelSummary(_ModelSummary):
                 *summary_data,
             )
 
-            summary_full = (
-                f"+++ Network Summary +++ \n\n{summary_table} \n\n{pl_module}"
-            )
+            summary_full = f"+++ Network Summary +++ \n\n{summary_table} \n\n{pl_module}"
             Path("./network.txt").unlink(missing_ok=True)
             save_txt(summary_full, "./network")
 
@@ -256,9 +254,7 @@ def log_git(repo_path: Union[pathlib.Path, str], repo_name: str = None):
         git_info = get_repo_info(repo_path)
         return git_info
     except Exception:
-        logger.error(
-            "Was not able to read git information, trying to continue without."
-        )
+        logger.error("Was not able to read git information, trying to continue without.")
         return {}
 
 

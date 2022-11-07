@@ -68,9 +68,7 @@ class RandomSelectionMixin(SelectionMixin):
         bg_cache = []
 
         logger.info("Building Sampling Cache for Dataloder")
-        for case_id, item in maybe_verbose_iterable(
-            self._data.items(), desc="Sampling Cache"
-        ):
+        for case_id, item in maybe_verbose_iterable(self._data.items(), desc="Sampling Cache"):
             instances = load_pickle(item["boxes_file"])["instances"]
             if instances:
                 for instance_id in instances:
@@ -151,14 +149,10 @@ class ObjectBalancedSelectionMixin(SelectionMixin):
         bg_cache = []
 
         logger.info("Building Sampling Cache for Dataloder")
-        for case_id, item in maybe_verbose_iterable(
-            self._data.items(), desc="Sampling Cache"
-        ):
+        for case_id, item in maybe_verbose_iterable(self._data.items(), desc="Sampling Cache"):
             candidates = load_pickle(item["boxes_file"])
             if candidates["instances"]:
-                for instance_id, instance_class in zip(
-                    candidates["instances"], candidates["labels"]
-                ):
+                for instance_id, instance_class in zip(candidates["instances"], candidates["labels"]):
                     fg_cache[int(instance_class)].append((case_id, instance_id))
             else:
                 bg_cache.append(case_id)
@@ -224,9 +218,7 @@ class ObjectBalancedSelectionMixin(SelectionMixin):
                 selected_instances.append(-1)
             else:
                 # sample fg / select an instance
-                _class_cases: List[Tuple[str, int]] = self.cache["fg"][
-                    selected_classes[idx]
-                ]
+                _class_cases: List[Tuple[str, int]] = self.cache["fg"][selected_classes[idx]]
                 _i = np.random.choice(range(len(_class_cases)))
                 _case, _instance_id = _class_cases[_i]
                 selected_cases.append(_case)
@@ -271,14 +263,10 @@ class PatientBalancedSelectionMixin(SelectionMixin):
         bg_cache: List[str] = []
 
         logger.info("Building Sampling Cache for Dataloder")
-        for case_id, item in maybe_verbose_iterable(
-            self._data.items(), desc="Sampling Cache"
-        ):
+        for case_id, item in maybe_verbose_iterable(self._data.items(), desc="Sampling Cache"):
             candidates = load_pickle(item["boxes_file"])
             if candidates["instances"]:
-                for instance_id, instance_class in zip(
-                    candidates["instances"], candidates["labels"]
-                ):
+                for instance_id, instance_class in zip(candidates["instances"], candidates["labels"]):
                     fg_cache[int(instance_class)][case_id].append(instance_id)
             else:
                 bg_cache.append(case_id)
@@ -345,9 +333,7 @@ class PatientBalancedSelectionMixin(SelectionMixin):
                 selected_instances.append(-1)
             else:
                 # sample fg / select an instance
-                _class_cases: Dict[str, List[int]] = self.cache["fg"][
-                    selected_classes[idx]
-                ]
+                _class_cases: Dict[str, List[int]] = self.cache["fg"][selected_classes[idx]]
                 _case = np.random.choice(list(_class_cases.keys()))
                 _instance_id = np.random.choice(_class_cases[_case])
                 selected_cases.append(_case)

@@ -74,23 +74,15 @@ class Instances2Boxes(AbstractTransform):
         """
         data[self.box_key] = []
         data[self.class_key] = []
-        for batch_idx, instance_element in enumerate(
-            data[self.instance_key].split(1, dim=0)
-        ):
-            _present_instances = (
-                data[self.present_instances][batch_idx]
-                if self.present_instances is not None
-                else None
-            )
+        for batch_idx, instance_element in enumerate(data[self.instance_key].split(1, dim=0)):
+            _present_instances = data[self.present_instances][batch_idx] if self.present_instances is not None else None
             _boxes, instance_idx = instances_to_boxes(
                 instance_element,
                 instance_element.ndim - 2,
                 instances=_present_instances,
             )
 
-            _classes = get_instance_class_from_properties(
-                instance_idx, data[self.map_key][batch_idx]
-            )
+            _classes = get_instance_class_from_properties(instance_idx, data[self.map_key][batch_idx])
             _classes = _classes.to(device=_boxes.device)
 
             data[self.box_key].append(_boxes)
@@ -281,11 +273,7 @@ class Instances2Segmentation(AbstractTransform):
         """
         semantic = torch.zeros_like(data[self.instance_key])
         for batch_idx in range(semantic.shape[0]):
-            _present_instances = (
-                data[self.present_instances][batch_idx]
-                if self.present_instances is not None
-                else None
-            )
+            _present_instances = data[self.present_instances][batch_idx] if self.present_instances is not None else None
             instances_to_segmentation(
                 data[self.instance_key][batch_idx],
                 data[self.map_key][batch_idx],
@@ -572,15 +560,9 @@ class Instances2BinaryMasks(AbstractTransform):
             dict: processed batch
         """
         data[self.binary_mask_key] = []
-        for batch_idx, instance_element in enumerate(
-            data[self.instance_key].split(1, dim=0)
-        ):
+        for batch_idx, instance_element in enumerate(data[self.instance_key].split(1, dim=0)):
             # print(f"Element shape: {instance_element.shape} orig {data[self.instance_key].shape}")
-            _present_instances = (
-                data[self.present_instances][batch_idx]
-                if self.present_instances is not None
-                else None
-            )
+            _present_instances = data[self.present_instances][batch_idx] if self.present_instances is not None else None
             data[self.binary_mask_key].append(
                 instances_to_binary_masks(
                     instances=instance_element[0],  # squeeze batch dim

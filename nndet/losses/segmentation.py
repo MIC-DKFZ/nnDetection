@@ -60,15 +60,9 @@ def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     fn = (1 - net_output) * y_onehot
 
     if mask is not None:
-        tp = torch.stack(
-            tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1
-        )
-        fp = torch.stack(
-            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1
-        )
-        fn = torch.stack(
-            tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1
-        )
+        tp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(tp, dim=1)), dim=1)
+        fp = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fp, dim=1)), dim=1)
+        fn = torch.stack(tuple(x_i * mask[:, 0] for x_i in torch.unbind(fn, dim=1)), dim=1)
 
     if square:
         tp = tp**2
@@ -155,10 +149,7 @@ class SoftDiceLoss(Loss):
         self.nonlin = nonlin
         self.smooth_nom = smooth_nom
         self.smooth_denom = smooth_denom
-        logger.info(
-            f"Running batch dice {self.batch_dice} and "
-            f"do bg {self.do_bg} in dice loss."
-        )
+        logger.info(f"Running batch dice {self.batch_dice} and " f"do bg {self.do_bg} in dice loss.")
         if self.reduction.lower() == "none":
             raise ValueError(f"SoftDice does not support reduction {reduction}.")
 
@@ -225,10 +216,7 @@ class TopKLoss(CrossEntropyLoss):
             loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError(
-                "Reduction is not supported in TopKLoss."
-                "This will always return the mean!"
-            )
+            raise ValueError("Reduction is not supported in TopKLoss." "This will always return the mean!")
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
@@ -280,10 +268,7 @@ class TopKLossSigmoid(BCEWithLogitsLoss):
             loss_fp32: If True, loss is forced to be computed in float32
         """
         if "reduction" in kwargs:
-            raise ValueError(
-                "Reduction is not supported in TopKLoss."
-                "This will always return the mean!"
-            )
+            raise ValueError("Reduction is not supported in TopKLoss." "This will always return the mean!")
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,

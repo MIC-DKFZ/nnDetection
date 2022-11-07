@@ -44,11 +44,7 @@ def create_label_case(
     seg_save_path = target_dir / f"{case_id}_seg_gt.npz"
     properties_save_path = target_dir / f"{case_id}.pkl"
 
-    if (
-        instances_save_path.is_file()
-        and boxes_save_path.is_file()
-        and seg_save_path.is_file()
-    ):
+    if instances_save_path.is_file() and boxes_save_path.is_file() and seg_save_path.is_file():
         logger.warning(f"Skipping prepare label {case_id} because it already exists")
     else:
         logger.info(f"Preparing label {case_id}")
@@ -64,9 +60,7 @@ def create_label_case(
         )
 
         boxes, instance_idx = instances_to_boxes_np(seg=instances, dim=dim)
-        box_classes = get_instance_class_from_properties_seq(
-            instance_idx=instance_idx, map_dict=mapping
-        )
+        box_classes = get_instance_class_from_properties_seq(instance_idx=instance_idx, map_dict=mapping)
         res = {"boxes": boxes, "classes": box_classes, "instance_idx": instance_idx}
         np.savez_compressed(str(boxes_save_path), **res)
 

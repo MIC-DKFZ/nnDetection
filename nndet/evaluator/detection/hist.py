@@ -57,9 +57,7 @@ class PredictionHistogram(DetectionMetric):
         self.plot_hist(results_list=results_list)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [
-                {0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r
-            ]
+            results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
             self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_")
         return {}, {}
 
@@ -107,9 +105,7 @@ class PredictionHistogram(DetectionMetric):
         gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
         self.check_number_of_iou(dt_matches, dt_ignores)
 
-        num_gt = np.count_nonzero(
-            gt_ignore == 0
-        )  # number of ground truth boxes (non ignored)
+        num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
             logger.error("No ground truth found! Returning nothing.")
             return {}, {}
@@ -118,9 +114,7 @@ class PredictionHistogram(DetectionMetric):
             # filter scores with ignores detections
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(dt_matches[iou_idx])
-            _ = self.compute_histogram_one_iou(
-                dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix
-            )
+            _ = self.compute_histogram_one_iou(dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix)
         return {}, {}
 
     def compute_histogram_one_iou(
@@ -176,17 +170,14 @@ class PredictionHistogram(DetectionMetric):
             )
         plt.legend()
         title = title_prefix + (
-            f"tp:{true_positives} fp:{false_positives} "
-            f"fn:{false_negatives} pos:{true_positives+false_negatives}"
+            f"tp:{true_positives} fp:{false_positives} " f"fn:{false_negatives} pos:{true_positives+false_negatives}"
         )
         plt.title(title)
         plt.xlabel("confidence score")
         plt.ylabel("log n")
 
         if self.save_dir is not None:
-            save_path = self.save_dir / (
-                f"{title_prefix}pred_hist_IoU@{iou}".replace(".", "_") + ".png"
-            )
+            save_path = self.save_dir / (f"{title_prefix}pred_hist_IoU@{iou}".replace(".", "_") + ".png")
             logger.info(f"Saving {save_path}")
             plt.savefig(save_path)
         plt.close()

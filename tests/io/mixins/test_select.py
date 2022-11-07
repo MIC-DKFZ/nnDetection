@@ -111,9 +111,7 @@ class TestRandomSelection:
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_select(self, mock_load, filled_instances_provider, force_bg_case: bool):
         mock_load.side_effect = filled_instances_provider.side_effect
-        filled_instances_provider.cache = RandomSelectionMixin.build_cache(
-            filled_instances_provider
-        )
+        filled_instances_provider.cache = RandomSelectionMixin.build_cache(filled_instances_provider)
         filled_instances_provider.force_bg_case = force_bg_case
 
         for _ in range(self.select_iterations):
@@ -121,13 +119,7 @@ class TestRandomSelection:
             assert (np.array(instance_ids) > 0).sum() == 2
             print(cases)
             if force_bg_case:
-                assert all(
-                    [
-                        c in ["o1", "o2", "o3"]
-                        for i, c in enumerate(cases)
-                        if instance_ids[i] < 0
-                    ]
-                )
+                assert all([c in ["o1", "o2", "o3"] for i, c in enumerate(cases) if instance_ids[i] < 0])
 
     @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
@@ -135,19 +127,13 @@ class TestRandomSelection:
         np.random.seed(0)  # seed selection
 
         mock_load.side_effect = unbal_provider_large.side_effect
-        unbal_provider_large.cache = RandomSelectionMixin.build_cache(
-            unbal_provider_large
-        )
+        unbal_provider_large.cache = RandomSelectionMixin.build_cache(unbal_provider_large)
         classes_sampled = []
         for _ in range(self.select_iterations_full):
             cases, instance_ids = RandomSelectionMixin.select(unbal_provider_large)
             assert len(cases) == len(instance_ids)
             assert len(cases) == unbal_provider_large.batch_size
-            _classes = [
-                unbal_provider_large._data[c]["labels"][i - 1]
-                for c, i in zip(cases, instance_ids)
-                if i > -1
-            ]
+            _classes = [unbal_provider_large._data[c]["labels"][i - 1] for c, i in zip(cases, instance_ids) if i > -1]
             classes_sampled.extend(_classes)
         _, cls_counts = np.unique(classes_sampled, return_counts=True)
         assert 0.88 <= cls_counts[0] / sum(cls_counts) <= 0.92
@@ -207,17 +193,11 @@ class TestObjectBalancedSelection:
         }
         # 0: 3 / 12; 1: 9 / 12
         assert len(cache["sqrt_weights"]) == 2
-        assert math.isclose(
-            cache["sqrt_weights"][0], math.sqrt(3) / (math.sqrt(3) + math.sqrt(9))
-        )
-        assert math.isclose(
-            cache["sqrt_weights"][1], math.sqrt(9) / (math.sqrt(3) + math.sqrt(9))
-        )
+        assert math.isclose(cache["sqrt_weights"][0], math.sqrt(3) / (math.sqrt(3) + math.sqrt(9)))
+        assert math.isclose(cache["sqrt_weights"][1], math.sqrt(9) / (math.sqrt(3) + math.sqrt(9)))
 
     @pytest.mark.parametrize("force_bg_case", [True, False])
-    @pytest.mark.parametrize(
-        "selection_mode", [SelectionMode("uniform"), SelectionMode("sqrt")]
-    )
+    @pytest.mark.parametrize("selection_mode", [SelectionMode("uniform"), SelectionMode("sqrt")])
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_select(
         self,
@@ -227,26 +207,16 @@ class TestObjectBalancedSelection:
         selection_mode: SelectionMode,
     ):
         mock_load.side_effect = filled_instances_provider.side_effect
-        filled_instances_provider.cache = ObjectBalancedSelectionMixin.build_cache(
-            filled_instances_provider
-        )
+        filled_instances_provider.cache = ObjectBalancedSelectionMixin.build_cache(filled_instances_provider)
         filled_instances_provider.force_bg_case = force_bg_case
         filled_instances_provider.selection_mode = selection_mode
 
         for _ in range(self.select_iterations):
-            cases, instance_ids = ObjectBalancedSelectionMixin.select(
-                filled_instances_provider
-            )
+            cases, instance_ids = ObjectBalancedSelectionMixin.select(filled_instances_provider)
             assert (np.array(instance_ids) > 0).sum() == 2
             print(cases)
             if force_bg_case:
-                assert all(
-                    [
-                        c in ["o1", "o2", "o3"]
-                        for i, c in enumerate(cases)
-                        if instance_ids[i] < 0
-                    ]
-                )
+                assert all([c in ["o1", "o2", "o3"] for i, c in enumerate(cases) if instance_ids[i] < 0])
 
     @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
@@ -254,21 +224,13 @@ class TestObjectBalancedSelection:
         np.random.seed(0)  # seed selection
 
         mock_load.side_effect = unbal_provider_large.side_effect
-        unbal_provider_large.cache = ObjectBalancedSelectionMixin.build_cache(
-            unbal_provider_large
-        )
+        unbal_provider_large.cache = ObjectBalancedSelectionMixin.build_cache(unbal_provider_large)
         classes_sampled = []
         for _ in range(self.select_iterations_full):
-            cases, instance_ids = ObjectBalancedSelectionMixin.select(
-                unbal_provider_large
-            )
+            cases, instance_ids = ObjectBalancedSelectionMixin.select(unbal_provider_large)
             assert len(cases) == len(instance_ids)
             assert len(cases) == unbal_provider_large.batch_size
-            _classes = [
-                unbal_provider_large._data[c]["labels"][i - 1]
-                for c, i in zip(cases, instance_ids)
-                if i > -1
-            ]
+            _classes = [unbal_provider_large._data[c]["labels"][i - 1] for c, i in zip(cases, instance_ids) if i > -1]
             classes_sampled.extend(_classes)
         _, cls_counts = np.unique(classes_sampled, return_counts=True)
         assert 0.48 <= cls_counts[0] / sum(cls_counts) <= 0.52
@@ -318,17 +280,11 @@ class TestPatientBalancedSelection:
         }
         # 0: 2 / 7; 1: 5/ 7
         assert len(cache["sqrt_weights"]) == 2
-        assert math.isclose(
-            cache["sqrt_weights"][0], math.sqrt(2) / (math.sqrt(2) + math.sqrt(5))
-        )
-        assert math.isclose(
-            cache["sqrt_weights"][1], math.sqrt(5) / (math.sqrt(2) + math.sqrt(5))
-        )
+        assert math.isclose(cache["sqrt_weights"][0], math.sqrt(2) / (math.sqrt(2) + math.sqrt(5)))
+        assert math.isclose(cache["sqrt_weights"][1], math.sqrt(5) / (math.sqrt(2) + math.sqrt(5)))
 
     @pytest.mark.parametrize("force_bg_case", [True, False])
-    @pytest.mark.parametrize(
-        "selection_mode", [SelectionMode("uniform"), SelectionMode("sqrt")]
-    )
+    @pytest.mark.parametrize("selection_mode", [SelectionMode("uniform"), SelectionMode("sqrt")])
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
     def test_select(
         self,
@@ -338,26 +294,16 @@ class TestPatientBalancedSelection:
         selection_mode: SelectionMode,
     ):
         mock_load.side_effect = filled_instances_provider.side_effect
-        filled_instances_provider.cache = PatientBalancedSelectionMixin.build_cache(
-            filled_instances_provider
-        )
+        filled_instances_provider.cache = PatientBalancedSelectionMixin.build_cache(filled_instances_provider)
         filled_instances_provider.force_bg_case = force_bg_case
         filled_instances_provider.selection_mode = selection_mode
 
         for _ in range(self.select_iterations):
-            cases, instance_ids = PatientBalancedSelectionMixin.select(
-                filled_instances_provider
-            )
+            cases, instance_ids = PatientBalancedSelectionMixin.select(filled_instances_provider)
             assert (np.array(instance_ids) > 0).sum() == 2
             print(cases)
             if force_bg_case:
-                assert all(
-                    [
-                        c in ["o1", "o2", "o3"]
-                        for i, c in enumerate(cases)
-                        if instance_ids[i] < 0
-                    ]
-                )
+                assert all([c in ["o1", "o2", "o3"] for i, c in enumerate(cases) if instance_ids[i] < 0])
 
     @pytest.mark.parametrize("unbal_provider_large", [0, 1, 2], indirect=True)
     @patch("nndet.io.datamodule.mixins.select.load_pickle")
@@ -365,21 +311,13 @@ class TestPatientBalancedSelection:
         np.random.seed(0)  # seed selection
 
         mock_load.side_effect = unbal_provider_large.side_effect
-        unbal_provider_large.cache = PatientBalancedSelectionMixin.build_cache(
-            unbal_provider_large
-        )
+        unbal_provider_large.cache = PatientBalancedSelectionMixin.build_cache(unbal_provider_large)
         classes_sampled = []
         for _ in range(self.select_iterations_full):
-            cases, instance_ids = PatientBalancedSelectionMixin.select(
-                unbal_provider_large
-            )
+            cases, instance_ids = PatientBalancedSelectionMixin.select(unbal_provider_large)
             assert len(cases) == len(instance_ids)
             assert len(cases) == unbal_provider_large.batch_size
-            _classes = [
-                unbal_provider_large._data[c]["labels"][i - 1]
-                for c, i in zip(cases, instance_ids)
-                if i > -1
-            ]
+            _classes = [unbal_provider_large._data[c]["labels"][i - 1] for c, i in zip(cases, instance_ids) if i > -1]
             classes_sampled.extend(_classes)
         _, cls_counts = np.unique(classes_sampled, return_counts=True)
         assert 0.48 <= cls_counts[0] / sum(cls_counts) <= 0.52

@@ -7,17 +7,13 @@ from nndet.nn.ops.scale import Scale, ScalePerDim
 
 @pytest.fixture
 def reg_pred():
-    reg = torch.tensor(
-        [[[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]]
-    )
+    reg = torch.tensor([[[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]])
     return reg
 
 
 @pytest.fixture
 def reg_target():
-    reg = torch.tensor(
-        [[[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]]
-    )
+    reg = torch.tensor([[[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]]])
     return reg
 
 
@@ -52,9 +48,7 @@ def test_scale_per_dim_3d(reg_pred, reg_target):
     reg_final = module(reg_pred)
 
     loss = (reg_target - reg_final).sum()
-    assert torch.allclose(
-        loss, torch.tensor([-198.0])
-    )  # (1 + 3 + 6 + 12 + 35 + 42) * 2
+    assert torch.allclose(loss, torch.tensor([-198.0]))  # (1 + 3 + 6 + 12 + 35 + 42) * 2
 
     loss.backward()
     assert torch.allclose(module.scale.grad, torch.tensor([-8.0, -12.0, -22.0]))

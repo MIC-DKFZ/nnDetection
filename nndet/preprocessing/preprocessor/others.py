@@ -171,9 +171,7 @@ class PreprocessorFP16I16(GenericPreprocessor):
         data, seg, properties = load_case_cropped(cropped_data_dir, case_id)
         seg = seg[None]
 
-        data, seg, properties = self.apply_process(
-            data, target_spacing, properties, seg
-        )
+        data, seg, properties = self.apply_process(data, target_spacing, properties, seg)
         properties["use_nonzero_mask_for_norm"] = self.use_mask_for_norm
 
         data = data.astype(np.float16)  # use float16 instead of float32

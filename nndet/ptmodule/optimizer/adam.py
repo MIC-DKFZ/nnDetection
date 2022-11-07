@@ -63,13 +63,9 @@ class AdamWLWPoly:
 
         # configure optimizer
         logger.info(
-            f"Running: initial_lr {trainer_cfg['initial_lr']} "
-            f"weight_decay {trainer_cfg['weight_decay']} "
-            f"AdamW"
+            f"Running: initial_lr {trainer_cfg['initial_lr']} " f"weight_decay {trainer_cfg['weight_decay']} " f"AdamW"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            module, weight_decay=trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(module, weight_decay=trainer_cfg["weight_decay"])
         betas = (trainer_cfg["beta1"], trainer_cfg["beta2"])
         optimizer = torch.optim.AdamW(
             wd_groups,
@@ -81,9 +77,7 @@ class AdamWLWPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=trainer_cfg["warm_iterations"],

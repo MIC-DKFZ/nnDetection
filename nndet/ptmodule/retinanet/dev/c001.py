@@ -30,31 +30,21 @@ class RetinaNetC001(RetinaNetModule):
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
-    backbone_conv_cls: Type[
-        BaseConvNormAct
-    ] = ConvInstanceLReLU  # conv class used for backbone
+    backbone_conv_cls: Type[BaseConvNormAct] = ConvInstanceLReLU  # conv class used for backbone
 
     neck_cls: Type[AbstractNeck] = FPN  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = BCECLassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
+    head_classifier_cls: Type[DenseClassifier] = BCECLassifier  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
 
-    matcher_cls: Type[
-        Matcher
-    ] = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
 
 @MODULE_REGISTRY.register

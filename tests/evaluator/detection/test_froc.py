@@ -34,14 +34,10 @@ class TestFROC:
         assert metric.get_iou_thresholds() == [0.1]
 
     def test_compute(self, mocker: MockerFixture, metric, results_list):
-        froc_mul_class_mock = mocker.Mock(
-            return_value=({"froc_score_cls": 0}, {"froc_curve_cls": 1})
-        )
+        froc_mul_class_mock = mocker.Mock(return_value=({"froc_score_cls": 0}, {"froc_curve_cls": 1}))
         metric.compute_froc_mul_iou_per_class = froc_mul_class_mock
 
-        froc_mul_iou_mock = mocker.Mock(
-            return_value=({"froc_score": 1}, {"froc_curve": 2})
-        )
+        froc_mul_iou_mock = mocker.Mock(return_value=({"froc_score": 1}, {"froc_curve": 2}))
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
         froc_score, froc_curve = metric(results_list)
@@ -114,12 +110,8 @@ class TestFROC:
             np.array([0.125, 0.25, 0.5, 1.0, 1.0, 1.0]),
         ).all()
 
-    def test_compute_froc_mul_iou_per_class(
-        self, mocker: MockerFixture, metric, results_list
-    ):
-        froc_mul_iou_mock = mocker.Mock(
-            return_value=({"froc_score": 1}, {"froc_curve": 2})
-        )
+    def test_compute_froc_mul_iou_per_class(self, mocker: MockerFixture, metric, results_list):
+        froc_mul_iou_mock = mocker.Mock(return_value=({"froc_score": 1}, {"froc_curve": 2}))
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
         froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list)
@@ -143,24 +135,16 @@ class TestFROC:
         _dt_scores = np.array([0.9, 0.8, 0.7, 0.6, 0.85, 0.75, 0.65, 0.55])
         num_images = 4
         num_gt = 4
-        fps, sens, th = metric.compute_froc_curve_one_iou(
-            _dt_matches, _dt_scores, num_images, num_gt
-        )
-        assert np.isclose(
-            fps, [0.0, 0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0]
-        ).all()
-        assert np.isclose(
-            sens, [0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0, 1.0]
-        ).all()
+        fps, sens, th = metric.compute_froc_curve_one_iou(_dt_matches, _dt_scores, num_images, num_gt)
+        assert np.isclose(fps, [0.0, 0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0]).all()
+        assert np.isclose(sens, [0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0, 1.0]).all()
         assert np.isclose(th[1:], [0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]).all()
 
     def test_froc_plotting(self, metric):
         with TemporaryDirectory(dir=os.getcwd()) as _dir:
             vals = np.array([0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 3.0 / 4, 1.0])
 
-            frocs = {
-                f"FROC_curve_IoU_{iou:.2f}": vals + iou / 10 for iou in range(0, 10)
-            }
+            frocs = {f"FROC_curve_IoU_{iou:.2f}": vals + iou / 10 for iou in range(0, 10)}
             frocs[f"mal_FROC_curve_IoU_{0.1:.2f}"] = [
                 0.0,
                 1.0 / 4,

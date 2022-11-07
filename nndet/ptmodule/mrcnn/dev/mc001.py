@@ -56,9 +56,7 @@ class MaskRCNNC001(MaskURCNNModule):
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     # RoI classes
@@ -71,9 +69,7 @@ class MaskRCNNC001(MaskURCNNModule):
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
     roi_box_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
-    roi_box_post_cls = (
-        CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
-    )
+    roi_box_post_cls = CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
 
     # optional mask branches
     roi_masker_cls = BCESingleMasker  # BCESingleMasker
@@ -89,9 +85,7 @@ class MaskURCNNC001(MaskRCNNC001):
 @MODULE_REGISTRY.register
 class MaskURCNNC001RSB(MaskURCNNC001):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
@@ -102,9 +96,7 @@ class MaskURCNNC001RSBCE(MaskURCNNC001):  # wrong parent class
 @MODULE_REGISTRY.register
 class MaskURCNNC001RSBCEF(MaskURCNNC001RSB):  # fixed parent class
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     roi_classifier_cls = CEConvRoIClassifier
 
 
@@ -123,9 +115,7 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
     roi_classifier_cls = BCEFCRoIClassifier  # RoIClassifierTwoMLP
     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
 
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
@@ -138,8 +128,6 @@ class MaskURCNNC001DiceBCE(MaskURCNNC001):
 @MODULE_REGISTRY.register
 class MaskURCNNC001RSBDiceBCE(MaskURCNNC001RSB):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 
     roi_masker_cls = DiceBCESingleMasker

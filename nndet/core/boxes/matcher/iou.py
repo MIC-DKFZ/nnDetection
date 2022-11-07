@@ -81,16 +81,12 @@ class IoUMatcher(Matcher):
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
-        between_thresholds = (matched_vals >= self.low_threshold) & (
-            matched_vals < self.high_threshold
-        )
+        between_thresholds = (matched_vals >= self.low_threshold) & (matched_vals < self.high_threshold)
         matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            matches = self.set_low_quality_matches_(
-                matches, all_matches, match_quality_matrix
-            )
+            matches = self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         # self._debug_logging(match_quality_matrix, matches, matched_vals,
         #                     below_low_threshold, between_thresholds)
@@ -125,14 +121,10 @@ class IoUMatcher(Matcher):
         logger.info(f"Foreground IoUs: {matched_vals[matches > -1]}")
         logger.info(f"Num GT: {match_quality_matrix.shape[0]}")
         match_bet_min = (
-            matched_vals[between_thresholds].min()
-            if matched_vals[between_thresholds].nelement() > 0
-            else None
+            matched_vals[between_thresholds].min() if matched_vals[between_thresholds].nelement() > 0 else None
         )
         match_bet_max = (
-            matched_vals[between_thresholds].max()
-            if matched_vals[between_thresholds].nelement() > 0
-            else None
+            matched_vals[between_thresholds].max() if matched_vals[between_thresholds].nelement() > 0 else None
         )
         logger.info(f"Inbetween IoU ranging from {match_bet_min} to {match_bet_max}")
         logger.info(f"Max background IoU: {matched_vals[below_low_threshold].max()}")

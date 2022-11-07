@@ -56,9 +56,7 @@ class V001Eps05(D3V001):
                 target_spacing[2] - target_spacing[1],
             ],
         ]
-        diffs = np.abs(diffs).sum(
-            axis=1
-        )  # [3] each entry contains the diff to all other axes
+        diffs = np.abs(diffs).sum(axis=1)  # [3] each entry contains the diff to all other axes
 
         if np.allclose(diffs, np.zeros_like(diffs)):
             # all axis are the same
@@ -70,7 +68,4 @@ class V001Eps05(D3V001):
             # self.transpose_forward = remaining_axes + [max_spacing_axis] # y, x, z
             self.transpose_forward = [max_diff_axis] + remaining_axes  # z, y, x
 
-        self.transpose_backward = [
-            np.argwhere(np.array(self.transpose_forward) == i)[0][0]
-            for i in range(dims)
-        ]
+        self.transpose_backward = [np.argwhere(np.array(self.transpose_forward) == i)[0][0] for i in range(dims)]

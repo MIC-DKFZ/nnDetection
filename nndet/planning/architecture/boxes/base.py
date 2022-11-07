@@ -61,9 +61,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         self.network_cls = network_cls
         self.estimator = estimator
 
-        self.dataset_properties = load_pickle(
-            self.preprocessed_output_dir / "properties" / "dataset_properties.pkl"
-        )
+        self.dataset_properties = load_pickle(self.preprocessed_output_dir / "properties" / "dataset_properties.pkl")
 
         # parameters initialized from process properties
         self.all_boxes: np.ndarray = None
@@ -79,36 +77,21 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         Load dataset properties and extract information
         """
         assert self.transpose_forward is not None
-        boxes = [
-            case["boxes"]
-            for case_id, case in self.dataset_properties[
-                "instance_props_per_patient"
-            ].items()
-        ]
-        self.all_boxes = np.concatenate(
-            [b for b in boxes if not isinstance(b, list) and b.size > 0], axis=0
-        )
+        boxes = [case["boxes"] for case_id, case in self.dataset_properties["instance_props_per_patient"].items()]
+        self.all_boxes = np.concatenate([b for b in boxes if not isinstance(b, list) and b.size > 0], axis=0)
         self.all_boxes = permute_boxes(self.all_boxes, dims=self.transpose_forward)
         self.all_ious = self.dataset_properties["all_ious"]
         self.class_ious = self.dataset_properties["class_ious"]
         self.num_instances = self.dataset_properties["num_instances"]
         self.num_instances_per_case = {
             case_id: sum(case["num_instances"].values())
-            for case_id, case in self.dataset_properties[
-                "instance_props_per_patient"
-            ].items()
+            for case_id, case in self.dataset_properties["instance_props_per_patient"].items()
         }
         self.dim = self.dataset_properties["dim"]
 
-        self.architecture_kwargs["classifier_classes"] = len(
-            self.dataset_properties["class_dct"]
-        )
-        self.architecture_kwargs["seg_classes"] = self.architecture_kwargs[
-            "classifier_classes"
-        ]
-        self.architecture_kwargs["in_channels"] = len(
-            self.dataset_properties["modalities"]
-        )
+        self.architecture_kwargs["classifier_classes"] = len(self.dataset_properties["class_dct"])
+        self.architecture_kwargs["seg_classes"] = self.architecture_kwargs["classifier_classes"]
+        self.architecture_kwargs["in_channels"] = len(self.dataset_properties["modalities"])
         self.architecture_kwargs["dim"] = self.dataset_properties["dim"]
 
     def plot_box_distribution(self, **kwargs):
@@ -124,11 +107,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         if plt is not None:
             if isinstance(self.all_boxes, list):
                 _boxes = np.concatenate(
-                    [
-                        b
-                        for b in self.all_boxes
-                        if not isinstance(b, list) and b.size > 0
-                    ],
+                    [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
                 dists = box_size_np(_boxes)
@@ -156,11 +135,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         if plt is not None:
             if isinstance(self.all_boxes, list):
                 _boxes = np.concatenate(
-                    [
-                        b
-                        for b in self.all_boxes
-                        if not isinstance(b, list) and b.size > 0
-                    ],
+                    [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
                 area = box_area_np(_boxes)
@@ -269,9 +244,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
 
         bg_weight = 1 / (num_classes + 1)
         remaining_weight = 1 - bg_weight
-        weights = [
-            remaining_weight * (1 - ni / sum(num_instances)) for ni in num_instances
-        ]
+        weights = [remaining_weight * (1 - ni / sum(num_instances)) for ni in num_instances]
         return [bg_weight] + weights
 
     def get_planner_id(self) -> str:
@@ -338,12 +311,8 @@ class BoxC001(BaseBoxesPlanner):
         self.min_decoder_level = 2
         self.num_decoder_level = 4
 
-        self.architecture_kwargs["fpn_channels"] = (
-            self.architecture_kwargs["start_channels"] * 2
-        )
-        self.architecture_kwargs["head_channels"] = self.architecture_kwargs[
-            "fpn_channels"
-        ]
+        self.architecture_kwargs["fpn_channels"] = self.architecture_kwargs["start_channels"] * 2
+        self.architecture_kwargs["head_channels"] = self.architecture_kwargs["fpn_channels"]
 
     def plan(
         self,
@@ -415,17 +384,12 @@ class BoxC001(BaseBoxesPlanner):
 
         rel_strides = self.architecture_kwargs["strides"]
         filt_rel_strides = [[1] * self.dim, *rel_strides]
-        filt_rel_strides = [
-            filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]
-        ]
+        filt_rel_strides = [filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]]
         strides = np.cumprod(filt_rel_strides, axis=0) / np.asarray(rel_strides[0])
 
-        params = self.find_anchors(
-            boxes_torch, strides.astype(np.int32), anchor_generator
-        )
+        params = self.find_anchors(boxes_torch, strides.astype(np.int32), anchor_generator)
         scaled_params = {
-            key: scale_with_abs_strides(item, strides, dim_idx)
-            for dim_idx, (key, item) in enumerate(params.items())
+            key: scale_with_abs_strides(item, strides, dim_idx) for dim_idx, (key, item) in enumerate(params.items())
         }
         logger.info(f"Determined Anchors: {params}; Results in params: {scaled_params}")
         self.anchors = scaled_params
@@ -505,18 +469,14 @@ class BoxC001(BaseBoxesPlanner):
                 p.set_bounds(lower=1)
                 params.append(p)
             instrum = ng.p.Instrumentation(*params)
-            optimizer = ng.optimizers.registry[algo](
-                parametrization=instrum, budget=5000, num_workers=1
-            )
+            optimizer = ng.optimizers.registry[algo](parametrization=instrum, budget=5000, num_workers=1)
 
             with torch.no_grad():
                 pbar = tqdm(range(optimizer.budget), f"Anchor Opt {algo}")
                 for _ in pbar:
                     x = optimizer.ask()
                     anchors = anchor_generator.generate_anchors(*x.args)
-                    anchors = compute_anchors_for_strides(
-                        anchors, strides=strides, cat=True
-                    )
+                    anchors = compute_anchors_for_strides(anchors, strides=strides, cat=True)
                     anchors = anchors
                     # TODO: add checks if GPU is availabe and has enough VRAM
                     iou = box_iou(boxes_torch.cuda(), anchors.cuda())  # boxes x anchors
@@ -527,10 +487,7 @@ class BoxC001(BaseBoxesPlanner):
             if _best_iou > best_iou:
                 best_iou = _best_iou
                 recommendation = optimizer.provide_recommendation().value[0]
-        return {
-            key: list(val)
-            for key, val in zip(["width", "height", "depth"], recommendation)
-        }
+        return {key: list(val) for key, val in zip(["width", "height", "depth"], recommendation)}
 
     def get_anchor_init(self, boxes: torch.Tensor) -> Sequence[Sequence[int]]:
         """
@@ -566,11 +523,7 @@ class BoxC001(BaseBoxesPlanner):
             Sequence[int]: patch size to use for training
         """
         self.estimator.batch_size = self.batch_size
-        patch_size = np.asarray(
-            self._get_initial_patch_size(
-                target_spacing_transposed, target_median_shape_transposed
-            )
-        )
+        patch_size = np.asarray(self._get_initial_patch_size(target_spacing_transposed, target_median_shape_transposed))
         first_run = True
         while True:
             if first_run:
@@ -593,9 +546,7 @@ class BoxC001(BaseBoxesPlanner):
             self.architecture_kwargs["strides"] = pooling
             num_resolutions = len(self.architecture_kwargs["conv_kernels"])
 
-            decoder_levels_start = min(
-                max(0, num_resolutions - self.num_decoder_level), self.min_decoder_level
-            )
+            decoder_levels_start = min(max(0, num_resolutions - self.num_decoder_level), self.min_decoder_level)
             self.architecture_kwargs["decoder_levels"] = tuple(
                 [i for i in range(decoder_levels_start, num_resolutions)]
             )
@@ -680,18 +631,14 @@ class BoxC001(BaseBoxesPlanner):
         input_patch_size = np.round(input_patch_size).astype(np.int32)
 
         # clip it to the median shape of the dataset because patches larger then that make not much sense
-        input_patch_size = [
-            min(i, j) for i, j in zip(input_patch_size, target_median_shape_transposed)
-        ]
+        input_patch_size = [min(i, j) for i, j in zip(input_patch_size, target_median_shape_transposed)]
         return np.round(input_patch_size).astype(np.int32)
 
     def plan_pool_and_conv_pool_late(
         self,
         patch_size: Sequence[int],
         spacing: Sequence[float],
-    ) -> Tuple[
-        List[int], List[Tuple[int]], List[Tuple[int]], Sequence[int], Sequence[int]
-    ]:
+    ) -> Tuple[List[int], List[Tuple[int]], List[Tuple[int]], Sequence[int], Sequence[int]]:
         """
         Plan pooling and convolutions of encoder network
         Axis which do not need pooling in every block are pooled as late as possible

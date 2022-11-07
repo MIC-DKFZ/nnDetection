@@ -65,9 +65,7 @@ def run(
 
     plan = load_pickle(training_dir / "plan_inference.pkl")
     if batch_size > 0:
-        logger.info(
-            f"Found batch size provided by script, running inference with batch size {batch_size}"
-        )
+        logger.info(f"Found batch size provided by script, running inference with batch size {batch_size}")
         plan["batch_size"] = batch_size
 
     if run_process:
@@ -136,14 +134,11 @@ def set_arg(cfg: Mapping, key: str, val: Any, force_args: bool) -> Mapping:
 
     if cfg[key] != val:
         if force_args:
-            logger.warning(
-                f"Found different values for {key}, will overwrite {cfg[key]} with {val}"
-            )
+            logger.warning(f"Found different values for {key}, will overwrite {cfg[key]} with {val}")
             cfg[key] = val
         else:
             raise ValueError(
-                f"Found different values for {key} and overwrite disabled."
-                f"Found {cfg[key]} but expected {val}."
+                f"Found different values for {key} and overwrite disabled." f"Found {cfg[key]} but expected {val}."
             )
     return cfg
 
@@ -201,12 +196,8 @@ def main():
             "keyword arguments to inference."
         ),
     )
-    parser.add_argument(
-        "--no_preprocess", action="store_false", help="Skip preprocessing of test data"
-    )
-    parser.add_argument(
-        "--no_predict", action="store_false", help="Skip prediction of test data"
-    )
+    parser.add_argument("--no_preprocess", action="store_false", help="Skip preprocessing of test data")
+    parser.add_argument("--no_predict", action="store_false", help="Skip prediction of test data")
     parser.add_argument(
         "--force_args",
         action="store_true",
@@ -275,8 +266,7 @@ def main():
 
     if test_split and run_process:
         raise ValueError(
-            "When using the test split option raw data is not "
-            "supported. Need to add --no_preprocess flag!"
+            "When using the test split option raw data is not " "supported. Need to add --no_preprocess flag!"
         )
 
     load_models = LoadModels(load_models)
@@ -291,9 +281,7 @@ def main():
     # print(cfg)
 
     cfg = set_arg(cfg, "task", task_name, force_args=force_args)
-    cfg["exp"] = set_arg(
-        cfg["exp"], "fold", fold, force_args=True if fold == -1 else force_args
-    )
+    cfg["exp"] = set_arg(cfg["exp"], "fold", fold, force_args=True if fold == -1 else force_args)
     cfg["exp"] = set_arg(cfg["exp"], "id", model, force_args=force_args)
 
     overwrites = ov if ov is not None else []
@@ -308,9 +296,7 @@ def main():
     if check:
         if test_split:
             raise ValueError("Check is not supported for test split option.")
-        check_data_and_label_splitted(
-            task_name=cfg["task"], test=True, labels=False, full_check=True
-        )
+        check_data_and_label_splitted(task_name=cfg["task"], test=True, labels=False, full_check=True)
 
     run(
         OmegaConf.to_container(cfg, resolve=True),

@@ -30,22 +30,19 @@ def env_guard(func):
         # det_data
         if os.environ.get("det_data", None) is None:
             raise RuntimeError(
-                "'det_data' environment variable not set. "
-                "Please refer to the installation instructions. "
+                "'det_data' environment variable not set. " "Please refer to the installation instructions. "
             )
 
         # det_models
         if os.environ.get("det_models", None) is None:
             raise RuntimeError(
-                "'det_models' environment variable not set. "
-                "Please refer to the installation instructions. "
+                "'det_models' environment variable not set. " "Please refer to the installation instructions. "
             )
 
         # OMP_NUM_THREADS
         if os.environ.get("OMP_NUM_THREADS", None) is None:
             raise RuntimeError(
-                "'OMP_NUM_THREADS' environment variable not set. "
-                "Please refer to the installation instructions. "
+                "'OMP_NUM_THREADS' environment variable not set. " "Please refer to the installation instructions. "
             )
 
         # det_num_threads
@@ -58,10 +55,7 @@ def env_guard(func):
 
         # det_verbose
         if os.environ.get("det_verbose", None) is None:
-            print(
-                "'det_verbose' environment variable not set. "
-                "Continue in verbose mode."
-            )
+            print("'det_verbose' environment variable not set. " "Continue in verbose mode.")
 
         return func(*args, **kwargs)
 
@@ -70,16 +64,12 @@ def env_guard(func):
 
 def _check_key_missing(cfg: dict, key: str, ktype=None):
     if key not in cfg:
-        raise ValueError(
-            f"Dataset information did not contain "
-            f"'{key}' key, found {list(cfg.keys())}"
-        )
+        raise ValueError(f"Dataset information did not contain " f"'{key}' key, found {list(cfg.keys())}")
 
     if ktype is not None:
         if not isinstance(cfg[key], ktype):
             raise ValueError(
-                f"Found {key} of type {type(cfg[key])} in "
-                f"dataset information but expected type {ktype}"
+                f"Found {key} of type {type(cfg[key])} in " f"dataset information but expected type {ktype}"
             )
 
 
@@ -106,22 +96,14 @@ def _check_dataset_file(cfg: dict):
 
     # check dim
     if dim := cfg["dim"] not in [2, 3]:
-        raise ValueError(
-            f"Found dim {dim} in dataset info but only support dim=2 or dim=3."
-        )
+        raise ValueError(f"Found dim {dim} in dataset info but only support dim=2 or dim=3.")
 
     # check labels
     for key, item in cfg["labels"].items():
         if not isinstance(key, str):
-            raise ValueError(
-                "Expected key of type string in dataset "
-                f"info labels but found {type(key)} : {key}"
-            )
+            raise ValueError("Expected key of type string in dataset " f"info labels but found {type(key)} : {key}")
         if not isinstance(item, str):
-            raise ValueError(
-                "Expected name of type string in dataset "
-                f"info labels but found {type(item)} : {item}"
-            )
+            raise ValueError("Expected name of type string in dataset " f"info labels but found {type(item)} : {item}")
 
     found_classes = sorted(list(map(int, cfg["labels"].keys())))
     for ic, idx in enumerate(found_classes):
@@ -134,15 +116,9 @@ def _check_dataset_file(cfg: dict):
     # check modalities
     for key, item in cfg["modalities"].items():
         if not isinstance(key, str):
-            raise ValueError(
-                "Expected key of type string in dataset "
-                f"info labels but found {type(key)} : {key}"
-            )
+            raise ValueError("Expected key of type string in dataset " f"info labels but found {type(key)} : {key}")
         if not isinstance(item, str):
-            raise ValueError(
-                "Expected name of type string in dataset "
-                f"info labels but found {type(item)} : {item}"
-            )
+            raise ValueError("Expected name of type string in dataset " f"info labels but found {type(item)} : {item}")
 
     found_mods = sorted(list(map(int, cfg["modalities"].keys())))
     for ic, idx in enumerate(found_mods):
@@ -154,12 +130,9 @@ def _check_dataset_file(cfg: dict):
 
     # check target class
     target_class = cfg.get("target_class", None)
-    if target_class is not None and (
-        not isinstance(target_class, int) or target_class not in found_classes
-    ):
+    if target_class is not None and (not isinstance(target_class, int) or target_class not in found_classes):
         raise ValueError(
-            "If target class is defined, it needs to be an integer, "
-            f"found {type(target_class)} : {target_class}"
+            "If target class is defined, it needs to be an integer, " f"found {type(target_class)} : {target_class}"
         )
 
     print("Dataset info check complete.")
@@ -203,10 +176,7 @@ def check_data_and_label_splitted(
         # check all files exist
         for cp in case_paths:
             if not Path(cp).is_file():
-                raise ValueError(
-                    f"Expected {cp} to be a raw splitted "
-                    "data path but it does not exist."
-                )
+                raise ValueError(f"Expected {cp} to be a raw splitted " "data path but it does not exist.")
 
         if labels:
             # check label info (json files)
@@ -219,8 +189,7 @@ def check_data_and_label_splitted(
             mask_info_path = mask_path.parent / f"{_c}.json"
             if not Path(mask_info_path).is_file():
                 raise ValueError(
-                    f"Expected {mask_info_path} to be a raw splitted "
-                    "mask info path but it does not exist."
+                    f"Expected {mask_info_path} to be a raw splitted " "mask info path but it does not exist."
                 )
             mask_info = load_json(mask_info_path)
             _check_instances_json(mask_info, mask_info_path, all_classes)
@@ -232,9 +201,7 @@ def check_data_and_label_splitted(
     print("Data and label check complete.")
 
 
-def _check_instances_json(
-    mask_info: Dict, mask_info_path: Union[str, Path], all_classes: Sequence[str]
-):
+def _check_instances_json(mask_info: Dict, mask_info_path: Union[str, Path], all_classes: Sequence[str]):
     """
     Check types of json files
 
@@ -271,9 +238,7 @@ def _check_instances_json(
             mask_info_instances = list(map(int, mask_info["instances"].keys()))
 
             if j := not min(mask_info_instances) == 1:
-                raise ValueError(
-                    f"Instance IDs need to start at 1, found {j} in {mask_info_path}"
-                )
+                raise ValueError(f"Instance IDs need to start at 1, found {j} in {mask_info_path}")
 
             for i in range(1, len(mask_info_instances) + 1):
                 if i not in mask_info_instances:
@@ -307,9 +272,7 @@ def _full_check(
 
     for _img, _path in zip(img_itk_seq, case_paths):
         if _img.GetDimension() != 3:
-            raise ValueError(
-                f"Expected three dimensions in {_path} but found {_img.GetDimension()}"
-            )
+            raise ValueError(f"Expected three dimensions in {_path} but found {_img.GetDimension()}")
 
     if mask_info_path is not None:
         mask_itk = img_itk_seq[-1]
@@ -319,8 +282,7 @@ def _full_check(
 
         if mask_np.ndim != 3:
             raise ValueError(
-                "Expected mask to have three dimensions but found "
-                f"{mask_np.ndim} dimensions in {mask_info_path}"
+                "Expected mask to have three dimensions but found " f"{mask_np.ndim} dimensions in {mask_info_path}"
             )
 
         mask_instances = np.unique(mask_np)
@@ -357,31 +319,13 @@ def _check_itk_params(
         ValueError: raised if spacing does not match
     """
     for idx, img in enumerate(img_seq[1:], start=1):
-        if not (
-            np.asarray(img_seq[0].GetDimension()) == np.asarray(img.GetDimension())
-        ).all():
-            raise ValueError(
-                f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
-            )
+        if not (np.asarray(img_seq[0].GetDimension()) == np.asarray(img.GetDimension())).all():
+            raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
         if not ((np.asarray(img_seq[0].GetSize()) == np.asarray(img.GetSize()))).all():
-            raise ValueError(
-                f"Expected {paths[idx]} and {paths[0]} to have same dimensions!"
-            )
-        if not np.allclose(
-            np.asarray(img_seq[0].GetOrigin()), np.asarray(img.GetOrigin())
-        ):
-            raise ValueError(
-                f"Expected {paths[idx]} and {paths[0]} to have same origin!"
-            )
-        if not np.allclose(
-            np.asarray(img_seq[0].GetDirection()), np.asarray(img.GetDirection())
-        ):
-            raise ValueError(
-                f"Expected {paths[idx]} and {paths[0]} to have same direction!"
-            )
-        if not np.allclose(
-            np.asarray(img_seq[0].GetSpacing()), np.asarray(img.GetSpacing())
-        ):
-            raise ValueError(
-                f"Expected {paths[idx]} and {paths[0]} to have same spacing!"
-            )
+            raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
+        if not np.allclose(np.asarray(img_seq[0].GetOrigin()), np.asarray(img.GetOrigin())):
+            raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same origin!")
+        if not np.allclose(np.asarray(img_seq[0].GetDirection()), np.asarray(img.GetDirection())):
+            raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same direction!")
+        if not np.allclose(np.asarray(img_seq[0].GetSpacing()), np.asarray(img.GetSpacing())):
+            raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same spacing!")

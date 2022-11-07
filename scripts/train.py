@@ -136,9 +136,7 @@ def evaluate():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument(
-        "model", type=str, help="model name, e.g. RetinaUNetV0_D3V001_3d"
-    )
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0_D3V001_3d")
     parser.add_argument("fold", type=int, help="fold, -1 => consolidated")
 
     parser.add_argument(
@@ -148,13 +146,9 @@ def evaluate():
     )
     parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
     parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
-    parser.add_argument(
-        "--seg", help="Run Semantic Segmentation Evaluation", action="store_true"
-    )
+    parser.add_argument("--seg", help="Run Semantic Segmentation Evaluation", action="store_true")
     parser.add_argument("--masks", help="Run Mask Evaluation", action="store_true")
-    parser.add_argument(
-        "--analyze_boxes", help="Analyze Box Results", action="store_true"
-    )
+    parser.add_argument("--analyze_boxes", help="Analyze Box Results", action="store_true")
     parser.add_argument(
         "--eval_preprocessed",
         help="Additionally run evaluation on preprocessed data",
@@ -195,25 +189,15 @@ def init_train_dir(cfg) -> Path:
     Initialize training directory and make it the current working directory
     """
     # determine folder for experiment
-    output_dir = (
-        Path(cfg.host.parent_results)
-        / str(cfg.task)
-        / str(cfg.exp.id)
-        / f"fold{cfg.exp.fold}"
-    )
+    output_dir = Path(cfg.host.parent_results) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
 
     if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
-            print(
-                f"Found existing folder {output_dir}, this run will overwrite "
-                f"the results inside that folder"
-            )
+            print(f"Found existing folder {output_dir}, this run will overwrite " f"the results inside that folder")
         output_dir.mkdir(parents=True, exist_ok=True)
     else:
         if not output_dir.is_dir():
-            raise ValueError(
-                f"{output_dir} is not a valid training dir and thus can not be resumed"
-            )
+            raise ValueError(f"{output_dir} is not a valid training dir and thus can not be resumed")
     os.chdir(str(output_dir))
     return output_dir
 
@@ -261,13 +245,9 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
             tags=tags,
             save_dir=save_dir,
         )
-        if (
-            ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])
-        ) is not None:
+        if (ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
             exp_id = ml_exp.experiment_id
-            runs = pl_logger._mlflow_client.search_runs(
-                [exp_id], filter_string=f'tag.mlflow.runName="{run_name}"'
-            )
+            runs = pl_logger._mlflow_client.search_runs([exp_id], filter_string=f'tag.mlflow.runName="{run_name}"')
             if len(runs) > 0:
                 pl_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
     elif logger_name == "tensorboard":
@@ -314,12 +294,8 @@ def _train(
             "plan": cfg["plan"],
             "aug_name": cfg["augment_cfg"]["name"],
             "aug_transforms": cfg["augment_cfg"]["transforms"],
-            **flatten_mapping(
-                {"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}
-            ),
-            **flatten_mapping(
-                {"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}
-            ),
+            **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
+            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
         }
         pl_logger.log_hyperparams(params)
 
@@ -348,9 +324,7 @@ def _train(
     plan_path = Path(str(cfg.host["plan_path"]))
     plan = load_pickle(plan_path)
 
-    data_dir = (
-        Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
-    )
+    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
 
     datamodule = Datamodule(
         io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
@@ -386,9 +360,7 @@ def _train(
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
     save_pickle(plan, train_dir / "plan.pkl")  # backup plan
     save_json(create_debug_plan(plan), "./plan_debug.json")  # easy read backup
-    splits = load_pickle(
-        Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file
-    )
+    splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
@@ -397,9 +369,7 @@ def _train(
         trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
     elif cfg["exec"]["mode"].lower() == "transfer":
         logger.info("Found train mode: transfer -> loading model weights")
-        module.load_state_dict(
-            torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True
-        )
+        module.load_state_dict(torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True)
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
@@ -418,10 +388,7 @@ def _train(
     else:
         detect_anomaly = False
 
-    if (
-        cfg["trainer_cfg"]["precision"] == 16
-        and cfg["trainer_cfg"]["amp_backend"] == "native"
-    ):
+    if cfg["trainer_cfg"]["precision"] == 16 and cfg["trainer_cfg"]["amp_backend"] == "native":
         device = "cuda" if num_gpus > 0 else "cpu"
         precision_plugin = ExposedNativeMixedPrecisionPlugin(
             precision=16,
@@ -460,13 +427,8 @@ def _train(
     run_info["train_h"] = train_time / 3600
     if do_sweep:
         case_ids = splits[cfg["exp"]["fold"]]["val"]
-        if (
-            "debug" in cfg["trainer_cfg"]
-            and "num_cases_val" in cfg["trainer_cfg"]["debug"]
-        ):
-            logger.warning(
-                "[!!!] Detected debug mode for sweep using reduced set of cases"
-            )
+        if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
+            logger.warning("[!!!] Detected debug mode for sweep using reduced set of cases")
             case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
 
         sweep_start = time.time()
@@ -488,11 +450,7 @@ def _train(
         eval_start = time.time()
         ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
         for restore in [True, False]:
-            target_dir = (
-                train_dir / "val_predictions"
-                if restore
-                else train_dir / "val_predictions_preprocessed"
-            )
+            target_dir = train_dir / "val_predictions" if restore else train_dir / "val_predictions_preprocessed"
             extract_results(
                 source_dir=train_dir / "sweep_predictions",
                 target_dir=target_dir,
@@ -505,9 +463,7 @@ def _train(
             model=cfg["exp"]["id"],
             fold=cfg["exp"]["fold"],
             test=False,
-            do_case_eval=(
-                module.requires_case_eval and (cfg["data"]["target_class"] is not None)
-            ),
+            do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
             do_boxes_eval=module.requires_box_eval(),
             do_analyze_boxes=module.requires_box_eval(),
             do_masks_eval=module.requires_mask_eval(),
@@ -554,9 +510,7 @@ def _sweep(
     logger.info(f"Log file at {log_file}")
 
     plan = load_pickle(train_dir / "plan.pkl")
-    data_dir = (
-        Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
-    )
+    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
 
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
@@ -585,11 +539,7 @@ def _sweep(
 
     ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
     for restore in [True, False]:
-        target_dir = (
-            train_dir / "val_predictions"
-            if restore
-            else train_dir / "val_predictions_preprocessed"
-        )
+        target_dir = train_dir / "val_predictions" if restore else train_dir / "val_predictions_preprocessed"
         extract_results(
             source_dir=train_dir / "sweep_predictions",
             target_dir=target_dir,
@@ -603,9 +553,7 @@ def _sweep(
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
-        do_case_eval=(
-            module.requires_case_eval and (cfg["data"]["target_class"] is not None)
-        ),
+        do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
         do_boxes_eval=module.requires_box_eval(),
         do_analyze_boxes=module.requires_box_eval(),
         do_masks_eval=module.requires_mask_eval(),
@@ -657,9 +605,7 @@ def _evaluate(
     if not test and eval_preprocessed:
         modes.append(False)
     if test and eval_preprocessed:
-        logger.warning(
-            "Evaluation of preprocessed data only supported on validation data."
-        )
+        logger.warning("Evaluation of preprocessed data only supported on validation data.")
 
     for restore in modes:
         if restore:
@@ -669,16 +615,10 @@ def _evaluate(
         else:
             plan = load_pickle(training_dir / "plan.pkl")
             pred_dir_name = f"{prefix}_predictions_preprocessed"
-            gt_dir = (
-                data_dir_task / "preprocessed" / plan["data_identifier"] / "labelsTr"
-            )
+            gt_dir = data_dir_task / "preprocessed" / plan["data_identifier"] / "labelsTr"
 
         pred_dir = training_dir / pred_dir_name
-        save_dir = (
-            training_dir / f"{prefix}_results"
-            if restore
-            else training_dir / f"{prefix}_results_preprocessed"
-        )
+        save_dir = training_dir / f"{prefix}_results" if restore else training_dir / f"{prefix}_results_preprocessed"
 
         # compute metrics
         if do_boxes_eval:
@@ -721,11 +661,7 @@ def _evaluate(
             save_metric_output(scores, curves, save_dir, "results_masks")
 
         # run analysis
-        save_dir = (
-            training_dir / f"{prefix}_analysis"
-            if restore
-            else training_dir / f"{prefix}_analysis_preprocessed"
-        )
+        save_dir = training_dir / f"{prefix}_analysis" if restore else training_dir / f"{prefix}_analysis_preprocessed"
         if do_analyze_boxes:
             logger.info(f"Analyze box predictions: restore {restore}")
             run_analysis_suite(

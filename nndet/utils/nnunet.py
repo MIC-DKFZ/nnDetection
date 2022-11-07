@@ -77,9 +77,7 @@ class Exporter:
         """
         Export labels
         """
-        case_ids = get_case_ids_from_dir(
-            self.label_dir, remove_modality=False, pattern="*.json"
-        )
+        case_ids = get_case_ids_from_dir(self.label_dir, remove_modality=False, pattern="*.json")
         label_target_dir = self.target_dir / self.label_dir.stem
         label_target_dir.mkdir(exist_ok=True, parents=True)
         num_classes = len(self.data_info.get("labels", {}))
@@ -99,11 +97,7 @@ class Exporter:
                     self._export_label,
                     zip(case_ids, repeat(num_classes), repeat(label_target_dir)),
                 )
-        assert len(
-            get_case_ids_from_dir(
-                label_target_dir, remove_modality=False, pattern="*.nii.gz"
-            )
-        ) == len(case_ids)
+        assert len(get_case_ids_from_dir(label_target_dir, remove_modality=False, pattern="*.nii.gz")) == len(case_ids)
 
     def _export_label(self, cid: str, num_classes: int, target_dir: Path):
         logger.info(f"Processing {cid}")
@@ -124,12 +118,8 @@ class Exporter:
             assert seg.max() <= num_classes, "Wrong class id, something went wrong."
         if instance_seg.max() > 0:
             assert seg.max() > 0, "Instance got lost, something went wrong"
-        assert np.all(
-            (instance_seg > 0) == (seg > 0)
-        ), "Something wrong with foreground"
-        assert np.all(
-            (instance_seg == 0) == (seg == 0)
-        ), "Something wrong with background"
+        assert np.all((instance_seg > 0) == (seg > 0)), "Something wrong with foreground"
+        assert np.all((instance_seg == 0) == (seg == 0)), "Something wrong with background"
 
         if self.export_stuff:
             # map stuff classes to: max(labels) + stuff_cls
@@ -181,23 +171,18 @@ class Exporter:
             num_instance_classes = len(instance_classes)
             # copy stuff classes into nnuent dataset.json
             stuff_classes = {
-                str(int(key) + num_instance_classes): item
-                for key, item in stuff_classes.items()
-                if int(key) > 0
+                str(int(key) + num_instance_classes): item for key, item in stuff_classes.items() if int(key) > 0
             }
             dataset_info["labels_stuff"] = stuff_classes
             dataset_info["labels"].update(stuff_classes)
 
         _case_ids = get_case_ids_from_dir(self.label_dir, remove_modality=False)
         case_ids_tr = get_case_ids_from_dir(self.tr_image_dir, remove_modality=True)
-        assert len(set(_case_ids).union(case_ids_tr)) == len(
-            _case_ids
-        ), "All training  images need a label"
+        assert len(set(_case_ids).union(case_ids_tr)) == len(_case_ids), "All training  images need a label"
         dataset_info["numTraining"] = len(case_ids_tr)
 
         dataset_info["training"] = [
-            {"image": f"./imagesTr/{cid}.nii.gz", "label": f"./labelsTr/{cid}.nii.gz"}
-            for cid in case_ids_tr
+            {"image": f"./imagesTr/{cid}.nii.gz", "label": f"./labelsTr/{cid}.nii.gz"} for cid in case_ids_tr
         ]
 
         if self.ts_image_dir is not None:

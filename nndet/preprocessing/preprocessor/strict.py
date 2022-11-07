@@ -74,9 +74,7 @@ class StrictNormMixin:
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert (
-            self.intensity_properties is not None
-        ), "ERROR: if there is a CT then we need intensity properties"
+        assert self.intensity_properties is not None, "ERROR: if there is a CT then we need intensity properties"
         mean_intensity = self.intensity_properties[modality]["mean"]
         std_intensity = self.intensity_properties[modality]["std"]
         lower_bound = self.intensity_properties[modality]["percentile_00_5"]
@@ -110,9 +108,7 @@ class StrictNormMixin:
         Returns:
             np.ndarray: normalized data (only modality channel was changes)
         """
-        assert (
-            self.intensity_properties is not None
-        ), "ERROR: if there is a CT then we need intensity properties"
+        assert self.intensity_properties is not None, "ERROR: if there is a CT then we need intensity properties"
         lower_bound = self.intensity_properties[modality]["percentile_00_5"]
         upper_bound = self.intensity_properties[modality]["percentile_99_5"]
 

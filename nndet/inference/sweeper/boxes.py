@@ -82,9 +82,7 @@ class BoxSweeper(Sweeper):
                 )
             best_score = _best_score
         toc = time.perf_counter()
-        logger.info(
-            f"\n\n Determined {state} with best sweeping score {best_score} {self.target_metric}\n\n"
-        )
+        logger.info(f"\n\n Determined {state} with best sweeping score {best_score} {self.target_metric}\n\n")
         logger.info(f"Sweep took {toc - tic} s total")
         return state
 
@@ -151,9 +149,7 @@ class BoxSweeper(Sweeper):
             save_dir=None,
         )
 
-        for case_id in maybe_verbose_iterable(
-            self.ensembler_cls.get_case_ids(self.pred_dir)
-        ):
+        for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
             ensembler = self.ensembler_cls.from_checkpoint(
                 base_dir=self.pred_dir,
                 case_id=case_id,
@@ -163,9 +159,7 @@ class BoxSweeper(Sweeper):
             ensembler.update_parameters(**overwrite)
 
             pred = to_numpy(ensembler.get_case_result(restore=False))
-            gt = np.load(
-                str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True
-            )
+            gt = np.load(str(self.gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
 
             evaluator.run_online_evaluation(
                 pred_boxes=[pred["pred_boxes"]],

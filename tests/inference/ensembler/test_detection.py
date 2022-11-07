@@ -63,12 +63,8 @@ class TestDetectionEnsembler:
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
-        assert all(
-            [a == b for a, b in zip(ensembler.properties["shape"], expected_shape)]
-        )
-        assert all(
-            [a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))]
-        )
+        assert all([a == b for a, b in zip(ensembler.properties["shape"], expected_shape)])
+        assert all([a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))])
         assert ensembler.parameters["model_iou"] == 0.5
         assert ensembler.parameters["ensemble_topk"] == 10
 
@@ -109,13 +105,9 @@ class TestDetectionEnsembler:
             torch.tensor([[0, 0, 1, 1]]).float(),
         ]
 
-        for exp_box, ens_box in zip(
-            expected_boxes0, ensembler.model_results["model_test0"]["boxes"]
-        ):
+        for exp_box, ens_box in zip(expected_boxes0, ensembler.model_results["model_test0"]["boxes"]):
             assert exp_box.allclose(ens_box)
-        for exp_box, ens_box in zip(
-            expected_boxes1, ensembler.model_results["model_test1"]["boxes"]
-        ):
+        for exp_box, ens_box in zip(expected_boxes1, ensembler.model_results["model_test1"]["boxes"]):
             assert exp_box.allclose(ens_box)
 
     def test_get_box_in_tile_weight(self, example):

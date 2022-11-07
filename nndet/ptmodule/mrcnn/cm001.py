@@ -71,9 +71,7 @@ class CascadeMaskURCNNModule(
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
-    segmenter_cls: Optional[
-        Type[Segmenter]
-    ] = None  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Optional[Type[Segmenter]] = None  # [optional] segmentation head as in RetinaUNet
 
     ########################
     # RoI Head Configuration
@@ -88,12 +86,8 @@ class CascadeMaskURCNNModule(
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
     roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = ...  # define roi box postprocessing strategy
+    roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
     roi_masker_cls: Type[Masker] = ...  # class of RoI mask head
     roi_mask_pooler_cls: Type[RoIPooler] = ...  # class of RoI mask pooler
-    roi_mask_post_cls: Type[
-        MaskPostprocessing
-    ] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+    roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy

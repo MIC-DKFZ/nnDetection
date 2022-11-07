@@ -62,13 +62,9 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
 
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(
-                    input.float(), target_one_hot.float()
-                )
+                loss = self.loss_weight * super().forward(input.float(), target_one_hot.float())
         else:
-            loss = self.loss_weight * super().forward(
-                input, target_one_hot.to(dtype=input.dtype)
-            )
+            loss = self.loss_weight * super().forward(input, target_one_hot.to(dtype=input.dtype))
         return loss
 
 

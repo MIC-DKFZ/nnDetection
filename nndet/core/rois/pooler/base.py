@@ -35,9 +35,7 @@ class RoIPooler(torch.nn.Module):
         super().__init__()
         self.feature_output_size = feature_output_size
         self.mask_output_size = mask_output_size
-        self.feature_pool_kwargs = (
-            feature_pool_kwargs if feature_pool_kwargs is not None else {}
-        )
+        self.feature_pool_kwargs = feature_pool_kwargs if feature_pool_kwargs is not None else {}
         self.mask_pool_kwargs = mask_pool_kwargs if mask_pool_kwargs is not None else {}
 
     def forward(
@@ -71,9 +69,7 @@ class RoIPooler(torch.nn.Module):
         assert len(image_size) + 2 == features[0].ndim
 
         if len(features) == 1:
-            spatial_scale = tuple(
-                features[0].shape[i + 2] / image_size[i] for i in range(len(image_size))
-            )
+            spatial_scale = tuple(features[0].shape[i + 2] / image_size[i] for i in range(len(image_size)))
             output = self._pool_features(
                 fmap=features[0],
                 proposal_boxes_batch_idx=proposal_boxes_batch_idx,
@@ -98,9 +94,7 @@ class RoIPooler(torch.nn.Module):
             )
 
             for idx, fmap in enumerate(features):
-                spatial_scale = tuple(
-                    fmap.shape[i + 2] / image_size[i] for i in range(len(image_size))
-                )
+                spatial_scale = tuple(fmap.shape[i + 2] / image_size[i] for i in range(len(image_size)))
                 idx = torch.where(proposal_levels == idx)[0]
                 if idx.numel() > 0:
                     output[idx] = self._pool_features(

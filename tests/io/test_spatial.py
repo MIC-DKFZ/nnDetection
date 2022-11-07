@@ -124,18 +124,14 @@ class TestSpatialFN:
         assert cat_points[0].allclose(expected)
 
     def test_points2boxes_2d(self):
-        points = torch.cat(
-            [torch.tensor([[0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0]] * 3)], dim=0
-        )
+        points = torch.cat([torch.tensor([[0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0]] * 3)], dim=0)
         expected_boxes = torch.tensor([[0.0, 0.0, 1.0, 1.0]] * 3)
 
         boxes = points2boxes(points)
         assert expected_boxes.allclose(boxes)
 
     def test_points2boxes_3d(self):
-        points = torch.cat(
-            [torch.tensor([[0.0, 0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0, 1.0]] * 3)]
-        )
+        points = torch.cat([torch.tensor([[0.0, 0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0, 1.0]] * 3)])
         expected_boxes = torch.tensor([[0.0, 0.0, 1.0, 1.0, 0.0, 1.0]] * 3)
 
         boxes = points2boxes(points)
@@ -143,18 +139,14 @@ class TestSpatialFN:
 
     def test_boxes2points_2d(self):
         boxes = torch.tensor([[0.0, 0.0, 1.0, 1.0]] * 3)
-        expected_points = torch.cat(
-            [torch.tensor([[0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0]] * 3)], dim=0
-        )
+        expected_points = torch.cat([torch.tensor([[0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0]] * 3)], dim=0)
 
         points = boxes2points(boxes)
         assert expected_points.allclose(points)
 
     def test_boxes2points_3d(self):
         boxes = torch.tensor([[0.0, 0.0, 1.0, 1.0, 0.0, 1.0]] * 3)
-        expected_points = torch.cat(
-            [torch.tensor([[0.0, 0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0, 1.0]] * 3)]
-        )
+        expected_points = torch.cat([torch.tensor([[0.0, 0.0, 0.0]] * 3), torch.tensor([[1.0, 1.0, 1.0]] * 3)])
 
         points = boxes2points(boxes)
         assert expected_points.allclose(points)

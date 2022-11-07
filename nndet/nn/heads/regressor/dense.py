@@ -121,14 +121,10 @@ class DenseRegressor(Regressor):
         """
         Build additionales scalar values per level
         """
-        logger.info(
-            f"Learning level specific scalar in regressor with scale per dim {self.scale_per_dim}"
-        )
+        logger.info(f"Learning level specific scalar in regressor with scale per dim {self.scale_per_dim}")
         if self.scale_per_dim:
             scale = [1.0 for _ in range(self.dim)]
-            return nn.ModuleList(
-                [ScalePerDim(scale=scale) for _ in range(self.num_levels)]
-            )
+            return nn.ModuleList([ScalePerDim(scale=scale) for _ in range(self.num_levels)])
         else:
             return nn.ModuleList([Scale() for _ in range(self.num_levels)])
 

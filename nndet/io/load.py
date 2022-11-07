@@ -33,9 +33,7 @@ __all__ = [
 ]
 
 
-def load_case_from_list(
-    data_files, seg_file=None
-) -> Tuple[np.ndarray, np.ndarray, dict]:
+def load_case_from_list(data_files, seg_file=None) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Load data and label of one case from list of paths
 
@@ -85,10 +83,7 @@ def load_case_from_list(
             properties_json = load_json(seg_props_file)
 
             # cast instances to correct type
-            properties_json["instances"] = {
-                str(key): int(item)
-                for key, item in properties_json["instances"].items()
-            }
+            properties_json["instances"] = {str(key): int(item) for key, item in properties_json["instances"].items()}
 
             properties.update(properties_json)
     else:
@@ -115,9 +110,7 @@ def load_properties_of_cropped(path: Path):
     return properties
 
 
-def load_case_cropped(
-    folder: Path, case_id: str
-) -> Tuple[np.ndarray, np.ndarray, dict]:
+def load_case_cropped(folder: Path, case_id: str) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Load single case after cropping
 
@@ -385,9 +378,7 @@ def load_npz_looped(
         dict: loaded data
     """
     if num_tries <= 0:
-        raise ValueError(
-            f"Num tires needs to be larger than 0, found {num_tries} tries."
-        )
+        raise ValueError(f"Num tires needs to be larger than 0, found {num_tries} tries.")
 
     for i in range(num_tries):  # try reading the file 3 times
         try:

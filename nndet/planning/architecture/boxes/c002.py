@@ -49,12 +49,8 @@ class BoxC002(BoxC001):
         """
         super().create_default_settings()
         self.architecture_kwargs["start_channels"] = 48 if self.dim == 2 else 32
-        self.architecture_kwargs["fpn_channels"] = (
-            self.architecture_kwargs["start_channels"] * 4
-        )
-        self.architecture_kwargs["head_channels"] = self.architecture_kwargs[
-            "fpn_channels"
-        ]
+        self.architecture_kwargs["fpn_channels"] = self.architecture_kwargs["start_channels"] * 4
+        self.architecture_kwargs["head_channels"] = self.architecture_kwargs["fpn_channels"]
         self.batch_size = 16 if self.dim == 2 else 4
         self.min_feature_map_size = 8 if self.dim == 2 else 4
         self.num_decoder_level = 4 if self.dim == 2 else 4
@@ -80,22 +76,14 @@ class BoxC002(BoxC001):
         """
         logger.info("Processing dataset properties")
         self.all_boxes = [
-            case["boxes"]
-            for case_id, case in self.dataset_properties[
-                "instance_props_per_patient"
-            ].items()
+            case["boxes"] for case_id, case in self.dataset_properties["instance_props_per_patient"].items()
         ]
         self.all_spacings = [
-            case["original_spacing"]
-            for case_id, case in self.dataset_properties[
-                "instance_props_per_patient"
-            ].items()
+            case["original_spacing"] for case_id, case in self.dataset_properties["instance_props_per_patient"].items()
         ]
         self.num_instances_per_case = {
             case_id: sum(case["num_instances"].values())
-            for case_id, case in self.dataset_properties[
-                "instance_props_per_patient"
-            ].items()
+            for case_id, case in self.dataset_properties["instance_props_per_patient"].items()
         }
 
         self.all_ious = self.dataset_properties["all_ious"]
@@ -103,15 +91,9 @@ class BoxC002(BoxC001):
         self.num_instances = self.dataset_properties["num_instances"]
         self.dim = self.dataset_properties["dim"]
 
-        self.architecture_kwargs["classifier_classes"] = len(
-            self.dataset_properties["class_dct"]
-        )
-        self.architecture_kwargs["seg_classes"] = self.architecture_kwargs[
-            "classifier_classes"
-        ]
-        self.architecture_kwargs["in_channels"] = len(
-            self.dataset_properties["modalities"]
-        )
+        self.architecture_kwargs["classifier_classes"] = len(self.dataset_properties["class_dct"])
+        self.architecture_kwargs["seg_classes"] = self.architecture_kwargs["classifier_classes"]
+        self.architecture_kwargs["in_channels"] = len(self.dataset_properties["modalities"])
         self.architecture_kwargs["dim"] = self.dataset_properties["dim"]
 
     def plan(
@@ -175,8 +157,7 @@ class BoxC002(BoxC001):
                 keep_box[idx + 2] = 2 * k + 1
 
         self.all_boxes = [
-            b[:, keep_box] if (not isinstance(b, list) and b.shape[1] == 6) else b
-            for b in self.all_boxes
+            b[:, keep_box] if (not isinstance(b, list) and b.shape[1] == 6) else b for b in self.all_boxes
         ]
         self.all_spacings = [c[keep] if len(c) == 3 else c for c in self.all_spacings]
 
@@ -211,11 +192,7 @@ class BoxC002(BoxC001):
             Sequence[int]: patch size to use for training
         """
         self.estimator.batch_size = self.batch_size
-        patch_size = np.asarray(
-            self._get_initial_patch_size(
-                target_spacing_transposed, target_median_shape_transposed
-            )
-        )
+        patch_size = np.asarray(self._get_initial_patch_size(target_spacing_transposed, target_median_shape_transposed))
         first_run = True
         while True:
             if first_run:
@@ -238,9 +215,7 @@ class BoxC002(BoxC001):
             self.architecture_kwargs["strides"] = pooling
             num_resolutions = len(self.architecture_kwargs["conv_kernels"])
 
-            decoder_levels_start = min(
-                max(1, num_resolutions - self.num_decoder_level), self.min_decoder_level
-            )
+            decoder_levels_start = min(max(1, num_resolutions - self.num_decoder_level), self.min_decoder_level)
             self.architecture_kwargs["decoder_levels"] = tuple(
                 [i for i in range(decoder_levels_start, num_resolutions)]
             )
@@ -283,11 +258,7 @@ class BoxC002(BoxC001):
             transpose_forward=transpose_forward,
             cat=False,
         ):
-            max_instances_per_image.append(
-                max(
-                    proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)
-                ).item()
-            )
+            max_instances_per_image.append(max(proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)).item())
         return max(max_instances_per_image)
 
     def _plan_anchors(
@@ -316,17 +287,12 @@ class BoxC002(BoxC001):
 
         rel_strides = self.architecture_kwargs["strides"]
         filt_rel_strides = [[1] * self.dim, *rel_strides]
-        filt_rel_strides = [
-            filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]
-        ]
+        filt_rel_strides = [filt_rel_strides[i] for i in self.architecture_kwargs["decoder_levels"]]
         strides = np.cumprod(filt_rel_strides, axis=0) / np.asarray(rel_strides[0])
 
-        params = self.find_anchors(
-            boxes_torch, strides.astype(np.int32), anchor_generator
-        )
+        params = self.find_anchors(boxes_torch, strides.astype(np.int32), anchor_generator)
         scaled_params = {
-            key: scale_with_abs_strides(item, strides, dim_idx)
-            for dim_idx, (key, item) in enumerate(params.items())
+            key: scale_with_abs_strides(item, strides, dim_idx) for dim_idx, (key, item) in enumerate(params.items())
         }
         logger.info(f"Determined Anchors: {params}; Results in params: {scaled_params}")
         self.anchors = scaled_params
@@ -347,15 +313,9 @@ class BoxC002(BoxC001):
         for spacing, boxes in zip(self.all_spacings, self.all_boxes):
             if not isinstance(boxes, list) and boxes.size > 0:
                 spacing_transposed = np.asarray(spacing)[transpose_forward]
-                scaling_transposed = spacing_transposed / np.asarray(
-                    target_spacing_transposed
-                )
-                boxes_transposed = permute_boxes(
-                    np.asarray(boxes), dims=transpose_forward
-                )
-                boxes_np_list.append(
-                    boxes_transposed * expand_to_boxes(scaling_transposed)
-                )
+                scaling_transposed = spacing_transposed / np.asarray(target_spacing_transposed)
+                boxes_transposed = permute_boxes(np.asarray(boxes), dims=transpose_forward)
+                boxes_np_list.append(boxes_transposed * expand_to_boxes(scaling_transposed))
         if cat:
             return np.concatenate(boxes_np_list).astype(np.float32)
         else:
@@ -389,9 +349,7 @@ class BoxC002(BoxC001):
             lowres_axis = np.argmax(target_spacing_transposed)
             isotropic_axes = list(range(len(target_median_shape_transposed)))
             isotropic_axes.pop(lowres_axis)
-            min_isotropic_axes_shape = min(
-                [target_median_shape_transposed[t] for t in isotropic_axes]
-            )
+            min_isotropic_axes_shape = min([target_median_shape_transposed[t] for t in isotropic_axes])
             lowres_shape = target_median_shape_transposed[lowres_axis]
         else:
             lowres_axis = -1
@@ -404,9 +362,7 @@ class BoxC002(BoxC001):
                 assert lowres_shape is not None
                 initial_patch_size.append(min(input_patch_size[i], lowres_shape))
             else:
-                initial_patch_size.append(
-                    min(input_patch_size[i], min_isotropic_axes_shape)
-                )
+                initial_patch_size.append(min(input_patch_size[i], min_isotropic_axes_shape))
         initial_patch_size = np.round(initial_patch_size).astype(np.int32)
         logger.info(f"Using initial patch size: {initial_patch_size}")
         return initial_patch_size
@@ -432,11 +388,7 @@ class BoxC002(BoxC001):
         if plt is not None:
             if isinstance(self.all_boxes, list):
                 _boxes = np.concatenate(
-                    [
-                        b
-                        for b in self.all_boxes
-                        if not isinstance(b, list) and b.size > 0
-                    ],
+                    [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
                 dists = box_size_np(_boxes)
@@ -451,9 +403,7 @@ class BoxC002(BoxC001):
                 plt.savefig(self.save_dir / "bbox_sizes_3d_orig.png")
                 plt.close()
 
-                dists = box_size_np(
-                    self._get_scaled_boxes(target_spacing_transposed, transpose_forward)
-                )
+                dists = box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
@@ -468,9 +418,7 @@ class BoxC002(BoxC001):
                 plt.savefig(self.save_dir / "bbox_sizes_2d_orig.png")
                 plt.close()
 
-                dists = box_size_np(
-                    self._get_scaled_boxes(target_spacing_transposed, transpose_forward)
-                )
+                dists = box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 ax.scatter(dists[:, 0], dists[:, 1])

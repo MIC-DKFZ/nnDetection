@@ -55,18 +55,11 @@ def center_crop_object_mask(
     all_centroids = [i["centroid"] for i in regionprops(mask.astype(np.int32))]
     crops = []
     for centroid in all_centroids:
-        crops.append(
-            tuple(
-                slice(int(c) - (s // 2), int(c) + (s // 2))
-                for c, s in zip(centroid, cshape)
-            )
-        )
+        crops.append(tuple(slice(int(c) - (s // 2), int(c) + (s // 2)) for c, s in zip(centroid, cshape)))
     return crops
 
 
-def center_crop_object_seg(
-    seg: np.ndarray, cshape: typing.Union[tuple, int], **kwargs
-) -> typing.List[tuple]:
+def center_crop_object_seg(seg: np.ndarray, cshape: typing.Union[tuple, int], **kwargs) -> typing.List[tuple]:
     """
     Creates indices to crop patches around individual objects in segmentation.
     Objects are determined by region growing with connected threshold.
@@ -205,16 +198,11 @@ def create_grid(
         raise TypeError("overlap and dshape must be defined for same dimensionality.")
     if any(np.subtract(dshape, cshape) < 0):
         # axes = np.nonzero(np.subtract(dshape, cshape) < 0)
-        logger.warning(
-            f"Found patch size which is bigger than data: data {dshape} patch {cshape}"
-        )
+        logger.warning(f"Found patch size which is bigger than data: data {dshape} patch {cshape}")
     if any(np.subtract(cshape, overlap) < 0):
         raise TypeError("Overlap must be smaller than size of patches.")
 
-    grid_slices = [
-        _mode_fn[mode](psize, dlim, ov, **kwargs)
-        for psize, dlim, ov in zip(cshape, dshape, overlap)
-    ]
+    grid_slices = [_mode_fn[mode](psize, dlim, ov, **kwargs) for psize, dlim, ov in zip(cshape, dshape, overlap)]
 
     if center_boarder:
         for idx, (psize, dlim, ov) in enumerate(zip(cshape, dshape, overlap)):
@@ -234,9 +222,7 @@ def create_grid(
     return grid
 
 
-def _fixed_slices(
-    psize: int, dlim: int, overlap: int, start: int = 0
-) -> typing.Tuple[slice]:
+def _fixed_slices(psize: int, dlim: int, overlap: int, start: int = 0) -> typing.Tuple[slice]:
     """
     Creates fixed slicing of a single axis. Only last patch exceeds dlim.
 
@@ -362,10 +348,7 @@ def _shifted_crop(
             # start is negative, thus it is subtracted from stop
             new_slice = slice(0, crop_dim.stop - crop_dim.start, crop_dim.step)
             if new_slice.stop > dshape[axis + idx]:
-                raise RuntimeError(
-                    "Patch is bigger than entire data. shift "
-                    "is not supported in this case."
-                )
+                raise RuntimeError("Patch is bigger than entire data. shift " "is not supported in this case.")
             shifted_crop.append(new_slice)
         elif crop_dim.stop > dshape[axis + idx]:
             new_slice = slice(
@@ -374,10 +357,7 @@ def _shifted_crop(
                 crop_dim.step,
             )
             if new_slice.start < 0:
-                raise RuntimeError(
-                    "Patch is bigger than entire data. shift "
-                    "is not supported in this case."
-                )
+                raise RuntimeError("Patch is bigger than entire data. shift " "is not supported in this case.")
             shifted_crop.append(new_slice)
         else:
             shifted_crop.append(crop_dim)
@@ -431,9 +411,7 @@ def _padded_crop(
         clipped_crop.append(slice(lower_bound, upper_bound, crop_dim.step))
     origin = [int(x.start) for x in crop]
     return (
-        np.pad(
-            data[tuple([..., *clipped_crop])], pad_width=padding, mode=mode, **kwargs
-        ),
+        np.pad(data[tuple([..., *clipped_crop])], pad_width=padding, mode=mode, **kwargs),
         origin,
         crop,
     )

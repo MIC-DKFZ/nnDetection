@@ -26,9 +26,7 @@ def main():
 
     splits = []
     kfold = GroupKFold(n_splits=5)
-    for i, (train_idx, test_idx) in enumerate(
-        kfold.split(case_ids, groups=case_ids_pat)
-    ):
+    for i, (train_idx, test_idx) in enumerate(kfold.split(case_ids, groups=case_ids_pat)):
         train_keys = np.array(case_ids)[train_idx]
         test_keys = np.array(case_ids)[test_idx]
 

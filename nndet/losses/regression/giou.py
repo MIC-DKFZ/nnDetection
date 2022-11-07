@@ -44,9 +44,7 @@ class GIoULoss(Loss):
         )
         self.eps = eps
 
-    def forward(
-        self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, pred_boxes: torch.Tensor, target_boxes: torch.Tensor) -> torch.Tensor:
         """
         Compute generalized iou loss
 
@@ -58,9 +56,7 @@ class GIoULoss(Loss):
             Tensor: loss
         """
         loss = reduction_helper(
-            torch.diag(
-                generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0
-            ),
+            torch.diag(generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0),
             reduction=self.reduction,
         )
         return self.loss_weight * -1 * loss
