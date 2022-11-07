@@ -12,7 +12,7 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 
 
 class PositionEmbeddingLearned(BasePositionEmbedding):
-    def __init__(self, dim: int, num_pos_feats: int, num_embeddings: int = 50):
+    def __init__(self, dim: int, num_pos_feats: int, num_embeddings: int = 64):
         """
         Positional embedding learned
 
@@ -22,18 +22,29 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
             num_embeddings: #TODO
         """
         super().__init__(dim=dim, num_pos_feats=num_pos_feats)
+
+        if self.dim == 3 and self.num_pos_feats % 3 != 0:
+            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 3 (in 3D)")
+        if self.dim == 2 and self.num_pos_feats % 3 != 0:
+            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 2 (in 2D)")
+
+        if self.dim == 2:
+            _num_pos_feats = num_pos_feats // 2
+        else:
+            _num_pos_feats = num_pos_feats // 3
+
         self.ax0_embed = torch.nn.Embedding(
             num_embeddings=num_embeddings,
-            embedding_dim=num_pos_feats,
+            embedding_dim=_num_pos_feats,
         )
         self.ax1_embed = torch.nn.Embedding(
             num_embeddings=num_embeddings,
-            embedding_dim=num_pos_feats,
+            embedding_dim=_num_pos_feats,
         )
         if self.dim == 3:
             self.ax2_embed = torch.nn.Embedding(
                 num_embeddings=num_embeddings,
-                embedding_dim=num_pos_feats,
+                embedding_dim=_num_pos_feats,
             )
         self.reset_parameters()
 

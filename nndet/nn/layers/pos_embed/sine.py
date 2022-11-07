@@ -43,6 +43,12 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             dim=dim,
             num_pos_feats=num_pos_feats,
         )
+
+        if self.dim == 3 and self.num_pos_feats % 3 != 0:
+            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 3 (in 3D)")
+        if self.dim == 2 and self.num_pos_feats % 3 != 0:
+            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 2 (in 2D)")
+
         self.temperature = temperature
         self.normalize = normalize
         if scale is not None and normalize is False:
@@ -67,14 +73,10 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             torch.Tensor: computed embedding [N, num_pos_feats, dims] where
                 N = batch size, dims = spatial dimensions
         """
-        # TODO: check with code below
-        if data.shape[1] % 2 != 0:
-            raise Warning("Position Encoding features not divisible by 2")
-
-        if data.shape[1] % 6 != 0:
-            self.num_pos_feats = data.shape[1] // 6 * 2 + 2
+        if self.dim == 3:
+            _num_pos_feats = self.num_pos_feats // 3
         else:
-            self.num_pos_feats = data.shape[1] // 3
+            _num_pos_feats = self.num_pos_feats // 2
 
         if data.ndim == 4:  # 2D
             stack_dim = 4
@@ -98,35 +100,22 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             y_embed = (y_embed + self.offset) / (y_embed[:, :, -1:] + self.eps) * self.scale
 
         # create t along channel dimension
-        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=data.device)
+        dim_t = torch.arange(_num_pos_feats, dtype=torch.float32, device=data.device)
         dim_t = self.temperature ** (
-            2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats
+            2 * torch.div(dim_t, 2, rounding_mode="floor") / _num_pos_feats
         )  # 2 * (dim_t // 2) / num_feats is used to create an alternating sequence of 0, 1
 
-        pos_x = x_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), num_pos_feats]
-        pos_y = y_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), num_pos_feats]
+        pos_x = x_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), _num_pos_feats]
+        pos_y = y_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), _num_pos_feats]
 
         # [batch, ax0, ax1(, ax2), 2]
-        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=stack_dim).flatten(-1)
-        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=stack_dim).flatten(-1)
+        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=stack_dim).flatten(-2)
+        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=stack_dim).flatten(-2)
 
         if data.ndim == 5:
-            pos_z = z_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), num_pos_feats]
-            pos_z = torch.stack((pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim).flatten(-1)
+            pos_z = z_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), _num_pos_feats]
+            pos_z = torch.stack((pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim).flatten(-2)
             pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
         else:
             pos = torch.cat((pos_x, pos_y), dim=3).permute(0, 3, 1, 2)
-
-        # TODO check: may need additional check at begnning to limit supprted cases
-        # if 3 * self.num_pos_feats - data.shape[1] == 0:
-        #     pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
-        # elif 3 * self.num_pos_feats - data.shape[1] == 2:
-        #     pos = torch.cat((pos_x, pos_y[..., :-1], pos_z[..., :-1]), dim=4).permute(
-        #         0, 4, 1, 2, 3
-        #     )
-        # elif 3 * self.num_pos_feats - data.shape[1] == 4:
-        #     pos = torch.cat(
-        #         (pos_x[..., :-1], pos_y[..., :-1], pos_z[..., :-2]), dim=4
-        #     ).permute(0, 4, 1, 2, 3)
-
         return pos

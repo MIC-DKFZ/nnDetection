@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from abc import abstractmethod
 
 import torch
@@ -14,6 +17,8 @@ class BasePositionEmbedding(torch.nn.Module):
         """
         super().__init__()
         self.dim = dim
+        if self.dim not in [2, 3]:
+            raise ValueError(f"Pos Embedding only supports 2D and 3D, found {self.dim}D")
         self.num_pos_feats = num_pos_feats
 
     @abstractmethod
