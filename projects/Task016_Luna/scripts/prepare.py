@@ -42,9 +42,7 @@ def create_masks(source: Path, target: Path, df: pd.DataFrame, num_processes: in
             pass
         else:
             for _, row in series_df.iterrows():
-                c.append(
-                    (float(row["coordX"]), float(row["coordY"]), float(row["coordZ"]))
-                )
+                c.append((float(row["coordX"]), float(row["coordY"]), float(row["coordZ"])))
                 r.append(float(row["diameter_mm"]) / 2)
         centers.append(c)
         rads.append(r)
@@ -76,9 +74,7 @@ def create_splits(source, target):
         path = Path(p)
         if not p.is_dir():
             continue
-        _files = [
-            str(i).rsplit(".", 1)[0] for i in path.iterdir() if i.suffix == ".mhd"
-        ]
+        _files = [str(i).rsplit(".", 1)[0] for i in path.iterdir() if i.suffix == ".mhd"]
         files.append(_files)
     splits = []
     for i in range(len(files)):
@@ -130,9 +126,7 @@ def main():
     source_data_dir = task_data_dir / "raw"
 
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
     for i in range(10):
         if not (p := source_data_dir / f"subset{i}"):
             raise ValueError(f"Expected {p} to contain Luna data")

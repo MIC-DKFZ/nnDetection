@@ -42,9 +42,7 @@ class NoAug(AugmentationSetup):
             bool: `True` if at least two axes have the same size.
                 `False` otherwise
         """
-        num_matching_axes = np.array(
-            [sum([i == j for j in self.patch_size]) for i in self.patch_size]
-        )
+        num_matching_axes = np.array([sum([i == j for j in self.patch_size]) for i in self.patch_size])
         return np.any(num_matching_axes > 1)
 
     def same_axes(self) -> List[int]:
@@ -54,9 +52,7 @@ class NoAug(AugmentationSetup):
         Returns:
             List[int: indices of axes which has the same patch size
         """
-        num_matching_axes = np.array(
-            [sum([i == j for j in self.patch_size]) for i in self.patch_size]
-        )
+        num_matching_axes = np.array([sum([i == j for j in self.patch_size]) for i in self.patch_size])
         same_axes = list(np.where(num_matching_axes == np.max(num_matching_axes))[0])
         return same_axes
 
@@ -81,13 +77,9 @@ class NoAug(AugmentationSetup):
     def get_training_transforms(self):
         tr_transforms = []
         if self.params.get("selected_data_channels"):
-            tr_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            tr_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
         tr_transforms.append(CenterCropTransform(self.patch_size))
         tr_transforms.append(RemoveLabelTransform(-1, 0))
         tr_transforms.append(RenameTransform("seg", "target", True))
@@ -97,13 +89,9 @@ class NoAug(AugmentationSetup):
     def get_validation_transforms(self):
         val_transforms = []
         if self.params.get("selected_data_channels"):
-            val_transforms.append(
-                DataChannelSelectionTransform(self.params.get("selected_data_channels"))
-            )
+            val_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
         if self.params.get("selected_seg_channels"):
-            val_transforms.append(
-                SegChannelSelectionTransform(self.params.get("selected_seg_channels"))
-            )
+            val_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
         val_transforms.append(CenterCropTransform(self.patch_size))
         val_transforms.append(RemoveLabelTransform(-1, 0))
         val_transforms.append(RenameTransform("seg", "target", True))

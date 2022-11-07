@@ -94,12 +94,8 @@ def seg_to_instances_voted(
                 continue
 
         instances[instance_binary_mask] = i  # save instance to final mask
-        cls_id, cls_count = np.unique(
-            seg[instance_binary_mask], return_counts=True
-        )  # count classes in region
-        majority_voted_class = cls_id[
-            np.argmax(cls_count)
-        ]  # select class with most votes
+        cls_id, cls_count = np.unique(seg[instance_binary_mask], return_counts=True)  # count classes in region
+        majority_voted_class = cls_id[np.argmax(cls_count)]  # select class with most votes
 
         assert 0 not in cls_id
         assert majority_voted_class > 0
@@ -251,9 +247,7 @@ def softmax_to_instances(
         for s in stuff:
             seg[seg == s] = 0
 
-    instances, instance_classes = seg_to_instances_voted(
-        seg, min_num_voxel=min_num_voxel
-    )
+    instances, instance_classes = seg_to_instances_voted(seg, min_num_voxel=min_num_voxel)
 
     instance_scores = compute_score_from_seg(
         instances,
@@ -261,9 +255,7 @@ def softmax_to_instances(
         probs,
         aggregation=aggregation,
     )
-    instance_classes = {
-        int(key): int(item) - 1 for key, item in instance_classes.items()
-    }
+    instance_classes = {int(key): int(item) - 1 for key, item in instance_classes.items()}
 
     instance_boxes, instance_idx = instances_to_boxes_np(seg=instances, dim=seg.ndim)
     instance_classes_seq = get_instance_class_from_properties_seq(

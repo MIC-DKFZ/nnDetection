@@ -46,9 +46,7 @@ class EMAWeightsCB(Callback):
         self.beta = beta
         self.ema_eval = ema_eval
         if self.ema_eval:
-            raise NotImplementedError(
-                "Evaluation with EMA weights is not implemented yet."
-            )
+            raise NotImplementedError("Evaluation with EMA weights is not implemented yet.")
         self.dirpath = Path(dirpath) if dirpath is not None else dirpath
 
     def on_train_start(self, trainer, pl_module):
@@ -102,9 +100,7 @@ class EMAWeights:
         self.device = torch.device(device) if isinstance(device, str) else device
 
         if self.device is not None:
-            self.module_state_dict = to_device(
-                self.module_state_dict, device=self.device, detach=True
-            )
+            self.module_state_dict = to_device(self.module_state_dict, device=self.device, detach=True)
 
         self.beta = beta
 
@@ -115,9 +111,7 @@ class EMAWeights:
         Args:
             module: module with updated weights
         """
-        for (nw, weight), (nu, udpate) in zip(
-            self.module_state_dict.items(), module.state_dict().items()
-        ):
+        for (nw, weight), (nu, udpate) in zip(self.module_state_dict.items(), module.state_dict().items()):
             assert nw == nu
             _update = udpate.detach().clone()
 

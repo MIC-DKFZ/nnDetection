@@ -34,13 +34,9 @@ class RangerLWPoly:
 
         # configure optimizer
         logger.info(
-            f"Running: initial_lr {trainer_cfg['initial_lr']} "
-            f"weight_decay {trainer_cfg['weight_decay']} "
-            f"Ranger"
+            f"Running: initial_lr {trainer_cfg['initial_lr']} " f"weight_decay {trainer_cfg['weight_decay']} " f"Ranger"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            module, weight_decay=trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(module, weight_decay=trainer_cfg["weight_decay"])
         optimizer = optim.Ranger(
             wd_groups,
             trainer_cfg["initial_lr"],
@@ -48,9 +44,7 @@ class RangerLWPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=trainer_cfg["warm_iterations"],

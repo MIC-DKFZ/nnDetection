@@ -59,9 +59,7 @@ class RetinaUNetModule(
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
 
-    segmenter_cls: Type[
-        Segmenter
-    ] = ...  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Type[Segmenter] = ...  # [optional] segmentation head as in RetinaUNet
 
 
 class RetinaUNetBase(RetinaUNetModule):
@@ -70,32 +68,20 @@ class RetinaUNetBase(RetinaUNetModule):
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
-    backbone_conv_cls: Type[
-        BaseConvNormAct
-    ] = ConvInstanceRelu  # conv class used for backbone
+    backbone_conv_cls: Type[BaseConvNormAct] = ConvInstanceRelu  # conv class used for backbone
 
     neck_cls: Type[AbstractNeck] = UFPN  # define class for neck
     neck_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupRelu  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = CEClassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
+    head_classifier_cls: Type[DenseClassifier] = CEClassifier  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
 
-    matcher_cls: Type[
-        Matcher
-    ] = IoUMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    matcher_cls: Type[Matcher] = IoUMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    segmenter_cls: Type[
-        Segmenter
-    ] = DiCESegmenter  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Type[Segmenter] = DiCESegmenter  # [optional] segmentation head as in RetinaUNet

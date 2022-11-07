@@ -44,9 +44,7 @@ def analyze_segmentations(analyzer: DatasetAnalyzer) -> dict:
     }
 
 
-def analyze_segmentation_per_case(
-    analyzer: DatasetAnalyzer, case_id: str, all_classes: Sequence[int]
-) -> Dict:
+def analyze_segmentation_per_case(analyzer: DatasetAnalyzer, case_id: str, all_classes: Sequence[int]) -> Dict:
     """
     1) what class is in this training case?
     2) what is the size distribution for each class?
@@ -79,9 +77,7 @@ def analyze_segmentation_per_case(
         regions.append((c,))
     all_in_one_region = check_if_all_in_one_region(seg, regions)
 
-    volume_per_class, region_sizes = collect_class_and_region_sizes(
-        seg, all_classes, vol_per_voxel
-    )
+    volume_per_class, region_sizes = collect_class_and_region_sizes(seg, all_classes, vol_per_voxel)
 
     return {
         "has_classes": unique_classes,
@@ -95,9 +91,7 @@ def run_analyze_segmentation(
     analyzer: DatasetAnalyzer,
     all_classes: Sequence[int],
     save: bool = True,
-    analyze_fn: Callable[
-        [DatasetAnalyzer, str, Sequence[int]], Dict
-    ] = analyze_segmentation_per_case,
+    analyze_fn: Callable[[DatasetAnalyzer, str, Sequence[int]], Dict] = analyze_segmentation_per_case,
 ) -> Dict[str, Dict]:
     """
     Analyze segmentations of all cases in analyzer
@@ -117,9 +111,7 @@ def run_analyze_segmentation(
     """
     props_per_case = OrderedDict()
     with Pool(analyzer.num_processes) as p:
-        props = p.starmap(
-            analyze_fn, zip(repeat(analyzer), analyzer.case_ids, repeat(all_classes))
-        )
+        props = p.starmap(analyze_fn, zip(repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
 
         for case_id, prop in zip(analyzer.case_ids, props):
             props_per_case[case_id] = prop
@@ -130,9 +122,7 @@ def run_analyze_segmentation(
     return props_per_case
 
 
-def check_if_all_in_one_region(
-    seg: np.ndarray, regions: Sequence[Sequence[int]]
-) -> Dict[Tuple[int], bool]:
+def check_if_all_in_one_region(seg: np.ndarray, regions: Sequence[Sequence[int]]) -> Dict[Tuple[int], bool]:
     """
     Check if regions are splited over multiple instances or are all connected
 

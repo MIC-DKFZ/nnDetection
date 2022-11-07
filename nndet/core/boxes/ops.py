@@ -226,11 +226,7 @@ def box_area_3d(
     Notes:
         always prefer using the n-D version since it takes care of data types.
     """
-    return (
-        (boxes[:, 2] - boxes[:, 0])
-        * (boxes[:, 3] - boxes[:, 1])
-        * (boxes[:, 5] - boxes[:, 4])
-    )
+    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 5] - boxes[:, 4])
 
 
 def box_area_2d(
@@ -286,9 +282,7 @@ def box_iou_union_3d(
     z1 = torch.max(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
     z2 = torch.min(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
-    inter = (
-        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
-    ) + eps  # [N, M]
+    inter = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N, M]
     union = vol1[:, None] + vol2 - inter
     return inter / union, union
 
@@ -324,9 +318,7 @@ def box_iou_union_3d_paired(
     z1 = torch.max(boxes1[:, 4], boxes2[:, 4])  # [N]
     z2 = torch.min(boxes1[:, 5], boxes2[:, 5])  # [N]
 
-    inter = (
-        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
-    ) + eps  # [N]
+    inter = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N]
 
     union = vol1 + vol2 - inter  # [N]
     return inter / union, union  # [N]
@@ -361,9 +353,7 @@ def generalized_box_iou_3d(
     z1 = torch.min(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
     z2 = torch.max(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
 
-    vol = (
-        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
-    ) + eps  # [N, M]
+    vol = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N, M]
     return iou - (vol - union) / vol
 
 
@@ -397,9 +387,7 @@ def generalized_box_iou_3d_paired(
     z1 = torch.min(boxes1[:, 4], boxes2[:, 4])  # [N]
     z2 = torch.max(boxes1[:, 5], boxes2[:, 5])  # [N]
 
-    vol = (
-        (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)
-    ) + eps  # [N]
+    vol = ((x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)) + eps  # [N]
     return iou - (vol - union) / vol
 
 
@@ -633,10 +621,7 @@ def permute_boxes(
     if dims is None:
         dims = list(range(boxes.shape[1] // 2))[::-1]
     if 2 * len(dims) != boxes.shape[1]:
-        raise TypeError(
-            f"Need same number of dimensions, found dims {dims} "
-            f"but boxes with shape {boxes.shape}"
-        )
+        raise TypeError(f"Need same number of dimensions, found dims {dims} " f"but boxes with shape {boxes.shape}")
 
     indexing = [[0, 2], [1, 3]]
     if boxes.shape[1] == 6:
@@ -665,9 +650,7 @@ def expand_to_boxes(
         Tensor: expanded tensors
     """
     idx = [0, 1, 0, 1]
-    if (data.ndim == 1 and data.shape[0] == 3) or (
-        data.ndim == 2 and data.shape[1] == 3
-    ):
+    if (data.ndim == 1 and data.shape[0] == 3) or (data.ndim == 2 and data.shape[1] == 3):
         idx.extend((2, 2))
     if data.ndim == 1:
         data = data[None]

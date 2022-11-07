@@ -37,9 +37,7 @@ def asymmetric_focal_loss_with_logits(
     """
     p = torch.sigmoid(logits)
     focal_term = (1 - (1 - p) * (1 - target)) ** float(gamma)
-    loss = focal_term * F.binary_cross_entropy_with_logits(
-        logits, target, reduction="none"
-    )
+    loss = focal_term * F.binary_cross_entropy_with_logits(logits, target, reduction="none")
 
     if alpha >= 0:
         alpha_t = alpha * target + (1 - alpha) * (1 - target)
@@ -47,6 +45,4 @@ def asymmetric_focal_loss_with_logits(
     return reduction_helper(loss, reduction=reduction)
 
 
-asymmetric_focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(
-    asymmetric_focal_loss_with_logits
-)
+asymmetric_focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(asymmetric_focal_loss_with_logits)

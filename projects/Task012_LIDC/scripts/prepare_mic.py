@@ -33,21 +33,13 @@ def prepare_case(case_dir: Path, target_dir: Path, df: pd.DataFrame):
     # process mask
     final_rois = np.zeros_like(img_arr, dtype=np.uint8)
     mal_labels = {}
-    roi_ids = set(
-        [
-            ii.split(".")[0].split("_")[-1]
-            for ii in os.listdir(case_dir)
-            if ".nii.gz" in ii
-        ]
-    )
+    roi_ids = set([ii.split(".")[0].split("_")[-1] for ii in os.listdir(case_dir) if ".nii.gz" in ii])
 
     rix = 1
     for rid in roi_ids:
         roi_id_paths = [ii for ii in os.listdir(case_dir) if "{}.nii".format(rid) in ii]
         nodule_ids = [ii.split("_")[2].lstrip("0") for ii in roi_id_paths]
-        rater_labels = [
-            df[df.NoduleID == int(ii)].Malignancy.values[0] for ii in nodule_ids
-        ]
+        rater_labels = [df[df.NoduleID == int(ii)].Malignancy.values[0] for ii in nodule_ids]
         rater_labels.extend([0] * (4 - len(rater_labels)))
         mal_label = np.mean([ii for ii in rater_labels if ii > -1])
 
@@ -65,9 +57,7 @@ def prepare_case(case_dir: Path, target_dir: Path, df: pd.DataFrame):
                 npt.assert_almost_equal(roi.GetSpacing()[ix], img.GetSpacing()[ix])
             roi_rater_list.append(roi_arr)
 
-        roi_rater_list.extend(
-            [np.zeros_like(roi_rater_list[-1])] * (4 - len(roi_id_paths))
-        )
+        roi_rater_list.extend([np.zeros_like(roi_rater_list[-1])] * (4 - len(roi_id_paths)))
         roi_raters = np.array(roi_rater_list)
         roi_raters = np.mean(roi_raters, axis=0)
         roi_raters[roi_raters < 0.5] = 0

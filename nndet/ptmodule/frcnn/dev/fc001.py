@@ -53,9 +53,7 @@ class FasterRCNNC001(FasterRCNNModule):
     head_sampler_cls = HardNegativeSamplerBatched
 
     matcher_cls = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNet
 
     # RoI classes
@@ -68,9 +66,7 @@ class FasterRCNNC001(FasterRCNNModule):
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
     roi_box_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
-    roi_box_post_cls = (
-        CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
-    )
+    roi_box_post_cls = CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
 
     # optional mask branches
     roi_masker_cls = None  # BCESingleMasker
@@ -103,17 +99,13 @@ class FasterRCNNC001(FasterRCNNModule):
 @MODULE_REGISTRY.register
 class FasterRCNNC001RSB(FasterRCNNC001):
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNetg
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
 class FasterRCNNC001RSBCE(FasterRCNNC001RSB):
     segmenter_cls = None  # [optional] segmentation head as in RetinaUNetg
-    roi_sampler_cls = (
-        HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
-    )
+    roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
     roi_classifier_cls = CEConvRoIClassifier
 
 

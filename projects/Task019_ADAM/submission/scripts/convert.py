@@ -27,8 +27,6 @@ if __name__ == "__main__":
     with open(source / "result.txt", "a") as f:
         if len(centers) > 0:
             for c in centers[:-1]:
-                f.write(
-                    f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}\n"
-                )
+                f.write(f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}\n")
             c = centers[-1]
             f.write(f"{round(float(c[2]))}, {round(float(c[1]))}, {round(float(c[0]))}")

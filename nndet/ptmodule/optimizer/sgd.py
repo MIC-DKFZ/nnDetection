@@ -63,9 +63,7 @@ class SGDLWPoly:
             f"SGD with momentum {trainer_cfg['sgd_momentum']} and "
             f"nesterov {trainer_cfg['sgd_nesterov']}"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            module, weight_decay=trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(module, weight_decay=trainer_cfg["weight_decay"])
         optimizer = torch.optim.SGD(
             wd_groups,
             trainer_cfg["initial_lr"],
@@ -76,9 +74,7 @@ class SGDLWPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=trainer_cfg["warm_iterations"],
@@ -135,9 +131,7 @@ class SGDPoly:
             f"SGD with momentum {trainer_cfg['sgd_momentum']} and "
             f"nesterov {trainer_cfg['sgd_nesterov']}"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            module, weight_decay=trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(module, weight_decay=trainer_cfg["weight_decay"])
         optimizer = torch.optim.SGD(
             wd_groups,
             trainer_cfg["initial_lr"],
@@ -148,9 +142,7 @@ class SGDPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = PolyLR(
             optimizer=optimizer,
             poly_gamma=trainer_cfg["poly_gamma"],
@@ -216,15 +208,11 @@ class TwoStageSGDLWPoly:
         trainer_cfg = module.trainer_cfg
 
         if not hasattr(module, "model"):
-            raise ValueError(
-                "Detector needs to be saved in 'model' param of lightning module!"
-            )
+            raise ValueError("Detector needs to be saved in 'model' param of lightning module!")
         if not hasattr(module.model, "rpn"):
             raise ValueError("RPN needs to be saved in 'model.rpn' param of detector!")
         if not hasattr(module.model, "roi_module"):
-            raise ValueError(
-                "RoI needs to be saved in 'model.roi_module' param of detector!"
-            )
+            raise ValueError("RoI needs to be saved in 'model.roi_module' param of detector!")
 
         rpn_initial_lr = trainer_cfg["rpn_initial_lr"]
         roi_initial_lr = trainer_cfg["roi_initial_lr"]
@@ -241,18 +229,14 @@ class TwoStageSGDLWPoly:
 
         param_groups = []
         # configure RPN
-        rpn_wd_groups = get_params_no_wd_on_norm(
-            module.model.rpn, weight_decay=trainer_cfg["weight_decay"]
-        )
+        rpn_wd_groups = get_params_no_wd_on_norm(module.model.rpn, weight_decay=trainer_cfg["weight_decay"])
         for idx in range(len(rpn_wd_groups)):
             rpn_wd_groups[idx]["lr"] = rpn_initial_lr
             rpn_wd_groups[idx]["momentum"] = rpn_sgd_momentum
         param_groups.extend(rpn_wd_groups)
 
         # configure RoI
-        roi_wd_groups = get_params_no_wd_on_norm(
-            module.model.roi_module, weight_decay=trainer_cfg["weight_decay"]
-        )
+        roi_wd_groups = get_params_no_wd_on_norm(module.model.roi_module, weight_decay=trainer_cfg["weight_decay"])
         for idx in range(len(roi_wd_groups)):
             roi_wd_groups[idx]["lr"] = roi_initial_lr
             roi_wd_groups[idx]["momentum"] = roi_sgd_momentum
@@ -266,9 +250,7 @@ class TwoStageSGDLWPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = module.train_epochs * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=trainer_cfg["warm_iterations"],

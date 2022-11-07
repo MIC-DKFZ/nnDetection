@@ -88,9 +88,7 @@ class Predictor:
         self.ensembler = {}
 
         self.models = models
-        self.model_weights = (
-            [1.0] * len(models) if model_weights is None else model_weights
-        )
+        self.model_weights = [1.0] * len(models) if model_weights is None else model_weights
 
         self.crop_size = crop_size
         self.overlap = overlap
@@ -167,23 +165,17 @@ class Predictor:
         for name, fn in self.ensembler_fns.items():
             if name in self.ensembler:
                 raise ValueError(
-                    f"{name} is already in ensemblers of predictor, "
-                    "can not use multiple ensembler of same type."
+                    f"{name} is already in ensemblers of predictor, " "can not use multiple ensembler of same type."
                 )
             _ensembler = fn(case, properties=properties)
             if name != _ensembler.ID:
-                raise RuntimeError(
-                    f"Provided predictor key {name} does not match ensembler ID {_ensembler.ID}!"
-                )
+                raise RuntimeError(f"Provided predictor key {name} does not match ensembler ID {_ensembler.ID}!")
             self.ensembler[name] = _ensembler
 
         tiles = self.tile_case(case)
         self.predict_tiles(tiles)
 
-        result = {
-            key: value.get_case_result(restore=restore)
-            for key, value in self.ensembler.items()
-        }
+        result = {key: value.get_case_result(restore=restore) for key, value in self.ensembler.items()}
         if save_dir is not None:
             save_dir = Path(save_dir)
             save_dir.mkdir(parents=True, exist_ok=True)
@@ -194,9 +186,7 @@ class Predictor:
         logger.info(f"Prediction took {toc - tic} s")
         return result
 
-    def tile_case(
-        self, case: dict, update_remaining: bool = True
-    ) -> Sequence[Dict[str, np.ndarray]]:
+    def tile_case(self, case: dict, update_remaining: bool = True) -> Sequence[Dict[str, np.ndarray]]:
         """
         Create patches from whole patient for prediction
 
@@ -224,18 +214,13 @@ class Predictor:
         for crop in crops:
             try:
                 # try selected extraction mode
-                tile = {
-                    key: save_get_crop(case[key], crop, mode=self.save_get_mode)[0]
-                    for key in self.tile_keys
-                }
+                tile = {key: save_get_crop(case[key], crop, mode=self.save_get_mode)[0] for key in self.tile_keys}
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
                     case[self.tile_keys[0]], crop, mode=self.save_get_mode
                 )
             except RuntimeError:
                 # fallback to padding
-                logger.warning(
-                    "Path size is bigger than whole case, padding case to match patch size"
-                )
+                logger.warning("Path size is bigger than whole case, padding case to match patch size")
                 tile = {
                     key: save_get_crop(
                         case[key],
@@ -253,13 +238,7 @@ class Predictor:
                 )
 
             if update_remaining:
-                tile.update(
-                    {
-                        key: item
-                        for key, item in case.items()
-                        if key not in self.tile_keys
-                    }
-                )
+                tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
             tiles.append(tile)
         return tiles
 
@@ -278,13 +257,8 @@ class Predictor:
             shuffle=False,
             collate_fn=slice_collate,
         )
-        for model_idx, (model, model_weight) in enumerate(
-            zip(self.models, self.model_weights)
-        ):
-            logger.info(
-                f"Predicting model {model_idx + 1} of "
-                f"{len(self.models)} with weight {model_weight}."
-            )
+        for model_idx, (model, model_weight) in enumerate(zip(self.models, self.model_weights)):
+            logger.info(f"Predicting model {model_idx + 1} of " f"{len(self.models)} with weight {model_weight}.")
 
             model.to(device=self.device)
             model.eval()
@@ -297,13 +271,9 @@ class Predictor:
                 )
             ):
                 for ensembler in self.ensembler.values():
-                    ensembler.add_model(
-                        name=f"model{model_idx}_t{t}", model_weight=model_weight
-                    )
+                    ensembler.add_model(name=f"model{model_idx}_t{t}", model_weight=model_weight)
 
-                for batch_num, batch in enumerate(
-                    maybe_verbose_iterable(dataloader, desc="Crop", position=1)
-                ):
+                for batch_num, batch in enumerate(maybe_verbose_iterable(dataloader, desc="Crop", position=1)):
                     self.predict_with_transformation(
                         model=model,
                         batch=batch,

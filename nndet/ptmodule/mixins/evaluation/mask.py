@@ -25,13 +25,9 @@ class ScoreMasksEvalMixin(EvalMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "score_masks" in evaluators:
-            raise RuntimeError(
-                "Found ScoreMasksEvaluator in evaluators, can not register a second one!"
-            )
+            raise RuntimeError("Found ScoreMasksEvaluator in evaluators, can not register a second one!")
 
-        _classes = [
-            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
-        ]
+        _classes = [f"class{c}" for c in range(plan["architecture"]["classifier_classes"])]
         evaluators["score_masks"] = MaskEvaluator.create(
             classes=_classes,
             fast=True,

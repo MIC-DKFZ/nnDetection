@@ -8,9 +8,7 @@ import torch
 ND_INT = Union[int, Tuple[int, int], Tuple[int, int, int]]
 ND_TUPLE_INT = Union[Tuple[int, int], Tuple[int, int, int]]  # no plain int allowed
 ND_FLOAT = Union[float, Tuple[float, float], Tuple[float, float, float]]
-ND_TUPLE_FLOAT = Union[
-    Tuple[float, float], Tuple[float, float, float]
-]  # no plain int allowed
+ND_TUPLE_FLOAT = Union[Tuple[float, float], Tuple[float, float, float]]  # no plain int allowed
 
 
 class CONVSEQ(torch.nn.Sequential):

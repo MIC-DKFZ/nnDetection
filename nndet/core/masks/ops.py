@@ -44,9 +44,7 @@ def roi_mask_to_image_mask(
             slice(int(boxes[idx, 1]), int(boxes[idx, 1]) + int(boxes_size[idx, 1])),
         ]
         if boxes.shape[1] == 6:
-            image_coords.append(
-                slice(int(boxes[idx, 4]), int(boxes[idx, 4]) + int(boxes_size[idx, 2]))
-            )
+            image_coords.append(slice(int(boxes[idx, 4]), int(boxes[idx, 4]) + int(boxes_size[idx, 2])))
         image_mask[idx][tuple(image_coords)] = _mask_rescale[0, 0]
 
     if threshold is not None:

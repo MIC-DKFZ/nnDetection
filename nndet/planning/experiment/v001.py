@@ -86,9 +86,7 @@ class D3V001(AbstractPlanner):
         estimator = MemoryEstimatorDetection()
         architecture_planner = BoxC002(
             preprocessed_output_dir=self.preprocessed_output_dir,
-            save_dir=self.preprocessed_output_dir
-            / "analysis"
-            / f"{self.__class__.__name__}_{mode}",
+            save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
             estimator=estimator,
             network_cls=MODULE_REGISTRY.get(model_name),
             model_cfg=model_cfg,
@@ -126,10 +124,7 @@ class D3V001(AbstractPlanner):
         remaining_axes = [i for i in list(range(dims)) if i != max_spacing_axis]
         # self.transpose_forward = remaining_axes + [max_spacing_axis] # y, x, z
         self.transpose_forward = [max_spacing_axis] + remaining_axes  # z, y, x
-        self.transpose_backward = [
-            np.argwhere(np.array(self.transpose_forward) == i)[0][0]
-            for i in range(dims)
-        ]
+        self.transpose_backward = [np.argwhere(np.array(self.transpose_forward) == i)[0][0] for i in range(dims)]
 
     def determine_target_spacing(self, mode: str) -> np.ndarray:
         """
@@ -178,12 +173,8 @@ class D3V001(AbstractPlanner):
         other_spacings = [target[i] for i in other_axes]
         other_sizes = [target_size[i] for i in other_axes]
 
-        has_aniso_spacing = target[worst_spacing_axis] > (
-            self.anisotropy_threshold * min(other_spacings)
-        )
-        has_aniso_voxels = target_size[
-            worst_spacing_axis
-        ] * self.anisotropy_threshold < min(other_sizes)
+        has_aniso_spacing = target[worst_spacing_axis] > (self.anisotropy_threshold * min(other_spacings))
+        has_aniso_voxels = target_size[worst_spacing_axis] * self.anisotropy_threshold < min(other_sizes)
         # we don't use the last one for now
         # median_size_in_mm = target[target_size_mm] * RESAMPLING_SEPARATE_Z_ANISOTROPY_THRESHOLD < max(target_size_mm)
 
@@ -192,9 +183,7 @@ class D3V001(AbstractPlanner):
             target_spacing_of_that_axis = np.percentile(spacings_of_that_axis, 10)
             # don't let the spacing of that axis get higher than the other axes
             if target_spacing_of_that_axis < min(other_spacings):
-                target_spacing_of_that_axis = (
-                    max(min(other_spacings), target_spacing_of_that_axis) + 1e-5
-                )
+                target_spacing_of_that_axis = max(min(other_spacings), target_spacing_of_that_axis) + 1e-5
             target[worst_spacing_axis] = target_spacing_of_that_axis
         return target
 
@@ -213,12 +202,7 @@ class D3V001(AbstractPlanner):
             bool: If True, trigger a low resolution model. If False, current
                 resolution is ok.
         """
-        all_boxes = [
-            case["boxes"]
-            for case_id, case in self.data_properties[
-                "instance_props_per_patient"
-            ].items()
-        ]
+        all_boxes = [case["boxes"] for case_id, case in self.data_properties["instance_props_per_patient"].items()]
         all_boxes = concatenate_property_boxes(all_boxes)
         object_size = np.percentile(box_size_np(all_boxes), 99.5, axis=0)
         object_size = object_size[list(transpose_forward)]

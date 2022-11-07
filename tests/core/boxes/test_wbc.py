@@ -8,9 +8,7 @@ from nndet.core.boxes.wbc import batched_wbc
 
 @dataclass
 class Example:
-    boxes = torch.tensor(
-        [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [2.0, 2.0, 3.0, 3.0]]
-    )
+    boxes = torch.tensor([[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [2.0, 2.0, 3.0, 3.0]])
     scores = torch.tensor([1.0, 1.0, 1.0])
     labels = torch.tensor([1.0, 1.0, 1.0])
     weights = torch.tensor([1.0, 1.0, 1.0])

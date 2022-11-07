@@ -10,9 +10,7 @@ with SuppressPrint():
 
 
 def get_do_separate_z(spacing, anisotropy_threshold: float = 3):
-    return nn_preprocessing.get_do_separate_z(
-        spacing=spacing, anisotropy_threshold=anisotropy_threshold
-    )
+    return nn_preprocessing.get_do_separate_z(spacing=spacing, anisotropy_threshold=anisotropy_threshold)
 
 
 def get_lowres_axis(new_spacing):
@@ -45,9 +43,7 @@ def resample_patient(
     )
 
 
-def resample_data_or_seg(
-    data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, order_z=0
-) -> np.ndarray:
+def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, order_z=0) -> np.ndarray:
     """
     Resample data or segmentation
 

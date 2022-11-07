@@ -73,8 +73,7 @@ def run_cropping_and_convert(
     )
     if not result_check:
         logger.warning(
-            f"Crop check failed: There are corrupted files!!!! {case_ids_failed}"
-            f"Try to crop corrupted files again.",
+            f"Crop check failed: There are corrupted files!!!! {case_ids_failed}" f"Try to crop corrupted files again.",
         )
         imgcrop = ImageCropper(0, cropped_output_dir)
         imgcrop.run_cropping(case_files, overwrite_existing=False)
@@ -179,9 +178,7 @@ def run_planning_and_process(
                     num_processes=0,
                 )
                 case_ids_failed, result_check = run_check(
-                    data_dir=preprocessed_output_dir
-                    / plan["data_identifier"]
-                    / "imagesTr",
+                    data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
                     remove=False,
                     processes=0,
                 )
@@ -223,20 +220,13 @@ def run_check(
     """
     cases_npz = list(data_dir.glob("*.npz"))
     cases_npz.sort()
-    cases_pkl = [
-        case.parent / f"{(case.name).rsplit('.', 1)[0]}.pkl" for case in cases_npz
-    ]
+    cases_pkl = [case.parent / f"{(case.name).rsplit('.', 1)[0]}.pkl" for case in cases_npz]
 
     if processes == 0:
-        result = [
-            check_case(case_npz, case_pkl, remove=remove)
-            for case_npz, case_pkl in zip(cases_npz, cases_pkl)
-        ]
+        result = [check_case(case_npz, case_pkl, remove=remove) for case_npz, case_pkl in zip(cases_npz, cases_pkl)]
     else:
         with Pool(processes=processes) as p:
-            result = p.starmap(
-                check_case, zip(cases_npz, cases_pkl, repeat(remove), repeat(keys))
-            )
+            result = p.starmap(check_case, zip(cases_npz, cases_pkl, repeat(remove), repeat(keys)))
     failed_cases = [fc[0] for fc in result if not fc[1]]
     logger.info(f"Checked {len(result)} cases in {data_dir}")
     return failed_cases, len(failed_cases) == 0
@@ -274,9 +264,7 @@ def check_case(
             instances_properties = properties["instances"].keys()
             props_instances = np.sort(np.array(list(map(int, instances_properties))))
 
-            if (len(seg_instances) != len(props_instances)) or any(
-                seg_instances != props_instances
-            ):
+            if (len(seg_instances) != len(props_instances)) or any(seg_instances != props_instances):
                 logger.warning(
                     f"Inconsistent instances {case_npz} from "
                     f"properties {props_instances} from seg {seg_instances}. "

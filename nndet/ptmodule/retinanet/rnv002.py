@@ -57,22 +57,14 @@ class RetinaNetV002(
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = BCECLassifier  # define class for head classifier
-    head_regressor_cls: Type[
-        DenseRegressor
-    ] = L1Regressor  # define class for head regressor
+    head_classifier_cls: Type[DenseClassifier] = BCECLassifier  # define class for head classifier
+    head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
     head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
 
-    matcher_cls: Type[
-        Matcher
-    ] = ATSSMatcher  # define class to match anchors to ground truth
-    box_post_cls: Type[
-        BoxPostprocessing
-    ] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
+    matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
     # Not suported here; See `RetinaUNet`
     segmenter_cls = None
@@ -88,9 +80,7 @@ class RetinaNetV002Focal(RetinaNetV002):
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
-    head_classifier_cls: Type[
-        DenseClassifier
-    ] = FocalClassifier  # define class for head classifier
+    head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[SamplerType]] = None
 

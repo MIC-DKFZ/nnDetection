@@ -34,9 +34,7 @@ def create_circle_mask_itk(
         image_np = image_np[0]
     mask_np = np.zeros_like(image_np).astype(np.uint8)
 
-    for _id, (world_center, world_rad) in enumerate(
-        zip(world_centers, world_rads), start=1
-    ):
+    for _id, (world_center, world_rad) in enumerate(zip(world_centers, world_rads), start=1):
         check_rad = (world_rad / min_spacing) * 1.5  # add some buffer to it
         bounds = []
         center = image_itk.TransformPhysicalPointToContinuousIndex(world_center)[::-1]

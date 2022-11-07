@@ -52,10 +52,7 @@ def generate_image(image_dir, label_dir, idx):
     elif selected_class == 2:
         slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
 
-        inner_slicing = [
-            slice(tp + object_width, tp + selected_size - object_width)
-            for tp in top_left
-        ]
+        inner_slicing = [slice(tp + object_width, tp + selected_size - object_width) for tp in top_left]
         if len(inner_slicing) == 3:
             inner_slicing[0] = slice(0, image_size[0])
         inner_slicing = tuple(inner_slicing)
@@ -106,8 +103,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--full",
-        help="Increase size of dataset. "
-        "Default sizes train/test 10/10 and full 1000/1000.",
+        help="Increase size of dataset. " "Default sizes train/test 10/10 and full 1000/1000.",
         action="store_true",
     )
     parser.add_argument(

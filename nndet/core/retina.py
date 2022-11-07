@@ -66,12 +66,7 @@ class BaseRetinaNet(AbstractDetector):
     def forward(
         self,
         inp: torch.Tensor,
-    ) -> Tuple[
-        Dict[str, torch.Tensor],
-        List[torch.Tensor],
-        Dict[str, torch.Tensor],
-        List[torch.Tensor],
-    ]:
+    ) -> Tuple[Dict[str, torch.Tensor], List[torch.Tensor], Dict[str, torch.Tensor], List[torch.Tensor]]:
         """
         Compute predicted bounding boxes, scores and segmentations
 
@@ -103,9 +98,7 @@ class BaseRetinaNet(AbstractDetector):
         pred_detection = self.head(feature_maps_head)
         anchors = self.anchor_generator(inp, feature_maps_head)
 
-        pred_seg = (
-            self.segmenter(features_maps_all) if self.segmenter is not None else None
-        )
+        pred_seg = self.segmenter(features_maps_all) if self.segmenter is not None else None
         return pred_detection, anchors, pred_seg, features_maps_all
 
     def train_step(
@@ -219,17 +212,12 @@ class BaseRetinaNet(AbstractDetector):
         )
 
         losses = {}
-        head_losses, pos_idx, neg_idx = self.head.compute_loss(
-            pred_detection, labels, matched_gt_boxes, anchors
-        )
+        head_losses, pos_idx, neg_idx = self.head.compute_loss(pred_detection, labels, matched_gt_boxes, anchors)
         losses.update(head_losses)
 
         if self.segmenter is not None:
             if target_seg is None:
-                raise RuntimeError(
-                    "Segmenter was provided to network, "
-                    "expected ground truth segmentations in step."
-                )
+                raise RuntimeError("Segmenter was provided to network, " "expected ground truth segmentations in step.")
             losses.update(self.segmenter.compute_loss(pred_seg, target_seg))
 
         if predict:
@@ -336,7 +324,5 @@ class BaseRetinaNet(AbstractDetector):
 
         prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
         if self.segmenter is not None:
-            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)[
-                "pred_seg"
-            ]
+            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         return prediction

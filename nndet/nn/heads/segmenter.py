@@ -119,9 +119,7 @@ class DiCESegmenter(Segmenter):
         """
         Build output convolution
         """
-        _intermediate_channels = (
-            self.internal_channels if self.num_internal > 0 else self.in_channels[0]
-        )
+        _intermediate_channels = self.internal_channels if self.num_internal > 0 else self.in_channels[0]
         return conv(
             _intermediate_channels,
             self.seg_classes,
@@ -660,9 +658,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
 
         loss = self._compute_loss(pred_seg["seg_logits"], target)
 
-        preds_decoder_level = [
-            pred_seg[f"dsv_logits_{dl}"] for dl in self.decoder_levels
-        ]
+        preds_decoder_level = [pred_seg[f"dsv_logits_{dl}"] for dl in self.decoder_levels]
         targets_interpolated = self.interpolator(preds_decoder_level, target)
 
         for pred, target in zip(preds_decoder_level, targets_interpolated):
@@ -671,9 +667,7 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
         return {"seg_loss": loss / (len(self.decoder_levels) + 1)}
 
     def _compute_loss(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        return self.alpha * self.ce_loss(pred, target.long()) + (
-            1 - self.alpha
-        ) * self.dice_loss(pred, target)
+        return self.alpha * self.ce_loss(pred, target.long()) + (1 - self.alpha) * self.dice_loss(pred, target)
 
 
 SegmenterType = TypeVar("SegmenterType", bound=Segmenter)

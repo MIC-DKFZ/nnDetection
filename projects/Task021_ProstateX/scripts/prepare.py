@@ -62,16 +62,12 @@ def prepare_case(
             adc_series_id = int(adc_mask_file.rsplit(".", 2)[0].rsplit("_", 1)[1])
 
         # T2
-        t2_dir = [
-            f for f in data_dir.glob("*t2*") if f.name.startswith(f"{t2_series_id}.")
-        ]
+        t2_dir = [f for f in data_dir.glob("*t2*") if f.name.startswith(f"{t2_series_id}.")]
         assert len(t2_dir) == 1
         t2_data_itk = load_dicom_series_sitk(t2_dir[0])
 
         # ADC
-        adc_dir = [
-            f for f in data_dir.glob("*ADC*") if f.name.startswith(f"{adc_series_id}.")
-        ]
+        adc_dir = [f for f in data_dir.glob("*ADC*") if f.name.startswith(f"{adc_series_id}.")]
         assert len(adc_dir) == 1
         adc_data_itk = load_dicom_series_sitk(adc_dir[0])
 
@@ -92,10 +88,7 @@ def prepare_case(
 
         # prepare mask
         mask_paths = list(t2_masks.glob(f"{case_id}*"))
-        fids = [
-            int([l for l in mp.name.split("-") if "Finding" in l][0][7:])
-            for mp in mask_paths
-        ]
+        fids = [int([l for l in mp.name.split("-") if "Finding" in l][0][7:]) for mp in mask_paths]
         mask_itk = load_sitk(str(mask_paths[0]))
         mask = sitk.GetArrayFromImage(mask_itk)
         mask[mask > 0] = 1
@@ -121,9 +114,7 @@ def prepare_case(
         sitk.WriteImage(t2_data_itk, str(data_target / f"{case_id}_0000.nii.gz"))
         sitk.WriteImage(adc_data_itk_res, str(data_target / f"{case_id}_0001.nii.gz"))
         sitk.WriteImage(pdw_data_itk_res, str(data_target / f"{case_id}_0002.nii.gz"))
-        sitk.WriteImage(
-            ktrans_data_itk_res, str(data_target / f"{case_id}_0003.nii.gz")
-        )
+        sitk.WriteImage(ktrans_data_itk_res, str(data_target / f"{case_id}_0003.nii.gz"))
         sitk.WriteImage(mask_final, str(label_target / f"{case_id}.nii.gz"))
         save_json({"instances": instances}, label_target / f"{case_id}.json")
     except Exception as e:
@@ -142,24 +133,13 @@ def main():
     # setup raw paths
     source_data_dir = task_data_dir / "raw"
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
 
     source_data = source_data_dir / "PROSTATEx"
     source_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452"
     source_ktrans = source_data_dir / "ktrains"
-    csv_labels = (
-        source_data_dir
-        / "ProstateX-TrainingLesionInformationv2"
-        / "ProstateX-Findings-Train.csv"
-    )
-    csv_masks = (
-        source_data_dir
-        / "rcuocolo-PROSTATEx_masks-e344452"
-        / "Files"
-        / "Image_list.csv"
-    )
+    csv_labels = source_data_dir / "ProstateX-TrainingLesionInformationv2" / "ProstateX-Findings-Train.csv"
+    csv_masks = source_data_dir / "rcuocolo-PROSTATEx_masks-e344452" / "Files" / "Image_list.csv"
 
     data_target = task_data_dir / "raw_splitted" / "imagesTr"
     data_target.mkdir(parents=True, exist_ok=True)

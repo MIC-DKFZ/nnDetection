@@ -77,9 +77,7 @@ def import_nnunet_boxes(
 
     idx = int(np.argmax(scores))
     postprocessing_settings["min_num_voxel"] = min_num_voxel_settings[idx]
-    logger.info(
-        f"Found min num voxel {min_num_voxel_settings[idx]} with score {scores[idx]}"
-    )
+    logger.info(f"Found min num voxel {min_num_voxel_settings[idx]} with score {scores[idx]}")
 
     # optimize score threshold
     logger.info("Looking for optimal min probability threshold")
@@ -116,9 +114,7 @@ def import_nnunet_boxes(
 
     idx = int(np.argmax(scores))
     postprocessing_settings["min_threshold"] = min_threshold_settings[idx]
-    logger.info(
-        f"Found min threshold {min_threshold_settings[idx]} with score {scores[idx]}"
-    )
+    logger.info(f"Found min threshold {min_threshold_settings[idx]} with score {scores[idx]}")
 
     logger.info("Looking for best probability aggregation")
     aggreagtion_settings = ["max", "median", "mean", "percentile95"]
@@ -153,9 +149,7 @@ def import_nnunet_boxes(
 
     idx = int(np.argmax(scores))
     postprocessing_settings["aggregation"] = aggreagtion_settings[idx]
-    logger.info(
-        f"Found aggregation {aggreagtion_settings[idx]} with score {scores[idx]}"
-    )
+    logger.info(f"Found aggregation {aggreagtion_settings[idx]} with score {scores[idx]}")
 
     save_pickle(postprocessing_settings, save_dir / "postprocessing.pkl")
     save_json(summary, save_dir / "summary.json")
@@ -214,12 +208,8 @@ def import_single_case(
         save_iseg: save instance segmentation
         stuff: stuff classes to remove
     """
-    assert (
-        logits_source.is_file()
-    ), f"Logits source needs to be a file, found {logits_source}"
-    assert (
-        logits_target_dir.is_dir()
-    ), f"Logits target dir needs to be a dir, found {logits_target_dir}"
+    assert logits_source.is_file(), f"Logits source needs to be a file, found {logits_source}"
+    assert logits_target_dir.is_dir(), f"Logits target dir needs to be a dir, found {logits_target_dir}"
 
     case_name = logits_source.stem
     logger.info(f"Processing {case_name}")
@@ -233,13 +223,9 @@ def import_single_case(
     if bbox is not None:
         tmp = np.zeros((probs.shape[0], *shape_original_before_cropping))
         for c in range(3):
-            bbox[c][1] = np.min(
-                (bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c])
-            )
+            bbox[c][1] = np.min((bbox[c][0] + probs.shape[c + 1], shape_original_before_cropping[c]))
 
-        tmp[
-            :, bbox[0][0] : bbox[0][1], bbox[1][0] : bbox[1][1], bbox[2][0] : bbox[2][1]
-        ] = probs
+        tmp[:, bbox[0][0] : bbox[0][1], bbox[1][0] : bbox[1][1], bbox[2][0] : bbox[2][1]] = probs
         probs = tmp
 
     res = softmax_to_instances(
@@ -262,9 +248,7 @@ def import_single_case(
 
     save_pickle(boxes, detection_target)
     if save_iseg:
-        instances = {
-            key: res[key] for key in ["pred_instances", "pred_labels", "pred_scores"]
-        }
+        instances = {key: res[key] for key in ["pred_instances", "pred_labels", "pred_scores"]}
         save_pickle(instances, instances_target)
     if save_seg:
         segmentation = {"pred_seg": np.argmax(probs, axis=0)}
@@ -289,9 +273,7 @@ def nnunet_dataset_json(nnunet_task: str):
 def copy_and_ensemble(cid, nnunet_dirs, nnunet_prediction_dir):
     logger.info(f"Copy and ensemble: {cid}")
     case = [
-        np.load(_nnunet_dir / f"fold_{fold}" / "validation_raw" / f"{cid}.npz")[
-            "softmax"
-        ]
+        np.load(_nnunet_dir / f"fold_{fold}" / "validation_raw" / f"{cid}.npz")["softmax"]
         for _nnunet_dir in nnunet_dirs
     ]
     assert len(case) == len(nnunet_dirs)
@@ -303,9 +285,7 @@ def copy_and_ensemble(cid, nnunet_dirs, nnunet_prediction_dir):
 
 def copy_and_ensemble_test(cid, nnunet_dirs, nnunet_prediction_dir):
     logger.info(f"Copy and ensemble: {cid}")
-    case = [
-        np.load(_nnunet_dir / f"{cid}.npz")["softmax"] for _nnunet_dir in nnunet_dirs
-    ]
+    case = [np.load(_nnunet_dir / f"{cid}.npz")["softmax"] for _nnunet_dir in nnunet_dirs]
     assert len(case) == len(nnunet_dirs)
     case_ensemble = np.mean(case, axis=0)
     assert case_ensemble.shape == case[0].shape
@@ -365,12 +345,8 @@ if __name__ == "__main__":
         help="Argmax with max probability aggregation.",
     )
     # Evaluation related settings
-    parser.add_argument(
-        "--save_seg", help="Save semantic segmentation", action="store_true"
-    )
-    parser.add_argument(
-        "--save_iseg", help="Save instance segmentation", action="store_true"
-    )
+    parser.add_argument("--save_seg", help="Save semantic segmentation", action="store_true")
+    parser.add_argument("--save_iseg", help="Save instance segmentation", action="store_true")
 
     args = parser.parse_args()
     nnunet_dirs = args.nnunet
@@ -388,13 +364,10 @@ if __name__ == "__main__":
         # select corresponding nnDetection task
         task_names = [n for n in PurePath(nnunet_dir).parts if "Task" in n]
         if len(task_names) > 1:
-            logger.error(
-                f"Found multiple task names trying to continue with {task_names[-1]}"
-            )
+            logger.error(f"Found multiple task names trying to continue with {task_names[-1]}")
         if len(task_names) == 0:
             logger.error(
-                "Could not derive task name from path please use "
-                "-t/--task to provide the name via cmd line!"
+                "Could not derive task name from path please use " "-t/--task to provide the name via cmd line!"
             )
         logger.info(f"Found nnunet task {task_names[-1]} in nnunet path")
         nnunet_task = task_names[-1]
@@ -421,11 +394,7 @@ if __name__ == "__main__":
     instance_classes = cfg["data"]["labels"]
     stuff_classes = cfg.get("labels_stuff", {})
     num_instance_classes = len(instance_classes)
-    stuff_classes = {
-        str(int(key) + num_instance_classes): item
-        for key, item in stuff_classes.items()
-        if int(key) > 0
-    }
+    stuff_classes = {str(int(key) + num_instance_classes): item for key, item in stuff_classes.items() if int(key) > 0}
     stuff = [int(s) for s in stuff_classes.keys()]
 
     if mode.lower() == "val":
@@ -435,20 +404,12 @@ if __name__ == "__main__":
         # copy all predictions from nnunet into one directory
         for fold in range(5):
             case_ids = [
-                p.stem
-                for p in (nnunet_dir / f"fold_{fold}" / "validation_raw").iterdir()
-                if p.name.endswith(".npz")
+                p.stem for p in (nnunet_dir / f"fold_{fold}" / "validation_raw").iterdir() if p.name.endswith(".npz")
             ]
-            logger.info(
-                f"Copy and ensemble results fold {fold} with {len(case_ids)} cases."
-            )
+            logger.info(f"Copy and ensemble results fold {fold} with {len(case_ids)} cases.")
 
             # copy properties
-            for p in [
-                p
-                for p in (nnunet_dir / f"fold_{fold}" / "validation_raw").iterdir()
-                if p.name.endswith(".pkl")
-            ]:
+            for p in [p for p in (nnunet_dir / f"fold_{fold}" / "validation_raw").iterdir() if p.name.endswith(".pkl")]:
                 shutil.copyfile(p, nnunet_prediction_dir / p.name)
 
             if num_workers > 0:
@@ -476,10 +437,7 @@ if __name__ == "__main__":
             postprocessing_settings = import_nnunet_boxes(
                 nnunet_prediction_dir=nnunet_prediction_dir,
                 save_dir=nndet_unet_dir,
-                boxes_gt_dir=Path(os.getenv("det_data"))
-                / task
-                / "preprocessed"
-                / "labelsTr",
+                boxes_gt_dir=Path(os.getenv("det_data")) / task / "preprocessed" / "labelsTr",
                 classes=list(cfg["data"]["labels"].keys()),
                 stuff=stuff,
                 num_workers=num_workers,

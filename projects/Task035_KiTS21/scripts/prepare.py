@@ -47,9 +47,7 @@ def run_prep(
         tumor_stack = []
 
         for annotator_idx in range(3):
-            tumor_file = (
-                f"tumor_instance-{tumor_idx + 1}_annotation-{annotator_idx + 1}.nii.gz"
-            )
+            tumor_file = f"tumor_instance-{tumor_idx + 1}_annotation-{annotator_idx + 1}.nii.gz"
             tumor_path = case_segmentation_dir / tumor_file
             tumor_itk = load_sitk(tumor_path)
             check_itk(data_itk, tumor_itk)
@@ -74,9 +72,7 @@ def run_prep(
         cyst_stack = []
 
         for annotator_idx in range(3):
-            cyst_file = (
-                f"cyst_instance-{cyst_idx + 1}_annotation-{annotator_idx + 1}.nii.gz"
-            )
+            cyst_file = f"cyst_instance-{cyst_idx + 1}_annotation-{annotator_idx + 1}.nii.gz"
             cyst_path = case_segmentation_dir / cyst_file
             cyst_itk = load_sitk(cyst_path)
             check_itk(data_itk, cyst_itk)
@@ -100,9 +96,7 @@ def run_prep(
 
     # save files
     assert len(instances) == (num_cyst + num_tumor)
-    logger.info(
-        f"Generated mask {case_id} with {num_tumor} tumors and {num_cyst} cysts"
-    )
+    logger.info(f"Generated mask {case_id} with {num_tumor} tumors and {num_cyst} cysts")
 
     save_id = "c" + case_id.rsplit("_", 1)[1]
 
@@ -119,9 +113,7 @@ def main():
     # setup raw paths
     source_data_dir = task_data_dir / "raw" / "data"
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
 
     logger.remove()
     logger.add(sys.stdout, level="INFO")

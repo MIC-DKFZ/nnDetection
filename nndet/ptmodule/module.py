@@ -61,9 +61,7 @@ class LightningBaseModule(pl.LightningModule):
 
         # handle transfer learning
         data_channels = self.plan["num_modalities"]  # number of channels of source data
-        network_channels = self.plan["architecture"][
-            "in_channels"
-        ]  # number of channels of target data
+        network_channels = self.plan["architecture"]["in_channels"]  # number of channels of target data
         if network_channels > data_channels:
             logger.info(
                 "Detected Transfer Learning Setup with different soruce "
@@ -87,9 +85,7 @@ class LightningBaseModule(pl.LightningModule):
         # define key for sweeping
         self.sweep_key = self.trainer_cfg["sweep_key"]
         self.monitor_key = self.trainer_cfg["monitor_key"]
-        logger.info(
-            f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring."
-        )
+        logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
         self.mean_val_loss = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -250,9 +246,7 @@ class LightningBaseModule(pl.LightningModule):
         """
         Configure optimizer and scheduler
         """
-        return OPTIMIZER_REGISTRY[self.trainer_cfg["opt_class"]].configure_optimizers(
-            self
-        )
+        return OPTIMIZER_REGISTRY[self.trainer_cfg["opt_class"]].configure_optimizers(self)
 
     def configure_callbacks(self):
         """
@@ -283,9 +277,7 @@ class LightningBaseModule(pl.LightningModule):
                     swa_epoch_start=self.train_epochs,
                     cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.0,
                     cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.0,
-                    num_iterations_per_epoch=self.trainer_cfg[
-                        "num_train_batches_per_epoch"
-                    ],
+                    num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
                 )
             )
         return callbacks

@@ -81,9 +81,7 @@ class FPN(AbstractNeck):
         """
         super().__init__()
         if len(relative_strides) != len(in_channels):
-            raise ValueError(
-                "Strides must contain same number of elements as channels."
-            )
+            raise ValueError("Strides must contain same number of elements as channels.")
         if not len(in_channels) > 0:
             raise ValueError(f"Found unplausible channels {in_channels}")
         self.dim: int = conv.dim
@@ -113,11 +111,7 @@ class FPN(AbstractNeck):
 
         # upsampling layers
         self.interpolation_mode = InterpolationMode(upsampling_mode)
-        self.interpolation_kwargs = (
-            {"align_corners": True}
-            if interpolation_kwargs is None
-            else interpolation_kwargs
-        )
+        self.interpolation_kwargs = {"align_corners": True} if interpolation_kwargs is None else interpolation_kwargs
 
         # create conv params
         self.conv_kernels = conv_kernels
@@ -127,34 +121,26 @@ class FPN(AbstractNeck):
         self.lateral = nn.ModuleDict(
             {
                 f"P{level}": self.build_lateral(conv, level)
-                for level in range(
-                    self.first_decoder_level, self.last_decoder_level + 1
-                )
+                for level in range(self.first_decoder_level, self.last_decoder_level + 1)
             }
         )
         self.out = nn.ModuleDict(
             {
                 f"P{level}": self.build_out(conv, level)
-                for level in range(
-                    self.first_decoder_level, self.last_decoder_level + 1
-                )
+                for level in range(self.first_decoder_level, self.last_decoder_level + 1)
             }
         )
         self.up = nn.ModuleDict(  # first level doesn't need upsampling
             {
                 f"P{level}": self.build_up(conv, level)
-                for level in range(
-                    self.first_decoder_level + 1, self.last_decoder_level + 1
-                )
+                for level in range(self.first_decoder_level + 1, self.last_decoder_level + 1)
             }
         )
         if self.num_fusion > 0:
             self.fusion = nn.ModuleDict(  # last level doesn't need fusion
                 {
                     f"P{level}": self.build_fusion(conv, level)
-                    for level in range(
-                        self.first_decoder_level, self.last_decoder_level
-                    )
+                    for level in range(self.first_decoder_level, self.last_decoder_level)
                 }
             )
         else:
@@ -169,8 +155,7 @@ class FPN(AbstractNeck):
         """
         out_channels = [
             None
-            if level_idx < self.first_decoder_level
-            or level_idx > self.last_decoder_level
+            if level_idx < self.first_decoder_level or level_idx > self.last_decoder_level
             else self.fpn_out_channels
             for level_idx in range(self.num_all_levels)
         ]
@@ -204,9 +189,7 @@ class FPN(AbstractNeck):
         """
         lateral_connection = []
         for i in range(self.num_lateral):
-            _in_channels = (
-                self.in_channels[level] if i == 0 else self.out_channels[level]
-            )
+            _in_channels = self.in_channels[level] if i == 0 else self.out_channels[level]
 
             lateral_connection.append(
                 conv(
@@ -340,9 +323,7 @@ class FPN(AbstractNeck):
         """
         out_list = [None for i in range(len(backbone_output))]
 
-        for level_idx in range(
-            self.last_decoder_level, self.first_decoder_level - 1, -1
-        ):
+        for level_idx in range(self.last_decoder_level, self.first_decoder_level - 1, -1):
             # iterate from last to first level
             lateral_feat = self.lateral[f"P{level_idx}"](backbone_output[level_idx])
 
@@ -466,9 +447,7 @@ class UFPN(FPN):
         for i in range(0, self.first_reduction_decoder_level):
             _diff = self.first_reduction_decoder_level - i
             assert _diff > 0
-            _out_channels_reduced = int(
-                self.fpn_out_channels / (self.reduction_out_channels**_diff)
-            )
+            _out_channels_reduced = int(self.fpn_out_channels / (self.reduction_out_channels**_diff))
             out_channels[i] = max(_out_channels_reduced, self.min_out_channels)
 
         for i in range(self.last_decoder_level + 1, self.num_all_levels):
@@ -639,9 +618,7 @@ class UpFPN(FPN):
         if self.up_interpolation_mode == InterpolationMode.TRANSPOSE:
             raise ValueError("Stride one upsampling does not support transpose mode.")
         self.up_interpolation_kwargs = (
-            {"align_corners": True}
-            if up_interpolation_kwargs is None
-            else up_interpolation_kwargs
+            {"align_corners": True} if up_interpolation_kwargs is None else up_interpolation_kwargs
         )
         self.up_stride_one = self.build_stride_one(conv)
 
@@ -677,9 +654,7 @@ class UpFPN(FPN):
                     scale_factor = [s * _relative_level_stride for s in scale_factor]
                 else:
                     assert len(_relative_level_stride) == len(scale_factor)
-                    scale_factor = [
-                        s * r for s, r in zip(scale_factor, _relative_level_stride)
-                    ]
+                    scale_factor = [s * r for s, r in zip(scale_factor, _relative_level_stride)]
 
         up_modules.append(
             nn.Upsample(

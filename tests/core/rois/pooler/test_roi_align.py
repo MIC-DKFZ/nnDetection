@@ -29,9 +29,7 @@ def test_roi_align_pseudo2d_vs_tv(
     spatial_scale: float,
 ):
     torch.manual_seed(seed)
-    boxes = torch.tensor(
-        [[0.0, 2.0, 1.0, 4.0, 3.0]]
-    )  # torchvision uses different axes - boxes ordering
+    boxes = torch.tensor([[0.0, 2.0, 1.0, 4.0, 3.0]])  # torchvision uses different axes - boxes ordering
     fmap = torch.rand(1, 1, 10, 10, requires_grad=True)
 
     pooled_fmap = tvision_roi_align(
@@ -98,9 +96,7 @@ def test_roi_align_pseudo2d_vs_tv(
 @pytest.mark.parametrize("spatial_scale", [1.0, 3.0, (1.0, 1.0, 1.0), (3.0, 3.0, 3.0)])
 @pytest.mark.parametrize("output_size", [(3, 3, 3), (7, 7, 7)])
 @pytest.mark.parametrize("n_boxes", [1, 3])
-def test_roi_align_3d_smoke(
-    sampling_ratio, aligned, spatial_scale, output_size, n_boxes
-):
+def test_roi_align_3d_smoke(sampling_ratio, aligned, spatial_scale, output_size, n_boxes):
     boxes = torch.tensor([[0.0, 2.0, 2.0, 4.0, 4.0, 2.0, 4.0]] * n_boxes)
     fmap = torch.zeros(1, 1, 16, 16, 16, requires_grad=True)
 

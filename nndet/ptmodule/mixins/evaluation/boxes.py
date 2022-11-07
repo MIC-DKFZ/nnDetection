@@ -22,13 +22,9 @@ class BoxEvalMixin(EvalMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "boxes" in evaluators:
-            raise RuntimeError(
-                "Found BoxEvaluator in evaluators, can not register a second one!"
-            )
+            raise RuntimeError("Found BoxEvaluator in evaluators, can not register a second one!")
 
-        _classes = [
-            f"class{c}" for c in range(plan["architecture"]["classifier_classes"])
-        ]
+        _classes = [f"class{c}" for c in range(plan["architecture"]["classifier_classes"])]
         evaluators["boxes"] = BoxEvaluator.create(
             classes=_classes,
             fast=True,
@@ -134,9 +130,7 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
         """
         evaluators = super().evaluation_init(plan=plan)
         if "rpn_boxes" in evaluators:
-            raise RuntimeError(
-                "Found BoxWithRPNEvalMixin in evaluators, can not register a second one!"
-            )
+            raise RuntimeError("Found BoxWithRPNEvalMixin in evaluators, can not register a second one!")
 
         evaluators["rpn_boxes"] = BoxEvaluator.create(
             classes=["rpn_fg"],

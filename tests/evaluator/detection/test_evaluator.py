@@ -27,15 +27,8 @@ class TestDetectionEvaluator:
                 DummyMetric((0.3, 0.4)),
             ],
         )
-        assert all(
-            [
-                a == b
-                for a, b in zip(self.evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])
-            ]
-        )
-        assert all(
-            [a == b for a, b in zip(self.evaluator.iou_mapping, [[0, 1], [2, 3]])]
-        )
+        assert all([a == b for a, b in zip(self.evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
+        assert all([a == b for a, b in zip(self.evaluator.iou_mapping, [[0, 1], [2, 3]])])
 
     def test_run_online_evaluation(self, mocker: MockerFixture, evaluator):
         evaluator.match_fn = mocker.MagicMock(return_value=[0, 1])
@@ -76,8 +69,6 @@ class TestDetectionEvaluator:
             0: {"dtMatches": np.array([0, 1, 2, 3])},
             1: {"dtMatches": np.array([2, 3, 0, 1])},
         }
-        res = evaluator.iou_filter(
-            image_dict, iou_idx=[0, 1], filter_keys=["dtMatches"]
-        )
+        res = evaluator.iou_filter(image_dict, iou_idx=[0, 1], filter_keys=["dtMatches"])
         assert np.isclose(res[0]["dtMatches"], [0, 1]).all()
         assert np.isclose(res[1]["dtMatches"], [2, 3]).all()

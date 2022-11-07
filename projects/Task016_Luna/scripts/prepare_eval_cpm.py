@@ -22,9 +22,7 @@ if __name__ == "__main__":
     model_dir = task_dir / model
     assert model_dir.is_dir()
 
-    raw_splitted_images = (
-        Path(os.getenv("det_data")) / "Task016_Luna" / "raw_splitted" / "imagesTr"
-    )
+    raw_splitted_images = Path(os.getenv("det_data")) / "Task016_Luna" / "raw_splitted" / "imagesTr"
 
     prediction_dir = model_dir / "consolidated" / "val_predictions"
     assert prediction_dir.is_dir()
@@ -34,22 +32,13 @@ if __name__ == "__main__":
     log_file = model_dir / "prepare_eval_cpm.log"
 
     prediction_cache = defaultdict(list)
-    prediction_paths = sorted(
-        [
-            p
-            for p in prediction_dir.iterdir()
-            if p.is_file() and p.name.endswith("_boxes.pkl")
-        ]
-    )
+    prediction_paths = sorted([p for p in prediction_dir.iterdir() if p.is_file() and p.name.endswith("_boxes.pkl")])
     logger.info(f"Found {len(prediction_paths)} predictions for evaluation")
     for prediction_path in tqdm(prediction_paths):
         seriusuid = prediction_path.stem.rsplit("_", 1)[0].replace("_", ".")
         predictions = load_pickle(prediction_path)
 
-        data_path = (
-            raw_splitted_images
-            / f"{prediction_path.stem.rsplit('_', 1)[0]}_0000.nii.gz"
-        )
+        data_path = raw_splitted_images / f"{prediction_path.stem.rsplit('_', 1)[0]}_0000.nii.gz"
         image_itk = load_sitk(data_path)
 
         boxes = predictions["pred_boxes"]
@@ -59,9 +48,7 @@ if __name__ == "__main__":
 
         for center, prob in zip(centers, probs):
             position_image = (float(center[2]), float(center[1]), float(center[0]))
-            position_world = image_itk.TransformContinuousIndexToPhysicalPoint(
-                position_image
-            )
+            position_world = image_itk.TransformContinuousIndexToPhysicalPoint(position_image)
 
             prediction_cache["seriesuid"].append(seriusuid)
             prediction_cache["coordX"].append(float(position_world[0]))

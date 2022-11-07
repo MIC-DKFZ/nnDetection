@@ -33,9 +33,7 @@ def consolidate_models(source_dirs: Sequence[Path], target_dir: Path, ckpt: str)
         found_models = [mp for mp in model_paths if ckpt in str(mp.stem)]
         assert len(found_models) == 1, f"Found wrong number of models, {found_models}"
         model_path = found_models[0]
-        assert f"fold{fold}" in str(
-            model_path.parent.stem
-        ), f"Expected fold {fold} but found {model_path}"
+        assert f"fold{fold}" in str(model_path.parent.stem), f"Expected fold {fold} but found {model_path}"
         shutil.copy2(model_path, target_dir / f"model_fold{fold}.ckpt")
 
 
@@ -124,8 +122,7 @@ def main():
         type=str,
         default="last",
         required=False,
-        help="Define identifier of checkpoint for consolidation. "
-        "Use this with care!",
+        help="Define identifier of checkpoint for consolidation. " "Use this with care!",
     )
 
     args = parser.parse_args()
@@ -142,8 +139,7 @@ def main():
 
     if consolidate == "export" and not sweep:
         raise ValueError(
-            "Export needs new parameter sweep! Actiate one of the sweep "
-            "arguments or change to copy mode"
+            "Export needs new parameter sweep! Actiate one of the sweep " "arguments or change to copy mode"
         )
 
     task_dir = Path(os.getenv("det_models")) / get_task(task, name=True, models=True)
@@ -227,11 +223,7 @@ def main():
         save_pickle(plan, target_dir / "plan_inference.pkl")
 
         for restore in [True, False]:
-            export_dir = (
-                target_dir / "val_predictions"
-                if restore
-                else target_dir / "val_predictions_preprocessed"
-            )
+            export_dir = target_dir / "val_predictions" if restore else target_dir / "val_predictions_preprocessed"
             extract_results(
                 source_dir=target_dir / "sweep_predictions",
                 target_dir=export_dir,

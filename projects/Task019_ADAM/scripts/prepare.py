@@ -121,9 +121,7 @@ def main():
     # setup raw paths
     source_data_dir = task_data_dir / "raw" / "ADAM_release_subjs"
     if not source_data_dir.is_dir():
-        raise RuntimeError(
-            f"{source_data_dir} should contain the raw data but does not exist."
-        )
+        raise RuntimeError(f"{source_data_dir} should contain the raw data but does not exist.")
 
     # setup raw splitted dirs
     target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"
@@ -137,9 +135,7 @@ def main():
         "task": "Task019FG_ADAM",
         "target_class": None,
         "test_labels": False,
-        "labels": {
-            "0": "Aneurysm"
-        },  # since we are running FG vs BG this is not completely correct
+        "labels": {"0": "Aneurysm"},  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "Structured", "1": "TOF"},
         "dim": 3,
     }

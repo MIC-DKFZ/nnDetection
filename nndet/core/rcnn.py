@@ -36,13 +36,9 @@ class RCNN(AbstractDetector):
         #TODO docs2
         """
         # copy target classes
-        targets["target_roi_classes"] = [
-            trc.detach().clone() for trc in targets["target_classes"]
-        ]
+        targets["target_roi_classes"] = [trc.detach().clone() for trc in targets["target_classes"]]
         # map original targets to fg vs bg for RPN
-        targets["target_classes"] = [
-            torch.zeros_like(trc) for trc in targets["target_classes"]
-        ]
+        targets["target_classes"] = [torch.zeros_like(trc) for trc in targets["target_classes"]]
 
         losses, proposals, features = self.rpn.train_step_with_features(
             images=images,
@@ -80,9 +76,7 @@ class RCNN(AbstractDetector):
         images: torch.Tensor,
         **kwargs,
     ) -> Dict[str, Any]:
-        proposals, features = self.rpn.inference_step_with_features(
-            images=images, **kwargs
-        )
+        proposals, features = self.rpn.inference_step_with_features(images=images, **kwargs)
         predictions = {f"rpn_{key}": item for key, item in proposals.items()}
 
         roi_predictions = self.roi_module.inference_step(

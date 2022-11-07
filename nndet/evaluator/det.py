@@ -65,10 +65,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Find indices of iou thresholds for each metric
         """
-        return [
-            [self.iou_thresholds.index(th) for th in m.get_iou_thresholds()]
-            for m in self.metrics
-        ]
+        return [[self.iou_thresholds.index(th) for th in m.get_iou_thresholds()] for m in self.metrics]
 
     def run_online_evaluation(
         self,
@@ -102,10 +99,7 @@ class DetectionEvaluator(AbstractEvaluator):
             dict: empty dict... detection metrics can only be evaluated at the end
         """
         if gt_ignore is None:
-            n = [
-                0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0]
-                for gt_boxes_img in gt_boxes
-            ]
+            n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
         self.results_list.extend(
@@ -176,10 +170,7 @@ class DetectionEvaluator(AbstractEvaluator):
         iou_idx = list(iou_idx)
         filtered = {}
         for cls_key, cls_item in image_dict.items():
-            filtered[cls_key] = {
-                key: item[iou_idx] if key in filter_keys else item
-                for key, item in cls_item.items()
-            }
+            filtered[cls_key] = {key: item[iou_idx] if key in filter_keys else item for key, item in cls_item.items()}
         return filtered
 
     def reset(self):

@@ -56,18 +56,14 @@ class MRIAugModular(AugModular):
             tio.transforms.RandomBiasField(p=1.0),
         )
 
-        trafo = TIOTransform(
-            trafo=tio.transforms.Compose(mri_transforms), data_key="data"
-        )
+        trafo = TIOTransform(trafo=tio.transforms.Compose(mri_transforms), data_key="data")
 
         mri_transforms = []
         mri_transforms.append(
             monai.transforms.RandBiasFieldD(prob=1.0, keys=["data"]),
         )
 
-        trafo = MonaiTransform(
-            trafo=monai.transforms.Compose(mri_transforms), data_key="data"
-        )
+        trafo = MonaiTransform(trafo=monai.transforms.Compose(mri_transforms), data_key="data")
 
         logger.info(f"Training transforms were extended with \n{mri_transforms}")
         tr_transforms.append(trafo)

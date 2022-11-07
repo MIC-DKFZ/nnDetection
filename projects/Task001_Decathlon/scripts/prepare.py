@@ -34,8 +34,7 @@ def main():
         "tasks",
         type=str,
         nargs="+",
-        help="One or multiple of: Task003_Liver, Task007_Pancreas, "
-        "Task008_HepaticVessel, Task010_Colon",
+        help="One or multiple of: Task003_Liver, Task007_Pancreas, " "Task008_HepaticVessel, Task010_Colon",
     )
     args = parser.parse_args()
     tasks = args.tasks

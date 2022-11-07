@@ -29,14 +29,9 @@ def linear_warm_up(
     """
     assert final_lr > initial_lr
     if iteration >= num_iterations:
-        logger.warning(
-            f"WarmUp was stepped too often, {iteration} "
-            f"but only {num_iterations} were expected!"
-        )
+        logger.warning(f"WarmUp was stepped too often, {iteration} " f"but only {num_iterations} were expected!")
 
-    return initial_lr + (final_lr - initial_lr) * (
-        float(iteration) / float(num_iterations)
-    )
+    return initial_lr + (final_lr - initial_lr) * (float(iteration) / float(num_iterations))
 
 
 def poly_lr(
@@ -112,9 +107,7 @@ def cosine_annealing_lr(
     Returns:
         float: learning rate
     """
-    return final_lr + 0.5 * (initial_lr - final_lr) * (
-        1 + math.cos(math.pi * float(iteration) / float(num_iterations))
-    )
+    return final_lr + 0.5 * (initial_lr - final_lr) * (1 + math.cos(math.pi * float(iteration) / float(num_iterations)))
 
 
 class PolyLR(_LRScheduler):
@@ -186,11 +179,7 @@ class LinearWarmupPolyLR(_LRScheduler):
             self.warm_lr = [warm_lr] * len(optimizer.param_groups)
         else:
             if len(warm_lr) != len(optimizer.param_groups):
-                raise ValueError(
-                    "Expected {} warm_lr, but got {}".format(
-                        len(optimizer.param_groups), len(warm_lr)
-                    )
-                )
+                raise ValueError("Expected {} warm_lr, but got {}".format(len(optimizer.param_groups), len(warm_lr)))
             self.warm_lr = [warm_lr]
 
         # poly lr
@@ -249,9 +238,7 @@ class CycleLinear(_LRScheduler):
         # cycle linear lr
         self.cycle_num_iterations = cycle_num_iterations
 
-        if not isinstance(cycle_initial_lr, list) and not isinstance(
-            cycle_initial_lr, tuple
-        ):
+        if not isinstance(cycle_initial_lr, list) and not isinstance(cycle_initial_lr, tuple):
             self.cycle_initial_lr = [cycle_initial_lr] * len(optimizer.param_groups)
         else:
             if len(cycle_initial_lr) != len(optimizer.param_groups):
@@ -262,16 +249,12 @@ class CycleLinear(_LRScheduler):
                 )
             self.cycle_initial_lr = [cycle_initial_lr]
 
-        if not isinstance(cycle_final_lr, list) and not isinstance(
-            cycle_final_lr, tuple
-        ):
+        if not isinstance(cycle_final_lr, list) and not isinstance(cycle_final_lr, tuple):
             self.cycle_final_lr = [cycle_final_lr] * len(optimizer.param_groups)
         else:
             if len(cycle_final_lr) != len(optimizer.param_groups):
                 raise ValueError(
-                    "Expected {} cycle_final_lr, but got {}".format(
-                        len(optimizer.param_groups), len(cycle_final_lr)
-                    )
+                    "Expected {} cycle_final_lr, but got {}".format(len(optimizer.param_groups), len(cycle_final_lr))
                 )
             self.cycle_final_lr = [cycle_final_lr]
         super().__init__(optimizer, last_epoch=last_epoch)
@@ -324,7 +307,4 @@ class WarmUpExponential(_LRScheduler):
         Compute current learning rate for each param group
         """
         # last epoch is automatically handled by parent class
-        return [
-            base_lr * (1 - math.exp(-(1 - self.beta2) * self.last_epoch))
-            for base_lr in zip(self.base_lrs)
-        ]
+        return [base_lr * (1 - math.exp(-(1 - self.beta2) * self.last_epoch)) for base_lr in zip(self.base_lrs)]

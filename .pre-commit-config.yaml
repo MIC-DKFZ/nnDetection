@@ -19,6 +19,7 @@ repos:
     hooks:
     - id: black
       name: Black Code Formatting
+      args: [--config=./black.toml]
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.9.3

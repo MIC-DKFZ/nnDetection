@@ -30,34 +30,20 @@ class RoIBuildMixin:
 
     # RoI classes
     roi_conv_cls: Type[CONVSEQ] = ...  #: conv class for RoI head
-    roi_module_cls: Type[
-        RoIModule
-    ] = ...  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
+    roi_module_cls: Type[RoIModule] = ...  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
     roi_head_cls: Type[RoIBoxHead] = ...  #: define class for RoI box head
     roi_classifier_cls: Type[RoIClassifier] = ...  #: define class for box classifier
     roi_regressor_cls: Type[RoIRegressor] = ...  #: define class for box regressor
 
-    roi_matcher_cls: Type[
-        Matcher
-    ] = ...  #:  define class to match proposals to ground truth
-    roi_sampler_cls: Type[
-        SamplerType
-    ] = ...  #: sampler class for negative mining. None = no sampling
-    roi_box_pooler_cls: Type[
-        RoIPooler
-    ] = ...  #: define pooling operation of RoIs for box branch
-    roi_box_post_cls: Type[
-        BoxPostprocessing
-    ] = ...  #: define roi box postprocessing strategy
+    roi_matcher_cls: Type[Matcher] = ...  #:  define class to match proposals to ground truth
+    roi_sampler_cls: Type[SamplerType] = ...  #: sampler class for negative mining. None = no sampling
+    roi_box_pooler_cls: Type[RoIPooler] = ...  #: define pooling operation of RoIs for box branch
+    roi_box_post_cls: Type[BoxPostprocessing] = ...  #: define roi box postprocessing strategy
 
     # optional mask branches
     roi_masker_cls: Type[Masker] = None  #: define class of mask branch in RoI module
-    roi_mask_pooler_cls: Type[
-        RoIPooler
-    ] = None  #: define pooling operation of RoIs for mask branch
-    roi_mask_post_cls: Type[
-        MaskPostprocessing
-    ] = None  #: define roi mask postprocessing strategy
+    roi_mask_pooler_cls: Type[RoIPooler] = None  #: define pooling operation of RoIs for mask branch
+    roi_mask_post_cls: Type[MaskPostprocessing] = None  #: define roi mask postprocessing strategy
 
     @staticmethod
     def get_roi_box_size(
@@ -175,9 +161,7 @@ class RoIBuildMixin:
             masker = cls.roi_masker_cls(
                 conv,
                 in_channels=plan_arch["fpn_channels"],
-                internal_channels=int(
-                    roi_mask_channel_multiplier * plan_arch["fpn_channels"]
-                ),
+                internal_channels=int(roi_mask_channel_multiplier * plan_arch["fpn_channels"]),
                 **kwargs,
             )
         else:

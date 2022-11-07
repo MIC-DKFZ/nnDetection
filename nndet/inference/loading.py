@@ -66,24 +66,18 @@ def load_final_model(
     """
     from nndet.ptmodule import MODULE_REGISTRY
 
-    assert (
-        num_models == 1
-    ), f"load_final_model only supports num_models=1, found {num_models}"
+    assert num_models == 1, f"load_final_model only supports num_models=1, found {num_models}"
     logger.info(f"Loading {identifier} model")
 
     model_names = list(source_models.glob("*.ckpt"))
     if not model_names:
-        logger.info(
-            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
-        )
+        logger.info("Did not find models with '.ckpt' ending looking for '.model' checkpoints.")
         model_names = list(source_models.glob("*.model"))
         if model_names:
             logger.info("Found models with '.model' ending.")
 
     model_names = [m for m in model_names if identifier in str(m.stem)]
-    assert (
-        len(model_names) == 1
-    ), f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
+    assert len(model_names) == 1, f"Found wrong number of models, {model_names} in {source_models} with {identifier}"
 
     path = model_names[0]
     model = MODULE_REGISTRY[cfg["module"]](
@@ -126,9 +120,7 @@ def load_all_models(
 
     model_names = list(source_models.glob("*.ckpt"))
     if not model_names:
-        logger.info(
-            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
-        )
+        logger.info("Did not find models with '.ckpt' ending looking for '.model' checkpoints.")
         model_names = list(source_models.glob("*.model"))
         if model_names:
             logger.info("Found models with '.model' ending.")
@@ -183,9 +175,7 @@ def load_selective_models(
 
     model_names = list(source_models.glob(f"*{selector}.ckpt"))
     if not model_names:
-        logger.info(
-            "Did not find models with '.ckpt' ending looking for '.model' checkpoints."
-        )
+        logger.info("Did not find models with '.ckpt' ending looking for '.model' checkpoints.")
         model_names = list(source_models.glob(f"*{selector}.model"))
         if model_names:
             logger.info("Found models with '.model' ending.")
@@ -197,8 +187,7 @@ def load_selective_models(
 
     if num_expected_models is not None and num_models_found != num_expected_models:
         raise RuntimeError(
-            "Found unexpected number of models: "
-            f"expected {num_expected_models} found {num_models_found}"
+            "Found unexpected number of models: " f"expected {num_expected_models} found {num_models_found}"
         )
 
     models = []

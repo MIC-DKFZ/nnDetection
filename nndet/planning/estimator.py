@@ -89,9 +89,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
 
     def create_offset_tensor_on_GPU(self) -> torch.Tensor:
         device = f"cuda:{self.gpu_id}"
-        tensor_mem = torch.rand(
-            1, dtype=float, requires_grad=False, device=device
-        ).element_size()
+        tensor_mem = torch.rand(1, dtype=float, requires_grad=False, device=device).element_size()
         return torch.rand(
             math.ceil(self.offset / tensor_mem),
             dtype=float,
@@ -222,14 +220,10 @@ class MemoryEstimatorDetection(MemoryEstimator):
                 for _ in range(10):
                     opt.zero_grad()
                     inp = {
-                        "images": torch.rand(
-                            (self.batch_size, *shape), device=device, dtype=torch.float
-                        ),
+                        "images": torch.rand((self.batch_size, *shape), device=device, dtype=torch.float),
                         "targets": {
                             "target_boxes": [
-                                torch.tensor(
-                                    boxes, device=device, dtype=torch.float
-                                ).repeat(num_instances, 1)
+                                torch.tensor(boxes, device=device, dtype=torch.float).repeat(num_instances, 1)
                                 for _ in range(self.batch_size)
                             ],
                             "target_classes": [
@@ -275,9 +269,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         torch.cuda.empty_cache()
         gc.collect()
         logger.info(
-            f"Measured: {b2mb(empty_mem)} mb empty, "
-            f"{b2mb(fixed_mem)} mb fixed, "
-            f"{b2mb(dyn_mem)} mb dynamic"
+            f"Measured: {b2mb(empty_mem)} mb empty, " f"{b2mb(fixed_mem)} mb fixed, " f"{b2mb(dyn_mem)} mb dynamic"
         )
         return fixed_mem - empty_mem, dyn_mem - fixed_mem
 

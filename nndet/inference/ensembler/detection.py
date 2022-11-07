@@ -367,9 +367,7 @@ class BoxEnsembler(BaseEnsembler):
         boxes = []
         scores = []
         labels = []
-        for b, s, l in zip(
-            result[self.box_key], result[self.score_key], result[self.label_key]
-        ):
+        for b, s, l in zip(result[self.box_key], result[self.score_key], result[self.label_key]):
             _boxes, _scores, _labels, _ = self.postprocess_image(
                 boxes=b.float(),
                 probs=s.float(),
@@ -381,10 +379,7 @@ class BoxEnsembler(BaseEnsembler):
             scores.append(_scores.cpu())
             labels.append(_labels.cpu())
 
-        centers = [
-            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-            for img_boxes in boxes
-        ]
+        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -682,10 +677,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         boxes = [r.half().cpu() for r in result[self.box_key]]
         scores = [r.half().cpu() for r in result[self.score_key]]
         labels = [r.half().cpu() for r in result[self.label_key]]
-        centers = [
-            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-            for img_boxes in boxes
-        ]
+        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -897,9 +889,7 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
             self.overlap_map_mean = self.overlap_map.avg()
 
             for model in self.model_results.keys():
-                batch_idx = self.build_batch_indices(
-                    self.model_results[model]["scores"]
-                )
+                batch_idx = self.build_batch_indices(self.model_results[model]["scores"])
 
                 boxes = cat(self.model_results[model]["boxes"])
                 probs = cat(self.model_results[model]["scores"])
@@ -909,26 +899,14 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
                 if len(probs) > self.num_reduced_cache:
                     _, idx_sorted = probs.sort(descending=True)
                     idx_sorted = idx_sorted[: self.num_reduced_cache]
-                    batch_idx_keep = [
-                        [b for b in bix if b in idx_sorted] for bix in batch_idx
-                    ]
+                    batch_idx_keep = [[b for b in bix if b in idx_sorted] for bix in batch_idx]
 
-                    assert len(batch_idx_keep) == len(
-                        self.model_results[model]["scores"]
-                    )
+                    assert len(batch_idx_keep) == len(self.model_results[model]["scores"])
 
-                    self.model_results[model]["boxes"] = [
-                        boxes[i] for i in batch_idx_keep
-                    ]
-                    self.model_results[model]["scores"] = [
-                        probs[i] for i in batch_idx_keep
-                    ]
-                    self.model_results[model]["labels"] = [
-                        labels[i] for i in batch_idx_keep
-                    ]
-                    self.model_results[model]["weights"] = [
-                        weights[i] for i in batch_idx_keep
-                    ]
+                    self.model_results[model]["boxes"] = [boxes[i] for i in batch_idx_keep]
+                    self.model_results[model]["scores"] = [probs[i] for i in batch_idx_keep]
+                    self.model_results[model]["labels"] = [labels[i] for i in batch_idx_keep]
+                    self.model_results[model]["weights"] = [weights[i] for i in batch_idx_keep]
 
     @staticmethod
     def build_batch_indices(b: Sequence[Tensor]) -> List[List[int]]:
@@ -1060,10 +1038,7 @@ class BoxEnsemblerSelective(BoxEnsembler):
         boxes = [r.float().cpu() for r in result[self.box_key]]
         scores = [r.float().cpu() for r in result[self.score_key]]
         labels = [r.float().cpu() for r in result[self.label_key]]
-        centers = [
-            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-            for img_boxes in boxes
-        ]
+        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -1329,10 +1304,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
         # process 2d boxes
         tile_size = batch[self.data_key].shape[2:]
-        centers = [
-            box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
-            for img_boxes in boxes
-        ]
+        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -1344,9 +1316,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         for boxes_image, idx in zip(boxes, slice_idx):
             if boxes_image.numel() > 0:
                 idx_tensor = torch.tensor([[float(idx), float(idx) + 1.0]])
-                idx_tensor_expanded = idx_tensor.to(boxes_image).expand(
-                    boxes_image.shape[0], -1
-                )
+                idx_tensor_expanded = idx_tensor.to(boxes_image).expand(boxes_image.shape[0], -1)
                 _boxes_3d = torch.stack(
                     [
                         idx_tensor_expanded[:, 0],
@@ -1449,9 +1419,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         # the upper bound is already correct, we need to fix the lower bound here
         boxes[:, 0] = boxes[:, 0] - 1
 
-        keep = remove_small_boxes(
-            boxes, min_size=self.parameters["track_remove_small_boxes"]
-        )
+        keep = remove_small_boxes(boxes, min_size=self.parameters["track_remove_small_boxes"])
         boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
         return boxes, probs, labels
 

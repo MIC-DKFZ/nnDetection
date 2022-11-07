@@ -89,9 +89,7 @@ class AbstractBackbone(torch.nn.Module):
             if new_stride is None:
                 new_stride = relative_strides[level_idx]
             else:
-                new_stride = [
-                    ns * s for ns, s in zip(new_stride, relative_strides[level_idx])
-                ]
+                new_stride = [ns * s for ns, s in zip(new_stride, relative_strides[level_idx])]
             absolute_strides.append(tuple(new_stride))
         assert len(relative_strides) == len(absolute_strides)
         return absolute_strides

@@ -115,11 +115,7 @@ class RoIAlignBase(RoIPooler):
         Returns:
             Tensor: pooled masks [N, output_size]
         """
-        output_size = (
-            self.feature_output_size
-            if self.mask_output_size is None
-            else self.mask_output_size
-        )
+        output_size = self.feature_output_size if self.mask_output_size is None else self.mask_output_size
 
         pooled_masks = []
         for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
@@ -174,10 +170,7 @@ class RoIAlignOrigAssign(RoIAlignBase):
 
         num_levels = len(features)
         level = (
-            (num_levels + torch.log2(torch.sqrt(d2 * d3)))
-            .round()
-            .clamp_(min=0, max=num_levels)
-            .to(dtype=torch.long)
+            (num_levels + torch.log2(torch.sqrt(d2 * d3))).round().clamp_(min=0, max=num_levels).to(dtype=torch.long)
         )
         return level
 
@@ -207,17 +200,13 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         # We normalize the box size instead of the area/vol
         # since this should give better numerical results especially
         # when using mixed precision (i.e. 128^3 does not fit float16)
-        proposal_boxes_norm = (proposal_boxes * 1.33) / expand_to_boxes(
-            image_size_tensor
-        )
+        proposal_boxes_norm = (proposal_boxes * 1.33) / expand_to_boxes(image_size_tensor)
         normed_size = box_size(proposal_boxes_norm)  # [N, 3]
 
         if len(image_size) == 2:
             v = torch.log2((normed_size[:, 0] * normed_size[:, 1]).sqrt())
         elif len(image_size) == 3:
-            v = torch.log2(
-                (normed_size[:, 0] * normed_size[:, 1] * normed_size[:, 2]) ** (1 / 3)
-            )
+            v = torch.log2((normed_size[:, 0] * normed_size[:, 1] * normed_size[:, 2]) ** (1 / 3))
         else:
             raise ValueError(f"Image size needs to be 2D or 3d, received {image_size}.")
 

@@ -100,9 +100,7 @@ class SegmentationEnsembler(BaseEnsembler):
                 "spacing_after_resampling": properties["spacing_after_resampling"],
                 "crop_bbox": properties["crop_bbox"],
                 "size_after_cropping": properties["size_after_cropping"],
-                "original_size_before_cropping": properties[
-                    "original_size_of_raw_data"
-                ],
+                "original_size_before_cropping": properties["original_size_of_raw_data"],
                 "itk_origin": properties["itk_origin"],
                 "itk_spacing": properties["itk_spacing"],
                 "itk_direction": properties["itk_direction"],
@@ -174,16 +172,10 @@ class SegmentationEnsembler(BaseEnsembler):
         crops = batch["crop"]
 
         weight = self.get_weighting(tuple(seg_batch.shape[2:])).to(seg_batch)
-        seg_batch = (
-            seg_batch
-            * weight[None].to(seg_batch)
-            * self.model_weights[self.model_current]
-        )
+        seg_batch = seg_batch * weight[None].to(seg_batch) * self.model_weights[self.model_current]
 
         if self.model_results is None:
-            self.model_results = torch.zeros(
-                (int(seg_batch.shape[1]), *self.properties["shape"])
-            ).to(seg_batch)
+            self.model_results = torch.zeros((int(seg_batch.shape[1]), *self.properties["shape"])).to(seg_batch)
 
         for seg, crop in zip(seg_batch, zip(*crops)):
             _weight = weight.clone()
@@ -210,9 +202,7 @@ class SegmentationEnsembler(BaseEnsembler):
             case_start = max(0, c.start)
             case_stop = min(self.model_results.shape[dim + 1], c.stop)
 
-            crop_start = max(
-                0, 0 - (c.start - 0)
-            )  # 0 added for completeness of pattern
+            crop_start = max(0, 0 - (c.start - 0))  # 0 added for completeness of pattern
             crop_stop = min(
                 seg.shape[dim + 1],
                 seg.shape[dim + 1] - (c.stop - self.model_results.shape[dim + 1]),
@@ -235,9 +225,7 @@ class SegmentationEnsembler(BaseEnsembler):
         """
         if crop_size not in self.cache_crop_weight:
             if self.parameters["use_gaussian"]:
-                logger.info(
-                    f"Creating new gaussian weight matrix for crop size {crop_size}"
-                )
+                logger.info(f"Creating new gaussian weight matrix for crop size {crop_size}")
                 tmp = np.zeros(crop_size)
                 center_coords = [i // 2 for i in crop_size]
                 sigmas = [i // 8 for i in crop_size]
@@ -248,9 +236,7 @@ class SegmentationEnsembler(BaseEnsembler):
                 self.cache_crop_weight[crop_size] = torch.from_numpy(weighting).float()
             else:
                 logger.info(f"Creating new weight matrix for crop size {crop_size}")
-                self.cache_crop_weight[crop_size] = torch.ones(
-                    crop_size, dtype=torch.float
-                )
+                self.cache_crop_weight[crop_size] = torch.ones(crop_size, dtype=torch.float)
 
         return self.cache_crop_weight[crop_size]
 
@@ -271,9 +257,7 @@ class SegmentationEnsembler(BaseEnsembler):
             transpose_backward=self.properties["transpose_backward"],
             original_spacing=self.properties["original_spacing"],
             spacing_after_resampling=self.properties["spacing_after_resampling"],
-            original_size_before_cropping=self.properties[
-                "original_size_before_cropping"
-            ],
+            original_size_before_cropping=self.properties["original_size_before_cropping"],
             size_after_cropping=self.properties["size_after_cropping"],
             crop_bbox=self.properties["crop_bbox"],
             interpolation_order=1,

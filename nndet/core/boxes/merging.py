@@ -15,9 +15,7 @@ from nndet.core.boxes.ops import box_iou
 from nndet.utils.info import experimental
 
 
-def weighted_merging(
-    boxes: torch.Tensor, scores: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor]:
+def weighted_merging(boxes: torch.Tensor, scores: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Weighted mean merging of boxes
 
@@ -96,23 +94,15 @@ class GreedyIoUBoxMerger(Merger):
             iou_fn=iou_fn,
         )
         if neighbor_slices < 1:
-            raise ValueError(
-                f"neighbor_slices must be at least one, found {neighbor_slices}"
-            )
+            raise ValueError(f"neighbor_slices must be at least one, found {neighbor_slices}")
         if iou_th < 0 or iou_th > 1:
             raise ValueError(f"IoU threshold needs to be within [0,1], found {iou_th}")
         if not isinstance(boxes, torch.Tensor):
-            raise ValueError(
-                f"Wrong type for boxes, got {type(boxes)} expected Tensor."
-            )
+            raise ValueError(f"Wrong type for boxes, got {type(boxes)} expected Tensor.")
         if not isinstance(scores, torch.Tensor):
-            raise ValueError(
-                f"Wrong type for scores, got {type(boxes)} expected Tensor."
-            )
+            raise ValueError(f"Wrong type for scores, got {type(boxes)} expected Tensor.")
         if not isinstance(labels, torch.Tensor):
-            raise ValueError(
-                f"Wrong type for labels, got {type(boxes)} expected Tensor."
-            )
+            raise ValueError(f"Wrong type for labels, got {type(boxes)} expected Tensor.")
         if boxes.shape[0] != len(scores) or boxes.shape[0] != len(labels):
             raise ValueError("Every Box needs a label and a score")
         self.boxes = boxes
@@ -149,13 +139,7 @@ class GreedyIoUBoxMerger(Merger):
                 idx=idx_sorted,
                 seed_index=seed_index,
             )
-            (
-                tracked_indices,
-                tracked_boxes,
-                tracked_slices,
-                tracked_scores,
-                tracked_labels,
-            ) = self.build_track(
+            (tracked_indices, tracked_boxes, tracked_slices, tracked_scores, tracked_labels,) = self.build_track(
                 seed_index=seed_index,
                 idx_list=idx_sorted,
                 idx_selected=idx_selected,
@@ -197,9 +181,7 @@ class GreedyIoUBoxMerger(Merger):
         Returns:
             List[int]: indices of boxes which match the label of the seed box
         """
-        idx_correct_label = [
-            i for i in idx if self.labels[i] == self.labels[seed_index]
-        ]
+        idx_correct_label = [i for i in idx if self.labels[i] == self.labels[seed_index]]
         return idx_correct_label
 
     def build_track(
@@ -237,9 +219,7 @@ class GreedyIoUBoxMerger(Merger):
                 matched = False
                 for nb in range(1, self.neighbor_slices + 1):
                     expansion_index = [
-                        int(i)
-                        for i in idx_selected
-                        if self.slices[i] == self.slices[box_index] + nb * direction
+                        int(i) for i in idx_selected if self.slices[i] == self.slices[box_index] + nb * direction
                     ]
 
                     if not expansion_index:
@@ -378,9 +358,7 @@ class VoteLabelGreedyIoUBoxMerger(GreedyIoUBoxMerger):
                 matched = False
                 for nb in range(1, self.neighbor_slices + 1):
                     expansion_index = [
-                        int(i)
-                        for i in idx_selected
-                        if self.slices[i] == self.slices[box_index] + nb * direction
+                        int(i) for i in idx_selected if self.slices[i] == self.slices[box_index] + nb * direction
                     ]
 
                     if not expansion_index:
@@ -389,9 +367,7 @@ class VoteLabelGreedyIoUBoxMerger(GreedyIoUBoxMerger):
                     match_quality_matrix = self.iou_fn(
                         self.boxes[[int(box_index)]], self.boxes[expansion_index]
                     )  # 1 x M
-                    matched_idx = torch.nonzero(
-                        match_quality_matrix > self.iou_th, as_tuple=True
-                    )[1]
+                    matched_idx = torch.nonzero(match_quality_matrix > self.iou_th, as_tuple=True)[1]
 
                     # we need to keep track of the boxes in this slice to merge them
                     matched_boxes, matched_scores = [], []

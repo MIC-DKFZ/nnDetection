@@ -120,9 +120,7 @@ def test_optim_mixin_smoke(opt_str, cfg, opt_expected_cls):
     if isinstance(result, tuple):
         optimizer, scheduler = result
         assert isinstance(optimizer[0], opt_expected_cls[0])  # check for correct class
-        assert isinstance(
-            scheduler["scheduler"], opt_expected_cls[1]
-        )  # check for correct class
+        assert isinstance(scheduler["scheduler"], opt_expected_cls[1])  # check for correct class
     else:
         optimizer = result
         assert isinstance(optimizer, opt_expected_cls)  # check for correct class

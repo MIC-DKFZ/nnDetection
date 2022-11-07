@@ -76,9 +76,7 @@ def get_allowed_n_proc_DA():
         elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-gpu"):
             return 24
         else:
-            raise RuntimeError(
-                f"Could not determine det_num_threads, env: {dnt} hostname {hostname}"
-            )
+            raise RuntimeError(f"Could not determine det_num_threads, env: {dnt} hostname {hostname}")
     else:
         return int(dnt)
 
@@ -176,12 +174,8 @@ class BaseDatamodule(BaseModule):
         elif dim == 3 and self.plan["do_dummy_2D_data_aug"]:
             logger.info("Using dummy 2d augmentation params")
             params["dummy_2D"] = True
-            params["elastic_deform_alpha"] = params["2d_overwrites"][
-                "elastic_deform_alpha"
-            ]
-            params["elastic_deform_sigma"] = params["2d_overwrites"][
-                "elastic_deform_sigma"
-            ]
+            params["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
+            params["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
             params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
 
         params["selected_seg_channels"] = [0]
@@ -197,10 +191,7 @@ class BaseDatamodule(BaseModule):
         )
         self.patch_size_generator = self.augmentation.get_patch_size_generator()
 
-        logger.info(
-            f"Augmentation: {params['transforms']} transforms and "
-            f"{params.get('name', 'no_name')} params "
-        )
+        logger.info(f"Augmentation: {params['transforms']} transforms and " f"{params.get('name', 'no_name')} params ")
         logger.info(
             f"Loading network patch size {self.augmentation.patch_size} "
             f"and generator patch size {self.patch_size_generator}"

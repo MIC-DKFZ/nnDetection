@@ -53,12 +53,8 @@ class TestSegmentationEnsembler:
         )
         expected_shape = list(example.case["data"].shape)[1:]
 
-        assert all(
-            [a == b for a, b in zip(ensembler.properties["shape"], expected_shape)]
-        )
-        assert all(
-            [a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))]
-        )
+        assert all([a == b for a, b in zip(ensembler.properties["shape"], expected_shape)])
+        assert all([a == b for a, b in zip(ensembler.properties["transpose_backward"], (0, 1))])
         assert ensembler.parameters["model_iou"] == 0.5
         assert ensembler.parameters["ensemble_topk"] == 10
 

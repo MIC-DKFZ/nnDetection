@@ -13,9 +13,7 @@ def create_hard_negative_example():
     positive: [0, 0, 1, 1, 0, 0]
     negative: [1, 1, 0, 0, 0, 0]
     """
-    sampler = HardNegativeSampler(
-        batch_size_per_image=4, positive_fraction=0.5, pool_size=1
-    )
+    sampler = HardNegativeSampler(batch_size_per_image=4, positive_fraction=0.5, pool_size=1)
     target_labels = torch.tensor([0, 0, 1, 1, 0, 0])
     fg_probs = torch.tensor([1, 1, 1, 1, 0, 0])
     img_labels = torch.zeros_like(target_labels)

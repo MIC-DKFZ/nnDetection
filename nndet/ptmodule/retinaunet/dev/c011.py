@@ -257,9 +257,7 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
             f"SGD SAM with momentum {self.trainer_cfg['sgd_momentum']} and "
             f"nesterov {self.trainer_cfg['sgd_nesterov']}"
         )
-        wd_groups = get_params_no_wd_on_norm(
-            self, weight_decay=self.trainer_cfg["weight_decay"]
-        )
+        wd_groups = get_params_no_wd_on_norm(self, weight_decay=self.trainer_cfg["weight_decay"])
 
         optimizer = SAM(
             wd_groups,
@@ -273,9 +271,7 @@ class RetinaUNetC011L1SAM(RetinaUNetC011L1):
         )
 
         # configure lr scheduler
-        num_iterations = (
-            self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = self.train_epochs * self.trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=self.trainer_cfg["warm_iterations"],

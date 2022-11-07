@@ -246,9 +246,7 @@ class TestCaseEvaluator:
         assert np.allclose(aggregated_classes, [1, 1, 0, 0, 1, 0])
 
     def test_aggregate_prdictions(self, evaluator_filled):
-        agg_pred_score, agg_pred_class = evaluator_filled.aggregate_prdictions(
-            threshold=0.5
-        )
+        agg_pred_score, agg_pred_class = evaluator_filled.aggregate_prdictions(threshold=0.5)
         assert np.allclose(agg_pred_score, [0.9, 0.1, 1.0, 0.0, 0.8, 0.8])
         assert np.allclose(agg_pred_class, [1, 0, 1, 0, 1, 1])
 
@@ -295,9 +293,7 @@ class TestCaseEvaluator:
         exp_gt = [1, 1, 0, 0, 1, 0]
         exp_pred = [0.9, 0.1, 1.0, 0.0, 0.8, 0.8]
         assert np.isclose(results_scalar["auc_case"], roc_auc_score(exp_gt, exp_pred))
-        assert np.isclose(
-            results_scalar["ap_case"], average_precision_score(exp_gt, exp_pred)
-        )
+        assert np.isclose(results_scalar["ap_case"], average_precision_score(exp_gt, exp_pred))
 
         # at th=0.500
         # gt [1, 1, 0, 0, 1, 0]

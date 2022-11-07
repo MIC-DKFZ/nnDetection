@@ -291,9 +291,7 @@ class TestGreedyIoUBoxMerger:
         )
         boxes_3d, scores_3d, labels_3d = merger.merge()
 
-        expected_boxes = torch.Tensor(
-            [[3.0, 0.0, 4.0, 1.0, 0.0, 1.0], [5.0, 0.0, 7.0, 1.0, 0.0, 1.0]]
-        )
+        expected_boxes = torch.Tensor([[3.0, 0.0, 4.0, 1.0, 0.0, 1.0], [5.0, 0.0, 7.0, 1.0, 0.0, 1.0]])
         expected_scores = torch.Tensor([1.0, 0.7])
         expected_labels = torch.Tensor([1.0, 1.0])
         assert boxes_3d.allclose(expected_boxes)
@@ -302,9 +300,7 @@ class TestGreedyIoUBoxMerger:
 
 
 class TestVoteLabelGreedyIoUBoxMerger:
-    def test_neighboring_track_vote_label(
-        self, boxes_neighboring_track, scores, labels
-    ):
+    def test_neighboring_track_vote_label(self, boxes_neighboring_track, scores, labels):
         """
         Test tracking of direct neighbors with wrong label inside
         """
@@ -353,9 +349,7 @@ class TestVoteLabelGreedyIoUBoxMerger:
         )
         boxes_3d, scores_3d, labels_3d = merger.merge()
 
-        expected_boxes = torch.Tensor(
-            [[3.0, 0.0, 4.0, 1.0, 0.0, 1.0], [6.0, 0.0, 7.0, 1.0, 0.0, 1.0]]
-        )
+        expected_boxes = torch.Tensor([[3.0, 0.0, 4.0, 1.0, 0.0, 1.0], [6.0, 0.0, 7.0, 1.0, 0.0, 1.0]])
         expected_scores = torch.Tensor([0.8, 0.7])
         expected_labels = torch.Tensor([1.0, 1.0])
         assert boxes_3d.allclose(expected_boxes)
