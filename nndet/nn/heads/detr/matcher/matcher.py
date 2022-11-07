@@ -41,9 +41,7 @@ class SimpleHungarianMatcher(nn.Module):
         self.cost_giou = cost_giou
         self.logits_to_probs = nn.Softmax(dim=-1)
         self.class_loss = SimpleClassLossforMatcher()
-        assert (
-            cost_class != 0 or cost_bbox != 0 or cost_giou != 0
-        ), "all costs cant be 0"
+        assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
 
     @staticmethod
     def fix_indices(mask: List[bool], indices: List[Tensor]):
@@ -95,9 +93,7 @@ class SimpleHungarianMatcher(nn.Module):
         # Compute the classification cost. Contrary to the loss, we don't use the NLL,
         # but approximate it in 1 - proba[target class].
         # The 1 is a constant that doesn't change the matching, it can be ommitted.
-        out_prob = self.logits_to_probs(outputs["pred_logits"]).flatten(
-            0, 1
-        )  # [batch_size * num_queries, num_classes]
+        out_prob = self.logits_to_probs(outputs["pred_logits"]).flatten(0, 1)  # [batch_size * num_queries, num_classes]
         out_bbox = outputs["pred_boxes"].flatten(0, 1)  # [batch_size * num_queries, 6]
         # Also concat the target labels and boxes
         tgt_ids = torch.cat([v["labels"] for v in targets])
@@ -115,16 +111,10 @@ class SimpleHungarianMatcher(nn.Module):
         )
 
         # Final cost matrix
-        C = (
-            self.cost_bbox * cost_bbox
-            + self.cost_class * cost_class
-            + self.cost_giou * cost_giou
-        )
+        C = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou
         C = C.view(bs, num_queries, -1).cpu()
         sizes = [len(v["boxes"]) for v in targets]
-        indices = [
-            linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))
-        ]
+        indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
         return [
             (
                 torch.as_tensor(i, dtype=torch.int64),

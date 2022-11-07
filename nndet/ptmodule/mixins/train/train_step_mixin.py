@@ -35,9 +35,7 @@ class TrainMixin:
                 # split for auxiliary losses
                 weight_key = "_".join(key.split("_")[:2])
                 if weight_key in weight_dict:
-                    loss += (
-                        value * weight_dict[weight_key] / (norm_dec_layers * weight_sum)
-                    )
+                    loss += value * weight_dict[weight_key] / (norm_dec_layers * weight_sum)
         # Else the weight dict will contain all necessary keys for loss computation
         else:
             weight_sum = 0
@@ -46,11 +44,7 @@ class TrainMixin:
                 # of these after 10 epochs
                 if key not in losses:
                     continue
-                if (
-                    self.model.decrease_aux_loss
-                    and len(key.split("_")) > 2
-                    and self.current_epoch + 1 > 10
-                ):
+                if self.model.decrease_aux_loss and len(key.split("_")) > 2 and self.current_epoch + 1 > 10:
                     loss += loss_weight / ((self.current_epoch + 1) / 10) * losses[key]
                     weight_sum += loss_weight / ((self.current_epoch + 1) / 10)
 

@@ -34,17 +34,11 @@ class TransformerFacebook(nn.Module):
     ):
         super().__init__()
 
-        encoder_layer = TransformerEncoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation, normalize_before
-        )
+        encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout, activation, normalize_before)
         encoder_norm = nn.LayerNorm(d_model) if normalize_before else None
-        self.encoder = TransformerEncoder(
-            encoder_layer, num_encoder_layers, encoder_norm
-        )
+        self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
 
-        decoder_layer = TransformerDecoderLayer(
-            d_model, nhead, dim_feedforward, dropout, activation, normalize_before
-        )
+        decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward, dropout, activation, normalize_before)
         decoder_norm = nn.LayerNorm(d_model)
         self.decoder = TransformerDecoder(
             decoder_layer,
@@ -200,9 +194,7 @@ class TransformerEncoderLayer(nn.Module):
         pos: Optional[Tensor] = None,
     ):
         q = k = self.with_pos_embed(src, pos)
-        src2 = self.self_attn(
-            q, k, value=src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask
-        )[0]
+        src2 = self.self_attn(q, k, value=src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
         src = src + self.dropout1(src2)
         src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
@@ -219,9 +211,7 @@ class TransformerEncoderLayer(nn.Module):
     ):
         src2 = self.norm1(src)
         q = k = self.with_pos_embed(src2, pos)
-        src2 = self.self_attn(
-            q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask
-        )[0]
+        src2 = self.self_attn(q, k, value=src2, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
         src = src + self.dropout1(src2)
         src2 = self.norm2(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src2))))
@@ -283,9 +273,7 @@ class TransformerDecoderLayer(nn.Module):
         query_pos: Optional[Tensor] = None,
     ):
         q = k = self.with_pos_embed(tgt, query_pos)
-        tgt2 = self.self_attn(
-            q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask
-        )[0]
+        tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
         tgt2 = self.cross_attn(
@@ -315,9 +303,7 @@ class TransformerDecoderLayer(nn.Module):
     ):
         tgt2 = self.norm1(tgt)
         q = k = self.with_pos_embed(tgt2, query_pos)
-        tgt2 = self.self_attn(
-            q, k, value=tgt2, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask
-        )[0]
+        tgt2 = self.self_attn(q, k, value=tgt2, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt2 = self.norm2(tgt)
         tgt2 = self.cross_attn(

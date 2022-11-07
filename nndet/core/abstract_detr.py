@@ -58,12 +58,8 @@ class AbstractDETR(AbstractDetector):
         prediction, _ = self.inference_step_with_features(images=images, **kwargs)
         return prediction
 
-    def log_queries(
-        self, target_classes: List[Tensor], pred_logits: Tensor, batch_num: int
-    ):
-        num_objects = np.array(
-            [len(class_tensor) for class_tensor in target_classes], dtype=int
-        )
+    def log_queries(self, target_classes: List[Tensor], pred_logits: Tensor, batch_num: int):
+        num_objects = np.array([len(class_tensor) for class_tensor in target_classes], dtype=int)
         query_preds = pred_logits.argmax(dim=2)
         query_scores = (
             torch.gather(
@@ -78,20 +74,9 @@ class AbstractDETR(AbstractDetector):
             .T
         )
         query_preds = query_preds.detach().cpu().numpy().T
-        df_dict = dict(
-            [(f"query{i}_pred", query_pred) for i, query_pred in enumerate(query_preds)]
-        )
-        df_dict.update(
-            dict(
-                [
-                    (f"query{i}_score:", query_score)
-                    for i, query_score in enumerate(query_scores)
-                ]
-            )
-        )
-        df_dict.update(
-            {"num gt": num_objects, "batch_num": np.repeat(batch_num, len(num_objects))}
-        )
+        df_dict = dict([(f"query{i}_pred", query_pred) for i, query_pred in enumerate(query_preds)])
+        df_dict.update(dict([(f"query{i}_score:", query_score) for i, query_score in enumerate(query_scores)]))
+        df_dict.update({"num gt": num_objects, "batch_num": np.repeat(batch_num, len(num_objects))})
         df = pd.DataFrame(df_dict)
         output_path = "query_preds.csv"
         df.to_csv(output_path, mode="a", header=not os.path.exists(output_path))

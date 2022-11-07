@@ -53,35 +53,21 @@ class PositionEmbeddingSine(nn.Module):
             eps = 1e-6
             x_embed = (x_embed + self.offset) / (x_embed[:, -1:, :] + eps) * self.scale
             y_embed = (y_embed + self.offset) / (y_embed[:, :, -1:] + eps) * self.scale
-            z_embed = (
-                (z_embed + self.offset) / (z_embed[:, :, :, -1:] + eps) * self.scale
-            )
+            z_embed = (z_embed + self.offset) / (z_embed[:, :, :, -1:] + eps) * self.scale
 
         dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=x.device)
-        dim_t = self.temperature ** (
-            2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats
-        )
+        dim_t = self.temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats)
 
         pos_x = x_embed[:, :, :, :, None] / dim_t
         pos_y = y_embed[:, :, :, :, None] / dim_t
         pos_z = z_embed[:, :, :, :, None] / dim_t
-        pos_x = torch.stack(
-            (pos_x[:, :, :, :, 0::2].sin(), pos_x[:, :, :, :, 1::2].cos()), dim=5
-        ).flatten(4)
-        pos_y = torch.stack(
-            (pos_y[:, :, :, :, 0::2].sin(), pos_y[:, :, :, :, 1::2].cos()), dim=5
-        ).flatten(4)
-        pos_z = torch.stack(
-            (pos_z[:, :, :, :, 0::2].sin(), pos_z[:, :, :, :, 1::2].cos()), dim=5
-        ).flatten(4)
+        pos_x = torch.stack((pos_x[:, :, :, :, 0::2].sin(), pos_x[:, :, :, :, 1::2].cos()), dim=5).flatten(4)
+        pos_y = torch.stack((pos_y[:, :, :, :, 0::2].sin(), pos_y[:, :, :, :, 1::2].cos()), dim=5).flatten(4)
+        pos_z = torch.stack((pos_z[:, :, :, :, 0::2].sin(), pos_z[:, :, :, :, 1::2].cos()), dim=5).flatten(4)
         if 3 * self.num_pos_feats - tensor.shape[1] == 0:
             pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
         elif 3 * self.num_pos_feats - tensor.shape[1] == 2:
-            pos = torch.cat((pos_x, pos_y[..., :-1], pos_z[..., :-1]), dim=4).permute(
-                0, 4, 1, 2, 3
-            )
+            pos = torch.cat((pos_x, pos_y[..., :-1], pos_z[..., :-1]), dim=4).permute(0, 4, 1, 2, 3)
         elif 3 * self.num_pos_feats - tensor.shape[1] == 4:
-            pos = torch.cat(
-                (pos_x[..., :-1], pos_y[..., :-1], pos_z[..., :-2]), dim=4
-            ).permute(0, 4, 1, 2, 3)
+            pos = torch.cat((pos_x[..., :-1], pos_y[..., :-1], pos_z[..., :-2]), dim=4).permute(0, 4, 1, 2, 3)
         return pos

@@ -34,9 +34,7 @@ class DETRMixin(ModelMixin):
         **kwargs,
     ):
         if "plan_arch_overwrites" in model_cfg:
-            logger.info(
-                f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
-            )
+            logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} ")
             plan_arch.update(model_cfg["plan_arch_overwrites"])
         logger.info(
             f"Start channels: {plan_arch['start_channels']}; "
@@ -118,13 +116,10 @@ class DETRMixin(ModelMixin):
                 weight_dict = {
                     k[15:]: v  # Copy all keys and values from the pretrained state dict
                     for k, v in pretrain_dict.items()  # backbone. k[15:] filters out the "model.backbone." which is not
-                    if k[:15]
-                    == "model.backbone."  # needed to load the weights into the encoder
+                    if k[:15] == "model.backbone."  # needed to load the weights into the encoder
                 }
                 backbone.load_state_dict(weight_dict)
-                logger.info(
-                    f"Using Pretrained Model Weights for {cls.backbone_cls.__name__} from {path}."
-                )
+                logger.info(f"Using Pretrained Model Weights for {cls.backbone_cls.__name__} from {path}.")
         return backbone
 
     @classmethod
@@ -134,9 +129,7 @@ class DETRMixin(ModelMixin):
         hidden_dim = model_cfg["hidden_dim"]
         losses = ["labels", "boxes", "cardinality"]
         # Build all necessary modules
-        classifier = cls.head_cls.classifier_cls(
-            in_features=hidden_dim, num_classes=num_classes
-        )
+        classifier = cls.head_cls.classifier_cls(in_features=hidden_dim, num_classes=num_classes)
         regressor = cls.head_cls.regressor_cls(
             input_dim=hidden_dim,
             hidden_dim=hidden_dim,

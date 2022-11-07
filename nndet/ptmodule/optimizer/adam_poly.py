@@ -63,19 +63,11 @@ class AdamWPoly:
         )
         # Obtain all parameters that are not in the backbone (no batch/layer norms outside the backbone) -> normal
         # learning rate and weight decay applies
-        detr_params = {
-            "params": [
-                p
-                for n, p in module.named_parameters()
-                if "backbone" not in n and p.requires_grad
-            ]
-        }
+        detr_params = {"params": [p for n, p in module.named_parameters() if "backbone" not in n and p.requires_grad]}
 
         # Differentiate between normal layers and normalization layers which shouldn't have weight decay
         if hasattr(module.model, "backbone"):
-            param_groups = get_params_no_wd_on_norm(
-                module.model.backbone, weight_decay=trainer_cfg["weight_decay"]
-            )
+            param_groups = get_params_no_wd_on_norm(module.model.backbone, weight_decay=trainer_cfg["weight_decay"])
         elif hasattr(module.model.detr, "backbone"):
             param_groups = get_params_no_wd_on_norm(
                 module.model.detr.backbone, weight_decay=trainer_cfg["weight_decay"]
@@ -99,9 +91,7 @@ class AdamWPoly:
         )
 
         # configure lr scheduler
-        num_iterations = (
-            trainer_cfg["max_num_epochs"] * trainer_cfg["num_train_batches_per_epoch"]
-        )
+        num_iterations = trainer_cfg["max_num_epochs"] * trainer_cfg["num_train_batches_per_epoch"]
         scheduler = LinearWarmupPolyLR(
             optimizer=optimizer,
             warm_iterations=trainer_cfg["warm_iterations"],

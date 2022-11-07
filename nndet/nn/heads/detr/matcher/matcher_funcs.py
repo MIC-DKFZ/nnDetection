@@ -24,11 +24,7 @@ class FocalLossforMatcher(nn.Module):
         self.gamma = gamma
 
     def forward(self, out_prob, tgt_ids):
-        neg_cost_class = (
-            (1 - self.alpha) * (out_prob**self.gamma) * (-(1 - out_prob + 1e-8).log())
-        )
-        pos_cost_class = (
-            self.alpha * ((1 - out_prob) ** self.gamma) * (-(out_prob + 1e-8).log())
-        )
+        neg_cost_class = (1 - self.alpha) * (out_prob**self.gamma) * (-(1 - out_prob + 1e-8).log())
+        pos_cost_class = self.alpha * ((1 - out_prob) ** self.gamma) * (-(out_prob + 1e-8).log())
         cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
         return cost_class

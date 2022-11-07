@@ -42,9 +42,7 @@ class BaseSoftmaxDETRHead(BaseDETRHead):
         )
         empty_weight = torch.ones(num_classes + 1)
         empty_weight[-1] = eos_coef
-        self.class_loss = CrossEntropyLoss(
-            weight=empty_weight, loss_weight=1, reduction="mean"
-        )
+        self.class_loss = CrossEntropyLoss(weight=empty_weight, loss_weight=1, reduction="mean")
 
     def forward(self, out_sequence: Tensor, reference: Tensor):
         """
@@ -89,26 +87,17 @@ class BaseSoftmaxDETRHead(BaseDETRHead):
         # Get all corresponding boxes
         prediction = {
             "pred_boxes": [
-                box_center_normalized_to_edges_original(
-                    pred_detection["pred_boxes"][i][mask], images.shape[-3:]
-                )
+                box_center_normalized_to_edges_original(pred_detection["pred_boxes"][i][mask], images.shape[-3:])
                 for i, mask in enumerate(no_bg_mask)
             ]
         }
 
         # Mask the logits to the same size
-        logits_mask = no_bg_mask.unsqueeze(-1).expand(
-            pred_detection["pred_logits"].size()
-        )
-        logits_masked = [
-            pred_detection["pred_logits"][i][mask] for i, mask in enumerate(logits_mask)
-        ]
+        logits_mask = no_bg_mask.unsqueeze(-1).expand(pred_detection["pred_logits"].size())
+        logits_masked = [pred_detection["pred_logits"][i][mask] for i, mask in enumerate(logits_mask)]
 
         # Obtain the logit score for the highest scoring class from the masked logits
-        pred_scores = [
-            F.softmax(logits_masked[i], dim=0)[pred_labels_masked[i]]
-            for i in range(len(logits_masked))
-        ]
+        pred_scores = [F.softmax(logits_masked[i], dim=0)[pred_labels_masked[i]] for i in range(len(logits_masked))]
         prediction["pred_labels"] = pred_labels_masked
         prediction["pred_scores"] = pred_scores
         return prediction
