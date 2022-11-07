@@ -4,15 +4,17 @@ import torch
 
 
 class BasePositionEmbedding(torch.nn.Module):
-    def __init__(self, in_channels: int) -> None:
+    def __init__(self, dim: int, num_pos_feats: int) -> None:
         """
         Base class to implement positional embeddings
 
         Args:
-            in_channels: number of input features
+            dim: number of spatial dimensions
+            num_pos_feats: number of positional encoding features
         """
         super().__init__()
-        self.num_pos_feats = in_channels
+        self.dim = dim
+        self.num_pos_feats = num_pos_feats
 
     @abstractmethod
     def forward(self, data: torch.Tensor) -> torch.Tensor:

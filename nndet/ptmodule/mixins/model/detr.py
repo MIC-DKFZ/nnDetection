@@ -49,7 +49,7 @@ class DETRMixin(ModelMixin):
 
         # transformer
         hidden_dim = model_cfg["hidden_dim"]
-        pos_embed = cls.pos_embed_cls(in_channels=hidden_dim)
+        pos_embed = cls.pos_embed_cls(num_pos_feats=hidden_dim)
         transformer = cls.transformer_cls(
             d_model=hidden_dim,
             nhead=model_cfg["attention_heads"],
