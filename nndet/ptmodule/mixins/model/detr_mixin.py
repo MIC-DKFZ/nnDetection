@@ -8,6 +8,7 @@ from loguru import logger
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.detr import BaseDETR
 from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule.mixins.model import ModelMixin
 from nndet.utils.typing import CONVSEQ
@@ -20,6 +21,7 @@ class DETRMixin(ModelMixin):
     backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
     # transformer
+    pos_embed_cls: BasePositionEmbedding = ...
     transformer_cls = ...
     # head blocks
     head_cls = ...  # main head
@@ -44,14 +46,20 @@ class DETRMixin(ModelMixin):
             f"fpn channels: {plan_arch['fpn_channels']}"
         )
         backbone = cls._build_backbone(plan_arch, model_cfg)
+
+        # transformer
+        hidden_dim = model_cfg["hidden_dim"]
+        pos_embed = cls.pos_embed_cls(in_channels=hidden_dim)
         transformer = cls.transformer_cls(
-            d_model=model_cfg["hidden_dim"],
+            d_model=hidden_dim,
             nhead=model_cfg["attention_heads"],
             num_encoder_layers=model_cfg["num_encoder_layers"],
             num_decoder_layers=model_cfg["num_decoder_layers"],
             dim_feedforward=model_cfg["dim_feedforward"],
             **model_cfg["transformer_kwargs"],
         )
+
+        # head
         head = cls._build_head(plan_arch, model_cfg)
 
         # Parse model kwargs
@@ -63,7 +71,8 @@ class DETRMixin(ModelMixin):
             backbone=backbone,
             transformer=transformer,
             head=head,
-            hidden_dim=model_cfg["hidden_dim"],
+            pos_embed=pos_embed,
+            hidden_dim=hidden_dim,
             detection_per_img=model_cfg["detection_per_img"],
             query_dim=model_cfg["query_dim"],
             **model_kwargs,

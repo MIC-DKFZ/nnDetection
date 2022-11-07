@@ -6,10 +6,11 @@ Various positional encodings for the transformer.
 import math
 
 import torch
-from torch import nn
+
+from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 
 
-class PositionEmbeddingSine(nn.Module):
+class PositionEmbeddingSine(BasePositionEmbedding):
     """
     This is a more standard version of the position embedding, very similar to the one
     used by the Attention is all you need paper, generalized to work on images.
@@ -17,14 +18,22 @@ class PositionEmbeddingSine(nn.Module):
 
     def __init__(
         self,
-        num_pos_feats: int = 30,
+        in_channels: int,
         temperature: int = 10000,
         normalize: bool = False,
         scale: bool = None,
         offset: float = 0.0,
     ):
-        super().__init__()
-        self.num_pos_feats = num_pos_feats
+        """
+        Implement sine positional embedding for 3D data
+
+        Args:
+            in_channels: number of input features
+            #TODO: more docs
+        """
+        super().__init__(
+            in_channels=in_channels,
+        )
         self.temperature = temperature
         self.normalize = normalize
         if scale is not None and normalize is False:

@@ -6,6 +6,8 @@ from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.detr import BaseSoftmaxDETRHead
 from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
+from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.transformer import TransformerFacebook
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
@@ -20,7 +22,7 @@ from nndet.utils.typing import CONVSEQ
 # Modules can be defined by setting the different classes
 
 
-class DETRModule(
+class BoxDETRModule(
     TrainMixin,
     LightningBaseModule,  # Main module
     BoxesPrepareMixin,  # prepare batch for box training
@@ -47,16 +49,18 @@ class DETRModule(
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
 
     # transformer
+    pos_embed_cls: BasePositionEmbedding = ...
     transformer_cls = ...
     # head
     head_cls = ...  # main head
 
 
 @MODULE_REGISTRY.register
-class DETR(DETRModule):
+class BoxDETR(BoxDETRModule):
     backbone_cls = ConvBackbone
     backbone_conv_cls = ConvInstanceRelu
     # Transformer
+    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
     transformer_cls = TransformerFacebook
     # Head
     head_cls = BaseSoftmaxDETRHead

@@ -5,19 +5,16 @@ from torch import Tensor, nn
 
 from nndet.core.abstract import AbstractDetector
 from nndet.nn.heads.detr import BaseDETRHead
-from nndet.utils.position_encoding import PositionEmbeddingSine
+from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 
 
 class BaseDETR(AbstractDetector):
-    """
-    Basic DETR Module, Implements forward pass, loss computation
-    """
-
     def __init__(
         self,
         backbone: nn.Module,
         transformer: nn.Module,
         head: BaseDETRHead,
+        pos_embed: BasePositionEmbedding,
         hidden_dim: int,
         detection_per_img: int,
         query_dim: int,
@@ -28,13 +25,15 @@ class BaseDETR(AbstractDetector):
         log_features: bool = False,
     ):
         """
-        Base DETR Implementation
+        Basic DETR Module, Implements forward pass, loss computation
+
         Args:
             backbone: Backbone network to compute image features
             transformer: Transformer Model
             head: Head used for classification, regression, loss computation and postprocessing
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
+            pos_embed: module to generate positional embedding
             query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
             num_feature_levels: which levels of backbone input should be used for the transformer input
                                 (currently only one supported)
@@ -61,7 +60,7 @@ class BaseDETR(AbstractDetector):
             raise NotImplementedError
 
         # Build Transformer Specific Architecture
-        self.pos_embed = PositionEmbeddingSine(num_pos_feats=self.hidden_dim)
+        self.pos_embed = pos_embed
         self.transformer = transformer
         self.decoder_layers = transformer.dec_layers
         self.query_pos = nn.Embedding(detection_per_img, query_dim)

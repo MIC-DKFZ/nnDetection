@@ -10,7 +10,7 @@ MODULE_REGISTRY: Mapping[str, Type[LightningBaseModule]] = Registry()
 
 # register modules
 
-from nndet.ptmodule.detr import DETRModule
+from nndet.ptmodule.detr import BoxDETRModule
 from nndet.ptmodule.frcnn import FasterRCNNModule
 from nndet.ptmodule.mrcnn import MaskRCNNModule
 from nndet.ptmodule.retinanet import RetinaNetModule
