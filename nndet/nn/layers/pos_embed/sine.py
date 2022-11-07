@@ -90,25 +90,15 @@ class PositionEmbeddingSine(BasePositionEmbedding):
         if data.ndim == 5:
             z_embed = not_mask.cumsum(3, dtype=torch.float32)
             if self.normalize:
-                z_embed = (
-                    (z_embed + self.offset)
-                    / (z_embed[..., -1:] + self.eps)
-                    * self.scale
-                )
+                z_embed = (z_embed + self.offset) / (z_embed[..., -1:] + self.eps) * self.scale
 
         # TODO: check eps
         if self.normalize:
-            x_embed = (
-                (x_embed + self.offset) / (x_embed[:, -1:, :] + self.eps) * self.scale
-            )
-            y_embed = (
-                (y_embed + self.offset) / (y_embed[:, :, -1:] + self.eps) * self.scale
-            )
+            x_embed = (x_embed + self.offset) / (x_embed[:, -1:, :] + self.eps) * self.scale
+            y_embed = (y_embed + self.offset) / (y_embed[:, :, -1:] + self.eps) * self.scale
 
         # create t along channel dimension
-        dim_t = torch.arange(
-            self.num_pos_feats, dtype=torch.float32, device=data.device
-        )
+        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=data.device)
         dim_t = self.temperature ** (
             2 * torch.div(dim_t, 2, rounding_mode="floor") / self.num_pos_feats
         )  # 2 * (dim_t // 2) / num_feats is used to create an alternating sequence of 0, 1
@@ -117,20 +107,12 @@ class PositionEmbeddingSine(BasePositionEmbedding):
         pos_y = y_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), num_pos_feats]
 
         # [batch, ax0, ax1(, ax2), 2]
-        pos_x = torch.stack(
-            (pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=stack_dim
-        ).flatten(-1)
-        pos_y = torch.stack(
-            (pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=stack_dim
-        ).flatten(-1)
+        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=stack_dim).flatten(-1)
+        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=stack_dim).flatten(-1)
 
         if data.ndim == 5:
-            pos_z = (
-                z_embed[..., None] / dim_t
-            )  # [batch, ax0, ax1(, ax2), num_pos_feats]
-            pos_z = torch.stack(
-                (pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim
-            ).flatten(-1)
+            pos_z = z_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), num_pos_feats]
+            pos_z = torch.stack((pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim).flatten(-1)
             pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
         else:
             pos = torch.cat((pos_x, pos_y), dim=3).permute(0, 3, 1, 2)

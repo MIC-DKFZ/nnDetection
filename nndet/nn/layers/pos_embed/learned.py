@@ -72,12 +72,8 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
             pos = (
                 torch.cat(
                     [
-                        ax0_emb.unsqueeze(1).repeat(
-                            1, ax1, 1
-                        ),  # [ax0, ax1, num_pos_feats]
-                        ax1_emb.unsqueeze(0).repeat(
-                            ax0, 1, 1
-                        ),  # [ax0, ax1, num_pos_feats]
+                        ax0_emb.unsqueeze(1).repeat(1, ax1, 1),  # [ax0, ax1, num_pos_feats]
+                        ax1_emb.unsqueeze(0).repeat(ax0, 1, 1),  # [ax0, ax1, num_pos_feats]
                     ],
                     dim=-1,
                 )
@@ -92,15 +88,9 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
             pos = (
                 torch.cat(
                     [
-                        ax0_emb.unsqueeze(1)
-                        .unsqueeze(2)
-                        .repeat(1, ax1, ax2, 1),  # [ax0, ax1, ax2, num_pos_feats]
-                        ax1_emb.unsqueeze(0)
-                        .unsqueeze(2)
-                        .repeat(ax0, 1, ax2, 1),  # [ax0, ax1, ax2, num_pos_feats]
-                        ax2_emb.unsqueeze(0)
-                        .unsqueeze(1)
-                        .repeat(ax0, ax1, 1, 1),  # [ax0, ax1, ax2, num_pos_feats]
+                        ax0_emb.unsqueeze(1).unsqueeze(2).repeat(1, ax1, ax2, 1),  # [ax0, ax1, ax2, num_pos_feats]
+                        ax1_emb.unsqueeze(0).unsqueeze(2).repeat(ax0, 1, ax2, 1),  # [ax0, ax1, ax2, num_pos_feats]
+                        ax2_emb.unsqueeze(0).unsqueeze(1).repeat(ax0, ax1, 1, 1),  # [ax0, ax1, ax2, num_pos_feats]
                     ],
                     dim=-1,
                 )
