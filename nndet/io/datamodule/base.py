@@ -139,7 +139,7 @@ class BaseModule(pl.LightningDataModule):
         #         )
 
         if not splits_file.is_file():
-            raise RuntimeError("Split file does not exist, run 'nndet_split' to generate one.")
+            raise RuntimeError("Split file does not exist, run 'nndet_cv_split' to generate one.")
         logger.info(f"Using splits {splits_file} with fold {self.fold}")
         splits = load_pickle(splits_file)
 
