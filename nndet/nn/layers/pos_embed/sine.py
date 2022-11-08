@@ -36,28 +36,34 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             dim: number of spatial dimensions
             num_pos_feats: number of positional encoding features (d in formula)
             temperature: term in denominator to compute position
-
-            #TODO: more docs
+            noramlize: normalize t to the [0, 1] range
+            scale: scale t to different range, only applicable if normalize is
+                set to `True`
+            offset: add offset to t, only applicable if normalize is set to
+                `True`
         """
         super().__init__(
             dim=dim,
             num_pos_feats=num_pos_feats,
         )
 
-        if self.dim == 3 and self.num_pos_feats % 3 != 0:
+        if self.dim == 3 and self.num_pos_feats % 6 != 0:
             raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 3 (in 3D)")
-        if self.dim == 2 and self.num_pos_feats % 3 != 0:
+        if self.dim == 2 and self.num_pos_feats % 4 != 0:
             raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 2 (in 2D)")
 
         self.temperature = temperature
         self.normalize = normalize
         if scale is not None and normalize is False:
             raise ValueError("normalize should be True if scale is passed")
+        if not math.isclose(offset, 0) and normalize is False:
+            raise ValueError("normalize should be True if offset is passed")
+
         if scale is None:
             scale = 2 * math.pi
         self.scale = scale
         self.offset = offset
-        self.eps = 1e-6  # TODO: check this
+        self.eps = 1e-6
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
         """
@@ -65,9 +71,6 @@ class PositionEmbeddingSine(BasePositionEmbedding):
 
         Args:
             data: input feature map to compute embedding for
-
-        Raises:
-            Warning: _description_ # TODO
 
         Returns:
             torch.Tensor: computed embedding [N, num_pos_feats, dims] where
@@ -94,12 +97,10 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             if self.normalize:
                 z_embed = (z_embed + self.offset) / (z_embed[..., -1:] + self.eps) * self.scale
 
-        # TODO: check eps
         if self.normalize:
             x_embed = (x_embed + self.offset) / (x_embed[:, -1:, :] + self.eps) * self.scale
             y_embed = (y_embed + self.offset) / (y_embed[:, :, -1:] + self.eps) * self.scale
 
-        # create t along channel dimension
         dim_t = torch.arange(_num_pos_feats, dtype=torch.float32, device=data.device)
         dim_t = self.temperature ** (
             2 * torch.div(dim_t, 2, rounding_mode="floor") / _num_pos_feats

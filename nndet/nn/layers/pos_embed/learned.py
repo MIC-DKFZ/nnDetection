@@ -23,9 +23,9 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
         """
         super().__init__(dim=dim, num_pos_feats=num_pos_feats)
 
-        if self.dim == 3 and self.num_pos_feats % 3 != 0:
+        if self.dim == 3 and self.num_pos_feats % 6 != 0:
             raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 3 (in 3D)")
-        if self.dim == 2 and self.num_pos_feats % 3 != 0:
+        if self.dim == 2 and self.num_pos_feats % 4 != 0:
             raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 2 (in 2D)")
 
         if self.dim == 2:
@@ -60,9 +60,6 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
 
         Args:
             data: input feature map to compute embedding for
-
-        Raises:
-            Warning: _description_ # TODO
 
         Returns:
             torch.Tensor: computed embedding [N, num_pos_feats, dims] where
