@@ -8,6 +8,7 @@ from loguru import logger
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.detr import BaseDETR
 from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule.mixins.model import ModelMixin
@@ -25,6 +26,9 @@ class DETRMixin(ModelMixin):
     transformer_cls = ...
     # head blocks
     head_cls = ...  # main head
+
+    # [Optional] Semantic Segmenation Head
+    segmenter_cls: Optional[Type[Segmenter]] = None  #: [optional] segmentation head
 
     @classmethod
     def from_config_plan(
@@ -44,6 +48,15 @@ class DETRMixin(ModelMixin):
             f"fpn channels: {plan_arch['fpn_channels']}"
         )
         backbone = cls._build_backbone(plan_arch, model_cfg)
+
+        if cls.has_segmenter():
+            segmenter = cls._build_segmenter(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                backbone=backbone,
+            )
+        else:
+            segmenter = None
 
         # transformer
         hidden_dim = model_cfg["hidden_dim"]
@@ -79,6 +92,7 @@ class DETRMixin(ModelMixin):
             hidden_dim=hidden_dim,
             detection_per_img=model_cfg["detection_per_img"],
             query_dim=model_cfg["query_dim"],
+            segmenter=segmenter,
             **model_kwargs,
         )
 
@@ -180,3 +194,45 @@ class DETRMixin(ModelMixin):
             num_classes=num_classes,
             **head_kwargs,
         )
+
+    @classmethod
+    def has_segmenter(cls):
+        """
+        Check if configuration should have a segmenter
+
+        Returns:
+            bool: True if detector needs segemetner, False othterwise
+        """
+        return cls.segmenter_cls is not None
+
+    @classmethod
+    def _build_segmenter(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        backbone: AbstractBackbone,
+    ) -> Segmenter:
+        """
+        Build segmenter head
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            neck: neck instance
+
+        Returns:
+            SegmenterType: segmenter head
+        """
+        name = cls.segmenter_cls.__name__
+        kwargs = model_cfg.get("segmenter_kwargs", {})
+        conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
+
+        logger.info(f"Building:: segmenter {name} {kwargs}")
+        segmenter = cls.segmenter_cls(
+            conv,
+            seg_classes=plan_arch["seg_classes"],
+            in_channels=backbone.get_channels(),
+            decoder_levels=plan_arch["decoder_levels"],
+            **kwargs,
+        )
+        return segmenter

@@ -5,15 +5,16 @@ from nndet.core.detr import BaseDETR
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.detr import BaseSoftmaxDETRHead
+from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.transformer import TransformerFacebook
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import DETRMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.mixins.train import TrainMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
@@ -34,23 +35,16 @@ class BoxDETRModule(
     This is the basic object detection module without a segmentation head
     """
 
+    # define detector cls
+    detector_cls: Type[AbstractDetector] = BaseDETR
+
     # Backbone
     backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
 
-    # Transformer Block
-    transformer_cls = TransformerFacebook
-    # Head Blocks
-    head_cls = BaseSoftmaxDETRHead
-    # define detector cls
-    detector_cls: Type[AbstractDetector] = BaseDETR
-
-    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-
     # transformer
-    pos_embed_cls: BasePositionEmbedding = ...
     transformer_cls = ...
+    pos_embed_cls: BasePositionEmbedding = ...
     # head
     head_cls = ...  # main head
 
@@ -64,3 +58,34 @@ class BoxDETR(BoxDETRModule):
     transformer_cls = TransformerFacebook
     # Head
     head_cls = BaseSoftmaxDETRHead
+
+
+@MODULE_REGISTRY.register
+class UDETR(
+    TrainMixin,
+    LightningBaseModule,  # Main module
+    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
+    BoxesPrepareMixin,  # prepare batch for box training
+    SemanticFgEvalMixin,  # Semantic Segmentation Evaluation
+    BoxEvalMixin,  # Bounding Box Evaluation
+    DETRMixin,  # DETR Mixin to build the model
+    BoxPredictionMixin,  # Bounding Box Sweep
+):
+    """
+    This is the basic object detection module without a segmentation head
+    """
+
+    # define detector cls
+    detector_cls: Type[AbstractDetector] = BaseDETR
+
+    backbone_cls = ConvBackbone
+    backbone_conv_cls = ConvInstanceRelu
+
+    # transformer
+    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
+    transformer_cls = TransformerFacebook
+
+    # Head Blocks
+    head_cls = BaseSoftmaxDETRHead
+
+    segmenter_cls = DiCESegmenterFgBg
