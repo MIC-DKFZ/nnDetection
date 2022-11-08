@@ -5,6 +5,7 @@ from torch import Tensor, nn
 
 from nndet.core.abstract import AbstractDetector
 from nndet.nn.heads.detr import BaseDETRHead
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 
 
@@ -19,6 +20,7 @@ class BaseDETR(AbstractDetector):
         detection_per_img: int,
         query_dim: int,
         num_feature_levels: int = 1,
+        segmenter: Optional[Segmenter] = None,
         # debugging
         log_queries: bool = False,
         log_ious: bool = False,
@@ -65,6 +67,9 @@ class BaseDETR(AbstractDetector):
 
         # Build the final layers for classification and box regression
         self.head = head
+
+        # Build semantic segmentation branch
+        self.segmenter = segmenter
 
         # toggle the debug mode
         self.log_query = log_queries
@@ -166,11 +171,21 @@ class BaseDETR(AbstractDetector):
 
             List[torch.Tensor]: feature maps from decoder
         """
+        target_seg: Tensor = targets.get("target_seg", None)
+
         pred_detection, pred_seg, features = self(images)
         pred_losses, _ = self.head.compute_loss(pred_detection, targets, images.shape[2:])
+
+        if self.segmenter is not None:
+            if target_seg is None:
+                raise RuntimeError("Segmenter was provided to network, " "expected ground truth segmentations in step.")
+            pred_losses.update(self.segmenter.compute_loss(pred_seg, target_seg))
+
         if predict:
             # postprocessing
             prediction = self.head.postprocess_for_inference(images, pred_detection)
+            if self.segmenter is not None:
+                prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         else:
             prediction = None
         return pred_losses, prediction, features
@@ -205,6 +220,8 @@ class BaseDETR(AbstractDetector):
         """
         pred_detection, pred_seg, features = self(images)
         prediction = self.head.postprocess_for_inference(images, pred_detection)
+        if self.segmenter is not None:
+            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         return prediction, features
 
     def forward(
@@ -244,4 +261,7 @@ class BaseDETR(AbstractDetector):
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(out_sequence, reference)
-        return pred_detections, None, features
+
+        # optionally forward seg head
+        pred_seg = self.segmenter(features) if self.segmenter is not None else None
+        return pred_detections, pred_seg, features
