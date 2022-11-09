@@ -57,12 +57,14 @@ class BoxPostprocessing:
                     img_reps=reps[idx],
                     img_probs=probs[idx],
                     img_shape=img_shape,
+                    num_anchors_per_level=num_anchors_per_level,
                 )
             else:
                 _reps, _probs, _labels = self.process_image_per_class(
                     img_reps=reps[idx],
                     img_probs=probs[idx],
                     img_shape=img_shape,
+                    num_anchors_per_level=num_anchors_per_level,
                 )
 
             all_reps.append(_reps)
@@ -176,7 +178,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         return res[:3]
 
 
-class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
+class PerLevelBoxPostprocessing(BoxPostprocessing):
     """
     Warning:
         Only use this with a single class. otherwise the results will be off.
@@ -214,6 +216,7 @@ class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
             )
         boxes = clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
+
         levels = [
             torch.full((n,), fill_value=level_idx, dtype=torch.long, device=probs.device)
             for level_idx, n in enumerate(num_anchors_per_level)
@@ -275,3 +278,12 @@ class PerLevelBoxPostprocessing(CrossLevelBoxPostprocessing):
             iou_thresh=self.nms_thresh,
         )
         return res[:3]
+
+    def process_image_per_class(
+        self,
+        img_reps: torch.Tensor,
+        img_probs: torch.Tensor,
+        img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+        num_anchors_per_level: Optional[Sequence[int]] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
