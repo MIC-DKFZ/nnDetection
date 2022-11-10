@@ -1,6 +1,9 @@
-from typing import Optional
+from typing import Dict, Optional
 
 import torch
+
+# TODO: fc wrapper
+# TODO: do_norm & do_act
 
 
 class FFNClassifier(torch.nn.Module):
@@ -21,6 +24,7 @@ class FFNClassifier(torch.nn.Module):
         self.num_classes = num_classes
         self.num_layers = num_layers
 
+        self.loss_name: str = "ffn_cls"
         self.loss: Optional[torch.nn.Module] = None
         self.logits_convert_fn: Optional[torch.nn.Module] = None
         self.init_weights()
@@ -49,31 +53,32 @@ class FFNClassifier(torch.nn.Module):
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         return self.fc(features)
 
+    # return dict loss
     def compute_loss(
         self,
         pred_logits: torch.Tensor,
         targets: torch.Tensor,
         **kwargs,
-    ) -> torch.Tensor:
+    ) -> Dict[str, torch.Tensor]:
         """
-        Base classifier with cross entropy loss (in general hard negative
-        example mining should be done before this)
+        Compute loss for given predictions and targets
 
         Args:
-            pred_logits (Tensor): predicted logits
-            targets (Tensor): classification targets
+            pred_logits: predicted logits
+            targets: classification targets
 
         Returns:
-            Tensor: classification loss
+            Dict[str, torch.Tensor]: classification loss saved in
+                key `self.loss_name` which is defined by module
         """
-        return self.loss(pred_logits, targets, **kwargs)
+        return {self.loss_name: self.loss(pred_logits, targets, **kwargs)}
 
     def logits_to_probs(self, logits: torch.Tensor) -> torch.Tensor:
         """
         Convert logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C]
+            logits: bounding box logits [N, C] #TODO
                 N = number of anchors, C=number of foreground classes
 
         Returns:
