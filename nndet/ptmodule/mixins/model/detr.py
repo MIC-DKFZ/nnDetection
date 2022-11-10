@@ -223,7 +223,7 @@ class DETRMixin(ModelMixin):
             bool: True if detector needs neck, False othterwise
         """
         has_neck = cls.neck_cls is not None
-        if cls.neck_conv_cls is None:
+        if has_neck and cls.neck_conv_cls is None:
             raise ValueError("Neck class was provided without conv class.")
         return has_neck
 

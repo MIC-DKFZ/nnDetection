@@ -76,28 +76,19 @@ class BaseSoftmaxDETRHead(BaseDETRHead):
                         the class List[[R]]
                     'pred_labels': List[Tensor]: predicted class List[[R]]
                     'pred_seg': Tensor: predicted segmentation [N, C, dims]
-        """ ""
+        """
+        batch_pred_scores_fg = F.softmax(pred_detection["pred_logits"], dim=-1)[..., :-1]
+        batch_pred_scores, batch_pred_labels = batch_pred_scores_fg.max(-1)
+        batch_pred_boxes = box_center_normalized_to_edges_original(pred_detection["pred_boxes"], images.shape[-3:])
 
-        # Get the highest scoring class for each prediction
-        pred_labels = pred_detection["pred_logits"].argmax(dim=2)
-        # Get mask of non-background predictions and mask the predictions
-        no_bg_mask = pred_labels < self.num_classes
-        pred_labels_masked = [pred_labels[i][mask] for i, mask in enumerate(no_bg_mask)]
+        batch_size = batch_pred_scores.shape[0]
+        assert batch_size == batch_pred_labels.shape[0]
+        assert batch_size == batch_pred_boxes.shape[0]
+        assert batch_pred_labels.shape[1] == batch_pred_boxes.shape[1]
 
-        # Get all corresponding boxes
-        prediction = {
-            "pred_boxes": [
-                box_center_normalized_to_edges_original(pred_detection["pred_boxes"][i][mask], images.shape[-3:])
-                for i, mask in enumerate(no_bg_mask)
-            ]
-        }
-
-        # Mask the logits to the same size
-        logits_mask = no_bg_mask.unsqueeze(-1).expand(pred_detection["pred_logits"].size())
-        logits_masked = [pred_detection["pred_logits"][i][mask] for i, mask in enumerate(logits_mask)]
-
-        # Obtain the logit score for the highest scoring class from the masked logits
-        pred_scores = [F.softmax(logits_masked[i], dim=0)[pred_labels_masked[i]] for i in range(len(logits_masked))]
-        prediction["pred_labels"] = pred_labels_masked
-        prediction["pred_scores"] = pred_scores
+        prediction = {"pred_boxes": [], "pred_scores": [], "pred_labels": []}
+        for batch_idx in range(batch_size):
+            prediction["pred_boxes"].append(batch_pred_boxes[batch_idx])
+            prediction["pred_scores"].append(batch_pred_scores[batch_idx])
+            prediction["pred_labels"].append(batch_pred_labels[batch_idx])
         return prediction
