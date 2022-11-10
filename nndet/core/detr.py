@@ -4,6 +4,7 @@ import torch
 from torch import Tensor, nn
 
 from nndet.core.abstract import AbstractDetector
+from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.detr import BaseDETRHead
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
@@ -12,7 +13,7 @@ from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 class BaseDETR(AbstractDetector):
     def __init__(
         self,
-        backbone: nn.Module,
+        backbone: AbstractBackbone,
         transformer: nn.Module,
         head: BaseDETRHead,
         pos_embed: BasePositionEmbedding,
@@ -51,7 +52,6 @@ class BaseDETR(AbstractDetector):
         channels = self.backbone.get_channels()
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
-        self.total_feature_levels = len(channels)
 
         # For future multi feature
         if num_feature_levels == 1:
@@ -68,7 +68,7 @@ class BaseDETR(AbstractDetector):
         # Build the final layers for classification and box regression
         self.head = head
 
-        # Build semantic segmentation branch
+        # Build optional modules
         self.segmenter = segmenter
 
         # toggle the debug mode

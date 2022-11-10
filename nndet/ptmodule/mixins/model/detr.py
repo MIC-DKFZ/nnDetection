@@ -8,9 +8,11 @@ from loguru import logger
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.detr import BaseDETR
 from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.backbone.spine import SpineWrapper
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 from nndet.nn.layers.wrapper import Generator
+from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule.mixins.model import ModelMixin
 from nndet.utils.typing import CONVSEQ
 
@@ -26,6 +28,10 @@ class DETRMixin(ModelMixin):
     transformer_cls = ...
     # head blocks
     head_cls = ...  # main head
+
+    # [Optional]
+    neck_cls: Optional[Type[AbstractNeck]] = None  #: [optional] define class for neck
+    neck_conv_cls: Optional[Type[CONVSEQ]] = None  #: [optional] conv class used for neck
 
     # [Optional] Semantic Segmenation Head
     segmenter_cls: Optional[Type[Segmenter]] = None  #: [optional] segmentation head
@@ -49,15 +55,6 @@ class DETRMixin(ModelMixin):
         )
         backbone = cls._build_backbone(plan_arch, model_cfg)
 
-        if cls.has_segmenter():
-            segmenter = cls._build_segmenter(
-                plan_arch=plan_arch,
-                model_cfg=model_cfg,
-                backbone=backbone,
-            )
-        else:
-            segmenter = None
-
         # transformer
         hidden_dim = model_cfg["hidden_dim"]
         pos_embed_kwargs = model_cfg.get("pos_embed", {})
@@ -78,6 +75,28 @@ class DETRMixin(ModelMixin):
 
         # head
         head = cls._build_head(plan_arch, model_cfg)
+
+        # build optional modules
+        # these are not part of the original DETR architecture
+        if cls.has_neck():
+            neck = cls._build_neck(
+                backbone=backbone,
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+            )
+            backbone = SpineWrapper(
+                backbone=backbone,
+                neck=neck,
+            )
+
+        if cls.has_segmenter():
+            segmenter = cls._build_segmenter(
+                plan_arch=plan_arch,
+                model_cfg=model_cfg,
+                backbone=backbone,
+            )
+        else:
+            segmenter = None
 
         # Parse model kwargs
         model_kwargs = {}
@@ -194,6 +213,52 @@ class DETRMixin(ModelMixin):
             num_classes=num_classes,
             **head_kwargs,
         )
+
+    @classmethod
+    def has_neck(cls):
+        """
+        Check if configuration should have a neck
+
+        Returns:
+            bool: True if detector needs neck, False othterwise
+        """
+        has_neck = cls.neck_cls is not None
+        if cls.neck_conv_cls is None:
+            raise ValueError("Neck class was provided without conv class.")
+        return has_neck
+
+    @classmethod
+    def _build_neck(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        backbone: AbstractBackbone,
+    ) -> AbstractNeck:
+        """
+        Build neck network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            AbstractNeck: neck instance
+        """
+        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
+        logger.info(f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}")
+
+        decoder_levels = plan_arch["decoder_levels"]
+        neck = cls.neck_cls(
+            conv=conv,
+            conv_kernels=plan_arch["conv_kernels"],
+            relative_strides=backbone.get_relative_strides(),
+            in_channels=backbone.get_channels(),
+            first_decoder_level=min(decoder_levels),
+            last_decoder_level=max(decoder_levels),
+            fpn_out_channels=plan_arch["fpn_channels"],
+            **model_cfg["neck_kwargs"],
+        )
+        return neck
 
     @classmethod
     def has_segmenter(cls):

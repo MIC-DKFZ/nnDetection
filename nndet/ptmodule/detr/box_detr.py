@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Type
 
 from nndet.core.abstract import AbstractDetector
@@ -6,9 +7,12 @@ from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.detr import BaseSoftmaxDETRHead
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
-from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceRelu
+from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
+from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.neck.fpn import UpFPN
 from nndet.nn.transformer import TransformerFacebook
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
@@ -61,7 +65,7 @@ class BoxDETR(BoxDETRModule):
 
 
 @MODULE_REGISTRY.register
-class UDETR(
+class BoxUDETR(
     TrainMixin,
     LightningBaseModule,  # Main module
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
@@ -88,4 +92,8 @@ class UDETR(
     # Head Blocks
     head_cls = BaseSoftmaxDETRHead
 
+    neck_cls: Type[AbstractNeck] = UpFPN  # define class for neck
+    neck_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for neck
     segmenter_cls = DiCESegmenterFgBg

@@ -22,7 +22,6 @@ loss_giou_matcher: 2
 # Only used if cross entropy is used
 eos_coef: 0.1 # background cross entropy weight -> decrease to balance class disparity
 
-
 # positional embedding keyword arguments
 pos_embed:
   # sine embedding
@@ -30,3 +29,16 @@ pos_embed:
   normalize: True  # old default was False
   scale:
   offset: 0.0
+
+# optional
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
