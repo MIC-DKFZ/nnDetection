@@ -320,6 +320,7 @@ class BaseRetinaNet(AbstractDetector):
             reps=pred_boxes,
             probs=pred_probs,
             image_shapes=image_shapes,
+            num_anchors_per_level=self.anchor_generator.get_num_acnhors_per_level(),
         )
 
         prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}
