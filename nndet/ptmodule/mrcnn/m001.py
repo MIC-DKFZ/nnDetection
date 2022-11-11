@@ -141,6 +141,7 @@ class MaskURCNNModule(
     head_sampler_cls: Optional[Type[SamplerType]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     segmenter_cls: Optional[Type[Segmenter]] = ...  # segmentation head as in RetinaUNet
 
     ########################
@@ -199,6 +200,7 @@ class BoxMaskRCNNModule(
     head_sampler_cls: Optional[Type[SamplerType]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
     # Classes other than None are not supprted here
     segmenter_cls: Optional[Type[Segmenter]] = None  # [optional] segmentation head as in RetinaUNet
@@ -260,6 +262,7 @@ class BoxMaskURCNNModule(
     head_sampler_cls: Optional[Type[SamplerType]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
+    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
     segmenter_cls: Optional[Type[Segmenter]] = ...  # segmentation head as in RetinaUNet
 
     ########################

@@ -474,7 +474,10 @@ def print_reg():
 
 
 @env_guard
-def create_test_split():
+def create_test_data_split():
+    """
+    Random test data split -> no stratification
+    """
     import argparse
     import os
     import sys
@@ -513,9 +516,9 @@ def create_test_split():
 
 
 @env_guard
-def create_split():
+def create_cv_split():
     """
-    Utility function to create (best effort) splits
+    Utility function to create (best effort) cross validation splits
 
     This function will automatically generate splits which can be used
     inside nndetection. In order to properly do this, the case names need to

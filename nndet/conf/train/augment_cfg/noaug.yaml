@@ -13,6 +13,11 @@ rotation_y: [-0, 0]
 rotation_z: [-0, 0]
 scale_range: [1., 1.]
 
+# rotation_x: [-30, 30]
+# rotation_y: [-30, 30]
+# rotation_z: [-30, 30]
+# scale_range: [0.7, 1.4]
+
 2d_overwrites:
   elastic_deform_alpha: [0., 0.]
   elastic_deform_sigma: [0., 0.]

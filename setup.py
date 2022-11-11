@@ -133,7 +133,7 @@ setup(
             "nndet_eval = scripts.train:evaluate",
             "nndet_predict = scripts.predict:main",
             "nndet_consolidate = scripts.consolidate:main",
-            "nndet_split = scripts.utils:create_split",
+            "nndet_cv_split = scripts.utils:create_cv_split",
             "nndet_boxes2nii = scripts.utils:boxes2nii",
             "nndet_boxes2nii2 = scripts.utils:boxes2nii2",
             "nndet_masks2nii = scripts.utils:masks2nii",
@@ -141,7 +141,7 @@ setup(
             "nndet_unpack = scripts.utils:unpack",
             "nndet_env = scripts.utils:env",
             "nndet_print_reg = scripts.utils:print_reg",
-            "nndet_test_split = scripts.utils:create_test_split",
+            "nndet_test_data_split = scripts.utils:create_test_data_split",
         ]
     },
 )
