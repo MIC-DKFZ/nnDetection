@@ -35,7 +35,7 @@ class CONVSEQ(torch.nn.Sequential):
         Provide interface to generate a Conv Sequence, usual sequences are:
             conv -> norm -> activation
 
-        Args
+        Args:
             dim: number of dimensions the convolution should be chosen for
             in_channels: input channels
             out_channels: output_channels
@@ -71,4 +71,42 @@ class CONVGEN:
     dim: int
 
     def __call__(self, **kwargs) -> CONVSEQ:
+        ...
+
+
+class LINEARSEQ:
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        norm: Optional[Union[Callable[..., Type[torch.nn.Module]], str]],
+        act: Optional[Union[Callable[..., Type[torch.nn.Module]], str]],
+        dropout_rate: float = 0.0,
+        bias: bool = None,
+        norm_kwargs: Optional[dict] = None,
+        act_inplace: Optional[bool] = None,
+        act_kwargs: Optional[dict] = None,
+        initializer: Callable[[torch.nn.Module], None] = None,
+    ):
+        """
+        Interface for linear seq e.g. norm -> linear -> activation -> dropout
+
+        Args:
+            in_channels: input channels
+            out_channels: output_channels
+            norm: type of normalization. If None, no normalization will be
+                applied
+            act: class of non linearity; if None no actication is used.
+            dropout_rate: probability for dropout (i.e. probability to zero
+                one element)
+            bias: whether to include bias or not If None, the bias will be
+                determined dynamicaly: False; if a normalization follows
+                otherwise True;
+            norm_kwargs: keyword arguments for normalization layer
+            act_inplace: whether to perform activation inplce or not; If None,
+                inplace will be determined dynamicaly: True; if a normalization
+                follows otherwise False;
+            act_kwargs: keyword arguments for non linearity layer.
+            initializer: initilize weights
+        """
         ...
