@@ -36,17 +36,17 @@ class FFNRegressor(torch.nn.Module):
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
 
+        self.in_channels = in_channels
+        self.internal_channels = internal_channels
+        self.num_layers = num_layers
+        self.dim = dim
+
         self.mlp = self._build_module(
             linear=linear,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
             **kwargs,
         )
-
-        self.in_channels = in_channels
-        self.internal_channels = internal_channels
-        self.num_layers = num_layers
-        self.dim = dim
 
         self.loss_name: str = "ffn_reg_spec"
         self.box_loss_name: str = "ffn_reg_box"

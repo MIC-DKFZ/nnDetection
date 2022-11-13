@@ -5,7 +5,8 @@ from typing import Dict, Optional
 import torch
 from loguru import logger
 
-from nndet.losses.classification.ce import BCEWithLogitsLossOneHot, CrossEntropyLoss
+from nndet.losses.classification.bce import BinaryCrossEntropyLoss
+from nndet.losses.classification.ce import CrossEntropyLoss
 from nndet.losses.classification.focal import FocalLossWithLogits
 from nndet.utils.typing import LINEARSEQ
 
@@ -401,7 +402,7 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
             prior_prob=prior_prob,
             **kwargs,
         )
-        self.loss = BCEWithLogitsLossOneHot(
+        self.loss = BinaryCrossEntropyLoss(
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
