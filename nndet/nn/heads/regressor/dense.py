@@ -133,11 +133,16 @@ class DenseRegressor(Regressor):
         Forward input
 
         Args:
-            x: input feature map of size [N x C x Y x X x Z]
+            x: input feature map of size [N, C, dims], where N=batch size,
+                C=number of channels, dims=spatial dimensions
+            level: specify current level, needed if level specific
+                modules should be forward
 
         Returns:
-            torch.Tensor: classification logits for each anchor
-                [N, n_anchors, dim*2]
+            torch.Tensor: predicted logits [N, anchors, dim*2],
+                where N=number batch_size, anchors=product of spatial size of
+                feature map times number of anchors per position,
+                dim=number of spatial dimensions
         """
         bb_logits = self.conv_out(self.conv_internal(x))
 

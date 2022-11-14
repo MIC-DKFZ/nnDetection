@@ -24,6 +24,24 @@ class RoIRegressor(Regressor):
         add_norm: bool = True,
         **kwargs,
     ):
+        """
+        Base class to build regressor heads with typical conv structure
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            input_size: specify spatial dimensions of RoI
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            kwargs: keyword arguments passed to first and internal convolutions
+
+        Notes:
+            `self.loss` needs to be overwritten in subclasses
+        """
         super().__init__()
         self.dim = conv.dim
         self.num_convs = num_convs
@@ -40,9 +58,15 @@ class RoIRegressor(Regressor):
 
     @abstractmethod
     def _build_module_internal(self, conv, add_norm: bool, **kwargs):
+        """
+        Build internal modules
+        """
         raise NotImplementedError
 
     def _build_module_out(self, conv):
+        """
+        Build final convolution
+        """
         return conv(
             self.internal_channels,
             self.dim * 2,
@@ -55,9 +79,23 @@ class RoIRegressor(Regressor):
         )
 
     def init_weights(self):
+        """
+        Init weights with prior prob
+        """
         pass
 
-    def forward(self, features):
+    def forward(self, features: Tensor) -> Tensor:
+        """
+        Forward input through module
+
+        Args:
+            features: input features [N, C, roi_size], where N=number of
+                RoIs, C=number of channels, roi_size=spatial size of RoI
+
+        Returns:
+            torch.Tensor: predicted logits [N, dim * 2], where N=number of
+                RoIs, dim=number of spatial dimensions
+        """
         x = self.module_out(self.module_internal(features))
         return x.view(x.shape[0], -1)  # [N, C, 1] -> [N, C]
 
@@ -68,11 +106,13 @@ class RoIRegressor(Regressor):
         **kwargs,
     ) -> Tensor:
         """
-        Compute regression loss (l1 loss)
+        Compute regression loss
 
         Args:
-            pred_deltas: predicted bounding box deltas [N,  dim * 2]
-            target_deltas: target bounding box deltas [N,  dim * 2]
+            pred_deltas: predicted bounding box deltas [N,  dim * 2] where
+                N=number of RoIs, dim=number of spatial dimeneions
+            target_deltas: target bounding box deltas [N,  dim * 2] where
+                N=number of RoIs, dim=number of spatial dimeneions
 
         Returns:
             Tensor: loss
@@ -82,6 +122,9 @@ class RoIRegressor(Regressor):
 
 class ConvRoIRegressor(RoIRegressor):
     def _build_module_internal(self, conv, **kwargs):
+        """
+        Build internal modules conv(s) -> pool -> out
+        """
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
             name="c_in",
@@ -115,6 +158,9 @@ class ConvRoIRegressor(RoIRegressor):
 
 class FCRoIRegressor(RoIRegressor):
     def _build_module_internal(self, conv, **kwargs):
+        """
+        Build internal modules flatten -> FC(s) -> out
+        """
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
             name="conv1x1_view",
@@ -161,6 +207,24 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Regressor head with L1 loss. Structure: conv(s) -> pool -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            input_size: specify spatial dimensions of RoI
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            beta: L1 to L2 change point.
+                For beta values < 1e-5, L1 loss is computed.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             in_channels=in_channels,
@@ -192,6 +256,22 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Regressor head with GIoU loss. Structure: conv(s) -> pool -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            input_size: specify spatial dimensions of RoI
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             in_channels=in_channels,
@@ -223,6 +303,24 @@ class L1FCRoIRegressor(FCRoIRegressor):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Regressor head with L1 loss. Structure: flatten -> FC(s) -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            input_size: specify spatial dimensions of RoI
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            beta: L1 to L2 change point.
+                For beta values < 1e-5, L1 loss is computed.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             in_channels=in_channels,
@@ -254,6 +352,22 @@ class GIoUFCRoIRegressor(FCRoIRegressor):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Regressor head with GIoU loss. Structure: flatten -> FC(s) -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            input_size: specify spatial dimensions of RoI
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             in_channels=in_channels,
