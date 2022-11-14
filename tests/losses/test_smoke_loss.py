@@ -8,6 +8,7 @@ from nndet.losses.classification import (
     CrossEntropyLoss,
     FocalLossWithLogits,
 )
+from nndet.losses.classification.bce import BinaryCrossEntropyLoss
 from nndet.losses.classification.poly1 import (
     Poly1BCEWithLogits,
     Poly1FocalLossWithLogits,
@@ -61,6 +62,7 @@ TEST_CLASSIFICATION_LABEL_LOSSES = [
     BCEWithLogitsLossOneHot(reduction="mean"),
     Poly1BCEWithLogits(reduction="mean"),
     Poly1FocalLossWithLogits(reduction="mean"),
+    BinaryCrossEntropyLoss(reduction="mean"),
 ]
 TEST_CLASSIFICATION_SIGMOID_LOSSES = [
     BCEWithLogitsLoss(reduction="mean"),

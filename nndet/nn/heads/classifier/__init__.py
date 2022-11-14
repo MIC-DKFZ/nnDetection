@@ -6,7 +6,6 @@ from nndet.nn.heads.classifier.dense import (
     BCECLassifier,
     CEClassifier,
     DenseClassifier,
-    DenseClassifierType,
     FocalClassifier,
     FullyConntectedBCECLassifier,
 )

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Optional, TypeVar
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -133,11 +133,16 @@ class DenseRegressor(Regressor):
         Forward input
 
         Args:
-            x: input feature map of size [N x C x Y x X x Z]
+            x: input feature map of size [N, C, dims], where N=batch size,
+                C=number of channels, dims=spatial dimensions
+            level: specify current level, needed if level specific
+                modules should be forward
 
         Returns:
-            torch.Tensor: classification logits for each anchor
-                [N, n_anchors, dim*2]
+            torch.Tensor: predicted logits [N, anchors, dim*2],
+                where N=number batch_size, anchors=product of spatial size of
+                feature map times number of anchors per position,
+                dim=number of spatial dimensions
         """
         bb_logits = self.conv_out(self.conv_internal(x))
 
@@ -179,9 +184,6 @@ class DenseRegressor(Regressor):
                 torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, 0)
-
-
-DenseRegressorType = TypeVar("DenseRegressorType", bound=DenseRegressor)
 
 
 class L1Regressor(DenseRegressor):
@@ -494,7 +496,6 @@ class DualRegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
-            loss_fp32=loss_fp32,
             scale_per_dim=scale_per_dim,
             **kwargs,
         )

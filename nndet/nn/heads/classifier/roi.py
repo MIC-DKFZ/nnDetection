@@ -27,6 +27,25 @@ class RoIClassifier(Classifier):
         add_norm: bool = True,
         **kwargs,
     ):
+        """
+        Base class to build RoI classifier heads with typical conv structure
+        conv(in, internal) -> num_convs x conv(internal, internal) ->
+        conv(internal, out)
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            kwargs: keyword arguments passed to first and internal convolutions
+
+        Notes:
+            `self.loss` needs to be overwritten in subclasses
+            `self.logits_convert_fn` needs to be overwritten in subclasses
+        """
         super().__init__()
         self.dim = conv.dim
         self.num_convs = num_convs
@@ -45,9 +64,15 @@ class RoIClassifier(Classifier):
 
     @abstractmethod
     def _build_module_internal(self, conv, add_norm: bool, **kwargs):
+        """
+        Build internal modules
+        """
         raise NotImplementedError
 
     def _build_module_out(self, conv):
+        """
+        Build final convolution
+        """
         return conv(
             self.internal_channels,
             self.num_classes,
@@ -60,23 +85,42 @@ class RoIClassifier(Classifier):
         )
 
     def init_weights(self):
+        """
+        Init weights with prior prob
+        """
         pass
 
-    def forward(self, features):
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        """
+        Forward input through module
+
+        Args:
+            features: input features [N, C, roi_size], where N=number of
+                RoIs, C=number of channels, roi_size=spatial size of RoI
+
+        Returns:
+            torch.Tensor: predicted logits [N, num_classes], where N=number of
+                RoIs, num_classes=number of foreground classes (if softmax
+                based predictions are used, one additional background channel
+                at the 0th position is added)
+        """
         x = self.module_out(self.module_internal(features))
         return x.view(x.shape[0], -1)  # [N, C, 1] -> [N, C]
 
     def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
         """
-        Base classifier with cross entropy loss (in general hard negative
-        example mining should be done before this)
+        Compute loss from logits and targets with specified loss function
+        (defined by `self.loss`).
 
         Args:
-            pred_logits (Tensor): predicted logits
-            targets (Tensor): classification targets
+            pred_logits: predicted logits [N, C] where N=number of RoIs,
+                C=number of classes
+            targets: classification targets [N], where N=number of RoIs
+                (targets need to be provided in numerical format as
+                expected by CE loss from torch)
 
         Returns:
-            Tensor: classification loss
+            Tensor: classification loss (scalar)
         """
         return self.loss(pred_logits, targets, **kwargs)
 
@@ -85,17 +129,23 @@ class RoIClassifier(Classifier):
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C]
-                N = number of anchors, C=number of foreground classes
+            logits: predicted logits [N, C]
+                N = number of RoIs, C=number of foreground classes (if
+                softmax based predicitions are used, num_classes + 1
+                channels will be available in the input)
 
         Returns:
-            Tensor: probabilities
+            Tensor: probabilities [N, C] where N = number of RoIs,
+                C=number of foreground classes
         """
         return self.logits_convert_fn(logits)
 
 
 class ConvRoIClassifier(RoIClassifier):
     def _build_module_internal(self, conv, **kwargs):
+        """
+        Build internal modules conv(s) -> pool -> out
+        """
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
             name="c_in",
@@ -129,6 +179,9 @@ class ConvRoIClassifier(RoIClassifier):
 
 class FCRoIClassifier(RoIClassifier):
     def _build_module_internal(self, conv, **kwargs):
+        """
+        Build internal modules flatten -> FC(s) -> out
+        """
         _conv_internal = torch.nn.Sequential()
         _conv_internal.add_module(
             name="conv1x1_view",
@@ -178,6 +231,27 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
         prior_prob: Optional[float] = None,
         **kwargs,
     ):
+        """
+        Classifier Head with sigmoid based BCE loss computation and prio
+        prob weight init. Structure: conv(s) -> pool -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            weight: weight in BCEWithLogitsLoss (see pytorch for more info)
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            prior_prob: initialize final conv with given prior probability.
+                If `None`, no init will be performed.
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         self.prior_prob = prior_prob
         super().__init__(
             conv=conv,
@@ -242,6 +316,27 @@ class BCEFCRoIClassifier(FCRoIClassifier):
         prior_prob: Optional[float] = None,
         **kwargs,
     ):
+        """
+        Classifier Head with sigmoid based BCE loss computation and prio
+        prob weight init. Structure: flatten -> FC(s) -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            weight: weight in BCEWithLogitsLoss (see pytorch for more info)
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            smoothing:  label smoothing
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            prior_prob: initialize final conv with given prior probability.
+                If `None`, no init will be performed.
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         self.prior_prob = prior_prob
         super().__init__(
             conv=conv,
@@ -304,6 +399,24 @@ class CEConvRoIClassifier(ConvRoIClassifier):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Classifier Head with softmax based CE loss computation.
+        Structure: conv(s) -> pool -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            weight: weight in BCEWithLogitsLoss (see pytorch for more info)
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             input_size=input_size,
@@ -327,10 +440,13 @@ class CEConvRoIClassifier(ConvRoIClassifier):
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C], C=number of classes
+            logits: predicted logits [N, C]
+                N = number of RoIs, C=number of foreground classes + 1
+                    (+1 needed for background in softmax)
 
         Returns:
-            Tensor: probabilities
+            Tensor: probabilities [N, C] where N = number of RoIs,
+                C=number of foreground classes
         """
         return self.logits_convert_fn(logits)[:, 1:]  # remove background predictions
 
@@ -351,6 +467,24 @@ class CEFCRoIClassifier(FCRoIClassifier):
         loss_fp32: bool = False,
         **kwargs,
     ):
+        """
+        Classifier Head with softmax based CE loss computation.
+        Structure: flatten -> FC(s) -> out
+
+        Args:
+            conv: Convolution modules which handles a single layer
+            in_channels: number of input channels
+            internal_channels: number of channels internally used
+            num_classes: number of foreground classes
+            num_convs: number of convolutions
+                input_conv -> num_convs -> output_convs
+            add_norm: en-/disable normalization layers in internal layers
+            weight: weight in BCEWithLogitsLoss (see pytorch for more info)
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: keyword arguments passed to first and internal convolutions
+        """
         super().__init__(
             conv=conv,
             input_size=input_size,
@@ -374,9 +508,12 @@ class CEFCRoIClassifier(FCRoIClassifier):
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C], C=number of classes
+            logits: predicted logits [N, C]
+                N = number of RoIs, C=number of foreground classes + 1
+                    (+1 needed for background in softmax)
 
         Returns:
-            Tensor: probabilities
+            Tensor: probabilities [N, C] where N = number of RoIs,
+                C=number of foreground classes
         """
         return self.logits_convert_fn(logits)[:, 1:]  # remove background predictions

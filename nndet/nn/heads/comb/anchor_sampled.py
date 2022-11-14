@@ -10,9 +10,9 @@ from torch import Tensor
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.sampler import SamplerType
 from nndet.nn.heads.abstract import ClassifierType, RegressorType
-from nndet.nn.heads.classifier.dense import DenseClassifierType
+from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
-from nndet.nn.heads.regressor.dense import DenseRegressorType
+from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.training.ema import EMA
 from nndet.utils.enums import BoxRegressionMode
 from nndet.utils.tensor import cat
@@ -21,8 +21,8 @@ from nndet.utils.tensor import cat
 class BoxHeadHNM(AnchorHead):
     def __init__(
         self,
-        classifier: DenseClassifierType,
-        regressor: DenseRegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: BoxCoderND,
         sampler: SamplerType,
         shared: Optional[torch.nn.Module] = None,
@@ -166,8 +166,8 @@ class BoxHeadHNM(AnchorHead):
 class BoxHeadHNMV2(AnchorHead):
     def __init__(
         self,
-        classifier: DenseClassifierType,
-        regressor: DenseRegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: BoxCoderND,
         sampler: SamplerType,
         shared: Optional[torch.nn.Module] = None,

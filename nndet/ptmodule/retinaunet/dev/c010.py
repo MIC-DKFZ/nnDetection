@@ -9,12 +9,12 @@ from nndet.core.boxes.coder import CoderType
 # from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
 from nndet.nn.heads.classifier import (
     AsymmetricFocalClassifier,
-    DenseClassifierType,
+    DenseClassifier,
     FocalClassifier,
     FullyConntectedBCECLassifier,
 )
 from nndet.nn.heads.comb import AnchorHeadType, BoxHeadAll
-from nndet.nn.heads.regressor import DenseRegressorType
+from nndet.nn.heads.regressor import DenseRegressor
 from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.nn.layers.conv import (
     ConvGroupLReLU,
@@ -48,8 +48,8 @@ class RetinaUNetC010Focal(RetinaUNetC010):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        classifier: DenseClassifierType,
-        regressor: DenseRegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: CoderType,
     ) -> AnchorHeadType:
         """

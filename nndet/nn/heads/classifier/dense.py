@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import math
-from typing import Optional, TypeVar
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -130,11 +130,17 @@ class DenseClassifier(Classifier):
         Forward input
 
         Args:
-            x (torch.Tensor): input feature map of size (N x C x Y x X x Z)
+            x: input feature map of size [N, C, dims], where N=batch size,
+                C=number of channels, dims=spatial dimensions
+            level: ignored, kept for compatibility with regressor head
 
         Returns:
-            torch.Tensor: classification logits for each anchor
-                [N, anchors, num_classes]
+            torch.Tensor: predicted logits [N, anchors, num_classes],
+                where N=number batch_size, anchors=product of spatial size of
+                feature map times number of anchors per position,
+                num_classes=number of foreground classes (if softmax
+                based predictions are used, one additional background channel
+                at the 0th position is added)
         """
         class_logits = self.conv_out(self.conv_internal(x))
 
@@ -146,15 +152,18 @@ class DenseClassifier(Classifier):
 
     def compute_loss(self, pred_logits: Tensor, targets: Tensor, **kwargs) -> Tensor:
         """
-        Base classifier with cross entropy loss (in general hard negative
-        example mining should be done before this)
+        Compute loss from logits and targets with specified loss function
+        (defined by `self.loss`).
 
         Args:
-            pred_logits (Tensor): predicted logits
-            targets (Tensor): classification targets
+            pred_logits: predicted logits [N, C] where N=number of anchors,
+                C=number of classes
+            targets: classification targets [N], where N=number of anchors
+                (targets need to be provided in numerical format as
+                expected by CE loss from torch)
 
         Returns:
-            Tensor: classification loss
+            Tensor: classification loss (scalar)
         """
         return self.loss(pred_logits, targets, **kwargs)
 
@@ -163,11 +172,12 @@ class DenseClassifier(Classifier):
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C]
+            logits: predicted logits [N, C]
                 N = number of anchors, C=number of foreground classes
 
         Returns:
-            Tensor: probabilities
+            Tensor: probabilities [N, C] where N = number of anchors,
+                C=number of foreground classes
         """
         return self.logits_convert_fn(logits)
 
@@ -190,9 +200,6 @@ class DenseClassifier(Classifier):
                     torch.nn.init.constant_(layer.bias, bias_value)
         else:
             logger.info("Init classifier weights: conv default")
-
-
-DenseClassifierType = TypeVar("DenseClassifierType", bound=DenseClassifier)
 
 
 class BCECLassifier(DenseClassifier):
@@ -330,10 +337,12 @@ class CEClassifier(DenseClassifier):
         Convert bounding box logits to probabilities
 
         Args:
-            logits (Tensor): bounding box logits [N, C], C=number of classes
+            logits: predicted logits [N, C + 1]
+                N = number of anchors, C=number of foreground classes
 
         Returns:
-            Tensor: probabilities
+            Tensor: probabilities [N, C] where N = number of anchors,
+                C=number of foreground classes
         """
         return self.logits_convert_fn(logits)[:, 1:]  # remove background predictions
 
