@@ -15,12 +15,12 @@ from nndet.core.boxes.coder import CoderType
 #     StackedResPlain,
 # )
 from nndet.nn.heads.classifier import AsymmetricFocalClassifier, FocalClassifier
-from nndet.nn.heads.classifier.dense import DenseClassifierType
+from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
 from nndet.nn.heads.comb.base import AnchorHeadType
 from nndet.nn.heads.regressor import L1Regressor
-from nndet.nn.heads.regressor.dense import DenseRegressorType, DualRegressor
+from nndet.nn.heads.regressor.dense import DenseRegressor, DualRegressor
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 
 # from nndet.nn.layers.wrapper import Generator
@@ -73,8 +73,8 @@ class RetinaUNetC011Focal(RetinaUNetC011):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        classifier: DenseClassifierType,
-        regressor: DenseRegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: CoderType,
     ) -> AnchorHeadType:
         """

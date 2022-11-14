@@ -14,10 +14,8 @@ from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.heads.classifier import DenseClassifierType
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead, AnchorHeadType
-from nndet.nn.heads.regressor import DenseRegressorType
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.segmenter import Segmenter, SegmenterType
 from nndet.nn.layers.wrapper import Generator
@@ -272,7 +270,7 @@ class SingleStageMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
         anchor_generator: AnchorGeneratorType,
-    ) -> DenseClassifierType:
+    ) -> DenseClassifier:
         """
         Build classification subnetwork for detection head
 
@@ -306,7 +304,7 @@ class SingleStageMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
         anchor_generator: AnchorGeneratorType,
-    ) -> DenseRegressorType:
+    ) -> DenseRegressor:
         """
         Build regression subnetwork for detection head
 
@@ -338,8 +336,8 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        classifier: DenseClassifierType,
-        regressor: DenseRegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: CoderType,
     ) -> AnchorHeadType:
         """

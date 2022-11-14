@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Optional, TypeVar
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -184,9 +184,6 @@ class DenseRegressor(Regressor):
                 torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, 0)
-
-
-DenseRegressorType = TypeVar("DenseRegressorType", bound=DenseRegressor)
 
 
 class L1Regressor(DenseRegressor):

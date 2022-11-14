@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import math
-from typing import Optional, TypeVar
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -200,9 +200,6 @@ class DenseClassifier(Classifier):
                     torch.nn.init.constant_(layer.bias, bias_value)
         else:
             logger.info("Init classifier weights: conv default")
-
-
-DenseClassifierType = TypeVar("DenseClassifierType", bound=DenseClassifier)
 
 
 class BCECLassifier(DenseClassifier):
