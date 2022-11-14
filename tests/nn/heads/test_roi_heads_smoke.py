@@ -35,7 +35,7 @@ EXAMPLE_CONFIG = {
     "in_channels": 16,
     "internal_channels": 32,
     "num_convs": 1,
-    "add_norm": False,
+    "add_norm": True,
     "input_size": INPUT_SIZE_CONFIG,
 }
 

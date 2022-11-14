@@ -494,7 +494,6 @@ class DualRegressor(DenseRegressor):
             num_convs=num_convs,
             add_norm=add_norm,
             learn_scale=learn_scale,
-            loss_fp32=loss_fp32,
             scale_per_dim=scale_per_dim,
             **kwargs,
         )
