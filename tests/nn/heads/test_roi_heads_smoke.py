@@ -35,40 +35,55 @@ EXAMPLE_CONFIG = {
     "in_channels": 16,
     "internal_channels": 32,
     "num_convs": 1,
-    "add_norm": True,
     "input_size": INPUT_SIZE_CONFIG,
 }
 
 TEST_CASES_UTIL = [
     # RoI Util
-    (RoIConv1x1View(3), INPUT_SIZE_TENSOR, (10, 1024, 1, 1, 1)),
+    (RoIConv1x1View(3), INPUT_SIZE_TENSOR, (N, 1024, 1, 1, 1)),
 ]
 
 TEST_CASES_CLS = [
     # RoI Classifier Tests
     (
-        BCEConvRoIClassifier(**EXAMPLE_CONFIG, num_classes=NUM_CLASSES),  # module
+        BCEConvRoIClassifier(
+            **EXAMPLE_CONFIG,
+            num_classes=NUM_CLASSES,
+            add_norm=True,
+        ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_CLS),  # target
         (N, NUM_CLASSES),  # logits shape
         (N, NUM_CLASSES),  # prob shape
     ),
     (
-        BCEFCRoIClassifier(**EXAMPLE_CONFIG, num_classes=NUM_CLASSES),  # module
+        BCEFCRoIClassifier(
+            **EXAMPLE_CONFIG,
+            num_classes=NUM_CLASSES,
+            add_norm=False,
+        ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_CLS),  # target
         (N, NUM_CLASSES),  # logits shape
         (N, NUM_CLASSES),  # prob shape
     ),
     (
-        CEConvRoIClassifier(**EXAMPLE_CONFIG, num_classes=NUM_CLASSES),  # module
+        CEConvRoIClassifier(
+            **EXAMPLE_CONFIG,
+            num_classes=NUM_CLASSES,
+            add_norm=True,
+        ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_CLS),  # target
         (N, NUM_CLASSES + 1),  # logits shape
         (N, NUM_CLASSES),  # prob shape
     ),
     (
-        CEFCRoIClassifier(**EXAMPLE_CONFIG, num_classes=NUM_CLASSES),  # module
+        CEFCRoIClassifier(
+            **EXAMPLE_CONFIG,
+            num_classes=NUM_CLASSES,
+            add_norm=False,
+        ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_CLS),  # target
         (N, NUM_CLASSES + 1),  # logits shape
@@ -79,25 +94,25 @@ TEST_CASES_CLS = [
 TEST_CASES_REG = [
     # RoI Regressor Tests
     (
-        L1ConvRoIRegressor(**EXAMPLE_CONFIG),
+        L1ConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        L1FCRoIRegressor(**EXAMPLE_CONFIG),
+        L1FCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUConvRoIRegressor(**EXAMPLE_CONFIG),
+        GIoUConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUFCRoIRegressor(**EXAMPLE_CONFIG),
+        GIoUFCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
