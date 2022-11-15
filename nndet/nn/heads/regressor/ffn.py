@@ -54,6 +54,9 @@ class FFNRegressor(torch.nn.Module):
         self.box_loss: Optional[torch.nn.Module] = None
         self.init_weights()
 
+        # normalize predictions
+        self.logits_convert_fn = torch.nn.Sigmoid()
+
     def _build_module(
         self,
         linear: LINEARSEQ,
@@ -114,11 +117,12 @@ class FFNRegressor(torch.nn.Module):
                 channels
 
         Returns:
-            torch.Tensor: output prediction [D, B, R, dims * 2] where
-                D=number of decoder layers, B=batch size, R=number of
-                predictions, dims=number of spatial dimensions
+            torch.Tensor: output prediction, normalized image coordinates
+                [D, B, R, dims * 2] where D=number of decoder layers,
+                B=batch size, R=number of predictions, dims=number of
+                spatial dimensions
         """
-        return self.mlp(features)
+        return self.logits_convert_fn(self.mlp(features))
 
     def compute_loss(
         self,

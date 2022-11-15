@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
@@ -7,7 +7,7 @@ from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 
 
-class BaseDETRHead(torch.nn.Module):
+class DETRHead(torch.nn.Module):
     def __init__(
         self,
         classifier: FFNClassifier,
@@ -22,11 +22,87 @@ class BaseDETRHead(torch.nn.Module):
 
         self.aux_loss = aux_loss
 
+    def forward(
+        self,
+        out_sequence: torch.Tensor,
+        reference: torch.Tensor,
+    ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
+        """
+        Predict bounding boxes and classes using the ClassifierFFN and
+        RegressionFFN
+
+        Args:
+            out_sequence: output sequence of the transformer [D, B, R, C]
+                where D=number of decoder layers, B=batch size,
+                R=number of predictions, C=number of channels
+            reference: reference output of the transformer
+                (not used in original DETR head)
+                #TODO
+
+        Returns:
+            Dict[str, torch.Tensor]: predictions and auxiliary information
+
+                ``"pred_cls_logits"`` torch.Tensor
+                    predicted logits from ClassifierFFN [B, R, num_classes]
+                    where B=batch size, R=number of predictions,
+                    num_classes=number of classes
+
+                ``"pred_box_logits"`` torch.Tensor
+                    predicted normalized coords from RegressorFFN
+                    [B, R, dims * 2] where B=batch size, R=number of
+                    predictions, dims=number of spatial dimensions
+
+                ``"aux_outputs"`` List[Dict[str, torch.Tensor]]
+                    list with predictions from previous decoder layers
+                    following the same format as `pred_cls_logits` and
+                    `pred_box_logits`
+        """
+        box_logits = self.regressor(out_sequence)
+        class_logits = self.classifier(out_sequence)
+
+        preds = {"pred_cls_logits": class_logits[-1], "pred_box_logits": box_logits[-1]}
+        # Predict for all decoder levels but only propagate last decoder output
+
+        if self.aux_loss:
+            # put remaining oututs into aux info
+            aux = [{"pred_cls_logits": a, "pred_box_logits": b} for a, b in zip(class_logits[:-1], box_logits[:-1])]
+        else:
+            aux = None
+        return preds, aux
+
+    def compute_loss(
+        self,
+        prediction_logits: Dict[str, torch.Tensor],
+        target_boxes_norm: List[torch.Tensor],
+        target_labels: List[torch.Tensor],
+        img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
+    ) -> Dict[str, torch.Tensor]:
+        (
+            num_boxes,
+            mask,
+            masked_indices,
+            full_indices,
+            masked_outputs,
+            masked_targets,
+        ) = self.matcher(outputs, targets)
+        # Box Loss computation on the masked (=non-empty) patches
+        # If there is a box in any patch -> match it and calculate box loss on masked outputs
+        losses = self.get_all_losses(
+            num_boxes,
+            masked_indices,
+            full_indices,
+            masked_outputs,
+            outputs,
+            masked_targets,
+            targets,
+        )
+        return losses
+
     def compute_loss(
         self,
         outputs: Dict[str, torch.Tensor],
         target_dict: Dict[str, List[torch.Tensor]],
-        im_shape: Tuple,
+        img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
     ) -> Tuple[Dict[str, torch.Tensor], List[Dict[str, torch.Tensor]]]:
         """
         Main function that computes all losses and preprocesses the ground truths

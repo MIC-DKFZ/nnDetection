@@ -56,7 +56,6 @@ class BaseSoftmaxDETRHead(BaseDETRHead):
         boxes = self.regressor(out_sequence).sigmoid()
         classes = self.classifier(out_sequence)
 
-        breakpoint()
         out = {"pred_logits": classes[-1], "pred_boxes": boxes[-1]}
         # Predict for all decoder levels but only propagate last decoder output
         if self.aux_loss:
