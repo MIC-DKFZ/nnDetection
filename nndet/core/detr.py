@@ -4,7 +4,6 @@ import torch
 from torch import Tensor, nn
 
 from nndet.core.abstract import AbstractDetector
-from nndet.core.boxes.ops import box_point2center_format, box_point_norm_with_size
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.detr import BaseDETRHead
 from nndet.nn.heads.segmenter import Segmenter
@@ -172,17 +171,15 @@ class BaseDETR(AbstractDetector):
 
             List[torch.Tensor]: feature maps from decoder
         """
-        target_labels: List[Tensor] = targets["target_classes"]
-        target_boxes: List[Tensor] = targets["target_boxes"]
-        target_boxes_norm = [box_point_norm_with_size(box, img_shape=tuple(images.shape[2:])) for box in target_boxes]
         target_seg: Tensor = targets.get("target_seg", None)
 
-        prediction_logits, pred_seg, features = self(images)
+        pred_detection, pred_seg, features = self(images)
 
         pred_losses, _ = self.head.compute_loss(
-            prediction_logits=prediction_logits,
-            target_boxes_norm=target_boxes_norm,
-            target_labels=target_labels,
+            pred_detection=pred_detection,
+            target_boxes=targets["target_boxes"],
+            target_labels=targets["target_classes"],
+            img_shape=tuple(images.shape[2:]),
         )
         if self.segmenter is not None:
             if target_seg is None:
@@ -191,7 +188,7 @@ class BaseDETR(AbstractDetector):
 
         if predict:
             # postprocessing
-            prediction = self.head.postprocess_for_inference(images, prediction_logits)
+            prediction = self.head.postprocess_for_inference(images, pred_detection)
             if self.segmenter is not None:
                 prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         else:
