@@ -125,10 +125,10 @@ class BaseMatcher(nn.Module):
     @torch.no_grad()
     def match(
         self,
-        pred_logits,
-        pred_coords,
-        target_boxes,
-        target_labels,
+        pred_logits: torch.Tensor,
+        pred_coords: torch.Tensor,
+        target_boxes: List[torch.Tensor],
+        target_labels: List[torch.Tensor],
     ) -> List[Tuple[Tensor, Tensor]]:
         """
         Perform matching over batch elements with at least one ground truth

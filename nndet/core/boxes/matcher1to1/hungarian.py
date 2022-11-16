@@ -37,10 +37,10 @@ class HungarianMatcher(BaseMatcher):
     @torch.no_grad()
     def match(
         self,
-        pred_logits,
-        pred_coords,
-        target_boxes,
-        target_labels,
+        pred_logits: torch.Tensor,
+        pred_coords: torch.Tensor,
+        target_boxes: List[torch.Tensor],
+        target_labels: List[torch.Tensor],
     ) -> List[Tuple[Tensor, Tensor]]:
         """
         Perform matching over batch elements with at least one ground truth
@@ -53,7 +53,7 @@ class HungarianMatcher(BaseMatcher):
             pred_coords: predicted bounding boxes coordinates from model
                 [B, R, dims * 2] where B=batch size, R=number of predictions
                 dims=number of spatial dimensions
-            target_boxes: target ground truth boxes (not encoded)
+            target_boxes: target ground truth boxes
                 List([L, dims * 2]) where L is the number of ground truth boxes
                 in each image, dims is the number of spatial dimensions and
                 the length of the list corresponds to the batch size

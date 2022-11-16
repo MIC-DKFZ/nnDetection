@@ -1,0 +1,81 @@
+# DETR
+# backbone
+
+# transformer
+
+# [optional] neck
+
+# head
+head_kwargs:
+  aux_loss: True
+
+# classifier
+head_classifier_kwargs:
+  internal_channels: ${model_cfg.hidden_dim}
+  num_layers: 1
+  add_norm: False
+  dropout_rate: 0.0
+
+  reduction: "mean" # FIXME
+  # TODO: aux loss norm
+
+# regressor
+head_regressor_kwargs:
+  internal_channels: ${model_cfg.hidden_dim}
+  num_layers: 3
+  add_norm: False
+  dropout_rate: 0.0
+
+# matcher
+matcher_class_criterion_kwargs:
+  loss_weight: 2
+
+matcher_reg_criterion_kwargs:
+  loss_weight: 5
+
+matcher_box_criterion_kwargs:
+  loss_weight: 2
+
+matcher_kwargs: {}
+
+# DETR Architecture Parameters
+# ----------------------------
+num_encoder_layers: 3
+num_decoder_layers: 6
+dim_feedforward: 1024
+detection_per_img: 6  # number of detections per image
+regressor_depth: 3  # depth of the bounding box regressor
+hidden_dim: 120 # feature length of the transformer input (must be divisible by the number of attention heads)
+query_dim: 120 # should be the same as hidden_dim except for DABDETR
+attention_heads: 8  # number of attention heads in the transformer
+transformer_kwargs: {} # Transformer kwargs: needed
+aux_loss: True
+# Matching and Loss computation Params
+# ------------------------------------
+loss_ce: 2
+loss_bbox: 5
+loss_giou: 2
+
+# Only used if cross entropy is used
+eos_coef: 0.1 # background cross entropy weight -> decrease to balance class disparity
+
+# positional embedding keyword arguments
+pos_embed:
+  # sine embedding
+  temperature: 10000
+  normalize: True  # old default was False
+  scale:
+  offset: 0.0
+
+# optional
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False

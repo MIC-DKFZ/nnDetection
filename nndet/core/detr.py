@@ -175,7 +175,7 @@ class BaseDETR(AbstractDetector):
 
         pred_detection, pred_seg, features = self(images)
 
-        pred_losses, _ = self.head.compute_loss(
+        pred_losses = self.head.compute_loss(
             pred_detection=pred_detection,
             target_boxes=targets["target_boxes"],
             target_labels=targets["target_classes"],
@@ -188,7 +188,7 @@ class BaseDETR(AbstractDetector):
 
         if predict:
             # postprocessing
-            prediction = self.head.postprocess_for_inference(images, pred_detection)
+            prediction = self.head.postprocess_for_inference(pred_detection, img_shape=tuple(images.shape[2:]))
             if self.segmenter is not None:
                 prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         else:
@@ -224,7 +224,7 @@ class BaseDETR(AbstractDetector):
             List[torch.Tensor]: feature maps from encoder
         """
         pred_detection, pred_seg, features = self(images)
-        prediction = self.head.postprocess_for_inference(images, pred_detection)
+        prediction = self.head.postprocess_for_inference(pred_detection, img_shape=tuple(images.shape[2:]))
         if self.segmenter is not None:
             prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         return prediction, features

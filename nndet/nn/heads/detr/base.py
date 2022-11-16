@@ -26,14 +26,16 @@ from nndet.utils.dist import get_world_size, is_dist_avail_and_initialized
 class DETRHead(torch.nn.Module):
     def __init__(
         self,
+        num_classes: int,
         classifier: FFNClassifier,
         regressor: FFNRegressor,
         matcher: BaseMatcher,
         aux_loss: bool = True,
     ) -> None:
         super().__init__()
+        self.num_classes = num_classes
         self.classifier = classifier
-        self.reggressor = regressor
+        self.regressor = regressor
         self.matcher = matcher
         self.aux_loss = aux_loss
 
@@ -121,15 +123,15 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed losses
         """
         # average number of boxes for norm in distributed setting
-        num_boxes = sum(len(t) if t.numel() > 0 else 0 for t in target_labels)
-        num_boxes = torch.as_tensor(
-            [num_boxes],
+        num_boxes_all = sum(len(t) if t.numel() > 0 else 0 for t in target_labels)
+        num_boxes_all = torch.as_tensor(
+            [num_boxes_all],
             dtype=torch.float,
             device=pred_detection["pred_cls_logits"].device,
         )
         if is_dist_avail_and_initialized():
-            torch.distributed.all_reduce(num_boxes)
-        num_boxes = torch.clamp(num_boxes / get_world_size(), min=1).item()
+            torch.distributed.all_reduce(num_boxes_all)
+        num_boxes_all = torch.clamp(num_boxes_all / get_world_size(), min=1).item()
 
         # change format of targets
         target_boxes, target_labels = self.prepare_targets(
@@ -144,7 +146,7 @@ class DETRHead(torch.nn.Module):
             pred_coords=pred_detection["pred_box_coords"],
             target_boxes=target_boxes,
             target_labels=target_labels,
-            num_boxes=num_boxes,
+            num_boxes_all=num_boxes_all,
         )
         if "aux_outputs" in pred_detection:
             for i, aux_outputs in enumerate(pred_detection["aux_outputs"]):
@@ -153,7 +155,7 @@ class DETRHead(torch.nn.Module):
                     pred_coords=pred_detection["pred_box_coords"],
                     target_boxes=target_boxes,
                     target_labels=target_labels,
-                    num_boxes=num_boxes,
+                    num_boxes_all=num_boxes_all,
                 )
                 l_dict = {k + f"_{i}": v for k, v in l_dict.items()}
                 losses.update(l_dict)
@@ -161,6 +163,7 @@ class DETRHead(torch.nn.Module):
         return losses
 
     def prepare_targets(
+        self,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
@@ -191,7 +194,7 @@ class DETRHead(torch.nn.Module):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-        num_boxes: int,
+        num_boxes_all: int,
     ) -> Dict[str, torch.Tensor]:
         """
         Perform matching of predictions and ground truth objects and
@@ -207,7 +210,7 @@ class DETRHead(torch.nn.Module):
             target_boxes: target boxes in center format List([N, dims * 2])
                 (cx, cy, dx, dy (,cz, dz)) (format referes to DETR default)
             target_labels: target labels in numerical format List([N])
-            num_boxes: average number of ground truth boxes in the batch
+            num_boxes_all: average number of ground truth boxes in the batch
 
         Returns:
             Dict[str, torch.Tensor]: computed losses. Exact entries depend on
@@ -221,20 +224,20 @@ class DETRHead(torch.nn.Module):
         )
 
         losses = {}
-        losses.udpate(
+        losses.update(
             self.compute_class_loss(
                 pred_logits=pred_logits,
                 target_labels=target_labels,
                 indices=indices,
-                num_boxes=num_boxes,
+                num_boxes_all=num_boxes_all,
             )
         )
-        losses.udpate(
+        losses.update(
             self.compute_box_loss(
                 pred_coords=pred_coords,
                 target_boxes=target_boxes,
                 indices=indices,
-                num_boxes=num_boxes,
+                num_boxes_all=num_boxes_all,
             )
         )
         return losses
@@ -244,7 +247,7 @@ class DETRHead(torch.nn.Module):
         pred_logits: torch.Tensor,
         target_labels: List[torch.Tensor],
         indices: List[Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]],
-        num_boxes: int,
+        num_boxes_all: int,
     ) -> Dict[str, torch.Tensor]:
         """
         Compute classification loss of head
@@ -263,13 +266,14 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed classification losses
         """
         idx = self._get_src_permutation_idx(indices)
-        target_classes_o = torch.cat([target_labels[J] for t, (_, J) in zip(target_labels, indices) if J is not None])
+        target_classes_o = torch.cat([t[J] for t, (_, J) in zip(target_labels, indices) if J is not None])
         target_classes = torch.full(
             pred_logits.shape[:2],
-            self.num_classes,
+            self.num_classes,  # TODO: recheck if this works correctly with sigmoid losses
             dtype=torch.int64,
             device=pred_logits.device,
         )
+
         target_classes[idx] = target_classes_o
 
         loss = self.classifier.compute_loss(
@@ -307,11 +311,11 @@ class DETRHead(torch.nn.Module):
         src_boxes = pred_coords[idx]
 
         target_boxes = torch.cat(
-            [target_boxes[i] for t, (_, i) in zip(target_boxes, indices) if i is not None],
+            [t[i] for t, (_, i) in zip(target_boxes, indices) if i is not None],
             dim=0,
         )
 
-        loss = self.reggressor.compute_loss(
+        loss = self.regressor.compute_loss(
             preds=src_boxes,
             targets=target_boxes,
             pred_boxes=box_center2point_format(src_boxes),
