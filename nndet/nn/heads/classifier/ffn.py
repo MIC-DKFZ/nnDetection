@@ -345,6 +345,7 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             dropout_rate=dropout_rate,
             **kwargs,
         )
+        self.loss_name = "ffn_ce"
         self.loss = CrossEntropyLoss(
             weight=weight,
             reduction=reduction,
@@ -402,6 +403,7 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
             prior_prob=prior_prob,
             **kwargs,
         )
+        self.loss_name = "ffn_bce"
         self.loss = BinaryCrossEntropyLoss(
             weight=weight,
             reduction=reduction,
@@ -462,6 +464,7 @@ class FocalFFNClassifier(SigmoidFFNClassifier):
             prior_prob=prior_prob,
             **kwargs,
         )
+        self.loss_name = "ffn_focal"
         self.loss = FocalLossWithLogits(
             gamma=gamma,
             alpha=alpha,

@@ -2,9 +2,9 @@
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
   max_channels: 384
-  num_conv: [4, 4, 8, 8] # 1 res full res, 2 lower res, 4 det res
-  num_conv_stem: 2 # 1 conv init
-  start_channels: 32
+  # num_conv: [4, 4, 8, 8] # 1 res full res, 2 lower res, 4 det res
+  # num_conv_stem: 2 # 1 conv init
+  # start_channels: 32
 
 # transformer
 
@@ -22,13 +22,15 @@ head_classifier_kwargs:
   add_norm: False
   dropout_rate: 0.0
   # loss
+  loss_weight: 2 # cls loss weight
   reduction: "sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
 # TODO: eos
-# TODO: GIoU regressor
-# TODO: GIoU criterion
+# TODO: GIoU regressor (done)
+# TODO: GIoU criterion (done)
 # TODO: replace deprecated function in post
 # TODO: custom reduce for focal loss
+# TODO shared layer norm for aux outputs
 
 # regressor
 head_regressor_kwargs:
@@ -37,6 +39,8 @@ head_regressor_kwargs:
   add_norm: False
   dropout_rate: 0.0
   # loss
+  loss_weight: 5 # loss weight L1
+  box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
 
 # matcher
