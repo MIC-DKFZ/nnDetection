@@ -735,6 +735,34 @@ def box_point_norm_with_size(
     return boxes / expand_to_boxes(img_shape_tensor[None])
 
 
+def box_point_rescale_with_size(
+    boxes: torch.Tensor,
+    img_shape: ND_TUPLE_INT,
+    extra_batched: bool = False,
+) -> torch.Tensor:
+    """
+    Revert normalization from boxes in point format with image size.
+
+    Args:
+        boxes: bounding boxes [x0, y0, x1, y1 (, z0, z1)] with shape
+            [N, dim * 2]
+        img_shape: shape of input (in training, this corresponds to the shape
+            of the reference frame of the box, usually the extracted patch)
+        extra_batched: provided bounding boxes are in format [B, R, dims * 2]
+
+    Returns:
+        torch.Tensor: rescaled boxes [x0, y0, x1, y1 (, z0, z1)]
+    """
+    if boxes.numel() == 0:  # handle empty boxes
+        return boxes
+
+    img_shape_tensor = torch.tensor(img_shape, dtype=boxes.dtype, device=boxes.device)
+    if extra_batched:
+        return boxes * expand_to_boxes(img_shape_tensor[None])[None]
+    else:
+        return boxes * expand_to_boxes(img_shape_tensor[None])
+
+
 def box_point2center_format(boxes_point: torch.Tensor) -> torch.Tensor:
     """
     Convert bounding boxes from point [x0, y0, x1, y1 (, z0, z1)] into

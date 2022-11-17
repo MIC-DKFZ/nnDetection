@@ -7,6 +7,21 @@ backbone_kwargs: # keyword arguments passed to encoder
   # start_channels: 32
 
 # transformer
+transformer_kwargs: {} # Transformer kwargs: needed
+num_encoder_layers: 3
+num_decoder_layers: 3
+dim_feedforward: 1024
+hidden_dim: 192 # feature length of the transformer input (must be divisible by the number of attention heads)
+query_dim: 192 # should be the same as hidden_dim except for DABDETR
+attention_heads: 8  # number of attention heads in the transformer
+
+# positional embedding keyword arguments
+pos_embed:
+  # sine embedding
+  temperature: 10000
+  normalize: True  # old default was False
+  scale:
+  offset: 0.0
 
 # head
 head_kwargs:
@@ -25,13 +40,6 @@ head_classifier_kwargs:
   background_weight: 0.1 # background cross entropy weight
   loss_weight: 2 # cls loss weight
   reduction: "mean"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
-
-# TODO: eos (done)
-# TODO: GIoU regressor (done)
-# TODO: GIoU criterion (done)
-# TODO: replace deprecated function in post
-# TODO: custom reduce for focal loss
-# TODO shared layer norm for aux outputs (done)
 
 # regressor
 head_regressor_kwargs:
@@ -53,26 +61,8 @@ matcher_box_criterion_kwargs:
   loss_weight: 2
 matcher_kwargs: {}
 
-# DETR Architecture Parameters
-# ----------------------------
+# detection parameters
 detection_per_img: 6  # number of detections per image
-
-transformer_kwargs: {} # Transformer kwargs: needed
-num_encoder_layers: 3
-num_decoder_layers: 3
-dim_feedforward: 1024
-hidden_dim: 192 # feature length of the transformer input (must be divisible by the number of attention heads)
-query_dim: 192 # should be the same as hidden_dim except for DABDETR
-attention_heads: 8  # number of attention heads in the transformer
-
-
-# positional embedding keyword arguments
-pos_embed:
-  # sine embedding
-  temperature: 10000
-  normalize: True  # old default was False
-  scale:
-  offset: 0.0
 
 # optional
 neck_kwargs: # keyword arguments passed to decoder

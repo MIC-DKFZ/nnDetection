@@ -11,12 +11,12 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
-from nndet.core.boxes import box_center_normalized_to_edges_original
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.boxes.ops import (
     box_center2point_format,
     box_point2center_format,
     box_point_norm_with_size,
+    box_point_rescale_with_size,
 )
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
@@ -419,8 +419,8 @@ class DETRHead(torch.nn.Module):
         """
         batch_pred_scores_fg = self.classifier.postprocess_logits(pred_detection["pred_cls_logits"])
         batch_pred_scores, batch_pred_labels = batch_pred_scores_fg.max(-1)
-        # TODO: replace deprecated function
-        batch_pred_boxes = box_center_normalized_to_edges_original(pred_detection["pred_box_coords"], img_shape)
+        batch_pred_boxes_norm = box_center2point_format(pred_detection["pred_box_coords"])
+        batch_pred_boxes = box_point_rescale_with_size(batch_pred_boxes_norm, img_shape=img_shape, extra_batched=True)
 
         batch_size = batch_pred_scores.shape[0]
         assert batch_size == batch_pred_labels.shape[0]
