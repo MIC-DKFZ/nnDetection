@@ -5,7 +5,7 @@ from typing import Optional
 
 import torch
 
-from nndet.losses.ops import SigmoidBaseLoss
+from nndet.losses.ops import SigmoidBaseLoss, reduction_helper
 
 
 class BinaryCrossEntropyLoss(SigmoidBaseLoss):
@@ -58,9 +58,12 @@ class BinaryCrossEntropyLoss(SigmoidBaseLoss):
         Returns:
             torch.Tensor: loss
         """
-        return torch.nn.functional.binary_cross_entropy_with_logits(
-            logits,
-            targets,
-            weight=self.weight,
+        return reduction_helper(
+            torch.nn.functional.binary_cross_entropy_with_logits(
+                logits,
+                targets,
+                weight=self.weight,
+                reduction="none",
+            ),
             reduction=self.reduction,
         )
