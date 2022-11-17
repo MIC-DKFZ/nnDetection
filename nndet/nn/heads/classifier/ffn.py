@@ -312,6 +312,7 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
         add_norm: bool = False,
         dropout_rate: float = 0.0,
         weight: Optional[torch.Tensor] = None,
+        background_weight: Optional[float] = None,
         reduction: str = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
@@ -330,6 +331,8 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
             weight: weight in cross entrpoy loss (see pytorch for more info)
+            background_weight: weight for background class. Can only be used if
+                no other weight is provided.
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -345,6 +348,13 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             dropout_rate=dropout_rate,
             **kwargs,
         )
+
+        if background_weight is not None:
+            if weight is not None:
+                raise ValueError("Received background weight and weight tensor for CE loss")
+            weight = torch.ones(self.num_classes)
+            weight[0] = background_weight
+
         self.loss_name = "ffn_ce"
         self.loss = CrossEntropyLoss(
             weight=weight,

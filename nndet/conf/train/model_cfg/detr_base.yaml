@@ -22,15 +22,16 @@ head_classifier_kwargs:
   add_norm: False
   dropout_rate: 0.0
   # loss
+  background_weight: 0.1 # background cross entropy weight
   loss_weight: 2 # cls loss weight
   reduction: "mean"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
-# TODO: eos
+# TODO: eos (done)
 # TODO: GIoU regressor (done)
 # TODO: GIoU criterion (done)
 # TODO: replace deprecated function in post
 # TODO: custom reduce for focal loss
-# TODO shared layer norm for aux outputs
+# TODO shared layer norm for aux outputs (done)
 
 # regressor
 head_regressor_kwargs:
@@ -56,26 +57,14 @@ matcher_kwargs: {}
 # ----------------------------
 detection_per_img: 6  # number of detections per image
 
+transformer_kwargs: {} # Transformer kwargs: needed
 num_encoder_layers: 3
 num_decoder_layers: 3
-
 dim_feedforward: 1024
-
-# regressor_depth: 3  # depth of the bounding box regressor
 hidden_dim: 192 # feature length of the transformer input (must be divisible by the number of attention heads)
 query_dim: 192 # should be the same as hidden_dim except for DABDETR
 attention_heads: 8  # number of attention heads in the transformer
 
-transformer_kwargs: {} # Transformer kwargs: needed
-# aux_loss: True
-# Matching and Loss computation Params
-# ------------------------------------
-loss_ce: 2
-loss_bbox: 5
-loss_giou: 2
-
-# Only used if cross entropy is used
-eos_coef: 0.1 # background cross entropy weight -> decrease to balance class disparity
 
 # positional embedding keyword arguments
 pos_embed:
