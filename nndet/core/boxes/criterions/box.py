@@ -71,4 +71,4 @@ class GIoUBoxCriterion(BoxCriterion):
                 R=number of predictions, L is the number of ground truth
                 objects
         """
-        return self.loss_weight * generalized_box_iou(pred_coords, target_boxes, eps=self.eps)
+        return self.loss_weight * -1 - generalized_box_iou(pred_coords, target_boxes, eps=self.eps)
