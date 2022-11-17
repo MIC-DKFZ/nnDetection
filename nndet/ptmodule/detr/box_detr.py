@@ -3,13 +3,21 @@ from typing import Optional, Type
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.criterions.box import L1BoxCriterion
-from nndet.core.boxes.criterions.cls import SimpleClassCriterionSopftmax
+from nndet.core.boxes.criterions.cls import (
+    SimpleClassCriterionSigmoid,
+    SimpleClassCriterionSoftmax,
+)
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
 from nndet.core.detr import BaseDETR
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
-from nndet.nn.heads.classifier.ffn import CEFFNClassifier, FFNClassifier
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
+from nndet.nn.heads.classifier.ffn import (
+    CEFFNClassifier,
+    FFNClassifier,
+    FocalFFNClassifier,
+)
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1FFNRegressor
 from nndet.nn.heads.segmenter import Segmenter
@@ -21,7 +29,7 @@ from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.transformer import TransformerFacebook
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
-from nndet.ptmodule.mixins.model.detr import SetPredictionMixin
+from nndet.ptmodule.mixins.model.detr import SetModelMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 
@@ -35,7 +43,7 @@ class BoxDETRModule(
     LightningBaseModule,  # Main module
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Bounding Box Evaluation
-    SetPredictionMixin,  # DETR Mixin to build the model
+    SetModelMixin,  # DETR Mixin to build the model
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     # define detector cls
@@ -84,14 +92,19 @@ class BoxDETR(BoxDETRModule):
     head_regressor_cls: FFNRegressor = L1FFNRegressor  #: define regressor class
 
     matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
-    matcher_class_criterion_cls: ClassCriterion = (
-        SimpleClassCriterionSopftmax  #: criterion to compute class cost matrix
-    )
+    matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
     # either reg or box criterion need to be set
     # reg criterion usually operates on encoded targets while box cirterion operates on raw boxes
     # there is no structural difference though and just a nomenclature
     matcher_reg_criterion_cls: Optional[BoxCriterion] = L1BoxCriterion  #: criterion to compute regression cost matrix
     matcher_box_criterion_cls: Optional[BoxCriterion] = None  #: criterion to compute regression cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxDETRC001(BoxDETR):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
+    head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
 # @MODULE_REGISTRY.register

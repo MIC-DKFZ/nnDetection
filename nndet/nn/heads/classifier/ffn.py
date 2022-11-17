@@ -223,7 +223,7 @@ class SoftmaxFFNClassifier(FFNClassifier):
             torch.Tensor: converted logits [N, R, C] where N=batch size,
                 R=number of boxes, C=number of classes
         """
-        return self.logits_to_probs(logits=logits)[..., :-1]  # remove background class
+        return self.logits_to_probs(logits=logits)[..., 1:]  # remove background class
 
 
 class SigmoidFFNClassifier(FFNClassifier):

@@ -22,7 +22,7 @@ from nndet.ptmodule.mixins.model import ModelMixin
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
 
-class SetPredictionMixin(ModelMixin):
+class SetModelMixin(ModelMixin):
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseDETR  #: define base detector class
 
@@ -75,7 +75,7 @@ class SetPredictionMixin(ModelMixin):
         # transformer
         hidden_dim = model_cfg["hidden_dim"]
         pos_embed_kwargs = model_cfg.get("pos_embed", {})
-        logger.info(f"Building Pos Embed:: {cls.pos_embed_cls.__name__} with {pos_embed_kwargs}")
+        logger.info(f"Building:: Pos Embed {cls.pos_embed_cls.__name__} with {pos_embed_kwargs}")
         pos_embed = cls.pos_embed_cls(
             dim=plan_arch["dim"],
             num_pos_feats=hidden_dim,
@@ -293,14 +293,11 @@ class SetPredictionMixin(ModelMixin):
         regressor: FFNRegressor,
         matcher: BaseMatcher,
     ) -> BaseDETR:
-        num_classes = plan_arch["classifier_classes"]  # FIXME
-
         name = cls.head_cls.__name__
         kwargs = model_cfg["head_kwargs"]
 
         logger.info(f"Building:: head {name} with {kwargs}")
         return cls.head_cls(
-            num_classes=num_classes,
             classifier=classifier,
             regressor=regressor,
             matcher=matcher,

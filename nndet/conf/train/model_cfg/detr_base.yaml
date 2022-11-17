@@ -1,13 +1,19 @@
 # DETR
 # backbone
+backbone_kwargs: # keyword arguments passed to encoder
+  max_channels: 384
+  num_conv: [4, 4, 8, 8] # 1 res full res, 2 lower res, 4 det res
+  num_conv_stem: 2 # 1 conv init
+  start_channels: 32
 
 # transformer
-
-# [optional] neck
 
 # head
 head_kwargs:
   aux_loss: True
+  scale_aux_loss: 'none' # one of 'none' | 'mean' | 'reduced'
+  norm_cls_loss_by_num_boxes: True # normalize classification loss by avg number of boxes
+  norm_reg_loss_by_num_boxes: True # normalize regression loss by avg number of boxes
 
 # classifier
 head_classifier_kwargs:
@@ -15,9 +21,14 @@ head_classifier_kwargs:
   num_layers: 1
   add_norm: False
   dropout_rate: 0.0
+  # loss
+  reduction: "sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
-  reduction: "mean" # FIXME
-  # TODO: aux loss norm
+# TODO: eos
+# TODO: GIoU regressor
+# TODO: GIoU criterion
+# TODO: replace deprecated function in post
+# TODO: custom reduce for focal loss
 
 # regressor
 head_regressor_kwargs:
@@ -25,31 +36,34 @@ head_regressor_kwargs:
   num_layers: 3
   add_norm: False
   dropout_rate: 0.0
+  # loss
+  reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
 
 # matcher
 matcher_class_criterion_kwargs:
   loss_weight: 2
-
 matcher_reg_criterion_kwargs:
   loss_weight: 5
-
 matcher_box_criterion_kwargs:
   loss_weight: 2
-
 matcher_kwargs: {}
 
 # DETR Architecture Parameters
 # ----------------------------
-num_encoder_layers: 3
-num_decoder_layers: 6
-dim_feedforward: 1024
 detection_per_img: 6  # number of detections per image
-regressor_depth: 3  # depth of the bounding box regressor
-hidden_dim: 120 # feature length of the transformer input (must be divisible by the number of attention heads)
-query_dim: 120 # should be the same as hidden_dim except for DABDETR
+
+num_encoder_layers: 3
+num_decoder_layers: 3
+
+dim_feedforward: 1024
+
+# regressor_depth: 3  # depth of the bounding box regressor
+hidden_dim: 192 # feature length of the transformer input (must be divisible by the number of attention heads)
+query_dim: 192 # should be the same as hidden_dim except for DABDETR
 attention_heads: 8  # number of attention heads in the transformer
+
 transformer_kwargs: {} # Transformer kwargs: needed
-aux_loss: True
+# aux_loss: True
 # Matching and Loss computation Params
 # ------------------------------------
 loss_ce: 2

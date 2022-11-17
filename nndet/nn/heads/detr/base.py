@@ -21,23 +21,28 @@ from nndet.core.boxes.ops import (
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.utils.dist import get_world_size, is_dist_avail_and_initialized
+from nndet.utils.enums import AuxLossNorm
 
 
 class DETRHead(torch.nn.Module):
     def __init__(
         self,
-        num_classes: int,
         classifier: FFNClassifier,
         regressor: FFNRegressor,
         matcher: BaseMatcher,
         aux_loss: bool = True,
+        scale_aux_loss: str = "none",
+        norm_cls_loss_by_num_boxes: bool = False,
+        norm_reg_loss_by_num_boxes: bool = False,
     ) -> None:
         super().__init__()
-        self.num_classes = num_classes
         self.classifier = classifier
         self.regressor = regressor
         self.matcher = matcher
         self.aux_loss = aux_loss
+        self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
+        self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
+        self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
 
     def forward(
         self,
@@ -149,18 +154,43 @@ class DETRHead(torch.nn.Module):
             num_boxes_all=num_boxes_all,
         )
         if "aux_outputs" in pred_detection:
-            for i, aux_outputs in enumerate(pred_detection["aux_outputs"]):
+            num_aux_outputs = len(pred_detection["aux_outputs"])
+            for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
                 l_dict = self._match_and_compute_loss(
-                    pred_logits=pred_detection["pred_cls_logits"],
-                    pred_coords=pred_detection["pred_box_coords"],
+                    pred_logits=aux_outputs["pred_cls_logits"],
+                    pred_coords=aux_outputs["pred_box_coords"],
                     target_boxes=target_boxes,
                     target_labels=target_labels,
                     num_boxes_all=num_boxes_all,
                 )
-                l_dict = {k + f"_{i}": v for k, v in l_dict.items()}
-                losses.update(l_dict)
-                # TODO: check normalization
+                losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
         return losses
+
+    def format_scale_aux_losses(
+        self,
+        loss_dict: Dict[str, torch.Tensor],
+        num_aux_outputs: int,
+        aux_idx: int,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Format and optionally scale the auxiliary losses
+
+        Args:
+            loss_dict: losses computed from heads on auxiliary outputs
+            num_aux_outputs: number of auxiliary outputs
+            aux_idx: index of current auxiliary output
+
+        Returns:
+            Dict[str, torch.Tensor]: formatted and scaled auxiliary output
+        """
+        if self.scale_aux_loss == AuxLossNorm.NONE:
+            loss_dict = {k + f"_{aux_idx}": v for k, v in loss_dict.items()}
+        elif self.scale_aux_loss == AuxLossNorm.MEAN:
+            loss_dict = {k + f"_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
+        elif self.scale_aux_loss == AuxLossNorm.REDUCED:
+            w = 1 / (num_aux_outputs - aux_idx + 1)
+            loss_dict = {k + f"_{aux_idx}": v * w for k, v in loss_dict.items()}
+        return loss_dict
 
     def prepare_targets(
         self,
@@ -186,7 +216,10 @@ class DETRHead(torch.nn.Module):
         for box in target_boxes:
             boxes_norm = box_point_norm_with_size(box, img_shape=img_shape)
             target_boxes_new.append(box_point2center_format(boxes_norm))
-        return target_boxes_new, target_labels
+
+        # shift labels by one to put background at 0
+        target_labels_new = [t + 1 if t.numel() > 0 else t for t in target_labels]
+        return target_boxes_new, target_labels_new
 
     def _match_and_compute_loss(
         self,
@@ -269,7 +302,7 @@ class DETRHead(torch.nn.Module):
         target_classes_o = torch.cat([t[J] for t, (_, J) in zip(target_labels, indices) if J is not None])
         target_classes = torch.full(
             pred_logits.shape[:2],
-            self.num_classes,  # TODO: recheck if this works correctly with sigmoid losses
+            0,
             dtype=torch.int64,
             device=pred_logits.device,
         )
@@ -280,6 +313,9 @@ class DETRHead(torch.nn.Module):
             pred_logits=pred_logits.transpose(1, 2),
             targets=target_classes,
         )
+        if self.norm_cls_loss_by_num_boxes:
+            loss = {key: item / num_boxes_all for key, item in loss.items()}
+
         # TODO: add class error
         return loss
 
@@ -321,7 +357,8 @@ class DETRHead(torch.nn.Module):
             pred_boxes=box_center2point_format(src_boxes),
             target_boxes=box_center2point_format(target_boxes),
         )
-        loss = {key: item / num_boxes_all for key, item in loss.items()}
+        if self.norm_reg_loss_by_num_boxes:
+            loss = {key: item / num_boxes_all for key, item in loss.items()}
         return loss
 
     @staticmethod
