@@ -146,6 +146,8 @@ def reduction_helper(
         return data
     if reduction.lower() == "sum":
         return torch.sum(data)
+    if reduction.lower() == "mean_d1_sum":
+        return torch.mean(data, dim=1).sum()
     raise AttributeError("Reduction parameter unknown.")
 
 
