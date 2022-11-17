@@ -2,7 +2,7 @@ from typing import Optional, Type
 
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
-from nndet.core.boxes.criterions.box import GIoUBoxCriterion, L1RegCriterion
+from nndet.core.boxes.criterions.box import GIoUCenterBoxCriterion, L1RegCriterion
 from nndet.core.boxes.criterions.cls import (
     SimpleClassCriterionSigmoid,
     SimpleClassCriterionSoftmax,
@@ -97,7 +97,9 @@ class BoxDETR(BoxDETRModule):
     # reg criterion usually operates on encoded targets while box cirterion operates on raw boxes
     # there is no structural difference though and just a nomenclature
     matcher_reg_criterion_cls: Optional[BoxCriterion] = L1RegCriterion  #: criterion to compute regression cost matrix
-    matcher_box_criterion_cls: Optional[BoxCriterion] = GIoUBoxCriterion  #: criterion to compute regression cost matrix
+    matcher_box_criterion_cls: Optional[
+        BoxCriterion
+    ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
 
 
 @MODULE_REGISTRY.register

@@ -1,7 +1,7 @@
 import torch
 
 from nndet.core.boxes.criterions.base import BoxCriterion
-from nndet.core.boxes.ops import generalized_box_iou
+from nndet.core.boxes.ops import box_center2point_format, generalized_box_iou
 
 
 class L1RegCriterion(BoxCriterion):
@@ -38,7 +38,7 @@ class L1RegCriterion(BoxCriterion):
         return self.loss_weight * torch.cdist(pred_coords, target_boxes, p=1)
 
 
-class GIoUBoxCriterion(BoxCriterion):
+class GIoUCenterBoxCriterion(BoxCriterion):
     def __init__(self, loss_weight: float, eps: float = 1e-6) -> None:
         """
         Compute L1 based box cost matrix
@@ -71,4 +71,8 @@ class GIoUBoxCriterion(BoxCriterion):
                 R=number of predictions, L is the number of ground truth
                 objects
         """
-        return self.loss_weight * -1 - generalized_box_iou(pred_coords, target_boxes, eps=self.eps)
+        return self.loss_weight * -1 - generalized_box_iou(
+            box_center2point_format(pred_coords),
+            box_center2point_format(target_boxes),
+            eps=self.eps,
+        )
