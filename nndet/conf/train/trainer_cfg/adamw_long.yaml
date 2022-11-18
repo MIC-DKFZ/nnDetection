@@ -9,7 +9,7 @@ amp_level: # when mixed precision backend is APEX use O1
 # cudnn.benchmark which can give up to 20% performance. Set this to false
 # to perform non-deterministic training
 deterministic: False
-benchmark: False
+benchmark: True
 terminate_on_nan: False # [optional; Default True]
 
 save_top_k: 1 # topk model selection [optonal; Default 1]
@@ -23,16 +23,16 @@ num_val_batches_per_epoch: 100 # number of val batches per epoch
 
 opt_class: "AdamWLWPoly"
 initial_lr: 1.e-4 # initial learning rate to start with
-weight_decay: 1.e-4 # weight decay for optimizer
+weight_decay: 3.e-5 # weight decay for optimizer
 
 # AdamW specific parameters
 beta1: 0.9
 beta2: 0.999
-eps: 1e-4
+eps: 1e-6
 amsgrad: True # PyTorch Default False
 
-warm_iterations: 0 # number of iterations with warmup
-warm_lr: 1.e-6 # learning rate to start warmup from
+warm_iterations: 4000 # number of iterations with warmup
+warm_lr: 1.e-7 # learning rate to start warmup from
 
 poly_gamma: 0.9 # poly learning rate gamma
 
