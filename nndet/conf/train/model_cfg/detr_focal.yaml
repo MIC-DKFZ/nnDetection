@@ -38,7 +38,7 @@ head_classifier_kwargs:
   dropout_rate: 0.0
   # loss
   gamma: 1 # background cross entropy weight
-  loss_weight: 1 # cls loss weight
+  loss_weight: 2 # cls loss weight
   reduction: "mean_d1_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
 # regressor
