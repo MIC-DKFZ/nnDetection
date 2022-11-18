@@ -35,6 +35,22 @@ class DETRHead(torch.nn.Module):
         norm_cls_loss_by_num_boxes: bool = False,
         norm_reg_loss_by_num_boxes: bool = False,
     ) -> None:
+        """
+        Head module for DETR like networks (head is placed behind transformer)
+
+        Args:
+            classifier: classifier with loss and conversion methods
+            regressor: regressor with loss
+            matcher: matching module
+            aux_loss: Additional losses on intermediate outputs from decoder
+                layers. Defaults to True.
+            scale_aux_loss: Only used if `aux_loss=True`. Defines a strategy
+                to normalize the aux losses. Defaults to "none".
+            norm_cls_loss_by_num_boxes: Normalize classification loss by
+                average number of bounding boxes in batch. Defaults to False.
+            norm_reg_loss_by_num_boxes: Normalize regression loss by
+                average number of bounding boxes in batch. Defaults to False.
+        """
         super().__init__()
         self.classifier = classifier
         self.regressor = regressor

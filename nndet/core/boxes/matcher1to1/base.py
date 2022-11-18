@@ -63,7 +63,13 @@ class BaseMatcher(nn.Module):
                 the length of the list corresponds to the batch size
 
         Returns:
-            List[Tuple[Optional[Tensor], Optional[Tensor]]]: #TODO
+            List[Tuple[Tensor, Tensor]]: returns the matched indices for a
+                batch. The first tensor contains the selected predictions
+                (in order) and the second tensor contains the selected ground
+                truth objects (in order). It holds for each elements:
+                len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
+                Entries with None correspond to images without ground truth
+                objects.
         """
         # Filter out patches with no boxes in them
         num_boxes = 0
@@ -107,7 +113,13 @@ class BaseMatcher(nn.Module):
                 batch elements.
 
         Returns:
-            List[Tuple[Optional[Tensor], Optional[Tensor]]]: #TODO
+            List[Tuple[Tensor, Tensor]]: returns the matched indices for a
+                batch. The first tensor contains the selected predictions
+                (in order) and the second tensor contains the selected ground
+                truth objects (in order). It holds for each elements:
+                len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
+                Entries with None correspond to images without ground truth
+                objects.
         """
         indices = []
         add_missing = 0
@@ -150,6 +162,10 @@ class BaseMatcher(nn.Module):
                 the length of the list corresponds to the batch size
 
         Returns:
-            List[Tuple[Tensor, Tensor]]: #TODO
+            List[Tuple[Tensor, Tensor]]: returns the matched indices for a
+                batch. The first tensor contains the selected predictions
+                (in order) and the second tensor contains the selected ground
+                truth objects (in order). It holds for each elements:
+                len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
         """
         raise NotImplementedError()

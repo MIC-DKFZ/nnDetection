@@ -16,24 +16,6 @@ from nndet.core.boxes.matcher1to1.base import BaseMatcher
 
 
 class HungarianMatcher(BaseMatcher):
-    # def match(self, outputs: Dict, targets: List[Dict]) -> List[Tuple[Tensor, Tensor]]:
-    #     """Performs the matching
-    #     Params:
-    #         outputs: This is a dict that contains at least these entries:
-    #              "pred_logits": Tensor of dim [batch_size, num_queries, num_classes] with the classification logits
-    #              "pred_boxes": Tensor of dim [batch_size, num_queries, 6] with the predicted box coordinates
-    #         targets: This is a list of targets (len(targets) = batch_size), where each target is a dict containing:
-    #              "labels": Tensor of dim [num_target_boxes] (where num_target_boxes is the number of ground-truth
-    #                        objects in the target) containing the class labels
-    #              "boxes": Tensor of dim [num_target_boxes, 6] containing the target box coordinates
-    #     Returns:
-    #         A list of size batch_size, containing tuples of (index_i, index_j) where:
-    #             - index_i is the indices of the selected predictions (in order)
-    #             - index_j is the indices of the corresponding selected targets (in order)
-    #         For each batch element, it holds:
-    #             len(index_i) = len(index_j) = min(num_queries, num_target_boxes)
-    #     """
-
     @torch.no_grad()
     def match(
         self,
@@ -62,7 +44,11 @@ class HungarianMatcher(BaseMatcher):
                 the length of the list corresponds to the batch size
 
         Returns:
-            List[Tuple[Tensor, Tensor]]: #TODO
+            List[Tuple[Tensor, Tensor]]: returns the matched indices for a
+                batch. The first tensor contains the selected predictions
+                (in order) and the second tensor contains the selected ground
+                truth objects (in order). It holds for each elements:
+                len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
         """
         bs, num_queries = pred_logits.shape[:2]
 
