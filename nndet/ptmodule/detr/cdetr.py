@@ -7,7 +7,7 @@ from nndet.ptmodule.detr import DETRModule
 
 
 @MODULE_REGISTRY.register
-class CDETRA(DETRModule):
+class CDETR(DETRModule):
     backbone_cls = ConvBackbone
     backbone_conv_cls = ConvInstanceRelu
 
@@ -16,7 +16,7 @@ class CDETRA(DETRModule):
 
 
 @MODULE_REGISTRY.register
-class CDETRCEA(DETRModule):
+class CDETRCE(DETRModule):
     backbone_cls = ConvBackbone
     backbone_conv_cls = ConvInstanceRelu
 
