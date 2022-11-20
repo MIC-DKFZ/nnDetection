@@ -37,7 +37,7 @@ head_classifier_kwargs:
   add_norm: False
   dropout_rate: 0.0
   # loss
-  gamma: 1 # background cross entropy weight
+  background_weight: 0.1 # background cross entropy weight
   loss_weight: 2 # cls loss weight
   reduction: "mean"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
