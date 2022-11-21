@@ -443,6 +443,7 @@ class DETRHead(torch.nn.Module):
                     ``'pred_labels'``: List[torch.Tensor]
                         predicted class List[[R]]
         """
+        # TODO: update to topk sigmoid based perdictions
         batch_pred_scores_fg = self.classifier.postprocess_logits(pred_detection["pred_cls_logits"])
         batch_pred_scores, batch_pred_labels = batch_pred_scores_fg.max(-1)
         batch_pred_boxes_norm = box_center2point_format(pred_detection["pred_box_coords"])
