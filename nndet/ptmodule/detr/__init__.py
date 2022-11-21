@@ -1,2 +1,2 @@
-from nndet.ptmodule.detr.cdetr import CDETR, CDETRCE
-from nndet.ptmodule.detr.detr import DETR, DETRModule
+from nndet.ptmodule.detr.box_detr import BoxDETRModule
+from nndet.ptmodule.detr.dev import BoxDETRC001

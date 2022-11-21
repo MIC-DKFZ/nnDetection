@@ -1,40 +1,42 @@
-import os
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
 
-from nndet.core.abstract_detr import AbstractDETR
+from nndet.core.abstract import AbstractDetector
+from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.detr import BaseDETRHead
-from nndet.utils.position_encoding import PositionEmbeddingSine
+from nndet.nn.heads.segmenter import Segmenter
+from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 
 
-class BaseDETR(AbstractDETR):
-    """
-    Basic DETR Module, Implements forward pass, loss computation
-    """
-
+class BaseDETR(AbstractDetector):
     def __init__(
         self,
-        backbone,
+        backbone: AbstractBackbone,
         transformer: nn.Module,
         head: BaseDETRHead,
+        pos_embed: BasePositionEmbedding,
         hidden_dim: int,
         detection_per_img: int,
         query_dim: int,
         num_feature_levels: int = 1,
+        segmenter: Optional[Segmenter] = None,
+        # debugging
         log_queries: bool = False,
         log_ious: bool = False,
         log_features: bool = False,
     ):
         """
-        Base DETR Implementation
+        Basic DETR Module, Implements forward pass, loss computation
+
         Args:
             backbone: Backbone network to compute image features
             transformer: Transformer Model
             head: Head used for classification, regression, loss computation and postprocessing
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
+            pos_embed: module to generate positional embedding
             query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
             num_feature_levels: which levels of backbone input should be used for the transformer input
                                 (currently only one supported)
@@ -50,7 +52,6 @@ class BaseDETR(AbstractDETR):
         channels = self.backbone.get_channels()
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
-        self.total_feature_levels = len(channels)
 
         # For future multi feature
         if num_feature_levels == 1:
@@ -59,7 +60,7 @@ class BaseDETR(AbstractDETR):
             raise NotImplementedError
 
         # Build Transformer Specific Architecture
-        self.pos_embed = PositionEmbeddingSine(num_pos_feats=self.hidden_dim)
+        self.pos_embed = pos_embed
         self.transformer = transformer
         self.decoder_layers = transformer.dec_layers
         self.query_pos = nn.Embedding(detection_per_img, query_dim)
@@ -67,103 +68,13 @@ class BaseDETR(AbstractDETR):
         # Build the final layers for classification and box regression
         self.head = head
 
+        # Build optional modules
+        self.segmenter = segmenter
+
         # toggle the debug mode
         self.log_query = log_queries
         self.log_iou = log_ious
         self.log_features = log_features
-
-    def forward(
-        self,
-        inp: torch.Tensor,
-    ) -> Tuple[Dict[str, torch.Tensor], List, Dict, List[torch.Tensor]]:
-        """
-        Compute predicted bounding boxes, scores and segmentations
-
-        Args:
-            inp (torch.Tensor): batch of input images
-
-        Returns:
-            dict: predictions from head. Typically includes
-
-                ``"pred_logits"´´ Tensor of predicted logits
-                ``"pred_boxes"´´ Tensor of predicted bounding boxes in normalized center format
-
-            List[torch.Tensor]: list of anchors, empty list for DETR
-
-            dict: segmentation prediction. None, for segmentation use DETRSegmentation
-
-            List[torch.Tensor]: feature maps from decoder
-        """
-
-        # Compute feature list from backbone
-        features = self.backbone(inp)  # [l] (N, C_i, px, py, pz)
-        # Reduce channel dimension with 1x1 convolution to hidden_dim
-        srcs_sequence = self.input_proj[0](features[-1]).unsqueeze(dim=1)  # (N, 1, C, px, py, pz)
-        # Get Position Embedding and pass through transformer
-        pos_embed = self.pos_embed(srcs_sequence.squeeze(dim=1))  # (N, C, px, py, pz)
-        out_sequence, memory, reference = self.transformer(srcs_sequence, self.query_pos.weight, pos_embed)
-        # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
-        # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
-
-        # Calculate Boxes and Class predictions
-        pred_detections = self.head(out_sequence, reference)
-        return pred_detections, [], {}, features
-
-    def forward_log_features_and_attention_maps(
-        self, images: Tensor, targets: Dict, batch_num: int
-    ) -> Tuple[Dict[str, torch.Tensor], List, Dict, List[torch.Tensor]]:
-        """
-        Sets forward hooks to save features, queries and attention maps, then do forward step and save
-        See `self.forward` for more info
-        """
-        # Set some hooks for visualization
-        (
-            conv_features,
-            enc_attn_weights,
-            dec_attn_weights,
-            enc_features,
-            dec_queries0,
-            dec_queries1,
-        ) = ([], [], [], [], [], [])
-        hooks = [
-            self.transformer.encoder.layers[-1].self_attn.register_forward_hook(
-                lambda _self, _input, output: enc_attn_weights.append(output[1])
-            ),
-            self.transformer.decoder.layers[-1].cross_attn.register_forward_hook(
-                lambda _self, _input, output: dec_attn_weights.append(output[1])
-            ),
-            self.transformer.encoder.register_forward_hook(lambda _self, _input, output: enc_features.append(output)),
-            self.input_proj[0].register_forward_hook(lambda _self, _input, output: conv_features.append(output)),
-            self.transformer.decoder.layers[0].register_forward_hook(
-                lambda _self, _input, output: dec_queries0.append(output)
-            ),
-            self.transformer.decoder.layers[1].register_forward_hook(
-                lambda _self, _input, output: dec_queries1.append(output)
-            ),
-        ]
-        # Forward pass and loss computation
-        pred_detection, _, pred_seg, features = self(images)
-
-        for hook in hooks:
-            hook.remove()
-        conv_features = conv_features[0]
-        enc_attn_weights = enc_attn_weights[0]
-        dec_attn_weights = dec_attn_weights[0]
-        enc_features = enc_features[0]
-        dec_queries0 = dec_queries0[0]
-        dec_queries1 = dec_queries1[0]
-        if not os.path.exists("vis"):
-            os.mkdir("vis")
-        torch.save(images, f"vis/images{batch_num}.pt")
-        torch.save(targets, f"vis/conv_features{batch_num}.pt")
-        torch.save(conv_features, f"vis/conv_features{batch_num}.pt")
-        torch.save(enc_attn_weights, f"vis/enc_attn{batch_num}.pt")
-        torch.save(dec_attn_weights, f"vis/dec_attn{batch_num}.pt")
-        torch.save(enc_features, f"vis/enc_features{batch_num}.pt")
-        torch.save(dec_queries0, f"vis/dec_queries0{batch_num}.pt")
-        torch.save(dec_queries1, f"vis/dec_queries1{batch_num}.pt")
-        return pred_detection, _, pred_seg, features
 
     def train_step(
         self,
@@ -260,27 +171,26 @@ class BaseDETR(AbstractDETR):
 
             List[torch.Tensor]: feature maps from decoder
         """
-        if not self.log_features:
-            pred_detection, _, pred_seg, features = self(images)
-        else:
-            (
-                pred_detection,
-                _,
-                pred_seg,
-                features,
-            ) = self.forward_log_features_and_attention_maps(images, targets, batch_num)
+        target_seg: Tensor = targets.get("target_seg", None)
 
-        # Log the predicted queries
-        if self.log_query:
-            self.log_queries(targets["target_classes"], pred_detection["pred_logits"], batch_num)
+        pred_detection, pred_seg, features = self(images)
 
-        pred_losses, _ = self.head.compute_loss(pred_detection, targets, images.shape[2:])
+        pred_losses = self.head.compute_loss(
+            pred_detection=pred_detection,
+            target_boxes=targets["target_boxes"],
+            target_labels=targets["target_classes"],
+            img_shape=tuple(images.shape[2:]),
+        )
+        if self.segmenter is not None:
+            if target_seg is None:
+                raise RuntimeError("Segmenter was provided to network, " "expected ground truth segmentations in step.")
+            pred_losses.update(self.segmenter.compute_loss(pred_seg, target_seg))
 
         if predict:
             # postprocessing
-            prediction = self.postprocess_for_inference(images, pred_detection)
-            if self.log_iou:
-                self.log_ious(pred_detection["pred_boxes"])
+            prediction = self.head.postprocess_for_inference(pred_detection, img_shape=tuple(images.shape[2:]))
+            if self.segmenter is not None:
+                prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         else:
             prediction = None
         return pred_losses, prediction, features
@@ -313,11 +223,50 @@ class BaseDETR(AbstractDETR):
 
             List[torch.Tensor]: feature maps from encoder
         """
-        pred_detection, anchors, pred_seg, features = self(images)
-        prediction = self.postprocess_for_inference(
-            images=images,
-            pred_detection=pred_detection,
-            anchors=anchors,
-            pred_seg=pred_seg,
-        )
+        pred_detection, pred_seg, features = self(images)
+        prediction = self.head.postprocess_for_inference(pred_detection, img_shape=tuple(images.shape[2:]))
+        if self.segmenter is not None:
+            prediction["pred_seg"] = self.segmenter.postprocess_for_inference(pred_seg)["pred_seg"]
         return prediction, features
+
+    def forward(
+        self,
+        inp: torch.Tensor,
+    ) -> Tuple[Dict[str, torch.Tensor], List, Dict, List[torch.Tensor]]:
+        """
+        Compute predicted bounding boxes, scores and segmentations
+
+        Args:
+            inp: batch of input images
+
+        Returns:
+            dict: predictions from head. Typically includes
+
+                ``"pred_logits"´´ Tensor
+                    predicted logits
+
+                ``"pred_boxes"´´ Tensor
+                    predicted bounding boxes in normalized center format
+
+            List[torch.Tensor]: list of anchors, empty list for DETR
+            Dict: segmentation prediction. None, for segmentation use DETRSegmentation
+            List[torch.Tensor]: feature maps from decoder
+        """
+
+        # Compute feature list from backbone
+        features = self.backbone(inp)  # [l] (N, C_i, px, py, pz)
+        # Reduce channel dimension with 1x1 convolution to hidden_dim
+        srcs_sequence = self.input_proj[0](features[-1]).unsqueeze(dim=1)  # (N, 1, C, px, py, pz)
+        # Get Position Embedding and pass through transformer
+        pos_embed = self.pos_embed(srcs_sequence.squeeze(dim=1))  # (N, C, px, py, pz)
+        out_sequence, memory, reference = self.transformer(srcs_sequence, self.query_pos.weight, pos_embed)
+        # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
+        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
+        # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
+
+        # Calculate Boxes and Class predictions
+        pred_detections = self.head(out_sequence, reference)
+
+        # optionally forward seg head
+        pred_seg = self.segmenter(features) if self.segmenter is not None else None
+        return pred_detections, pred_seg, features

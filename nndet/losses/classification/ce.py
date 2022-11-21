@@ -25,6 +25,10 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+
+        Warning:
+            Only kept for backwards compatibility. Please don't use this class
+            and use `nndet.losses.classification.bce.BinaryCrossEntropyLoss`
         """
         super().__init__(
             *args,

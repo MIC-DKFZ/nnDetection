@@ -70,6 +70,7 @@ class RetinaUNetV002(
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
     segmenter_cls: Type[Segmenter] = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    # FIXME: NECK CONV CLS
 
 
 @MODULE_REGISTRY.register

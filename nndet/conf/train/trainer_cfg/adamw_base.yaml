@@ -29,7 +29,7 @@ weight_decay: 3.e-5 # weight decay for optimizer
 # AdamW specific parameters
 beta1: 0.9
 beta2: 0.999
-eps: 1e-8
+eps: 1e-6
 amsgrad: True # PyTorch Default False
 
 warm_iterations: 4000 # number of iterations with warmup

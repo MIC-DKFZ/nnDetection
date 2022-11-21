@@ -6,17 +6,26 @@ from hydra import compose, initialize_config_module
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf.omegaconf import OmegaConf
 
+from nndet.ptmodule.detr.dev.c001 import BoxDETRC001CE
 from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
 from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
 from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 
 # specific modules
 from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
+from nndet.ptmodule.retinanet.rnv002 import (
+    RetinaNetV002,
+    RetinaNetV002Focal,
+    RetinaNetV002Res,
+)
 
 # base modules
-from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
-from nndet.ptmodule.retinaunet.run001 import RetinaUNetModule
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv002 import (
+    RetinaUNetV002,
+    RetinaUNetV002Focal,
+    RetinaUNetV002Res,
+)
 
 
 @pytest.fixture
@@ -93,11 +102,30 @@ def example_batch(in_channels, patch_size, device):
     }
 
 
+def example_empty_batch(in_channels, patch_size, device):
+    data = torch.zeros(in_channels, *patch_size, dtype=torch.float, device=device)
+    mask = torch.zeros(1, *patch_size, dtype=torch.float, device=device)
+    return {
+        "data": data[None],
+        "target": mask[None],
+        "instance_mapping": [{}],
+    }
+
+
 CASES = [
-    # (RetinaNetC001, "v001"),
-    # (RetinaNetC001Focal, "c014_focal"),
+    # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
+    (RetinaUNetV002, "retinaunet_v002"),
+    (RetinaUNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaUNetV002Res, "retinaunet_v002"),
+    (RetinaNetV002, "retinaunet_v002"),
+    (RetinaNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaNetV002Res, "retinaunet_v002"),
+    # Dev Models
+    (BoxDETRC001CE, "detr_c001"),
+    # (RetinaNetC001, "v001"),
+    # (RetinaNetC001Focal, "c014_focal"),
     # (RetinaUNetCV001Focal, "c014_focal"),
     # (FasterRCNNC001, "frcnn_c001"),
     # (MaskRCNNC001, "mrcnn_c001"),
@@ -105,22 +133,27 @@ CASES = [
 ]
 
 
-@pytest.mark.parametrize("step", ["train", "val"])
+DEVICES = ["cpu"]
+# TODO: gpu tests
+# pytest.param(
+#     "cuda",
+#     marks=pytest.mark.skipif(
+#         not torch.cuda.is_available(), reason="No cuda gpu available"
+#     ),
+# ),
+
+
 @pytest.mark.parametrize("case", CASES)
-@pytest.mark.parametrize(
-    "device",
-    [
-        "cpu",
-        # TODO: gpu tests
-        # pytest.param(
-        #     "cuda",
-        #     marks=pytest.mark.skipif(
-        #         not torch.cuda.is_available(), reason="No cuda gpu available"
-        #     ),
-        # ),
-    ],
-)
-def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device):
+@pytest.mark.parametrize("step", ["train", "val"])
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("empty_batch", [True, False])
+def test_model_step_smoke(
+    example_plan,
+    case: Tuple[Callable, str],
+    step: str,
+    device: str,
+    empty_batch: bool,
+):
     # Skip RCNN CPU tests ...
     if "rcnn" in case[1] and device == "cpu":
         return
@@ -140,7 +173,8 @@ def test_step_smoke(example_plan, step: str, case: Tuple[Callable, str], device)
     )
     module.to(device)
 
-    batch = example_batch(
+    _batch_fn = example_empty_batch if empty_batch else example_batch
+    batch = _batch_fn(
         in_channels=example_plan["architecture"]["in_channels"],
         patch_size=example_plan["patch_size"],
         device=device,
