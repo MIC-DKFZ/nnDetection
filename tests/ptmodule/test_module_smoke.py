@@ -12,11 +12,19 @@ from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 
 # specific modules
 from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
+from nndet.ptmodule.retinanet.rnv002 import (
+    RetinaNetV002,
+    RetinaNetV002Focal,
+    RetinaNetV002Res,
+)
 
 # base modules
-from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
-from nndet.ptmodule.retinaunet.run001 import RetinaUNetModule
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv002 import (
+    RetinaUNetV002,
+    RetinaUNetV002Focal,
+    RetinaUNetV002Res,
+)
 
 
 @pytest.fixture
@@ -104,10 +112,18 @@ def example_empty_batch(in_channels, patch_size, device):
 
 
 CASES = [
-    # (RetinaNetC001, "v001"),
-    # (RetinaNetC001Focal, "c014_focal"),
+    # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
+    (RetinaUNetV002, "retinaunet_v002"),
+    (RetinaUNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaUNetV002Res, "retinaunet_v002"),
+    (RetinaNetV002, "retinaunet_v002"),
+    (RetinaNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaNetV002Res, "retinaunet_v002"),
+    # Dev Models
+    # (RetinaNetC001, "v001"),
+    # (RetinaNetC001Focal, "c014_focal"),
     # (RetinaUNetCV001Focal, "c014_focal"),
     # (FasterRCNNC001, "frcnn_c001"),
     # (MaskRCNNC001, "mrcnn_c001"),
