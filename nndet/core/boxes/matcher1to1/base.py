@@ -92,6 +92,8 @@ class BaseMatcher(nn.Module):
                 target_boxes=masked_boxes,
                 target_labels=masked_labels,
             )
+        else:
+            masked_indices = []
 
         indices = self.unmask_indices(mask, masked_indices)
         return indices
