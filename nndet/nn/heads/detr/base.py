@@ -315,7 +315,6 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed classification losses
         """
         idx = self._get_src_permutation_idx(indices)
-        target_classes_o = torch.cat([t[J] for t, (_, J) in zip(target_labels, indices) if J is not None])
         target_classes = torch.full(
             pred_logits.shape[:2],
             0,
@@ -323,7 +322,9 @@ class DETRHead(torch.nn.Module):
             device=pred_logits.device,
         )
 
-        target_classes[idx] = target_classes_o
+        if idx[0].numel() > 0:  # at least one object in batch
+            target_classes_o = torch.cat([t[J] for t, (_, J) in zip(target_labels, indices) if J is not None])
+            target_classes[idx] = target_classes_o
 
         loss = self.classifier.compute_loss(
             pred_logits=pred_logits.transpose(1, 2),
@@ -360,6 +361,9 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed regression losses
         """
         idx = self._get_src_permutation_idx(indices)
+
+        if idx[0].numel() == 0:  # skip box loss if no objects are in batch
+            return {}
         src_boxes = pred_coords[idx]
 
         target_boxes = torch.cat(
@@ -394,9 +398,15 @@ class DETRHead(torch.nn.Module):
                 the predictions to bring them into the same order as the
                 ground truth
         """
-        batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices) if src is not None])
-        src_idx = torch.cat([src for (src, _) in indices if src is not None])
-        return batch_idx, src_idx
+
+        batch_idx = [torch.full_like(src, i) for i, (src, _) in enumerate(indices) if src is not None]
+        src_idx = [src for (src, _) in indices if src is not None]
+
+        if batch_idx:
+            return torch.cat(batch_idx), torch.cat(src_idx)
+        else:
+            # empty tensors
+            return torch.tensor(batch_idx), torch.tensor(src_idx)
 
     def postprocess_for_inference(
         self,
