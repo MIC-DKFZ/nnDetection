@@ -4,6 +4,5 @@
 from nndet.nn.heads.abstract import BaseHead, ClassifierType, RegressorType
 from nndet.nn.heads.classifier import DenseClassifier
 from nndet.nn.heads.comb import AnchorHeadType, RoIHeadType
-from nndet.nn.heads.detr import BaseDETRHead
 from nndet.nn.heads.regressor import DenseRegressor
 from nndet.nn.heads.segmenter import Segmenter, SegmenterType

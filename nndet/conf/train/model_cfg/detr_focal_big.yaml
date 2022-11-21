@@ -37,7 +37,8 @@ head_classifier_kwargs:
   add_norm: False
   dropout_rate: 0.0
   # loss
-  gamma: 1 # background cross entropy weight
+  gamma: 1 # gamma for focal loss
+  alpha: 0.75  # alpha for focal loss
   loss_weight: 2 # cls loss weight
   reduction: "mean_d1_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
@@ -55,6 +56,8 @@ head_regressor_kwargs:
 # matcher
 matcher_class_criterion_kwargs:
   loss_weight: 2
+  gamma: ${model_cfg.head_classifier_kwargs.gamma}
+  alpha: ${model_cfg.head_classifier_kwargs.alpha}
 matcher_reg_criterion_kwargs:
   loss_weight: 5
 matcher_box_criterion_kwargs:

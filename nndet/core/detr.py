@@ -5,7 +5,7 @@ from torch import Tensor, nn
 
 from nndet.core.abstract import AbstractDetector
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.heads.detr import BaseDETRHead
+from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 
@@ -15,17 +15,13 @@ class BaseDETR(AbstractDetector):
         self,
         backbone: AbstractBackbone,
         transformer: nn.Module,
-        head: BaseDETRHead,
+        head: DETRHead,
         pos_embed: BasePositionEmbedding,
         hidden_dim: int,
         detection_per_img: int,
         query_dim: int,
         num_feature_levels: int = 1,
         segmenter: Optional[Segmenter] = None,
-        # debugging
-        log_queries: bool = False,
-        log_ious: bool = False,
-        log_features: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
@@ -40,9 +36,6 @@ class BaseDETR(AbstractDetector):
             query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
             num_feature_levels: which levels of backbone input should be used for the transformer input
                                 (currently only one supported)
-            log_queries: log the predicted queries for analysis
-            log_ious: log the ious of predicted boxes for analysis
-            log_features: log features or attention maps
         """
         super().__init__()
         # Obtain important hyperparameters
@@ -70,11 +63,6 @@ class BaseDETR(AbstractDetector):
 
         # Build optional modules
         self.segmenter = segmenter
-
-        # toggle the debug mode
-        self.log_query = log_queries
-        self.log_iou = log_ious
-        self.log_features = log_features
 
     def train_step(
         self,
