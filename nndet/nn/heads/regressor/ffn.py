@@ -122,8 +122,8 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-        # return self.logits_convert_fn(self.mlp(features))
-        return self.mlp(features)
+        return self.logits_convert_fn(self.mlp(features))
+        # return self.mlp(features)
 
     def compute_loss(
         self,
