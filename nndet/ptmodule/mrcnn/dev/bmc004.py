@@ -149,6 +149,20 @@ class BoxMaskURCNNC004ResEncHeV2(BoxMaskURCNNC004):
 
 
 @MODULE_REGISTRY.register
+class BoxMaskURCNNC004HeV2(BoxMaskURCNNC004):
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone
+    backbone_conv_cls: Type[CONVSEQ] = partial(
+        ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for backbone
+    neck_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for neck
+    roi_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for RoI head
+
+
+@MODULE_REGISTRY.register
 class BoxMaskURCNNC004ResEncPerLevelPost(BoxMaskURCNNC004):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone
     box_post_cls: Type[BoxPostprocessing] = PerLevelBoxPostprocessing  # define box postprocessing strategy

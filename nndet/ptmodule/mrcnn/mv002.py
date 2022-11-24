@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from functools import partial
 from typing import Optional, Type
 
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
@@ -24,6 +25,7 @@ from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
+from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import FPN, UFPN
 from nndet.ptmodule import MODULE_REGISTRY
@@ -63,10 +65,14 @@ class BoxMaskRCNNV002(
     # RPN Configuration
     ###################
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for backbone
+    backbone_conv_cls: Type[CONVSEQ] = partial(
+        ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for backbone
 
     neck_cls: Type[AbstractNeck] = FPN  # define class for neck
-    neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
+    neck_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
@@ -86,7 +92,9 @@ class BoxMaskRCNNV002(
     # RoI Head Configuration
     ########################
     # RoI classes
-    roi_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for RoI head
+    roi_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = RoIModule  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = RoIBoxHead  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = BCEConvRoIClassifier  # box head classifier class
@@ -125,10 +133,14 @@ class BoxMaskURCNNV002(
     # RPN Configuration
     ###################
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  # define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for backbone
+    backbone_conv_cls: Type[CONVSEQ] = partial(
+        ConvInstanceLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for backbone
 
     neck_cls: Type[AbstractNeck] = UFPN  # define class for neck
-    neck_conv_cls: Type[CONVSEQ] = ConvInstanceLReLU  # conv class used for neck
+    neck_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for neck
 
     head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
@@ -146,7 +158,9 @@ class BoxMaskURCNNV002(
     # RoI Head Configuration
     ########################
     # RoI classes
-    roi_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for RoI head
+    roi_conv_cls: Type[CONVSEQ] = partial(
+        ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
+    )  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = RoIModule  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = RoIBoxHead  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = BCEConvRoIClassifier  # box head classifier class
