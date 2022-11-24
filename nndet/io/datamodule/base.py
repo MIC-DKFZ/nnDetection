@@ -57,8 +57,13 @@ class BaseModule(pl.LightningDataModule):
         self.fold = fold
 
         self.preprocessed_dir = self.data_dir.parent.parent
-        self.splits_file = self.augment_cfg.get(
-            "splits_final", "splits_final.pkl")
+        
+        if "splits" in self.augment_cfg:
+            self.splits_file = self.augment_cfg["splits"]
+        elif "splits_final" in self.augment_cfg:
+            self.splits_file = self.augment_cfg["splits_final"]
+        else:
+            self.splits_file = "splits_final"
 
         self.dataset_tr = {}
         self.dataset_val = {}

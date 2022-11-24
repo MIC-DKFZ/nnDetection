@@ -18,6 +18,7 @@ import os
 import sys
 import socket
 import argparse
+import importlib
 from pathlib import Path
 from datetime import datetime
 from typing import List
@@ -346,6 +347,10 @@ def _sweep(
 
     cfg = OmegaConf.load(str(train_dir / "config.yaml"))
     os.chdir(str(train_dir))
+
+    for imp in cfg.get("additional_imports", []):
+        print(f"Additional import found {imp}")
+        importlib.import_module(imp)
 
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="INFO")

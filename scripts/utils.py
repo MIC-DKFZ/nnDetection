@@ -186,6 +186,19 @@ def unpack():
     unpack_dataset(p, num_processes, False)
 
 
+def hydra_searchpath():
+    from hydra import compose as hydra_compose
+    from hydra import initialize_config_module
+        
+    initialize_config_module(config_module="nndet.conf")
+    cfg = hydra_compose("config.yaml", return_hydra_config=True)
+
+    print("Found config sources::")
+    print("----------------------")
+    for s in cfg.hydra.runtime.config_sources:
+        print(s)
+
+
 def env():
     import os
     import torch
