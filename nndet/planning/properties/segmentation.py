@@ -117,12 +117,17 @@ def run_analyze_segmentation(
         Dict[Dict]: computed properties per case
     """
     props_per_case = OrderedDict()
-    with Pool(analyzer.num_processes) as p:
-        props = p.starmap(analyze_fn, zip(
-            repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
 
-        for case_id, prop in zip(analyzer.case_ids, props):
-            props_per_case[case_id] = prop
+    if analyzer.num_processes == 0:
+        props = [analyze_fn(*args) for args in zip(
+            repeat(analyzer), analyzer.case_ids, repeat(all_classes))]
+    else:
+        with Pool(analyzer.num_processes) as p:        
+                props = p.starmap(analyze_fn, zip(
+                    repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
+
+    for case_id, prop in zip(analyzer.case_ids, props):
+        props_per_case[case_id] = prop
 
     if save:
         with open(analyzer.props_per_case_file, "wb") as f:

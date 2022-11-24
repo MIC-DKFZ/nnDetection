@@ -232,7 +232,7 @@ def run_check(data_dir: Path,
                  for case in cases_npz]
 
     if processes == 0:
-        result = [check_case(case_npz, case_pkl, remove=remove)
+        result = [check_case(case_npz, case_pkl, remove=remove, keys=keys)
                   for case_npz, case_pkl in zip(cases_npz, cases_pkl)]
     else:
         with Pool(processes=processes) as p:

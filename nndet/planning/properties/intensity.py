@@ -80,25 +80,31 @@ def run_collect_intensity_properties(analyzer: DatasetAnalyzer,
             Evaluated statistics: `median`; `mean`; `std`; `min`; `max`; `percentile_99_5`; `percentile_00_5`
             `local_props`: contains a dict (with case ids) where statistics where computed per case
     """
-    with Pool(analyzer.num_processes) as p:
-        results = OrderedDict()
-        for mod_id in range(num_modalities):
-            logger.info(f"Processing intensity values of modality {mod_id}")
-            results[mod_id] = OrderedDict()
+    
+    results = OrderedDict()
+    for mod_id in range(num_modalities):
+        logger.info(f"Processing intensity values of modality {mod_id}")
+        results[mod_id] = OrderedDict()
 
-            voxels = p.starmap(get_voxels_in_foreground,
-                               zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)))
+        if analyzer.num_processes == 0:
+            voxels = [get_voxels_in_foreground(*args) for args in
+                      zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id))]
+            local_props = [compute_stats(v) for v in voxels]
+        else:
+            with Pool(analyzer.num_processes) as p:
+                voxels = p.starmap(get_voxels_in_foreground,
+                                    zip(repeat(analyzer), analyzer.case_ids, repeat(mod_id)))
+                local_props = p.map(compute_stats, voxels)
 
-            local_props = p.map(compute_stats, voxels)
-            props_per_case = OrderedDict()
-            for case_id, lp in zip(analyzer.case_ids, local_props):
-                props_per_case[case_id] = lp
-            
-            all_voxels = []
-            for iv in voxels:
-                all_voxels += iv
-            results[mod_id]['local_props'] = props_per_case
-            results[mod_id].update(compute_stats(all_voxels))
+        props_per_case = OrderedDict()
+        for case_id, lp in zip(analyzer.case_ids, local_props):
+            props_per_case[case_id] = lp
+
+        all_voxels = []
+        for iv in voxels:
+            all_voxels += iv
+        results[mod_id]['local_props'] = props_per_case
+        results[mod_id].update(compute_stats(all_voxels))
 
     if save:
         with open(analyzer.intensity_properties_file, 'wb') as f:

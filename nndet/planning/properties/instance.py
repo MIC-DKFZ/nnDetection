@@ -73,9 +73,13 @@ def run_analyze_instances(analyzer: DatasetAnalyzer,
         Dict: extract properties per case id [case_id, property_dict]
     """
     props_per_case = OrderedDict()
-    with Pool(analyzer.num_processes) as p:
-        props = p.starmap(analyze_instances_per_case, zip(
-            repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
+    if analyzer.num_processes == 0:
+        props = [analyze_instances_per_case(*args) for args in zip(
+                 repeat(analyzer), analyzer.case_ids, repeat(all_classes))]
+    else:
+        with Pool(analyzer.num_processes) as p:
+            props = p.starmap(analyze_instances_per_case, zip(
+                repeat(analyzer), analyzer.case_ids, repeat(all_classes)))
 
     # props = [analyze_instances_per_case(analyzer, cid, all_classes) for cid in analyzer.case_ids]
 
