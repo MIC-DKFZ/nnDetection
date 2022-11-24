@@ -223,7 +223,9 @@ def run_check(
     cases_pkl = [case.parent / f"{(case.name).rsplit('.', 1)[0]}.pkl" for case in cases_npz]
 
     if processes == 0:
-        result = [check_case(case_npz, case_pkl, remove=remove) for case_npz, case_pkl in zip(cases_npz, cases_pkl)]
+        result = [
+            check_case(case_npz, case_pkl, remove=remove, keys=keys) for case_npz, case_pkl in zip(cases_npz, cases_pkl)
+        ]
     else:
         with Pool(processes=processes) as p:
             result = p.starmap(check_case, zip(cases_npz, cases_pkl, repeat(remove), repeat(keys)))
