@@ -182,7 +182,8 @@ More details about the format can be found below.
 All data sets should reside inside `Task[Number]_[Name]` folders inside the specified detection data folder (the path to this folder can be set via the `det_data` environment flag).
 To avoid conflicts with our provided pretrained models we recommend to use task numbers starting from 100.
 An overview is provided below ([Name] symbolise folders, `-` symbolise files, indents refer to substructures)
-Note: Please avoid `.` inside file names since it can influence how paths/names are splitted.
+
+**Warning[!]: Please avoid any `.` inside file names/folder names/paths since it can influence how paths/names are splitted.**
 
 ```text
 ${det_data}
