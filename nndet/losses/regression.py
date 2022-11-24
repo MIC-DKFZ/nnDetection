@@ -1,3 +1,12 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
+# SPDX-License-Identifier: Apache-2.0
+#
+# L1 loss from fvcore (https://github.com/facebookresearch/fvcore) licensed under
+# SPDX-FileCopyrightText: 2019, Facebook, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+
 from typing import Optional
 
 import torch

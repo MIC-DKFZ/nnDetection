@@ -1,3 +1,11 @@
+// Modifications licensed under:
+// SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
+// SPDX-License-Identifier: Apache-2.0
+//
+// Parts of this code are from torchvision licensed under
+// SPDX-FileCopyrightText: 2016 Soumith Chintala
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*  adopted from
     https://github.com/pytorch/vision/blob/master/torchvision/csrc/nms.h on Nov 15 2019
     no cpu support, but could be added with this interface.

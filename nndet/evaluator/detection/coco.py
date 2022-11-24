@@ -1,50 +1,10 @@
-"""
-Some parts are adapted from https://github.com/cocodataset/cocoapi :
-
-Copyright (c) 2014, Piotr Dollar and Tsung-Yi Lin
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-The views and conclusions contained in the software and documentation are those
-of the authors and should not be interpreted as representing official policies, 
-either expressed or implied, of the FreeBSD Project.
-"""
-"""
-For the remaining parts:
-
-Copyright 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from cocoapi licensed under
+# SPDX-FileCopyrightText: 2014, Piotr Dollar and Tsung-Yi Lin
+# SPDX-License-Identifier: BSD-2-Clause-Views
 
 import time
 import numpy as np
@@ -137,7 +97,6 @@ class COCOMetric(DetectionMetric):
 
         results = {}
         results.update(self.compute_ap(dataset_statistics))
-        results.update(self.compute_ar(dataset_statistics))
 
         if self.verbose:
             toc = time.time()
@@ -149,15 +108,14 @@ class COCOMetric(DetectionMetric):
         Compute AP metrics
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            dataset_statistics (dict): computed statistics over dataset
+                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
+                    detection thresholds
+                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
+                `precision`: Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
+                `scores`: Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
         """
         results = {}
         if self.iou_range:  # mAP
@@ -184,47 +142,6 @@ class COCOMetric(DetectionMetric):
                            f"MaxDet_{self.max_detections[-1]}")
                     results[key] = self.select_ap(dataset_statistics,
                                                   iou_idx=[idx], cls_idx=cls_idx, max_det_idx=-1)
-        return results
-
-    def compute_ar(self, dataset_statistics: dict) -> dict:
-        """
-        Compute AR metrics
-
-        Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
-        """
-        results = {}
-        for max_det_idx, max_det in enumerate(self.max_detections):  # mAR
-            key = f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_MaxDet_{max_det}"
-            results[key] = self.select_ar(dataset_statistics, max_det_idx=max_det_idx)
-
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"mAR_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                           f"MaxDet_{max_det}")
-                    results[key] = self.select_ar(dataset_statistics,
-                                                  cls_idx=cls_idx, max_det_idx=max_det_idx)
-
-        for idx in self.iou_list_idx:   # AR@IoU
-            key = f"AR_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
-            results[key] = self.select_ar(dataset_statistics, iou_idx=idx, max_det_idx=-1)
-
-            if self.per_class:
-                for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                    key = (f"{cls_str}_"
-                           f"AR_IoU_{self.iou_thresholds[idx]:.2f}_"
-                           f"MaxDet_{self.max_detections[-1]}")
-                    results[key] = self.select_ar(dataset_statistics, iou_idx=idx,
-                                                  cls_idx=cls_idx, max_det_idx=-1)
         return results
 
     @staticmethod
@@ -256,42 +173,6 @@ class COCOMetric(DetectionMetric):
             prec = prec[..., cls_idx, :]
         prec = prec[..., max_det_idx]
         return np.mean(prec)
-
-    @staticmethod
-    def select_ar(dataset_statistics: dict, iou_idx: Union[int, Sequence[int]] = None,
-                  cls_idx: Union[int, Sequence[int]] = None,
-                  max_det_idx: int = -1) -> np.ndarray:
-        """
-        Compute average recall
-
-        Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            iou_idx: index of IoU values to select for evaluation(if None, all values are used)
-            cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
-
-        Returns:
-            np.ndarray: recall value
-        """
-        rec = dataset_statistics["recall"]
-        if iou_idx is not None:
-            rec = rec[iou_idx]
-        if cls_idx is not None:
-            rec = rec[..., cls_idx, :]
-        rec = rec[..., max_det_idx]
-
-        if len(rec[rec > -1]) == 0:
-            rec = -1
-        else:
-            rec = np.mean(rec[rec > -1])
-        return rec
 
     def compute_statistics(self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
                            ) -> Dict[str, Union[np.ndarray, List]]:

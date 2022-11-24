@@ -177,7 +177,7 @@ def _train(
         do_sweep: determine best emprical parameters for run
     """
     print(f"Overwrites: {ov}")
-    initialize_config_module(config_module="nndet.conf")
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
 
     assert cfg.host.parent_data is not None, 'Parent data can not be None'

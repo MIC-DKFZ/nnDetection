@@ -1,3 +1,12 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from torchvision (https://github.com/pytorch/vision) licensed under
+# SPDX-FileCopyrightText: 2016 Soumith Chintala 
+# SPDX-License-Identifier: BSD-3-Clause
+
+
 import torch
 import torch.nn as nn
 
@@ -355,7 +364,7 @@ class BaseRetinaNet(AbstractModel):
             keep_idxs = probs > self.score_thresh
             probs, idx = probs[keep_idxs], idx[keep_idxs]
 
-        anchor_idxs = idx // self.num_foreground_classes
+        anchor_idxs = torch.div(idx, self.num_foreground_classes, rounding_mode="floor")
         labels = idx % self.num_foreground_classes
         boxes = boxes[anchor_idxs]
 

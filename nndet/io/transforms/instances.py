@@ -190,8 +190,8 @@ def get_instance_class_from_properties(
     Returns:
         Tensor: extracted instance classes
     """
-    instance_idx, _ = instance_idx.sort()
-    classes = [int(map_dict[str(int(idx.detach().item()))]) for idx in instance_idx]
+    _map_dict = {int(k): int(i) for k, i in map_dict.items()}
+    classes = [int(_map_dict[int(idx.detach().item())]) for idx in instance_idx]
     return torch.tensor(classes, device=instance_idx.device)
 
 
@@ -207,8 +207,8 @@ def get_instance_class_from_properties_seq(
     Returns:
         Sequence[int]: extracted instance classes
     """
-    instance_idx = sorted(instance_idx)
-    classes = [int(map_dict[str(int(idx))]) for idx in instance_idx]
+    _map_dict = {int(k): int(i) for k, i in map_dict.items()}
+    classes = [int(_map_dict[int(idx)]) for idx in instance_idx]
     return classes
 
 

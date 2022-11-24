@@ -32,7 +32,6 @@ from nndet.utils.info import experimental
 
 
 class FROCMetric(DetectionMetric):
-    @experimental
     def __init__(self,
                  classes: Sequence[str],
                  iou_thresholds: Sequence[float] = (0.1, 0.5),
