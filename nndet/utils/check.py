@@ -168,6 +168,8 @@ def check_data_and_label_splitted(
             if not Path(cp).is_file():
                 raise ValueError(f"Expected {cp} to be a raw splitted "
                                  "data path but it does not exist.")
+            if "." in str(cp.parent):
+                raise ValueError(f"Avoid '.' in paths since this confuses nnDetection in its current version, found {str(cp)}")
 
         if labels:
             # check label info (json files)
