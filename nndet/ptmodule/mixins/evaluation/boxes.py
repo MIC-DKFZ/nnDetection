@@ -59,6 +59,8 @@ class BoxEvalMixin(EvalMixin):
         gt_classes = to_numpy(targets["target_classes"])
         gt_ignore = None
 
+        assert len(pred_boxes) == len(gt_boxes)
+
         self.evaluators["boxes"].run_online_evaluation(
             pred_boxes=pred_boxes,
             pred_classes=pred_classes,
@@ -88,12 +90,12 @@ class BoxEvalMixin(EvalMixin):
         # [optional] log own scores
         logger.info(
             "Box::   "
-            f"mAP@0.1:0.5:0.05: {box_scores['mAP_IoU_0.10_0.50_0.05_MaxDet_100']:0.3f}  "
-            f"AP@0.1: {box_scores['AP_IoU_0.10_MaxDet_100']:0.3f}  "
-            f"AP@0.5: {box_scores['AP_IoU_0.50_MaxDet_100']:0.3f} "
-            f"FROC@0.1: {box_scores['mc_FROC_score_IoU_0.10']:0.3f} "
-            f"FROC@0.5: {box_scores['mc_FROC_score_IoU_0.50']:0.3f} "
-            f"FROC@0.1 (pool): {box_scores['FROC_score_IoU_0.10']:0.3f} "
+            f"mAP@0.1:0.5:0.05: {box_scores.get('mAP_IoU_0.10_0.50_0.05_MaxDet_100', np.nan):0.3f}  "
+            f"AP@0.1: {box_scores.get('AP_IoU_0.10_MaxDet_100', np.nan):0.3f}  "
+            f"AP@0.5: {box_scores.get('AP_IoU_0.50_MaxDet_100', np.nan):0.3f} "
+            f"FROC@0.1: {box_scores.get('mc_FROC_score_IoU_0.10', np.nan):0.3f} "
+            f"FROC@0.5: {box_scores.get('mc_FROC_score_IoU_0.50', np.nan):0.3f} "
+            f"FROC@0.1 (pool): {box_scores.get('FROC_score_IoU_0.10', np.nan):0.3f} "
         )
 
         # log own scores

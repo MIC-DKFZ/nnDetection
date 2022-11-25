@@ -4,6 +4,7 @@ from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.detr import BaseDETR
+from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
@@ -40,6 +41,7 @@ class BoxDETRModule(
     head_linear_cls: LINEARSEQ = ...  #: conv class used for head
     head_classifier_cls: FFNClassifier = ...  #: define classifier class
     head_regressor_cls: FFNRegressor = ...  #: define regressor class
+    head_box_post_cls: DETRBoxPost = ...  #: define postprocessing strategy during inference
 
     matcher_cls: BaseMatcher = ...  #: matching algorithm
     matcher_class_criterion_cls: ClassCriterion = ...  #: criterion to compute class cost matrix

@@ -9,6 +9,7 @@ from nndet.core.boxes.criterions.cls import (
 )
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
+from nndet.core.post.detr import DETRBoxPost, MaxFGBoxPost, TopKBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
@@ -45,6 +46,7 @@ class BoxDETRC001(BoxDETRModule):
     head_linear_cls: LINEARSEQ = LayerLinearReluDrop  #: conv class used for head
     head_classifier_cls: FFNClassifier = CEFFNClassifier  #: define classifier class
     head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
+    head_box_post_cls: DETRBoxPost = MaxFGBoxPost  #: define postprocessing strategy during inference
 
     matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
     matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
@@ -70,6 +72,7 @@ class BoxDETRC001CERes(BoxDETRC001):
 @MODULE_REGISTRY.register
 class BoxDETRC001BCE(BoxDETRC001):
     head_classifier_cls: FFNClassifier = BCEFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
@@ -77,12 +80,14 @@ class BoxDETRC001BCE(BoxDETRC001):
 class BoxDETRC001BCERes(BoxDETRC001):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
     head_classifier_cls: FFNClassifier = BCEFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
 @MODULE_REGISTRY.register
 class BoxDETRC001Focal(BoxDETRC001):
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
@@ -90,6 +95,7 @@ class BoxDETRC001Focal(BoxDETRC001):
 class BoxDETRC001FocalRes(BoxDETRC001):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
@@ -100,4 +106,5 @@ class BoxCDETRC001Focal(BoxDETRC001):
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix

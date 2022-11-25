@@ -9,6 +9,7 @@ from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.detr import BaseDETR
+from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.spine import SpineWrapper
 from nndet.nn.heads.classifier.ffn import FFNClassifier
@@ -37,6 +38,7 @@ class SetModelMixin(ModelMixin):
     head_linear_cls: LINEARSEQ = ...  #: conv class used for head
     head_classifier_cls: FFNClassifier = ...  #: define classifier class
     head_regressor_cls: FFNRegressor = ...  #: define regressor class
+    head_box_post_cls: DETRBoxPost = ...  #: define postprocessing strategy during inference
 
     matcher_cls: BaseMatcher = ...  #: matching algorithm
     matcher_class_criterion_cls: ClassCriterion = ...  #: criterion to compute class cost matrix
@@ -103,12 +105,17 @@ class SetModelMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
+        box_post = cls._build_box_post(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+        )
         head = cls._build_head(
             plan_arch,
             model_cfg,
             classifier=classifier,
             regressor=regressor,
             matcher=matcher,
+            box_post=box_post,
         )
 
         # build optional modules
@@ -285,13 +292,26 @@ class SetModelMixin(ModelMixin):
         )
 
     @classmethod
+    def _build_box_post(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ) -> DETRBoxPost:
+        name = cls.head_box_post_cls.__name__
+        kwargs = model_cfg["head_box_post_kwargs"]
+
+        logger.info(f"Building:: box post {name} with {kwargs}")
+        return cls.head_box_post_cls(**kwargs)
+
+    @classmethod
     def _build_head(
         cls,
-        plan_arch,
-        model_cfg,
+        plan_arch: dict,
+        model_cfg: dict,
         classifier: FFNClassifier,
         regressor: FFNRegressor,
         matcher: BaseMatcher,
+        box_post: DETRBoxPost,
     ) -> BaseDETR:
         name = cls.head_cls.__name__
         kwargs = model_cfg["head_kwargs"]
@@ -301,6 +321,7 @@ class SetModelMixin(ModelMixin):
             classifier=classifier,
             regressor=regressor,
             matcher=matcher,
+            box_post=box_post,
             **kwargs,
         )
 

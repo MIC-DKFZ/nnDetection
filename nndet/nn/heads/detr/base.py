@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 #
-# Original code from DETR https://github.com/facebookresearch/detr/blob/main/models/matcher.py
+# Original code from DETR https://github.com/facebookresearch/detr
 # SPDX-FileCopyrightText: 2020 Facebook
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,6 +18,7 @@ from nndet.core.boxes.ops import (
     box_point_norm_with_size,
     box_point_rescale_with_size,
 )
+from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.utils.dist import get_world_size, is_dist_avail_and_initialized
@@ -30,6 +31,7 @@ class DETRHead(torch.nn.Module):
         classifier: FFNClassifier,
         regressor: FFNRegressor,
         matcher: BaseMatcher,
+        box_post: DETRBoxPost,
         aux_loss: bool = True,
         scale_aux_loss: str = "none",
         norm_cls_loss_by_num_boxes: bool = False,
@@ -42,6 +44,7 @@ class DETRHead(torch.nn.Module):
             classifier: classifier with loss and conversion methods
             regressor: regressor with loss
             matcher: matching module
+            box_post: postprocessing strategy for predictions during inference
             aux_loss: Additional losses on intermediate outputs from decoder
                 layers. Defaults to True.
             scale_aux_loss: Only used if `aux_loss=True`. Defines a strategy
@@ -55,6 +58,7 @@ class DETRHead(torch.nn.Module):
         self.classifier = classifier
         self.regressor = regressor
         self.matcher = matcher
+        self.box_post = box_post
         self.aux_loss = aux_loss
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
@@ -443,20 +447,12 @@ class DETRHead(torch.nn.Module):
                     ``'pred_labels'``: List[torch.Tensor]
                         predicted class List[[R]]
         """
-        # TODO: update to topk sigmoid based perdictions
-        batch_pred_scores_fg = self.classifier.postprocess_logits(pred_detection["pred_cls_logits"])
-        batch_pred_scores, batch_pred_labels = batch_pred_scores_fg.max(-1)
+        batch_pred_probs = self.classifier.postprocess_logits(pred_detection["pred_cls_logits"])
         batch_pred_boxes_norm = box_center2point_format(pred_detection["pred_box_coords"])
         batch_pred_boxes = box_point_rescale_with_size(batch_pred_boxes_norm, img_shape=img_shape, extra_batched=True)
-
-        batch_size = batch_pred_scores.shape[0]
-        assert batch_size == batch_pred_labels.shape[0]
-        assert batch_size == batch_pred_boxes.shape[0]
-        assert batch_pred_labels.shape[1] == batch_pred_boxes.shape[1]
-
-        prediction = {"pred_boxes": [], "pred_scores": [], "pred_labels": []}
-        for batch_idx in range(batch_size):
-            prediction["pred_boxes"].append(batch_pred_boxes[batch_idx])
-            prediction["pred_scores"].append(batch_pred_scores[batch_idx])
-            prediction["pred_labels"].append(batch_pred_labels[batch_idx])
-        return prediction
+        pred_boxes, pred_scores, pred_labels = self.box_post.process_batch(batch_pred_probs, batch_pred_boxes)
+        return {
+            "pred_boxes": pred_boxes,
+            "pred_scores": pred_scores,
+            "pred_labels": pred_labels,
+        }
