@@ -99,7 +99,7 @@ class DETRHead(torch.nn.Module):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
         """
-        box_logits = self.regressor(out_sequence)
+        box_logits = self.regressor.apply_non_lin(self.regressor(out_sequence))
         class_logits = self.classifier(out_sequence)
 
         preds = {"pred_cls_logits": class_logits[-1], "pred_box_coords": box_logits[-1]}

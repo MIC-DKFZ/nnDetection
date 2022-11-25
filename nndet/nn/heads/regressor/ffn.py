@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 import torch
 
+from nndet.core.ops import inverse_sigmoid
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.utils.typing import LINEARSEQ
@@ -53,9 +54,6 @@ class FFNRegressor(torch.nn.Module):
         self.loss: Optional[torch.nn.Module] = None
         self.box_loss: Optional[torch.nn.Module] = None
         self.init_weights()
-
-        # normalize predictions
-        self.logits_convert_fn = torch.nn.Sigmoid()
 
     def _build_module(
         self,
@@ -122,8 +120,31 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-        return self.logits_convert_fn(self.mlp(features))
-        # return self.mlp(features)
+        return self.mlp(features)
+
+    def apply_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Normalise predictions
+
+        Args:
+            x: input tensor of arbitrary shape
+
+        Returns:
+            torch.Tensor: output tensor of same shape
+        """
+        return torch.sigmoid(x)
+
+    def apply_inverse_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Invert the non-linearity which is used to normalize the predictions
+
+        Args:
+            x: input tensor of arbitrary shape
+
+        Returns:
+            torch.Tensor: output tensor of same shape
+        """
+        return inverse_sigmoid(x)
 
     def compute_loss(
         self,

@@ -2,7 +2,6 @@ from typing import Dict, List, Optional, Tuple
 
 import torch
 
-from nndet.core.ops import inverse_sigmoid
 from nndet.nn.heads.detr.base import DETRHead
 
 
@@ -44,16 +43,15 @@ class ConditionalDETRHead(DETRHead):
         """
 
         # regressor
-        reference_before_sigmoid = inverse_sigmoid(reference)
+        reference_before_sigmoid = self.regressor.apply_inverse_non_lin(reference)
 
         outputs_coords = []
         inds = torch.tensor([0, 1, 4], device=out_sequence.device)
         # Also let intermediate level predict, but don't use it for the output
         for lvl in range(out_sequence.shape[0]):
-            # TODO: check sigmoid is placed inside regressor
             tmp = self.regressor(out_sequence[lvl])
             tmp[..., inds] += reference_before_sigmoid
-            outputs_coord = tmp.sigmoid()
+            outputs_coord = self.regressor.apply_non_lin(tmp)
             outputs_coords.append(outputs_coord)
         box_logits = torch.stack(outputs_coords)
 
