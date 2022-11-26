@@ -4,11 +4,16 @@
 import torch
 
 from nndet.losses.classification.functional.asymfocal import (
-    asymmetric_focal_loss_with_logits_jit as asymmetric_focal_loss_with_logits,
+    asymmetric_focal_loss_with_logits,
 )
-from nndet.losses.classification.functional.focal import (
-    focal_loss_with_logits_jit as focal_loss_with_logits,
-)
+
+# from nndet.losses.classification.functional.asymfocal import (
+#     asymmetric_focal_loss_with_logits_jit as asymmetric_focal_loss_with_logits,
+# )
+# from nndet.losses.classification.functional.focal import (
+#     focal_loss_with_logits_jit as focal_loss_with_logits,
+# )
+from nndet.losses.classification.functional.focal import focal_loss_with_logits
 from nndet.losses.ops import SigmoidBaseLoss
 
 
