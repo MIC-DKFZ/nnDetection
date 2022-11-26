@@ -238,7 +238,7 @@ class DETRHead(torch.nn.Module):
             target_boxes_new.append(box_point2center_format(boxes_norm))
 
         # shift labels by one to put background at 0
-        target_labels_new = [t + 1 if t.numel() > 0 else t for t in target_labels]
+        target_labels_new = [t.long() + 1 if t.numel() > 0 else t for t in target_labels]
         return target_boxes_new, target_labels_new
 
     def _match_and_compute_loss(
