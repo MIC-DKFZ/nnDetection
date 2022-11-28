@@ -90,11 +90,11 @@ def boxes2nii():
 
         prediction_meta = {}
         for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
-            mask_slicing = [slice(int(pbox[0]) + 1, int(pbox[2])),
-                            slice(int(pbox[1]) + 1, int(pbox[3])),
+            mask_slicing = [slice(int(pbox[0]), int(pbox[2]) + 1),
+                            slice(int(pbox[1]), int(pbox[3]) + 1),
                             ]
             if instance_mask.ndim == 3:
-                mask_slicing.append(slice(int(pbox[4]) + 1, int(pbox[5])))
+                mask_slicing.append(slice(int(pbox[4]), int(pbox[5]) + 1))
             instance_mask[tuple(mask_slicing)] = instance_id
 
             prediction_meta[int(instance_id)] = {
