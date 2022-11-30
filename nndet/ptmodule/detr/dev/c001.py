@@ -1,4 +1,5 @@
-from typing import Optional, Type
+import copy
+from typing import Optional, Sequence, Type
 
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.criterions.box import GIoUCenterBoxCriterion, L1RegCriterion
@@ -65,6 +66,25 @@ class BoxDETRC001CE(BoxDETRC001):
 
 
 @MODULE_REGISTRY.register
+class BoxDETRC001CE_S16(BoxDETRC001CE):
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
+    ) -> AbstractBackbone:
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["conv_kernels"] = _plan_arch["conv_kernels"][:-1]
+        _plan_arch["strides"] = _plan_arch["strides"][:-1]
+        return super()._build_backbone(
+            plan_arch=_plan_arch,
+            model_cfg=model_cfg,
+            patch_size=patch_size,
+        )
+
+
+@MODULE_REGISTRY.register
 class BoxDETRC001CERes(BoxDETRC001):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
 
@@ -108,6 +128,25 @@ class BoxCDETRC001Focal(BoxDETRC001):
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxCDETRC001Focal_S16(BoxCDETRC001Focal):
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
+    ) -> AbstractBackbone:
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["conv_kernels"] = _plan_arch["conv_kernels"][:-1]
+        _plan_arch["strides"] = _plan_arch["strides"][:-1]
+        return super()._build_backbone(
+            plan_arch=_plan_arch,
+            model_cfg=model_cfg,
+            patch_size=patch_size,
+        )
 
 
 @MODULE_REGISTRY.register

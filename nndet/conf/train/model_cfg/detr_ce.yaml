@@ -1,18 +1,20 @@
 # DETR
+# detection parameters
+detection_per_img: 24  # number of detections per image
+
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
-  max_channels: 384
-  # num_conv: [4, 4, 8, 8] # 1 res full res, 2 lower res, 4 det res
-  # num_conv_stem: 2 # 1 conv init
-  # start_channels: 32
+  pooling_mode: conv_kernel # one of 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
+  start_channels: 32 # number of starting channels
+  max_channels: 512 # maximum number of channels
 
 # transformer
 transformer_kwargs: {} # Transformer kwargs: needed
 num_encoder_layers: 3
 num_decoder_layers: 3
 dim_feedforward: 1024
-hidden_dim: 192 # feature length of the transformer input (must be divisible by the number of attention heads)
-query_dim: 192 # should be the same as hidden_dim except for DABDETR
+hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+query_dim: 384 # should be the same as hidden_dim except for DABDETR
 attention_heads: 8  # number of attention heads in the transformer
 
 # positional embedding keyword arguments
@@ -63,9 +65,6 @@ matcher_reg_criterion_kwargs:
 matcher_box_criterion_kwargs:
   loss_weight: 2
 matcher_kwargs: {}
-
-# detection parameters
-detection_per_img: 6  # number of detections per image
 
 # optional
 neck_kwargs: # keyword arguments passed to decoder
