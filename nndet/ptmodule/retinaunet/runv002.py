@@ -76,9 +76,6 @@ class RetinaUNetV002(
 class RetinaUNetV002Focal(RetinaUNetV002):
     """
     Focal Loss based RetinaUNet V002
-
-    On some datases Focal Loss can produce improved results but it is usually
-    worse than HNM + BCE when evaluated across many datasets
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head

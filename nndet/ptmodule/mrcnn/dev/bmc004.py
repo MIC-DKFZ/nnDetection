@@ -197,3 +197,11 @@ class BoxMaskRCNNC004ResEnc(BoxMaskURCNNC004ResEnc):
     neck_cls: Type[AbstractNeck] = FPN  # define class for neck
 
     segmenter_cls: Optional[Type[Segmenter]] = None  # segmentation head as in RetinaUNet
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004HeV2Focal(BoxMaskURCNNC004):
+    head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
+    head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
+    # [optional] sampler class for negative mining
+    head_sampler_cls: Optional[Type[SamplerType]] = None
