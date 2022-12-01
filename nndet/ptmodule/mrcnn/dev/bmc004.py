@@ -200,7 +200,7 @@ class BoxMaskRCNNC004ResEnc(BoxMaskURCNNC004ResEnc):
 
 
 @MODULE_REGISTRY.register
-class BoxMaskURCNNC004HeV2Focal(BoxMaskURCNNC004):
+class BoxMaskURCNNC004HeV2Focal(BoxMaskURCNNC004HeV2):
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
