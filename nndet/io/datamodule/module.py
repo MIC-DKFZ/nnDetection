@@ -74,7 +74,7 @@ def get_allowed_n_proc_DA():
         elif hostname.startswith("e230-dgx2"):
             return 6
         elif hostname.startswith("e230-dgxa100-") or hostname.startswith("lsf22-gpu"):
-            return 24
+            return 28
         else:
             raise RuntimeError(f"Could not determine det_num_threads, env: {dnt} hostname {hostname}")
     else:
