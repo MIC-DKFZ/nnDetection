@@ -5,6 +5,6 @@ defaults:
   - trainer_cfg: adamw_long
   - model_cfg: detr_ce
 
-module: BoxDETRC001CE
+module: BoxDETRC001CE_S16
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
