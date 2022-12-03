@@ -13,6 +13,6 @@ defaults:
   - trainer_cfg: sgd99_base
   - model_cfg: retinaunet_l1_focal_atss
 
-module: RetinaUNetV002
+module: RetinaUNetV002Focal
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
