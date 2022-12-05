@@ -733,6 +733,108 @@ class DataLoader2DOffset(
         self.offset_prob = offset_prob
 
 
+@DATALOADER_REGISTRY.register
+class NoiseLoader(BaseDataLoader3D):
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        **kwargs,
+    ):
+        """
+        A special dataloader only loading a single (artifically generated)
+        cached case.
+
+        Args:
+            data: Ignored.
+            batch_size: size of batches to generate
+            patch_size_generator: Ignored.
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Ignored.
+            memmap_mode: Ignored.
+            pad_mode: Ignored.
+            pad_kwargs_data: Ignored.
+            num_batches_per_epoch: number of batcher per epoch
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.data_batch = None
+        self.seg_batch = None
+
+    def build_cache(self):
+        return []
+
+    def __len__(self):
+        return self.num_batches_per_epoch
+
+    def generate_train_batch(self) -> Dict[str, Any]:
+        """
+        Generate a single batch
+
+        Returns:
+            Dict: batch dict
+
+                ``"data"`` np.ndarray
+                    data
+
+                ``"seg"`` np.ndarray
+                    unordered(!) numbered instance segmentation
+                    Reordering needs to happen after final crop
+
+                ``"instances"`` List[Sequence[int]]
+                    class for each instance in the case (<- we can not
+                    extract them because we do not know the present instances
+                    yet)
+
+                ``"properties"`` List[Dict]
+                    properties of each case
+
+                ``"keys"`` List[str]
+                    case ids
+
+        """
+        if self.data_batch is None:
+            self.data_batch = np.zeros(self.data_shape_batch, dtype=float)
+        if self.seg_batch is None:
+            self.seg_batch = np.zeros(self.seg_shape_batch, dtype=float)
+            self.seg_batch[0, 0, 16:32, 16:32, 16:32] = 1
+            self.seg_batch[1, 0, 4:28, 4:28, 4:28] = 1
+
+        batch_size = self.data_shape_batch[0]
+        # instances_batch = [{"1": 0} for _ in batch_size]
+        instances_batch = [{"1": 0} if idx in [0, 1] else {} for idx in range(batch_size)]
+        properties_batch = [{} for _ in range(batch_size)]
+        case_ids_batch = ["case_noise" for _ in range(batch_size)]
+
+        return {
+            "data": self.data_batch,
+            "seg": self.seg_batch,
+            "properties": properties_batch,
+            "instance_mapping": instances_batch,
+            "keys": case_ids_batch,
+        }
+
+
 ####
 # Backwards Compatibility
 ####
