@@ -45,8 +45,11 @@ class DetectionEvaluator(AbstractEvaluator):
             iou_fn: compute overlap for each pair
             max_detections: number of maximum detections per image
                 (reduces computation)
-            match_fn: TODO
-            criterion_ranges: TODO
+            match_fn: function to match predictions to ground truth
+            box_criterion: function that takes np.array of boxes [N, 4/6] and computes scalar criterion value
+                np.array [N]
+            criterion_ranges: OrderedDict containing names and ranges of the different ranges of interest, the first
+                entry should contain the whole region otherwise the evaluation is not complete
             filter_keys: define keys which need to be filtered by the IoU value
         """
         self.iou_fn = iou_fn
@@ -54,6 +57,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         self.max_detections = max_detections
         self.box_criterion = box_criterion
+        # Set default ranges here to not have mutable parameter
         if criterion_ranges is None:
             criterion_ranges = ODict(
                 {"": (0, 128**3), "_S": (0, 10**3), "_M": (10**3, 24**3), "_L": (24**3, 128**3)}
@@ -124,6 +128,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         # Loop over all evaluated criterion ranges
         for list_index, criterion_range in enumerate(self.criterion_ranges.values()):
+            # Define new gt_ignores based on the criterion
             gt_ignore_final = copy.deepcopy(gt_ignore)
             for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
                 # If there is no ground truth in this image, we don't need to change the ignored values

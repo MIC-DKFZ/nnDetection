@@ -51,8 +51,8 @@ def matching_batch(
         max_detections: maximum number of detections which should be evaluated
         case_id: optionally provide a case id which will be return to
             identify the matching result
-        criterion:
-        criterion_range:
+        criterion: (Optional) criterion to filter unmatched predictions by in case of evaluating for multiple volumes
+        criterion_range: (Optional) tuple containing the lower and upper bound for the criterion filtering
 
     Returns:
         List[Dict[int, Dict[str, np.ndarray]]]
@@ -118,16 +118,11 @@ def _matching_no_gt(
 
     Args:
         iou_thresholds: defined which IoU thresholds should be evaluated
-        pred_boxes:
-        pred_scores:
-
         max_detections: maximum number of allowed detections per image.
             This functions uses this parameter to stay consistent with
             the actual matching function which needs this limit.
         case_id: optionally provide a case id which will be return to
             identify the matching result
-        criterion:
-        criterion_range:
 
     Returns:
         dict: computed matching
@@ -321,7 +316,7 @@ def _matching_single_image_single_class(
                 for dt_box_criterion in dt_boxes_criterion
             ]
         ).reshape(1, -1)
-        dt_ignore_new = np.logical_or(
+        dt_ignore = np.logical_or(
             dt_ignore, np.logical_and(dt_match == 0, np.repeat(dt_outside, len(iou_thresholds), axis=0))
         )
 
@@ -331,6 +326,6 @@ def _matching_single_image_single_class(
         "gtMatches": gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
         "dtScores": pred_scores,  # [D] detection scores
         "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
-        "dtIgnore": dt_ignore_new,  # [T, D], indicate which detections should be ignored
+        "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
         "case_id": case_id,
     }
