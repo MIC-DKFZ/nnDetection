@@ -183,16 +183,17 @@ class FROCMetric(DetectionMetric):
             )
 
         # keep shape in case of 1 threshold
-        old_shape = dt_matches.shape
-        dt_matches = dt_matches[np.logical_not(dt_ignores)].reshape(old_shape)
+        # old_shape = dt_matches.shape
+        # dt_matches = dt_matches[np.logical_not(dt_ignores)].reshape(old_shape)
 
         curves = {}
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
-            # filter scores with ignores detections
+            # filter scores and matches with detection ignores
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
-            assert len(_scores) == len(dt_matches[iou_idx])
+            _dt_matches = dt_matches[iou_idx][np.logical_not(dt_ignores[iou_idx])]
+            assert len(_scores) == len(_dt_matches)
 
-            _fps, _sens, _th = self.compute_froc_curve_one_iou(dt_matches[iou_idx], _scores, num_images, num_gt)
+            _fps, _sens, _th = self.compute_froc_curve_one_iou(_dt_matches, _scores, num_images, num_gt)
 
             # interpolate at defined fpr thresholds
             curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)

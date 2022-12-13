@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,7 +45,9 @@ class PredictionHistogram(DetectionMetric):
         return self.iou_thresholds
 
     def compute(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        title_prefix: Optional[str] = "",
     ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Plot class independent and per class histograms. For more info see
@@ -53,12 +55,13 @@ class PredictionHistogram(DetectionMetric):
 
         Args:
             Dict: results over dataset
+            title_prefix:
         """
         self.plot_hist(results_list=results_list)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
             results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
-            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_")
+            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}{title_prefix}_")
         return {}, {}
 
     def plot_hist(
@@ -111,10 +114,11 @@ class PredictionHistogram(DetectionMetric):
             return {}, {}
 
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
-            # filter scores with ignores detections
+            # filter scores and matches with detection ignores
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
-            assert len(_scores) == len(dt_matches[iou_idx])
-            _ = self.compute_histogram_one_iou(dt_matches[iou_idx], _scores, num_images, num_gt, iou_val, title_prefix)
+            _dt_matches = dt_matches[iou_idx][np.logical_not(dt_ignores[iou_idx])]
+            assert len(_scores) == len(_dt_matches)
+            _ = self.compute_histogram_one_iou(_dt_matches, _scores, num_images, num_gt, iou_val, title_prefix)
         return {}, {}
 
     def compute_histogram_one_iou(

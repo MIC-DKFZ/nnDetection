@@ -1,13 +1,18 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+
+import copy
+
+# Avoid have OrderedDict twice
+from collections import OrderedDict as ODict
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, OrderedDict, Sequence, Tuple
 
 import numpy as np
 
-from nndet.core.boxes import box_iou_np
+from nndet.core.boxes import box_area_np, box_iou_np
 from nndet.core.masks.ops_np import bin_mask_iou_np
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
@@ -28,6 +33,8 @@ class DetectionEvaluator(AbstractEvaluator):
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
+        box_criterion: Callable = box_area_np,
+        criterion_ranges: OrderedDict[str, Tuple] = None,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
     ):
         """
@@ -38,16 +45,24 @@ class DetectionEvaluator(AbstractEvaluator):
             iou_fn: compute overlap for each pair
             max_detections: number of maximum detections per image
                 (reduces computation)
+            match_fn: TODO
+            criterion_ranges: TODO
             filter_keys: define keys which need to be filtered by the IoU value
         """
         self.iou_fn = iou_fn
         self.match_fn = match_fn
 
         self.max_detections = max_detections
+        self.box_criterion = box_criterion
+        if criterion_ranges is None:
+            criterion_ranges = ODict(
+                {"": (0, 128**3), "_S": (0, 10**3), "_M": (10**3, 24**3), "_L": (24**3, 128**3)}
+            )
+        self.criterion_ranges = criterion_ranges
         self.metrics = metrics
         self.filter_keys = filter_keys
 
-        self.results_list = []  # store results of each image
+        self.results_list = [[] for i in criterion_ranges]  # store results of each image
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
@@ -102,20 +117,42 @@ class DetectionEvaluator(AbstractEvaluator):
             n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
-        self.results_list.extend(
-            self.match_fn(
-                self.iou_fn,
-                self.iou_thresholds,
-                pred_boxes=pred_boxes,
-                pred_classes=pred_classes,
-                pred_scores=pred_scores,
-                gt_boxes=gt_boxes,
-                gt_classes=gt_classes,
-                gt_ignore=gt_ignore,
-                max_detections=self.max_detections,
-                case_id=case_id,
+        # Compute ground truth volumes, set volume of no gt to -1 to ignore
+        gt_boxes_criterion = [
+            np.array([-1]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
+        ]
+
+        # Loop over all evaluated criterion ranges
+        for list_index, criterion_range in enumerate(self.criterion_ranges.values()):
+            gt_ignore_final = copy.deepcopy(gt_ignore)
+            for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
+                # If there is no ground truth in this image, we don't need to change the ignored values
+                if not gt_ignore_final[i].size == 0:
+                    for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
+                        if (
+                            gt_ignore_final[i][j]
+                            or gt_box_criterion < criterion_range[0]
+                            or gt_box_criterion > criterion_range[1]
+                        ):
+                            gt_ignore_final[i][j] = 1
+                        else:
+                            gt_ignore_final[i][j] = 0
+            self.results_list[list_index].extend(
+                self.match_fn(
+                    self.iou_fn,
+                    self.iou_thresholds,
+                    pred_boxes=pred_boxes,
+                    pred_classes=pred_classes,
+                    pred_scores=pred_scores,
+                    gt_boxes=gt_boxes,
+                    gt_classes=gt_classes,
+                    gt_ignore=gt_ignore_final,
+                    max_detections=self.max_detections,
+                    case_id=case_id,
+                    criterion=self.box_criterion,
+                    criterion_range=criterion_range,
+                )
             )
-        )
         return {}
 
     def finish_online_evaluation(
@@ -131,20 +168,25 @@ class DetectionEvaluator(AbstractEvaluator):
         metric_scores = {}
         metric_curves = {}
         for metric_idx, metric in enumerate(self.metrics):
-            _filter = partial(
-                self.iou_filter,
-                iou_idx=self.iou_mapping[metric_idx],
-                filter_keys=self.filter_keys,
-            )
-            iou_filtered_results = list(map(_filter, self.results_list))
+            for criterion_key, results in zip(self.criterion_ranges.keys(), self.results_list):
+                _filter = partial(
+                    self.iou_filter,
+                    iou_idx=self.iou_mapping[metric_idx],
+                    filter_keys=self.filter_keys,
+                )
+                iou_filtered_results = list(map(_filter, results))
 
-            score, curve = metric(iou_filtered_results)
+                if metric.__class__ == PredictionHistogram:
+                    score, curve = metric(iou_filtered_results, title_prefix=criterion_key)
+                else:
+                    score, curve = metric(iou_filtered_results)
+                if score is not None:
+                    score = {f"{key}{criterion_key}": value for key, value in score.items()}
+                    metric_scores.update(score)
 
-            if score is not None:
-                metric_scores.update(score)
-
-            if curve is not None:
-                metric_curves.update(curve)
+                if curve is not None:
+                    curve = {f"{key}_{criterion_key}": value for key, value in curve.items()}
+                    metric_curves.update(curve)
         return metric_scores, metric_curves
 
     @staticmethod

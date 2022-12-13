@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
 
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -25,6 +25,8 @@ def matching_batch(
     gt_ignore: Sequence[Sequence[bool]],
     max_detections: int = 100,
     case_id: Optional[str] = None,
+    criterion: Optional[Callable] = None,
+    criterion_range: Optional[Tuple] = None,
 ) -> List[Dict[int, Dict[str, np.ndarray]]]:
     """
     Match boxes of a batch to corresponding ground truth for each category
@@ -49,6 +51,8 @@ def matching_batch(
         max_detections: maximum number of detections which should be evaluated
         case_id: optionally provide a case id which will be return to
             identify the matching result
+        criterion:
+        criterion_range:
 
     Returns:
         List[Dict[int, Dict[str, np.ndarray]]]
@@ -65,14 +69,17 @@ def matching_batch(
         result = {}  # dict contains results for each class in one image
         for c in img_classes:
             pred_mask = pclasses == c  # mask predictions with current class
-            gt_mask = gclasses == c  # mask ground trtuh with current class
+            gt_mask = gclasses == c  # mask ground truth with current class
 
             if not np.any(gt_mask):  # no ground truth
                 result[c] = _matching_no_gt(
                     iou_thresholds=iou_thresholds,
+                    pred_boxes=pboxes[pred_mask],
                     pred_scores=pscores[pred_mask],
                     max_detections=max_detections,
                     case_id=case_id,
+                    criterion=criterion,
+                    criterion_range=criterion_range,
                 )
             elif not np.any(pred_mask):  # no predictions
                 result[c] = _matching_no_pred(
@@ -90,6 +97,8 @@ def matching_batch(
                     max_detections=max_detections,
                     iou_thresholds=iou_thresholds,
                     case_id=case_id,
+                    criterion=criterion,
+                    criterion_range=criterion_range,
                 )
         results.append(result)
     return results
@@ -97,21 +106,28 @@ def matching_batch(
 
 def _matching_no_gt(
     iou_thresholds: Sequence[float],
+    pred_boxes: np.ndarray,
     pred_scores: np.ndarray,
     max_detections: int,
     case_id: Optional[str] = None,
+    criterion: Optional[Callable] = None,
+    criterion_range: Optional[Tuple] = None,
 ):
     """
     Matching result with not ground truth in image
 
     Args:
         iou_thresholds: defined which IoU thresholds should be evaluated
-        dt_scores: predicted scores
+        pred_boxes:
+        pred_scores:
+
         max_detections: maximum number of allowed detections per image.
             This functions uses this parameter to stay consistent with
             the actual matching function which needs this limit.
         case_id: optionally provide a case id which will be return to
             identify the matching result
+        criterion:
+        criterion_range:
 
     Returns:
         dict: computed matching
@@ -128,12 +144,25 @@ def _matching_no_gt(
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
     dt_scores = pred_scores[dt_ind]
+    pred_boxes = pred_boxes[dt_ind]
 
     num_preds = len(dt_scores)
 
     gt_match = np.array([[]] * len(iou_thresholds))
     dt_match = np.zeros((len(iou_thresholds), num_preds))
     dt_ignore = np.zeros((len(iou_thresholds), num_preds))
+
+    # If a criterion was passed, check for unmatched detections outside the criterion ranges and ignore
+    if criterion is not None and criterion_range is not None:
+        dt_boxes_criterion = criterion(pred_boxes)
+        dt_outside = np.array(
+            [
+                dt_box_criterion < criterion_range[0] or dt_box_criterion > criterion_range[1]
+                for dt_box_criterion in dt_boxes_criterion
+            ]
+        ).reshape(1, -1)
+        # all boxes are unmatched so remove the "and"
+        dt_ignore = np.logical_or(dt_ignore, np.repeat(dt_outside, len(iou_thresholds), axis=0))
 
     return {
         "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
@@ -199,6 +228,8 @@ def _matching_single_image_single_class(
     max_detections: int,
     iou_thresholds: Sequence[float],
     case_id: Optional[str] = None,
+    criterion: Optional[Callable] = None,
+    criterion_range: Optional[Tuple] = None,
 ) -> Dict[str, np.ndarray]:
     """
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
@@ -281,12 +312,25 @@ def _matching_single_image_single_class(
                 dt_match[tind, dind] = 1
                 gt_match[tind, m] = 1
 
+    # If a criterion was passed, check for unmatched detections outside the criterion ranges and ignore
+    if criterion is not None and criterion_range is not None:
+        dt_boxes_criterion = criterion(pred_boxes)
+        dt_outside = np.array(
+            [
+                dt_box_criterion < criterion_range[0] or dt_box_criterion > criterion_range[1]
+                for dt_box_criterion in dt_boxes_criterion
+            ]
+        ).reshape(1, -1)
+        dt_ignore_new = np.logical_or(
+            dt_ignore, np.logical_and(dt_match == 0, np.repeat(dt_outside, len(iou_thresholds), axis=0))
+        )
+
     # store results for given image and category
     return {
         "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
         "gtMatches": gt_match,  # [T, G], where T = number of thresholds, G = number of ground truth
         "dtScores": pred_scores,  # [D] detection scores
         "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
-        "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
+        "dtIgnore": dt_ignore_new,  # [T, D], indicate which detections should be ignored
         "case_id": case_id,
     }
