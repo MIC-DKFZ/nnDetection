@@ -132,7 +132,7 @@ class DetectionEvaluator(AbstractEvaluator):
                         if (
                             gt_ignore_final[i][j]
                             or gt_box_criterion < criterion_range[0]
-                            or gt_box_criterion > criterion_range[1]
+                            or gt_box_criterion >= criterion_range[1]
                         ):
                             gt_ignore_final[i][j] = 1
                         else:
@@ -176,7 +176,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 )
                 iou_filtered_results = list(map(_filter, results))
 
-                if metric.__class__ == PredictionHistogram:
+                if metric.__class__ != COCOMetric:
                     score, curve = metric(iou_filtered_results, title_prefix=criterion_key)
                 else:
                     score, curve = metric(iou_filtered_results)
