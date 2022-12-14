@@ -31,10 +31,10 @@ class DetectionEvaluator(AbstractEvaluator):
         self,
         metrics: Sequence[DetectionMetric],
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
-        max_detections: int = 100,
-        match_fn: Callable = matching_batch,
         box_criterion: Callable = box_area_np,
         criterion_ranges: OrderedDict[str, Tuple] = None,
+        max_detections: int = 100,
+        match_fn: Callable = matching_batch,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
     ):
         """
@@ -59,9 +59,7 @@ class DetectionEvaluator(AbstractEvaluator):
         self.box_criterion = box_criterion
         # Set default ranges here to not have mutable parameter
         if criterion_ranges is None:
-            criterion_ranges = ODict(
-                {"": (0, 128**3), "_S": (0, 10**3), "_M": (10**3, 24**3), "_L": (24**3, 128**3)}
-            )
+            criterion_ranges = ODict({"": (0, 512**3)})
         self.criterion_ranges = criterion_ranges
         self.metrics = metrics
         self.filter_keys = filter_keys
@@ -233,6 +231,8 @@ class DetectionEvaluator(AbstractEvaluator):
         fast: bool = True,
         verbose: bool = False,
         save_dir: Optional[Path] = None,
+        box_criterion: Callable = box_area_np,
+        criterion_ranges: OrderedDict[str, Tuple] = None,
     ):
         """
         Create an box evaluator object
@@ -280,7 +280,19 @@ class DetectionEvaluator(AbstractEvaluator):
                     iou_thresholds=(0.1, 0.5),
                 )
             )
-        return cls(metrics=tuple(metrics), iou_fn=cls.similarity_fn)
+
+        # Use default setting if no ranges are passed
+        if criterion_ranges is None or len(criterion_ranges) == 0:
+            criterion_ranges = ODict(
+                {"": (0, 256**3), "_S": (0, 10**3), "_M": (10**3, 24**3), "_L": (24**3, 256**3)}
+            )
+
+        return cls(
+            metrics=tuple(metrics),
+            iou_fn=cls.similarity_fn,
+            box_criterion=box_criterion,
+            criterion_ranges=criterion_ranges,
+        )
 
 
 class BoxEvaluator(DetectionEvaluator):
