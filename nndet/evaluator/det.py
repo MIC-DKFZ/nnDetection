@@ -3,12 +3,9 @@
 
 
 import copy
-
-# Avoid have OrderedDict twice
-from collections import OrderedDict as ODict
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, OrderedDict, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -32,7 +29,7 @@ class DetectionEvaluator(AbstractEvaluator):
         metrics: Sequence[DetectionMetric],
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
         box_criterion: Callable = box_area_np,
-        criterion_ranges: OrderedDict[str, Tuple] = None,
+        criterion_ranges: Dict[str, Tuple] = None,
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
@@ -57,14 +54,14 @@ class DetectionEvaluator(AbstractEvaluator):
 
         self.max_detections = max_detections
         self.box_criterion = box_criterion
-        # Set default ranges here to not have mutable parameter
+        # Set to only one range if create function was not used
         if criterion_ranges is None:
-            criterion_ranges = ODict({"": (0, 512**3)})
+            criterion_ranges = {"": (0, 512**3)}
         self.criterion_ranges = criterion_ranges
         self.metrics = metrics
         self.filter_keys = filter_keys
 
-        self.results_list = [[] for i in criterion_ranges]  # store results of each image
+        self.results_dict = {key: [] for key in criterion_ranges.keys()}  # store results of each image
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
@@ -125,7 +122,7 @@ class DetectionEvaluator(AbstractEvaluator):
         ]
 
         # Loop over all evaluated criterion ranges
-        for list_index, criterion_range in enumerate(self.criterion_ranges.values()):
+        for results_key, criterion_range in self.criterion_ranges.items():
             # Define new gt_ignores based on the criterion
             gt_ignore_final = copy.deepcopy(gt_ignore)
             for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
@@ -140,7 +137,8 @@ class DetectionEvaluator(AbstractEvaluator):
                             gt_ignore_final[i][j] = 1
                         else:
                             gt_ignore_final[i][j] = 0
-            self.results_list[list_index].extend(
+            # Store results in corresponding results_dict entry
+            self.results_dict[results_key].extend(
                 self.match_fn(
                     self.iou_fn,
                     self.iou_thresholds,
@@ -171,7 +169,7 @@ class DetectionEvaluator(AbstractEvaluator):
         metric_scores = {}
         metric_curves = {}
         for metric_idx, metric in enumerate(self.metrics):
-            for criterion_key, results in zip(self.criterion_ranges.keys(), self.results_list):
+            for criterion_key, results in self.results_dict.items():
                 _filter = partial(
                     self.iou_filter,
                     iou_idx=self.iou_mapping[metric_idx],
@@ -222,7 +220,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Reset internal state of evaluator
         """
-        self.results_list = []
+        self.results_dict = {key: [] for key in self.criterion_ranges}
 
     @classmethod
     def create(
@@ -232,7 +230,7 @@ class DetectionEvaluator(AbstractEvaluator):
         verbose: bool = False,
         save_dir: Optional[Path] = None,
         box_criterion: Callable = box_area_np,
-        criterion_ranges: OrderedDict[str, Tuple] = None,
+        criterion_ranges: Dict[str, Tuple] = None,
     ):
         """
         Create an box evaluator object
@@ -244,6 +242,9 @@ class DetectionEvaluator(AbstractEvaluator):
                 Does no calculate pre class metrics
             verbose: Additional logging output
             save_dir: Path to save information
+            box_criterion: Criterion for separate evaluation
+            criterion_ranges: Ranges of the value of the box criterion to evaluate (the first entry should be
+                "": full range
 
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
@@ -283,10 +284,12 @@ class DetectionEvaluator(AbstractEvaluator):
 
         # Use default setting if no ranges are passed
         if criterion_ranges is None or len(criterion_ranges) == 0:
-            criterion_ranges = ODict(
-                {"": (0, 256**3), "_S": (0, 10**3), "_M": (10**3, 24**3), "_L": (24**3, 256**3)}
-            )
-
+            criterion_ranges = {
+                "": (0, 256**3),
+                "_S": (0, 10**3),
+                "_M": (10**3, 24**3),
+                "_L": (24**3, 256**3),
+            }
         return cls(
             metrics=tuple(metrics),
             iou_fn=cls.similarity_fn,
