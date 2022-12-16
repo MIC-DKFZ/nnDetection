@@ -364,7 +364,8 @@ class BaseRetinaNet(AbstractModel):
             keep_idxs = probs > self.score_thresh
             probs, idx = probs[keep_idxs], idx[keep_idxs]
 
-        anchor_idxs = torch.div(idx, self.num_foreground_classes, rounding_mode="floor")
+        #anchor_idxs = torch.div(idx, self.num_foreground_classes, rounding_mode="floor")
+        anchor_idxs = torch.floor_divide(idx, self.num_foreground_classes)
         labels = idx % self.num_foreground_classes
         boxes = boxes[anchor_idxs]
 
