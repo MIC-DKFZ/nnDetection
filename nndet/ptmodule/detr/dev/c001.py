@@ -112,6 +112,25 @@ class BoxDETRC001Focal(BoxDETRC001):
 
 
 @MODULE_REGISTRY.register
+class BoxDETRC001Focal_S16(BoxDETRC001Focal):
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
+    ) -> AbstractBackbone:
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["conv_kernels"] = _plan_arch["conv_kernels"][:-1]
+        _plan_arch["strides"] = _plan_arch["strides"][:-1]
+        return super()._build_backbone(
+            plan_arch=_plan_arch,
+            model_cfg=model_cfg,
+            patch_size=patch_size,
+        )
+
+
+@MODULE_REGISTRY.register
 class BoxDETRC001FocalRes(BoxDETRC001):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
