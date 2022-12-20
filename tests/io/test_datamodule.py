@@ -21,4 +21,4 @@ def test_get_allowed_n_proc_DA_t1(mock):
 @mock.patch.dict(os.environ, {}, clear=True)
 def test_get_allowed_n_proc_DA_t2(mock):
     proc = get_allowed_n_proc_DA()
-    assert proc == 24
+    assert proc == 28
