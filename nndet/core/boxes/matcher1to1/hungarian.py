@@ -9,6 +9,7 @@
 from typing import List, Tuple
 
 import torch
+from loguru import logger
 from scipy.optimize import linear_sum_assignment
 from torch import Tensor
 
@@ -69,7 +70,19 @@ class HungarianMatcher(BaseMatcher):
         C = cost_class + cost_box
         C = C.view(bs, num_queries, -1).cpu()
         sizes = [len(v) for v in target_boxes]
-        indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
+        try:
+            indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
+        except Exception:
+            logger.info(f"Out logits: {out_logits}")
+            logger.info(f"Out boxes: {out_bbox}")
+            logger.info(f"Gt labels: {tgt_labels}")
+            logger.info(f"Gt boxes: {tgt_bbox}")
+            logger.info(f"cost_class: {cost_class}")
+            logger.info(f"cost_box: {cost_box}")
+            logger.info(f"sizes: {sizes}")
+            logger.info(f"C: {C}")
+            logger.info(f"BS {bs} NQ: {num_queries}")
+            raise RuntimeError
 
         return [
             (
