@@ -2,6 +2,7 @@ monai
 pytest
 pytest-cov
 pytest-mock
+syrupy
 pre-commit
 sphinx
 pydata-sphinx-theme
