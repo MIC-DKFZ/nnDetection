@@ -1,3 +1,4 @@
+monai
 pytest
 pytest-cov
 pytest-mock

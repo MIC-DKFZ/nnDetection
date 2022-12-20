@@ -1,5 +1,12 @@
+import math
+
 import numpy as np
 import pytest
+
+try:
+    import monai
+except ImportError:
+    monai = None
 
 from nndet.evaluator.registry import BoxEvaluator
 
@@ -130,3 +137,49 @@ def test_evaluator(snapshot, example):
     assert res[1]["class2_FROC_num_images"] == n_img
     assert res[1]["class0_FROC_num_gt"] + res[1]["class1_FROC_num_gt"] + res[1]["class2_FROC_num_gt"] == n_gt_all
     assert res == snapshot
+
+
+@pytest.mark.skipif(monai is None, reason="Monai is not available")
+def test_froc_against_monai(example):
+    from monai.metrics.froc import compute_froc_curve_data, compute_froc_score
+
+    example_preds, example_gt, n_img, n_pred_all, n_gt_all = example
+    assert len(example_preds) == len(example_gt)
+    evaluator = BoxEvaluator.create(
+        classes=["class0", "class1", "class2"],
+        fast=False,
+        verbose=True,
+        save_dir=None,
+    )
+
+    for idx, (p, t) in enumerate(zip(example_preds, example_gt)):
+        evaluator.run_online_evaluation(
+            pred_boxes=[p["pred_boxes"]],
+            pred_classes=[p["pred_labels"]],
+            pred_scores=[p["pred_scores"]],
+            gt_boxes=[t["target_boxes"]],
+            gt_classes=[t["target_classes"]],
+            gt_ignore=None,
+            case_id=[f"case{idx}"],
+        )
+
+    res = evaluator.finish_online_evaluation()
+    froc_score_nndet = res[0]["FROC_score_IoU_0.10"]
+
+    results_list = evaluator.results_list
+
+    results = [_r for r in results_list for _r in r.values()]
+    tp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 1] for r in results])
+    fp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 0] for r in results])
+
+    fppi, sens = compute_froc_curve_data(fp_probs=fp_props, tp_probs=tp_props, num_targets=n_gt_all, num_images=n_img)
+    froc_score_monai = compute_froc_score(fppi, sens, eval_thresholds=(0.125, 0.25, 0.5, 1, 2, 4, 8))
+
+    assert res[1]["FROC_num_images"] == n_img
+    assert res[1]["FROC_num_gt"] == n_gt_all
+    assert res[1]["class0_FROC_num_images"] == res[1]["class1_FROC_num_images"]
+    assert res[1]["class1_FROC_num_images"] == res[1]["class2_FROC_num_images"]
+    assert res[1]["class2_FROC_num_images"] == n_img
+    assert res[1]["class0_FROC_num_gt"] + res[1]["class1_FROC_num_gt"] + res[1]["class2_FROC_num_gt"] == n_gt_all
+
+    assert math.isclose(float(froc_score_nndet), float(froc_score_monai))
