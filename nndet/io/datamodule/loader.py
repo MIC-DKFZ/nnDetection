@@ -7,6 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 
+import nndet.core.boxes.ops as ops_torch
+from nndet.core.boxes.clip import clip_boxes_to_image
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.mixins.bgcrop import RandomBGCrop2D, RandomBGCrop3D
 from nndet.io.datamodule.mixins.fgcrop import (
@@ -220,7 +222,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 )[0]
             if self.load_box:
                 res = self.load_box_from_crop(
-                    case_data,
+                    case_id=case_id,
+                    case_data=case_data,
                     crop=crop,
                 )
                 box_coord_batch.append(res[0])
@@ -261,10 +264,32 @@ class BaseDataLoader3D(SlimDataLoaderBase):
 
     def load_box_from_crop(
         self,
+        case_id: str,
         case_data: np.ndarray,
         crop: Sequence[slice],
     ) -> Tuple[np.ndarray, np.ndarray]:
-        pass
+        gt = np.load(self._data[case_id]["label_boxes_file"])
+        gt_boxes = gt["boxes"]
+        gt_labels = gt["labels"]
+
+        if gt_boxes.size > 0:
+            lower_bound = np.array([s.start for s in crop])
+            # offset coordinates to crop
+            crop_boxes = gt_boxes - ops_torch.expand_to_boxes(lower_bound[None])
+            # TODO: update function
+            # TODO: clip must be at -1!
+            crop_boxes = clip_boxes_to_image(crop_boxes, img_shape=self.patch_size_generator)
+            # TODO: think about min size 1 vs 2
+            # remove small boxes (everything outside of the crop has size 0)
+            keep = ops_torch.remove_small_boxes(crop_boxes, min_size=1)
+
+            box_coord = crop_boxes[keep]
+            box_label = gt_labels[keep]
+        else:
+            # TODO: dtypes
+            gt_boxes = np.array([[]]).reshape(-1, 6)  # TODO dim param
+            gt_labels = np.array([])
+        return box_coord, box_label
 
 
 ###
