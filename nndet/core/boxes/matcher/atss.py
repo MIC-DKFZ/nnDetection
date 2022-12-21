@@ -13,17 +13,17 @@ import torch
 from loguru import logger
 from torch import Tensor
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.matcher.base import Matcher
-from nndet.core.boxes.ops import box_center_dist, box_iou, center_in_boxes
 
-INF = 100  # not really inv but here it is sufficient
+INF = 10000  # not really inf but here it is sufficient
 
 
 class ATSSMatcher(Matcher):
     def __init__(
         self,
         num_candidates: int,
-        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = ops_torch.box_iou,
         center_in_gt: bool = True,
     ):
         """
@@ -78,7 +78,7 @@ class ATSSMatcher(Matcher):
         num_gt = boxes.shape[0]
         num_anchors = anchors.shape[0]
 
-        distances, _, anchors_center = box_center_dist(boxes, anchors)  # num_boxes x anchors
+        distances, _, anchors_center = ops_torch.box_center_dist(boxes, anchors)  # num_boxes x anchors
 
         # select candidates based on center distance
         candidate_idx = []
@@ -111,7 +111,7 @@ class ATSSMatcher(Matcher):
                 .expand_as(candidate_idx)
                 .contiguous()
             )  # [num_boxes x n_candidates]
-            is_in_gt = center_in_boxes(
+            is_in_gt = ops_torch.center_in_boxes(
                 anchors_center[candidate_idx.view(-1)],
                 boxes[boxes_idx.view(-1)],
                 eps=self.min_dist,

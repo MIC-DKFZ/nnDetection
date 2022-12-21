@@ -14,7 +14,16 @@ from nndet.core.boxes.clip import clip_boxes_to_image, clip_boxes_to_image_
 from nndet.core.boxes.coder import BoxCoderND, CoderType
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher, Matcher, MatcherType
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms, nms
-from nndet.core.boxes.ops import (
+from nndet.core.boxes.sampler import (
+    AbstractSampler,
+    BalancedHardNegativeSampler,
+    HardNegativeSampler,
+    HardNegativeSamplerBatched,
+    HardNegativeSamplerFgAll,
+    NegativeSampler,
+)
+from nndet.core.ops_np import box_area_np, box_iou_np, box_size_np
+from nndet.core.ops_torch import (
     box_area,
     box_center,
     box_center_dist,
@@ -26,12 +35,3 @@ from nndet.core.boxes.ops import (
     permute_boxes,
     remove_small_boxes,
 )
-from nndet.core.boxes.sampler import (
-    AbstractSampler,
-    BalancedHardNegativeSampler,
-    HardNegativeSampler,
-    HardNegativeSamplerBatched,
-    HardNegativeSamplerFgAll,
-    NegativeSampler,
-)
-from nndet.core.ops_np import box_area_np, box_iou_np, box_size_np

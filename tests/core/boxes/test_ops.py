@@ -3,12 +3,8 @@ import math
 import pytest
 import torch
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes import *
-from nndet.core.boxes.ops import (
-    cat_and_index,
-    distance_box_iou_paired,
-    generalized_box_iou_paired,
-)
 
 
 @pytest.fixture
@@ -82,14 +78,14 @@ def test_generalized_box_iou_3d(boxes0_3d, boxes1_3d):
 
 
 def test_generalized_box_iou_3d_paired(boxes0_3d, boxes1_3d):
-    ious = generalized_box_iou_paired(boxes0_3d, boxes1_3d[1:])
+    ious = ops_torch.generalized_box_iou_paired(boxes0_3d, boxes1_3d[1:])
     assert all([a == b for a, b in zip(ious.shape, (2, 2))])
     expected = torch.empty_like(ious).fill_((1.0 / 15.0) - (12.0 / 27.0))
     assert ious.allclose(expected)
 
 
 def test_distance_box_iou_3d_paired(boxes0_3d, boxes1_3d):
-    ious = distance_box_iou_paired(boxes0_3d, boxes1_3d[1:])
+    ious = ops_torch.distance_box_iou_paired(boxes0_3d, boxes1_3d[1:])
     assert all([a == b for a, b in zip(ious.shape, (2, 2))])
 
     # iou = 1 / 15
@@ -141,6 +137,6 @@ def test_permute_boxes_3d():
 
 
 def test_cat_and_index(boxes0_3d, boxes1_3d):
-    boxes, idx = cat_and_index([boxes0_3d, torch.tensor([[]]).reshape(-1, 6), boxes1_3d])
+    boxes, idx = ops_torch.cat_and_index([boxes0_3d, torch.tensor([[]]).reshape(-1, 6), boxes1_3d])
     torch.allclose(boxes, torch.cat([boxes0_3d, boxes1_3d], dim=0))
     torch.allclose(idx, torch.tensor([0, 0, 2, 2, 2], dtype=boxes0_3d.dtype))

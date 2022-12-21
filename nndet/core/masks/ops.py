@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn.functional as F
 
-from nndet.core.boxes.ops import box_size
+import nndet.core.ops_torch as ops_torch
 
 
 def roi_mask_to_image_mask(
@@ -28,7 +28,7 @@ def roi_mask_to_image_mask(
     if num_items == 0:
         return torch.tensor([], device=masks.device, dtype=masks.dtype)
 
-    boxes_size = torch.round(box_size(boxes)).to(dtype=torch.int)
+    boxes_size = torch.round(ops_torch.box_size(boxes)).to(dtype=torch.int)
     for idx in range(num_items):
         if (boxes_size[idx] < 1).any():
             continue

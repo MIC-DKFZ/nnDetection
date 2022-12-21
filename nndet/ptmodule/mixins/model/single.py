@@ -6,11 +6,11 @@ from typing import Optional, Sequence, Type
 
 from loguru import logger
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
 from nndet.core.boxes.coder import BoxCoderND, CoderType
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
@@ -166,7 +166,7 @@ class SingleStageMixin(ModelMixin):
         )
 
         matcher = cls.matcher_cls(
-            similarity_fn=box_iou,
+            similarity_fn=ops_torch.box_iou,
             **model_cfg["matcher_kwargs"],
         )
         box_post = cls._build_box_post(

@@ -6,8 +6,8 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.nms import nms
-from nndet.core.boxes.ops import box_area, box_iou
 
 
 def batched_wbc_nms_no_label(
@@ -153,10 +153,10 @@ def wbc(
         Tensor: consolidated boxes
         Tensor: consolidated scores
     """
-    ious = box_iou(boxes, boxes)
+    ious = ops_torch.box_iou(boxes, boxes)
 
     if use_area:
-        areas = box_area(boxes)
+        areas = ops_torch.box_area(boxes)
         weights = weights * areas
 
     _, idx_pool = torch.sort(scores, descending=True)
