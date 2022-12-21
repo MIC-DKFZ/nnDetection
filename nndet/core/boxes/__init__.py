@@ -26,7 +26,6 @@ from nndet.core.boxes.ops import (
     permute_boxes,
     remove_small_boxes,
 )
-from nndet.core.boxes.ops_np import box_area_np, box_iou_np, box_size_np
 from nndet.core.boxes.sampler import (
     AbstractSampler,
     BalancedHardNegativeSampler,
@@ -35,3 +34,4 @@ from nndet.core.boxes.sampler import (
     HardNegativeSamplerFgAll,
     NegativeSampler,
 )
+from nndet.core.ops_np import box_area_np, box_iou_np, box_size_np

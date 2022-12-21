@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 import numpy as np
 
-from nndet.core.boxes.ops_np import box_size_np
+import nndet.core.ops_np as ops_np
 from nndet.utils.typing import ND_TUPLE_INT
 
 
@@ -114,7 +114,7 @@ class OffsetFGCrop3D(FGCrop):
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
         box = candidates["boxes"][[idx]]  # [1, 6]
-        box_size = box_size_np(box)[0]
+        box_size = ops_np.box_size_np(box)[0]
         box = box[0]
 
         origins = []
@@ -199,7 +199,7 @@ class OffsetFGCrop3DV2(FGCrop):
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
         box = candidates["boxes"][[idx]]  # [1, 6]
-        box_size = box_size_np(box)[0]
+        box_size = ops_np.box_size_np(box)[0]
         box = box[0]
 
         origins = []
@@ -368,7 +368,7 @@ class OffsetFGCrop2D(FGCrop):
         # some instances might get lost during resampling so we need to find the correct index
         idx = candidates["instances"].index(instance_id)
         box = candidates["boxes"][[idx]]  # [1, 6]
-        box_size = box_size_np(box)[0, 1:]
+        box_size = ops_np.box_size_np(box)[0, 1:]
         box = box[0]
 
         slice_idx = np.random.randint(int(box[0]) + 1, int(box[2]))
