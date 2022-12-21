@@ -19,7 +19,6 @@ class FGCrop:
     def get_fg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         instance_id: int,
@@ -30,7 +29,6 @@ class FGCrop:
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             instance_id: instance index to sample
@@ -47,7 +45,6 @@ class InsideFGCrop3D(FGCrop):
     def get_fg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         instance_id: int,
@@ -58,7 +55,6 @@ class InsideFGCrop3D(FGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             instance_id: instance index to sample
@@ -89,7 +85,6 @@ class OffsetFGCrop3D(FGCrop):
     def get_fg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         instance_id: int,
@@ -100,7 +95,6 @@ class OffsetFGCrop3D(FGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             instance_id: instance index to sample
@@ -173,7 +167,6 @@ class OffsetFGCrop3DV2(FGCrop):
     def get_fg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         instance_id: int,
@@ -185,7 +178,6 @@ class OffsetFGCrop3DV2(FGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             instance_id: instance index to sample
@@ -343,7 +335,6 @@ class OffsetFGCrop2D(FGCrop):
     def get_fg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         instance_id: int,
@@ -354,7 +345,6 @@ class OffsetFGCrop2D(FGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             instance_id: instance index to sample

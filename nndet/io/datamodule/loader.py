@@ -25,6 +25,8 @@ from nndet.io.patching import save_get_crop
 from nndet.utils.enums import SelectionMode
 from nndet.utils.info import deprecate
 
+# TODO: add caching mechanism for bounding boxes
+
 
 class BaseDataLoader3D(SlimDataLoaderBase):
     build_cache: Callable[[], Dict]
@@ -43,6 +45,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         pad_mode: str = "constant",
         pad_kwargs_data: Optional[Dict[str, Any]] = None,
         num_batches_per_epoch: int = 2500,
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Basic Dataloder for 3D Data.
@@ -62,6 +66,11 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             pad_mode: Padding mode for data. Defaults to "constant".
             pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
+            load_seg: load segmentation map into `seg` key.
+            # TODO: update me
+            load_box: load bounding boxes into `box` key. Working with
+                boxes directly is significnatly more efficient in terms
+                of IO and augmentation but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -95,6 +104,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.data_shape_batch, self.seg_shape_batch = self.determine_shapes()
         self.cache = self.build_cache()
         self.candidates_key = "boxes_file"
+        self.load_seg = load_seg
+        self.load_box = load_box
 
     def __len__(self):
         return self.num_batches_per_epoch
@@ -155,21 +166,25 @@ class BaseDataLoader3D(SlimDataLoaderBase):
 
         """
         data_batch = np.zeros(self.data_shape_batch, dtype=float)
-        seg_batch = np.zeros(self.seg_shape_batch, dtype=float)
         instances_batch, properties_batch, case_ids_batch = [], [], []
+
+        if self.load_seg:
+            seg_batch = np.zeros(self.seg_shape_batch, dtype=float)
+        if self.load_box:
+            box_coord_batch = []
+            box_label_batch = []
 
         selected_cases, selected_instances = self.select()
         for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
             # print(case_id, instance_id)
             case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=True)
-            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=True)
             properties = load_pickle(self._data[case_id]["properties_file"])
 
+            # determine positions and patches
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
                 crop = self.get_bg_crop(
                     case_data=case_data,
-                    case_seg=case_seg,
                     properties=properties,
                     case_id=case_id,
                     candidates=candidates,
@@ -178,36 +193,54 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 candidates = self.load_candidates(case_id=case_id, fg_crop=True)
                 crop = self.get_fg_crop(
                     case_data=case_data,
-                    case_seg=case_seg,
                     properties=properties,
                     case_id=case_id,
                     instance_id=instance_id,
                     candidates=candidates,
                 )
 
+            # loading
             data_batch[batch_idx] = save_get_crop(
                 case_data,
                 crop=crop,
                 mode=self.pad_mode,
                 **self.pad_kwargs_data,
             )[0]
-            seg_batch[batch_idx] = save_get_crop(
-                case_seg,
-                crop=crop,
-                mode="constant",
-                constant_values=-1,
-            )[0]
+            if self.load_seg:
+                case_seg = np.load(
+                    self._data[case_id]["seg_file"],
+                    self.memmap_mode,
+                    allow_pickle=True,
+                )
+                seg_batch[batch_idx] = save_get_crop(
+                    case_seg,
+                    crop=crop,
+                    mode="constant",
+                    constant_values=-1,
+                )[0]
+            if self.load_box:
+                res = self.load_box_from_crop(
+                    case_data,
+                    crop=crop,
+                )
+                box_coord_batch.append(res[0])
+                box_label_batch.append(res[1])
             case_ids_batch.append(case_id)
             instances_batch.append(properties.pop("instances"))
             properties_batch.append(properties)
 
-        return {
+        out = {
             "data": data_batch,
-            "seg": seg_batch,
             "properties": properties_batch,
             "instance_mapping": instances_batch,
             "keys": case_ids_batch,
         }
+        if self.load_seg:
+            out["seg"] = seg_batch
+        if self.load_box:
+            out["box_coord"] = box_coord_batch
+            out["box_label"] = box_label_batch
+        return out
 
     def load_candidates(self, case_id: str, fg_crop: bool) -> Union[Dict, None]:
         """
@@ -226,79 +259,12 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         else:
             return None
 
-
-class BaseDataLoader2D(BaseDataLoader3D):
-    def generate_train_batch(self) -> Dict[str, Any]:
-        """
-        Generate a single batch
-
-        Returns:
-            Dict: batch dict
-
-                ``"data"`` np.ndarray
-                    data
-
-                ``"seg"`` np.ndarray
-                    unordered(!) numbered instance segmentation
-                    Reordering needs to happen after final crop
-
-                ``"instances"`` List[Sequence[int]]
-                    class for each instance in the case (<- we can not
-                    extract them because we do not know the present instances
-                    yet)
-
-                ``"properties"`` List[Dict]
-                    properties of each case
-
-                ``"keys"`` List[str]
-                    case ids
-        """
-        data_batch = np.zeros(self.data_shape_batch, dtype=np.float32)
-        seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float32)
-        instances_batch, properties_batch, case_ids_batch = [], [], []
-
-        selected_cases, selected_instances = self.select()
-        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
-            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=False)
-            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=False)
-            properties = load_pickle(self._data[case_id]["properties_file"])
-            if instance_id < 0:
-                candidates = self.load_candidates(case_id=case_id, fg_crop=False)
-                crop = self.get_bg_crop(
-                    case_data=case_data,
-                    case_seg=case_seg,
-                    properties=properties,
-                    case_id=case_id,
-                    candidates=candidates,
-                )
-            else:
-                candidates = self.load_candidates(case_id=case_id, fg_crop=True)
-                crop = self.get_fg_crop(
-                    case_data=case_data,
-                    case_seg=case_seg,
-                    properties=properties,
-                    case_id=case_id,
-                    instance_id=instance_id,
-                    candidates=candidates,
-                )
-
-            data_batch[batch_idx] = save_get_crop(case_data, crop=crop, mode=self.pad_mode, **self.pad_kwargs_data,)[
-                0
-            ][:, 0]
-            seg_batch[batch_idx] = save_get_crop(case_seg, crop=crop, mode="constant", constant_values=-1,)[
-                0
-            ][:, 0]
-            case_ids_batch.append(case_id)
-            instances_batch.append(properties.pop("instances"))
-            properties_batch.append(properties)
-
-        return {
-            "data": data_batch,
-            "seg": seg_batch,
-            "properties": properties_batch,
-            "instance_mapping": instances_batch,
-            "keys": case_ids_batch,
-        }
+    def load_box_from_crop(
+        self,
+        case_data: np.ndarray,
+        crop: Sequence[slice],
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        pass
 
 
 ###
@@ -677,63 +643,6 @@ class DataLoader3DOffsetPatientBalanced(
 
 
 @DATALOADER_REGISTRY.register
-class DataLoader2DOffset(
-    RandomBGCrop2D,
-    OffsetFGCrop2D,
-    RandomSelectionMixin,
-    BaseDataLoader2D,
-):
-    def __init__(
-        self,
-        data: Dict,
-        batch_size: int,
-        patch_size_generator: Sequence[int],
-        patch_size_final: Sequence[int],
-        oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
-        num_batches_per_epoch: int = 2500,
-        offset_prob: float = 1.0,
-    ):
-        """
-        Dataloder for 2D Data.
-        Center of foreground patches is sampled with an offset while objects
-        reamin inside the patch.
-        Background patches are sampled randomly.
-        Objects are selected randomly.
-
-        Args:
-            data: dict with cases and data paths
-            batch_size: size of batches to generate
-            patch_size_generator: patch size prduced by the dataloader
-            patch_size_final: final patch size after spatial transform
-            oversample_foreground_percent: Oversample foreground patches.
-                Each batch will be balanced to fullfill this criterion.
-            memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
-            offset_prob: probability to apply additional offsets of objects.
-
-        Raises:
-            ValueError: patch size of dataloder and final patch size need to
-                have the same length
-        """
-        super().__init__(
-            data=data,
-            batch_size=batch_size,
-            patch_size_generator=patch_size_generator,
-            patch_size_final=patch_size_final,
-            oversample_foreground_percent=oversample_foreground_percent,
-            memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
-            num_batches_per_epoch=num_batches_per_epoch,
-        )
-        self.offset_prob = offset_prob
-
-
-@DATALOADER_REGISTRY.register
 class NoiseLoader(BaseDataLoader3D):
     def __init__(
         self,
@@ -869,3 +778,137 @@ class DataLoader3DBalanced(DataLoader3DOffsetObjectBalanced):
     )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+####
+# Deprecated -- Do not use this
+####
+class BaseDataLoader2D(BaseDataLoader3D):
+    def generate_train_batch(self) -> Dict[str, Any]:
+        """
+        Generate a single batch
+
+        Returns:
+            Dict: batch dict
+
+                ``"data"`` np.ndarray
+                    data
+
+                ``"seg"`` np.ndarray
+                    unordered(!) numbered instance segmentation
+                    Reordering needs to happen after final crop
+
+                ``"instances"`` List[Sequence[int]]
+                    class for each instance in the case (<- we can not
+                    extract them because we do not know the present instances
+                    yet)
+
+                ``"properties"`` List[Dict]
+                    properties of each case
+
+                ``"keys"`` List[str]
+                    case ids
+        """
+        data_batch = np.zeros(self.data_shape_batch, dtype=np.float32)
+        seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float32)
+        instances_batch, properties_batch, case_ids_batch = [], [], []
+
+        selected_cases, selected_instances = self.select()
+        for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
+            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=False)
+            case_seg = np.load(self._data[case_id]["seg_file"], self.memmap_mode, allow_pickle=False)
+            properties = load_pickle(self._data[case_id]["properties_file"])
+            if instance_id < 0:
+                candidates = self.load_candidates(case_id=case_id, fg_crop=False)
+                crop = self.get_bg_crop(
+                    case_data=case_data,
+                    case_seg=case_seg,
+                    properties=properties,
+                    case_id=case_id,
+                    candidates=candidates,
+                )
+            else:
+                candidates = self.load_candidates(case_id=case_id, fg_crop=True)
+                crop = self.get_fg_crop(
+                    case_data=case_data,
+                    case_seg=case_seg,
+                    properties=properties,
+                    case_id=case_id,
+                    instance_id=instance_id,
+                    candidates=candidates,
+                )
+
+            data_batch[batch_idx] = save_get_crop(case_data, crop=crop, mode=self.pad_mode, **self.pad_kwargs_data,)[
+                0
+            ][:, 0]
+            seg_batch[batch_idx] = save_get_crop(case_seg, crop=crop, mode="constant", constant_values=-1,)[
+                0
+            ][:, 0]
+            case_ids_batch.append(case_id)
+            instances_batch.append(properties.pop("instances"))
+            properties_batch.append(properties)
+
+        return {
+            "data": data_batch,
+            "seg": seg_batch,
+            "properties": properties_batch,
+            "instance_mapping": instances_batch,
+            "keys": case_ids_batch,
+        }
+
+
+@DATALOADER_REGISTRY.register
+class DataLoader2DOffset(
+    RandomBGCrop2D,
+    OffsetFGCrop2D,
+    RandomSelectionMixin,
+    BaseDataLoader2D,
+):
+    def __init__(
+        self,
+        data: Dict,
+        batch_size: int,
+        patch_size_generator: Sequence[int],
+        patch_size_final: Sequence[int],
+        oversample_foreground_percent: float = 0.5,
+        memmap_mode: str = "r+",
+        pad_mode: str = "constant",
+        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        num_batches_per_epoch: int = 2500,
+        offset_prob: float = 1.0,
+    ):
+        """
+        Dataloder for 2D Data.
+        Center of foreground patches is sampled with an offset while objects
+        reamin inside the patch.
+        Background patches are sampled randomly.
+        Objects are selected randomly.
+
+        Args:
+            data: dict with cases and data paths
+            batch_size: size of batches to generate
+            patch_size_generator: patch size prduced by the dataloader
+            patch_size_final: final patch size after spatial transform
+            oversample_foreground_percent: Oversample foreground patches.
+                Each batch will be balanced to fullfill this criterion.
+            memmap_mode: Do not change this. Defaults to "r".
+            pad_mode: Padding mode for data. Defaults to "constant".
+            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
+            offset_prob: probability to apply additional offsets of objects.
+
+        Raises:
+            ValueError: patch size of dataloder and final patch size need to
+                have the same length
+        """
+        super().__init__(
+            data=data,
+            batch_size=batch_size,
+            patch_size_generator=patch_size_generator,
+            patch_size_final=patch_size_final,
+            oversample_foreground_percent=oversample_foreground_percent,
+            memmap_mode=memmap_mode,
+            pad_mode=pad_mode,
+            pad_kwargs_data=pad_kwargs_data,
+            num_batches_per_epoch=num_batches_per_epoch,
+        )
+        self.offset_prob = offset_prob
