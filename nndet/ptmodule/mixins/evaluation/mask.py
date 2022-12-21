@@ -6,7 +6,7 @@ from typing import Dict, List
 import torch
 from loguru import logger
 
-from nndet.core.masks.ops import roi_mask_to_image_mask
+import nndet.core.ops_torch as ops_torch
 from nndet.evaluator import AbstractEvaluator
 from nndet.evaluator.det import MaskEvaluator
 from nndet.ptmodule.mixins.evaluation.base import EvalMixin
@@ -62,7 +62,7 @@ class ScoreMasksEvalMixin(EvalMixin):
         pred_masks = []
         for idx in range(len(target_binary_masks)):
             # breakpoint()
-            pred_bin_masks = roi_mask_to_image_mask(
+            pred_bin_masks = ops_torch.roi_mask_to_image_mask(
                 boxes=_pred_boxes[idx],
                 masks=_pred_masks_probs[idx],
                 image_shape=_image_spatial_size,

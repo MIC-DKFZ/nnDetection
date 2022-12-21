@@ -25,7 +25,7 @@ import SimpleITK as sitk
 from sklearn.metrics import confusion_matrix
 from torch import Tensor
 
-from nndet.core.boxes import box_iou_np, box_size_np
+import nndet.core.ops_np as ops_np
 from nndet.io.load import load_pickle, save_json
 from nndet.utils.info import deprecate, experimental, maybe_verbose_iterable
 
@@ -79,7 +79,7 @@ def collect_overview(
             results[case_id]["num_fn"] = len(gt_classes)
             results[case_id]["fn_boxes"] = gt_boxes
         else:
-            match_quality_matrix = box_iou_np(gt_boxes, pred_boxes)
+            match_quality_matrix = ops_np.box_iou_np(gt_boxes, pred_boxes)
             matched_idxs = np.argmax(match_quality_matrix, axis=0)
             matched_vals = np.max(match_quality_matrix, axis=0)
             matched_idxs[matched_vals < iou] = -1
@@ -200,7 +200,7 @@ def collect_score_iou(prediction_dir: Path, gt_dir: Path, iou: float, score: flo
             all_pred.append(np.ones(len(gt_classes)) * -1)
             all_target.append(gt_classes)
         else:
-            match_quality_matrix = box_iou_np(gt_boxes, pred_boxes)
+            match_quality_matrix = ops_np.box_iou_np(gt_boxes, pred_boxes)
 
             matched_idxs = np.argmax(match_quality_matrix, axis=0)
             matched_vals = np.max(match_quality_matrix, axis=0)
@@ -300,7 +300,7 @@ def collect_boxes(prediction_dir: Path, gt_dir: Path, iou: float, score: float):
             all_target.append(gt_classes)
             all_boxes.append(gt_boxes)
         else:
-            match_quality_matrix = box_iou_np(gt_boxes, pred_boxes)
+            match_quality_matrix = ops_np.box_iou_np(gt_boxes, pred_boxes)
 
             matched_idxs = np.argmax(match_quality_matrix, axis=0)
             matched_vals = np.max(match_quality_matrix, axis=0)
@@ -330,7 +330,7 @@ def plot_sizes(all_pred, all_target, all_boxes, iou, score):
     _all_target = np.concatenate(all_target)
     _all_boxes = np.concatenate([ab for ab in all_boxes if ab.size > 0])
 
-    dists = box_size_np(_all_boxes)
+    dists = ops_np.box_size_np(_all_boxes)
     tp_mask = _all_pred == _all_target
     fp_mask = (_all_pred != _all_target) * (_all_pred != -1)
     fn_mask = (_all_pred != _all_target) * (_all_pred == -1)
@@ -377,7 +377,7 @@ def plot_sizes_bar(all_pred, all_target, all_boxes, iou, score, max_bin: Optiona
     _all_target = np.concatenate(all_target)
     _all_boxes = np.concatenate([ab for ab in all_boxes if ab.size > 0])
 
-    dists = box_size_np(_all_boxes)
+    dists = ops_np.box_size_np(_all_boxes)
     tp_mask = _all_pred == _all_target
     fp_mask = (_all_pred != _all_target) * (_all_pred != -1)
     fn_mask = (_all_pred != _all_target) * (_all_pred == -1)

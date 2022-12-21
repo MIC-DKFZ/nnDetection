@@ -10,7 +10,7 @@ from typing import Dict, List, Sequence, Tuple
 import numpy as np
 from loguru import logger
 
-from nndet.core.boxes import box_iou_np
+import nndet.core.ops_np as ops_np
 from nndet.io.load import load_case_cropped
 from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.planning import DatasetAnalyzer
@@ -263,7 +263,7 @@ def compute_each_iou(boxes: np.ndarray):
     Returns:
         np.ndarray: computed IoUs [N-1, N-1]
     """
-    ious = box_iou_np(boxes, boxes)
+    ious = ops_np.box_iou_np(boxes, boxes)
     # remove diagonal elements because they are always one
     ious = ious[~np.eye(ious.shape[0], dtype=bool)].reshape(ious.shape[0], -1)
     return ious

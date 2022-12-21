@@ -10,7 +10,6 @@ import torch
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
-from nndet.core.masks.ops import roi_mask_to_image_mask
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.ensembler.utils import (
     apply_offsets_to_boxes,
@@ -231,7 +230,7 @@ class MaskEnsembler(BaseEnsembler):
 
         transposing = [0] + [i + 1 for i in self.properties["transpose_backward"]]
         masks = np.transpose(masks, transposing)
-        image_masks = roi_mask_to_image_mask(
+        image_masks = ops_torch.roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["original_size_of_raw_data"]),
@@ -255,7 +254,7 @@ class MaskEnsembler(BaseEnsembler):
             Tensor: masks in image space [N, image_dims]
         """
         assert masks.ndim == (boxes.shape[1] // 2) + 1, f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
-        image_masks = roi_mask_to_image_mask(
+        image_masks = ops_torch.roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["shape"]),
