@@ -12,7 +12,6 @@ from typing import List, Optional, Sequence, Tuple, Union
 import torch
 
 import nndet.core.ops_torch as ops_torch
-from nndet.core.boxes.clip import clip_boxes_to_image_
 from nndet.core.boxes.nms import batched_nms
 
 
@@ -124,7 +123,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             Tensor: final class label [R]
         """
         assert img_reps.shape[0] == img_probs.shape[0]
-        boxes = clip_boxes_to_image_(img_reps, img_shape)
+        boxes = ops_torch.clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
 
         if self.topk_candidates is not None:
@@ -214,7 +213,7 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
                 "PerLevelBoxPostprocessing is only supported with a "
                 f"single class but found {img_probs.shape[1]} classes"
             )
-        boxes = clip_boxes_to_image_(img_reps, img_shape)
+        boxes = ops_torch.clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
 
         levels = [

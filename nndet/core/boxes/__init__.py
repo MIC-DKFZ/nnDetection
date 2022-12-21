@@ -10,7 +10,6 @@ from nndet.core.boxes.anchors import (
     compute_anchors_for_strides,
     get_anchor_generator,
 )
-from nndet.core.boxes.clip import clip_boxes_to_image, clip_boxes_to_image_
 from nndet.core.boxes.coder import BoxCoderND, CoderType
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher, Matcher, MatcherType
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms, nms
@@ -30,6 +29,8 @@ from nndet.core.ops_torch import (
     box_iou,
     box_size,
     center_in_boxes,
+    clip_boxes_to_image,
+    clip_boxes_to_image_,
     expand_to_boxes,
     generalized_box_iou,
     permute_boxes,
