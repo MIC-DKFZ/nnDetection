@@ -346,7 +346,6 @@ class PtDatamodule(BaseDatamodule):
         if not multiprocessing:
             num_processes = 0
             persistent_workers = False
-            num_cached_per_queue = None
         else:
             persistent_workers = True
 

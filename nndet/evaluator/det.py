@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import copy
 from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -28,11 +27,11 @@ class DetectionEvaluator(AbstractEvaluator):
         self,
         metrics: Sequence[DetectionMetric],
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
-        box_criterion: Callable = box_area_np,
-        criterion_ranges: Dict[str, Tuple] = None,
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
+        box_criterion: Callable = box_area_np,
+        criterion_ranges: Optional[Dict[str, Tuple]] = None,
     ):
         """
         Class for evaluate detection metrics
@@ -43,21 +42,22 @@ class DetectionEvaluator(AbstractEvaluator):
             max_detections: number of maximum detections per image
                 (reduces computation)
             match_fn: function to match predictions to ground truth
-            box_criterion: function that takes np.array of boxes [N, 4/6] and computes scalar criterion value
-                np.array [N]
-            criterion_ranges: OrderedDict containing names and ranges of the different ranges of interest, the first
-                entry should contain the whole region otherwise the evaluation is not complete
             filter_keys: define keys which need to be filtered by the IoU value
+            box_criterion: function that takes array of boxes [N, 4/6] and computes scalar criterion value
+                array [N]
+            criterion_ranges: (optional) Dict containing names and ranges of additional ranges of interest
         """
         self.iou_fn = iou_fn
         self.match_fn = match_fn
 
         self.max_detections = max_detections
         self.box_criterion = box_criterion
-        # Set to only one range if create function was not used
-        if criterion_ranges is None:
-            criterion_ranges = {"": (0, 512**3)}
-        self.criterion_ranges = criterion_ranges
+        # set range to cover every object
+        self.criterion_ranges = {"": (np.NINF, np.inf)}
+        # expand by additional ranges
+        if criterion_ranges is not None:
+            self.criterion_ranges.update(criterion_ranges)
+
         self.metrics = metrics
         self.filter_keys = filter_keys
 
@@ -124,23 +124,33 @@ class DetectionEvaluator(AbstractEvaluator):
         # Loop over all evaluated criterion ranges
         for results_key, criterion_range in self.criterion_ranges.items():
             # Define new gt_ignores based on the criterion
-            gt_ignore_final = copy.deepcopy(gt_ignore)
+            gt_ignore_final = []
             for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
+                # TODO maybe should switch to use explicit boolean and not zeros?
+                gt_ignore_criterion = np.zeros(gt_ignore[i].shape)
                 # If there is no ground truth in this image, we don't need to change the ignored values
-                if not gt_ignore_final[i].size == 0:
+                if not gt_ignore[i].size == 0:
                     for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
-                        if (
-                            gt_ignore_final[i][j]
-                            or gt_box_criterion < criterion_range[0]
-                            or gt_box_criterion >= criterion_range[1]
-                        ):
-                            gt_ignore_final[i][j] = 1
-                        else:
-                            gt_ignore_final[i][j] = 0
+                        if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
+                            gt_ignore_criterion[j] = 1
+                gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
             # Store results in corresponding results_dict entry
+            temp_matches = self.match_fn(
+                self.iou_fn,
+                self.iou_thresholds,
+                pred_boxes=pred_boxes,
+                pred_classes=pred_classes,
+                pred_scores=pred_scores,
+                gt_boxes=gt_boxes,
+                gt_classes=gt_classes,
+                gt_ignore=gt_ignore_final,
+                max_detections=self.max_detections,
+                case_id=case_id,
+            )
             self.results_dict[results_key].extend(
-                self.match_fn(
-                    self.iou_fn,
+                self.find_dt_ignores(
+                    results_key,
+                    temp_matches,
                     self.iou_thresholds,
                     pred_boxes=pred_boxes,
                     pred_classes=pred_classes,
@@ -148,13 +158,51 @@ class DetectionEvaluator(AbstractEvaluator):
                     gt_boxes=gt_boxes,
                     gt_classes=gt_classes,
                     gt_ignore=gt_ignore_final,
-                    max_detections=self.max_detections,
-                    case_id=case_id,
-                    criterion=self.box_criterion,
-                    criterion_range=criterion_range,
                 )
             )
         return {}
+
+    def find_dt_ignores(
+        self,
+        results_key,
+        matches,
+        iou_thresholds,
+        pred_boxes,
+        pred_classes,
+        pred_scores,
+        gt_boxes,
+        gt_classes,
+        gt_ignore,
+    ):
+        # iterate over images/batches
+        for match, pboxes, pclasses, pscores, gboxes, gclasses, gignore in zip(
+            matches, pred_boxes, pred_classes, pred_scores, gt_boxes, gt_classes, gt_ignore
+        ):
+            img_classes = np.union1d(pclasses, gclasses)
+            for c in img_classes:
+                pred_mask = pclasses == c  # mask predictions with current class
+                if not np.any(pred_mask):  # no predictions
+                    continue
+                # if there are predictions, find unmatched predictions outside the ranges and add to dtIgnore
+                pred_boxes_masked = pboxes[pred_mask]
+                dt_match = match[c]["dtMatches"]
+                dt_ignore = match[c]["dtIgnore"]
+                # Calculate the box criterion for all boxes
+                dt_boxes_criterion = self.box_criterion(pred_boxes_masked)
+                # Find outliers
+                dt_outside = np.array(
+                    [
+                        dt_box_criterion < self.criterion_ranges[results_key][0]
+                        or dt_box_criterion > self.criterion_ranges[results_key][1]
+                        for dt_box_criterion in dt_boxes_criterion
+                    ]
+                ).reshape(1, -1)
+                # ignore outliers and previous ignores
+                dt_ignore = np.logical_or(
+                    dt_ignore, np.logical_and(dt_match == 0, np.repeat(dt_outside, len(iou_thresholds), axis=0))
+                )
+                match[c]["dtIgnore"] = dt_ignore
+        return matches
 
     def finish_online_evaluation(
         self,
@@ -220,7 +268,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Reset internal state of evaluator
         """
-        self.results_dict = {key: [] for key in self.criterion_ranges}
+        self.results_dict = {key: [] for key in self.criterion_ranges.keys()}
 
     @classmethod
     def create(
