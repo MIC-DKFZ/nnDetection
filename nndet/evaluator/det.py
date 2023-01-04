@@ -27,7 +27,7 @@ class DetectionEvaluator(AbstractEvaluator):
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
-        box_criterion: Callable = box_area_np,
+        box_criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
     ):
         """
@@ -275,7 +275,7 @@ class DetectionEvaluator(AbstractEvaluator):
         fast: bool = True,
         verbose: bool = False,
         save_dir: Optional[Path] = None,
-        box_criterion: Callable = box_area_np,
+        box_criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
     ):
         """
