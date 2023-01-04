@@ -61,7 +61,7 @@ class DetectionEvaluator(AbstractEvaluator):
         self.metrics = metrics
         self.filter_keys = filter_keys
 
-        self.results_dict = {key: [] for key in criterion_ranges.keys()}  # store results of each image
+        self.results_dict = {key: [] for key in self.criterion_ranges.keys()}  # store results of each image
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
@@ -134,7 +134,7 @@ class DetectionEvaluator(AbstractEvaluator):
                         if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
                             gt_ignore_criterion[j] = 1
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
-            # Store results in corresponding results_dict entry
+            # Get all matches
             temp_matches = self.match_fn(
                 self.iou_fn,
                 self.iou_thresholds,
@@ -147,6 +147,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 max_detections=self.max_detections,
                 case_id=case_id,
             )
+            # Find unmatched detections and ignore those not fitting to criterion
             self.results_dict[results_key].extend(
                 self.find_dt_ignores(
                     results_key,
@@ -164,15 +165,15 @@ class DetectionEvaluator(AbstractEvaluator):
 
     def find_dt_ignores(
         self,
-        results_key,
+        results_key: str,
         matches,
-        iou_thresholds,
-        pred_boxes,
-        pred_classes,
-        pred_scores,
-        gt_boxes,
-        gt_classes,
-        gt_ignore,
+        iou_thresholds: Sequence[float],
+        pred_boxes: Sequence[np.ndarray],
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_boxes: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+        gt_ignore: Sequence[Sequence[bool]],
     ):
         # iterate over images/batches
         for match, pboxes, pclasses, pscores, gboxes, gclasses, gignore in zip(
@@ -278,16 +279,16 @@ class DetectionEvaluator(AbstractEvaluator):
         verbose: bool = False,
         save_dir: Optional[Path] = None,
         box_criterion: Callable = box_area_np,
-        criterion_ranges: Dict[str, Tuple] = None,
+        criterion_ranges: Optional[Dict[str, Tuple]] = None,
     ):
         """
-        Create an box evaluator object
+        Create a box evaluator object
 
         Args:
             classes: classes present in the dataset
             fast: Reduces the evaluation suite to save time.
                 Only evaluated IoUs in the range of 0.1-0.5
-                Does no calculate pre class metrics
+                Does not calculate pre-class metrics
             verbose: Additional logging output
             save_dir: Path to save information
             box_criterion: Criterion for separate evaluation
@@ -330,14 +331,6 @@ class DetectionEvaluator(AbstractEvaluator):
                 )
             )
 
-        # Use default setting if no ranges are passed
-        if criterion_ranges is None or len(criterion_ranges) == 0:
-            criterion_ranges = {
-                "": (0, 256**3),
-                "_S": (0, 10**3),
-                "_M": (10**3, 24**3),
-                "_L": (24**3, 256**3),
-            }
         return cls(
             metrics=tuple(metrics),
             iou_fn=cls.similarity_fn,

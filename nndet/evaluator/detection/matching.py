@@ -65,12 +65,11 @@ def matching_batch(
         result = {}  # dict contains results for each class in one image
         for c in img_classes:
             pred_mask = pclasses == c  # mask predictions with current class
-            gt_mask = gclasses == c  # mask ground truth with current class
+            gt_mask = gclasses == c  # mask ground trtuh with current class
 
             if not np.any(gt_mask):  # no ground truth
                 result[c] = _matching_no_gt(
                     iou_thresholds=iou_thresholds,
-                    pred_boxes=pboxes[pred_mask],
                     pred_scores=pscores[pred_mask],
                     max_detections=max_detections,
                     case_id=case_id,
@@ -98,7 +97,6 @@ def matching_batch(
 
 def _matching_no_gt(
     iou_thresholds: Sequence[float],
-    pred_boxes: np.ndarray,
     pred_scores: np.ndarray,
     max_detections: int,
     case_id: Optional[str] = None,
@@ -108,6 +106,7 @@ def _matching_no_gt(
 
     Args:
         iou_thresholds: defined which IoU thresholds should be evaluated
+        dt_scores: predicted scores
         max_detections: maximum number of allowed detections per image.
             This functions uses this parameter to stay consistent with
             the actual matching function which needs this limit.
@@ -129,7 +128,6 @@ def _matching_no_gt(
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
     dt_scores = pred_scores[dt_ind]
-    pred_boxes = pred_boxes[dt_ind]
 
     num_preds = len(dt_scores)
 
