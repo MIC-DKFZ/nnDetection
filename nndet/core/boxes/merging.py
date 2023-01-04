@@ -11,7 +11,7 @@ from typing import Callable, List, Tuple
 import torch
 from torch import Tensor
 
-from nndet.core.boxes.ops import box_iou
+import nndet.core.ops_torch as ops_torch
 from nndet.utils.info import experimental
 
 
@@ -37,7 +37,7 @@ class Merger(ABC):
     def __init__(
         self,
         iou_th: float,
-        iou_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        iou_fn: Callable[[Tensor, Tensor], Tensor] = ops_torch.box_iou,
     ):
         """
         Generic Merger Interface
@@ -73,7 +73,7 @@ class GreedyIoUBoxMerger(Merger):
         scores: Tensor,
         labels: Tensor,
         iou_th: float,
-        iou_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        iou_fn: Callable[[Tensor, Tensor], Tensor] = ops_torch.box_iou,
         neighbor_slices: int = 1,
     ):
         """

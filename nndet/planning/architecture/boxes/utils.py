@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from nndet.core.boxes import box_center
+import nndet.core.ops_torch as ops_torch
 
 
 def comp_num_pool_per_axis(patch_size: Sequence[int], max_num_pool: int, min_feature_map_size: int) -> List[int]:
@@ -106,7 +106,7 @@ def proxy_num_boxes_in_patch(boxes: Tensor, patch_size: Sequence[int]) -> Tensor
     """
     patch_size = torch.tensor(patch_size, dtype=torch.float)[None, None] / 2  # [1, 1, dims]
 
-    center = box_center(boxes)  # [N, dims]
+    center = ops_torch.box_center(boxes)  # [N, dims]
     center_dists = (center[None] - center[:, None]).abs()  # [N, N, dims]
 
     center_in_range = (center_dists <= patch_size).prod(dim=-1)  # [N, N]

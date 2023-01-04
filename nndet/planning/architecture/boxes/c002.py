@@ -9,13 +9,9 @@ import numpy as np
 import torch
 from loguru import logger
 
-from nndet.core.boxes import (
-    box_center,
-    box_size_np,
-    expand_to_boxes,
-    get_anchor_generator,
-    permute_boxes,
-)
+import nndet.core.ops_np as ops_np
+import nndet.core.ops_torch as ops_torch
+from nndet.core.boxes import get_anchor_generator
 from nndet.planning.architecture.boxes.base import BoxC001
 from nndet.planning.architecture.boxes.utils import (
     proxy_num_boxes_in_patch,
@@ -282,7 +278,7 @@ class BoxC002(BoxC001):
             "planning."
         )
         boxes_torch = torch.from_numpy(boxes_np).float()
-        boxes_torch = boxes_torch - expand_to_boxes(box_center(boxes_torch))
+        boxes_torch = boxes_torch - ops_torch.expand_to_boxes(ops_torch.box_center(boxes_torch))
         anchor_generator = get_anchor_generator(self.dim, s_param=True)
 
         rel_strides = self.architecture_kwargs["strides"]
@@ -314,8 +310,8 @@ class BoxC002(BoxC001):
             if not isinstance(boxes, list) and boxes.size > 0:
                 spacing_transposed = np.asarray(spacing)[transpose_forward]
                 scaling_transposed = spacing_transposed / np.asarray(target_spacing_transposed)
-                boxes_transposed = permute_boxes(np.asarray(boxes), dims=transpose_forward)
-                boxes_np_list.append(boxes_transposed * expand_to_boxes(scaling_transposed))
+                boxes_transposed = ops_torch.permute_boxes(np.asarray(boxes), dims=transpose_forward)
+                boxes_np_list.append(boxes_transposed * ops_torch.expand_to_boxes(scaling_transposed))
         if cat:
             return np.concatenate(boxes_np_list).astype(np.float32)
         else:
@@ -391,9 +387,9 @@ class BoxC002(BoxC001):
                     [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
-                dists = box_size_np(_boxes)
+                dists = ops_np.box_size_np(_boxes)
             else:
-                dists = box_size_np(self.all_boxes)
+                dists = ops_np.box_size_np(self.all_boxes)
 
             if dists.shape[1] == 3:
                 fig = plt.figure()
@@ -403,7 +399,7 @@ class BoxC002(BoxC001):
                 plt.savefig(self.save_dir / "bbox_sizes_3d_orig.png")
                 plt.close()
 
-                dists = box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
+                dists = ops_np.box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
                 ax.scatter(dists[:, 0], dists[:, 1], dists[:, 2])
@@ -418,7 +414,7 @@ class BoxC002(BoxC001):
                 plt.savefig(self.save_dir / "bbox_sizes_2d_orig.png")
                 plt.close()
 
-                dists = box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
+                dists = ops_np.box_size_np(self._get_scaled_boxes(target_spacing_transposed, transpose_forward))
                 fig = plt.figure()
                 ax = fig.add_subplot(111)
                 ax.scatter(dists[:, 0], dists[:, 1])

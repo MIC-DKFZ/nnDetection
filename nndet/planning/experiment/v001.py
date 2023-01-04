@@ -6,7 +6,7 @@ from typing import Dict, List, Sequence
 import numpy as np
 from loguru import logger
 
-from nndet.core.boxes.ops_np import box_size_np
+import nndet.core.ops_np as ops_np
 from nndet.planning.architecture.boxes import BoxC002
 from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 from nndet.planning.estimator import MemoryEstimatorDetection
@@ -204,7 +204,7 @@ class D3V001(AbstractPlanner):
         """
         all_boxes = [case["boxes"] for case_id, case in self.data_properties["instance_props_per_patient"].items()]
         all_boxes = concatenate_property_boxes(all_boxes)
-        object_size = np.percentile(box_size_np(all_boxes), 99.5, axis=0)
+        object_size = np.percentile(ops_np.box_size_np(all_boxes), 99.5, axis=0)
         object_size = object_size[list(transpose_forward)]
 
         if (np.asarray(prev_res_patch_size) < object_size).any():

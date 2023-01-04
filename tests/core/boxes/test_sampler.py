@@ -1,7 +1,11 @@
 import pytest
 import torch
 
-from nndet.core.boxes import *
+from nndet.core.boxes import (
+    HardNegativeSampler,
+    HardNegativeSamplerFgAll,
+    NegativeSampler,
+)
 
 
 def create_hard_negative_example():

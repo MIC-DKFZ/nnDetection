@@ -8,8 +8,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from nndet.core.boxes import box_area_np, box_iou_np
-from nndet.core.masks.ops_np import bin_mask_iou_np
+import nndet.core.ops_np as ops_np
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
 from nndet.evaluator.detection.froc import FROCMetric
@@ -21,12 +20,10 @@ __all__ = ["DetectionEvaluator"]
 
 
 class DetectionEvaluator(AbstractEvaluator):
-    similarity_fn = box_iou_np
-
     def __init__(
         self,
         metrics: Sequence[DetectionMetric],
-        iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray] = box_iou_np,
+        iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
         max_detections: int = 100,
         match_fn: Callable = matching_batch,
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
@@ -340,11 +337,11 @@ class DetectionEvaluator(AbstractEvaluator):
 
 
 class BoxEvaluator(DetectionEvaluator):
-    similarity_fn = box_iou_np
+    similarity_fn = ops_np.box_iou_np
 
 
 class MaskEvaluator(DetectionEvaluator):
-    similarity_fn = bin_mask_iou_np
+    similarity_fn = ops_np.bin_mask_iou_np
 
 
 class CountDifferenceEvaluator(AbstractEvaluator):

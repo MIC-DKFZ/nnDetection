@@ -15,7 +15,7 @@ from hydra import initialize_config_module
 from loguru import logger
 from tqdm import tqdm
 
-from nndet.core.boxes import box_size_np
+import nndet.core.ops_np as ops_np
 from nndet.io import save_json
 from nndet.io.itk import load_sitk, load_sitk_as_array
 from nndet.io.transforms.instances import instances_to_boxes_np
@@ -60,7 +60,7 @@ def prepare_detection_label(
     final_mapping = {}
     if instances_not_filtered.max() > 0:
         boxes, instance_ids = instances_to_boxes_np(seg=instances_not_filtered, dim=instances_not_filtered.ndim)
-        box_sizes = box_size_np(boxes)
+        box_sizes = ops_np.box_size_np(boxes)
 
         assert len(instance_ids) == len(boxes)
         isotopic_axis = list(range(seg.ndim))

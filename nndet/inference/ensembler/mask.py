@@ -8,9 +8,8 @@ from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tupl
 import numpy as np
 import torch
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
-from nndet.core.boxes.ops import box_center, remove_small_boxes
-from nndet.core.masks.ops import roi_mask_to_image_mask
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.ensembler.utils import (
     apply_offsets_to_boxes,
@@ -231,7 +230,7 @@ class MaskEnsembler(BaseEnsembler):
 
         transposing = [0] + [i + 1 for i in self.properties["transpose_backward"]]
         masks = np.transpose(masks, transposing)
-        image_masks = roi_mask_to_image_mask(
+        image_masks = ops_torch.roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["original_size_of_raw_data"]),
@@ -255,7 +254,7 @@ class MaskEnsembler(BaseEnsembler):
             Tensor: masks in image space [N, image_dims]
         """
         assert masks.ndim == (boxes.shape[1] // 2) + 1, f"Found mask with {masks.ndim} and boxes with {boxes.shape[1]}"
-        image_masks = roi_mask_to_image_mask(
+        image_masks = ops_torch.roi_mask_to_image_mask(
             boxes=boxes,
             masks=masks,
             image_shape=tuple(self.properties["shape"]),
@@ -495,7 +494,8 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         labels = [r.float().cpu() for r in result[self.label_key]]
         boxes = [r.float().cpu() for r in result[self.box_key]]
         centers = [
-            box_center(img_boxes) if img_boxes.numel() > 0 else torch.Tensor([]).to(img_boxes) for img_boxes in boxes
+            ops_torch.box_center(img_boxes) if img_boxes.numel() > 0 else torch.Tensor([]).to(img_boxes)
+            for img_boxes in boxes
         ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
@@ -612,7 +612,7 @@ class MaskViaBoxesSelectiveEnsembler(MaskEnsembler):
         # b = clip_boxes_to_image(b, shape)
         # After clipping we could have boxes with volume 0 which we definitely
         # need to remove because of the IoU computation
-        keep = remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
+        keep = ops_torch.remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
         b, m, p, l, w = b[keep], m[keep], p[keep], l[keep], w[keep]
 
         _boxes, _masks, _probs, _labels, _weights = self.parameters["model_nms_fn"](

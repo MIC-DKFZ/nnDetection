@@ -8,9 +8,9 @@ import torch
 from loguru import logger
 from torch import Tensor
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.ops import cat_and_index
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
@@ -136,7 +136,7 @@ class BaseRoIModule(torch.nn.Module):
         batch_size = len(proposal_boxes)
         matched_gt_labels = cat(matched_gt_labels)
         matched_gt_boxes = cat(matched_gt_boxes)
-        _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
+        _proposal_boxes, batch_idx = ops_torch.cat_and_index(proposal_boxes)
 
         box_roi_features = self.box_pooler(
             features=features,
@@ -195,7 +195,7 @@ class BaseRoIModule(torch.nn.Module):
             matched_gt_idx=pos_matched_gt_idx,
         )  # List[[R, output_size]]
 
-        pos_proposal_boxes, batch_idx = cat_and_index(pos_proposal_boxes)
+        pos_proposal_boxes, batch_idx = ops_torch.cat_and_index(pos_proposal_boxes)
 
         mask_roi_features = self.mask_pooler(
             features=features,
@@ -305,7 +305,7 @@ class BaseRoIModule(torch.nn.Module):
         proposal_scores: Optional[List[torch.Tensor]] = None,
         stage: int = 0,
     ) -> Dict[str, List[torch.Tensor]]:
-        _proposal_boxes, batch_idx = cat_and_index(proposal_boxes)
+        _proposal_boxes, batch_idx = ops_torch.cat_and_index(proposal_boxes)
 
         if _proposal_boxes.numel() == 0:
             batch_size = len(proposal_boxes)
@@ -349,7 +349,7 @@ class BaseRoIModule(torch.nn.Module):
         pred_labels: List[torch.Tensor],
         stage: int = 0,
     ) -> Dict[str, List[Tensor]]:
-        _boxes, batch_idx = cat_and_index(pred_boxes)
+        _boxes, batch_idx = ops_torch.cat_and_index(pred_boxes)
 
         if _boxes.numel() == 0:
             batch_size = len(pred_boxes)
