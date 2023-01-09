@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
 import time
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
@@ -61,6 +61,9 @@ class COCOMetric(DetectionMetric):
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
         self.max_detections = max_detection
 
+    def get_save_name(self):
+        return "COCO"
+
     def get_iou_thresholds(self) -> Sequence[float]:
         """
         Return IoU thresholds needed for this metric in an numpy array
@@ -73,6 +76,7 @@ class COCOMetric(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str] = "",
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute COCO metrics
@@ -87,6 +91,7 @@ class COCOMetric(DetectionMetric):
                 `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
                     should be ignored
                 `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            tag (Optional[str]): tag of the current evaluation
 
         Returns:
             Dict[str, float]: dictionary with coco metrics

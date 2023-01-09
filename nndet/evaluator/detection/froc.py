@@ -53,6 +53,7 @@ class FROCMetric(DetectionMetric):
         self.iou_thresholds = iou_thresholds
         self.fpi_thresholds = fpi_thresholds
         self.verbose = verbose
+        self.title_prefix = ""
 
         if save_dir is None:
             self.save_dir = save_dir
@@ -71,7 +72,7 @@ class FROCMetric(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        title_prefix: Optional[str] = "",
+        tag: Optional[str] = "",
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC
@@ -89,7 +90,7 @@ class FROCMetric(DetectionMetric):
                     [G] indicate whether ground truth should be ignored
                 `dtIgnore`: detections which should be ignored [T, D],
                     indicate which detections should be ignored
-            title_prefix:
+            tag (Optional[str]): tag of the current evaluation
 
         Returns:
             Dict[str, float]: FROC score per IoU (key: FROC_score@IoU:{key:2f})
@@ -120,7 +121,7 @@ class FROCMetric(DetectionMetric):
             logger.info(f"FROC per class finished (t={(toc - tic):0.2f}s).")
 
         if self.save_dir is not None:
-            self.plot_froc_curves(curves, title_prefix)
+            self.plot_froc_curves(curves)
         return scores, curves
 
     def compute_froc_mul_iou(
@@ -290,7 +291,13 @@ class FROCMetric(DetectionMetric):
 
         return froc_scores_cls, froc_curves_cls
 
-    def plot_froc_curves(self, curves: Dict[str, Sequence[float]], title_prefix: Optional[str] = "") -> None:
+    def set_prefix(self, prefix: str):
+        self.title_prefix = prefix
+
+    def get_save_name(self) -> str:
+        return f"FROC_{self.title_prefix}"
+
+    def plot_froc_curves(self, curves: Dict[str, Sequence[float]]) -> None:
         """
         Plot frocs
 
@@ -298,16 +305,18 @@ class FROCMetric(DetectionMetric):
             curves: dict with froc curves (as obtained by :method:`compute`)
                 FROC_score_IoU_{key:.2f} for class "normal" FROC
                 {cls_name}_FROC_score_IoU_{key:.2f}: for class specific froc
-            title_prefix:
         """
         # plot normal froc curves
         _, frocs, ious, num_images, num_gt = select_froc_curves(curves)
         fig, ax = get_froc_ax(self.fpi_thresholds)
         for froc, iou in zip(frocs, ious):
             ax.plot(self.fpi_thresholds, froc, "o-", label=f"IoU:{iou:.2f}")
-        ax.set_title(f"FROC{title_prefix} N_img={num_images} N_gt={num_gt}")
+
+        # Get save name and save plot
+        save_name = self.get_save_name()
+        ax.set_title(f"{save_name} N_img={num_images} N_gt={num_gt}")
         ax.legend(loc="lower right")
-        fig.savefig(self.save_dir / f"FROC{title_prefix}.png")
+        fig.savefig(self.save_dir / f"{save_name}.png")
         plt.close(fig)
 
         # plot cls frocs
@@ -320,7 +329,7 @@ class FROCMetric(DetectionMetric):
         for iou, frocs in reordered.items():
             fig, ax = get_froc_ax(self.fpi_thresholds)
 
-            title = f"FROC_cls_IoU_{iou:.2f}{title_prefix}"
+            title = f"{save_name}_cls_IoU_{iou:.2f}"
             ax_title = title
 
             for class_name, froc, ni, ng in frocs:
@@ -365,7 +374,7 @@ def get_froc_ax(
 def select_froc_curves(
     curves: Dict[str, np.ndarray],
     prefix: Optional[str] = None,
-) -> Tuple[List[str], List[np.ndarray], List[float]]:
+) -> Tuple[List[str], List[np.ndarray], List[float], int, int]:
     """
     Select froc curves
 
@@ -401,7 +410,7 @@ def select_froc_curves(
 
 def select_froc_curves_cls(
     curves: Dict[str, np.ndarray],
-) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
+) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float], int, int]]:
     """
     Select class specific froc curves
 

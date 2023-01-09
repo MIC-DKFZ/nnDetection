@@ -34,6 +34,10 @@ class PredictionHistogram(DetectionMetric):
 
         self.iou_thresholds = iou_thresholds
         self.bins = bins
+        self.prefix = ""
+
+    def get_save_name(self) -> str:
+        return self.prefix
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -47,21 +51,31 @@ class PredictionHistogram(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        title_prefix: Optional[str] = "",
+        tag: Optional[str] = "",
     ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Plot class independent and per class histograms. For more info see
         `method``plot_hist`
-
         Args:
-            Dict: results over dataset
-            title_prefix:
+            results_list: list with result s per image (in list)
+                per category (dict). Inner Dict contains multiple results
+                    obtained by :func:`box_matching_batch`.
+                `dtMatches`: matched detections [T, D], where T = number of
+                    thresholds, D = number of detections
+                `gtMatches`: matched ground truth boxes [T, G], where
+                    T = number of thresholds, G = number of  ground truth
+                `dtScores`: prediction scores [D] detection scores
+                `gtIgnore`: ground truth boxes which should be ignored
+                    [G] indicate whether ground truth should be ignored
+                `dtIgnore`: detections which should be ignored [T, D],
+                    indicate which detections should be ignored
+            tag (Optional[str]): tag of the current evaluation
         """
         self.plot_hist(results_list=results_list)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
             results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
-            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}{title_prefix}_")
+            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}{tag}_")
         return {}, {}
 
     def plot_hist(

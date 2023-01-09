@@ -222,13 +222,10 @@ class DetectionEvaluator(AbstractEvaluator):
                     filter_keys=self.filter_keys,
                 )
                 iou_filtered_results = list(map(_filter, results))
+                score, curve = metric(iou_filtered_results, tag=criterion_key)
 
-                if metric.__class__ != COCOMetric:
-                    score, curve = metric(iou_filtered_results, title_prefix=criterion_key)
-                else:
-                    score, curve = metric(iou_filtered_results)
                 if score is not None:
-                    score = {f"{key}{criterion_key}": value for key, value in score.items()}
+                    score = {f"{key}_{criterion_key}": value for key, value in score.items()}
                     metric_scores.update(score)
 
                 if curve is not None:

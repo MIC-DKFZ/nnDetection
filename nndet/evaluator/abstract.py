@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -55,6 +55,7 @@ class AbstractMetric(ABC):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str],
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric
@@ -69,7 +70,7 @@ class AbstractMetric(ABC):
                 `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
                     should be ignored
                 `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
-
+            tag (Optional[str]): tag of the current evaluation
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
             Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
@@ -78,6 +79,15 @@ class AbstractMetric(ABC):
 
 
 class DetectionMetric(AbstractMetric):
+    @abstractmethod
+    def get_save_name(self) -> str:
+        """
+        Return name of file to save
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def get_iou_thresholds(self) -> Sequence[float]:
         """
