@@ -163,7 +163,7 @@ class DetectionEvaluator(AbstractEvaluator):
     def find_dt_ignores(
         self,
         results_key: str,
-        matches,
+        matches: List[Dict[int, Dict[str, np.ndarray]]],
         iou_thresholds: Sequence[float],
         pred_boxes: Sequence[np.ndarray],
         pred_classes: Sequence[np.ndarray],

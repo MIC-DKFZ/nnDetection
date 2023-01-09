@@ -31,15 +31,23 @@ class TestDetectionEvaluator:
         )
         assert all([a == b for a, b in zip(self.evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
         assert all([a == b for a, b in zip(self.evaluator.iou_mapping, [[0, 1], [2, 3]])])
+        assert "" in self.evaluator.criterion_ranges.keys()
+        assert self.evaluator.criterion_ranges[""][0] == np.NINF
+        assert self.evaluator.criterion_ranges[""][1] == np.inf
 
     def test_run_online_evaluation(self, mocker: MockerFixture, evaluator):
-        evaluator.match_fn = mocker.MagicMock(return_value=[0, 1])
-
-        _pred_boxes = np.array([0])[None]
-        _pred_classes = np.array([1])[None]
-        _pred_scores = np.array([2])[None]
-        _gt_boxes = np.array([3])[None]
-        _gt_classes = np.array([4])[None]
+        _pred_boxes = np.array([[0]])[None]
+        _pred_classes = np.array([[1]])[None]
+        _pred_scores = np.array([[2]])[None]
+        _gt_boxes = np.array([[3]])[None]
+        _gt_classes = np.array([[4]])[None]
+        # Use pred and gt class here
+        mock_matches = {
+            1: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
+            4: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
+        }
+        evaluator.match_fn = mocker.MagicMock(return_value=[mock_matches])
+        evaluator.box_criterion = mocker.MagicMock(return_value=[0])
         res = evaluator.run_online_evaluation(
             _pred_boxes,
             _pred_classes,
@@ -49,7 +57,38 @@ class TestDetectionEvaluator:
         )
 
         assert not res
-        assert all([a == b for a, b in zip(evaluator.results_list, [0, 1])])
+        assert all(a == b for a, b in zip([""], evaluator.results_dict.keys()))
+        assert len(evaluator.results_dict[""]) == 1
+        assert all(mock_matches[key] == value for key, value in evaluator.results_dict[""][0].items())
+
+    def test_find_dt_ignores(self, mocker: MockerFixture, evaluator):
+        _pred_boxes = np.array([[0]])[None]
+        _pred_classes = np.array([[1]])[None]
+        _pred_scores = np.array([[2]])[None]
+        _gt_boxes = np.array([[3]])[None]
+        _gt_classes = np.array([[1]])[None]
+        _gt_ignore = np.array([[0]])[None]
+        # Use pred and gt class here, has to be unmatched so dtMatch 0
+        mock_matches = {1: {"dtMatches": np.array([[0]]), "dtIgnore": np.array([[0]])}}
+        evaluator.box_criterion = mocker.MagicMock(return_value=[2])
+        evaluator.criterion_ranges[""] = (0, 1)
+        # List[Dict[class, Dict]]
+        matches_with_ignores = evaluator.find_dt_ignores(
+            results_key="",
+            matches=[mock_matches],
+            iou_thresholds=[1],
+            pred_boxes=_pred_boxes,
+            pred_classes=_pred_classes,
+            pred_scores=_pred_scores,
+            gt_boxes=_gt_boxes,
+            gt_classes=_gt_classes,
+            gt_ignore=_gt_ignore,
+        )
+
+        assert len(matches_with_ignores) == 1
+        res = matches_with_ignores[0]
+        print(res)
+        assert all(res[c]["dtIgnore"][i] == 1 for c in res.keys() for i in range(len(res[c]["dtIgnore"])))
 
     def test_finish_online_evaluation(self, mocker: MockerFixture, evaluator):
         evaluator.iou_filter = mocker.Mock(return_value=0)
