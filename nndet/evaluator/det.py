@@ -225,12 +225,16 @@ class DetectionEvaluator(AbstractEvaluator):
                 score, curve = metric(iou_filtered_results, tag=criterion_key)
 
                 if score is not None:
-                    score = {f"{key}_{criterion_key}": value for key, value in score.items()}
                     metric_scores.update(score)
 
                 if curve is not None:
-                    curve = {f"{key}_{criterion_key}": value for key, value in curve.items()}
                     metric_curves.update(curve)
+        metric_curves.update(
+            {
+                f"criterion_{tag}" if tag != "" else "criterion": criterion_range
+                for tag, criterion_range in self.criterion_ranges.items()
+            }
+        )
         return metric_scores, metric_curves
 
     @staticmethod

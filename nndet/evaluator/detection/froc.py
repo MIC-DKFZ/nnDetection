@@ -53,7 +53,7 @@ class FROCMetric(DetectionMetric):
         self.iou_thresholds = iou_thresholds
         self.fpi_thresholds = fpi_thresholds
         self.verbose = verbose
-        self.title_prefix = ""
+        self.tag = ""
 
         if save_dir is None:
             self.save_dir = save_dir
@@ -98,6 +98,7 @@ class FROCMetric(DetectionMetric):
                 thresholds per IoU; [R] R is the number of fps thresholds
                 (key: FROC_curve@IoU:{key:2f})
         """
+        self.tag = tag
         if self.verbose:
             logger.info("Start FROC metric computation...")
             tic = time.time()
@@ -152,6 +153,7 @@ class FROCMetric(DetectionMetric):
         num_images = len(results_list)
         results = [_r for r in results_list for _r in r.values()]
 
+        save_name = self.get_save_name()
         if len(results) == 0:
             logger.warning("WARNING, no results found for froc computation")
             return (
@@ -160,7 +162,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    "FROC_num_gt": 0,
+                    f"{save_name}_num_gt": 0,
                 },
             )
 
@@ -181,7 +183,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    "FROC_num_gt": num_gt,
+                    f"{save_name}_num_gt": num_gt,
                 },
             )
 
@@ -202,11 +204,11 @@ class FROCMetric(DetectionMetric):
             curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)
 
         # linearly interpolate curves for needed fps values
-        scores = {f"FROC_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
-        curves = {f"FROC_curve_IoU_{key:.2f}": c for key, c in curves.items()}
+        scores = {f"{save_name}_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
+        curves = {f"{save_name}_curve_IoU_{key:.2f}": c for key, c in curves.items()}
         curves["FROC_fpi_thresholds"] = self.fpi_thresholds
         curves["FROC_num_images"] = num_images
-        curves["FROC_num_gt"] = num_gt
+        curves[f"{save_name}_num_gt"] = num_gt
         return scores, curves
 
     @staticmethod
@@ -291,11 +293,8 @@ class FROCMetric(DetectionMetric):
 
         return froc_scores_cls, froc_curves_cls
 
-    def set_prefix(self, prefix: str):
-        self.title_prefix = prefix
-
     def get_save_name(self) -> str:
-        return f"FROC_{self.title_prefix}"
+        return f"FROC_{self.tag}" if self.tag != "" else "FROC"
 
     def plot_froc_curves(self, curves: Dict[str, Sequence[float]]) -> None:
         """

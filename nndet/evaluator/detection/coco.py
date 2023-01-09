@@ -60,9 +60,10 @@ class COCOMetric(DetectionMetric):
 
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
         self.max_detections = max_detection
+        self.tag = ""
 
     def get_save_name(self):
-        return "COCO"
+        return f"AP_{self.tag}" if self.tag != "" else "AP"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -97,6 +98,7 @@ class COCOMetric(DetectionMetric):
             Dict[str, float]: dictionary with coco metrics
             Dict[str, np.ndarray]: None
         """
+        self.tag = tag
         if self.verbose:
             logger.info("Start COCO metric computation...")
             tic = time.time()
@@ -129,9 +131,10 @@ class COCOMetric(DetectionMetric):
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
         """
         results = {}
+        save_name = self.get_save_name()
         if self.iou_range:  # mAP
             key = (
-                f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                f"m{save_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
                 f"MaxDet_{self.max_detections[-1]}"
             )
             results[key] = self.select_ap(
@@ -143,7 +146,7 @@ class COCOMetric(DetectionMetric):
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
                 key = (
                     f"{cls_str}_"
-                    f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
+                    f"m{save_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
                     f"MaxDet_{self.max_detections[-1]}"
                 )
                 results[key] = self.select_ap(
@@ -154,11 +157,12 @@ class COCOMetric(DetectionMetric):
                 )
 
         for idx in self.iou_list_idx:  # AP@IoU
-            key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
+            key = f"{save_name}_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
             results[key] = self.select_ap(dataset_statistics, iou_idx=[idx], max_det_idx=-1)
-
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = f"{cls_str}_" f"AP_IoU_{self.iou_thresholds[idx]:.2f}_" f"MaxDet_{self.max_detections[-1]}"
+                key = (
+                    f"{cls_str}_" f"{save_name}_IoU_{self.iou_thresholds[idx]:.2f}_" f"MaxDet_{self.max_detections[-1]}"
+                )
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=[idx],

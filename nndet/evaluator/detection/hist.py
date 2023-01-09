@@ -34,10 +34,10 @@ class PredictionHistogram(DetectionMetric):
 
         self.iou_thresholds = iou_thresholds
         self.bins = bins
-        self.prefix = ""
+        self.tag = ""
 
     def get_save_name(self) -> str:
-        return self.prefix
+        return f"pred_hist_{self.tag}" if self.tag != "" else "pred_hist"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -71,11 +71,12 @@ class PredictionHistogram(DetectionMetric):
                     indicate which detections should be ignored
             tag (Optional[str]): tag of the current evaluation
         """
+        self.tag = tag
         self.plot_hist(results_list=results_list)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
             results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
-            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}{tag}_")
+            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_")
         return {}, {}
 
     def plot_hist(
@@ -193,9 +194,9 @@ class PredictionHistogram(DetectionMetric):
         plt.title(title)
         plt.xlabel("confidence score")
         plt.ylabel("log n")
-
+        save_name = self.get_save_name()
         if self.save_dir is not None:
-            save_path = self.save_dir / (f"{title_prefix}pred_hist_IoU@{iou}".replace(".", "_") + ".png")
+            save_path = self.save_dir / (f"{title_prefix}{save_name}_IoU@{iou}".replace(".", "_") + ".png")
             logger.info(f"Saving {save_path}")
             plt.savefig(save_path)
         plt.close()
