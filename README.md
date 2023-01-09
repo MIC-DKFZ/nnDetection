@@ -54,7 +54,7 @@ When running a training inside the container it is necessary to [increase the sh
 
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
-3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.7+) and [torchvision](https://github.com/pytorch/vision)(make sure to match the versions!).
+3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.10+) and [torchvision](https://github.com/pytorch/vision)(make sure to match the versions!).
 4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
 5. Set environment variables (more info can be found below):
     - `det_data`: [required] Path to the source directory where all the data will be located
