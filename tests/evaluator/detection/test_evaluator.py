@@ -68,8 +68,9 @@ class TestDetectionEvaluator:
         _gt_boxes = np.array([[3]])[None]
         _gt_classes = np.array([[1]])[None]
         _gt_ignore = np.array([[0]])[None]
-        # Use pred and gt class here, has to be unmatched so dtMatch 0
+        # Use pred and gt class here (1), has to be unmatched so dtMatch 0
         mock_matches = {1: {"dtMatches": np.array([[0]]), "dtIgnore": np.array([[0]])}}
+        # Match should be ignored as criterion returns 2 but bounds are (0, 1)
         evaluator.box_criterion = mocker.MagicMock(return_value=[2])
         evaluator.criterion_ranges[""] = (0, 1)
         # List[Dict[class, Dict]]
@@ -87,7 +88,6 @@ class TestDetectionEvaluator:
 
         assert len(matches_with_ignores) == 1
         res = matches_with_ignores[0]
-        print(res)
         assert all(res[c]["dtIgnore"][i] == 1 for c in res.keys() for i in range(len(res[c]["dtIgnore"])))
 
     def test_finish_online_evaluation(self, mocker: MockerFixture, evaluator):
@@ -96,14 +96,14 @@ class TestDetectionEvaluator:
         metric1 = mocker.Mock(return_value=({"score1": 2}, {"curve1": 3}))
 
         evaluator.metrics = [metric0, metric1]
-        evaluator.results_list = [None, None]
+        evaluator.results_dict = {"": [None, None]}
         evaluator.iou_mapping = [[0], [1]]
         metric_scores, metric_curves = evaluator.finish_online_evaluation()
 
-        assert metric_curves == {"curve0": 1, "curve1": 3}
+        assert metric_curves == {"curve0": 1, "curve1": 3, "criterion": (np.NINF, np.inf)}
         assert metric_scores == {"score0": 0, "score1": 2}
-        metric0.assert_called_with([0, 0])
-        metric1.assert_called_with([0, 0])
+        metric0.assert_called_with([0, 0], tag="")
+        metric1.assert_called_with([0, 0], tag="")
 
     def test_iou_filter(self, evaluator):
         image_dict = {
