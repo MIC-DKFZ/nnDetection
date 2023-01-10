@@ -674,4 +674,4 @@ def _evaluate(
 
 
 if __name__ == "__main__":
-    evaluate()
+    train()

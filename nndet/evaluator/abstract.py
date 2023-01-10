@@ -55,7 +55,7 @@ class AbstractMetric(ABC):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        tag: Optional[str],
+        tag: Optional[str] = "",
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute metric
