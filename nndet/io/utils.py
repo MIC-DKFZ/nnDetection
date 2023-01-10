@@ -47,7 +47,7 @@ def get_np_paths_from_dir(directory: Pathlike) -> List[str]:
         if not case_paths:
             logger.error(f"Did not find any npz files.")
             raise RuntimeError(f"Did not find any npz files. Folder: {directory}")
-    case_paths = [f for f in case_paths if "_seg" not in f]
+    case_paths = [f for f in case_paths if not f.endswith("_seg")]
     case_paths.sort()
     return case_paths
 
