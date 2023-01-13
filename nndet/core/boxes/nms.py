@@ -16,7 +16,8 @@ except ImportError as e:
         f"NMS Cuda import failed with {e}, nnDetection was probably not build with GPU support or build failed!"
     )
     nms_gpu = None
-from nndet.core.boxes.ops import box_iou
+
+import nndet.core.ops_torch as ops_torch
 
 
 def nms_cpu(boxes, scores, thresh):
@@ -32,7 +33,7 @@ def nms_cpu(boxes, scores, thresh):
         Tensor: int64 tensor with the indices of the elements that have been
             kept by NMS, sorted in decreasing order of scores
     """
-    ious = box_iou(boxes, boxes)
+    ious = ops_torch.box_iou(boxes, boxes)
     _, _idx = torch.sort(scores, descending=True)
 
     keep = []

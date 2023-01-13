@@ -94,10 +94,12 @@ class FocalClassCriterionSigmoid(ClassCriterion):
         alpha: float,
         gamma: float,
         loss_weight: float,
+        eps: float = 1e-6,
     ) -> None:
         super().__init__(loss_weight)
         self.alpha = alpha
         self.gamma = gamma
+        self.eps = eps
         self.logits_convert_fn = torch.nn.Sigmoid()
 
     def forward(
@@ -123,7 +125,8 @@ class FocalClassCriterionSigmoid(ClassCriterion):
         pred_probs = self.logits_convert_fn(pred_logits)
         target_labels_idx = target_labels - 1
 
-        neg_cost_class = (1 - self.alpha) * (pred_probs**self.gamma) * (-(1 - pred_probs + 1e-8).log())
-        pos_cost_class = self.alpha * ((1 - pred_probs) ** self.gamma) * (-(pred_probs + 1e-8).log())
+        neg_cost_class = (1 - self.alpha) * (pred_probs**self.gamma) * (-(1 - pred_probs + self.eps).log())
+        pos_cost_class = self.alpha * ((1 - pred_probs) ** self.gamma) * (-(pred_probs + self.eps).log())
+
         cost_class = pos_cost_class[:, target_labels_idx] - neg_cost_class[:, target_labels_idx]
         return cost_class

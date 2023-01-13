@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from nndet.core.boxes.ops_np import box_center_np
+import nndet.core.ops_np as ops_np
 from nndet.io import load_pickle
 
 THRESHOLD = 0.5
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     boxes = boxes[keep]
     if boxes.size > 0:
-        centers = box_center_np(boxes)
+        centers = ops_np.box_center_np(boxes)
     else:
         centers = []
 

@@ -1,9 +1,15 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List, Sequence, Tuple, Union
+# ivnerse_sigmoid function from
+# https://github.com/fundamentalvision/Deformable-DETR/blob/11169a60c33333af00a4849f1808023eba96a931/util/misc.py  # noqa: E501
+# SPDX-FileCopyrightText: 2020 SenseTime
+# SPDX-License-Identifier: Apache-2.0
+
+from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
+import torch.nn.functional as F
 from numpy import ndarray
 from torch import Tensor
 from torch.cuda.amp import autocast
@@ -712,6 +718,231 @@ def cat_and_index(
     return torch.cat(boxes, dim=0), torch.cat(indices, dim=0)
 
 
+def clip_boxes_to_image_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int],
+):
+    """
+    Clip boxes to image dimensions inplace
+
+    Args:
+        boxes: tensor with boxes [N x (2*dim)]
+            (x_min, y_min, x_max, y_max(, z_min, z_max))
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+
+    Raises:
+        ValueError: boxes need to have 4(2D) or 6(3D) components
+    """
+    if boxes.shape[-1] == 4:
+        return clip_boxes_to_image_2d_(boxes, img_shape)
+    elif boxes.shape[-1] == 6:
+        return clip_boxes_to_image_3d_(boxes, img_shape)
+    else:
+        raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
+
+
+def clip_boxes_to_image(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int],
+):
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: tensor with boxes [N x (2*dim)]
+            (x_min, y_min, x_max, y_max(, z_min, z_max))
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+
+    Raises:
+        ValueError: boxes need to have 4(2D) or 6(3D) components
+    """
+    if boxes.shape[-1] == 4:
+        return clip_boxes_to_image_2d(boxes, img_shape)
+    elif boxes.shape[-1] == 6:
+        return clip_boxes_to_image_3d(boxes, img_shape)
+    else:
+        raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
+
+
+def clip_boxes_to_image_2d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+    """
+    s0, s1 = img_shape
+    boxes[..., 0::2].clamp_(min=0, max=s0)
+    boxes[..., 1::2].clamp_(min=0, max=s1)
+    return boxes
+
+
+def clip_boxes_to_image_3d_(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: tensor with boxes [N x 6]
+            (x_min, y_min, x_max, y_max, z_min, z_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+    """
+    s0, s1, s2 = img_shape
+    boxes[..., 0::6].clamp_(min=0, max=s0)
+    boxes[..., 1::6].clamp_(min=0, max=s1)
+    boxes[..., 2::6].clamp_(min=0, max=s0)
+    boxes[..., 3::6].clamp_(min=0, max=s1)
+    boxes[..., 4::6].clamp_(min=0, max=s2)
+    boxes[..., 5::6].clamp_(min=0, max=s2)
+    return boxes
+
+
+def clip_boxes_to_image_2d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int],
+):
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: tensor with boxes [N x 4] (x_min, y_min, x_max, y_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+
+    Notes:
+        Uses float32 internally because clipping of half cpu tensors is not
+        supported
+    """
+    s0, s1 = img_shape
+    boxes[..., 0::2] = boxes[..., 0::2].clamp(min=0, max=s0)
+    boxes[..., 1::2] = boxes[..., 1::2].clamp(min=0, max=s1)
+    return boxes
+
+
+def clip_boxes_to_image_3d(
+    boxes: torch.Tensor,
+    img_shape: Tuple[int, int, int],
+):
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: tensor with boxes [N x 6]
+            (x_min, y_min, x_max, y_max, z_min, z_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as tensor
+
+    Notes:
+        Uses float32 internally because clipping of half cpu tensors is not
+        supported
+    """
+    s0, s1, s2 = img_shape
+    boxes[..., 0::6] = boxes[..., 0::6].clamp(min=0, max=s0)
+    boxes[..., 1::6] = boxes[..., 1::6].clamp(min=0, max=s1)
+    boxes[..., 2::6] = boxes[..., 2::6].clamp(min=0, max=s0)
+    boxes[..., 3::6] = boxes[..., 3::6].clamp(min=0, max=s1)
+    boxes[..., 4::6] = boxes[..., 4::6].clamp(min=0, max=s2)
+    boxes[..., 5::6] = boxes[..., 5::6].clamp(min=0, max=s2)
+    return boxes
+
+
+def roi_mask_to_image_mask(
+    boxes: torch.Tensor,
+    masks: torch.Tensor,
+    image_shape: Tuple[Tuple[int, int], Tuple[int, int, int]],
+    mode: str = "nearest",
+    align_corners: Optional[bool] = None,
+    antialias: bool = False,
+    threshold: Optional[float] = None,
+) -> torch.Tensor:
+    # TODO: unit test with empty mask, check shape == 0
+    # TODO: boxes rounding
+    # TODO: check for float
+    assert boxes.shape[0] == masks.shape[0]
+    num_items = boxes.shape[0] if boxes.numel() > 0 else 0
+
+    image_mask = torch.zeros(num_items, *image_shape, device=masks.device)
+    if num_items == 0:
+        return torch.tensor([], device=masks.device, dtype=masks.dtype)
+
+    boxes_size = torch.round(box_size(boxes)).to(dtype=torch.int)
+    for idx in range(num_items):
+        if (boxes_size[idx] < 1).any():
+            continue
+        _mask_rescale = F.interpolate(
+            masks[idx][None, None],
+            size=tuple(boxes_size[idx].tolist()),
+            mode=mode,
+            align_corners=align_corners,
+            # antialias=antialias,
+        )
+        image_coords = [
+            slice(int(boxes[idx, 0]), int(boxes[idx, 0]) + int(boxes_size[idx, 0])),
+            slice(int(boxes[idx, 1]), int(boxes[idx, 1]) + int(boxes_size[idx, 1])),
+        ]
+        if boxes.shape[1] == 6:
+            image_coords.append(slice(int(boxes[idx, 4]), int(boxes[idx, 4]) + int(boxes_size[idx, 2])))
+        image_mask[idx][tuple(image_coords)] = _mask_rescale[0, 0]
+
+    if threshold is not None:
+        image_mask = (image_mask > threshold).to(dtype=torch.float)
+    return image_mask
+
+
+def bin_mask_iou(
+    bin_masks1: torch.Tensor,
+    bin_masks2: torch.Tensor,
+) -> torch.Tensor:
+    bin_masks1_flattened = bin_masks1.flatten(1)
+    bin_masks2_flattened = bin_masks2.flatten(1)
+
+    masks1_vol = bin_masks1_flattened.sum(dim=1)  # [N]
+    masks2_vol = bin_masks2_flattened.sum(dim=1)  # [M]
+
+    intersection = torch.mm(bin_masks1_flattened, bin_masks2_flattened.T)  # [N, M]
+    union = masks1_vol[:, None] + masks2_vol[None] - intersection  # [N, M]
+    return intersection / union
+
+
+def inverse_sigmoid(data: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
+    """
+    Inverse Sigmoid Function for pre-sigmoid additions
+
+    Args:
+        data: input tensor
+        eps: epsilon for numerical stability
+
+    Returns:
+        torch.Tensor: inverse sigmoid of values in original tensor
+    """
+    data = data.clamp(min=0, max=1)
+    x1 = data.clamp(min=eps)
+    x2 = (1 - data).clamp(min=eps)
+    return torch.log(x1 / x2)
+
+
 def box_point_norm_with_size(
     boxes: torch.Tensor,
     img_shape: ND_TUPLE_INT,
@@ -770,16 +1001,16 @@ def box_point2center_format(boxes_point: torch.Tensor) -> torch.Tensor:
 
     Args:
         boxes_point: input boxes in format [x0, y0, x1, y1 (, z0, z1)] with
-            shape [N, dim * 2]
+            shape [*, dim * 2]
 
     Returns:
         torch.Tensor: boxes in format [cx, cy, dx, dy (, cz, dz)] with shape
-            [N, dim * 2]
+            [*, dim * 2]
     """
     if boxes_point.numel() == 0:  # handle empty boxes
         return boxes_point
 
-    if boxes_point.shape[1] == 4:
+    if boxes_point.shape[-1] == 4:
         x0, y0, x1, y1 = boxes_point.unbind(-1)
         bc = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0)]
     else:
@@ -802,16 +1033,16 @@ def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
 
     Args:
         boxes_point: input boxes in format [cx, cy, dx, dy (, cz, dz)] with
-            shape [N, dim * 2]
+            shape [*, dim * 2]
 
     Returns:
         torch.Tensor: boxes in format [x0, y0, x1, y1 (, z0, z1)] with shape
-            [N, dim * 2]
+            [*, dim * 2]
     """
     if boxes_center.numel() == 0:  # handle empty boxes
         return boxes_center
 
-    if boxes_center.shape[1] == 4:
+    if boxes_center.shape[-1] == 4:
         cx, cy, dx, dy = boxes_center.unbind(-1)
         bp = [
             cx - 0.5 * dx,

@@ -7,14 +7,14 @@ from typing import Callable, Optional, Sequence, Tuple, TypeVar
 import torch
 from torch import Tensor
 
-from nndet.core.boxes.ops import box_iou
+import nndet.core.ops_torch as ops_torch
 
 
 class Matcher(ABC):
     BELOW_LOW_THRESHOLD: int = -1
     BETWEEN_THRESHOLDS: int = -2
 
-    def __init__(self, similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou):
+    def __init__(self, similarity_fn: Callable[[Tensor, Tensor], Tensor] = ops_torch.box_iou):
         """
         Matches boxes and anchors to each other
 

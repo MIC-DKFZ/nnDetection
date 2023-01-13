@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from nndet.core.boxes import box_iou_np
+import nndet.core.ops_np as ops_np
 from nndet.evaluator.detection.matching import (
     _matching_no_gt,
     _matching_no_pred,
@@ -131,7 +131,7 @@ class TestMatching:
         iou_thresholds = [0.1, 0.5]
 
         res = _matching_single_image_single_class(
-            iou_fn=box_iou_np,
+            iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
@@ -154,7 +154,7 @@ class TestMatching:
         iou_thresholds = [0.1, 0.5]
 
         res = _matching_single_image_single_class(
-            iou_fn=box_iou_np,
+            iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
@@ -178,7 +178,7 @@ class TestMatching:
         iou_thresholds = [0.2, 0.5]
 
         res = _matching_single_image_single_class(
-            iou_fn=box_iou_np,
+            iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
@@ -260,7 +260,7 @@ class TestMatching:
         _gt_classes = [np.array([1, 1, 1, 0])]
         _gt_ignore = [np.array([0, 0, 0, 0])]
         matching_batch(
-            box_iou_np,
+            ops_np.box_iou_np,
             [0.1, 0.5, 0.75],
             _pd_boxes,
             _pd_classes,

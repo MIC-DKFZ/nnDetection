@@ -10,7 +10,7 @@ import torch
 from loguru import logger
 from torch import Tensor
 
-from nndet.core.boxes import box_center, clip_boxes_to_image, remove_small_boxes
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
 from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
 from nndet.core.boxes.wbc import batched_wbc
@@ -236,10 +236,10 @@ class BoxEnsembler(BaseEnsembler):
             weights[idx_sorted],
         )
 
-        b = clip_boxes_to_image(b, shape)
+        b = ops_torch.clip_boxes_to_image(b, shape)
         # After clipping we could have boxes with volume 0 which we definitely
         # need to remove because of the IoU computation
-        keep = remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
+        keep = ops_torch.remove_small_boxes(b, min_size=self.parameters["remove_small_boxes"])
         b, p, l, w = b[keep], p[keep], l[keep], w[keep]
 
         _boxes, _probs, _labels, _weights = self.get_model_nms()(
@@ -379,7 +379,10 @@ class BoxEnsembler(BaseEnsembler):
             scores.append(_scores.cpu())
             labels.append(_labels.cpu())
 
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
+        centers = [
+            ops_torch.box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -677,7 +680,10 @@ class BoxEnsemblerFastest(BoxEnsemblerLW):
         boxes = [r.half().cpu() for r in result[self.box_key]]
         scores = [r.half().cpu() for r in result[self.score_key]]
         labels = [r.half().cpu() for r in result[self.label_key]]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
+        centers = [
+            ops_torch.box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -1038,7 +1044,10 @@ class BoxEnsemblerSelective(BoxEnsembler):
         boxes = [r.float().cpu() for r in result[self.box_key]]
         scores = [r.float().cpu() for r in result[self.score_key]]
         labels = [r.float().cpu() for r in result[self.label_key]]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
+        centers = [
+            ops_torch.box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         tile_origins = [to for to in zip(*batch["tile_origin"])]
 
         tile_size = batch[self.data_key].shape[2:]
@@ -1304,7 +1313,10 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
         # process 2d boxes
         tile_size = batch[self.data_key].shape[2:]
-        centers = [box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes) for img_boxes in boxes]
+        centers = [
+            ops_torch.box_center(img_boxes) if img_boxes.numel() > 0 else Tensor([]).to(img_boxes)
+            for img_boxes in boxes
+        ]
         weights = [self._get_box_in_tile_weight(c, tile_size) for c in centers]
         weights = [w * self.model_weights[self.model_current] for w in weights]
 
@@ -1419,7 +1431,7 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
         # the upper bound is already correct, we need to fix the lower bound here
         boxes[:, 0] = boxes[:, 0] - 1
 
-        keep = remove_small_boxes(boxes, min_size=self.parameters["track_remove_small_boxes"])
+        keep = ops_torch.remove_small_boxes(boxes, min_size=self.parameters["track_remove_small_boxes"])
         boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
         return boxes, probs, labels
 

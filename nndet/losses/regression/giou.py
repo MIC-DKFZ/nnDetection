@@ -3,7 +3,7 @@
 
 import torch
 
-from nndet.core.boxes.ops import generalized_box_iou
+import nndet.core.ops_torch as ops_torch
 from nndet.losses.ops import Loss, reduction_helper
 from nndet.losses.regression.functional.giou import generalized_box_iou_loss
 
@@ -56,7 +56,7 @@ class GIoULoss(Loss):
             Tensor: loss
         """
         loss = reduction_helper(
-            torch.diag(generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0),
+            torch.diag(ops_torch.generalized_box_iou(pred_boxes, target_boxes, eps=self.eps), diagonal=0),
             reduction=self.reduction,
         )
         return self.loss_weight * -1 * loss

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
+import nndet.core.ops_np as ops_np
 import nndet.evaluator.detection.matching as matching
 from nndet.evaluator.det import DetectionEvaluator
 
@@ -16,7 +17,7 @@ class DummyMetric:
 
 @pytest.fixture
 def evaluator():
-    return DetectionEvaluator([DummyMetric()])
+    return DetectionEvaluator([DummyMetric()], iou_fn=ops_np.box_iou_np)
 
 
 class TestDetectionEvaluator:
@@ -26,6 +27,7 @@ class TestDetectionEvaluator:
                 DummyMetric((0.1, 0.2)),
                 DummyMetric((0.3, 0.4)),
             ],
+            iou_fn=ops_np.box_iou_np,
         )
         assert all([a == b for a, b in zip(self.evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
         assert all([a == b for a, b in zip(self.evaluator.iou_mapping, [[0, 1], [2, 3]])])

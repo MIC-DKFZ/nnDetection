@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 import torch
 
-from nndet.core.ops import inverse_sigmoid
+import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.utils.typing import LINEARSEQ
@@ -144,7 +144,7 @@ class FFNRegressor(torch.nn.Module):
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return inverse_sigmoid(x)
+        return ops_torch.inverse_sigmoid(x)
 
     def compute_loss(
         self,
