@@ -1001,16 +1001,16 @@ def box_point2center_format(boxes_point: torch.Tensor) -> torch.Tensor:
 
     Args:
         boxes_point: input boxes in format [x0, y0, x1, y1 (, z0, z1)] with
-            shape [N, dim * 2]
+            shape [*, dim * 2]
 
     Returns:
         torch.Tensor: boxes in format [cx, cy, dx, dy (, cz, dz)] with shape
-            [N, dim * 2]
+            [*, dim * 2]
     """
     if boxes_point.numel() == 0:  # handle empty boxes
         return boxes_point
 
-    if boxes_point.shape[1] == 4:
+    if boxes_point.shape[-1] == 4:
         x0, y0, x1, y1 = boxes_point.unbind(-1)
         bc = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0)]
     else:
@@ -1033,16 +1033,16 @@ def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
 
     Args:
         boxes_point: input boxes in format [cx, cy, dx, dy (, cz, dz)] with
-            shape [N, dim * 2]
+            shape [*, dim * 2]
 
     Returns:
         torch.Tensor: boxes in format [x0, y0, x1, y1 (, z0, z1)] with shape
-            [N, dim * 2]
+            [*, dim * 2]
     """
     if boxes_center.numel() == 0:  # handle empty boxes
         return boxes_center
 
-    if boxes_center.shape[1] == 4:
+    if boxes_center.shape[-1] == 4:
         cx, cy, dx, dy = boxes_center.unbind(-1)
         bp = [
             cx - 0.5 * dx,
