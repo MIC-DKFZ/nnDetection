@@ -267,6 +267,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         case_data: np.ndarray,
         crop: Sequence[slice],
     ) -> Tuple[np.ndarray, np.ndarray]:
+        # TODO: think about crop shits!
+
         gt = np.load(self._data[case_id]["label_boxes_file"])
         gt_boxes = gt["boxes"]
         gt_labels = gt["labels"]
@@ -276,16 +278,15 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             # offset coordinates to crop
             crop_boxes = gt_boxes - ops_np.expand_to_boxes(lower_bound[None])
             crop_boxes = ops_np.clip_boxes_to_image(crop_boxes, img_shape=self.patch_size_generator)
-            # TODO: think about min size 1 vs 2
-            # remove small boxes (everything outside of the crop has size 0)
-            keep = ops_np.remove_small_boxes(crop_boxes, min_size=1)
+            # remove small boxes (everything outside of the crop has size 0 or 1)
+            keep = ops_np.remove_small_boxes(crop_boxes, min_size=2)
 
             box_coord = crop_boxes[keep]
             box_label = gt_labels[keep]
         else:
-            # TODO: dtypes
-            gt_boxes = np.array([[]]).reshape(-1, 6)  # TODO dim param
-            gt_labels = np.array([])
+            ndim = case_data.ndim - 1
+            box_coord = np.array([[]], dtype=float).reshape(-1, ndim * 2)
+            box_label = np.array([], dtype=int)
         return box_coord, box_label
 
 
