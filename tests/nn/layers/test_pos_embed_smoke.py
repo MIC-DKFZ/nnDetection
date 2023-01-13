@@ -28,7 +28,7 @@ EMBED_OPT = [
 
 
 @pytest.mark.parametrize("input_shape", TEST_SHAPES)
-@pytest.mark.parametrize("embed_cls", EMBED_OPT)
+@pytest.mark.parametrize("embed_opt", EMBED_OPT)
 def test_smoke_pos_embed(input_shape: Sequence[int], embed_opt: Tuple[Type[BasePositionEmbedding], Dict]):
     embed_cls, embed_kwargs = embed_opt
 

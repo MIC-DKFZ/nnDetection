@@ -11,13 +11,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
-from nndet.core.boxes.ops import (
-    box_center2point_format,
-    box_point2center_format,
-    box_point_norm_with_size,
-    box_point_rescale_with_size,
-)
 from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
@@ -234,8 +229,8 @@ class DETRHead(torch.nn.Module):
         """
         target_boxes_new = []
         for box in target_boxes:
-            boxes_norm = box_point_norm_with_size(box, img_shape=img_shape)
-            target_boxes_new.append(box_point2center_format(boxes_norm))
+            boxes_norm = ops_torch.box_point_norm_with_size(box, img_shape=img_shape)
+            target_boxes_new.append(ops_torch.box_point2center_format(boxes_norm))
 
         # shift labels by one to put background at 0
         target_labels_new = [t.long() + 1 if t.numel() > 0 else t for t in target_labels]
@@ -378,8 +373,8 @@ class DETRHead(torch.nn.Module):
         loss = self.regressor.compute_loss(
             preds=src_boxes,
             targets=target_boxes,
-            pred_boxes=box_center2point_format(src_boxes),
-            target_boxes=box_center2point_format(target_boxes),
+            pred_boxes=ops_torch.box_center2point_format(src_boxes),
+            target_boxes=ops_torch.box_center2point_format(target_boxes),
         )
         if self.norm_reg_loss_by_num_boxes:
             loss = {key: item / num_boxes_all for key, item in loss.items()}
@@ -448,8 +443,10 @@ class DETRHead(torch.nn.Module):
                         predicted class List[[R]]
         """
         batch_pred_probs = self.classifier.postprocess_logits(pred_detection["pred_cls_logits"])
-        batch_pred_boxes_norm = box_center2point_format(pred_detection["pred_box_coords"])
-        batch_pred_boxes = box_point_rescale_with_size(batch_pred_boxes_norm, img_shape=img_shape, extra_batched=True)
+        batch_pred_boxes_norm = ops_torch.box_center2point_format(pred_detection["pred_box_coords"])
+        batch_pred_boxes = ops_torch.box_point_rescale_with_size(
+            batch_pred_boxes_norm, img_shape=img_shape, extra_batched=True
+        )
         pred_boxes, pred_scores, pred_labels = self.box_post.process_batch(batch_pred_probs, batch_pred_boxes)
         return {
             "pred_boxes": pred_boxes,

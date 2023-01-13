@@ -1,7 +1,7 @@
 import torch
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.criterions.base import BoxCriterion
-from nndet.core.boxes.ops import box_center2point_format, generalized_box_iou
 
 
 class L1RegCriterion(BoxCriterion):
@@ -71,8 +71,8 @@ class GIoUCenterBoxCriterion(BoxCriterion):
                 R=number of predictions, L is the number of ground truth
                 objects
         """
-        return self.loss_weight * -1 - generalized_box_iou(
-            box_center2point_format(pred_coords),
-            box_center2point_format(target_boxes),
+        return self.loss_weight * -1 - ops_torch.generalized_box_iou(
+            ops_torch.box_center2point_format(pred_coords),
+            ops_torch.box_center2point_format(target_boxes),
             eps=self.eps,
         )

@@ -14,7 +14,7 @@ benchmark: True
 terminate_on_nan: False # [optional; Default True]
 
 # pytorch 2.0 features
-do_compile: True
+do_compile: False
 compile_kwargs:
   mode: "max-autotune"
   backend: "inductor"
