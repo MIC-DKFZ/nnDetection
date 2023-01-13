@@ -8,6 +8,7 @@ import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 
 import nndet.core.boxes.ops as ops_torch
+import nndet.core.ops_np as ops_np
 from nndet.core.boxes.clip import clip_boxes_to_image
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.mixins.bgcrop import RandomBGCrop2D, RandomBGCrop3D
@@ -275,7 +276,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         if gt_boxes.size > 0:
             lower_bound = np.array([s.start for s in crop])
             # offset coordinates to crop
-            crop_boxes = gt_boxes - ops_torch.expand_to_boxes(lower_bound[None])
+            crop_boxes = gt_boxes - ops_np.expand_to_boxes(lower_bound[None])
             # TODO: update function
             # TODO: clip must be at -1!
             crop_boxes = clip_boxes_to_image(crop_boxes, img_shape=self.patch_size_generator)

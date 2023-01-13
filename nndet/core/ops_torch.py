@@ -645,8 +645,8 @@ def permute_boxes(
 
 
 def expand_to_boxes(
-    data: Union[Tensor, ndarray],
-) -> Union[Tensor, ndarray]:
+    data: Tensor,
+) -> Tensor:
     """
     Expand x,y,z data to box format
 

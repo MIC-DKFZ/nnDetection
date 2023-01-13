@@ -4,7 +4,23 @@
 import numpy as np
 from numpy import ndarray
 
+from nndet.core.ops_torch import expand_to_boxes as _expand_to_boxes
 from nndet.utils.tensor import ensure_min_float32_np
+
+
+def expand_to_boxes(
+    data: ndarray,
+) -> ndarray:
+    """
+    Expand x,y,z data to box format
+
+    Args:
+        data: data to expand (N, dim)[:, (x, y, [z])]
+
+    Returns:
+        ndarray: expanded tensors
+    """
+    return _expand_to_boxes(data)
 
 
 def box_area_np(
