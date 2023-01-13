@@ -17,17 +17,10 @@ from nndet.utils.info import SuppressPrint
 with SuppressPrint():
     from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
 
+import nndet.core.ops_np as ops_np
+import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractDetector
-from nndet.core.boxes import (
-    box_area_np,
-    box_center,
-    box_iou,
-    box_size_np,
-    compute_anchors_for_strides,
-    expand_to_boxes,
-    get_anchor_generator,
-    permute_boxes,
-)
+from nndet.core.boxes import compute_anchors_for_strides, get_anchor_generator
 from nndet.io.load import load_pickle
 from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.architecture.boxes.utils import (
@@ -79,7 +72,7 @@ class BaseBoxesPlanner(ArchitecturePlanner):
         assert self.transpose_forward is not None
         boxes = [case["boxes"] for case_id, case in self.dataset_properties["instance_props_per_patient"].items()]
         self.all_boxes = np.concatenate([b for b in boxes if not isinstance(b, list) and b.size > 0], axis=0)
-        self.all_boxes = permute_boxes(self.all_boxes, dims=self.transpose_forward)
+        self.all_boxes = ops_torch.permute_boxes(self.all_boxes, dims=self.transpose_forward)
         self.all_ious = self.dataset_properties["all_ious"]
         self.class_ious = self.dataset_properties["class_ious"]
         self.num_instances = self.dataset_properties["num_instances"]
@@ -110,9 +103,9 @@ class BaseBoxesPlanner(ArchitecturePlanner):
                     [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
-                dists = box_size_np(_boxes)
+                dists = ops_np.box_size_np(_boxes)
             else:
-                dists = box_size_np(self.all_boxes)
+                dists = ops_np.box_size_np(self.all_boxes)
             for axis in range(dists.shape[1]):
                 dist = dists[:, axis]
                 plt.hist(dist, bins=100)
@@ -138,9 +131,9 @@ class BaseBoxesPlanner(ArchitecturePlanner):
                     [b for b in self.all_boxes if not isinstance(b, list) and b.size > 0],
                     axis=0,
                 )
-                area = box_area_np(_boxes)
+                area = ops_np.box_area_np(_boxes)
             else:
-                area = box_area_np(self.all_boxes)
+                area = ops_np.box_area_np(self.all_boxes)
             plt.hist(area, bins=100)
             plt.savefig(self.save_dir / "box_areas.png")
             plt.xscale("log")
@@ -379,7 +372,7 @@ class BoxC001(BaseBoxesPlanner):
             "planning."
         )
         boxes_torch = torch.from_numpy(boxes_np).float()
-        boxes_torch = boxes_torch - expand_to_boxes(box_center(boxes_torch))
+        boxes_torch = boxes_torch - ops_torch.expand_to_boxes(ops_torch.box_center(boxes_torch))
         anchor_generator = get_anchor_generator(self.dim, s_param=True)
 
         rel_strides = self.architecture_kwargs["strides"]
@@ -418,7 +411,7 @@ class BoxC001(BaseBoxesPlanner):
             :func:`np.percentile`
         """
         mask = np.ones(boxes_np.shape[0]).astype(bool)
-        box_sizes = box_size_np(boxes_np)
+        box_sizes = ops_np.box_size_np(boxes_np)
         for ax in range(box_sizes.shape[1]):
             ax_sizes = box_sizes[:, ax]
             upper_th = np.percentile(ax_sizes, upper_percentile)
@@ -453,7 +446,7 @@ class BoxC001(BaseBoxesPlanner):
 
         dim = int(boxes_torch.shape[1] // 2)
 
-        # sizes = box_size(boxes_torch)
+        # sizes = ops_torch.box_size(boxes_torch)
         # maxs = sizes.max(dim=0)[0]
         best_iou = 0
         # TBPSA, PSO
@@ -479,7 +472,7 @@ class BoxC001(BaseBoxesPlanner):
                     anchors = compute_anchors_for_strides(anchors, strides=strides, cat=True)
                     anchors = anchors
                     # TODO: add checks if GPU is availabe and has enough VRAM
-                    iou = box_iou(boxes_torch.cuda(), anchors.cuda())  # boxes x anchors
+                    iou = ops_torch.box_iou(boxes_torch.cuda(), anchors.cuda())  # boxes x anchors
                     mean_iou = iou.max(dim=1)[0].mean().cpu()
                     optimizer.tell(x, -mean_iou.item())
                     pbar.set_postfix(mean_iou=mean_iou)

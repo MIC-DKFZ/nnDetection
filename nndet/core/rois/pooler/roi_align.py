@@ -7,7 +7,7 @@ import torch
 from loguru import logger
 from torch import Tensor
 
-from nndet.core.boxes.ops import box_size, expand_to_boxes
+import nndet.core.ops_torch as ops_torch
 from nndet.core.rois.pooler.base import RoIPooler
 from nndet.utils.typing import ND_FLOAT, ND_TUPLE_INT
 
@@ -31,7 +31,7 @@ def roi_align(
     # apply scaling here, will be moved to cuda function down the road
     if isinstance(spatial_scale, Sequence):
         _scale = torch.tensor(spatial_scale, dtype=boxes.dtype, device=boxes.device)
-        boxes[:, 1:] = boxes[:, 1:] * expand_to_boxes(_scale)
+        boxes[:, 1:] = boxes[:, 1:] * ops_torch.expand_to_boxes(_scale)
     else:
         boxes[:, 1:] = boxes[:, 1:] * spatial_scale
     spatial_scale = 1.0
@@ -164,9 +164,9 @@ class RoIAlignOrigAssign(RoIAlignBase):
             dtype=proposal_boxes.dtype,
             device=proposal_boxes.device,
         )
-        proposal_boxes_norm = proposal_boxes / expand_to_boxes(image_size_tensor)
+        proposal_boxes_norm = proposal_boxes / ops_torch.expand_to_boxes(image_size_tensor)
 
-        _, d2, d3 = box_size(proposal_boxes_norm).unbind(dim=-1)
+        _, d2, d3 = ops_torch.box_size(proposal_boxes_norm).unbind(dim=-1)
 
         num_levels = len(features)
         level = (
@@ -200,8 +200,8 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         # We normalize the box size instead of the area/vol
         # since this should give better numerical results especially
         # when using mixed precision (i.e. 128^3 does not fit float16)
-        proposal_boxes_norm = (proposal_boxes * 1.33) / expand_to_boxes(image_size_tensor)
-        normed_size = box_size(proposal_boxes_norm)  # [N, 3]
+        proposal_boxes_norm = (proposal_boxes * 1.33) / ops_torch.expand_to_boxes(image_size_tensor)
+        normed_size = ops_torch.box_size(proposal_boxes_norm)  # [N, 3]
 
         if len(image_size) == 2:
             v = torch.log2((normed_size[:, 0] * normed_size[:, 1]).sqrt())

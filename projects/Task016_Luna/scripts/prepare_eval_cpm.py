@@ -8,7 +8,7 @@ import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
-from nndet.core.boxes.ops_np import box_center_np
+import nndet.core.ops_np as ops_np
 from nndet.io.itk import load_sitk
 from nndet.io.load import load_pickle
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
         boxes = predictions["pred_boxes"]
         probs = predictions["pred_scores"]
-        centers = box_center_np(boxes)
+        centers = ops_np.box_center_np(boxes)
         assert predictions["restore"]
 
         for center, prob in zip(centers, probs):

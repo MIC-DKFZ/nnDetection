@@ -13,8 +13,8 @@ import torch
 from loguru import logger
 from torch import Tensor
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.matcher.base import Matcher
-from nndet.core.boxes.ops import box_iou
 
 
 class IoUMatcher(Matcher):
@@ -23,7 +23,7 @@ class IoUMatcher(Matcher):
         low_threshold: float,
         high_threshold: float,
         allow_low_quality_matches: bool,
-        similarity_fn: Callable[[Tensor, Tensor], Tensor] = box_iou,
+        similarity_fn: Callable[[Tensor, Tensor], Tensor] = ops_torch.box_iou,
     ):
         """
         Compute IoU based matching for a single image

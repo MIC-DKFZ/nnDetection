@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy as np
 from loguru import logger
 
-from nndet.core.boxes.ops import expand_to_boxes, permute_boxes
+import nndet.core.ops_torch as ops_torch
 from nndet.preprocessing.resampling import (
     get_do_separate_z,
     get_lowres_axis,
@@ -38,17 +38,17 @@ def restore_boxes(
     Returns:
         np.ndarray: predicted bounding boxes in the original image space
     """
-    boxes_transposed = permute_boxes(boxes, transpose_backward)
+    boxes_transposed = ops_torch.permute_boxes(boxes, transpose_backward)
 
     original_spacing = np.asarray(original_spacing)
     spacing_after_resampling = np.asarray(spacing_after_resampling)
     resampled_spacing = spacing_after_resampling[transpose_backward]
     scaling = resampled_spacing / original_spacing
-    scaling_expanded = expand_to_boxes(scaling[None])
+    scaling_expanded = ops_torch.expand_to_boxes(scaling[None])
     boxes_scaled = boxes_transposed * scaling_expanded
 
     offset = np.asarray([i[0] for i in crop_bbox])
-    offset_expanded = expand_to_boxes(offset[None])
+    offset_expanded = ops_torch.expand_to_boxes(offset[None])
     boxes_original = boxes_scaled + offset_expanded
     return boxes_original
 

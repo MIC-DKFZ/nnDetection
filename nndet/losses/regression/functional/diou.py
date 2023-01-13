@@ -4,7 +4,7 @@
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.core.boxes.ops import distance_box_iou_paired
+import nndet.core.ops_torch as ops_torch
 from nndet.losses.ops import reduction_helper
 
 
@@ -35,7 +35,7 @@ def distance_iou_loss(
         Need to compute IoU in float32 (autocast=False) because the
         volume/area can be to large
     """
-    loss = distance_box_iou_paired(
+    loss = ops_torch.distance_box_iou_paired(
         boxes1=pred_boxes,
         boxes2=target_boxes,
         eps=eps,

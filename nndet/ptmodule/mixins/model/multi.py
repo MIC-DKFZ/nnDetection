@@ -6,10 +6,10 @@ from typing import Callable, Optional, Sequence, Type
 
 from loguru import logger
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.ops import box_iou
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
@@ -374,7 +374,7 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
 
         # RoI Module
         roi_matcher = cls.roi_matcher_cls(
-            similarity_fn=box_iou,
+            similarity_fn=ops_torch.box_iou,
             **model_cfg["roi_matcher_kwargs"],
         )
         roi_sampler = cls._build_roi_sampler(
@@ -470,7 +470,7 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
 
             # Matcher
             roi_matcher = cls.roi_matcher_cls(
-                similarity_fn=box_iou,
+                similarity_fn=ops_torch.box_iou,
                 **model_cfg[f"roi_matcher_kwargs_s{i}"],
             )
             matchers.append(roi_matcher)

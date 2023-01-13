@@ -11,9 +11,8 @@ from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
 
-from nndet.core.boxes.clip import clip_boxes_to_image_
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.nms import batched_nms
-from nndet.core.boxes.ops import remove_small_boxes as fn_remove_small_boxes
 
 
 class BoxPostprocessing:
@@ -124,7 +123,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             Tensor: final class label [R]
         """
         assert img_reps.shape[0] == img_probs.shape[0]
-        boxes = clip_boxes_to_image_(img_reps, img_shape)
+        boxes = ops_torch.clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
 
         if self.topk_candidates is not None:
@@ -143,7 +142,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         boxes = boxes[anchor_idxs]
 
         if self.remove_small_boxes is not None:
-            keep = fn_remove_small_boxes(boxes, min_size=self.remove_small_boxes)
+            keep = ops_torch.remove_small_boxes(boxes, min_size=self.remove_small_boxes)
             boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
 
         boxes, probs, labels = self.nms(boxes, probs, labels)
@@ -214,7 +213,7 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
                 "PerLevelBoxPostprocessing is only supported with a "
                 f"single class but found {img_probs.shape[1]} classes"
             )
-        boxes = clip_boxes_to_image_(img_reps, img_shape)
+        boxes = ops_torch.clip_boxes_to_image_(img_reps, img_shape)
         probs = img_probs.flatten()
 
         levels = [
@@ -237,7 +236,7 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
             probs, boxes, levels = probs[keep_mask], boxes[keep_mask], levels[keep_mask]
 
         if self.remove_small_boxes is not None:
-            keep = fn_remove_small_boxes(boxes, min_size=self.remove_small_boxes)
+            keep = ops_torch.fn_remove_small_boxes(boxes, min_size=self.remove_small_boxes)
             boxes, probs, levels = boxes[keep], probs[keep], levels[keep]
         boxes, probs, _ = self.nms(boxes, probs, levels)
 
