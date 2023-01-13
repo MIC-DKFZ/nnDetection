@@ -785,8 +785,8 @@ def clip_boxes_to_image_2d_(
         Tensor: clipped boxes as tensor
     """
     s0, s1 = img_shape
-    boxes[..., 0::2].clamp_(min=0, max=s0)
-    boxes[..., 1::2].clamp_(min=0, max=s1)
+    boxes[..., 0::2].clamp_(min=-1, max=s0)
+    boxes[..., 1::2].clamp_(min=-1, max=s1)
     return boxes
 
 
@@ -806,12 +806,12 @@ def clip_boxes_to_image_3d_(
         Tensor: clipped boxes as tensor
     """
     s0, s1, s2 = img_shape
-    boxes[..., 0::6].clamp_(min=0, max=s0)
-    boxes[..., 1::6].clamp_(min=0, max=s1)
-    boxes[..., 2::6].clamp_(min=0, max=s0)
-    boxes[..., 3::6].clamp_(min=0, max=s1)
-    boxes[..., 4::6].clamp_(min=0, max=s2)
-    boxes[..., 5::6].clamp_(min=0, max=s2)
+    boxes[..., 0::6].clamp_(min=-1, max=s0)
+    boxes[..., 1::6].clamp_(min=-1, max=s1)
+    boxes[..., 2::6].clamp_(min=-1, max=s0)
+    boxes[..., 3::6].clamp_(min=-1, max=s1)
+    boxes[..., 4::6].clamp_(min=-1, max=s2)
+    boxes[..., 5::6].clamp_(min=-1, max=s2)
     return boxes
 
 
@@ -834,8 +834,8 @@ def clip_boxes_to_image_2d(
         supported
     """
     s0, s1 = img_shape
-    boxes[..., 0::2] = boxes[..., 0::2].clamp(min=0, max=s0)
-    boxes[..., 1::2] = boxes[..., 1::2].clamp(min=0, max=s1)
+    boxes[..., 0::2] = boxes[..., 0::2].clamp(min=-1, max=s0)
+    boxes[..., 1::2] = boxes[..., 1::2].clamp(min=-1, max=s1)
     return boxes
 
 
@@ -859,12 +859,12 @@ def clip_boxes_to_image_3d(
         supported
     """
     s0, s1, s2 = img_shape
-    boxes[..., 0::6] = boxes[..., 0::6].clamp(min=0, max=s0)
-    boxes[..., 1::6] = boxes[..., 1::6].clamp(min=0, max=s1)
-    boxes[..., 2::6] = boxes[..., 2::6].clamp(min=0, max=s0)
-    boxes[..., 3::6] = boxes[..., 3::6].clamp(min=0, max=s1)
-    boxes[..., 4::6] = boxes[..., 4::6].clamp(min=0, max=s2)
-    boxes[..., 5::6] = boxes[..., 5::6].clamp(min=0, max=s2)
+    boxes[..., 0::6] = boxes[..., 0::6].clamp(min=-1, max=s0)
+    boxes[..., 1::6] = boxes[..., 1::6].clamp(min=-1, max=s1)
+    boxes[..., 2::6] = boxes[..., 2::6].clamp(min=-1, max=s0)
+    boxes[..., 3::6] = boxes[..., 3::6].clamp(min=-1, max=s1)
+    boxes[..., 4::6] = boxes[..., 4::6].clamp(min=-1, max=s2)
+    boxes[..., 5::6] = boxes[..., 5::6].clamp(min=-1, max=s2)
     return boxes
 
 
