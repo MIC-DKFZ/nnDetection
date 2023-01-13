@@ -6,6 +6,7 @@ from numpy import ndarray
 
 from nndet.core.ops_torch import expand_to_boxes as _expand_to_boxes
 from nndet.utils.tensor import ensure_min_float32_np
+from nndet.utils.typing import ND_TUPLE_INT
 
 
 def expand_to_boxes(
@@ -212,3 +213,111 @@ def bin_mask_iou_np(
     intersection = np.matmul(bin_masks1_flattened, bin_masks2_flattened.T)  # [N, M]
     union = masks1_vol[:, None] + masks2_vol[None] - intersection  # [N, M]
     return intersection / union
+
+
+def clip_boxes_to_image(
+    boxes: np.ndarray,
+    img_shape: ND_TUPLE_INT,
+) -> np.ndarray:
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: array with boxes [N x (2*dim)]
+            (x_min, y_min, x_max, y_max(, z_min, z_max))
+        img_shape: size of image
+
+    Returns:
+        np.ndarray: clipped boxes as tensor
+
+    Raises:
+        ValueError: boxes need to have 4(2D) or 6(3D) components
+    """
+    if boxes.shape[-1] == 4:
+        return clip_boxes_to_image_2d(boxes, img_shape)
+    elif boxes.shape[-1] == 6:
+        return clip_boxes_to_image_3d(boxes, img_shape)
+    else:
+        raise ValueError(f"Boxes with {boxes.shape[-1]} are not supported.")
+
+
+def clip_boxes_to_image_2d(
+    boxes: np.ndarray,
+    img_shape: ND_TUPLE_INT,
+) -> np.ndarray:
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: array with boxes [N x 4] (x_min, y_min, x_max, y_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as array
+
+    Notes:
+        Uses float32 internally because clipping of half cpu tensors is not
+        supported
+    """
+    s0, s1 = img_shape
+    boxes[..., 0::2] = np.clip(boxes[..., 0::2], a_min=-1, a_max=s0)
+    boxes[..., 1::2] = np.clip(boxes[..., 1::2], a_min=-1, a_max=s1)
+    return boxes
+
+
+def clip_boxes_to_image_3d(
+    boxes: np.ndarray,
+    img_shape: ND_TUPLE_INT,
+) -> np.ndarray:
+    """
+    Clip boxes to image dimensions
+
+    Args:
+        boxes: array with boxes [N x 6]
+            (x_min, y_min, x_max, y_max, z_min, z_max)
+        img_shape: size of image
+
+    Returns:
+        Tensor: clipped boxes as array
+
+    Notes:
+        Uses float32 internally because clipping of half cpu tensors is not
+        supported
+    """
+    s0, s1, s2 = img_shape
+    boxes[..., 0::6] = np.clip(boxes[..., 0::6], a_min=-1, a_max=s0)
+    boxes[..., 1::6] = np.clip(boxes[..., 1::6], a_min=-1, a_max=s1)
+    boxes[..., 2::6] = np.clip(boxes[..., 2::6], a_min=-1, a_max=s0)
+    boxes[..., 3::6] = np.clip(boxes[..., 3::6], a_min=-1, a_max=s1)
+    boxes[..., 4::6] = np.clip(boxes[..., 4::6], a_min=-1, a_max=s2)
+    boxes[..., 5::6] = np.clip(boxes[..., 5::6], a_min=-1, a_max=s2)
+    return boxes
+
+
+def remove_small_boxes(
+    boxes: np.ndarray,
+    min_size: float,
+) -> np.ndarray:
+    """
+    Remove boxes with at least one side smaller than min_size.
+
+    Args:
+        boxes: boxes (x1, y1, x2, y2, (z1, z2)) [N, dim * 2]
+        min_size: minimum size
+
+    Returns:
+        array: indices of the boxes that have all sides
+            larger than min_size [N]
+    """
+    if boxes.shape[1] == 4:
+        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
+        keep = (ws >= min_size) & (hs >= min_size)
+    else:
+        ws, hs, ds = (
+            boxes[:, 2] - boxes[:, 0],
+            boxes[:, 3] - boxes[:, 1],
+            boxes[:, 5] - boxes[:, 4],
+        )
+        keep = (ws >= min_size) & (hs >= min_size) & (ds >= min_size)
+    keep = np.nonzero(keep)[0]
+    return keep
