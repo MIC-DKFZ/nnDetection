@@ -26,8 +26,6 @@ from nndet.io.patching import save_get_crop
 from nndet.utils.enums import SelectionMode
 from nndet.utils.info import deprecate
 
-# TODO: add caching mechanism for bounding boxes
-
 
 class BaseDataLoader3D(SlimDataLoaderBase):
     build_cache: Callable[[], Dict]
