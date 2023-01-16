@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import List, Sequence
+
 import numpy as np
 from numpy import ndarray
 
@@ -321,3 +323,84 @@ def remove_small_boxes(
         keep = (ws >= min_size) & (hs >= min_size) & (ds >= min_size)
     keep = np.nonzero(keep)[0]
     return keep
+
+
+# Point Operations
+
+
+def points_to_homogeneous(points: Sequence[np.ndarray]) -> List[np.ndarray]:
+    """
+    Transforms points from cartesian to homogeneous coordinates
+
+    Args:
+        points: list of points to transform [N, dims] where N is the number
+            of points and dims is the number of spatial dimensions
+
+    Returns:
+        List[np.ndarray]: the batch of points in homogeneous coordinates [N, dim + 1]
+    """
+    return [np.concatenate([p, np.ones((p.shape[0], 1), dtype=p.dtype)], dim=1) for p in points]
+
+
+def points_to_cartesian(points: Sequence[np.ndarray]) -> List[np.ndarray]:
+    """
+    Transforms points in homogeneous coordinates back to cartesian
+    coordinates.
+
+    Args:
+        points: homogeneous points [N, in_dims], N number of points,
+            in_dims number of input dimensions (spatial dimensions + 1)
+
+    Returns:
+        List[np.ndarray]: cartesian points [N, in_dims] = [N, dims]
+    """
+    return [p[..., :-1] / p[..., -1][:, None] for p in points]
+
+
+def boxes2points(boxes: np.ndarray) -> np.ndarray:
+    """
+    Convert boxes to points
+
+    Args:
+        boxes: (x1, y1, x2, y2, (z1, z2))[N, dims x 2]
+
+    Returns:
+        np.ndarray: points [N x 2, dims]
+    """
+    if boxes.shape[1] == 4:
+        idx0 = [0, 1]
+        idx1 = [2, 3]
+    else:
+        idx0 = [0, 1, 4]
+        idx1 = [2, 3, 5]
+
+    points0 = boxes[:, idx0]
+    points1 = boxes[:, idx1]
+    return np.concatenate([points0, points1], axis=0)
+
+
+def points2boxes(points: np.ndarray) -> np.ndarray:
+    """
+    Convert points to boxes
+
+    Args:
+        points: boxes need to be order as specified
+            order: [point_box_0, ... point_box_N/2] * 4
+            format of points: (x, y(, z)))[N, dims]
+
+    Returns:
+        np.ndarray: bounding boxes [N / 2, dims * 2]
+    """
+    if points.nelement() > 0:
+        points0, points1 = points.split(points.shape[0] // 2)
+        boxes = np.zeros((points.shape[0] // 2, points.shape[1] * 2), dtype=points.dtype)
+        boxes[:, 0] = np.min(points0[:, 0], points1[:, 0])
+        boxes[:, 1] = np.min(points0[:, 1], points1[:, 1])
+        boxes[:, 2] = np.max(points0[:, 0], points1[:, 0])
+        boxes[:, 3] = np.max(points0[:, 1], points1[:, 1])
+        if boxes.shape[1] == 6:
+            boxes[:, 4] = np.min(points0[:, 2], points1[:, 2])
+            boxes[:, 5] = np.max(points0[:, 2], points1[:, 2])
+        return boxes
+    else:
+        return np.tensor([]).reshape(-1, points.shape[1] * 2, dtype=points.dtype)
