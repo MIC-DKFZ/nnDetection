@@ -190,3 +190,5 @@ def test_load_box_from_crop_single_pixel_obj():
 # TODO: test with different save_get modi
 # TODO: recheck why seg needs to be padded with -1
 # TODO: remove padding option for data -> constant pad 0
+# TODO: add unit test in case data is smaller than patch -> current default values don't work ...
+#
