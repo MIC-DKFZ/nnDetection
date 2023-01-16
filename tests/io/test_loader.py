@@ -54,6 +54,7 @@ def test_load_box_from_crop_empty():
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=None,
+        mode="constant",
     )
 
     expected_coords = np.array([[]], dtype=float).reshape(-1, 3 * 2)
@@ -66,12 +67,13 @@ def test_load_box_from_crop_empty():
 @patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
 def test_load_box_from_crop_obj1(example_case):
     crop = (slice(0, 8), slice(0, 8), slice(0, 8))
-    case_data, case_seg = example_case
+    _, case_seg = example_case
     io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
         DummyLoader(),
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=crop,
+        mode="constant",
     )
 
     # manual result
@@ -85,6 +87,7 @@ def test_load_box_from_crop_obj1(example_case):
     io_seg = save_get_crop(
         data=case_seg,
         crop=crop,
+        mode="constant",
     )[0]
     seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
     assert np.allclose(seg_coords, io_coords)
@@ -93,12 +96,13 @@ def test_load_box_from_crop_obj1(example_case):
 @patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
 def test_load_box_from_crop_obj2_crop1(example_case):
     crop = (slice(8, 16), slice(0, 8), slice(8, 16))
-    case_data, case_seg = example_case
+    _, case_seg = example_case
     io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
         DummyLoader(),
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=[slice(8, 16), slice(0, 8), slice(8, 16)],
+        mode="constant",
     )
 
     # manual result
@@ -112,6 +116,7 @@ def test_load_box_from_crop_obj2_crop1(example_case):
     io_seg = save_get_crop(
         data=case_seg,
         crop=crop,
+        mode="constant",
     )[0]
     seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
     assert np.allclose(seg_coords, io_coords)
@@ -120,12 +125,13 @@ def test_load_box_from_crop_obj2_crop1(example_case):
 @patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
 def test_load_box_from_crop_obj2_crop2(example_case):
     crop = (slice(8, 16), slice(2, 10), slice(6, 14))
-    case_data, case_seg = example_case
+    _, case_seg = example_case
     io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
         DummyLoader(),
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=crop,
+        mode="constant",
     )
 
     # manual result
@@ -145,6 +151,7 @@ def test_load_box_from_crop_obj2_crop2(example_case):
     io_seg = save_get_crop(
         data=case_seg,
         crop=crop,
+        mode="constant",
     )[0]
     seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
     assert np.allclose(seg_coords, io_coords)
@@ -160,6 +167,7 @@ def test_load_box_from_crop_single_pixel_cut():
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=crop,
+        mode="constant",
     )
 
     expected_coords = np.array([[-1, -1, 1, 1, -1, 1]], dtype=float).reshape(-1, 3 * 2)
@@ -177,6 +185,7 @@ def test_load_box_from_crop_single_pixel_obj():
         case_id="c1",
         case_data=np.zeros((1, 16, 16, 16)),
         crop=crop,
+        mode="constant",
     )
 
     expected_coords = np.array([[4, 4, 6, 6, 4, 6]], dtype=float).reshape(-1, 3 * 2)
@@ -186,9 +195,110 @@ def test_load_box_from_crop_single_pixel_obj():
     assert np.allclose(io_labels, expected_labels)
 
 
-# TODO: outside crop lower and upper bound
-# TODO: test with different save_get modi
+@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+def test_outside_crop_upper_bound(example_case):
+    crop = (slice(14, 22), slice(0, 8), slice(14, 22))
+    _, case_seg = example_case
+    io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
+        DummyLoader(),
+        case_id="c1",
+        case_data=np.zeros((1, 16, 16, 16)),
+        crop=crop,
+        mode="constant",
+    )
+
+    # manual result
+    expected_coords = np.array(
+        [
+            [-1, -1, 2, 4, -1, 2],
+        ],
+        dtype=float,
+    )
+    expected_labels = np.array([0], dtype=int)
+
+    assert np.allclose(io_coords, expected_coords)
+    assert np.allclose(io_labels, expected_labels)
+
+    # io result from seg
+    io_seg = save_get_crop(
+        data=case_seg,
+        crop=crop,
+        mode="constant",
+    )[0]
+    seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
+    assert np.allclose(seg_coords, io_coords)
+
+
+@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+def test_outside_crop_lower_bound(example_case):
+    crop = (slice(-2, 6), slice(-2, 6), slice(-2, 6))
+    _, case_seg = example_case
+    io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
+        DummyLoader(),
+        case_id="c1",
+        case_data=np.zeros((1, 16, 16, 16)),
+        crop=crop,
+        mode="constant",
+    )
+
+    # manual result
+    expected_coords = np.array(
+        [
+            [5, 5, 8, 8, 5, 8],
+        ],
+        dtype=float,
+    )
+    expected_labels = np.array([1], dtype=int)
+
+    assert np.allclose(io_coords, expected_coords)
+    assert np.allclose(io_labels, expected_labels)
+
+    # io result from seg
+    io_seg = save_get_crop(
+        data=case_seg,
+        crop=crop,
+        mode="constant",
+    )[0]
+    seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
+    assert np.allclose(seg_coords, io_coords)
+
+
+@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+def test_crop_larger_patch(example_case):
+    loader = DummyLoader()
+    loader.patch_size_generator = (32, 32, 32)
+    crop = (slice(-8, 24), slice(-8, 24), slice(-8, 24))
+    _, case_seg = example_case
+    io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
+        loader,
+        case_id="c1",
+        case_data=np.zeros((1, 16, 16, 16)),
+        crop=crop,
+        mode="constant",
+    )
+
+    # manual result
+    expected_coords = np.array(
+        [
+            [11, 11, 15, 15, 11, 15],
+            [19, 7, 24, 12, 19, 24],
+            [15, 15, 20, 20, 15, 20],
+        ],
+        dtype=float,
+    )
+    expected_labels = np.array([1, 0, 1], dtype=int)
+
+    assert np.allclose(io_coords, expected_coords)
+    assert np.allclose(io_labels, expected_labels)
+
+    # io result from seg
+    io_seg = save_get_crop(
+        data=case_seg,
+        crop=crop,
+        mode="constant",
+    )[0]
+    seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
+    assert np.allclose(seg_coords, io_coords)
+
+
 # TODO: recheck why seg needs to be padded with -1
-# TODO: remove padding option for data -> constant pad 0
-# TODO: add unit test in case data is smaller than patch -> current default values don't work ...
-#

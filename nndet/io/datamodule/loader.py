@@ -192,10 +192,11 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 )
 
             # loading
+            mode = "constant"
             data_batch[batch_idx] = save_get_crop(
                 case_data,
                 crop=crop,
-                mode="constant",
+                mode=mode,
                 constant_values=0,
             )[0]
             if self.load_seg:
@@ -207,7 +208,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 seg_batch[batch_idx] = save_get_crop(
                     case_seg,
                     crop=crop,
-                    mode="constant",
+                    mode=mode,
                     constant_values=-1,
                 )[0]
             if self.load_box:
@@ -215,6 +216,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                     case_id=case_id,
                     case_data=case_data,
                     crop=crop,
+                    mode=mode,
                 )
                 box_coord_batch.append(res[0])
                 box_label_batch.append(res[1])
@@ -257,8 +259,10 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         case_id: str,
         case_data: np.ndarray,
         crop: Sequence[slice],
+        mode: str,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        # TODO: think about crop shits!
+        if mode not in ("constant",):
+            raise ValueError(f"Mode {mode} for IO is not supported.")
 
         gt = np.load(self._data[case_id]["label_boxes_file"])
         gt_boxes = gt["boxes"]
