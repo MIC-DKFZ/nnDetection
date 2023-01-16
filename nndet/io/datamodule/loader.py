@@ -42,7 +42,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         load_seg: bool = True,
         load_box: bool = False,
@@ -261,10 +261,32 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         crop: Sequence[slice],
         mode: str,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Load boxes from defined case and crop
+
+        Args:
+            case_id: case to load boxes from
+            case_data: not used, kept for consistency
+            crop: crop of patch
+            mode: mode used to load the patch. Refer to `save_get_crop` for
+                more information. Only 'constant' mode is supported right now.
+
+        Raises:
+            ValueError: Raise if mode is not 'constant'
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: loaded boxes and labels
+                np.ndarray: loaded boxes [N, dim*2]
+                np.ndarray: loaded labels [N]
+        """
         if mode not in ("constant",):
             raise ValueError(f"Mode {mode} for IO is not supported.")
 
-        gt = np.load(self._data[case_id]["label_boxes_file"])
+        gt = np.load(
+            self._data[case_id]["label_boxes_file"],
+            mmap_mode="r",
+            allow_pickle=True,
+        )
         gt_boxes = gt["boxes"]
         gt_labels = gt["labels"]
 
