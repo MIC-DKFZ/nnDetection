@@ -16,10 +16,10 @@ class MirrorTransform(AbstractTransform):
         """
         Randomly mirrors data, seg and points along specified axes.
         Mirroring is evenly distributed. Probability of mirroring along each
-        axis is `0.5` .
+        axis is `0.5` . This function is adapted from batchgenerators
+        .
 
         Args:
-            axes: Specifies the axes to mirror. Defaults to (0, 1, 2).
             data_key: specify where data is located in dict.
                 Expects data to be of format [B, C, s_dims], where B is the batch
                 size, C number of of channels and s_dims are up to three
@@ -35,6 +35,7 @@ class MirrorTransform(AbstractTransform):
                 of spatial dimensions
             p_per_sample: Probability to apply any mirroring to a given sample.
                 Defaults to 1.
+            axes: Specifies the axes to mirror. Defaults to (0, 1, 2).
 
         Raises:
             ValueError: raised if maximum of axes exceeds 2.
@@ -69,7 +70,7 @@ class MirrorTransform(AbstractTransform):
         else:
             points = None
 
-        # apply mirroring
+        # apply
         for b in range(batch_size):
             if np.random.uniform() < self.p_per_sample:
                 mirror_axes = self.get_mirror_axes(axes=self.axes)
@@ -117,15 +118,14 @@ class MirrorTransform(AbstractTransform):
         img_shape: List[int],
     ) -> np.ndarray:
         """
-        Create n dimensional matrix to for mirroring
+        Create matrix to mirror points
 
         Args:
             axes: axis to mirror
             img_shape: shape of image
 
         Returns:
-            Tensor: matrix for mirroring in homogeneous coordinated,
-                [cartesian_dims + 1, cartesian_dims + 1]
+            Tensor: matrix for mirroring in homogeneous coordinates
         """
         axes = tuple(axes)
         cartesian_dims = len(img_shape)
@@ -171,9 +171,9 @@ def mirror_points(
 
     Args:
         points: points to mirror. Expects points to be in the format
-            List([R, L, dims + 1]) where the List is the batch dimension,
-            R is the number of objects, L is the number of points per object
-            and dims are the number of spatial dimensions
+            [R, L, dims + 1] where  R is the number of objects,
+            L is the number of points per object and dims are the number
+            of spatial dimensions
         matrix: mirror matrix
 
     Returns:
