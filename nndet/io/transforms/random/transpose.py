@@ -79,9 +79,9 @@ class TransposeAxesTransform(AbstractTransform):
         # apply
         for b in range(batch_size):
             if np.random.uniform() < self.p_per_sample:
-                transpose_axes = self.get_axes_transpose(axes=self.axes, ndim=len(img_shape))
+                transpose_axes = self.get_axes(axes=self.axes, ndim=len(img_shape))
                 if points is not None:
-                    transpose_matrix = self.get_transpose_matrix(transpose_axes)
+                    transpose_matrix = self.get_matrix(transpose_axes)
 
                 data[b] = transpose_array(data[b], axes=transpose_axes)
                 if seg is not None:
@@ -98,7 +98,7 @@ class TransposeAxesTransform(AbstractTransform):
         return data_dict
 
     @staticmethod
-    def get_axes_transpose(axes: Sequence[int], ndim: int) -> List[int]:
+    def get_axes(axes: Sequence[int], ndim: int) -> List[int]:
         """
         Retrieve trasposed axes order. The result can be passed to the
         transpose function of numpy arrays.
@@ -127,7 +127,7 @@ class TransposeAxesTransform(AbstractTransform):
         return static_axes
 
     @staticmethod
-    def get_transpose_matrix(transpose_axes: Sequence[int], ndim: int) -> np.ndarray:
+    def get_matrix(transpose_axes: Sequence[int], ndim: int) -> np.ndarray:
         """
         Create matrix to transpose points
 

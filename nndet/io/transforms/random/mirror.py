@@ -73,9 +73,9 @@ class MirrorTransform(AbstractTransform):
         # apply
         for b in range(batch_size):
             if np.random.uniform() < self.p_per_sample:
-                mirror_axes = self.get_mirror_axes(axes=self.axes)
+                mirror_axes = self.get_axes(axes=self.axes)
                 if points is not None:
-                    mirror_matrix = self.get_mirror_matrix(axes=self.mirror_axes, img_shape=img_shape)
+                    mirror_matrix = self.get_matrix(axes=self.mirror_axes, img_shape=img_shape)
 
                 if mirror_axes:
                     data[b] = mirror_array(data[b], axes=mirror_axes)
@@ -93,7 +93,7 @@ class MirrorTransform(AbstractTransform):
         return data_dict
 
     @staticmethod
-    def get_mirror_axes(axes: Sequence[int]) -> List[int]:
+    def get_axes(axes: Sequence[int]) -> List[int]:
         """
         Retrieve axes to mirror. Each axis is mirrored with probability 0.5.
 
@@ -113,7 +113,7 @@ class MirrorTransform(AbstractTransform):
         return axes
 
     @staticmethod
-    def get_mirror_matrix(
+    def get_matrix(
         axes: Sequence[int],
         img_shape: List[int],
     ) -> np.ndarray:
