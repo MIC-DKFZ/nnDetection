@@ -348,8 +348,6 @@ class TestPredictorBoxEnsembler:
         assert "pred_boxes" in prediction["boxes"]
         assert not prediction["boxes"]["restore"]
 
-        # Needs to be changed after https://github.com/MIC-DKFZ/nnDetection/issues/23
-        boxes[boxes < 0] = 0
         assert np.allclose(boxes, prediction["boxes"]["pred_boxes"])
         assert np.allclose(np.array([1.0]), prediction["boxes"]["pred_scores"])
         assert np.allclose(np.array([1]), prediction["boxes"]["pred_labels"])
