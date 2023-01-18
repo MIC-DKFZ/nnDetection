@@ -1,4 +1,4 @@
-from functools import lru_cache
+# from functools import lru_cache
 from typing import Dict, Hashable, List, Optional, Sequence
 
 import numpy as np
@@ -110,7 +110,7 @@ class Rot90Transform(AbstractTransform):
         axes.sort()
         return axes
 
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     @staticmethod
     def get_matrix(axes: Sequence[int], num_rot: int, ndim: int) -> np.ndarray:
         """
@@ -165,7 +165,7 @@ def rot90_array(data: np.ndarray, axes: Sequence[int], num_rot: int) -> np.ndarr
         np.ndarray: rotated array
     """
     _axes = [i + 1 for i in axes]
-    return np.rot90(data, num_rot=num_rot, axes=_axes)
+    return np.rot90(data, k=num_rot, axes=_axes)
 
 
 def rot90_points(points: np.ndarray, matrix: np.ndarray) -> np.ndarray:

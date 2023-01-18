@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from itertools import product
 from typing import List, Sequence
 
 import numpy as np
@@ -404,3 +405,21 @@ def points2boxes(points: np.ndarray) -> np.ndarray:
         return boxes
     else:
         return np.tensor([]).reshape(-1, points.shape[1] * 2, dtype=points.dtype)
+
+
+def boxes2corners(boxes: np.ndarray) -> ndarray:
+    if boxes.size == 0:
+        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1])
+
+    if boxes.shape[1] == 4:
+        idx = list(product([0, 2], [1, 3]))
+        corners = np.stack([np.stack([boxes[:, i[0]], boxes[:, i[1]]], axis=-1) for i in idx], axis=1)
+    elif boxes.shape[1] == 6:
+        idx = list(product([0, 2], [1, 3], [4, 5]))
+        corners = np.stack(
+            [np.stack([boxes[:, i[0]], boxes[:, i[1]], boxes[:, i[2]]], axis=-1) for i in idx],
+            axis=1,
+        )
+    else:
+        raise ValueError(f"Unsupported dimensionality of boxes, found {boxes.ndim} dimensions")
+    return corners

@@ -82,13 +82,13 @@ class TransposeAxesTransform(AbstractTransform):
             if np.random.uniform() < self.p_per_sample:
                 transpose_axes = self.get_axes(axes=self.axes, ndim=len(img_shape))
                 if points is not None:
-                    transpose_matrix = self.get_matrix(transpose_axes)
+                    transpose_matrix = self.get_matrix(transpose_axes, ndim=len(img_shape))
 
                 data[b] = transpose_array(data[b], axes=transpose_axes)
                 if seg is not None:
                     seg[b] = transpose_array(seg[b], axes=transpose_axes)
                 if points is not None:
-                    points[b] = transpose_array(points[b], matrix=transpose_matrix)
+                    points[b] = transpose_points(points[b], matrix=transpose_matrix)
 
         # save batch
         data_dict[self.data_key] = data
@@ -112,13 +112,14 @@ class TransposeAxesTransform(AbstractTransform):
             List[int]: transposed axes order. Can be passed to np.transpose
                 to transpose the axes.
         """
-        axes = list(np.array(axes))  # need list to allow shuffle
+        axes = list(axes)  # need list to allow shuffle
         assert np.max(axes) <= ndim, "axes must only contain valid axis ids"
 
         static_axes = list(range(ndim))
         for i in axes:
             static_axes[i] = -1
         np.random.shuffle(axes)
+        print(axes)
 
         ctr = 0
         for j, i in enumerate(static_axes):
@@ -140,8 +141,9 @@ class TransposeAxesTransform(AbstractTransform):
             np.ndarray: matrix for transposing in homogeneous coordinates
         """
         mat = np.zeros((ndim + 1, ndim + 1))
-        for target_idx, source_idx in transpose_axes:
-            mat[source_idx, target_idx] = 1
+        for new_pos, old_pos in enumerate(transpose_axes):
+            mat[new_pos, old_pos] = 1
+        mat[-1, -1] = 1
         return mat
 
 
@@ -157,7 +159,7 @@ def transpose_array(data: np.ndarray, axes: List[int]) -> np.ndarray:
     Returns:
         np.ndarray: transposed array
     """
-    _axes = [0] + axes  # add color channel
+    _axes = [0] + list(np.array(axes) + 1)  # add color channel
     return data.transpose(*_axes)
 
 
