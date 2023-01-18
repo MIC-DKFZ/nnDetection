@@ -697,9 +697,7 @@ class NoiseLoader(BaseDataLoader3D):
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         **kwargs,
     ):
@@ -714,8 +712,6 @@ class NoiseLoader(BaseDataLoader3D):
             patch_size_final: final patch size after spatial transform
             oversample_foreground_percent: Ignored.
             memmap_mode: Ignored.
-            pad_mode: Ignored.
-            pad_kwargs_data: Ignored.
             num_batches_per_epoch: number of batcher per epoch
 
         Raises:
@@ -729,8 +725,6 @@ class NoiseLoader(BaseDataLoader3D):
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.data_batch = None
