@@ -79,7 +79,7 @@ class Rot90Transform(AbstractTransform):
                 rot_axes = self.get_axes(axes=self.axes)
 
                 if points is not None:
-                    rot90_matrix = self.get_matrix(axes=rot_axes, num_rot=_num_rot, ndim=len(img_shape))
+                    rot90_matrix = self.get_matrix(axes=rot_axes, num_rot=_num_rot, img_shape=img_shape)
 
                 data[b] = rot90_array(data[b], axes=rot_axes, num_rot=_num_rot)
                 if seg is not None:
@@ -112,14 +112,14 @@ class Rot90Transform(AbstractTransform):
 
     # @lru_cache(maxsize=None)
     @staticmethod
-    def get_matrix(axes: Sequence[int], num_rot: int, ndim: int) -> np.ndarray:
+    def get_matrix(axes: Sequence[int], num_rot: int, img_shape: Sequence[int]) -> np.ndarray:
         """
         Retrieve matrix to rotate points
 
         Args:
             axes: axes where the rotation is performed
             num_rot: number of 90 degree rotations
-            ndim: number of spatial dimensions
+            img_shape: image shape
 
         Raises:
             RuntimeError: raised if axes combination is not recognized
@@ -127,29 +127,36 @@ class Rot90Transform(AbstractTransform):
         Returns:
             np.ndarray: matrix to rotate points
         """
-        mat = np.zeros((ndim + 1, ndim + 1))
-        angle = np.pi * num_rot
+        ndim = len(img_shape)
+        mat = np.eye(ndim + 1)
+        angle = (np.pi / 2) * num_rot
         _axes = tuple(axes)
 
         if ndim == 2:
-            mat[:2, :2] = create_matrix_rotation_2d(angle=angle)
+            m = create_matrix_rotation_2d(angle=angle)
         else:
             if _axes == (0, 1):
-                m = create_matrix_rotation_x_3d(angle=angle)
-            elif _axes == (1, 0):
-                m = create_matrix_rotation_x_3d(angle=-angle)
-            elif _axes == (0, 2):
-                m = create_matrix_rotation_y_3d(angle=angle)
-            elif _axes == (2, 0):
-                m = create_matrix_rotation_y_3d(angle=-angle)
-            elif _axes == (1, 2):
                 m = create_matrix_rotation_z_3d(angle=angle)
-            elif _axes == (2, 1):
+            elif _axes == (1, 0):
                 m = create_matrix_rotation_z_3d(angle=-angle)
+            elif _axes == (0, 2):
+                m = create_matrix_rotation_y_3d(angle=-angle)
+            elif _axes == (2, 0):
+                m = create_matrix_rotation_y_3d(angle=angle)
+            elif _axes == (1, 2):
+                m = create_matrix_rotation_x_3d(angle=angle)
+            elif _axes == (2, 1):
+                m = create_matrix_rotation_x_3d(angle=-angle)
             else:
                 raise RuntimeError
-            mat[:3, :3] = m
-        return mat
+        mat[:ndim, :ndim] = m
+
+        offset_m1 = np.eye(ndim + 1)
+        offset_m1[:ndim, -1] = -1 * ((np.array(img_shape, dtype=float) - 1) / 2)
+        offset_m2 = np.eye(ndim + 1)
+        offset_m2[:ndim, -1] = (np.array(img_shape, dtype=float) - 1) / 2
+
+        return offset_m2 @ mat @ offset_m1
 
 
 def rot90_array(data: np.ndarray, axes: Sequence[int], num_rot: int) -> np.ndarray:

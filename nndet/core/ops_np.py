@@ -340,7 +340,7 @@ def points_to_homogeneous(points: Sequence[np.ndarray]) -> List[np.ndarray]:
     Returns:
         List[np.ndarray]: the batch of points in homogeneous coordinates [N, dim + 1]
     """
-    return [np.concatenate([p, np.ones((p.shape[0], 1), dtype=p.dtype)], dim=1) for p in points]
+    return [np.concatenate([p, np.ones((p.shape[0], p.shape[1], 1), dtype=p.dtype)], axis=-1) for p in points]
 
 
 def points_to_cartesian(points: Sequence[np.ndarray]) -> List[np.ndarray]:
@@ -408,6 +408,17 @@ def points2boxes(points: np.ndarray) -> np.ndarray:
 
 
 def boxes2corners(boxes: np.ndarray) -> ndarray:
+    """
+    Convert boxes to corner points
+
+    Args:
+        boxes: boxes of shape [N, dims] where is the number of boxes and dims
+            is the number of spatial dimensions
+
+    Returns:
+        ndarray: corner points [N, 2 ** (dims // 2), dims], where N is the
+            number of boxes and dims is the number of spatial dimensions
+    """
     if boxes.size == 0:
         return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1])
 
