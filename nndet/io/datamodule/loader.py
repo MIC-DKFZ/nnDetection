@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
@@ -322,7 +322,7 @@ class DataLoader3D(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -384,7 +384,7 @@ class DataLoader3DOffset(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -447,7 +447,7 @@ class DataLoader3DOffsetV2(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -515,7 +515,7 @@ class DataLoader3DOffsetObjectBalanced(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -590,7 +590,7 @@ class DataLoader3DOffsetPatientBalanced(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -659,9 +659,7 @@ class NoiseLoader(BaseDataLoader3D):
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         **kwargs,
     ):
@@ -676,8 +674,6 @@ class NoiseLoader(BaseDataLoader3D):
             patch_size_final: final patch size after spatial transform
             oversample_foreground_percent: Ignored.
             memmap_mode: Ignored.
-            pad_mode: Ignored.
-            pad_kwargs_data: Ignored.
             num_batches_per_epoch: number of batcher per epoch
 
         Raises:
@@ -691,8 +687,6 @@ class NoiseLoader(BaseDataLoader3D):
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.data_batch = None
@@ -879,9 +873,7 @@ class DataLoader2DOffset(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         offset_prob: float = 1.0,
     ):
@@ -900,8 +892,6 @@ class DataLoader2DOffset(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             offset_prob: probability to apply additional offsets of objects.
 
         Raises:
@@ -915,8 +905,6 @@ class DataLoader2DOffset(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.offset_prob = offset_prob
