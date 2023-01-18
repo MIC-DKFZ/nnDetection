@@ -75,7 +75,7 @@ class MirrorTransform(AbstractTransform):
             if np.random.uniform() < self.p_per_sample:
                 mirror_axes = self.get_axes(axes=self.axes)
                 if points is not None:
-                    mirror_matrix = self.get_matrix(axes=self.mirror_axes, img_shape=img_shape)
+                    mirror_matrix = self.get_matrix(axes=mirror_axes, img_shape=img_shape)
 
                 if mirror_axes:
                     data[b] = mirror_array(data[b], axes=mirror_axes)
@@ -103,14 +103,14 @@ class MirrorTransform(AbstractTransform):
         Returns:
             List[int]: selected axes
         """
-        axes = []
+        selecetd_axes = []
         if 0 in axes and np.random.uniform() < 0.5:
-            axes.append(0)
+            selecetd_axes.append(0)
         if 1 in axes and np.random.uniform() < 0.5:
-            axes.append(1)
+            selecetd_axes.append(1)
         if 2 in axes and np.random.uniform() < 0.5:
-            axes.append(2)
-        return axes
+            selecetd_axes.append(2)
+        return selecetd_axes
 
     @staticmethod
     def get_matrix(
@@ -134,14 +134,15 @@ class MirrorTransform(AbstractTransform):
         mat = np.eye(homogeneous_dims, dtype=float)
 
         # reflection
-        mat[[axes] * 2] = -1
+        for a in axes:
+            mat[a, a] = -1
 
         # add data shape to axis which were reflected
         self_tensor = np.zeros(cartesian_dims, dtype=float)
-        index_tensor = np.ndarray(axes, dtype=int)
-        src_tensor = np.ndarray([1] * len(axes), dtype=float)
-        offset_mask = np.put_along_axis(self_tensor, index_tensor, src_tensor, 0)
-        mat[:-1, -1] = offset_mask * (np.ndarray(img_shape) - 1)
+        index_tensor = np.array(axes, dtype=int)
+        src_tensor = np.array([1] * len(axes), dtype=float)
+        np.put_along_axis(self_tensor, index_tensor, src_tensor, 0)
+        mat[:-1, -1] = self_tensor * (np.array(img_shape) - 1)
         return mat
 
 
@@ -153,13 +154,16 @@ def mirror_array(
     Mirror array along provided axis
 
     Args:
-        data: input array
-        axes: axis to mirror
+        data: input array [C, dims], where is the color channel and
+            dims are sptatial dimensions
+        axes: axis to mirror, 0 refers to the first spatial dimension
+            not the color channel!
 
     Returns:
         np.ndarray: mirrored array
     """
-    return np.flip(data, tuple(axes))
+    _axes = [a + 1 for a in axes]
+    return np.flip(data, tuple(_axes))
 
 
 def mirror_points(
