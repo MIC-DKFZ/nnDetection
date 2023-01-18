@@ -47,7 +47,14 @@ EXAMPLE_CASE_SINGLE_PIXEL = {
 }
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE_EMPTY)
+def np_load_wrapper(return_value):
+    def np_load(path, mmap_mode, allow_pickle):
+        return return_value
+
+    return np_load
+
+
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE_EMPTY))
 def test_load_box_from_crop_empty():
     io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
         DummyLoader(),
@@ -64,7 +71,7 @@ def test_load_box_from_crop_empty():
     assert np.allclose(io_labels, expected_labels)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_load_box_from_crop_obj1(example_case):
     crop = (slice(0, 8), slice(0, 8), slice(0, 8))
     _, case_seg = example_case
@@ -93,7 +100,7 @@ def test_load_box_from_crop_obj1(example_case):
     assert np.allclose(seg_coords, io_coords)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_load_box_from_crop_obj2_crop1(example_case):
     crop = (slice(8, 16), slice(0, 8), slice(8, 16))
     _, case_seg = example_case
@@ -122,7 +129,7 @@ def test_load_box_from_crop_obj2_crop1(example_case):
     assert np.allclose(seg_coords, io_coords)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_load_box_from_crop_obj2_crop2(example_case):
     crop = (slice(8, 16), slice(2, 10), slice(6, 14))
     _, case_seg = example_case
@@ -157,7 +164,7 @@ def test_load_box_from_crop_obj2_crop2(example_case):
     assert np.allclose(seg_coords, io_coords)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE_SINGLE_PIXEL)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE_SINGLE_PIXEL))
 def test_load_box_from_crop_single_pixel_cut():
     loader = DummyLoader()
     loader.patch_size_generator = (1, 1, 1)
@@ -177,7 +184,7 @@ def test_load_box_from_crop_single_pixel_cut():
     assert np.allclose(io_labels, expected_labels)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE_EMPTY)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE_EMPTY))
 def test_load_box_from_crop_single_pixel_obj():
     crop = (slice(4, 12), slice(4, 12), slice(4, 12))
     io_coords, io_labels = BaseDataLoader3D.load_box_from_crop(
@@ -195,7 +202,7 @@ def test_load_box_from_crop_single_pixel_obj():
     assert np.allclose(io_labels, expected_labels)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_outside_crop_upper_bound(example_case):
     crop = (slice(14, 22), slice(0, 8), slice(14, 22))
     _, case_seg = example_case
@@ -229,7 +236,7 @@ def test_outside_crop_upper_bound(example_case):
     assert np.allclose(seg_coords, io_coords)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_outside_crop_lower_bound(example_case):
     crop = (slice(-2, 6), slice(-2, 6), slice(-2, 6))
     _, case_seg = example_case
@@ -263,7 +270,7 @@ def test_outside_crop_lower_bound(example_case):
     assert np.allclose(seg_coords, io_coords)
 
 
-@patch("nndet.io.datamodule.loader.np.load", lambda x: EXAMPLE_CASE)
+@patch("nndet.io.datamodule.loader.np.load", np_load_wrapper(EXAMPLE_CASE))
 def test_crop_larger_patch(example_case):
     loader = DummyLoader()
     loader.patch_size_generator = (32, 32, 32)
@@ -299,6 +306,3 @@ def test_crop_larger_patch(example_case):
     )[0]
     seg_coords = instances_to_boxes_np(io_seg, dim=3)[0]
     assert np.allclose(seg_coords, io_coords)
-
-
-# TODO: recheck why seg needs to be padded with -1
