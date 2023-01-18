@@ -16,8 +16,8 @@ class MirrorTransform(AbstractTransform):
         """
         Randomly mirrors data, seg and points along specified axes.
         Mirroring is evenly distributed. Probability of mirroring along each
-        axis is `0.5` . This function is adapted from batchgenerators
-        .
+        axis is `0.5` .
+        This function is adapted from batchgenerators.
 
         Args:
             data_key: specify where data is located in dict.

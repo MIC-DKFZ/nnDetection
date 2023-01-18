@@ -19,6 +19,7 @@ class TransposeAxesTransform(AbstractTransform):
         specified in `axes`. So if `axes=(0, 1, 2)` the shape must
         be `(128x128x128)` and cannotbe, for example `(128x128x96)`
         (`transpose_any_of_these=(0, 1)` would be the correct one here)!
+        This function is adapted from batchgenerators.
 
         Args:
             data_key: specify where data is located in dict.

@@ -22,7 +22,8 @@ class Rot90Transform(AbstractTransform):
         num_rot: Sequence[int] = (1, 2, 3),
     ):
         """
-        Randomly rotates the data by 90 degrees
+        Randomly rotates the data by 90 degrees.
+        This function is adapted from batchgenerators.
 
         Args:
             data_key: specify where data is located in dict.
