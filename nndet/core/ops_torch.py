@@ -1060,7 +1060,7 @@ def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
             cz - 0.5 * dz,
             cz + 0.5 * dz,
         ]
-        return torch.stack(bp, dim=-1)
+    return torch.stack(bp, dim=-1)
 
 
 # deprecated functions
