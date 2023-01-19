@@ -1,10 +1,12 @@
+import json
+
 import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-import nndet.evaluator.detection.matching as matching
-from nndet.evaluator.det import DetectionEvaluator
+from nndet.evaluator.det import BoxEvaluator, DetectionEvaluator
+from nndet.evaluator.detection.coco import COCOMetric
 
 
 class DummyMetric:
@@ -113,3 +115,56 @@ class TestDetectionEvaluator:
         res = evaluator.iou_filter(image_dict, iou_idx=[0, 1], filter_keys=["dtMatches"])
         assert np.isclose(res[0]["dtMatches"], [0, 1]).all()
         assert np.isclose(res[1]["dtMatches"], [2, 3]).all()
+
+    def test_compute_ap_whole_dataset(self):
+        with open("/home/m612r/Code/cocoapi/results/instances_val2014_fakebbox100_results.json") as f:
+            fake_detections = json.load(f)
+        # with open("/home/m612r/Code/cocoapi/annotations/instances_val2014.json") as g:
+        with open("new_ann_no_crowd.json") as g:
+            gt_coco = json.load(g)
+        annotations = gt_coco["annotations"]
+        # Need: pred_boxes, classes, scores, gt_boxes, gt_classes, gt_ignore
+        # Group by image and predict
+        detections_by_image = {}
+        for detection in fake_detections:
+            id = detection["image_id"]
+            if id not in detections_by_image:
+                detections_by_image[id] = {"score": [], "box": [], "class": []}
+            detections_by_image[id]["score"].append(detection["score"])
+            detections_by_image[id]["box"].append(detection["bbox"])
+            detections_by_image[id]["class"].append(detection["category_id"])
+        annotations_by_image = {}
+        for annotation in annotations:
+            id = annotation["image_id"]
+            if id not in annotations_by_image:
+                annotations_by_image[id] = {"box": [], "class": [], "gt_ignore": []}
+            annotations_by_image[id]["box"].append(annotation["bbox"])
+            annotations_by_image[id]["class"].append(annotation["category_id"])
+            annotations_by_image[id]["gt_ignore"].append(annotation["iscrowd"])
+
+        # Create evaluator
+
+        classes = [cat["name"] for cat in gt_coco["categories"]]
+        coco = COCOMetric(
+            classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), max_detection=(100,), verbose=True
+        )
+        ranges = {"small": (0**2, 32**2), "medium": (32**2, 96**2), "large": (96**2, 1e5**2)}
+        evaluator = BoxEvaluator(
+            [coco], iou_fn=ops_np.box_iou_np, box_criterion=ops_np.box_area_np, criterion_ranges=ranges
+        )
+
+        for id, detection in detections_by_image.items():
+            annotation = annotations_by_image[id]
+            evaluator.run_online_evaluation(
+                [ops_np.box_center2point_format(np.array(detection["box"]))],
+                [np.array(detection["class"])],
+                [np.array(detection["score"])],
+                [ops_np.box_center2point_format(np.array(annotation["box"]))],
+                [np.array(annotation["class"])],
+                [np.array(annotation["gt_ignore"])],
+                case_id=id,
+            )
+
+        score, _ = evaluator.finish_online_evaluation()
+        imp_scores = {key: value for key, value in score.items() if key[:3] == "mAP" or key[:2] == "AP"}
+        assert score is not None

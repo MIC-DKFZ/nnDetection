@@ -203,7 +203,10 @@ class COCOMetric(DetectionMetric):
         if cls_idx is not None:
             prec = prec[..., cls_idx, :]
         prec = prec[..., max_det_idx]
-        return np.mean(prec)
+
+        if np.any(prec != -1):
+            return np.mean(prec[prec > -1])
+        return np.array([-1])
 
     def compute_statistics(
         self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
