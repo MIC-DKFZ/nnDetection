@@ -3,6 +3,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
+import nndet.core.ops_np as ops_np
+from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.io.transforms.random.mirror import (
     MirrorTransform,
     mirror_array,
@@ -142,3 +144,29 @@ def test_mirror_transform(points_origin, points_mirrored_all_16):
     assert len(batch_produced["point"]) == len(expected_point)
     for bp, ep in zip(batch_produced["point"], expected_point):
         assert np.allclose(bp, ep)
+
+
+@patch("nndet.io.transforms.random.mirror.np.random.uniform", lambda: 0.4)
+def test_mirror_points_seg():
+    for coords in [(0, 0, 0, 0), (0, 4, 5, 8), (0, 15, 15, 15), (0, 4, slice(3, 6), slice(8, 12))]:
+        seg = np.zeros((1, 16, 16, 16))
+        img_shape = (16, 16, 16)
+        seg[coords] = 1
+
+        boxes = instances_to_boxes_np(seg, dim=3)[0]
+        input_points = ops_np.points_to_homogeneous([ops_np.boxes2corners(boxes).astype(float)])[0]
+
+        for axes in [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2)]:
+            seg_new = mirror_array(seg, axes=axes)
+            boxes_new = instances_to_boxes_np(seg_new, dim=3)[0]
+            seg_new_points = ops_np.boxes2corners(boxes_new).astype(float)[0]
+
+            matrix = MirrorTransform.get_matrix(axes=axes, img_shape=img_shape)
+            produced_points = mirror_points(input_points, matrix=matrix)[0, :, :3]
+
+            assert produced_points.shape == seg_new_points.shape
+            num_points = produced_points.shape[0]
+            for i in range(num_points):
+                assert np.prod(
+                    np.isclose(produced_points[i][None].repeat(num_points, axis=0), seg_new_points), axis=1
+                ).any()
