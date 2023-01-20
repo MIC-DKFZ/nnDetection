@@ -194,7 +194,6 @@ def augment_spatial(
             follow the same format as their input equivalent and are None
             if not provided as input.
     """
-    # TODO: speed up if points is empty
     if random_crop:
         raise NotImplementedError("Random crop is not implemented")
     dim = len(patch_size)
