@@ -19,6 +19,35 @@ def example() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     return data, seg, points
 
 
+def test_empty_points(example):
+    np.random.seed(0)
+    data, seg, points = example
+    points = np.array([[[]]]).reshape(0, 0, 3)
+    data_result, seg_result, points_result = augment_spatial(
+        data=data,
+        seg=seg,
+        points=points,
+        do_elastic_deform=True,
+        do_rotation=True,
+        do_scale=True,
+        patch_size=(12, 12, 12),
+    )
+    assert points_result.size == 0
+    assert points_result.shape == (0, 0, 3)
+
+    data_result, seg_result, points_result = augment_spatial(
+        data=data,
+        seg=seg,
+        points=points,
+        do_elastic_deform=False,
+        do_rotation=False,
+        do_scale=False,
+        patch_size=(12, 12, 12),
+    )
+    assert points_result.size == 0
+    assert points_result.shape == (0, 0, 3)
+
+
 def test_elastic_spatial_fn(example):
     np.random.seed(0)
     data, seg, points = example

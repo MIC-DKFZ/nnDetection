@@ -97,12 +97,12 @@ def augment_spatial(
     angle_x: Tuple[float, float] = (0, 2 * np.pi),
     angle_y: Tuple[float, float] = (0, 2 * np.pi),
     angle_z: Tuple[float, float] = (0, 2 * np.pi),
-    independent_scale_for_each_axis: bool = False,
-    p_independent_scale_per_axis: int = 1,
     # scale
     do_scale: bool = True,
     p_scale_per_sample: float = 1,
     scale: Tuple[float, float] = (0.75, 1.25),
+    independent_scale_for_each_axis: bool = False,
+    p_independent_scale_per_axis: int = 1,
     # interpolation & padding
     order_data: int = 3,
     border_cval_data: int = 0,
@@ -131,34 +131,68 @@ def augment_spatial(
             deformation is performed by generating a random offset
             field which is smoothed by an guassian kernel (kernel size gamma)
             and scaled by alpha. Defaults to True.
-        p_el_per_sample: _description_. Defaults to 1.
-        alpha: _description_. Defaults to (0.0, 1000.0).
-        sigma: _description_. Defaults to (10.0, 13.0).
-        do_rotation: _description_. Defaults to True.
-        p_rot_per_sample: _description_. Defaults to 1.
-        p_rot_per_axis: _description_. Defaults to 1.
-        angle_x: _description_. Defaults to (0, 2 * np.pi).
-        angle_y: _description_. Defaults to (0, 2 * np.pi).
-        angle_z: _description_. Defaults to (0, 2 * np.pi).
-        independent_scale_for_each_axis: _description_. Defaults to False.
-        p_independent_scale_per_axis: _description_. Defaults to 1.
-        do_scale: _description_. Defaults to True.
-        p_scale_per_sample: _description_. Defaults to 1.
-        scale: _description_. Defaults to (0.75, 1.25).
-        order_data: _description_. Defaults to 3.
-        border_cval_data: _description_. Defaults to 0.
-        border_mode_data: _description_. Defaults to "nearest".
-        order_seg: _description_. Defaults to 0.
-        border_cval_seg: _description_. Defaults to 0.
-        border_mode_seg: _description_. Defaults to "constant".
-        seg: _description_. Defaults to None.
-        patch_center_dist_from_border: _description_. Defaults to 30.
+        p_el_per_sample: probability to apply elastic deformation to a single
+            sample. Defaults to 1.
+        alpha: Magnitude range of deformation field. Defaults to (0.0, 1000.0).
+        sigma: Standard deviation range of gaussian filter. See scikit image
+            gaussian filter for more info. Defaults to (10.0, 13.0).
+        do_rotation: If enable perform random rotation aroud axes. Rotation
+            order: x->y->z. Rotations are not uniformly sampled
+            https://github.com/MIC-DKFZ/batchgenerators/issues/84.
+            Defaults to True.
+        p_rot_per_sample: probability to apply rotation to a single sample.
+            Defaults to 1.
+        p_rot_per_axis: probability that a single axis will be rotated.
+            Defaults to 1.
+        angle_x: Rotation range in radian. Defaults to (0, 2 * np.pi).
+        angle_y: Rotation range in radian.. Defaults to (0, 2 * np.pi).
+        angle_z: Rotation range in radian.. Defaults to (0, 2 * np.pi).
+        do_scale: if enabled random scaling is applied. Defaults to True.
+        p_scale_per_sample: probability to scale a single sample. Defaults to 1.
+        scale: Scale range. Values lower and above one are sampled separately.
+            Defaults to (0.75, 1.25).
+        p_independent_scale_per_axis: Enable scaling of axis individually.
+            Only used if `independent_scale_for_each_axis` is `True`.
+            Defaults to 1.
+        independent_scale_for_each_axis: Probability to scale each axis.
+            Defaults to False.
+        order_data: order to interpolate data passed to map_coordiantes.
+            See scikit image map_coordinates coordinated for more info.
+             Defaults to 3.
+        border_cval_data: border value passed to map_coordinates.
+            See scikit image map_coordinates coordinated for more info.
+            Defaults to 0.
+        border_mode_data: border mode passed to map_coordinates.
+            See scikit image map_coordinates coordinated for more info.
+            Defaults to "nearest".
+        order_seg: order to interpolate seg passed to map_coordiantes.
+            See scikit image map_coordinates coordinated for more info.
+            Defaults to 0.
+        border_cval_seg: border value passed to map_coordinates.
+            See scikit image map_coordinates coordinated for more info.
+            Defaults to 0.
+        border_mode_seg: border mode passed to map_coordinates.
+            See scikit image map_coordinates coordinated for more info.
+            Defaults to "constant".
+        seg: provide segmentation to augment. [C, dims] where C is the number
+            of channels and dims are spatial dimensions. Defaults to None.
+        points: points to augment. Note: in case of elastic_deformation
+            the correct poisition of non interger points can only be
+            interpolated. [N, R, #dims] where N is the number of objects,
+            R is the number of points per object and #dims are the number
+            of spatial dimensions
+        clip_points: optionally clip points to patch size
+        random_crop: Not supported here. Defaults to False.
+        patch_center_dist_from_border: Not used here. Defaults to 30.
 
     Raises:
-        NotImplementedError: _description_
+        NotImplementedError: if random_crop is enabled.
 
     Returns:
-        Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]: _description_
+        Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]: returns
+            a tuple with three entries: data, seg and points. All of them
+            follow the same format as their input equivalent and are None
+            if not provided as input.
     """
     # TODO: speed up if points is empty
     if random_crop:
@@ -174,7 +208,9 @@ def augment_spatial(
 
     # create coordinate grid
     coords = mapper.zero_center_coords()
-    points_sample = mapper.zero_center_points(points) if points is not None else None
+    points_empty = points.size == 0
+    # Note: always check points_sample against None to cover empty and no points
+    points_sample = None if points is None or points_empty else mapper.zero_center_points(points)
     modified_coords = False
 
     # perform augmentations
@@ -216,7 +252,7 @@ def augment_spatial(
 
     if modified_coords:
         coords = mapper.img_origin_center_coords(coords)
-        if points is not None:
+        if points_sample is not None:
             points_sample = mapper.img_origin_center_points(points_sample)
 
         for channel_id in range(data.shape[0]):
@@ -250,12 +286,16 @@ def augment_spatial(
         data_result = d[0]
         if seg is not None:
             seg_result = s[0]
-        if points is not None:
+        if points_sample is not None:
             points_sample = mapper.img_origin_center_points(p[0])
 
-    if clip_points and points is not None:
+    if clip_points and points_sample is not None:
         points_sample = np.clip(points_sample, a_min=0, a_max=np.array(patch_size)[None, None])
-    point_result = points_sample
+
+    if points_empty:
+        point_result = points  # empty array
+    else:
+        point_result = points_sample
     return data_result, seg_result, point_result
 
 
@@ -266,6 +306,21 @@ def apply_elastic_deform(
     points: Optional[np.ndarray] = None,
     points_img: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Apply random elastic deformation to coordinate mesh and points
+
+    Args:
+        coords: coordinate mesh
+        alpha: alpha specifying the magnitdue range
+        sigma: sigma specifying the standard deviation range of the
+            gaussian kernel
+        points: points in coordiante mesh frame. Defaults to None.
+        points_img: points in original iamge frame. No augmentations should
+            have been applied befor the elastic augmentation! Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     a = np.random.uniform(alpha[0], alpha[1])
     s = np.random.uniform(sigma[0], sigma[1])
     return elastic_deform_coords_points(
@@ -284,6 +339,20 @@ def elastic_deform_coords_points(
     points: Optional[np.ndarray] = None,
     points_img: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Perform elastic deformation to coordinate mesh and points
+
+    Args:
+        coords: coordinate mesh
+        alpha: alpha specifying the magnitdue
+        sigma: sigma specifying the standard deviation
+        points: points in coordiante mesh frame. Defaults to None.
+        points_img: points in original iamge frame. No augmentations should
+            have been applied befor the elastic augmentation! Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     n_dim = len(coords)
     offsets = []
     for _ in range(n_dim):
@@ -318,6 +387,21 @@ def apply_rotation(
     p_rot_per_axis: float,
     points: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Apply random rotation to coordinate mesh and points
+
+    Args:
+        coords: coordinate mesh
+        dim: number of spatial dimensions
+        angle_x: rotation range in radian
+        angle_y: rotation range in radian
+        angle_z: rotation range in radian
+        p_rot_per_axis: probability to apply rotation to an axis
+        points: points in coordiante mesh frame. Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     if np.random.uniform() <= p_rot_per_axis:
         a_x = np.random.uniform(angle_x[0], angle_x[1])
     else:
@@ -345,6 +429,20 @@ def rotate_coords_points(
     angles: Union[float, Tuple[float, float, float]],
     points: np.ndarray,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Perform rotation
+
+    Args:
+        coords: coordinate mesh
+        angles: rotation angles. In 2D this is a float, in 3D this should be
+            a tuple of three float each specifying the rotation angle for
+            the axis. The first entry corresponds to the x axis, the last one
+            to the z axis.
+        points: points in coordiante mesh frame. Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     if len(coords) == 3:
         rot_matrix = np.identity(len(coords))
         rot_matrix = create_matrix_rotation_x_3d(angles[0], rot_matrix)
@@ -375,6 +473,22 @@ def apply_scale(
     p_independent_scale_per_axis: float,
     points: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Apply random scaling to coordinate mesh and points
+
+    Args:
+        coords: coordinate mesh
+        dim: number of spatial dimensions
+        scale: scaling range.
+        independent_scale_for_each_axis: if enabled, different scaling values
+            can be applied to different axis.
+        p_independent_scale_per_axis: Probability to apply rotation to an
+            axis. Only used if `independent_scale_for_each_axis` is `True`.
+        points: points in coordiante mesh frame. Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     if independent_scale_for_each_axis and np.random.uniform() < p_independent_scale_per_axis:
         sc = []
         for _ in range(dim):
@@ -395,6 +509,17 @@ def scale_coords_points(
     scale: Union[float, Sequence[float]],
     points: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    """
+    Perform scaling of mesh and points
+
+    Args:
+        coords: coordinate mesh
+        scale: scale value
+        points: points in coordiante mesh frame. Defaults to None.
+
+    Returns:
+        Tuple[np.ndarray, Optional[np.ndarray]]: coordiante mesh and points
+    """
     if isinstance(scale, (tuple, list, np.ndarray)):
         assert len(scale) == len(coords)
         scale_array = np.array(scale)
