@@ -326,23 +326,27 @@ def _train(
 
     data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
 
+    # initiate module
+    module = MODULE_REGISTRY[cfg["module"]](
+        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
+        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
+        plan=plan,
+    )
+
+    # setup io
     datamodule = Datamodule(
         io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
         plan=plan,
         data_dir=data_dir,
         fold=cfg["exp"]["fold"],
+        use_box_io=module.use_box_io(),
         log_aug=log_aug,
     )
-    # copy IO config overwrites to plan
     plan["patch_size"] = list(datamodule.patch_size)
     plan["batch_size"] = int(datamodule.batch_size)
 
-    module = MODULE_REGISTRY[cfg["module"]](
-        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
-        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
-        plan=plan,
-    )
+    # callbacks
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,

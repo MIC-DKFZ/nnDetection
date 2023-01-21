@@ -62,7 +62,6 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             memmap_mode: Do not change this. Defaults to "r".
             num_batches_per_epoch: number of batcher per epoch
             load_seg: load segmentation map into `seg` key.
-            # TODO: update me
             load_box: load bounding boxes into `box` key. Working with
                 boxes directly is significnatly more efficient in terms
                 of IO and augmentation but less accurate during augmentation.
