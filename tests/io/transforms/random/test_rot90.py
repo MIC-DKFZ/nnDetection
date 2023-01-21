@@ -73,7 +73,7 @@ def test_rot90_points_seg(points_origin):
         for num_rot in range(1, 4):
             seg_rot = rot90_array(seg, num_rot=num_rot, axes=axes)
             boxes_rot = instances_to_boxes_np(seg_rot, dim=3)[0]
-            seg_points = ops_np.boxes2corners(boxes_rot).astype(float)[0]
+            seg_points = ops_np.boxes2corner_points(boxes_rot).astype(float)[0]
 
             matrix = Rot90Transform.get_matrix(axes=axes, num_rot=num_rot, img_shape=img_shape)
             produced_points = rot90_points(points_origin, matrix=matrix)[:, :3]
@@ -93,13 +93,13 @@ def test_rot90_points_seg2():
         seg[coords] = 1
 
         boxes = instances_to_boxes_np(seg, dim=3)[0]
-        input_points = ops_np.points_to_homogeneous([ops_np.boxes2corners(boxes).astype(float)])[0]
+        input_points = ops_np.points_to_homogeneous([ops_np.boxes2corner_points(boxes).astype(float)])[0]
 
         for axes in [(0, 1), (1, 2), (1, 0), (2, 1), (0, 2), (2, 0)]:
             for num_rot in range(1, 4):
                 seg_rot = rot90_array(seg, num_rot=num_rot, axes=axes)
                 boxes_rot = instances_to_boxes_np(seg_rot, dim=3)[0]
-                seg_points = ops_np.boxes2corners(boxes_rot).astype(float)[0]
+                seg_points = ops_np.boxes2corner_points(boxes_rot).astype(float)[0]
 
                 matrix = Rot90Transform.get_matrix(axes=axes, num_rot=num_rot, img_shape=img_shape)
                 produced_points = rot90_points(input_points, matrix=matrix)[0, :, :3]
@@ -136,7 +136,7 @@ def test_rot90_transform(points_origin):
                 batch_produced = trafo(**batch)
 
             boxes_rot = instances_to_boxes_np(batch_produced["seg"], dim=3)[0]
-            seg_points = ops_np.boxes2corners(boxes_rot).astype(float)[0]
+            seg_points = ops_np.boxes2corner_points(boxes_rot).astype(float)[0]
             produced_points = batch_produced["point"][0][0, :, :3]
 
             assert produced_points.shape == seg_points.shape

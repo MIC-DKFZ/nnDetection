@@ -334,13 +334,14 @@ def points_to_homogeneous(points: Sequence[np.ndarray]) -> List[np.ndarray]:
     Transforms points from cartesian to homogeneous coordinates
 
     Args:
-        points: list of points to transform [N, dims] where N is the number
-            of points and dims is the number of spatial dimensions
+        points: list of points to transform [*, #dims] where * are arbitrary
+            dimensions and dims is the number of spatial dimensions
 
     Returns:
-        List[np.ndarray]: the batch of points in homogeneous coordinates [N, dim + 1]
+        List[np.ndarray]: the batch of points in homogeneous
+            coordinates [*, #dim + 1]
     """
-    return [np.concatenate([p, np.ones((p.shape[0], p.shape[1], 1), dtype=p.dtype)], axis=-1) for p in points]
+    return [np.concatenate([p, np.ones((*p.shape[:-1], 1), dtype=p.dtype)], axis=-1) for p in points]
 
 
 def points_to_cartesian(points: Sequence[np.ndarray]) -> List[np.ndarray]:
@@ -358,9 +359,104 @@ def points_to_cartesian(points: Sequence[np.ndarray]) -> List[np.ndarray]:
     return [p[..., :-1] / p[..., -1][:, None] for p in points]
 
 
+def boxes2corner_points(boxes: np.ndarray) -> ndarray:
+    """
+    Convert boxes to corner points
+
+    Args:
+        boxes: boxes of shape [N, dims] where is the number of boxes and dims
+            is the number of spatial dimensions
+
+    Returns:
+        ndarray: corner points [N, 2 ** #dims, dims], where N is the
+            number of boxes and #dims is the number of spatial dimensions
+    """
+    if boxes.size == 0:
+        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1])
+
+    if boxes.shape[1] == 4:
+        idx = list(product([0, 2], [1, 3]))
+        corners = np.stack([np.stack([boxes[:, i[0]], boxes[:, i[1]]], axis=-1) for i in idx], axis=1)
+    elif boxes.shape[1] == 6:
+        idx = list(product([0, 2], [1, 3], [4, 5]))
+        corners = np.stack(
+            [np.stack([boxes[:, i[0]], boxes[:, i[1]], boxes[:, i[2]]], axis=-1) for i in idx],
+            axis=1,
+        )
+    else:
+        raise ValueError(f"Unsupported dimensionality of boxes, found {boxes.ndim} dimensions")
+    return corners
+
+
+def boxes2center_area_points(boxes: np.ndarray) -> np.ndarray:
+    """
+    Convert boxes to the center of area points
+
+    Args:
+        boxes: boxes of shape [N, dims] where is the number of boxes and dims
+            is the number of spatial dimensions
+
+    Returns:
+        ndarray: corner points [N, 2 ** #dims, dims], where N is the
+            number of boxes and #dims is the number of spatial dimensions
+    """
+    dim = boxes.shape[-1] // 2
+    num_obj = boxes.shape[0]
+    assert dim in [2, 3]
+    center = box_center_np(boxes)  # N, #dims
+    size = box_size_np(boxes)  # N, #dims
+
+    points = []
+    for d in range(dim):
+        offset = np.zeros_like(center)  # N, #dims
+        np.put_along_axis(offset, np.array([[d]] * num_obj), size[:, d : d + 1] / 2, axis=1)
+        points.append(center + offset)
+        points.append(center - offset)
+    return np.stack(points, axis=1)  # N, P, #dims
+
+
+def object_points2boxes(points: np.ndarray) -> np.ndarray:
+    """
+    Convert unordered set of points to boxes
+
+    Args:
+        points: points of shape [N, P, #dims] where N is the number of objects,
+            P is the number of points per object and #dims is the number of
+            spatial dimensions
+
+    Returns:
+        ndarray: boxes of shape [N, #dims] where is the number of boxes and
+            #dims is the number of spatial dimensions
+    """
+    if points.shape[-1] not in [2, 3]:
+        raise ValueError("Only support 2 and 3 dimensional points")
+
+    if points.size > 0:
+        t = [a[..., 0] for a in np.split(points, points.shape[-1], -1)]
+        points_ax0, points_ax1 = t[0], t[1]  # [N, P]
+        if points.shape[-1] == 3:
+            points_ax2 = t[2]  # [N, P]
+
+        boxes = np.zeros((points.shape[0], points.shape[-1] * 2), dtype=points.dtype)
+        boxes[:, 0] = np.min(points_ax0, axis=1)
+        boxes[:, 1] = np.min(points_ax1, axis=1)
+        boxes[:, 2] = np.max(points_ax0, axis=1)
+        boxes[:, 3] = np.max(points_ax1, axis=1)
+        if points.shape[-1] == 3:
+            boxes[:, 4] = np.min(points_ax2, axis=1)
+            boxes[:, 5] = np.max(points_ax2, axis=1)
+    else:
+        boxes = np.tensor([]).reshape(-1, points.shape[-1] * 2, dtype=points.dtype)
+    return boxes
+
+
+# These are specialized transformations for the mirror augmentation TTA
+# Prefer using the functions above for point transformations
+
+
 def boxes2points(boxes: np.ndarray) -> np.ndarray:
     """
-    Convert boxes to points
+    Convert boxes to 2 points
 
     Args:
         boxes: (x1, y1, x2, y2, (z1, z2))[N, dims x 2]
@@ -382,7 +478,7 @@ def boxes2points(boxes: np.ndarray) -> np.ndarray:
 
 def points2boxes(points: np.ndarray) -> np.ndarray:
     """
-    Convert points to boxes
+    Convert 2 points to boxes
 
     Args:
         points: boxes need to be order as specified
@@ -405,32 +501,3 @@ def points2boxes(points: np.ndarray) -> np.ndarray:
         return boxes
     else:
         return np.tensor([]).reshape(-1, points.shape[1] * 2, dtype=points.dtype)
-
-
-def boxes2corners(boxes: np.ndarray) -> ndarray:
-    """
-    Convert boxes to corner points
-
-    Args:
-        boxes: boxes of shape [N, dims] where is the number of boxes and dims
-            is the number of spatial dimensions
-
-    Returns:
-        ndarray: corner points [N, 2 ** (dims // 2), dims], where N is the
-            number of boxes and dims is the number of spatial dimensions
-    """
-    if boxes.size == 0:
-        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1])
-
-    if boxes.shape[1] == 4:
-        idx = list(product([0, 2], [1, 3]))
-        corners = np.stack([np.stack([boxes[:, i[0]], boxes[:, i[1]]], axis=-1) for i in idx], axis=1)
-    elif boxes.shape[1] == 6:
-        idx = list(product([0, 2], [1, 3], [4, 5]))
-        corners = np.stack(
-            [np.stack([boxes[:, i[0]], boxes[:, i[1]], boxes[:, i[2]]], axis=-1) for i in idx],
-            axis=1,
-        )
-    else:
-        raise ValueError(f"Unsupported dimensionality of boxes, found {boxes.ndim} dimensions")
-    return corners

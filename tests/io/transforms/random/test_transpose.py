@@ -119,12 +119,12 @@ def test_transpose_points_seg():
         seg[coords] = 1
 
         boxes = instances_to_boxes_np(seg, dim=3)[0]
-        input_points = ops_np.points_to_homogeneous([ops_np.boxes2corners(boxes).astype(float)])[0]
+        input_points = ops_np.points_to_homogeneous([ops_np.boxes2corner_points(boxes).astype(float)])[0]
 
         for axes in [(0, 1, 2), (1, 0, 2), (2, 1, 0), (0, 2, 1), (2, 0, 1)]:
             seg_new = transpose_array(seg, axes=axes)
             boxes_new = instances_to_boxes_np(seg_new, dim=3)[0]
-            seg_new_points = ops_np.boxes2corners(boxes_new).astype(float)[0]
+            seg_new_points = ops_np.boxes2corner_points(boxes_new).astype(float)[0]
 
             matrix = TransposeAxesTransform.get_matrix(transpose_axes=axes, ndim=len(img_shape))
             produced_points = transpose_points(input_points, matrix=matrix)[0, :, :3]
