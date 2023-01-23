@@ -16,8 +16,6 @@
 #include "ms_deform_attn_cuda.h"
 #endif
 
-namespace detrex {
-
 at::Tensor
 ms_deform_attn_forward(
     const at::Tensor &value, 
@@ -60,5 +58,3 @@ ms_deform_attn_backward(
     }
     AT_ERROR("Not implemented on the CPU");
 }
-
-} // namespace detrex
