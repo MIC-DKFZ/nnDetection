@@ -15,7 +15,6 @@ class DeformableDETRHead(DETRHead):
         Predict bounding boxes and classes using two MLPs
         Args:
             out_sequence:
-            init_reference:
             reference:
         Returns:
             Dict containing "pred_logits" and "pred_boxes"
@@ -25,15 +24,15 @@ class DeformableDETRHead(DETRHead):
         box_logits_list = []
         for lvl in range(out_sequence.shape[0]):
             # TODO references passed must be all be stored in reference
-            reference = reference[lvl]
-            reference = self.regressor.apply_inverse_non_lin(reference)
-            outputs_class = self.classifier[lvl](out_sequence[lvl])
-            tmp = self.regressor[lvl](out_sequence[lvl])
-            if reference.shape[-1] == 6:
-                tmp += reference
+            current_reference = reference[lvl]
+            current_reference = self.regressor.apply_inverse_non_lin(current_reference)
+            outputs_class = self.classifier(out_sequence[lvl], lvl)
+            tmp = self.regressor(out_sequence[lvl], lvl)
+            if current_reference.shape[-1] == 6:
+                tmp += current_reference
             else:
-                assert reference.shape[-1] == 3
-                tmp[..., :3] += reference
+                assert current_reference.shape[-1] == 3
+                tmp[..., :3] += current_reference
             outputs_coord = tmp.sigmoid()
             class_logit_list.append(outputs_class)
             box_logits_list.append(outputs_coord)
@@ -46,5 +45,4 @@ class DeformableDETRHead(DETRHead):
         if self.aux_loss:
             aux = [{"pred_cls_logits": a, "pred_box_coords": b} for a, b in zip(class_logits[:-1], box_logits[:-1])]
             preds["aux_outputs"] = aux
-
         return preds

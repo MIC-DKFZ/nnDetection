@@ -45,17 +45,25 @@ class BaseDETR(AbstractDetector):
         channels = self.backbone.get_channels()
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
+        self.input_feature_levels = len(channels)
 
         # For future multi feature
         if num_feature_levels == 1:
             self.input_proj = nn.ModuleList([nn.Conv3d(channels[-1], self.hidden_dim, kernel_size=1)])
         else:
-            raise NotImplementedError
+            input_proj_list = []
+            for i in range(num_feature_levels):
+                channel_idx = self.input_feature_levels - num_feature_levels + i
+                module_list = nn.Sequential(
+                    nn.Conv3d(channels[channel_idx], self.hidden_dim, kernel_size=1),
+                    nn.GroupNorm(num_groups=16, num_channels=self.hidden_dim),
+                )
+                input_proj_list.append(module_list)
+            self.input_proj = nn.ModuleList(input_proj_list)
 
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
         self.transformer = transformer
-        self.decoder_layers = transformer.dec_layers
         self.query_pos = nn.Embedding(detection_per_img, query_dim)
 
         # Build the final layers for classification and box regression

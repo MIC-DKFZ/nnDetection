@@ -1,3 +1,4 @@
+import copy
 import math
 from abc import abstractmethod
 from typing import Dict, Optional
@@ -21,6 +22,7 @@ class FFNClassifier(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_mlps: int = 1,
         **kwargs,
     ) -> None:
         """
@@ -49,6 +51,9 @@ class FFNClassifier(torch.nn.Module):
             dropout_rate=dropout_rate,
             **kwargs,
         )
+        self.share_mlp = num_mlps == 1
+        if not self.share_mlp:
+            self.mlp = [copy.deepcopy(self.mlp) for i in range(num_mlps + 1)]
 
         self.loss_name: str = "ffn_cls"
         self.loss: Optional[torch.nn.Module] = None
@@ -105,11 +110,12 @@ class FFNClassifier(torch.nn.Module):
         """
         pass
 
-    def forward(self, features: torch.Tensor) -> torch.Tensor:
+    def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
         """
         Forward feature through module
 
         Args:
+            layer: index to know which MLP to use
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
                 channels
@@ -119,7 +125,10 @@ class FFNClassifier(torch.nn.Module):
                 D=number of decoder layers, B=batch size, R=number of
                 predictions, num_classes=number of classes
         """
-        return self.mlp(features)
+        if self.share_mlp:
+            return self.mlp(features)
+        else:
+            return self.mlp[layer](features)
 
     def compute_loss(
         self,

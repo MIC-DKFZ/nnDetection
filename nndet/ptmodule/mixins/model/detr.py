@@ -220,7 +220,10 @@ class SetModelMixin(ModelMixin):
     ) -> FFNClassifier:
         num_classes = plan_arch["classifier_classes"]
         hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
-
+        num_mlps = 1
+        if "box_refine" in model_cfg:
+            if not model_cfg["box_refine"]:
+                num_mlps = model_cfg["num_decoder_layers"]
         name = cls.head_classifier_cls.__name__
         kwargs = model_cfg["head_classifier_kwargs"]
 
@@ -229,6 +232,7 @@ class SetModelMixin(ModelMixin):
             linear=cls.head_linear_cls,
             in_channels=hidden_dim,
             num_classes=num_classes,
+            num_mlps=num_mlps,
             **kwargs,
         )
 
@@ -240,7 +244,10 @@ class SetModelMixin(ModelMixin):
     ) -> FFNRegressor:
         dim = plan_arch["dim"]
         hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
-
+        num_mlps = 1
+        if "box_refine" in model_cfg:
+            if not model_cfg["box_refine"]:
+                num_mlps = model_cfg["num_decoder_layers"]
         name = cls.head_regressor_cls.__name__
         kwargs = model_cfg["head_regressor_kwargs"]
 
@@ -249,6 +256,7 @@ class SetModelMixin(ModelMixin):
             linear=cls.head_linear_cls,
             in_channels=hidden_dim,
             dim=dim,
+            num_mlps=num_mlps,
             **kwargs,
         )
 
@@ -312,7 +320,7 @@ class SetModelMixin(ModelMixin):
         regressor: FFNRegressor,
         matcher: BaseMatcher,
         box_post: DETRBoxPost,
-    ) -> BaseDETR:
+    ) -> DETRHead:
         name = cls.head_cls.__name__
         kwargs = model_cfg["head_kwargs"]
 
