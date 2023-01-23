@@ -230,8 +230,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         if self.load_seg:
             out["seg"] = seg_batch
         if self.load_box:
-            out["box_coord"] = box_coord_batch
-            out["box_label"] = box_label_batch
+            out["target_boxes"] = box_coord_batch
+            out["target_classes"] = box_label_batch
         return out
 
     def load_candidates(self, case_id: str, fg_crop: bool) -> Union[Dict, None]:
@@ -285,7 +285,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             allow_pickle=True,
         )
         gt_boxes = gt["boxes"]
-        gt_labels = gt["labels"]
+        gt_labels = gt["classes"]
 
         if gt_boxes.size > 0:
             lower_bound = np.array([s.start for s in crop])
@@ -388,6 +388,8 @@ class DataLoader3DOffset(
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Dataloder for 3D Data.
@@ -426,6 +428,8 @@ class DataLoader3DOffset(
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -660,6 +664,8 @@ class NoiseLoader(BaseDataLoader3D):
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
+        load_seg: bool = True,
+        load_box: bool = False,
         **kwargs,
     ):
         """
@@ -687,9 +693,13 @@ class NoiseLoader(BaseDataLoader3D):
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.data_batch = None
         self.seg_batch = None
+        self.box_coords_batch = None
+        self.box_labels_batch = None
 
     def build_cache(self):
         return []
@@ -731,18 +741,37 @@ class NoiseLoader(BaseDataLoader3D):
             self.seg_batch[1, 0, 4:28, 4:28, 4:28] = 1
 
         batch_size = self.data_shape_batch[0]
+
+        if self.box_coords_batch is None:
+            self.box_coords_batch = [
+                np.array([[15, 15, 32, 32, 15, 32]]),
+                np.array([[3, 3, 28, 28, 3, 28]]),
+                *[np.array([[]]).reshape(0, 6) for _ in range(batch_size - 2)],
+            ]
+            self.box_labels_batch = [
+                np.array([0]),
+                np.array([0]),
+                *[np.array([]) for _ in range(batch_size - 2)],
+            ]
+
         # instances_batch = [{"1": 0} for _ in batch_size]
         instances_batch = [{"1": 0} if idx in [0, 1] else {} for idx in range(batch_size)]
         properties_batch = [{} for _ in range(batch_size)]
         case_ids_batch = ["case_noise" for _ in range(batch_size)]
 
-        return {
+        batch = {
             "data": self.data_batch,
-            "seg": self.seg_batch,
             "properties": properties_batch,
             "instance_mapping": instances_batch,
             "keys": case_ids_batch,
         }
+        if self.load_seg:
+            batch["seg"] = self.seg_batch
+        if self.load_box:
+            batch["target_boxes"] = self.box_coords_batch
+            batch["target_classes"] = self.box_labels_batch
+
+        return batch
 
 
 ####

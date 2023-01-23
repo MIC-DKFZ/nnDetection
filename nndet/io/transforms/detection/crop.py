@@ -1,10 +1,64 @@
-from typing import List, Optional, Tuple
+from typing import Hashable, List, Optional, Tuple
 
 import numpy as np
 from batchgenerators.augmentations.crop_and_pad_augmentations import (
     get_lbs_for_center_crop,
     get_lbs_for_random_crop,
 )
+from batchgenerators.transforms.abstract_transforms import AbstractTransform
+
+import nndet.core.ops_np as ops_np
+
+
+class CenterCropTransform(AbstractTransform):
+    """Crops data and seg (if available) in the center
+
+    Args:
+        output_size (int or tuple of int): Output patch size
+
+    """
+
+    # FIXME # TODO add docs
+
+    def __init__(
+        self,
+        crop_size,
+        data_key="data",
+        label_key="seg",
+        point_key: Optional[Hashable] = None,
+    ):
+        self.data_key = data_key
+        self.label_key = label_key
+        self.point_key = point_key
+        self.crop_size = crop_size
+
+    def __call__(self, **data_dict):
+        data = data_dict.get(self.data_key)
+
+        if self.label_key is not None:
+            seg = data_dict[self.label_key]
+        else:
+            seg = None
+
+        if self.point_key is not None:
+            points = ops_np.points_to_cartesian(data_dict[self.point_key])
+        else:
+            points = None
+
+        data_result, seg_result, points_result = crop(
+            data=data,
+            seg=seg,
+            crop_size=self.crop_size,
+            margins=0,
+            crop_type="center",
+            points=points,
+        )
+        data_dict[self.data_key] = data_result
+        if seg is not None:
+            data_dict[self.label_key] = seg_result
+        if points is not None:
+            data_dict[self.point_key] = ops_np.points_to_homogeneous(points_result)
+        return data_dict
 
 
 def crop(

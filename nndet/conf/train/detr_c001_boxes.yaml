@@ -1,0 +1,10 @@
+# @package __global__
+defaults:
+  - augment_cfg: more_modular_boxes
+  - io_cfg: offset
+  - trainer_cfg: adamw_long
+  - model_cfg: detr_focal
+
+module: BoxIOCDETRC001Focal_S16
+plan: D3V001_3d # plan used for training
+planner: D3V001 # planner used for preprocessing

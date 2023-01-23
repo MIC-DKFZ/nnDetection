@@ -334,7 +334,7 @@ def points_to_homogeneous(points: Sequence[np.ndarray]) -> List[np.ndarray]:
     Transforms points from cartesian to homogeneous coordinates
 
     Args:
-        points: list of points to transform [*, #dims] where * are arbitrary
+        points: list of points to transform List([*, #dims]) where * are arbitrary
             dimensions and dims is the number of spatial dimensions
 
     Returns:
@@ -350,13 +350,13 @@ def points_to_cartesian(points: Sequence[np.ndarray]) -> List[np.ndarray]:
     coordinates.
 
     Args:
-        points: homogeneous points [N, in_dims], N number of points,
+        points: homogeneous points List([N, in_dims]), N number of points,
             in_dims number of input dimensions (spatial dimensions + 1)
 
     Returns:
         List[np.ndarray]: cartesian points [N, in_dims] = [N, dims]
     """
-    return [p[..., :-1] / p[..., -1][:, None] for p in points]
+    return [p[..., :-1] / p[..., -1][..., None] for p in points]
 
 
 def boxes2corner_points(boxes: np.ndarray) -> ndarray:
@@ -372,7 +372,7 @@ def boxes2corner_points(boxes: np.ndarray) -> ndarray:
             number of boxes and #dims is the number of spatial dimensions
     """
     if boxes.size == 0:
-        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1])
+        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1] // 2)
 
     if boxes.shape[1] == 4:
         idx = list(product([0, 2], [1, 3]))
@@ -388,7 +388,7 @@ def boxes2corner_points(boxes: np.ndarray) -> ndarray:
     return corners
 
 
-def boxes2center_area_points(boxes: np.ndarray) -> np.ndarray:
+def boxes2center_points(boxes: np.ndarray) -> np.ndarray:
     """
     Convert boxes to the center of area points
 
@@ -400,6 +400,9 @@ def boxes2center_area_points(boxes: np.ndarray) -> np.ndarray:
         ndarray: corner points [N, 2 ** #dims, dims], where N is the
             number of boxes and #dims is the number of spatial dimensions
     """
+    if boxes.size == 0:
+        return np.array([[[]]]).reshape(0, 2 ** (boxes.shape[1] // 2), boxes.shape[1] // 2)
+
     dim = boxes.shape[-1] // 2
     num_obj = boxes.shape[0]
     assert dim in [2, 3]

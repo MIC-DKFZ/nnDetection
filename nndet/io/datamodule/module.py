@@ -354,7 +354,7 @@ class PtDatamodule(BaseDatamodule):
         if not multiprocessing:
             num_processes = 0
             persistent_workers = False
-            num_cached_per_queue = None
+            num_cached_per_queue = 2  # default value from torch, raises error otherwise
         else:
             persistent_workers = True
 

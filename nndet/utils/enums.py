@@ -58,3 +58,8 @@ class AuxLossNorm(Enum):
     NONE = "none"
     MEAN = "mean"
     REDUCED = "reduced"
+
+
+class BoxPointMode(Enum):
+    CORNERS = "corners"
+    CENTERS = "centers"

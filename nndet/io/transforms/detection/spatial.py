@@ -13,7 +13,7 @@ from scipy.ndimage import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
 
 import nndet.core.ops_np as ops_np
-from nndet.io.transforms.random.crop_bg import crop
+from nndet.io.transforms.detection.crop import crop
 
 
 class SpatialTransform(AbstractTransform):
@@ -216,7 +216,7 @@ class SpatialTransform(AbstractTransform):
                 seg=seg[b] if seg is not None else None,
                 points=p[b] if points is not None else None,
                 data_out=data_result[b],
-                seg_out=seg_result[b],
+                seg_out=seg_result[b] if seg is not None else None,
                 patch_size=self.patch_size,
                 # elastic
                 do_elastic_deform=self.do_elastic_deform,

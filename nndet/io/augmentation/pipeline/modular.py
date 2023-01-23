@@ -50,7 +50,12 @@ with SuppressPrint():
         MaskTransform,
     )
 
+import nndet.io.transforms.detection as nndet_transforms
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
+from nndet.io.transforms.format import (
+    Boxes2ObjectPointsTransform,
+    ObjectPoints2BoxesTransform,
+)
 
 
 @AUGMENTATION_REGISTRY.register
@@ -751,3 +756,239 @@ class AugModularV2(NoAug):
         transforms = ComposePretty(tr_transforms)
         # logger.info(f"Training Transforms: \n{transforms}")
         return transforms
+
+
+@AUGMENTATION_REGISTRY.register
+class AugModularWBoxes(NoAug):
+    """
+    Aug Modular with Spatial Aug Transforms from nnDetection
+    """
+
+    def get_keys(self):
+        if self.use_box_io:
+            label_key = None
+            point_key = "target_points"
+        else:
+            label_key = "seg"
+            point_key = None
+        return "data", label_key, point_key
+
+    def get_training_transforms(self):
+        """
+        - UtilTransforms
+        - SpatialTransform
+        - GaussianNoiseTransform
+        - GaussianBlurTransform
+        - BrightnessMultiplicativeTransform
+        - [optional] BrightnessTransform
+        - ContrastAugmentationTransform
+        - [optional] SimulateLowResolutionTransform
+        - [optional] GammaTransform (inverted)
+        - [optional] GammaTransform
+        - [optional] MirrorTransform
+        - UtilTransforms
+        """
+        assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
+        data_key, label_key, point_key = self.get_keys()
+
+        tr_transforms = []
+        if self.params.get("selected_data_channels"):
+            tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
+        if self.params.get("selected_seg_channels"):
+            tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
+
+        tr_transforms.append(
+            Boxes2ObjectPointsTransform(
+                data_key=data_key,
+                box_coord_key="target_boxes",
+                point_key=point_key,
+            )
+        )
+
+        # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
+        if self.params.get("dummy_2D", False):
+            ignore_axes = (0,)
+            tr_transforms.append(Convert3DTo2DTransform())
+        else:
+            ignore_axes = None
+
+        tr_transforms.append(
+            nndet_transforms.SpatialTransform(
+                data_key=data_key,
+                label_key=label_key,
+                point_key=point_key,
+                patch_size=self._spatial_transform_patch_size,
+                patch_center_dist_from_border=None,
+                do_elastic_deform=self.params.get("do_elastic"),
+                alpha=self.params.get("elastic_deform_alpha"),
+                sigma=self.params.get("elastic_deform_sigma"),
+                do_rotation=self.params.get("do_rotation"),
+                angle_x=self.params.get("rotation_x"),
+                angle_y=self.params.get("rotation_y"),
+                angle_z=self.params.get("rotation_z"),
+                do_scale=self.params.get("do_scaling"),
+                scale=self.params.get("scale_range"),
+                order_data=self.params.get("order_data"),
+                border_mode_data=self.params.get("border_mode_data"),
+                border_cval_data=self.params.get("border_cval_data"),
+                order_seg=self.params.get("order_seg"),
+                border_mode_seg=self.params.get("border_mode_seg"),
+                border_cval_seg=self.params.get("border_cval_seg"),
+                random_crop=self.params.get("random_crop"),
+                p_el_per_sample=self.params.get("p_eldef"),
+                p_scale_per_sample=self.params.get("p_scale"),
+                p_rot_per_sample=self.params.get("p_rot"),
+                independent_scale_for_each_axis=self.params.get("independent_scale_factor_for_each_axis"),
+            )
+        )
+
+        if self.params.get("dummy_2D"):
+            tr_transforms.append(Convert2DTo3DTransform())
+
+        # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
+        # channel gets in the way
+
+        tr_transforms.append(
+            GaussianNoiseTransform(
+                p_per_sample=self.params.get("p_per_sample_gaussian_noise"),
+            ),
+        )
+
+        tr_transforms.append(
+            GaussianBlurTransform(
+                blur_sigma=self.params.get("gaussian_blur_sigma"),
+                different_sigma_per_channel=self.params.get("gaussian_blur_sigma_per_channel"),
+                p_per_sample=self.params.get("p_per_sample_gaussian_blur"),
+                p_per_channel=self.params.get("p_per_channel_gaussian_blur"),
+            ),
+        )
+
+        tr_transforms.append(
+            BrightnessMultiplicativeTransform(
+                p_per_sample=self.params.get("p_per_sample_brightness_mul"),
+                multiplier_range=self.params.get("brightness_mul_multiplier_range"),
+            ),
+        )
+
+        if self.params.get("do_additive_brightness"):
+            tr_transforms.append(
+                BrightnessTransform(
+                    mu=self.params.get("additive_brightness_mu"),
+                    sigma=self.params.get("additive_brightness_sigma"),
+                    per_channel=self.params.get("additive_brightness_per_channel"),
+                    p_per_sample=self.params.get("additive_brightness_p_per_sample"),
+                    p_per_channel=self.params.get("additive_brightness_p_per_channel"),
+                ),
+            )
+
+        tr_transforms.append(
+            ContrastAugmentationTransform(
+                contrast_range=self.params.get("contrast_range"),
+                p_per_sample=self.params.get("p_per_sample_contrast"),
+            ),
+        )
+
+        if self.params.get("do_sim_low_res"):
+            tr_transforms.append(
+                SimulateLowResolutionTransform(
+                    p_per_sample=self.params.get("p_per_sample_sim_low_res"),
+                    p_per_channel=self.params.get("p_per_channel_sim_low_res"),
+                    zoom_range=self.params.get("sim_low_res_zoom_range"),
+                    per_channel=self.params.get("sim_low_res_per_channel"),
+                    order_downsample=self.params.get("sim_low_res_order_downsample"),
+                    order_upsample=self.params.get("sim_low_res_order_upsample"),
+                    ignore_axes=ignore_axes,
+                ),
+            )
+
+        if self.params.get("do_gamma_inverted"):
+            tr_transforms.append(
+                GammaTransform(
+                    gamma_range=self.params.get("gamma_range"),
+                    invert_image=True,
+                    per_channel=True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma_inverted"],
+                ),
+            )  # inverted gamma
+
+        if self.params.get("do_gamma"):
+            tr_transforms.append(
+                GammaTransform(
+                    gamma_range=self.params.get("gamma_range"),
+                    invert_image=False,
+                    per_channel=True,
+                    retain_stats=self.params.get("gamma_retain_stats"),
+                    p_per_sample=self.params["p_gamma"],
+                ),
+            )
+
+        if self.params.get("do_mirror") or self.params.get("mirror"):
+            tr_transforms.append(
+                nndet_transforms.MirrorTransform(
+                    data_key=data_key,
+                    label_key=label_key,
+                    point_key=point_key,
+                    axes=self.params.get("mirror_axes"),
+                )
+            )
+        # if self.params.get("use_mask_for_norm"):
+        #     use_mask_for_norm = self.params.get("use_mask_for_norm")
+        #     tr_transforms.append(
+        #         MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
+        #     )
+
+        tr_transforms.append(
+            ObjectPoints2BoxesTransform(
+                data_key="data",
+                box_coord_key="target_boxes",
+                box_label_key="target_classes",
+                point_key="target_points",
+            )
+        )
+
+        # tr_transforms.append(RemoveLabelTransform(-1, 0))
+        # tr_transforms.append(RenameTransform("seg", "target", True))
+        # tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
+        tr_transforms.append(NumpyToTensor(["data", "target_boxes", "target_classes"], "float"))
+        transforms = ComposePretty(tr_transforms)
+        # logger.info(f"Training Transforms: \n{transforms}")
+        return transforms
+
+    def get_validation_transforms(self):
+        data_key, label_key, point_key = self.get_keys()
+        val_transforms = []
+
+        val_transforms.append(
+            Boxes2ObjectPointsTransform(
+                data_key=data_key,
+                box_coord_key="target_boxes",
+                point_key=point_key,
+            )
+        )
+
+        if self.params.get("selected_data_channels"):
+            val_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
+        if self.params.get("selected_seg_channels"):
+            val_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
+        val_transforms.append(
+            nndet_transforms.CenterCropTransform(
+                crop_size=self.patch_size,
+                data_key=data_key,
+                label_key=label_key,
+                point_key=point_key,
+            )
+        )
+        # val_transforms.append(RemoveLabelTransform(-1, 0))
+        # val_transforms.append(RenameTransform("seg", "target", True))
+        # val_transforms.append(NumpyToTensor(["data", "target"], "float"))
+        val_transforms.append(
+            ObjectPoints2BoxesTransform(
+                data_key=data_key,
+                box_coord_key="target_boxes",
+                box_label_key="target_classes",
+                point_key=point_key,
+            )
+        )
+        val_transforms.append(NumpyToTensor(["data", "target_boxes", "target_classes"], "float"))
+        return ComposePretty(val_transforms)

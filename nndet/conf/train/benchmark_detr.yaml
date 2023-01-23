@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defaults:
-  - augment_cfg: noaug
+  - augment_cfg: more_modular
   - io_cfg: benchmark
   - trainer_cfg: smoke_detr
   - model_cfg: detr_focal
@@ -12,3 +12,14 @@ defaults:
 module: BoxCDETRC001Focal_S16
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
+
+
+# defaults:
+#   - augment_cfg: more_modular_boxes
+#   - io_cfg: benchmark
+#   - trainer_cfg: smoke_detr
+#   - model_cfg: detr_focal
+
+# module: BoxIOCDETRC001Focal_S16
+# plan: D3V001_3d # plan used for training
+# planner: D3V001 # planner used for preprocessing
