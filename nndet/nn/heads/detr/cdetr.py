@@ -60,7 +60,7 @@ class ConditionalDETRHead(DETRHead):
 
         preds = {"pred_cls_logits": class_logits[-1], "pred_box_coords": box_logits[-1]}
         if self.aux_loss:
-            # put remaining oututs into aux info
+            # put remaining outputs into aux info
             aux = [{"pred_cls_logits": a, "pred_box_coords": b} for a, b in zip(class_logits[:-1], box_logits[:-1])]
             preds["aux_outputs"] = aux
         return preds
