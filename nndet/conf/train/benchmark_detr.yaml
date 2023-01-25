@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defaults:
-  - augment_cfg: more_modular
+  - augment_cfg: more_modular  # noaug for pure model benchmark
   - io_cfg: benchmark
   - trainer_cfg: smoke_detr
   - model_cfg: detr_focal
