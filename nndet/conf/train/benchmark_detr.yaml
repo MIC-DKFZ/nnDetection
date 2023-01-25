@@ -9,17 +9,6 @@ defaults:
   - trainer_cfg: smoke_detr
   - model_cfg: detr_focal
 
-module: BoxCDETRC001Focal_S16
+module: BoxCDETRC002
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
-
-
-# defaults:
-#   - augment_cfg: more_modular_boxes
-#   - io_cfg: benchmark
-#   - trainer_cfg: smoke_detr
-#   - model_cfg: detr_focal
-
-# module: BoxIOCDETRC001Focal_S16
-# plan: D3V001_3d # plan used for training
-# planner: D3V001 # planner used for preprocessing
