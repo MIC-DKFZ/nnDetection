@@ -80,6 +80,8 @@ class AugModular(NoAug):
         - [optional] MirrorTransform
         - UtilTransforms
         """
+        if self.use_box_io:
+            raise NotImplementedError("Box Augs are not implemented for this augmentation pipeline")
         assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -237,6 +239,8 @@ class AugModularPlus(NoAug):
         - [optional] MirrorTransform
         - UtilTransforms
         """
+        if self.use_box_io:
+            raise NotImplementedError("Box Augs are not implemented for this augmentation pipeline")
         assert self.params.get("mirror") is None, "old version of params, use new keyword do_mirror"
 
         tr_transforms = []
@@ -505,6 +509,8 @@ class AugModularV2(NoAug):
         - Sharpening
         - UtilTransforms
         """
+        if self.use_box_io:
+            raise NotImplementedError("Box Augs are not implemented for this augmentation pipeline")
         tr_transforms = []
         if self.params["selected_data_channels"]:
             tr_transforms.append(
@@ -794,7 +800,7 @@ class AugModularWBoxes(NoAug):
         tr_transforms = []
         if self.params.get("selected_data_channels"):
             tr_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
-        if self.params.get("selected_seg_channels"):
+        if self.params.get("selected_seg_channels") and label_key is not None:
             tr_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
 
         tr_transforms.append(
@@ -932,11 +938,9 @@ class AugModularWBoxes(NoAug):
                     axes=self.params.get("mirror_axes"),
                 )
             )
-        # if self.params.get("use_mask_for_norm"):
-        #     use_mask_for_norm = self.params.get("use_mask_for_norm")
-        #     tr_transforms.append(
-        #         MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0)
-        #     )
+        if self.params.get("use_mask_for_norm") and label_key is not None:
+            use_mask_for_norm = self.params.get("use_mask_for_norm")
+            tr_transforms.append(MaskTransform(use_mask_for_norm, mask_idx_in_seg=0, set_outside_to=0))
 
         tr_transforms.append(
             ObjectPoints2BoxesTransform(
@@ -947,10 +951,14 @@ class AugModularWBoxes(NoAug):
             )
         )
 
-        # tr_transforms.append(RemoveLabelTransform(-1, 0))
-        # tr_transforms.append(RenameTransform("seg", "target", True))
-        # tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
-        tr_transforms.append(NumpyToTensor(["data", "target_boxes", "target_classes"], "float"))
+        _keys = ["data"]
+        if label_key is not None:
+            tr_transforms.append(RemoveLabelTransform(-1, 0))
+            tr_transforms.append(RenameTransform("seg", "target", True))
+            _keys.append("target")
+        if point_key is not None:
+            _keys.extend(["target_boxes", "target_classes"])
+        tr_transforms.append(NumpyToTensor(_keys, "float"))
         transforms = ComposePretty(tr_transforms)
         # logger.info(f"Training Transforms: \n{transforms}")
         return transforms
@@ -969,8 +977,9 @@ class AugModularWBoxes(NoAug):
 
         if self.params.get("selected_data_channels"):
             val_transforms.append(DataChannelSelectionTransform(self.params.get("selected_data_channels")))
-        if self.params.get("selected_seg_channels"):
+        if self.params.get("selected_seg_channels") and label_key is not None:
             val_transforms.append(SegChannelSelectionTransform(self.params.get("selected_seg_channels")))
+
         val_transforms.append(
             nndet_transforms.CenterCropTransform(
                 crop_size=self.patch_size,
@@ -979,9 +988,7 @@ class AugModularWBoxes(NoAug):
                 point_key=point_key,
             )
         )
-        # val_transforms.append(RemoveLabelTransform(-1, 0))
-        # val_transforms.append(RenameTransform("seg", "target", True))
-        # val_transforms.append(NumpyToTensor(["data", "target"], "float"))
+
         val_transforms.append(
             ObjectPoints2BoxesTransform(
                 data_key=data_key,
@@ -990,5 +997,14 @@ class AugModularWBoxes(NoAug):
                 point_key=point_key,
             )
         )
-        val_transforms.append(NumpyToTensor(["data", "target_boxes", "target_classes"], "float"))
+
+        _keys = ["data"]
+        if label_key is not None:
+            val_transforms.append(RemoveLabelTransform(-1, 0))
+            val_transforms.append(RenameTransform("seg", "target", True))
+            _keys.append("target")
+        if point_key is not None:
+            _keys.extend(["target_boxes", "target_classes"])
+        val_transforms.append(NumpyToTensor(_keys, "float"))
+
         return ComposePretty(val_transforms)

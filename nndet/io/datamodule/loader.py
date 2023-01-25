@@ -62,9 +62,10 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             memmap_mode: Do not change this. Defaults to "r".
             num_batches_per_epoch: number of batcher per epoch
             load_seg: load segmentation map into `seg` key.
-            load_box: load bounding boxes into `box` key. Working with
-                boxes directly is significnatly more efficient in terms
-                of IO and augmentation but less accurate during augmentation.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -326,6 +327,8 @@ class DataLoader3D(
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Dataloder for 3D Data.
@@ -346,6 +349,11 @@ class DataLoader3D(
                 without any objects
             offset_prob: probability to apply additional offsets of objects.
             offset_magn: magnitude of additional offset.
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -363,6 +371,8 @@ class DataLoader3D(
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -411,6 +421,11 @@ class DataLoader3DOffset(
                 without any objects
             offset_prob: probability to apply additional offsets of objects.
             offset_magn: magnitude of additional offset.
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -456,6 +471,8 @@ class DataLoader3DOffsetV2(
         offset_prob: float = 1.0,
         offset_magn: float = 1.0,
         max_size_pct: float = 1.0,
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Dataloder for 3D Data.
@@ -480,6 +497,11 @@ class DataLoader3DOffsetV2(
             max_size_pct: if object size exceeds this percentage of the
                 patch size the patch center will be sampled randomly
                 within the box instead of an offeset.
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -497,6 +519,8 @@ class DataLoader3DOffsetV2(
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -525,6 +549,8 @@ class DataLoader3DOffsetObjectBalanced(
         offset_magn: float = 1.0,
         max_size_pct: float = 1.0,
         selection_mode: Union[str, SelectionMode] = "uniform",
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Dataloder for 3D Data.
@@ -554,6 +580,11 @@ class DataLoader3DOffsetObjectBalanced(
                 sampled each object class with the sample probability.
                 'sqrt' applies sqrt to the number of objects per class and
                 uses those values for weighted sampling.
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -571,6 +602,8 @@ class DataLoader3DOffsetObjectBalanced(
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -600,6 +633,8 @@ class DataLoader3DOffsetPatientBalanced(
         offset_magn: float = 1.0,
         max_size_pct: float = 1.0,
         selection_mode: Union[str, SelectionMode] = "uniform",
+        load_seg: bool = True,
+        load_box: bool = False,
     ):
         """
         Dataloder for 3D Data.
@@ -628,6 +663,11 @@ class DataLoader3DOffsetPatientBalanced(
                 sampled each object class with the sample probability.
                 'sqrt' applies sqrt to the number of objects per class and
                 uses those values for weighted sampling.
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to
@@ -645,6 +685,8 @@ class DataLoader3DOffsetPatientBalanced(
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
+            load_seg=load_seg,
+            load_box=load_box,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -680,6 +722,11 @@ class NoiseLoader(BaseDataLoader3D):
             oversample_foreground_percent: Ignored.
             memmap_mode: Ignored.
             num_batches_per_epoch: number of batcher per epoch
+            load_seg: load segmentation map into `seg` key.
+            load_box: load bounding boxes into `target_boxes` and
+                `target_classes` key. Working with boxes directly is
+                significnatly more efficient in terms of IO and augmentation
+                but less accurate during augmentation.
 
         Raises:
             ValueError: patch size of dataloder and final patch size need to

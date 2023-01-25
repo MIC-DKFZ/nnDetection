@@ -75,7 +75,7 @@ order_data: 1
 border_mode_data: "constant"
 border_cval_data: 0
 order_seg: 0
-border_cval_seg: -1
+border_cval_seg: 0  # since we con't have MaskTransform with points we pad with 0 instead of -1
 border_mode_seg: "constant"
 
 random_crop: False
