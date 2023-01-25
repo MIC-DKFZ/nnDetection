@@ -155,11 +155,11 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                     case ids
 
         """
-        data_batch = np.zeros(self.data_shape_batch, dtype=float)
+        data_batch = np.zeros(self.data_shape_batch, dtype=np.float16)
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
         if self.load_seg:
-            seg_batch = np.zeros(self.seg_shape_batch, dtype=float)
+            seg_batch = np.zeros(self.seg_shape_batch, dtype=np.float16)
         if self.load_box:
             box_coord_batch = []
             box_label_batch = []
