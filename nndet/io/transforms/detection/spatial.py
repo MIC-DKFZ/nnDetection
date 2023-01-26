@@ -210,7 +210,7 @@ class SpatialTransform(AbstractTransform):
                 p = ops_np.points_to_cartesian(points)
 
             # data and seg directly saved into arrays
-            data_result[b], seg_result[b], point_sample = augment_spatial(
+            data_result[b], seg_sample, point_sample = augment_spatial(
                 # inputs
                 data=data[b],
                 seg=seg[b] if seg is not None else None,
@@ -247,6 +247,8 @@ class SpatialTransform(AbstractTransform):
                 random_crop=self.random_crop,
                 patch_center_dist_from_border=self.patch_center_dist_from_border,
             )
+            if seg is not None:
+                seg_result[b] = seg_sample
             if points is not None:
                 points_result.append(ops_np.points_to_homogeneous([point_sample])[0])
 
