@@ -7,7 +7,7 @@ from batchgenerators.augmentations.spatial_transformations import (
     augment_spatial as augmen_spatial_bg,
 )
 
-from nndet.io.transforms.random.spatial import SpatialTransform, augment_spatial
+from nndet.io.transforms.detection.spatial import SpatialTransform, augment_spatial
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def test_elastic_spatial_fn_large_patch(example):
     assert np.allclose(seg_points, np.round(points_result))
 
 
-@patch("nndet.io.transforms.random.spatial.np.random.uniform", Mock(return_value=1 / 3))
+@patch("nndet.io.transforms.detection.spatial.np.random.uniform", Mock(return_value=1 / 3))
 def test_scale_spatial_fn(example):
     data, seg, points = example
     _, seg_result, points_result = augment_spatial(
@@ -211,6 +211,24 @@ def test_rot90_z_bigger_p_spatial_fn(example):
     )
     # 5, 9, 9 for p=15
     expected_points = np.array([[[7.0, 11.0, 11.0]]], dtype=float)
+    assert np.allclose(expected_points, points_result)
+    _, p0, p1, p2 = np.nonzero(seg_result)
+    seg_points = np.stack([p0, p1, p2], axis=-1)[None]
+    assert np.allclose(seg_points, points_result)
+
+
+def test_crop_outside_spatial_fn(example):
+    data, seg, points = example
+    _, seg_result, points_result = augment_spatial(
+        data=data,
+        seg=seg,
+        points=points,
+        do_elastic_deform=False,
+        do_rotation=False,
+        do_scale=False,
+        patch_size=(3, 3, 3),
+    )
+    expected_points = np.array([[[3.0, 3.0, 3.0]]], dtype=float)
     assert np.allclose(expected_points, points_result)
     _, p0, p1, p2 = np.nonzero(seg_result)
     seg_points = np.stack([p0, p1, p2], axis=-1)[None]

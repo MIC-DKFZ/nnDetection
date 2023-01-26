@@ -5,7 +5,7 @@ import pytest
 
 import nndet.core.ops_np as ops_np
 from nndet.io.transforms.instances import instances_to_boxes_np
-from nndet.io.transforms.random.rot90 import Rot90Transform, rot90_array, rot90_points
+from nndet.io.transforms.detection.rot90 import Rot90Transform, rot90_array, rot90_points
 
 
 @pytest.fixture
@@ -132,7 +132,7 @@ def test_rot90_transform(points_origin):
             batch["seg"][0, 0, 0, 0, 0] = 1
 
             trafo = Rot90Transform(data_key="data", label_key="seg", point_key="point", num_rot=(num_rot,))
-            with patch("nndet.io.transforms.random.rot90.np.random.choice", choice_wrapper(axes)):
+            with patch("nndet.io.transforms.detection.rot90.np.random.choice", choice_wrapper(axes)):
                 batch_produced = trafo(**batch)
 
             boxes_rot = instances_to_boxes_np(batch_produced["seg"], dim=3)[0]
