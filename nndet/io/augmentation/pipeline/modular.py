@@ -812,9 +812,10 @@ class AugModularWBoxes(NoAug):
         )
 
         # don't do color augmentations while in 2d mode with 3d data because the color channel is overloaded!!
+        dummy_2D_keys = ["data"] if label_key is None else ["data", "seg"]
         if self.params.get("dummy_2D", False):
             ignore_axes = (0,)
-            tr_transforms.append(Convert3DTo2DTransform())
+            tr_transforms.append(nndet_transforms.Convert3DTo2DTransform(array_keys=dummy_2D_keys, point_key=point_key))
         else:
             ignore_axes = None
 
@@ -849,7 +850,7 @@ class AugModularWBoxes(NoAug):
         )
 
         if self.params.get("dummy_2D"):
-            tr_transforms.append(Convert2DTo3DTransform())
+            tr_transforms.append(nndet_transforms.Convert2DTo3DTransform(array_keys=dummy_2D_keys, point_key=point_key))
 
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
