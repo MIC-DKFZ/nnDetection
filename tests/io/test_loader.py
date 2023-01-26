@@ -24,7 +24,7 @@ def example_case():
     return data, seg
 
 
-EXAMPLE_CASE_EMPTY = {"boxes": np.array([[]]), "labels": np.array([])}
+EXAMPLE_CASE_EMPTY = {"boxes": np.array([[]]), "classes": np.array([])}
 EXAMPLE_CASE = {
     "boxes": np.array(
         [
@@ -34,7 +34,7 @@ EXAMPLE_CASE = {
         ],
         dtype=float,
     ),
-    "labels": np.array([1, 0, 1], dtype=int),
+    "classes": np.array([1, 0, 1], dtype=int),
 }
 EXAMPLE_CASE_SINGLE_PIXEL = {
     "boxes": np.array(
@@ -43,7 +43,7 @@ EXAMPLE_CASE_SINGLE_PIXEL = {
         ],
         dtype=float,
     ),
-    "labels": np.array([2], dtype=int),
+    "classes": np.array([2], dtype=int),
 }
 
 
