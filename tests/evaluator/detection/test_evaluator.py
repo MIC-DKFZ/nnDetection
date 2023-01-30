@@ -2,6 +2,8 @@ import json
 
 import numpy as np
 import pytest
+from pycocotools.coco import COCO
+from pycocotools.cocoeval import COCOeval
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
@@ -117,36 +119,19 @@ class TestDetectionEvaluator:
         assert np.isclose(res[1]["dtMatches"], [2, 3]).all()
 
     def test_compute_ap_whole_dataset(self):
-        with open("/home/m612r/Code/cocoapi/results/instances_val2014_fakebbox100_results.json") as f:
+        detection_file = "new_results_no_crowd_fixed_area.json"
+        annotation_file = "new_ann_no_crowd_fixed_area.json"
+        coco_eval = evaluate_with_pycoco(detection_file, annotation_file)
+        with open(detection_file) as f:
             fake_detections = json.load(f)
-        # with open("/home/m612r/Code/cocoapi/annotations/instances_val2014.json") as g:
-        with open("new_ann_no_crowd.json") as g:
+        with open(annotation_file) as g:
             gt_coco = json.load(g)
-        annotations = gt_coco["annotations"]
-        # Need: pred_boxes, classes, scores, gt_boxes, gt_classes, gt_ignore
-        # Group by image and predict
-        detections_by_image = {}
-        for detection in fake_detections:
-            id = detection["image_id"]
-            if id not in detections_by_image:
-                detections_by_image[id] = {"score": [], "box": [], "class": []}
-            detections_by_image[id]["score"].append(detection["score"])
-            detections_by_image[id]["box"].append(detection["bbox"])
-            detections_by_image[id]["class"].append(detection["category_id"])
-        annotations_by_image = {}
-        for annotation in annotations:
-            id = annotation["image_id"]
-            if id not in annotations_by_image:
-                annotations_by_image[id] = {"box": [], "class": [], "gt_ignore": []}
-            annotations_by_image[id]["box"].append(annotation["bbox"])
-            annotations_by_image[id]["class"].append(annotation["category_id"])
-            annotations_by_image[id]["gt_ignore"].append(annotation["iscrowd"])
 
-        # Create evaluator
-
+        detections_by_image, annotations_by_image = convert_to_nndet_format(fake_detections, gt_coco)
+        # Create Evaluator
         classes = [cat["name"] for cat in gt_coco["categories"]]
         coco = COCOMetric(
-            classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), max_detection=(100,), verbose=True
+            classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), max_detection=(1, 10, 100), verbose=True
         )
         ranges = {"small": (0**2, 32**2), "medium": (32**2, 96**2), "large": (96**2, 1e5**2)}
         evaluator = BoxEvaluator(
@@ -156,15 +141,71 @@ class TestDetectionEvaluator:
         for id, detection in detections_by_image.items():
             annotation = annotations_by_image[id]
             evaluator.run_online_evaluation(
-                [ops_np.box_center2point_format(np.array(detection["box"]))],
+                [np.array(detection["box"])],
                 [np.array(detection["class"])],
                 [np.array(detection["score"])],
-                [ops_np.box_center2point_format(np.array(annotation["box"]))],
+                [np.array(annotation["box"])],
                 [np.array(annotation["class"])],
                 [np.array(annotation["gt_ignore"])],
                 case_id=id,
             )
 
         score, _ = evaluator.finish_online_evaluation()
-        imp_scores = {key: value for key, value in score.items() if key[:3] == "mAP" or key[:2] == "AP"}
+        imp_scores = {key: np.round(value, 3) for key, value in score.items() if key[:3] == "mAP" or key[:2] == "AP"}
+        coco_scores = np.round(coco_eval.stats, 3)
+        # Fails for rounding to 4 even for the first one
+        assert coco_scores[0] == imp_scores["mAP_IoU_0.50_0.95_0.05_MaxDet_100"]
+        assert coco_scores[1] == imp_scores["AP_IoU_0.50_MaxDet_100"]
+        assert coco_scores[2] == imp_scores["AP_IoU_0.75_MaxDet_100"]
+        assert coco_scores[3] == imp_scores["mAP_small_IoU_0.50_0.95_0.05_MaxDet_100"]
+        assert coco_scores[4] == imp_scores["mAP_medium_IoU_0.50_0.95_0.05_MaxDet_100"]
+        assert coco_scores[5] == imp_scores["mAP_large_IoU_0.50_0.95_0.05_MaxDet_100"]
         assert score is not None
+        assert imp_scores is not None
+
+
+def convert_to_nndet_format(fake_detections, gt_coco):
+    annotations = gt_coco["annotations"]
+    # Create Category map
+    category_map = {}
+    for i, category_dict in enumerate(gt_coco["categories"]):
+        category_map[category_dict["id"]] = i
+
+    # Need: pred_boxes, classes, scores, gt_boxes, gt_classes, gt_ignore
+    # Group by image and predict
+    detections_by_image = {}
+    for detection in fake_detections:
+        id = detection["image_id"]
+        if id not in detections_by_image:
+            detections_by_image[id] = {"score": [], "box": [], "class": []}
+        detections_by_image[id]["score"].append(detection["score"])
+        box = detection["bbox"]
+        out_box = np.array([box[0], box[1], box[0] + box[2], box[1] + box[3]])
+        detections_by_image[id]["box"].append(out_box)
+        detections_by_image[id]["class"].append(category_map[detection["category_id"]])
+    annotations_by_image = {}
+    for annotation in annotations:
+        id = annotation["image_id"]
+        if id not in annotations_by_image:
+            annotations_by_image[id] = {"box": [], "class": [], "gt_ignore": []}
+        box = annotation["bbox"]
+        out_box = np.array([box[0], box[1], box[0] + box[2], box[1] + box[3]])
+        annotations_by_image[id]["box"].append(out_box)
+        annotations_by_image[id]["class"].append(category_map[annotation["category_id"]])
+        annotations_by_image[id]["gt_ignore"].append(annotation["iscrowd"])
+    return detections_by_image, annotations_by_image
+
+
+def evaluate_with_pycoco(detection_file, annotation_file):
+    cocoGt = COCO(annotation_file)
+    cocoDt = cocoGt.loadRes(detection_file)
+
+    imgIds = sorted(cocoGt.getImgIds())
+    # running evaluation
+    annType = "bbox"
+    cocoEval = COCOeval(cocoGt, cocoDt, annType)
+    cocoEval.params.imgIds = imgIds
+    evaluation = cocoEval.evaluate()
+    accumulation = cocoEval.accumulate()
+    summary = cocoEval.summarize()
+    return cocoEval

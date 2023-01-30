@@ -127,9 +127,9 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_ignore_criterion = np.zeros(gt_ignore[i].shape)
                 # If there is no ground truth in this image, we don't need to change the ignored values
                 if not gt_ignore[i].size == 0:
-                    for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
-                        if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
-                            gt_ignore_criterion[j] = 1
+                    gt_ignore_criterion = (gt_boxes_img_criterion <= criterion_range[0]) | (
+                        gt_boxes_img_criterion > criterion_range[1]
+                    )
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
             # Get all matches
             temp_matches = self.match_fn(
@@ -190,7 +190,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 # Find outliers
                 dt_outside = np.array(
                     [
-                        dt_box_criterion < self.criterion_ranges[results_key][0]
+                        dt_box_criterion <= self.criterion_ranges[results_key][0]
                         or dt_box_criterion > self.criterion_ranges[results_key][1]
                         for dt_box_criterion in dt_boxes_criterion
                     ]

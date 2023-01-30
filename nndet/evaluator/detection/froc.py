@@ -162,7 +162,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    f"{save_name}_num_gt": 0,
+                    "FROC_num_gt": 0,
                 },
             )
 
@@ -183,7 +183,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    f"{save_name}_num_gt": num_gt,
+                    "FROC_num_gt": num_gt,
                 },
             )
 
@@ -208,7 +208,7 @@ class FROCMetric(DetectionMetric):
         curves = {f"{save_name}_curve_IoU_{key:.2f}": c for key, c in curves.items()}
         curves["FROC_fpi_thresholds"] = self.fpi_thresholds
         curves["FROC_num_images"] = num_images
-        curves[f"{save_name}_num_gt"] = num_gt
+        curves["FROC_num_gt"] = num_gt
         return scores, curves
 
     @staticmethod
