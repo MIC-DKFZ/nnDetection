@@ -160,8 +160,6 @@ class TestDetectionEvaluator:
         assert coco_scores[3] == imp_scores["mAP_small_IoU_0.50_0.95_0.05_MaxDet_100"]
         assert coco_scores[4] == imp_scores["mAP_medium_IoU_0.50_0.95_0.05_MaxDet_100"]
         assert coco_scores[5] == imp_scores["mAP_large_IoU_0.50_0.95_0.05_MaxDet_100"]
-        assert score is not None
-        assert imp_scores is not None
 
 
 def convert_to_nndet_format(fake_detections, gt_coco):
