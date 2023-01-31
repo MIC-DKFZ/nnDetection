@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
@@ -39,9 +39,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
     ):
         """
@@ -59,8 +57,6 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
 
         Raises:
@@ -82,11 +78,6 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.patch_size_final = patch_size_final
         self.oversample_foreground_percent = oversample_foreground_percent
         self.memmap_mode = memmap_mode
-        self.pad_mode = pad_mode
-        self.pad_kwargs_data = pad_kwargs_data if pad_kwargs_data is not None else {}
-        if "constant_values" not in self.pad_kwargs_data:
-            # this is also the numpy default; to be sure that is won't change we set it manually
-            self.pad_kwargs_data["constant_values"] = 0  # pad 0 is used during inference
         self.num_batches_per_epoch = num_batches_per_epoch
 
         # we sample bigger patches and create a center crop during augmentation
@@ -188,8 +179,8 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             data_batch[batch_idx] = save_get_crop(
                 case_data,
                 crop=crop,
-                mode=self.pad_mode,
-                **self.pad_kwargs_data,
+                mode="constant",
+                constant_values=0,
             )[0]
             seg_batch[batch_idx] = save_get_crop(
                 case_seg,
@@ -282,7 +273,7 @@ class BaseDataLoader2D(BaseDataLoader3D):
                     candidates=candidates,
                 )
 
-            data_batch[batch_idx] = save_get_crop(case_data, crop=crop, mode=self.pad_mode, **self.pad_kwargs_data,)[
+            data_batch[batch_idx] = save_get_crop(case_data, crop=crop, mode="constant", constant_values=0,)[
                 0
             ][:, 0]
             seg_batch[batch_idx] = save_get_crop(case_seg, crop=crop, mode="constant", constant_values=-1,)[
@@ -318,9 +309,7 @@ class DataLoader3D(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -340,8 +329,6 @@ class DataLoader3D(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
             force_bg_case: force extraction of background patches from cases
                 without any objects
@@ -363,8 +350,6 @@ class DataLoader3D(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.force_bg_case = force_bg_case
@@ -386,9 +371,7 @@ class DataLoader3DOffset(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -409,8 +392,6 @@ class DataLoader3DOffset(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
             force_bg_case: force extraction of background patches from cases
                 without any objects
@@ -432,8 +413,6 @@ class DataLoader3DOffset(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.force_bg_case = force_bg_case
@@ -455,9 +434,7 @@ class DataLoader3DOffsetV2(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -479,8 +456,6 @@ class DataLoader3DOffsetV2(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
             force_bg_case: force extraction of background patches from cases
                 without any objects
@@ -505,8 +480,6 @@ class DataLoader3DOffsetV2(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.force_bg_case = force_bg_case
@@ -529,9 +502,7 @@ class DataLoader3DOffsetObjectBalanced(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -555,8 +526,6 @@ class DataLoader3DOffsetObjectBalanced(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
             force_bg_case: force extraction of background patches from cases
                 without any objects
@@ -585,8 +554,6 @@ class DataLoader3DOffsetObjectBalanced(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.force_bg_case = force_bg_case
@@ -610,9 +577,7 @@ class DataLoader3DOffsetPatientBalanced(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         force_bg_case: bool = False,
         offset_prob: float = 1.0,
@@ -635,8 +600,6 @@ class DataLoader3DOffsetPatientBalanced(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             num_batches_per_epoch: number of batcher per epoch
             force_bg_case: force extraction of background patches from cases
                 without any objects
@@ -665,8 +628,6 @@ class DataLoader3DOffsetPatientBalanced(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.force_bg_case = force_bg_case
@@ -690,9 +651,7 @@ class DataLoader2DOffset(
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
         oversample_foreground_percent: float = 0.5,
-        memmap_mode: str = "r+",
-        pad_mode: str = "constant",
-        pad_kwargs_data: Optional[Dict[str, Any]] = None,
+        memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
         offset_prob: float = 1.0,
     ):
@@ -711,8 +670,6 @@ class DataLoader2DOffset(
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
-            pad_mode: Padding mode for data. Defaults to "constant".
-            pad_kwargs_data: Addition kwargs for data padding. Defaults to None.
             offset_prob: probability to apply additional offsets of objects.
 
         Raises:
@@ -726,8 +683,6 @@ class DataLoader2DOffset(
             patch_size_final=patch_size_final,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
-            pad_mode=pad_mode,
-            pad_kwargs_data=pad_kwargs_data,
             num_batches_per_epoch=num_batches_per_epoch,
         )
         self.offset_prob = offset_prob

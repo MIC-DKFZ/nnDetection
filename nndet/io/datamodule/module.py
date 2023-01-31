@@ -213,7 +213,6 @@ class BaseDatamodule(BaseModule):
             patch_size_generator=self.patch_size_generator,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            pad_mode="constant",
             num_batches_per_epoch=self.io_cfg["num_train_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
@@ -250,7 +249,6 @@ class BaseDatamodule(BaseModule):
             patch_size_generator=self.patch_size,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            pad_mode="constant",
             num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
             **self.dataloader_kwargs,
         )
