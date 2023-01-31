@@ -14,7 +14,7 @@ format-job:
     - python -c "import torch"
     - pip --version
     - echo "Install"
-    - pip install pre-commit==2.19.0
+    - pip install pre-commit
     - pip install git+https://github.com/mibaumgartner/reuse-tool.git
     - echo "Check Install"
     - pre-commit --version
