@@ -124,12 +124,12 @@ class DetectionEvaluator(AbstractEvaluator):
             gt_ignore_final = []
             for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
                 # TODO maybe should switch to use explicit boolean and not zeros?
-                gt_ignore_criterion = np.zeros(gt_ignore[i].shape)
+                gt_ignore_criterion = np.zeros(len(gt_ignore[i]))
                 # If there is no ground truth in this image, we don't need to change the ignored values
                 if not gt_ignore[i].size == 0:
-                    gt_ignore_criterion = (gt_boxes_img_criterion <= criterion_range[0]) | (
-                        gt_boxes_img_criterion > criterion_range[1]
-                    )
+                    for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
+                        if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
+                            gt_ignore_criterion[j] = 1
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
             # Get all matches
             temp_matches = self.match_fn(
