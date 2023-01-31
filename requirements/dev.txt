@@ -5,3 +5,4 @@ pre-commit
 sphinx
 pydata-sphinx-theme
 sphinx-toolbox
+pycocotools
