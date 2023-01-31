@@ -4,8 +4,12 @@ import numpy as np
 import pytest
 
 import nndet.core.ops_np as ops_np
+from nndet.io.transforms.detection.rot90 import (
+    Rot90Transform,
+    rot90_array,
+    rot90_points,
+)
 from nndet.io.transforms.instances import instances_to_boxes_np
-from nndet.io.transforms.detection.rot90 import Rot90Transform, rot90_array, rot90_points
 
 
 @pytest.fixture
