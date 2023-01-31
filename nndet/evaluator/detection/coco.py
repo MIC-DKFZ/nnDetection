@@ -280,8 +280,8 @@ class COCOMetric(DetectionMetric):
                 tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
                 fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
-                tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-                fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+                tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
+                fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
 
                 for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
                     tp, fp = np.array(tp), np.array(fp)
