@@ -123,6 +123,7 @@ class FROCMetric(DetectionMetric):
 
         if self.save_dir is not None:
             self.plot_froc_curves(curves)
+
         return scores, curves
 
     def compute_froc_mul_iou(
@@ -162,7 +163,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    "FROC_num_gt": 0,
+                    f"{save_name}_num_gt": 0,
                 },
             )
 
@@ -183,7 +184,7 @@ class FROCMetric(DetectionMetric):
                     "froc_curve": np.zeros(len(self.fpi_thresholds)),
                     "FROC_fpi_thresholds": self.fpi_thresholds,
                     "FROC_num_images": num_images,
-                    "FROC_num_gt": num_gt,
+                    f"{save_name}_num_gt": num_gt,
                 },
             )
 
@@ -208,7 +209,7 @@ class FROCMetric(DetectionMetric):
         curves = {f"{save_name}_curve_IoU_{key:.2f}": c for key, c in curves.items()}
         curves["FROC_fpi_thresholds"] = self.fpi_thresholds
         curves["FROC_num_images"] = num_images
-        curves["FROC_num_gt"] = num_gt
+        curves[f"{save_name}_num_gt"] = num_gt
         return scores, curves
 
     @staticmethod
@@ -306,20 +307,20 @@ class FROCMetric(DetectionMetric):
                 {cls_name}_FROC_score_IoU_{key:.2f}: for class specific froc
         """
         # plot normal froc curves
-        _, frocs, ious, num_images, num_gt = select_froc_curves(curves)
+        save_name = self.get_save_name()
+        _, frocs, ious, num_images, num_gt = select_froc_curves(curves, save_name=save_name)
         fig, ax = get_froc_ax(self.fpi_thresholds)
         for froc, iou in zip(frocs, ious):
             ax.plot(self.fpi_thresholds, froc, "o-", label=f"IoU:{iou:.2f}")
 
-        # Get save name and save plot
-        save_name = self.get_save_name()
+        # Save plot
         ax.set_title(f"{save_name} N_img={num_images} N_gt={num_gt}")
         ax.legend(loc="lower right")
         fig.savefig(self.save_dir / f"{save_name}.png")
         plt.close(fig)
 
         # plot cls frocs
-        selection = select_froc_curves_cls(curves)
+        selection = select_froc_curves_cls(curves, save_name=save_name)
         reordered = defaultdict(list)
         for class_name, (names, frocs, ious, ni, ng) in selection.items():
             for froc, iou in zip(frocs, ious):
@@ -372,6 +373,7 @@ def get_froc_ax(
 
 def select_froc_curves(
     curves: Dict[str, np.ndarray],
+    save_name: Optional[str] = "FROC",
     prefix: Optional[str] = None,
 ) -> Tuple[List[str], List[np.ndarray], List[float], int, int]:
     """
@@ -380,6 +382,8 @@ def select_froc_curves(
     Args:
         curves: dict to select frocs from. Class specific frocs need to
             follow FROC_score_IoU_{key:.2f} pattern
+        save_name: save name of the FROC metric
+        prefix: Optional class prefix
 
     Returns:
         Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
@@ -400,7 +404,7 @@ def select_froc_curves(
         num_images = curves[n]
     else:
         num_images = np.nan
-    if (n := f"{prefix}FROC_num_gt") in curves:
+    if (n := f"{prefix}{save_name}_num_gt") in curves:
         num_gt = curves[n]
     else:
         num_gt = np.nan
@@ -409,6 +413,7 @@ def select_froc_curves(
 
 def select_froc_curves_cls(
     curves: Dict[str, np.ndarray],
+    save_name: Optional[str] = "FROC",
 ) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float], int, int]]:
     """
     Select class specific froc curves
@@ -416,6 +421,7 @@ def select_froc_curves_cls(
     Args:
         curves: dict to select frocs from. Class specific frocs need to follow
             {cls_name}_FROC_score_IoU_{key:.2f} pattern
+        save_name: current save name of the FROC metric
 
     Returns:
         Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
@@ -435,5 +441,5 @@ def select_froc_curves_cls(
     all_classes = list(set(all_classes))
     output = {}
     for cls_name in all_classes:
-        output[cls_name] = select_froc_curves(curves, prefix=f"{cls_name}_")
+        output[cls_name] = select_froc_curves(curves, save_name=save_name, prefix=f"{cls_name}_")
     return output

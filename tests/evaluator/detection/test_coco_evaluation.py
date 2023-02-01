@@ -1,9 +1,11 @@
 import io
 import json
 import math
+import os
 import tempfile
 import zipfile
 from copy import deepcopy
+from typing import Dict, Tuple
 
 import numpy as np
 import pytest
@@ -16,7 +18,7 @@ from nndet.evaluator.det import BoxEvaluator
 from nndet.evaluator.detection import COCOMetric
 
 
-def filter_dataset(predictions, annotations):
+def filter_dataset(predictions: Dict, annotations: Dict) -> Tuple[Dict, Dict]:
     imageIds = []
     for result in predictions:
         imageIds.append(result["image_id"])
@@ -57,50 +59,17 @@ def filter_dataset(predictions, annotations):
     return predictions, new_an_dict
 
 
-@pytest.fixture
-def download_data():
-
-    r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
-    z = zipfile.ZipFile(io.BytesIO(r.content))
-    with z.open("annotations/instances_val2014.json") as annotation_zip:
-        annotation_dict = json.load(annotation_zip)
-    predictions = requests.get(
-        "https://raw.githubusercontent.com/cocodataset/cocoapi/master/results"
-        "/instances_val2014_fakebbox100_results.json"
-    ).json()
-
-    filtered_predictions, filtered_annotations = filter_dataset(predictions, annotation_dict)
-    annotation_path = "temp_annotations.json"
-    prediction_path = "temp_predictions.json"
-    with open(annotation_path, "w") as f:
-        json.dump(filtered_annotations, f)
-    with open(prediction_path, "w") as g:
-        json.dump(filtered_predictions, g)
-
-    # COCO Eval
-    cocoGt = COCO(annotation_path)
-    cocoDt = cocoGt.loadRes(prediction_path)
-
-    imgIds = sorted(cocoGt.getImgIds())
-    # running evaluation
-    annType = "bbox"
-    cocoEval = COCOeval(cocoGt, cocoDt, annType)
-    cocoEval.params.imgIds = imgIds
-    evaluation = cocoEval.evaluate()
-    accumulation = cocoEval.accumulate()
-    summary = cocoEval.summarize()
-
-    # Convert to nndet format
-    annotations = filtered_annotations["annotations"]
+def convert_to_nndet_format(predictions_in: Dict, annotations_in: Dict) -> Tuple[Dict, Dict]:
+    annotations = annotations_in["annotations"]
     # Create Category map
     category_map = {}
-    for i, category_dict in enumerate(filtered_annotations["categories"]):
+    for i, category_dict in enumerate(annotations_in["categories"]):
         category_map[category_dict["id"]] = i
 
     # Need: pred_boxes, classes, scores, gt_boxes, gt_classes, gt_ignore
     # Group by image and predict
     detections_by_image = {}
-    for detection in filtered_predictions:
+    for detection in predictions_in:
         id = detection["image_id"]
         if id not in detections_by_image:
             detections_by_image[id] = {"score": [], "box": [], "class": []}
@@ -120,6 +89,48 @@ def download_data():
         annotations_by_image[id]["class"].append(category_map[annotation["category_id"]])
         annotations_by_image[id]["gt_ignore"].append(annotation["iscrowd"])
 
+    return detections_by_image, annotations_by_image
+
+
+@pytest.fixture
+def download_data():
+    # Download data and load into arrays
+    r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    with z.open("annotations/instances_val2014.json") as annotation_zip:
+        annotation_dict = json.load(annotation_zip)
+    predictions = requests.get(
+        "https://raw.githubusercontent.com/cocodataset/cocoapi/master/results"
+        "/instances_val2014_fakebbox100_results.json"
+    ).json()
+
+    # Filter out iscrowd instances and fix the wrong area entries
+    filtered_predictions, filtered_annotations = filter_dataset(predictions, annotation_dict)
+    annotation_path = "temp_annotations.json"
+    prediction_path = "temp_predictions.json"
+    with open(annotation_path, "w") as f:
+        json.dump(filtered_annotations, f)
+    with open(prediction_path, "w") as g:
+        json.dump(filtered_predictions, g)
+
+    # COCO Eval
+    cocoGt = COCO(annotation_path)
+    cocoDt = cocoGt.loadRes(prediction_path)
+    imgIds = sorted(cocoGt.getImgIds())
+    # running evaluation
+    annType = "bbox"
+    cocoEval = COCOeval(cocoGt, cocoDt, annType)
+    cocoEval.params.imgIds = imgIds
+    evaluation = cocoEval.evaluate()
+    accumulation = cocoEval.accumulate()
+    summary = cocoEval.summarize()
+    # After evaluation with pycoco, delete temp files
+    os.remove(annotation_path)
+    os.remove(prediction_path)
+
+    # Convert to nndet format
+    detections_by_image, annotations_by_image = convert_to_nndet_format(filtered_predictions, filtered_annotations)
+
     # Create COCO Metric
     classes = [cat["name"] for cat in filtered_annotations["categories"]]
     coco = COCOMetric(
@@ -129,7 +140,6 @@ def download_data():
     evaluator = BoxEvaluator(
         [coco], iou_fn=ops_np.box_iou_np, box_criterion=ops_np.box_area_np, criterion_ranges=ranges
     )
-
     return cocoEval, detections_by_image, annotations_by_image, evaluator
 
 

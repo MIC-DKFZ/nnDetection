@@ -126,7 +126,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 # TODO maybe should switch to use explicit boolean and not zeros?
                 gt_ignore_criterion = np.zeros(len(gt_ignore[i]))
                 # If there is no ground truth in this image, we don't need to change the ignored values
-                if not gt_ignore[i].size == 0:
+                if not len(gt_ignore[i]) == 0:
                     for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
                         if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
                             gt_ignore_criterion[j] = 1
@@ -186,7 +186,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 # if there are predictions, find unmatched predictions outside the ranges and add to dtIgnore
                 pred_boxes_masked = pboxes[pred_mask]
                 pred_scores_masked = pscores[pred_mask]
-                # filter for max_detections highest scoring predictions to speed up computation
+                # filter for max_detections and only use the highest scoring predictions to speed up computation
                 dt_ind = np.argsort(-pred_scores_masked, kind="mergesort")
                 dt_ind = dt_ind[:max_detections]
 
@@ -237,6 +237,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
                 if curve is not None:
                     metric_curves.update(curve)
+        # Add entries containing the criterion ranges
         metric_curves.update(
             {
                 f"criterion_{tag}" if tag != "" else "criterion": criterion_range
