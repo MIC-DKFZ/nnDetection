@@ -55,7 +55,6 @@ class BaseDETR(AbstractDetector):
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
         self.transformer = transformer
-        self.decoder_layers = transformer.dec_layers
         self.query_pos = nn.Embedding(detection_per_img, query_dim)
 
         # Build the final layers for classification and box regression

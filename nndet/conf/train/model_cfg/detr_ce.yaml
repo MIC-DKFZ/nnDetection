@@ -11,11 +11,17 @@ backbone_kwargs: # keyword arguments passed to encoder
 # transformer
 transformer_kwargs: {} # Transformer kwargs: needed
 num_encoder_layers: 3
+encoder_post_norm: False
 num_decoder_layers: 3
+decoder_post_norm: True
+transformer_attn_dropout: 0.0
+transformer_ffn_dropout: 0.0
 dim_feedforward: 1024
 hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
 query_dim: 384 # should be the same as hidden_dim except for DABDETR
 attention_heads: 8  # number of attention heads in the transformer
+
+
 
 # positional embedding keyword arguments
 pos_embed:
