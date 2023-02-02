@@ -21,8 +21,7 @@
 
 import copy
 import warnings
-from ctypes import Union
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -97,13 +96,13 @@ class BaseTransformerLayer(nn.Module):
     def forward(
         self,
         query: torch.Tensor,
-        key: torch.Tensor = None,
-        value: torch.Tensor = None,
-        query_pos: torch.Tensor = None,
-        key_pos: torch.Tensor = None,
-        attn_masks: List[torch.Tensor] = None,
-        query_key_padding_mask: torch.Tensor = None,
-        key_padding_mask: torch.Tensor = None,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        attn_masks: Optional[List[torch.Tensor]] = None,
+        query_key_padding_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
         """Forward function for `BaseTransformerLayer`.

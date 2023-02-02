@@ -29,6 +29,11 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.transformer import TransformerFacebook
 from nndet.nn.transformer.conditional_transformer import ConditionalTransformer
+from nndet.nn.transformer.conditional_transformer2 import (
+    ConditionalDetrTransformer,
+    ConditionalDetrTransformerDecoder,
+    ConditionalDetrTransformerEncoder,
+)
 from nndet.nn.transformer.detr_transformer import (
     DetrTransformer,
     DetrTransformerDecoder,
@@ -91,6 +96,19 @@ class BoxDETRUpdated(BoxDETRModuleUpdated):
     matcher_box_criterion_cls: Optional[
         BoxCriterion
     ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxCDETRUpdated(BoxDETRUpdated):
+    transformer_encoder_cls = ConditionalDetrTransformerEncoder
+    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_cls = ConditionalDetrTransformer
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
+
+    head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
+    head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
+    matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
 @MODULE_REGISTRY.register

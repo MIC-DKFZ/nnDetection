@@ -34,7 +34,9 @@ class DetrTransformerEncoder(TransformerLayerSequence):
         attn_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        post_norm: bool = True,
+        activation: nn.Module = nn.ReLU(),
+        post_norm: bool = False,
+        dim: int = 3,
         batch_first: bool = False,
     ):
         super(DetrTransformerEncoder, self).__init__(
@@ -50,6 +52,7 @@ class DetrTransformerEncoder(TransformerLayerSequence):
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
+                    activation=activation,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -69,13 +72,13 @@ class DetrTransformerEncoder(TransformerLayerSequence):
     def forward(
         self,
         query: torch.Tensor,
-        key: torch.Tensor = None,
-        value: torch.Tensor = None,
-        query_pos: torch.Tensor = None,
-        key_pos: torch.Tensor = None,
-        attn_masks: List[torch.Tensor] = None,
-        query_key_padding_mask: torch.Tensor = None,
-        key_padding_mask: torch.Tensor = None,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        attn_masks: Optional[List[torch.Tensor]] = None,
+        query_key_padding_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
 
@@ -106,8 +109,10 @@ class DetrTransformerDecoder(TransformerLayerSequence):
         attn_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
+        activation: nn.Module = nn.ReLU(),
         post_norm: bool = True,
         return_intermediate: bool = True,
+        dim: int = 3,
         batch_first: bool = False,
     ):
         super(DetrTransformerDecoder, self).__init__(
@@ -122,6 +127,7 @@ class DetrTransformerDecoder(TransformerLayerSequence):
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
+                    activation=activation,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -132,7 +138,7 @@ class DetrTransformerDecoder(TransformerLayerSequence):
         )
         self.return_intermediate = return_intermediate
         self.embed_dim = self.layers[0].embed_dim
-
+        self.dim = dim
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
@@ -199,7 +205,7 @@ class DetrTransformer(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.encoder.embed_dim
-
+        self.dim = decoder.dim
         self.init_weights()
 
     def init_weights(self):
@@ -214,10 +220,18 @@ class DetrTransformer(nn.Module):
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[Union[torch.Tensor, None], ...]:
+
         # This is single resolution so unpack the multiscale lists
         assert len(features) == len(query_embed) == len(pos_embed) == 1
         features, query_embed, pos_embed = features[0], query_embed[0], pos_embed[0]
-        bs, c, h, w, z = features.shape
+        dim = features.dim()
+        if dim == 4:
+            bs, c, h, w = features.shape
+        elif dim == 5:
+            bs, c, h, w, z = features.shape
+        else:
+            raise "Number of feature dimensions not supported"
+
         features = features.view(bs, c, -1).permute(2, 0, 1)  # [bs, c, h, w] -> [h*w*z, bs, c]
         pos_embed = pos_embed.view(bs, c, -1).permute(2, 0, 1)
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)  # [num_query, dim] -> [num_query, bs, dim]
@@ -235,6 +249,7 @@ class DetrTransformer(nn.Module):
         )
 
         target = torch.zeros_like(query_embed)
+        # TODO might want to rename to hidden_state
         decoder_output = self.decoder(
             query=target,
             key=memory,
@@ -244,5 +259,9 @@ class DetrTransformer(nn.Module):
             key_padding_mask=mask,
         )
         decoder_output = decoder_output.transpose(1, 2)
-        memory = memory.permute(1, 2, 0).reshape(bs, c, h, w, z)
+        if dim == 4:
+            memory = memory.permute(1, 2, 0).reshape(bs, c, h, w)
+        else:
+            memory = memory.permute(1, 2, 0).reshape(bs, c, h, w, z)
+
         return decoder_output, memory, None

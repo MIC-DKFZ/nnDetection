@@ -440,6 +440,7 @@ class NewSetModelMixin(SetModelMixin):
             feedforward_dim=model_cfg["dim_feedforward"],
             ffn_dropout=model_cfg["transformer_ffn_dropout"],
             post_norm=model_cfg["encoder_post_norm"],
+            dim=plan_arch["dim"],
         )
         decoder = cls.transformer_decoder_cls(
             embed_dim=model_cfg["hidden_dim"],
@@ -449,5 +450,6 @@ class NewSetModelMixin(SetModelMixin):
             feedforward_dim=model_cfg["dim_feedforward"],
             ffn_dropout=model_cfg["transformer_ffn_dropout"],
             post_norm=model_cfg["decoder_post_norm"],
+            dim=plan_arch["dim"],
         )
         return cls.transformer_cls(encoder=encoder, decoder=decoder)
