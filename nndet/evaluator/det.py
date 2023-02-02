@@ -229,8 +229,9 @@ class DetectionEvaluator(AbstractEvaluator):
                     iou_idx=self.iou_mapping[metric_idx],
                     filter_keys=self.filter_keys,
                 )
+                _criterion_key = criterion_key if criterion_key else None
                 iou_filtered_results = list(map(_filter, results))
-                score, curve = metric(iou_filtered_results, tag=criterion_key)
+                score, curve = metric(iou_filtered_results, tag=_criterion_key)
 
                 if score is not None:
                     metric_scores.update(score)

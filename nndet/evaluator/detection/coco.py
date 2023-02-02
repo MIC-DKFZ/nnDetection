@@ -140,7 +140,7 @@ class COCOMetric(DetectionMetric):
     def compute_ap(
         self,
         dataset_statistics: dict,
-        tag: Optional[str] = None,
+        tag: Optional[str],
     ) -> dict:
         """
         Compute AP metrics

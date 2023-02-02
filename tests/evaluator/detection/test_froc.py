@@ -114,7 +114,7 @@ class TestFROC:
         froc_mul_iou_mock = mocker.Mock(return_value=({"froc_score": 1}, {"froc_curve": 2}))
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
-        froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list)
+        froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list, tag=None)
 
         assert {
             "benign_froc_score": 1,
@@ -125,8 +125,8 @@ class TestFROC:
 
         froc_mul_iou_mock.assert_has_calls(
             [
-                call([{0: {"dtMatches": 0}}] * 3 + [{}] * 3),
-                call([{}] * 3 + [{0: {"dtMatches": 1}}] * 3),
+                call([{0: {"dtMatches": 0}}] * 3 + [{}] * 3, tag=None),
+                call([{}] * 3 + [{0: {"dtMatches": 1}}] * 3, tag=None),
             ]
         )
 
@@ -186,4 +186,4 @@ class TestFROC:
             frocs["mal_FROC_num_gt"] = 10
             frocs["ben_FROC_num_gt"] = 10
             metric.save_dir = Path(_dir)
-            metric.plot_froc_curves(frocs)
+            metric.plot_froc_curves(frocs, tag=None)
