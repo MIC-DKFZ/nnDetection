@@ -22,7 +22,7 @@ class DummyDetectionMetric(DetectionMetric):
     def get_iou_thresholds(self):
         super().get_iou_thresholds()
 
-    def get_save_name(self):
+    def get_save_name(self, tag):
         super().get_save_name()
 
 

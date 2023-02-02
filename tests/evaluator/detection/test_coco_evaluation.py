@@ -1,10 +1,9 @@
 import io
 import json
 import math
-import os
-import tempfile
 import zipfile
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
@@ -94,28 +93,38 @@ def convert_to_nndet_format(predictions_in: Dict, annotations_in: Dict) -> Tuple
 
 @pytest.fixture
 def download_data():
-    # Download data and load into arrays
-    r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
-    z = zipfile.ZipFile(io.BytesIO(r.content))
-    with z.open("annotations/instances_val2014.json") as annotation_zip:
-        annotation_dict = json.load(annotation_zip)
-    predictions = requests.get(
-        "https://raw.githubusercontent.com/cocodataset/cocoapi/master/results"
-        "/instances_val2014_fakebbox100_results.json"
-    ).json()
+    cache_dir = Path(__file__).parent / "coco_cache_tests"
+    annotation_path = cache_dir / "temp_annotations.json"
+    prediction_path = cache_dir / "temp_predictions.json"
+    if not cache_dir.is_dir():
+        cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # Filter out iscrowd instances and fix the wrong area entries
-    filtered_predictions, filtered_annotations = filter_dataset(predictions, annotation_dict)
-    annotation_path = "temp_annotations.json"
-    prediction_path = "temp_predictions.json"
-    with open(annotation_path, "w") as f:
-        json.dump(filtered_annotations, f)
-    with open(prediction_path, "w") as g:
-        json.dump(filtered_predictions, g)
+        # Download data and load into arrays
+        r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
+        z = zipfile.ZipFile(io.BytesIO(r.content))
+        with z.open("annotations/instances_val2014.json") as annotation_zip:
+            annotation_dict = json.load(annotation_zip)
+        predictions = requests.get(
+            "https://raw.githubusercontent.com/cocodataset/cocoapi/master/results"
+            "/instances_val2014_fakebbox100_results.json"
+        ).json()
+
+        # Filter out iscrowd instances and fix the wrong area entries
+        filtered_predictions, filtered_annotations = filter_dataset(predictions, annotation_dict)
+
+        with open(annotation_path, "w") as f:
+            json.dump(filtered_annotations, f)
+        with open(prediction_path, "w") as g:
+            json.dump(filtered_predictions, g)
+    else:
+        with open(annotation_path, "r") as f:
+            filtered_annotations = json.load(f)
+        with open(prediction_path, "r") as g:
+            filtered_predictions = json.load(g)
 
     # COCO Eval
-    cocoGt = COCO(annotation_path)
-    cocoDt = cocoGt.loadRes(prediction_path)
+    cocoGt = COCO(str(annotation_path))
+    cocoDt = cocoGt.loadRes(str(prediction_path))
     imgIds = sorted(cocoGt.getImgIds())
     # running evaluation
     annType = "bbox"
@@ -124,9 +133,10 @@ def download_data():
     evaluation = cocoEval.evaluate()
     accumulation = cocoEval.accumulate()
     summary = cocoEval.summarize()
-    # After evaluation with pycoco, delete temp files
-    os.remove(annotation_path)
-    os.remove(prediction_path)
+
+    # # After evaluation with pycoco, delete temp files
+    # os.remove(annotation_path)
+    # os.remove(prediction_path)
 
     # Convert to nndet format
     detections_by_image, annotations_by_image = convert_to_nndet_format(filtered_predictions, filtered_annotations)

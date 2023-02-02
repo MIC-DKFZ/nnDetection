@@ -104,8 +104,8 @@ class TestDetectionEvaluator:
 
         assert metric_curves == {"curve0": 1, "curve1": 3, "criterion": (np.NINF, np.inf)}
         assert metric_scores == {"score0": 0, "score1": 2}
-        metric0.assert_called_with([0, 0], tag="")
-        metric1.assert_called_with([0, 0], tag="")
+        metric0.assert_called_with([0, 0], tag=None)
+        metric1.assert_called_with([0, 0], tag=None)
 
     def test_iou_filter(self, evaluator):
         image_dict = {
