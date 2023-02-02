@@ -28,14 +28,14 @@ import torch.nn as nn
 
 class MultiheadAttention(nn.Module):
     """A wrapper for ``torch.nn.MultiheadAttention``
-    Implemente MultiheadAttention with identity connection,
+    Implemented MultiheadAttention with identity connection,
     and position embedding is also passed as input.
     Args:
         embed_dim (int): The embedding dimension for attention.
         num_heads (int): The number of attention heads.
-        attn_drop (float): A Dropout layer on attn_output_weights.
+        attn_drop_value (float): A Dropout layer on attn_output_weights.
             Default: 0.0.
-        proj_drop (float): A Dropout layer after `MultiheadAttention`.
+        proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
             Default: 0.0.
         batch_first (bool): if `True`, then the input and output tensor will be
             provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
@@ -45,8 +45,8 @@ class MultiheadAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        attn_drop: float = 0.0,
-        proj_drop: float = 0.0,
+        attn_drop_value: float = 0.0,
+        proj_drop_value: float = 0.0,
         batch_first: bool = False,
         **kwargs,
     ):
@@ -58,12 +58,12 @@ class MultiheadAttention(nn.Module):
         self.attn = nn.MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
-            dropout=attn_drop,
+            dropout=attn_drop_value,
             batch_first=batch_first,
             **kwargs,
         )
 
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.proj_drop = nn.Dropout(proj_drop_value)
 
     def forward(
         self,

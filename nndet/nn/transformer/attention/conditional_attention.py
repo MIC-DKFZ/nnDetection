@@ -12,9 +12,9 @@ class ConditionalSelfAttention(nn.Module):
     Args:
         embed_dim (int): The embedding dimension for attention.
         num_heads (int): The number of attention heads.
-        attn_drop (float): A Dropout layer on attn_output_weights.
+        attn_drop_value (float): A Dropout layer on attn_output_weights.
             Default: 0.0.
-        proj_drop (float): A Dropout layer after `MultiheadAttention`.
+        proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
             Default: 0.0.
         batch_first (bool): if `True`, then the input and output tensor will be
             provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
@@ -24,8 +24,8 @@ class ConditionalSelfAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        attn_drop: float = 0.0,
-        proj_drop: float = 0.0,
+        attn_drop_value: float = 0.0,
+        proj_drop_value: float = 0.0,
         batch_first: bool = False,
         **kwargs,
     ):
@@ -36,8 +36,8 @@ class ConditionalSelfAttention(nn.Module):
         self.key_pos_proj = nn.Linear(embed_dim, embed_dim)
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.out_proj = nn.Linear(embed_dim, embed_dim)
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.attn_drop = nn.Dropout(attn_drop_value)
+        self.proj_drop = nn.Dropout(proj_drop_value)
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         head_dim = embed_dim // num_heads
@@ -157,9 +157,9 @@ class ConditionalCrossAttention(nn.Module):
     Args:
         embed_dim (int): The embedding dimension for attention.
         num_heads (int): The number of attention heads.
-        attn_drop (float): A Dropout layer on attn_output_weights.
+        attn_drop_value (float): A Dropout layer on attn_output_weights.
             Default: 0.0.
-        proj_drop (float): A Dropout layer after `MultiheadAttention`.
+        proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
             Default: 0.0.
         batch_first (bool): if `True`, then the input and output tensor will be
             provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
@@ -169,8 +169,8 @@ class ConditionalCrossAttention(nn.Module):
         self,
         embed_dim,
         num_heads,
-        attn_drop=0.0,
-        proj_drop=0.0,
+        attn_drop_value=0.0,
+        proj_drop_value=0.0,
         batch_first=False,
         **kwargs,
     ):
@@ -182,8 +182,8 @@ class ConditionalCrossAttention(nn.Module):
         self.key_pos_proj = nn.Linear(embed_dim, embed_dim)
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.out_proj = nn.Linear(embed_dim, embed_dim)
-        self.attn_drop = nn.Dropout(attn_drop)
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.attn_drop = nn.Dropout(attn_drop_value)
+        self.proj_drop = nn.Dropout(proj_drop_value)
         self.num_heads = num_heads
         self.batch_first = batch_first
 

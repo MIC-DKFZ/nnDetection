@@ -32,6 +32,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         num_heads: int = 8,
         num_layers: int = 6,
         attn_dropout: float = 0.1,
+        proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
         activation: nn.Module = nn.ReLU(),
@@ -60,7 +61,8 @@ class DETRTransformerEncoder(TransformerLayerSequence):
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
                     num_heads=num_heads,
-                    attn_drop=attn_dropout,
+                    attn_drop_value=attn_dropout,
+                    proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
                 ffn=FFN(
@@ -137,6 +139,7 @@ class DETRTransformerDecoder(TransformerLayerSequence):
         num_heads: int = 8,
         num_layers: int = 6,
         attn_dropout: float = 0.1,
+        proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
         activation: nn.Module = nn.ReLU(),
@@ -165,7 +168,8 @@ class DETRTransformerDecoder(TransformerLayerSequence):
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
                     num_heads=num_heads,
-                    attn_drop=attn_dropout,
+                    attn_drop_value=attn_dropout,
+                    proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
                 ffn=FFN(

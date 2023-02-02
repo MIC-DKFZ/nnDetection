@@ -31,6 +31,8 @@ class SetModelMixin(ModelMixin):
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
+    transformer_encoder_cls = ...
+    transformer_decoder_cls = ...
     transformer_cls = ...
 
     # head blocks
@@ -156,14 +158,29 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ):
-        return cls.transformer_cls(
-            d_model=model_cfg["hidden_dim"],
-            nhead=model_cfg["attention_heads"],
-            num_encoder_layers=model_cfg["num_encoder_layers"],
-            num_decoder_layers=model_cfg["num_decoder_layers"],
-            dim_feedforward=model_cfg["dim_feedforward"],
-            **model_cfg["transformer_kwargs"],
+        encoder = cls.transformer_encoder_cls(
+            embed_dim=model_cfg["hidden_dim"],
+            num_heads=model_cfg["attention_heads"],
+            num_layers=model_cfg["num_encoder_layers"],
+            attn_dropout=model_cfg["transformer_attn_dropout"],
+            proj_dropout=model_cfg["transformer_proj_dropout"],
+            feedforward_dim=model_cfg["dim_feedforward"],
+            ffn_dropout=model_cfg["transformer_ffn_dropout"],
+            post_norm=model_cfg["encoder_post_norm"],
+            dim=plan_arch["dim"],
         )
+        decoder = cls.transformer_decoder_cls(
+            embed_dim=model_cfg["hidden_dim"],
+            num_heads=model_cfg["attention_heads"],
+            num_layers=model_cfg["num_decoder_layers"],
+            attn_dropout=model_cfg["transformer_attn_dropout"],
+            proj_dropout=model_cfg["transformer_proj_dropout"],
+            feedforward_dim=model_cfg["dim_feedforward"],
+            ffn_dropout=model_cfg["transformer_ffn_dropout"],
+            post_norm=model_cfg["decoder_post_norm"],
+            dim=plan_arch["dim"],
+        )
+        return cls.transformer_cls(encoder=encoder, decoder=decoder)
 
     @classmethod
     def _build_backbone(
@@ -420,36 +437,3 @@ class SetModelMixin(ModelMixin):
             **kwargs,
         )
         return segmenter
-
-
-class NewSetModelMixin(SetModelMixin):
-    transformer_encoder_cls = ...
-    transformer_decoder_cls = ...
-
-    @classmethod
-    def _build_transformer(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-    ):
-        encoder = cls.transformer_encoder_cls(
-            embed_dim=model_cfg["hidden_dim"],
-            num_heads=model_cfg["attention_heads"],
-            num_layers=model_cfg["num_encoder_layers"],
-            attn_dropout=model_cfg["transformer_attn_dropout"],
-            feedforward_dim=model_cfg["dim_feedforward"],
-            ffn_dropout=model_cfg["transformer_ffn_dropout"],
-            post_norm=model_cfg["encoder_post_norm"],
-            dim=plan_arch["dim"],
-        )
-        decoder = cls.transformer_decoder_cls(
-            embed_dim=model_cfg["hidden_dim"],
-            num_heads=model_cfg["attention_heads"],
-            num_layers=model_cfg["num_decoder_layers"],
-            attn_dropout=model_cfg["transformer_attn_dropout"],
-            feedforward_dim=model_cfg["dim_feedforward"],
-            ffn_dropout=model_cfg["transformer_ffn_dropout"],
-            post_norm=model_cfg["decoder_post_norm"],
-            dim=plan_arch["dim"],
-        )
-        return cls.transformer_cls(encoder=encoder, decoder=decoder)
