@@ -27,16 +27,20 @@ class COCOMetric(DetectionMetric):
         """
         Class to compute COCO metrics
         Metrics computed:
-            mAP over the IoU range specified by :param:`iou_range` at last value of :param:`max_detection`
-            AP values at IoU thresholds specified by :param:`iou_list` at last value of :param:`max_detection`
-            AR over max detections thresholds defined by :param:`max_detection` (over iou range)
+            mAP over the IoU range specified by :param:`iou_range` at last
+            value of :param:`max_detection`
+            AP values at IoU thresholds specified by :param:`iou_list` at
+            last value of :param:`max_detection`
+            AR over max detections thresholds defined by :param:`max_detection`
+            (over iou range)
 
         Args:
-            classes (Sequence[str]): name of each class (index needs to correspond to predicted class indices!)
-            iou_list (Sequence[float]): specific thresholds where ap is evaluated and saved
-            iou_range (Sequence[float]): (start, stop, step) for mAP iou thresholds
-            max_detection (Sequence[int]): maximum number of detections per image
-            verbose (bool): log time needed for evaluation
+            classes: name of each class (index needs to correspond to
+                predicted class indices!)
+            iou_list: specific thresholds where ap is evaluated and saved
+            iou_range: (start, stop, step) for mAP iou thresholds
+            max_detection: maximum number of detections per image
+            verbose: log time needed for evaluation
         """
         self.verbose = verbose
         self.classes = classes
@@ -60,10 +64,13 @@ class COCOMetric(DetectionMetric):
 
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
         self.max_detections = max_detection
-        self.tag = ""
 
-    def get_save_name(self):
-        return f"AP_{self.tag}" if self.tag != "" else "AP"
+    @classmethod
+    def get_save_name(cls, tag: Optional[str]) -> str:
+        """
+        Retrieve name to save information to files
+        """
+        return f"AP_{tag}" if tag is not None else "AP"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -77,28 +84,42 @@ class COCOMetric(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        tag: Optional[str] = "",
+        tag: Optional[str] = None,
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute COCO metrics
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
-            tag (Optional[str]): tag of the current evaluation
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict[str, float]: dictionary with coco metrics
             Dict[str, np.ndarray]: None
         """
-        self.tag = tag
         if self.verbose:
             logger.info("Start COCO metric computation...")
             tic = time.time()
@@ -109,29 +130,45 @@ class COCOMetric(DetectionMetric):
             logger.info(f"Statistics for COCO metrics finished (t={(toc - tic):0.2f}s).")
 
         results = {}
-        results.update(self.compute_ap(dataset_statistics))
+        results.update(self.compute_ap(dataset_statistics, tag=tag))
 
         if self.verbose:
             toc = time.time()
             logger.info(f"COCO metrics computed in t={(toc - tic):0.2f}s.")
         return results, None
 
-    def compute_ap(self, dataset_statistics: dict) -> dict:
+    def compute_ap(
+        self,
+        dataset_statistics: dict,
+        tag: Optional[str] = None,
+    ) -> dict:
         """
         Compute AP metrics
 
         Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
+            dataset_statistics: computed statistics over dataset
+
+                ``counts``: (int, int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes, num_max_detections]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
         """
         results = {}
-        save_name = self.get_save_name()
+        save_name = self.get_save_name(tag=tag)
         if self.iou_range:  # mAP
             key = (
                 f"m{save_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
@@ -182,17 +219,29 @@ class COCOMetric(DetectionMetric):
         Compute average precision
 
         Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
+            dataset_statistics: computed statistics over dataset
+
+                ``counts``: (int, int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes, num_max_detections]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            iou_idx: index of IoU values to select for evaluation(if None, all values are used)
-            cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
+
+            iou_idx: index of IoU values to select for evaluation
+                (if None, all values are used)
+            cls_idx: class indices to select, if None all classes
+                will be selected
+            max_det_idx: index to select max detection threshold from data
 
         Returns:
             np.ndarray: AP value
@@ -209,28 +258,51 @@ class COCOMetric(DetectionMetric):
         self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
     ) -> Dict[str, Union[np.ndarray, List]]:
         """
-        Compute statistics needed for COCO metrics (mAP, AP of individual classes, mAP@IoU_Thresholds, AR)
+        Compute statistics needed for COCO metrics (mAP, AP of
+        individual classes, mAP@IoU_Thresholds, AR)
         Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per cateory (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth should be
-                    ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
 
         Returns:
             dict: computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
+
+                ``counts``: (int, int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes, num_max_detections]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
         """
         num_iou_th = len(self.iou_thresholds)
@@ -313,11 +385,13 @@ def compute_stats_single_threshold(
     Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
 
     Args:
-        tp (np.ndarray): cumsum over true positives [R], R is the number of detections
-        fp (np.ndarray): cumsum over false positives [R], R is the number of detections
-        dt_scores_sorted (np.ndarray): sorted (descending) scores [R], R is the number of detections
-        recall_thresholds (Sequence[float]): recall thresholds which should be evaluated
-        num_gt (int): number of ground truth bounding boxes (excluding boxes which are ignored)
+        tp: cumsum over true positives [R], R is the number of detections
+        fp: cumsum over false positives [R], R is the number of detections
+        dt_scores_sorted: sorted (descending) scores [R],
+            R is the number of detections
+        recall_thresholds: recall thresholds which should be evaluated
+        num_gt: number of ground truth bounding boxes (excluding
+            boxes which are ignored)
 
     Returns:
         float: overall recall for given IoU value
