@@ -40,9 +40,10 @@ class DetectionEvaluator(AbstractEvaluator):
                 (reduces computation)
             match_fn: function to match predictions to ground truth
             filter_keys: define keys which need to be filtered by the IoU value
-            box_criterion: function that takes array of boxes [N, 4/6] and computes scalar criterion value
-                array [N]
-            criterion_ranges: (optional) Dict containing names and ranges of additional ranges of interest
+            box_criterion: function that takes array of boxes [N, 4/6] and
+                computes scalar criterion value array [N]
+            criterion_ranges: Dict containing names and ranges of
+                additional ranges of interest
         """
         self.iou_fn = iou_fn
         self.match_fn = match_fn
@@ -52,6 +53,14 @@ class DetectionEvaluator(AbstractEvaluator):
         # set range to cover every object
         self.criterion_ranges = {"": (np.NINF, np.inf)}
         # expand by additional ranges
+        for key, bounds in criterion_ranges.items():
+            if key in self.criterion_ranges:
+                raise ValueError(f"Key {key} is not supported in criterion ranges since it is a default key")
+            if bounds[1] < bounds[0]:
+                raise ValueError(
+                    f"Bounds {bounds} from criterion ranges {criterion_ranges} arenot supported."
+                    "Upper bounds needs to larger than lower bound!"
+                )
         if criterion_ranges is not None:
             self.criterion_ranges.update(criterion_ranges)
 
@@ -92,28 +101,33 @@ class DetectionEvaluator(AbstractEvaluator):
         Preprocess batch results for final evaluation
 
         Args:
-            pred_boxes (Sequence[np.ndarray]): predicted boxes from single batch; List[[D, dim * 2]], D number of
-                predictions
-            pred_classes (Sequence[np.ndarray]): predicted classes from a single batch; List[[D]], D number of
-                predictions
-            pred_scores (Sequence[np.ndarray]): predicted score for each bounding box; List[[D]], D number of
-                predictions
-            gt_boxes (Sequence[np.ndarray]): ground truth boxes; List[[G, dim * 2]], G number of ground truth
-            gt_classes (Sequence[np.ndarray]): ground truth classes; List[[G]], G number of ground truth
-            gt_ignore (Sequence[Sequence[bool]]): specified if which ground truth boxes are not counted as true
-                positives (detections which match theses boxes are not counted as false positives either);
+            pred_boxes: predicted boxes from single batch;
+                List[[D, dim * 2]], D number of predictions
+            pred_classes: predicted classes from a single batch; List[[D]],
+                D number of predictions
+            pred_scores: predicted score for each bounding box; List[[D]],
+                D number of predictions
+            gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of
+                ground truth
+            gt_classes: ground truth classes; List[[G]], G number of ground
+                truth
+            gt_ignore: specified if which ground truth boxes are not counted
+                as true positives (detections which match theses boxes are
+                not counted as false positives either);
                 List[[G]], G number of ground truth
             case_id: optionally provide a case id which will be return to
                 identify the matching result
 
         Returns
-            dict: empty dict... detection metrics can only be evaluated at the end
+            dict: empty dict... detection metrics can only be evaluated
+                at the end
         """
         if gt_ignore is None:
             n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
         # Compute ground truth volumes, set volume of no gt to -1 to ignore
+        # TODO: add review comment here
         gt_boxes_criterion = [
             np.array([-1]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
         ]
@@ -131,6 +145,8 @@ class DetectionEvaluator(AbstractEvaluator):
                         if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
                             gt_ignore_criterion[j] = 1
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
+            assert len(gt_ignore_final) == len(gt_ignore)
+
             # Get all matches
             temp_matches = self.match_fn(
                 self.iou_fn,
@@ -300,8 +316,8 @@ class DetectionEvaluator(AbstractEvaluator):
             verbose: Additional logging output
             save_dir: Path to save information
             box_criterion: Criterion for separate evaluation
-            criterion_ranges: Ranges of the value of the box criterion to evaluate (the first entry should be
-                "": full range
+            criterion_ranges: Ranges of the value of the box criterion to
+                evaluate (the first entry should be "": full range
 
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
