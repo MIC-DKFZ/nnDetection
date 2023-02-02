@@ -34,10 +34,15 @@ class PredictionHistogram(DetectionMetric):
 
         self.iou_thresholds = iou_thresholds
         self.bins = bins
-        self.tag = ""
 
-    def get_save_name(self) -> str:
-        return f"pred_hist_{self.tag}" if self.tag != "" else "pred_hist"
+    def get_save_name(self, tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        return f"pred_hist_{tag}" if tag is not None else "pred_hist"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -51,64 +56,99 @@ class PredictionHistogram(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        tag: Optional[str] = "",
+        tag: Optional[str] = None,
     ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Plot class independent and per class histograms. For more info see
         `method``plot_hist`
+
         Args:
-            results_list: list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results
-                    obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of
-                    thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where
-                    T = number of thresholds, G = number of  ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
-                    [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
-                    indicate which detections should be ignored
-            tag (Optional[str]): tag of the current evaluation
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
         """
-        self.tag = tag
-        self.plot_hist(results_list=results_list)
+        self.plot_hist(results_list=results_list, title_prefix=None, tag=tag)
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
             results_by_cls = [{0: r[cls_idx]} for r in results_list if cls_idx in r if cls_idx in r]
-            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_")
+            self.plot_hist(results_by_cls, title_prefix=f"cl_{cls_str}_", tag=tag)
         return {}, {}
 
     def plot_hist(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-        title_prefix: str = "",
+        title_prefix: Optional[str],
+        tag: Optional[str],
     ) -> Tuple[Dict[str, float], Dict[str, Dict[str, Any]]]:
         """
         Compute prediction histograms for multiple IoU values
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, G], where T = number of thresholds, G = number of ground truth
-                `gtMatches`: matched ground truth boxes [T, D], where T = number of thresholds,
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
                     D = number of detections
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
             title_prefix: prefix for title of histogram plot
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict: empty
             Dict[Dict[str, Any]]: histogram informations
                 `{IoU Value}`:
-                    `tp_hist` (np.ndarray): histogram if true positives; false negatives @ score=0 [:attr:`self.bins`]
-                    `fp_hist` (np.ndarray): false positive histogram [:attr:`self.bins`]
-                    `true_positives` (int): number of true positives according to matching
-                    `false_positives` (int): number of false_positives according to matching
-                    `false_negatives` (int): number of false_negatives according to matching
+                    `tp_hist` (np.ndarray): histogram if true positives;
+                        false negatives @ score=0 [:attr:`self.bins`]
+                    `fp_hist` (np.ndarray): false positive histogram
+                        [:attr:`self.bins`]
+                    `true_positives` (int): number of true positives
+                        according to matching
+                    `false_positives` (int): number of false_positives
+                        according to matching
+                    `false_negatives` (int): number of false_negatives
+                        according to matching
         """
+        title_prefix = "" if title_prefix is None else title_prefix
         num_images = len(results_list)
         results = [_r for r in results_list for _r in r.values()]
 
@@ -133,7 +173,15 @@ class PredictionHistogram(DetectionMetric):
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
             _dt_matches = dt_matches[iou_idx][np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(_dt_matches)
-            _ = self.compute_histogram_one_iou(_dt_matches, _scores, num_images, num_gt, iou_val, title_prefix)
+            _ = self.compute_histogram_one_iou(
+                _dt_matches,
+                _scores,
+                num_images,
+                num_gt,
+                iou_val,
+                title_prefix=title_prefix,
+                tag=tag,
+            )
         return {}, {}
 
     def compute_histogram_one_iou(
@@ -144,6 +192,7 @@ class PredictionHistogram(DetectionMetric):
         num_gt: int,
         iou: float,
         title_prefix: str,
+        tag: Optional[str],
     ):
         """
         Plot prediction histogram
@@ -194,7 +243,7 @@ class PredictionHistogram(DetectionMetric):
         plt.title(title)
         plt.xlabel("confidence score")
         plt.ylabel("log n")
-        save_name = self.get_save_name()
+        save_name = self.get_save_name(tag=tag)
         if self.save_dir is not None:
             save_path = self.save_dir / (f"{title_prefix}{save_name}_IoU@{iou}".replace(".", "_") + ".png")
             logger.info(f"Saving {save_path}")

@@ -47,7 +47,8 @@ class AbstractMetric(ABC):
 
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
-            Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+            Dict[str, np.ndarray]: dictionary with arrays, e.g. for
+                visualization of graphs
         """
         return self.compute(*args, **kwargs)
 
@@ -61,19 +62,36 @@ class AbstractMetric(ABC):
         Compute metric
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, G], where T = number of thresholds, G = number of ground truth
-                `gtMatches`: matched ground truth boxes [T, D], where T = number of thresholds,
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
                     D = number of detections
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
-            tag (Optional[str]): tag of the current evaluation
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
-            Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+            Dict[str, np.ndarray]: dictionary with arrays, e.g. for
+                visualization of graphs
         """
         raise NotImplementedError
 
