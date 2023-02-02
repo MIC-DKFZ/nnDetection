@@ -166,7 +166,7 @@ def test_froc_against_monai(example):
     res = evaluator.finish_online_evaluation()
     froc_score_nndet = res[0]["FROC_score_IoU_0.10"]
 
-    results_list = evaluator.results_list
+    results_list = evaluator.results_dict[""]
 
     results = [_r for r in results_list for _r in r.values()]
     tp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 1] for r in results])
