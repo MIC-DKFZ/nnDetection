@@ -18,10 +18,9 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from nndet.nn.transformer.attention.attention import (
+from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
-    MultiheadAttention,
 )
 from nndet.nn.transformer.transformer_base_layer import (
     BaseTransformerLayer,
@@ -30,12 +29,16 @@ from nndet.nn.transformer.transformer_base_layer import (
 from nndet.utils.mlp import FFN, MLP
 
 
-def gen_sineembed3d_for_position(
-    pos_tensor: torch.Tensor, num_pos_feats: int, temperature: int = 10000
-) -> torch.Tensor:
+def gen_sine_embed_for_position(pos_tensor: torch.Tensor, num_pos_feats: int, temperature: int = 10000) -> torch.Tensor:
     """
-    3D Positional Encoding to encode given positions (different to the normal position encoding which computes position
-    based on pixels)
+    2D or 3D Positional Encoding to encode given positions (different to the normal position encoding which computes
+    position based on pixels)
+    Args:
+        pos_tensor: tensor of shape (bs, num_pos, 2|3)
+        num_pos_feats: number of out features (output dimension)
+        temperature: temperature of the position encoding
+    Returns:
+        Tensor:
     """
     dim = pos_tensor.shape[2]
     assert dim in [2, 3]
@@ -54,6 +57,7 @@ def gen_sineembed3d_for_position(
     pos_x = torch.stack((pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()), dim=3).flatten(2)
     pos_y = torch.stack((pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()), dim=3).flatten(2)
 
+    # Handle 3D Case
     if dim == 3:
         z_embed = pos_tensor[:, :, 2] * scale
         pos_z = z_embed[:, :, None] / dim_t
@@ -65,84 +69,13 @@ def gen_sineembed3d_for_position(
             return torch.cat((pos_x, pos_y, pos_z[:, :, :-1]), dim=2)
         else:
             return torch.cat((pos_x, pos_y[:, :, :-1], pos_z[:, :, :-1]), dim=2)
-
+    # 2D Case
     if num_pos_feats % dim == 0:
         return torch.cat((pos_x, pos_y), dim=2)
     return torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
 
 
-class ConditionalDetrTransformerEncoder(TransformerLayerSequence):
-    def __init__(
-        self,
-        embed_dim: int = 256,
-        num_heads: int = 8,
-        num_layers: int = 6,
-        attn_dropout: float = 0.1,
-        feedforward_dim: int = 2048,
-        ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
-        post_norm: bool = False,
-        dim: int = 3,
-        batch_first: bool = False,
-    ):
-        super(ConditionalDetrTransformerEncoder, self).__init__(
-            transformer_layers=BaseTransformerLayer(
-                attn=MultiheadAttention(
-                    embed_dim=embed_dim,
-                    num_heads=num_heads,
-                    attn_drop=attn_dropout,
-                    batch_first=batch_first,
-                ),
-                ffn=FFN(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    activation=activation,
-                ),
-                norm=nn.LayerNorm(normalized_shape=embed_dim),
-                operation_order=("self_attn", "norm", "ffn", "norm"),
-            ),
-            num_layers=num_layers,
-        )
-        self.embed_dim = self.layers[0].embed_dim
-        self.pre_norm = self.layers[0].pre_norm
-
-        if post_norm:
-            self.post_norm_layer = nn.LayerNorm(self.embed_dim)
-        else:
-            self.post_norm_layer = None
-
-    def forward(
-        self,
-        query: torch.Tensor,
-        key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
-        query_pos: Optional[torch.Tensor] = None,
-        key_pos: Optional[torch.Tensor] = None,
-        attn_masks: Optional[List[torch.Tensor]] = None,
-        query_key_padding_mask: Optional[torch.Tensor] = None,
-        key_padding_mask: Optional[torch.Tensor] = None,
-        **kwargs,
-    ) -> torch.Tensor:
-
-        for layer in self.layers:
-            query = layer(
-                query,
-                key,
-                value,
-                query_pos=query_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                **kwargs,
-            )
-
-        if self.post_norm_layer is not None:
-            query = self.post_norm_layer(query)
-        return query
-
-
-class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
+class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -157,7 +90,23 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
         dim: int = 3,
         batch_first: bool = False,
     ):
-        super(ConditionalDetrTransformerDecoder, self).__init__(
+        """
+        Transformer Decoder for Conditional DETR
+        Args:
+            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            num_heads: number of attention heads
+            num_layers: number of decoder layers
+            attn_dropout: dropout in the attention modules
+            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            ffn_dropout: dropout of the feed forward network
+            activation: activation of the feed forward network
+            post_norm: apply an additional layer norm to all outputs
+            return_intermediate: return the outputs of all
+            dim: dimension of the input, has to be 2 or 3
+            batch_first: use batch first computations in the transformer
+        """
+
+        super(ConditionalDETRTransformerDecoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
                 attn=[
                     ConditionalSelfAttention(
@@ -204,8 +153,8 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
     def forward(
         self,
         query: torch.Tensor,
-        key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
+        key: torch.Tensor = None,
+        value: torch.Tensor = None,
         query_pos: Optional[torch.Tensor] = None,
         key_pos: Optional[torch.Tensor] = None,
         attn_masks: Optional[List[torch.Tensor]] = None,
@@ -213,6 +162,23 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
         key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        """
+        Compute a sequence of output box embeddings given object queries and features.
+        Args:
+            query: Object queries (num_queries, bs, C)
+            key: features from the transformer encoder used as keys in cross-attention
+            value: features from the transformer encoder used as values in cross-attention
+            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            key_pos: (Optional) position embedding for the given key
+            attn_masks: (Optional) mask for the attention layer
+            query_key_padding_mask: (Optional) query key padding mask for attention
+            key_padding_mask: (Optional) key padding mask for attention
+            **kwargs:
+        Returns:
+            Tensor: Sequence of output embeddings, either of the last layer if return_intermediate is false  or of all
+                layers with shape ((num_decoder_layers), num_queries, bs, C)
+        """
+
         intermediate = []
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
         reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
@@ -227,7 +193,7 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
                 position_transform = self.query_scale(query)
 
             # get sine embedding for the query vector
-            query_sine_embed = gen_sineembed3d_for_position(obj_center, self.embed_dim)
+            query_sine_embed = gen_sine_embed_for_position(obj_center, self.embed_dim)
             # apply position transform
             query_sine_embed = query_sine_embed[..., : self.embed_dim] * position_transform
 
@@ -272,7 +238,7 @@ class ConditionalDetrTransformer(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.encoder.embed_dim
-
+        self.dim = decoder.dim
         self.init_weights()
 
     def init_weights(self):
@@ -283,14 +249,27 @@ class ConditionalDetrTransformer(nn.Module):
     def forward(
         self,
         features: List[torch.Tensor],
-        query_embed: List[torch.Tensor],
+        query_embed: torch.Tensor,
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[Union[torch.Tensor, None], ...]:
+        """
+        Compute the output box embeddings given the input features, position embedding and query embedding
+        Args:
+            features: features from the backbone in form of a List[Tensor(bs, C, H, W, (Z))]
+            query_embed: object queries = input for the transformer decoder
+            pos_embed: position embedding for the features, same shape as features
+            mask: mask to mask out certain pixels of the feature maps, same shape as features
+
+        Returns:
+            Tensor: output box embeddings (output of the decoder) ((num_decoder_layers), bs, num_queries, C)
+            Tensor: refined feature sequence (output of the encoder) (bs, C, H, W, (Z))
+            Tensor: References from the transformer decoder ((num_decoder_layers), bs, num_queries, dim)
+        """
 
         # This is single resolution so unpack the multiscale lists
-        assert len(features) == len(query_embed) == len(pos_embed) == 1
-        features, query_embed, pos_embed = features[0], query_embed[0], pos_embed[0]
+        assert len(features) == len(pos_embed) == 1
+        features, pos_embed = features[0], pos_embed[0]
 
         dim = self.decoder.dim
         assert dim == features.dim() - 2  # subtract batch size and sequence length

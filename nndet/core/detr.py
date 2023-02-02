@@ -246,7 +246,7 @@ class BaseDETR(AbstractDetector):
         srcs_sequence = self.input_proj[0](features[-1])  # (N, 1, C, px, py, (pz))
         # Get Position Embedding and pass through transformer
         pos_embed = self.pos_embed(srcs_sequence)  # (N, C, px, py, (pz))
-        out_sequence, memory, reference = self.transformer([srcs_sequence], [self.query_pos.weight], [pos_embed])
+        out_sequence, memory, reference = self.transformer([srcs_sequence], self.query_pos.weight, [pos_embed])
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation

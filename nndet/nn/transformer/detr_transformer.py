@@ -39,6 +39,21 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         dim: int = 3,
         batch_first: bool = False,
     ):
+        """
+        Transformer Encoder for DETR. Consists of num_layers transformer encoder layers refining the input feature
+        sequence.
+        Args:
+            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            num_heads: number of attention heads
+            num_layers: number of decoder layers
+            attn_dropout: dropout in the attention modules
+            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            ffn_dropout: dropout of the feed forward network
+            activation: activation of the feed forward network
+            post_norm: apply an additional layer norm to all outputs
+            dim: dimension of the input, has to be 2 or 3
+            batch_first: use batch first computations in the transformer
+        """
         super(DETRTransformerEncoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
                 # Added this list, might be wrong
@@ -81,6 +96,21 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
+        """
+        Compute a sequence of refined features. Typical inputs are query and query_pos.
+        Args:
+            query: sequence of input features (sequence_length, bs, C)
+            key: (Optional) key for attention
+            value: (Optional) value for attention
+            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            key_pos: (Optional) position embedding for the given key
+            attn_masks: (Optional) mask for the attention layer
+            query_key_padding_mask: (Optional) query key padding mask for attention
+            key_padding_mask: (Optional) key padding mask for attention
+            **kwargs:
+        Returns:
+            Tensor: Sequence of refined features (sequence_length, bs, C)
+        """
 
         for layer in self.layers:
             query = layer(
@@ -115,6 +145,21 @@ class DETRTransformerDecoder(TransformerLayerSequence):
         dim: int = 3,
         batch_first: bool = False,
     ):
+        """
+        Transformer Decoder for DETR
+        Args:
+            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            num_heads: number of attention heads
+            num_layers: number of decoder layers
+            attn_dropout: dropout in the attention modules
+            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            ffn_dropout: dropout of the feed forward network
+            activation: activation of the feed forward network
+            post_norm: apply an additional layer norm to all outputs
+            return_intermediate: return the outputs of all
+            dim: dimension of the input, has to be 2 or 3
+            batch_first: use batch first computations in the transformer
+        """
         super(DETRTransformerDecoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
@@ -147,15 +192,31 @@ class DETRTransformerDecoder(TransformerLayerSequence):
     def forward(
         self,
         query: torch.Tensor,
-        key: torch.Tensor = None,
-        value: torch.Tensor = None,
-        query_pos: torch.Tensor = None,
-        key_pos: torch.Tensor = None,
-        attn_masks: List[torch.Tensor] = None,
-        query_key_padding_mask: torch.Tensor = None,
-        key_padding_mask: torch.Tensor = None,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        attn_masks: Optional[List[torch.Tensor]] = None,
+        query_key_padding_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
+        """
+        Compute a sequence of output box embeddings given object queries and features.
+        Args:
+            query: Object queries (num_queries, bs, C)
+            key: features from the transformer encoder used as keys in cross-attention
+            value: features from the transformer encoder used as values in cross-attention
+            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            key_pos: (Optional) position embedding for the given key
+            attn_masks: (Optional) mask for the attention layer
+            query_key_padding_mask: (Optional) query key padding mask for attention
+            key_padding_mask: (Optional) key padding mask for attention
+            **kwargs:
+        Returns:
+            Tensor: Sequence of output embeddings, either of the last layer if return_intermediate is false  or of all
+                layers with shape ((num_decoder_layers), num_queries, bs, C)
+        """
 
         if not self.return_intermediate:
             for layer in self.layers:
@@ -200,7 +261,13 @@ class DETRTransformerDecoder(TransformerLayerSequence):
 
 
 class DETRTransformer(nn.Module):
-    def __init__(self, encoder: nn.Module, decoder: nn.Module):
+    def __init__(self, encoder: TransformerLayerSequence, decoder: TransformerLayerSequence):
+        """
+        Transformer module for DETR.
+        Args:
+            encoder: Transformer encoder
+            decoder: Transformer decoder
+        """
         super(DETRTransformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -216,14 +283,27 @@ class DETRTransformer(nn.Module):
     def forward(
         self,
         features: List[torch.Tensor],
-        query_embed: List[torch.Tensor],
+        query_embed: torch.Tensor,
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[Union[torch.Tensor, None], ...]:
+        """
+        Compute the output box embeddings given the input features, position embedding and query embedding
+        Args:
+            features: features from the backbone in form of a List[Tensor(bs, C, H, W, (Z))]
+            query_embed: object queries = input for the transformer decoder
+            pos_embed: position embedding for the features, same shape as features
+            mask: mask to mask out certain pixels of the feature maps, same shape as features
+
+        Returns:
+            Tensor: output box embeddings (output of the decoder) ((num_decoder_layers), bs, num_queries, C)
+            Tensor: refined feature sequence (output of the encoder) (bs, C, H, W, (Z))
+            Optional(Tensor): None
+        """
 
         # This is single resolution so unpack the multiscale lists
-        assert len(features) == len(query_embed) == len(pos_embed) == 1
-        features, query_embed, pos_embed = features[0], query_embed[0], pos_embed[0]
+        assert len(features) == len(pos_embed) == 1
+        features, pos_embed = features[0], pos_embed[0]
         dim = features.dim()
         if dim == 4:
             bs, c, h, w = features.shape

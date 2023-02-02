@@ -29,8 +29,7 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.transformer.conditional_detr_transformer import (
     ConditionalDetrTransformer,
-    ConditionalDetrTransformerDecoder,
-    ConditionalDetrTransformerEncoder,
+    ConditionalDETRTransformerDecoder,
 )
 from nndet.nn.transformer.detr_transformer import (
     DETRTransformer,
@@ -150,8 +149,8 @@ class BoxDETRC001FocalRes(BoxDETRC001):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001Focal(BoxDETRC001):
-    transformer_encoder_cls = ConditionalDetrTransformerEncoder
-    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder
     transformer_cls = ConditionalDetrTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
@@ -182,8 +181,8 @@ class BoxCDETRC001Focal_S16(BoxCDETRC001Focal):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001ResFocal(BoxDETRC001):
-    transformer_encoder_cls = ConditionalDetrTransformerEncoder
-    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder
     transformer_cls = ConditionalDetrTransformer
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
 

@@ -19,8 +19,7 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.transformer.conditional_detr_transformer import (
     ConditionalDetrTransformer,
-    ConditionalDetrTransformerDecoder,
-    ConditionalDetrTransformerEncoder,
+    ConditionalDETRTransformerDecoder,
 )
 from nndet.nn.transformer.detr_transformer import (
     DETRTransformer,
@@ -88,8 +87,8 @@ class BoxIODETRC002(BoxDETRC002):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC002(BoxDETRC002):
-    transformer_encoder_cls = ConditionalDetrTransformerEncoder
-    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder
     transformer_cls = ConditionalDetrTransformer
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
 
