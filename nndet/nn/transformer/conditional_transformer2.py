@@ -214,11 +214,11 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
         **kwargs,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         intermediate = []
-        reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, 2]
-        reference_points: torch.Tensor = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
+        reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
+        reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
 
         for idx, layer in enumerate(self.layers):
-            obj_center = reference_points[..., :2].transpose(0, 1)  # [num_queries, batch_size, 2]
+            obj_center = reference_points[..., : self.dim].transpose(0, 1)  # [num_queries, batch_size, dim]
 
             # do not apply transform in position in the first decoder layer
             if idx == 0:
@@ -231,7 +231,7 @@ class ConditionalDetrTransformerDecoder(TransformerLayerSequence):
             # apply position transform
             query_sine_embed = query_sine_embed[..., : self.embed_dim] * position_transform
 
-            query: torch.Tensor = layer(
+            query = layer(
                 query,
                 key,
                 value,
