@@ -325,6 +325,13 @@ class DetectionEvaluator(AbstractEvaluator):
         # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
+        criterion_ranges_final = {
+            "small-V64": (0, 8**3),
+            "medium-V64": (8**3, 32**3),
+            "large-V64": (32**3, np.inf),
+        }
+        if criterion_ranges is not None:
+            criterion_ranges_final.update(criterion_ranges)
 
         metrics = []
         metrics.append(
@@ -359,7 +366,7 @@ class DetectionEvaluator(AbstractEvaluator):
             metrics=tuple(metrics),
             iou_fn=cls.similarity_fn,
             box_criterion=box_criterion,
-            criterion_ranges=criterion_ranges,
+            criterion_ranges=criterion_ranges_final,
         )
 
 
