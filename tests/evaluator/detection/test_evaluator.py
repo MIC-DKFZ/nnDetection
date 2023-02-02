@@ -1,10 +1,12 @@
+import json
+
 import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-import nndet.evaluator.detection.matching as matching
-from nndet.evaluator.det import DetectionEvaluator
+from nndet.evaluator.det import BoxEvaluator, DetectionEvaluator
+from nndet.evaluator.detection.coco import COCOMetric
 
 
 class DummyMetric:

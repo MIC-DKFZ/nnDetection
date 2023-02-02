@@ -37,6 +37,7 @@ Matcher
    :nosignatures:
 
    matcher
+   assign
 
 
 Coder
@@ -79,21 +80,19 @@ Sampler
 Ops Torch
 ~~~~~~~~~
 
-.. currentmodule:: nndet.core.boxes
+.. currentmodule:: nndet.core
 
 .. autosummary::
    :toctree: Ops Torch
    :nosignatures:
 
-   assign
-   clip
-   ops
+   ops_torch
 
 
 Ops Numpy
 ~~~~~~~~~
 
-.. currentmodule:: nndet.core.boxes
+.. currentmodule:: nndet.core
 
 .. autosummary::
    :toctree: Ops Numpy

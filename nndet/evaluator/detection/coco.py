@@ -252,7 +252,10 @@ class COCOMetric(DetectionMetric):
         if cls_idx is not None:
             prec = prec[..., cls_idx, :]
         prec = prec[..., max_det_idx]
-        return np.mean(prec)
+
+        if np.any(prec != -1):
+            return np.mean(prec[prec > -1])
+        return np.array([-1])
 
     def compute_statistics(
         self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
@@ -349,8 +352,8 @@ class COCOMetric(DetectionMetric):
                 tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
                 fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
-                tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
-                fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float32)
+                tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
+                fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
 
                 for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
                     tp, fp = np.array(tp), np.array(fp)
