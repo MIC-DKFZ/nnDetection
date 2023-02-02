@@ -27,20 +27,18 @@ from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
-from nndet.nn.transformer import TransformerFacebook
-from nndet.nn.transformer.conditional_transformer import ConditionalTransformer
-from nndet.nn.transformer.conditional_transformer2 import (
+from nndet.nn.transformer.conditional_detr_transformer import (
     ConditionalDetrTransformer,
     ConditionalDetrTransformerDecoder,
     ConditionalDetrTransformerEncoder,
 )
 from nndet.nn.transformer.detr_transformer import (
-    DetrTransformer,
-    DetrTransformerDecoder,
-    DetrTransformerEncoder,
+    DETRTransformer,
+    DETRTransformerDecoder,
+    DETRTransformerEncoder,
 )
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.detr.box_detr import BoxDETRModule, BoxDETRModuleUpdated
+from nndet.ptmodule.detr.box_detr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
 
@@ -50,7 +48,9 @@ class BoxDETRC001(BoxDETRModule):
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
     # transformer
     pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
-    transformer_cls = TransformerFacebook
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = DETRTransformerDecoder
+    transformer_cls = DETRTransformer
 
     # head blocks
     head_cls: DETRHead = DETRHead  #: main DETR head
@@ -68,47 +68,6 @@ class BoxDETRC001(BoxDETRModule):
     matcher_box_criterion_cls: Optional[
         BoxCriterion
     ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
-
-
-@MODULE_REGISTRY.register
-class BoxDETRUpdated(BoxDETRModuleUpdated):
-    backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
-    # transformer
-    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
-    transformer_encoder_cls = DetrTransformerEncoder
-    transformer_decoder_cls = DetrTransformerDecoder
-    transformer_cls = DetrTransformer
-
-    # head blocks
-    head_cls: DETRHead = DETRHead  #: main DETR head
-    head_linear_cls: LINEARSEQ = LayerLinearReluDrop  #: conv class used for head
-    head_classifier_cls: FFNClassifier = CEFFNClassifier  #: define classifier class
-    head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
-    head_box_post_cls: DETRBoxPost = MaxFGBoxPost  #: define postprocessing strategy during inference
-
-    matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
-    matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
-    # either reg or box criterion need to be set
-    # reg criterion usually operates on encoded targets while box cirterion operates on raw boxes
-    # there is no structural difference though and just a nomenclature
-    matcher_reg_criterion_cls: Optional[BoxCriterion] = L1RegCriterion  #: criterion to compute regression cost matrix
-    matcher_box_criterion_cls: Optional[
-        BoxCriterion
-    ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
-
-
-@MODULE_REGISTRY.register
-class BoxCDETRUpdated(BoxDETRUpdated):
-    transformer_encoder_cls = ConditionalDetrTransformerEncoder
-    transformer_decoder_cls = ConditionalDetrTransformerDecoder
-    transformer_cls = ConditionalDetrTransformer
-    backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
-
-    head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
-    head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
-    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
-    matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
 
 
 @MODULE_REGISTRY.register
@@ -191,7 +150,9 @@ class BoxDETRC001FocalRes(BoxDETRC001):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001Focal(BoxDETRC001):
-    transformer_cls = ConditionalTransformer
+    transformer_encoder_cls = ConditionalDetrTransformerEncoder
+    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_cls = ConditionalDetrTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
@@ -221,7 +182,9 @@ class BoxCDETRC001Focal_S16(BoxCDETRC001Focal):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001ResFocal(BoxDETRC001):
-    transformer_cls = ConditionalTransformer
+    transformer_encoder_cls = ConditionalDetrTransformerEncoder
+    transformer_decoder_cls = ConditionalDetrTransformerDecoder
+    transformer_cls = ConditionalDetrTransformer
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head

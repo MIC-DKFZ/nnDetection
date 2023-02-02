@@ -25,7 +25,7 @@ from nndet.nn.transformer.transformer_base_layer import (
 from nndet.utils.mlp import FFN
 
 
-class DetrTransformerEncoder(TransformerLayerSequence):
+class DETRTransformerEncoder(TransformerLayerSequence):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -39,7 +39,7 @@ class DetrTransformerEncoder(TransformerLayerSequence):
         dim: int = 3,
         batch_first: bool = False,
     ):
-        super(DetrTransformerEncoder, self).__init__(
+        super(DETRTransformerEncoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
                 # Added this list, might be wrong
                 attn=MultiheadAttention(
@@ -100,7 +100,7 @@ class DetrTransformerEncoder(TransformerLayerSequence):
         return query
 
 
-class DetrTransformerDecoder(TransformerLayerSequence):
+class DETRTransformerDecoder(TransformerLayerSequence):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -115,7 +115,7 @@ class DetrTransformerDecoder(TransformerLayerSequence):
         dim: int = 3,
         batch_first: bool = False,
     ):
-        super(DetrTransformerDecoder, self).__init__(
+        super(DETRTransformerDecoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
@@ -199,9 +199,9 @@ class DetrTransformerDecoder(TransformerLayerSequence):
         return torch.stack(intermediate)
 
 
-class DetrTransformer(nn.Module):
+class DETRTransformer(nn.Module):
     def __init__(self, encoder: nn.Module, decoder: nn.Module):
-        super(DetrTransformer, self).__init__()
+        super(DETRTransformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.encoder.embed_dim
