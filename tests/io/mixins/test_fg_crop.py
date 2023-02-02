@@ -26,7 +26,7 @@ def cropper() -> OffsetFGCrop3DV2:
 def crop_kwargs() -> Dict:
     return {
         "case_data": np.zeros((2, 16, 32, 64)),
-        "case_seg": np.zeros((1, 16, 32, 64)),
+        # "case_seg": np.zeros((1, 16, 32, 64)),
         "properties": {},
         "case_id": "test_id",
     }
@@ -275,7 +275,7 @@ class TestOffsetFGCrop3DV2:
 
         crop = cropper.get_fg_crop(
             case_data=data,
-            case_seg=None,
+            # case_seg=None,
             properties={},
             case_id="test0",
             candidates=candidates,

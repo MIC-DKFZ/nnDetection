@@ -41,7 +41,7 @@ def test_single_mirror_corner_cases():
     ).float()
     new_boxes = new_batch["boxes"][0]
 
-    torch.allclose(new_boxes, boxes_expteced)
+    assert torch.allclose(new_boxes, boxes_expteced)
     assert new_boxes.shape == boxes_expteced.shape
 
 

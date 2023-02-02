@@ -96,6 +96,7 @@ class BaseDatamodule(BaseModule):
         augment_cfg: dict,
         data_dir: os.PathLike,
         fold: int = 0,
+        use_box_io: bool = False,
         **kwargs,
     ):
         """
@@ -122,6 +123,9 @@ class BaseDatamodule(BaseModule):
             preprocessed_dir: path to base preprocessed dir
             data_dir: path to preprocessed data dir
             fold: current fold
+            use_box_io: specify if the model should be trained with
+                bounding box input. This will influence how the dataloader
+                loads data and how the augmentation operates.
 
         Warnings:
             `fold=None` was deperacated to prevent wrong usage, it is
@@ -137,6 +141,7 @@ class BaseDatamodule(BaseModule):
         )
         self.augmentation: Optional[Type[AugmentationSetup]] = None
         self.patch_size_generator: Optional[Sequence[int]] = None
+        self.use_box_io = use_box_io
 
     @property
     def dataloader(self):
@@ -188,6 +193,7 @@ class BaseDatamodule(BaseModule):
         self.augmentation = augmentation_cls(
             patch_size=patch_size,
             params=params,
+            use_box_io=self.use_box_io,
         )
         self.patch_size_generator = self.augmentation.get_patch_size_generator()
 
@@ -213,8 +219,9 @@ class BaseDatamodule(BaseModule):
             patch_size_generator=self.patch_size_generator,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            pad_mode="constant",
             num_batches_per_epoch=self.io_cfg["num_train_batches_per_epoch"],
+            load_seg=not self.use_box_io,
+            load_box=self.use_box_io,
             **self.dataloader_kwargs,
         )
         tr_transforms = self.augmentation.get_training_transforms()
@@ -250,8 +257,9 @@ class BaseDatamodule(BaseModule):
             patch_size_generator=self.patch_size,
             patch_size_final=self.patch_size,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            pad_mode="constant",
             num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
+            load_seg=not self.use_box_io,
+            load_box=self.use_box_io,
             **self.dataloader_kwargs,
         )
 
@@ -346,6 +354,7 @@ class PtDatamodule(BaseDatamodule):
         if not multiprocessing:
             num_processes = 0
             persistent_workers = False
+            num_cached_per_queue = 2  # default value from torch, raises error otherwise
         else:
             persistent_workers = True
 

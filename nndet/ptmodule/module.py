@@ -55,6 +55,13 @@ class LightningBaseModule(pl.LightningModule):
             plan_anchors=self.plan["anchors"],
             patch_size=plan["patch_size"],
         )
+        if self.trainer_cfg.get("do_compile", False):
+            _major, _minor, _ = torch.__version__.split(".", 2)
+            if int(_major) >= 2 or (int(_major) == 1 and int(_minor) >= 14):
+                logger.info(f"Compiling model with PyTorch (>2) feature:: {self.trainer_cfg['compile_kwargs']}")
+                self.model = torch.compile(self.model, **self.trainer_cfg["compile_kwargs"])
+            else:
+                logger.warning(f"Torch {torch.__version__} does not support model compiling.")
 
         # initialize pre transforms from ModeMixin
         trafos = self.get_pre_transforms(plan=plan)
@@ -106,6 +113,8 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
+        if "target" in batch:  # free memory from numbered instance seg
+            del batch["target"]
         targets = {key: item for key, item in batch.items() if "target_" in key}
         if "target_seg" in targets:
             # [optional] add semantic segmentation to targets if available
@@ -135,6 +144,8 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
+            if "target" in batch:  # free memory from numbered instance seg
+                del batch["target"]
             targets = {key: item for key, item in batch.items() if "target_" in key}
             if "target_seg" in targets:
                 # [optional] add semantic segmentation to targets if available

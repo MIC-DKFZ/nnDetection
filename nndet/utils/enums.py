@@ -52,3 +52,14 @@ class LoadModels(Enum):
     ALL = "all"
     BEST = "best"
     LAST = "last"
+
+
+class AuxLossNorm(Enum):
+    NONE = "none"
+    MEAN = "mean"
+    REDUCED = "reduced"
+
+
+class BoxPointMode(Enum):
+    CORNERS = "corners"
+    CENTERS = "centers"

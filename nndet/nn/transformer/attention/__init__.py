@@ -1,0 +1,1 @@
+from nndet.nn.transformer.attention.multi_head_attention import MultiheadAttention

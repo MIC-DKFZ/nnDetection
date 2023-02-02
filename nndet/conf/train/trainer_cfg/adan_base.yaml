@@ -13,6 +13,13 @@ deterministic: False
 benchmark: False
 terminate_on_nan: False # [optional; Default True]
 
+# pytorch 2.0 features
+do_compile: False
+compile_kwargs:
+  mode: "default"
+  backend: "inductor"
+  fullgraph: false
+
 save_top_k: 1 # topk model selection [optonal; Default 1]
 sweep_key: mAP_IoU_0.10_0.50_0.05_MaxDet_100
 monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model

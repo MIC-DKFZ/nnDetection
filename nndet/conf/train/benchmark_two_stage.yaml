@@ -1,0 +1,14 @@
+# @package __global__
+
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+defaults:
+  - augment_cfg: more_modular  # noaug for pure model benchmark
+  - io_cfg: benchmark
+  - trainer_cfg: smoke
+  - model_cfg: mrcnn_l1_hnm_atss_c0
+
+module: BoxMaskURCNNV002
+plan: D3V001_3d # plan used for training
+planner: D3V001 # planner used for preprocessing

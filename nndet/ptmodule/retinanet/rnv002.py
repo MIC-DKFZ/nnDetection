@@ -83,6 +83,13 @@ class RetinaNetV002Focal(RetinaNetV002):
 
 
 @MODULE_REGISTRY.register
+class BoxIORetinaNetV002Focal(RetinaNetV002Focal):
+    @classmethod
+    def use_box_io(self):
+        return True
+
+
+@MODULE_REGISTRY.register
 class RetinaNetV002Res(RetinaNetV002):
     """
     Residual Conv Backbone
