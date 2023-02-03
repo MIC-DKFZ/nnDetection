@@ -38,7 +38,7 @@ class TestMatching:
             return_value=0,
         )
         iou_fn = mocker.Mock(return_value=None)
-        iou_tresholds = [0.1, 0.5]
+        iou_thresholds = [0.1, 0.5]
 
         pred_boxes = np.array([[0, 1, 2, 3], [0, 1, 2, 3]])
         pred_classes = np.array([1, 0])
@@ -50,7 +50,7 @@ class TestMatching:
 
         res = matching_batch(
             iou_fn,
-            iou_tresholds,
+            iou_thresholds,
             [pred_boxes],
             [pred_classes],
             [pred_scores],
@@ -69,7 +69,7 @@ class TestMatching:
             return_value=0,
         )
         iou_fn = mocker.Mock(return_value=None)
-        iou_tresholds = [0.1, 0.5]
+        iou_thresholds = [0.1, 0.5]
 
         pred_boxes = np.array([[0.0, 1.0, 2.0, 3.0]])
         pred_classes = np.array([0])
@@ -81,7 +81,7 @@ class TestMatching:
 
         res = matching_batch(
             iou_fn,
-            iou_tresholds,
+            iou_thresholds,
             [pred_boxes],
             [pred_classes],
             [pred_scores],
@@ -100,7 +100,7 @@ class TestMatching:
             return_value=0,
         )
         iou_fn = mocker.Mock(return_value=None)
-        iou_tresholds = [0.1, 0.5]
+        iou_thresholds = [0.1, 0.5]
 
         pred_boxes = np.array([[]])
         pred_classes = np.array([])
@@ -112,7 +112,7 @@ class TestMatching:
 
         res = matching_batch(
             iou_fn,
-            iou_tresholds,
+            iou_thresholds,
             [pred_boxes],
             [pred_classes],
             [pred_scores],

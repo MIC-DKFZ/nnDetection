@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
 
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
@@ -20,10 +20,10 @@ def matching_batch(
     pred_boxes: Sequence[np.ndarray],
     pred_classes: Sequence[np.ndarray],
     pred_scores: Sequence[np.ndarray],
-    pred_outside: Sequence[np.ndarray],
     gt_boxes: Sequence[np.ndarray],
     gt_classes: Sequence[np.ndarray],
     gt_ignore: Sequence[Sequence[bool]],
+    pred_ignore: Optional[Union[Sequence[np.ndarray], None]] = None,
     max_detections: int = 100,
     case_id: Optional[str] = None,
 ) -> List[Dict[int, Dict[str, np.ndarray]]]:
@@ -40,7 +40,7 @@ def matching_batch(
             D number of predictions
         pred_scores: predicted score for each bounding box; List[[D]],
             D number of predictions
-        pred_outside: boolean whether the predicted box is inside the
+        pred_ignore: boolean whether the predicted box is inside the
             criterion range
         gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
             truth
@@ -60,12 +60,15 @@ def matching_batch(
             for each image (list)
     """
     results = []
+    if pred_ignore is None:
+        pred_ignore = [np.zeros(pclasses.shape, dtype=int) for pclasses in pred_classes]
+
     # iterate over images/batches
-    for pboxes, pclasses, pscores, poutside, gboxes, gclasses, gignore in zip(
+    for pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore in zip(
         pred_boxes,
         pred_classes,
         pred_scores,
-        pred_outside,
+        pred_ignore,
         gt_boxes,
         gt_classes,
         gt_ignore,
@@ -74,13 +77,13 @@ def matching_batch(
         result = {}  # dict contains results for each class in one image
         for c in img_classes:
             pred_mask = pclasses == c  # mask predictions with current class
-            gt_mask = gclasses == c  # mask ground trtuh with current class
+            gt_mask = gclasses == c  # mask ground truth with current class
 
             if not np.any(gt_mask):  # no ground truth
                 result[c] = _matching_no_gt(
                     iou_thresholds=iou_thresholds,
                     pred_scores=pscores[pred_mask],
-                    pred_outside=poutside[pred_mask],
+                    pred_ignore=pignore[pred_mask],
                     max_detections=max_detections,
                     case_id=case_id,
                 )
@@ -95,7 +98,7 @@ def matching_batch(
                     iou_fn=iou_fn,
                     pred_boxes=pboxes[pred_mask],
                     pred_scores=pscores[pred_mask],
-                    pred_outside=poutside[pred_mask],
+                    pred_ignore=pignore[pred_mask],
                     gt_boxes=gboxes[gt_mask],
                     gt_ignore=gignore[gt_mask],
                     max_detections=max_detections,
@@ -109,8 +112,8 @@ def matching_batch(
 def _matching_no_gt(
     iou_thresholds: Sequence[float],
     pred_scores: np.ndarray,
-    pred_outside: np.ndarray,
     max_detections: int,
+    pred_ignore: Optional[Union[np.ndarray, None]] = None,
     case_id: Optional[str] = None,
 ):
     """
@@ -136,10 +139,12 @@ def _matching_no_gt(
             `dtIgnore`: detections which should be ignored [T, D],
                 indicate which detections should be ignored
     """
+    if pred_ignore is None:
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
     dt_scores = pred_scores[dt_ind]
-    dt_outside = pred_outside[dt_ind]
+    dt_outside = pred_ignore[dt_ind]
 
     num_preds = len(dt_scores)
 
@@ -206,11 +211,11 @@ def _matching_single_image_single_class(
     iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
     pred_boxes: np.ndarray,
     pred_scores: np.ndarray,
-    pred_outside: np.ndarray,
     gt_boxes: np.ndarray,
     gt_ignore: np.ndarray,
     max_detections: int,
     iou_thresholds: Sequence[float],
+    pred_ignore: Optional[Union[np.ndarray, None]] = None,
     case_id: Optional[str] = None,
 ) -> Dict[str, np.ndarray]:
     """
@@ -243,13 +248,16 @@ def _matching_single_image_single_class(
             `dtIgnore`: detections which should be ignored [T, D],
                 indicate which detections should be ignored
     """
+    if pred_ignore is None:
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
+
     # filter for max_detections highest scoring predictions to speed up computation
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
 
     pred_boxes = pred_boxes[dt_ind]
     pred_scores = pred_scores[dt_ind]
-    dt_outside = pred_outside[dt_ind]
+    dt_outside = pred_ignore[dt_ind]
     # sort ignored ground truth to last positions
     gt_ind = np.argsort(gt_ignore, kind="mergesort")
     gt_boxes = gt_boxes[gt_ind]

@@ -147,9 +147,9 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
             assert len(gt_ignore_final) == len(gt_ignore)
 
-            # Find detections that are outside the
+            # Find detections that are outside the criterion
             pred_outside = [
-                np.logical_or(dt_box_criterion < criterion_range[0], dt_box_criterion > criterion_range[1])
+                np.logical_or(dt_box_criterion < criterion_range[0], dt_box_criterion >= criterion_range[1])
                 for dt_box_criterion in dt_boxes_criterion
             ]
             # Get all matches
@@ -160,7 +160,7 @@ class DetectionEvaluator(AbstractEvaluator):
                     pred_boxes=pred_boxes,
                     pred_classes=pred_classes,
                     pred_scores=pred_scores,
-                    pred_outside=pred_outside,
+                    pred_ignore=pred_outside,
                     gt_boxes=gt_boxes,
                     gt_classes=gt_classes,
                     gt_ignore=gt_ignore_final,
