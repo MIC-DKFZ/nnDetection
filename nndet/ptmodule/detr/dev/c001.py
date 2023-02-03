@@ -27,15 +27,14 @@ from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
-from nndet.nn.transformer.conditional_detr_transformer import (
-    ConditionalDetrTransformer,
+from nndet.nn.transformer.layers.conditional_detr import (
     ConditionalDETRTransformerDecoder,
 )
-from nndet.nn.transformer.detr_transformer import (
-    DETRTransformer,
+from nndet.nn.transformer.layers.detr import (
     DETRTransformerDecoder,
     DETRTransformerEncoder,
 )
+from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.box_detr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
@@ -151,7 +150,7 @@ class BoxDETRC001FocalRes(BoxDETRC001):
 class BoxCDETRC001Focal(BoxDETRC001):
     transformer_encoder_cls = DETRTransformerEncoder
     transformer_decoder_cls = ConditionalDETRTransformerDecoder
-    transformer_cls = ConditionalDetrTransformer
+    transformer_cls = DETRTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
@@ -183,7 +182,7 @@ class BoxCDETRC001Focal_S16(BoxCDETRC001Focal):
 class BoxCDETRC001ResFocal(BoxDETRC001):
     transformer_encoder_cls = DETRTransformerEncoder
     transformer_decoder_cls = ConditionalDETRTransformerDecoder
-    transformer_cls = ConditionalDetrTransformer
+    transformer_cls = DETRTransformer
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head

@@ -1,3 +1,11 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from detrex licensed under
+# SPDX-FileCopyrightText: 2022, The IDEA Authors
+# SPDX-License-Identifier: Apache-2.0
+
 import warnings
 from typing import Optional
 
@@ -6,20 +14,6 @@ from torch import nn as nn
 
 
 class ConditionalSelfAttention(nn.Module):
-    """Conditional Self-Attention Module used in Conditional-DETR
-    `Conditional DETR for Fast Training Convergence.
-    <https://arxiv.org/pdf/2108.06152.pdf>`_
-    Args:
-        embed_dim (int): The embedding dimension for attention.
-        num_heads (int): The number of attention heads.
-        attn_drop_value (float): A Dropout layer on attn_output_weights.
-            Default: 0.0.
-        proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
-            Default: 0.0.
-        batch_first (bool): if `True`, then the input and output tensor will be
-            provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
-    """
-
     def __init__(
         self,
         embed_dim: int,
@@ -29,6 +23,20 @@ class ConditionalSelfAttention(nn.Module):
         batch_first: bool = False,
         **kwargs,
     ):
+        """
+        Conditional Self-Attention Module used in Conditional-DETR
+        `Conditional DETR for Fast Training Convergence.
+        <https://arxiv.org/pdf/2108.06152.pdf>`_
+        Args:
+            embed_dim (int): The embedding dimension for attention.
+            num_heads (int): The number of attention heads.
+            attn_drop_value (float): A Dropout layer on attn_output_weights.
+                Default: 0.0.
+            proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
+                Default: 0.0.
+            batch_first (bool): if `True`, then the input and output tensor will be
+                provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
+        """
         super(ConditionalSelfAttention, self).__init__()
         self.query_content_proj = nn.Linear(embed_dim, embed_dim)
         self.query_pos_proj = nn.Linear(embed_dim, embed_dim)
