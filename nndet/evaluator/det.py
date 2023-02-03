@@ -53,17 +53,16 @@ class DetectionEvaluator(AbstractEvaluator):
         # set range to cover every object
         self.criterion_ranges = {"": (np.NINF, np.inf)}
         # expand by additional ranges
-        for key, bounds in criterion_ranges.items():
-            if key in self.criterion_ranges:
-                raise ValueError(f"Key {key} is not supported in criterion ranges since it is a default key")
-            if bounds[1] < bounds[0]:
-                raise ValueError(
-                    f"Bounds {bounds} from criterion ranges {criterion_ranges} arenot supported."
-                    "Upper bounds needs to larger than lower bound!"
-                )
         if criterion_ranges is not None:
+            for key, bounds in criterion_ranges.items():
+                if key in self.criterion_ranges:
+                    raise ValueError(f"Key {key} is not supported in criterion ranges since it is a default key")
+                if bounds[1] < bounds[0]:
+                    raise ValueError(
+                        f"Bounds {bounds} from criterion ranges {criterion_ranges} are not supported."
+                        "Upper bounds needs to larger than lower bound!"
+                    )
             self.criterion_ranges.update(criterion_ranges)
-
         self.metrics = metrics
         self.filter_keys = filter_keys
 
@@ -126,19 +125,20 @@ class DetectionEvaluator(AbstractEvaluator):
             n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
             gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
 
-        # Compute ground truth volumes, set volume of no gt to -1 to ignore
-        # TODO: add review comment here
+        # Compute ground truth volumes
         gt_boxes_criterion = [
-            np.array([-1]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
+            np.array([]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
         ]
-
+        # Compute detection volumes
+        dt_boxes_criterion = [
+            np.array([]) if dt_boxes_img.size == 0 else self.box_criterion(dt_boxes_img) for dt_boxes_img in pred_boxes
+        ]
         # Loop over all evaluated criterion ranges
         for results_key, criterion_range in self.criterion_ranges.items():
             # Define new gt_ignores based on the criterion
             gt_ignore_final = []
             for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
-                # TODO maybe should switch to use explicit boolean and not zeros?
-                gt_ignore_criterion = np.zeros(len(gt_ignore[i]))
+                gt_ignore_criterion = np.zeros(len(gt_ignore[i]), dtype=int)
                 # If there is no ground truth in this image, we don't need to change the ignored values
                 if not len(gt_ignore[i]) == 0:
                     for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
@@ -147,84 +147,28 @@ class DetectionEvaluator(AbstractEvaluator):
                 gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
             assert len(gt_ignore_final) == len(gt_ignore)
 
+            # Find detections that are outside the
+            pred_outside = [
+                np.logical_or(dt_box_criterion < criterion_range[0], dt_box_criterion > criterion_range[1])
+                for dt_box_criterion in dt_boxes_criterion
+            ]
             # Get all matches
-            temp_matches = self.match_fn(
-                self.iou_fn,
-                self.iou_thresholds,
-                pred_boxes=pred_boxes,
-                pred_classes=pred_classes,
-                pred_scores=pred_scores,
-                gt_boxes=gt_boxes,
-                gt_classes=gt_classes,
-                gt_ignore=gt_ignore_final,
-                max_detections=self.max_detections,
-                case_id=case_id,
-            )
-            # Find unmatched detections and ignore those not fitting to criterion
             self.results_dict[results_key].extend(
-                self.find_dt_ignores(
-                    results_key,
-                    temp_matches,
+                self.match_fn(
+                    self.iou_fn,
                     self.iou_thresholds,
                     pred_boxes=pred_boxes,
                     pred_classes=pred_classes,
                     pred_scores=pred_scores,
+                    pred_outside=pred_outside,
                     gt_boxes=gt_boxes,
                     gt_classes=gt_classes,
                     gt_ignore=gt_ignore_final,
                     max_detections=self.max_detections,
+                    case_id=case_id,
                 )
             )
         return {}
-
-    def find_dt_ignores(
-        self,
-        results_key: str,
-        matches: List[Dict[int, Dict[str, np.ndarray]]],
-        iou_thresholds: Sequence[float],
-        pred_boxes: Sequence[np.ndarray],
-        pred_classes: Sequence[np.ndarray],
-        pred_scores: Sequence[np.ndarray],
-        gt_boxes: Sequence[np.ndarray],
-        gt_classes: Sequence[np.ndarray],
-        gt_ignore: Sequence[Sequence[bool]],
-        max_detections: int = 100,
-    ):
-        # iterate over images/batches
-        for match, pboxes, pclasses, pscores, gboxes, gclasses, gignore in zip(
-            matches, pred_boxes, pred_classes, pred_scores, gt_boxes, gt_classes, gt_ignore
-        ):
-            img_classes = np.union1d(pclasses, gclasses)
-            for c in img_classes:
-                pred_mask = pclasses == c  # mask predictions with current class
-                if not np.any(pred_mask):  # no predictions
-                    continue
-                # if there are predictions, find unmatched predictions outside the ranges and add to dtIgnore
-                pred_boxes_masked = pboxes[pred_mask]
-                pred_scores_masked = pscores[pred_mask]
-                # filter for max_detections and only use the highest scoring predictions to speed up computation
-                dt_ind = np.argsort(-pred_scores_masked, kind="mergesort")
-                dt_ind = dt_ind[:max_detections]
-
-                pred_boxes_sorted = pred_boxes_masked[dt_ind]
-                dt_match = match[c]["dtMatches"]
-                dt_ignore = match[c]["dtIgnore"]
-                # Calculate the box criterion for all boxes
-                dt_boxes_criterion = self.box_criterion(pred_boxes_sorted)
-                # Find outliers
-                dt_outside = np.array(
-                    [
-                        dt_box_criterion <= self.criterion_ranges[results_key][0]
-                        or dt_box_criterion > self.criterion_ranges[results_key][1]
-                        for dt_box_criterion in dt_boxes_criterion
-                    ]
-                ).reshape(1, -1)
-                # ignore outliers and previous ignores
-                dt_ignore = np.logical_or(
-                    dt_ignore, np.logical_and(dt_match == 0, np.repeat(dt_outside, len(iou_thresholds), axis=0))
-                )
-                match[c]["dtIgnore"] = dt_ignore
-        return matches
 
     def finish_online_evaluation(
         self,
