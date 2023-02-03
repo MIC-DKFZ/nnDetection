@@ -40,8 +40,8 @@ def matching_batch(
             D number of predictions
         pred_scores: predicted score for each bounding box; List[[D]],
             D number of predictions
-        pred_ignore: boolean whether the predicted box is inside the
-            criterion range
+        pred_ignore: boolean whether the predicted box should be ignored if
+            it is not matched
         gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
             truth
         gt_classes: ground truth classes; List[[G]], G number of ground truth
@@ -124,6 +124,7 @@ def _matching_no_gt(
         max_detections: maximum number of allowed detections per image.
             This functions uses this parameter to stay consistent with
             the actual matching function which needs this limit.
+        pred_ignore: detections that should be ignored if they are not matched
         case_id: optionally provide a case id which will be return to
             identify the matching result
 
@@ -228,6 +229,7 @@ def _matching_single_image_single_class(
             of predictions
         pred_scores: predicted score for each bounding box; [D], D number of
             predictions
+        pred_ignore: detections that should be ignored if they are not matched
         gt_boxes: ground truth boxes; [G, dim * 2], G number of ground truth
         gt_ignore: specified if which ground truth boxes are not counted as
             true positives (detections which match theses boxes are not
