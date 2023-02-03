@@ -148,7 +148,7 @@ class TestMatching:
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
         assert res["case_id"] == "example"
 
-    def test_box_matching_single_image_single_class_ignore(self, example):
+    def test_box_matching_single_image_single_class_gt_ignore(self, example):
         pred_boxes, pred_scores, gt_boxes = example
         gt_ignore = np.array([1, 0, 0])
         iou_thresholds = [0.1, 0.5]
@@ -195,6 +195,32 @@ class TestMatching:
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
         assert res["case_id"] == "example"
 
+    def test_box_matching_single_image_single_class_mul_matches_pred_ignore(self, example):
+        pred_boxes, pred_scores, gt_boxes = example
+        pred_boxes[0, :] = pred_boxes[2, :]  # simulate duplicate prediction
+        pred_ignore = np.array([1, 0, 1])  # set both to ignore, only unmatched should be ignored
+        gt_ignore = np.array([0, 0, 0])
+        iou_thresholds = [0.2, 0.5]
+
+        res = _matching_single_image_single_class(
+            iou_fn=ops_np.box_iou_np,
+            pred_boxes=pred_boxes,
+            pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
+            gt_boxes=gt_boxes,
+            gt_ignore=gt_ignore,
+            max_detections=100,
+            iou_thresholds=iou_thresholds,
+            case_id="example",
+        )
+
+        assert np.isclose(res["dtMatches"], [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0]]).all()
+        assert np.isclose(res["gtMatches"], [[0.0, 1.0, 1.0], [0.0, 1.0, 1.0]]).all()
+        assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
+        assert np.isclose(res["gtIgnore"], [0.0, 0.0, 0.0]).all()
+        assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]).all()
+        assert res["case_id"] == "example"
+
     def test_matching_no_gt(self, example):
         _, pred_scores, _ = example
         iou_thresholds = [0.1, 0.5]
@@ -213,6 +239,28 @@ class TestMatching:
         assert res["gtIgnore"].size == 0
         assert res["gtIgnore"].shape == (0,)
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
+        assert res["case_id"] == "example"
+
+    def test_matching_no_gt_pred_ignore(self, example):
+        _, pred_scores, _ = example
+        pred_ignore = np.array([0, 1, 0])
+        iou_thresholds = [0.1, 0.5]
+
+        res = _matching_no_gt(
+            iou_thresholds=iou_thresholds,
+            pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
+            max_detections=100,
+            case_id="example",
+        )
+
+        assert np.isclose(res["dtMatches"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
+        assert res["gtMatches"].size == 0
+        assert res["gtMatches"].shape == (2, 0)
+        assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
+        assert res["gtIgnore"].size == 0
+        assert res["gtIgnore"].shape == (0,)
+        assert np.isclose(res["dtIgnore"], [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]).all()
         assert res["case_id"] == "example"
 
     def test_matching_no_pred(self, example):
