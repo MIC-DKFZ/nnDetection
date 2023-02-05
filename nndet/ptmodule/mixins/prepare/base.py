@@ -8,6 +8,15 @@ from nndet.io.transforms import AbstractTransform, FindInstances
 
 
 class PrepareMixin(ABC):
+    @classmethod
+    def use_box_io(cls) -> bool:
+        """
+        Returns:
+            bool: `True` if boxes Dataloader and Augmentation should be
+                used for this module. `False` otherwise.
+        """
+        return False
+
     def get_pre_transforms(self, plan: dict) -> List[AbstractTransform]:
         """
         Perform a sequence of transformations to the intput before passing it
@@ -20,10 +29,13 @@ class PrepareMixin(ABC):
         Notes:
             make sure to call the super classes here!
         """
-        transforms = [
-            FindInstances(
-                instance_key="target",
-                save_key="present_instances",
-            ),
-        ]
+        if self.use_box_io():
+            transforms = []
+        else:
+            transforms = [
+                FindInstances(
+                    instance_key="target",
+                    save_key="present_instances",
+                ),
+            ]
         return transforms

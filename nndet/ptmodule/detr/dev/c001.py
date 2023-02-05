@@ -177,3 +177,10 @@ class BoxCDETRC001ResFocal(BoxDETRC001):
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxIOCDETRC001Focal_S16(BoxCDETRC001Focal):
+    @classmethod
+    def use_box_io(cls):
+        return True

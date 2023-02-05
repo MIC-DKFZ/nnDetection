@@ -13,7 +13,7 @@ SEEDS = [0, 1, 2, 3, 4, 5]
 def crop_kwargs() -> Dict:
     return {
         "case_data": np.zeros((2, 16, 32, 64)),
-        "case_seg": np.zeros((1, 16, 32, 64)),
+        # "case_seg": np.zeros((1, 16, 32, 64)),
         "properties": {},
         "case_id": "test_id",
     }

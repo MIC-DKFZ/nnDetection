@@ -68,6 +68,7 @@ class AugmentationSetup(ABC):
         self,
         patch_size: Sequence[int],
         params: dict,
+        use_box_io: bool = False,
     ) -> None:
         """
         Helper class for augmenation setup
@@ -75,6 +76,8 @@ class AugmentationSetup(ABC):
         Args:
             patch_size: output patch size of augmentations
             params: augmentation parameters
+            use_box_io: if `True` augmentation are performed on point based
+                representations
 
         Notes:
             The needed keys of :attr:`params` depend on the exact
@@ -82,6 +85,7 @@ class AugmentationSetup(ABC):
         """
         self.patch_size = patch_size
         self.params = params
+        self.use_box_io = use_box_io
 
     @abstractmethod
     def get_training_transforms(self):

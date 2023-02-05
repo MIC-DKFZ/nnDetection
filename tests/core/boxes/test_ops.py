@@ -138,5 +138,5 @@ def test_permute_boxes_3d():
 
 def test_cat_and_index(boxes0_3d, boxes1_3d):
     boxes, idx = ops_torch.cat_and_index([boxes0_3d, torch.tensor([[]]).reshape(-1, 6), boxes1_3d])
-    torch.allclose(boxes, torch.cat([boxes0_3d, boxes1_3d], dim=0))
-    torch.allclose(idx, torch.tensor([0, 0, 2, 2, 2], dtype=boxes0_3d.dtype))
+    assert torch.allclose(boxes, torch.cat([boxes0_3d, boxes1_3d], dim=0))
+    assert torch.allclose(idx, torch.tensor([0, 0, 2, 2, 2], dtype=boxes0_3d.dtype))
