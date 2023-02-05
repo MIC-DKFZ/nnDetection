@@ -12,6 +12,8 @@ from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model.detr import SetModelMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
@@ -34,7 +36,9 @@ class BoxDETRModule(
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
-    transformer_cls = ...
+    transformer_encoder_cls: Type[TransformerLayerSequence] = ...
+    transformer_decoder_cls: Type[TransformerLayerSequence] = ...
+    transformer_cls: Type[AbstractTransformer] = ...
 
     # head blocks
     head_cls: DETRHead = ...  #: main DETR head

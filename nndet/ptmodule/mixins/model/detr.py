@@ -31,6 +31,8 @@ class SetModelMixin(ModelMixin):
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
+    transformer_encoder_cls = ...
+    transformer_decoder_cls = ...
     transformer_cls = ...
 
     # head blocks
@@ -83,14 +85,7 @@ class SetModelMixin(ModelMixin):
             num_pos_feats=hidden_dim,
             **pos_embed_kwargs,
         )
-        transformer = cls.transformer_cls(
-            d_model=hidden_dim,
-            nhead=model_cfg["attention_heads"],
-            num_encoder_layers=model_cfg["num_encoder_layers"],
-            num_decoder_layers=model_cfg["num_decoder_layers"],
-            dim_feedforward=model_cfg["dim_feedforward"],
-            **model_cfg["transformer_kwargs"],
-        )
+        transformer = cls._build_transformer(plan_arch=plan_arch, model_cfg=model_cfg)
 
         # head & matching
         classifier = cls._build_classifier(
@@ -156,6 +151,36 @@ class SetModelMixin(ModelMixin):
             segmenter=segmenter,
             **model_kwargs,
         )
+
+    @classmethod
+    def _build_transformer(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+    ):
+        encoder = cls.transformer_encoder_cls(
+            embed_dim=model_cfg["hidden_dim"],
+            num_heads=model_cfg["attention_heads"],
+            num_layers=model_cfg["num_encoder_layers"],
+            attn_dropout=model_cfg["transformer_attn_dropout"],
+            proj_dropout=model_cfg["transformer_proj_dropout"],
+            feedforward_dim=model_cfg["dim_feedforward"],
+            ffn_dropout=model_cfg["transformer_ffn_dropout"],
+            post_norm=model_cfg["encoder_post_norm"],
+            dim=plan_arch["dim"],
+        )
+        decoder = cls.transformer_decoder_cls(
+            embed_dim=model_cfg["hidden_dim"],
+            num_heads=model_cfg["attention_heads"],
+            num_layers=model_cfg["num_decoder_layers"],
+            attn_dropout=model_cfg["transformer_attn_dropout"],
+            proj_dropout=model_cfg["transformer_proj_dropout"],
+            feedforward_dim=model_cfg["dim_feedforward"],
+            ffn_dropout=model_cfg["transformer_ffn_dropout"],
+            post_norm=model_cfg["decoder_post_norm"],
+            dim=plan_arch["dim"],
+        )
+        return cls.transformer_cls(encoder=encoder, decoder=decoder)
 
     @classmethod
     def _build_backbone(
@@ -331,292 +356,6 @@ class SetModelMixin(ModelMixin):
             matcher=matcher,
             box_post=box_post,
             **kwargs,
-        )
-
-    @classmethod
-    def has_neck(cls):
-        """
-        Check if configuration should have a neck
-
-        Returns:
-            bool: True if detector needs neck, False othterwise
-        """
-        has_neck = cls.neck_cls is not None
-        if has_neck and cls.neck_conv_cls is None:
-            raise ValueError("Neck class was provided without conv class.")
-        return has_neck
-
-    @classmethod
-    def _build_neck(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        backbone: AbstractBackbone,
-    ) -> AbstractNeck:
-        """
-        Build neck network
-
-        Args:
-            plan_arch: architecture settings
-            model_cfg: additional architecture settings
-
-        Returns:
-            AbstractNeck: neck instance
-        """
-        conv = Generator(cls.neck_conv_cls, plan_arch["dim"])
-        logger.info(f"Building:: neck {cls.neck_cls.__name__}: {model_cfg['neck_kwargs']}")
-
-        decoder_levels = plan_arch["decoder_levels"]
-        neck = cls.neck_cls(
-            conv=conv,
-            conv_kernels=plan_arch["conv_kernels"],
-            relative_strides=backbone.get_relative_strides(),
-            in_channels=backbone.get_channels(),
-            first_decoder_level=min(decoder_levels),
-            last_decoder_level=max(decoder_levels),
-            fpn_out_channels=plan_arch["fpn_channels"],
-            **model_cfg["neck_kwargs"],
-        )
-        return neck
-
-    @classmethod
-    def has_segmenter(cls):
-        """
-        Check if configuration should have a segmenter
-
-        Returns:
-            bool: True if detector needs segemetner, False othterwise
-        """
-        return cls.segmenter_cls is not None
-
-    @classmethod
-    def _build_segmenter(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        backbone: AbstractBackbone,
-    ) -> Segmenter:
-        """
-        Build segmenter head
-
-        Args:
-            plan_arch: architecture settings
-            model_cfg: additional architecture settings
-            neck: neck instance
-
-        Returns:
-            SegmenterType: segmenter head
-        """
-        name = cls.segmenter_cls.__name__
-        kwargs = model_cfg.get("segmenter_kwargs", {})
-        conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
-
-        logger.info(f"Building:: segmenter {name} {kwargs}")
-        segmenter = cls.segmenter_cls(
-            conv,
-            seg_classes=plan_arch["seg_classes"],
-            in_channels=backbone.get_channels(),
-            decoder_levels=plan_arch["decoder_levels"],
-            **kwargs,
-        )
-        return segmenter
-
-
-class DETRMixin(ModelMixin):
-    # define detector cls
-    detector_cls: Type[AbstractOneStageDetector] = BaseDETR
-
-    backbone_cls: Type[AbstractBackbone] = ...  # define class for backbone
-    backbone_conv_cls: Type[CONVSEQ] = ...  # conv class used for backbone
-    # transformer
-    pos_embed_cls: BasePositionEmbedding = ...
-    transformer_cls = ...
-    # head blocks
-    head_cls = ...  # main head
-
-    # [Optional]
-    neck_cls: Optional[Type[AbstractNeck]] = None  #: [optional] define class for neck
-    neck_conv_cls: Optional[Type[CONVSEQ]] = None  #: [optional] conv class used for neck
-
-    # [Optional] Semantic Segmenation Head
-    segmenter_cls: Optional[Type[Segmenter]] = None  #: [optional] segmentation head
-
-    @classmethod
-    def from_config_plan(
-        cls,
-        model_cfg: dict,
-        plan_arch: dict,
-        plan_anchors: dict,
-        patch_size: Optional[Sequence[int]] = None,
-        **kwargs,
-    ):
-        if "plan_arch_overwrites" in model_cfg:
-            logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} ")
-            plan_arch.update(model_cfg["plan_arch_overwrites"])
-        logger.info(
-            f"Start channels: {plan_arch['start_channels']}; "
-            f"head channels: {plan_arch['head_channels']}; "
-            f"fpn channels: {plan_arch['fpn_channels']}"
-        )
-        backbone = cls._build_backbone(plan_arch, model_cfg)
-
-        # transformer
-        hidden_dim = model_cfg["hidden_dim"]
-        pos_embed_kwargs = model_cfg.get("pos_embed", {})
-        logger.info(f"Building Pos Embed:: {cls.pos_embed_cls.__name__} with {pos_embed_kwargs}")
-        pos_embed = cls.pos_embed_cls(
-            dim=plan_arch["dim"],
-            num_pos_feats=hidden_dim,
-            **pos_embed_kwargs,
-        )
-        transformer = cls.transformer_cls(
-            d_model=hidden_dim,
-            nhead=model_cfg["attention_heads"],
-            num_encoder_layers=model_cfg["num_encoder_layers"],
-            num_decoder_layers=model_cfg["num_decoder_layers"],
-            dim_feedforward=model_cfg["dim_feedforward"],
-            **model_cfg["transformer_kwargs"],
-        )
-
-        # head
-        head = cls._build_head(plan_arch, model_cfg)
-
-        # build optional modules
-        # these are not part of the original DETR architecture
-        if cls.has_neck():
-            neck = cls._build_neck(
-                backbone=backbone,
-                plan_arch=plan_arch,
-                model_cfg=model_cfg,
-            )
-            backbone = SpineWrapper(
-                backbone=backbone,
-                neck=neck,
-            )
-
-        if cls.has_segmenter():
-            segmenter = cls._build_segmenter(
-                plan_arch=plan_arch,
-                model_cfg=model_cfg,
-                backbone=backbone,
-            )
-        else:
-            segmenter = None
-
-        # Parse model kwargs
-        model_kwargs = {}
-        if "kwargs" in model_cfg.keys():
-            model_kwargs.update(model_cfg["kwargs"])
-
-        return cls.detector_cls(
-            backbone=backbone,
-            transformer=transformer,
-            head=head,
-            pos_embed=pos_embed,
-            hidden_dim=hidden_dim,
-            detection_per_img=model_cfg["detection_per_img"],
-            query_dim=model_cfg["query_dim"],
-            segmenter=segmenter,
-            **model_kwargs,
-        )
-
-    @classmethod
-    def _build_backbone(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        patch_size: Optional[Sequence[int]] = None,
-    ) -> AbstractBackbone:
-        """
-        Build backbone network
-
-        Args:
-            plan_arch: architecture settings
-            model_cfg: additional architecture settings
-            patch_size: optionally provide the patch size
-                to check compatibility with backbone
-
-        Returns:
-            AbstractBackbone: backbone instance
-        """
-
-        conv = Generator(cls.backbone_conv_cls, plan_arch["dim"])
-        backbone_kwargs = {}
-        if "backbone_kwargs" in model_cfg:
-            backbone_kwargs = model_cfg["backbone_kwargs"]
-        backbone: AbstractBackbone = cls.backbone_cls.from_config_plan(
-            conv=conv,
-            backbone_cfg=backbone_kwargs,
-            plan_arch=plan_arch,
-        )
-        if patch_size is not None:
-            if not backbone.check_patch_size(patch_size):
-                raise ValueError(
-                    f"Backbone {cls.backbone_cls.__name__} with absolute "
-                    f"strides {backbone.get_absolute_strides()} is not compatible "
-                    f"with patch size {patch_size}"
-                )
-            else:
-                logger.info("Patch size check complete, backbone is compatible.")
-
-        # If configured, load weights from a nnDetection pretrained encoder
-        # FIXME this gives error when continuing training
-        if "pretrained_encoder" in model_cfg:
-            if model_cfg["pretrained_encoder"]:
-                path = Path(model_cfg["pretrain_dir"]) / "model_best.ckpt"
-                assert os.path.exists(path), f"No state dict found at {path}"
-                pretrain_dict = torch.load(path)["state_dict"]
-                weight_dict = {
-                    k[15:]: v  # Copy all keys and values from the pretrained state dict
-                    for k, v in pretrain_dict.items()  # backbone. k[15:] filters out the "model.backbone." which is not
-                    if k[:15] == "model.backbone."  # needed to load the weights into the encoder
-                }
-                backbone.load_state_dict(weight_dict)
-                logger.info(f"Using Pretrained Model Weights for {cls.backbone_cls.__name__} from {path}.")
-        return backbone
-
-    @classmethod
-    def _build_head(cls, plan_arch, model_cfg):
-        # Obtain needed parameters
-        num_classes = plan_arch["classifier_classes"]
-        hidden_dim = model_cfg["hidden_dim"]
-        losses = ["labels", "boxes", "cardinality"]
-        # Build all necessary modules
-        classifier = cls.head_cls.classifier_cls(in_features=hidden_dim, num_classes=num_classes)
-        regressor = cls.head_cls.regressor_cls(
-            input_dim=hidden_dim,
-            hidden_dim=hidden_dim,
-            output_dim=6,
-            num_layers=model_cfg["regressor_depth"],
-        )
-
-        matcher_kwargs = {}
-        if "matcher_kwargs" in model_cfg:
-            matcher_kwargs = model_cfg["matcher_kwargs"]
-
-        matcher = cls.head_cls.matcher_cls(
-            model_cfg["loss_ce_matcher"],
-            model_cfg["loss_bbox_matcher"],
-            model_cfg["loss_giou_matcher"],
-            **matcher_kwargs,
-        )
-
-        weight_dict = {
-            "loss_ce": model_cfg["loss_ce"],
-            "loss_bbox": model_cfg["loss_bbox"],
-            "loss_giou": model_cfg["loss_giou"],
-        }
-        head_kwargs = {}
-        if "head_kwargs" in model_cfg:
-            head_kwargs = model_cfg["head_kwargs"]
-        return cls.head_cls(
-            classifier,
-            regressor,
-            matcher,
-            weight_dict=weight_dict,
-            losses=losses,
-            num_classes=num_classes,
-            **head_kwargs,
         )
 
     @classmethod
