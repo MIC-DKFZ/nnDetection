@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Sequence, Type
+from typing import List, Optional, Sequence, Type
 
 import torch
 from loguru import logger
@@ -19,6 +19,9 @@ from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 from nndet.nn.layers.wrapper import Generator
 from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 from nndet.ptmodule.mixins.model import ModelMixin
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
@@ -29,11 +32,14 @@ class SetModelMixin(ModelMixin):
 
     backbone_cls: Type[AbstractBackbone] = ...  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
+
+    channel_mapper_cls: ChannelMapper = ...  #: define channel mapper
+
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
-    transformer_encoder_cls = ...
-    transformer_decoder_cls = ...
-    transformer_cls = ...
+    transformer_encoder_cls: TransformerLayerSequence = ...
+    transformer_decoder_cls: TransformerLayerSequence = ...
+    transformer_cls: Type[AbstractTransformer] = ...
 
     # head blocks
     head_cls: DETRHead = ...  #: main DETR head
@@ -85,6 +91,11 @@ class SetModelMixin(ModelMixin):
             num_pos_feats=hidden_dim,
             **pos_embed_kwargs,
         )
+
+        channel_mapper = cls._build_channel_mapper(
+            plan_arch=plan_arch, channels=backbone.get_channels(), model_cfg=model_cfg
+        )
+
         transformer = cls._build_transformer(plan_arch=plan_arch, model_cfg=model_cfg)
 
         # head & matching
@@ -143,6 +154,7 @@ class SetModelMixin(ModelMixin):
         return cls.detector_cls(
             backbone=backbone,
             transformer=transformer,
+            channel_mapper=channel_mapper,
             head=head,
             pos_embed=pos_embed,
             hidden_dim=hidden_dim,
@@ -181,6 +193,26 @@ class SetModelMixin(ModelMixin):
             dim=plan_arch["dim"],
         )
         return cls.transformer_cls(encoder=encoder, decoder=decoder)
+
+    @classmethod
+    def _build_channel_mapper(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        channels: List[int],
+    ):
+        num_in_features = model_cfg["num_feature_levels"]
+        # get the last num_in_features
+        in_features = [i for i in range(len(channels) - 1, len(channels) - 1 - num_in_features, -1)]
+        # Change norm or activation or other using kwargs
+        channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
+        return cls.channel_mapper_cls(
+            dim=plan_arch["dim"],
+            in_channels=channels,
+            in_features=in_features,
+            out_channels=model_cfg["hidden_dim"],
+            **channel_mapper_kwargs,
+        )
 
     @classmethod
     def _build_backbone(
@@ -337,7 +369,7 @@ class SetModelMixin(ModelMixin):
         regressor: FFNRegressor,
         matcher: BaseMatcher,
         box_post: DETRBoxPost,
-    ) -> BaseDETR:
+    ) -> DETRHead:
         name = cls.head_cls.__name__
         kwargs = model_cfg["head_kwargs"]
 

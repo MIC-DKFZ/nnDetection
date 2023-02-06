@@ -8,8 +8,13 @@ backbone_kwargs: # keyword arguments passed to encoder
   start_channels: 48 # number of starting channels
   max_channels: 512 # maximum number of channels
 
+# Channel Mapper
+channel_mapper_kwargs: {}
+num_feature_levels: 1
+num_total_levels: 1
+
 # transformer
-transformer_kwargs: {} # Transformer kwargs: needed
+transformer_kwargs: {} # Transformer kwargs
 num_encoder_layers: 3
 encoder_post_norm: False
 num_decoder_layers: 3

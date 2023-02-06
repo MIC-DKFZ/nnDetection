@@ -27,6 +27,7 @@ from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
+from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.layers.conditional_detr import (
     ConditionalDETRTransformerDecoder,
 )
@@ -44,6 +45,7 @@ from nndet.utils.typing import CONVSEQ, LINEARSEQ
 class BoxDETRC001(BoxDETRModule):
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
     # transformer
     pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
     transformer_encoder_cls = DETRTransformerEncoder

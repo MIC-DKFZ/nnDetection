@@ -16,4 +16,4 @@ def attention():
 
 @pytest.fixture
 def base_transformer_layer():
-    return BaseTransformerLayer()
+    return BaseLayerSequence
