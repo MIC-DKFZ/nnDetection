@@ -8,12 +8,14 @@ from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
+from nndet.nn.neck.channel_mapper import ChannelMapper
 
 
 class BaseDETR(AbstractDetector):
     def __init__(
         self,
         backbone: AbstractBackbone,
+        channel_mapper: ChannelMapper,
         transformer: nn.Module,
         head: DETRHead,
         pos_embed: BasePositionEmbedding,
@@ -42,24 +44,9 @@ class BaseDETR(AbstractDetector):
         self.detection_per_img = detection_per_img
         # Set Backbone and get channels and feature levels
         self.backbone = backbone
-        channels = self.backbone.get_channels()
+        self.channel_mapper = channel_mapper
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
-        self.input_feature_levels = len(channels)
-
-        # For future multi feature
-        if num_feature_levels == 1:
-            self.input_proj = nn.ModuleList([nn.Conv3d(channels[-1], self.hidden_dim, kernel_size=1)])
-        else:
-            input_proj_list = []
-            for i in range(num_feature_levels):
-                channel_idx = self.input_feature_levels - num_feature_levels + i
-                module_list = nn.Sequential(
-                    nn.Conv3d(channels[channel_idx], self.hidden_dim, kernel_size=1),
-                    nn.GroupNorm(num_groups=16, num_channels=self.hidden_dim),
-                )
-                input_proj_list.append(module_list)
-            self.input_proj = nn.ModuleList(input_proj_list)
 
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
@@ -250,12 +237,15 @@ class BaseDETR(AbstractDetector):
         """
 
         # Compute feature list from backbone
-        features = self.backbone(inp)  # [l] (N, C_i, px, py, (pz))
+        features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
-        srcs_sequence = self.input_proj[0](features[-1])  # (N, 1, C, px, py, (pz))
-        # Get Position Embedding and pass through transformer
-        pos_embed = self.pos_embed(srcs_sequence)  # (N, C, px, py, (pz))
-        out_sequence, memory, reference = self.transformer([srcs_sequence], self.query_pos.weight, [pos_embed])
+        mapped_features = self.channel_mapper(features)  # [num_feature_levels] (N, C, px, py, (pz))
+        # Get Position Embedding
+        pos_embeds = []
+        for feature in mapped_features:
+            pos_embeds.append(self.pos_embed(feature))
+        # transformer
+        out_sequence, memory, reference = self.transformer(mapped_features, self.query_pos.weight, pos_embeds)
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
