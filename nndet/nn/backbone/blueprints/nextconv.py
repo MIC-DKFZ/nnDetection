@@ -446,7 +446,7 @@ if DropPath is not None:
                         conv stem. Default: False
 
                     ``"num_conv"`` Union[int, Sequence[int]]
-                        [optional] number of convolutions per level. Default 3.
+                        [optional] number of convolutions per level. Default 6.
 
                     ``'num_conv_stem'`` int
                         [optional] number of convolutions in stem. Default to
@@ -492,7 +492,7 @@ if DropPath is not None:
             logger.info(f"Building:: backbone {cls.__name__}: {backbone_cfg} ")
             # parse config and plan
             num_levels = len(plan_arch["conv_kernels"])
-            num_conv = backbone_cfg.get("num_conv", 3)
+            num_conv = backbone_cfg.get("num_conv", 6)
             if isinstance(num_conv, int):
                 num_conv = [num_conv] * num_levels
             else:

@@ -9,6 +9,7 @@ from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
 from nndet.core.post.detr import DETRBoxPost, TopKBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.nextconv import ConvNeXtBackbone
 from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
@@ -86,3 +87,8 @@ class BoxIOCDETRC002(BoxCDETRC002):
     @classmethod
     def use_box_io(cls):
         return True
+
+
+@MODULE_REGISTRY.register
+class BoxCDETRC002NeXt(BoxDETRC002):
+    backbone_cls: Type[AbstractBackbone] = ConvNeXtBackbone
