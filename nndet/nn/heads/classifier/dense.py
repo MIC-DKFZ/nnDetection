@@ -18,7 +18,8 @@ from nndet.losses.classification.poly1 import (
     Poly1BCEWithLogits,
     Poly1FocalLossWithLogits,
 )
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier
+from nndet.nn.heads.abstract import Classifier
+from nndet.utils.collections import CONV_TYPES
 
 
 class DenseClassifier(Classifier):

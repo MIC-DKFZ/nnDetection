@@ -10,8 +10,6 @@ from torch import Tensor
 
 from nndet.core.boxes import BoxCoderND
 
-CONV_TYPES = (nn.Conv2d, nn.Conv3d)
-
 
 class Classifier(nn.Module):
     @abstractmethod
