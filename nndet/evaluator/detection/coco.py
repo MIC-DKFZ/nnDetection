@@ -423,8 +423,8 @@ class COCOMetric(DetectionMetric):
         cls,
         result_scores: Dict[str, float],
         result_meta: Dict[str, Any],
-        save_dir: Optional[os.PathLike] = None,
-    ) -> Dict:
+        save_dir: os.PathLike,
+    ) -> None:
         """
         Plot precision recall curves of AP computation
         (these are alrady interpolated!)
@@ -432,42 +432,39 @@ class COCOMetric(DetectionMetric):
         Args:
             result_scores: single as obtained from `compute` function
             result_meta: meta information as obtained from `compute` function
-            save_dir: path to directory where files should be saved. If None,
-                the plots won't be saved
+            save_dir: path to directory where files should be saved
 
         Returns:
             Dict: figures of create plots
         """
-        figures = {}
         recall = result_meta["recall_thresholds"]
         save_name = result_meta["save_name"]
         for iou in result_meta["iou_thresholds"]:
             max_det = result_meta["max_detections"][-1]
 
+            # create plot
+            fig, ax = plt.subplots()
+            ax.set_xlim(-0.05, 1.05)
+            ax.set_ylim(-0.05, 1.05)
+            ax.set_xlabel("Recall")
+            ax.set_ylabel("Precision")
+            ax.grid(True)
+
             for cls_str in result_meta["classes"]:
                 key = f"{cls_str}_{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
                 prec = result_meta[key]["curve"]
+                ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]}")
 
-                # create plot
-                fig, ax = plt.subplots()
-                ax.set_xlim(0, 1)
-                ax.set_ylim(0, 1)
-                ax.set_xlabel("Recall")
-                ax.set_ylabel("Precision")
-                ax.grid(True)
+            title = f"{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
+            ax.set_title(title)
+            ax.legend(loc="lower right")
 
-                ax.plot(recall, prec, "-", label=f"AP {result_scores[key]}")
-                ax.set_title(key)
-                ax.legend(loc="lower right")
-
-                # save file
-                if save_dir is not None:
-                    ap_save_dir = Path(save_dir) / "results_AP"
-                    ap_save_dir.mkdir(exist_ok=True)
-                    # fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.png")
-                    fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.pdf")
-                figures[key] = fig
-        return figures
+            # save file
+            ap_save_dir = Path(save_dir) / "results_AP"
+            ap_save_dir.mkdir(exist_ok=True)
+            # fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.png")
+            fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.pdf")
+            plt.close(fig)
 
 
 def compute_stats_single_threshold(
