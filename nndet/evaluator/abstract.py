@@ -96,8 +96,9 @@ class AbstractMetric(ABC):
         """
         raise NotImplementedError
 
+    @classmethod
     def plot(
-        self,
+        cls,
         result_scores: Dict[str, float],
         result_curves: Dict[str, Any],
         save_dir: Optional[os.PathLike] = None,

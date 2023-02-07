@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
+import os
 from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -29,6 +30,7 @@ class DetectionEvaluator(AbstractEvaluator):
         filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
         box_criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
+        save_dir: Optional[os.PathLike] = None,
     ):
         """
         Class for evaluate detection metrics
@@ -44,6 +46,8 @@ class DetectionEvaluator(AbstractEvaluator):
                 computes scalar criterion value array [N]
             criterion_ranges: Dict containing names and ranges of
                 additional ranges of interest
+            save_dir: if provided, this will call the plot function of the
+                metric with the defined save_dir to create additional plots
         """
         self.iou_fn = iou_fn
         self.match_fn = match_fn
@@ -70,6 +74,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
+        self.save_dir = Path(save_dir)
 
     def get_unique_iou_thresholds(self):
         """
@@ -192,6 +197,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 _criterion_key = criterion_key if criterion_key else None
                 iou_filtered_results = list(map(_filter, results))
                 score, curve = metric(iou_filtered_results, tag=_criterion_key)
+                metric.plot(score, curve, save_dir=self.save_dir)
 
                 if score is not None:
                     metric_scores.update(score)
@@ -284,7 +290,6 @@ class DetectionEvaluator(AbstractEvaluator):
                 iou_thresholds=iou_thresholds,
                 fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
                 verbose=verbose,
-                save_dir=None if fast else save_dir,
             )
         )
         metrics.append(
@@ -311,6 +316,7 @@ class DetectionEvaluator(AbstractEvaluator):
             iou_fn=cls.similarity_fn,
             box_criterion=box_criterion,
             criterion_ranges=criterion_ranges_final,
+            save_dir=save_dir,
         )
 
 

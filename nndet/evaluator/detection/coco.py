@@ -8,6 +8,7 @@
 
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -417,8 +418,9 @@ class COCOMetric(DetectionMetric):
             "scores": scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
         }
 
+    @classmethod
     def plot(
-        self,
+        cls,
         result_scores: Dict[str, float],
         result_meta: Dict[str, Any],
         save_dir: Optional[os.PathLike] = None,
@@ -437,14 +439,14 @@ class COCOMetric(DetectionMetric):
             Dict: figures of create plots
         """
         figures = {}
-        recall_thresholds = result_meta["recall_thresholds"]
+        recall = result_meta["recall_thresholds"]
         save_name = result_meta["save_name"]
         for iou in result_meta["iou_thresholds"]:
             max_det = result_meta["max_detections"][-1]
 
             for cls_str in result_meta["classes"]:
                 key = f"{cls_str}_{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
-                prec = result_meta[key]
+                prec = result_meta[key]["curve"]
 
                 # create plot
                 fig, ax = plt.subplots()
@@ -454,15 +456,15 @@ class COCOMetric(DetectionMetric):
                 ax.set_ylabel("Precision")
                 ax.grid(True)
 
-                ax.plot(recall_thresholds, prec, "o-", label=f"AP {result_scores[key]}")
+                ax.plot(recall, prec, "-", label=f"AP {result_scores[key]}")
                 ax.set_title(key)
                 ax.legend(loc="lower right")
 
                 # save file
                 if save_dir is not None:
-                    ap_save_dir = save_dir / "results_AP"
-                    ap_save_dir.mkdir(exists_ok=True)
-                    fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.png")
+                    ap_save_dir = Path(save_dir) / "results_AP"
+                    ap_save_dir.mkdir(exist_ok=True)
+                    # fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.png")
                     fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.pdf")
                 figures[key] = fig
         return figures
