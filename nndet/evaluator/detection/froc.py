@@ -191,14 +191,10 @@ class FROCMetric(DetectionMetric):
         save_name = self.get_save_name(tag=tag)
         if len(results) == 0:
             logger.warning("WARNING, no results found for froc computation")
-            return (
-                {f"{save_name}_score": 0},
-                {
-                    f"{save_name}_curve": np.zeros(len(self.fpi_thresholds)),
-                    f"{save_name}_fpi_thresholds": self.fpi_thresholds,
-                    f"{save_name}_num_images": num_images,
-                    f"{save_name}_num_gt": 0,
-                },
+            return self.zero_result(
+                save_name=save_name,
+                num_images=num_images,
+                num_gt=0,
             )
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
@@ -211,15 +207,11 @@ class FROCMetric(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.error("No ground truth found! Returning 0 in FROC.")
-            return (
-                {f"{save_name}_score": 0},
-                {
-                    f"{save_name}_curve": np.zeros(len(self.fpi_thresholds)),
-                    f"{save_name}_fpi_thresholds": self.fpi_thresholds,
-                    f"{save_name}_num_images": num_images,
-                    f"{save_name}_num_gt": num_gt,
-                },
+            logger.warning("No ground truth found! Returning 0 in FROC.")
+            return self.zero_result(
+                save_name=save_name,
+                num_images=num_images,
+                num_gt=num_gt,
             )
 
         # keep shape in case of 1 threshold
@@ -244,6 +236,36 @@ class FROCMetric(DetectionMetric):
         curves[f"{save_name}_fpi_thresholds"] = self.fpi_thresholds
         curves[f"{save_name}_num_images"] = num_images
         curves[f"{save_name}_num_gt"] = num_gt
+        return scores, curves
+
+    def zero_result(
+        self,
+        save_name: str,
+        num_images: int,
+        num_gt: int,
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        """
+        Helper function to create zero result
+
+        Args:
+            save_name: name of evaluation
+            num_images: number of images
+            num_gt: number of ground truth objects
+
+        Returns:
+            Dict[str, float]: FROC score per IoU
+            Dict[str,np.ndarray]: FROC curve computed at specified fps
+                thresholds per IoU; [R] R is the number of fps thresholds
+        """
+        scores = {}
+        curves = {
+            f"{save_name}_fpi_thresholds": self.fpi_thresholds,
+            f"{save_name}_num_images": num_images,
+            f"{save_name}_num_gt": num_gt,
+        }
+        for _, iou_val in enumerate(self.iou_thresholds):
+            scores[f"{save_name}_score_IoU_{iou_val:.2f}"] = 0
+            curves[f"{save_name}_score_IoU_{iou_val:.2f}"] = np.zeros(len(self.fpi_thresholds))
         return scores, curves
 
     @staticmethod
