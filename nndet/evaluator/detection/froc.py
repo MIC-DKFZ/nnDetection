@@ -264,7 +264,7 @@ class FROCMetric(DetectionMetric):
             f"{save_name}_num_gt": num_gt,
         }
         for _, iou_val in enumerate(self.iou_thresholds):
-            scores[f"{save_name}_score_IoU_{iou_val:.2f}"] = 0
+            scores[f"{save_name}_score_IoU_{iou_val:.2f}"] = np.nan
             curves[f"{save_name}_score_IoU_{iou_val:.2f}"] = np.zeros(len(self.fpi_thresholds))
         return scores, curves
 
