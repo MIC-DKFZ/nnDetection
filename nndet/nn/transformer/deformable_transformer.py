@@ -15,210 +15,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from nndet_detr.util.misc import FFN, inverse_sigmoid
 
-from nndet.nn.transformer.attention.multi_head_attention_wrapper import (
-    MultiheadAttention,
-)
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
-from nndet.nn.transformer.base_layer.base_transformer_layer import BaseTransformerLayer
-from nndet.nn.transformer.base_layer.transformer_layer_sequence import (
-    TransformerLayerSequence,
-)
-
-
-class DeformableDETRTransformerEncoder(TransformerLayerSequence):
-    def __init__(
-        self,
-        embed_dim: int = 256,
-        num_heads: int = 8,
-        feedforward_dim: int = 1024,
-        attn_dropout: float = 0.1,
-        ffn_dropout: float = 0.1,
-        num_layers: int = 6,
-        post_norm: bool = False,
-        num_feature_levels: int = 4,
-        num_points: int = 4,
-    ):
-        super(DeformableDETRTransformerEncoder, self).__init__(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    MultiScaleDeformableAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        dropout=attn_dropout,
-                        batch_first=True,
-                        num_levels=num_feature_levels,
-                        num_points=num_points,
-                    )
-                ],
-                ffn=FFN(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    output_dim=embed_dim,
-                    num_fcs=2,
-                    ffn_drop=ffn_dropout,
-                ),
-                norm=nn.LayerNorm(embed_dim),
-                operation_order=("self_attn", "norm", "ffn", "norm"),
-            ),
-            num_layers=num_layers,
-        )
-        self.embed_dim = self.layers[0].embed_dim
-        self.pre_norm = self.layers[0].pre_norm
-
-        if post_norm:
-            self.post_norm_layer = nn.LayerNorm(self.embed_dim)
-        else:
-            self.post_norm_layer = None
-
-    def forward(
-        self,
-        query,
-        key,
-        value,
-        query_pos=None,
-        key_pos=None,
-        attn_masks=None,
-        query_key_padding_mask=None,
-        key_padding_mask=None,
-        **kwargs,
-    ):
-
-        for layer in self.layers:
-            query = layer(
-                query,
-                key,
-                value,
-                query_pos=query_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                **kwargs,
-            )
-
-        if self.post_norm_layer is not None:
-            query = self.post_norm_layer(query)
-        return query
-
-
-class DeformableDETRTransformerDecoder(TransformerLayerSequence):
-    def __init__(
-        self,
-        embed_dim: int = 256,
-        num_heads: int = 8,
-        feedforward_dim: int = 1024,
-        attn_dropout: float = 0.1,
-        ffn_dropout: float = 0.1,
-        num_layers: int = 6,
-        return_intermediate: bool = True,
-        num_feature_levels: int = 4,
-        num_points: int = 4,
-    ):
-        super(DeformableDETRTransformerDecoder, self).__init__(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    MultiheadAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        attn_drop=attn_dropout,
-                        batch_first=True,
-                    ),
-                    MultiScaleDeformableAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        dropout=attn_dropout,
-                        batch_first=True,
-                        num_levels=num_feature_levels,
-                        num_points=num_points,
-                    ),
-                ],
-                ffn=FFN(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    output_dim=embed_dim,
-                    ffn_drop=ffn_dropout,
-                ),
-                norm=nn.LayerNorm(embed_dim),
-                operation_order=(
-                    "self_attn",
-                    "norm",
-                    "cross_attn",
-                    "norm",
-                    "ffn",
-                    "norm",
-                ),
-            ),
-            num_layers=num_layers,
-        )
-        self.return_intermediate = return_intermediate
-
-        self.bbox_embed = None
-        self.class_embed = None
-
-    def forward(
-        self,
-        query,
-        key,
-        value,
-        query_pos=None,
-        key_pos=None,
-        attn_masks=None,
-        query_key_padding_mask=None,
-        key_padding_mask=None,
-        reference_points=None,  # num_queries, 4. normalized.
-        valid_ratios=None,
-        **kwargs,
-    ):
-        output = query
-
-        intermediate = []
-        intermediate_reference_points = []
-        for layer_idx, layer in enumerate(self.layers):
-            if reference_points.shape[-1] == 6:
-                reference_points_input = (
-                    reference_points[:, :, None] * torch.cat([valid_ratios, valid_ratios], -1)[:, None]
-                )
-            else:
-                assert reference_points.shape[-1] == 3
-                reference_points_input = reference_points[:, :, None] * valid_ratios[:, None]
-
-            output = layer(
-                output,
-                key,
-                value,
-                query_pos=query_pos,
-                key_pos=key_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                reference_points=reference_points_input,
-                **kwargs,
-            )
-
-            if self.bbox_embed is not None:
-                tmp = self.bbox_embed(output, layer_idx)
-                # FIXME the order xyz,whd might be wrong here
-                if reference_points.shape[-1] == 6:
-                    new_reference_points = tmp + inverse_sigmoid(reference_points)
-                    new_reference_points = new_reference_points.sigmoid()
-                else:
-                    assert reference_points.shape[-1] == 3
-                    new_reference_points = tmp
-                    new_reference_points[..., :3] = tmp[..., :3] + inverse_sigmoid(reference_points)
-                    new_reference_points = new_reference_points.sigmoid()
-                reference_points = new_reference_points.detach()
-
-            if self.return_intermediate:
-                intermediate.append(output)
-                intermediate_reference_points.append(reference_points)
-
-        if self.return_intermediate:
-            return torch.stack(intermediate), torch.stack(intermediate_reference_points)
-
-        return output, reference_points
 
 
 class DeformableDETRTransformer(nn.Module):
@@ -371,9 +171,9 @@ class DeformableDETRTransformer(nn.Module):
     def forward(
         self,
         multi_level_feats,
-        multi_level_masks,
-        multi_level_pos_embeds,
         query_embed,
+        multi_level_pos_embeds,
+        multi_level_masks=None,
         **kwargs,
     ):
         assert self.as_two_stage or query_embed is not None
@@ -381,28 +181,22 @@ class DeformableDETRTransformer(nn.Module):
         mask_flatten = []
         lvl_pos_embed_flatten = []
         spatial_shapes = []
-        for lvl, (feat, mask, pos_embed) in enumerate(
-            zip(multi_level_feats, multi_level_masks, multi_level_pos_embeds)
-        ):
+        for lvl, (feat, pos_embed) in enumerate(zip(multi_level_feats, multi_level_pos_embeds)):
             bs, c, d, h, w = feat.shape
             spatial_shape = (d, h, w)
             spatial_shapes.append(spatial_shape)
 
             feat = feat.flatten(2).transpose(1, 2)  # bs, dhw, c
-            mask = mask.flatten(1)  # bs, dhw
             pos_embed = pos_embed.flatten(2).transpose(1, 2)  # bs, dhw, c
             lvl_pos_embed = pos_embed + self.level_embeds[lvl].view(1, 1, -1)
             lvl_pos_embed_flatten.append(lvl_pos_embed)
             feat_flatten.append(feat)
-            mask_flatten.append(mask)
         feat_flatten = torch.cat(feat_flatten, 1)
-        mask_flatten = torch.cat(mask_flatten, 1)
+        mask_flatten = torch.zeros_like(feat_flatten)
         lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)
         spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=feat_flatten.device)
-
         level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
         valid_ratios = torch.stack([self.get_valid_ratio(m) for m in multi_level_masks], 1)
-
         reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=feat_flatten[-1].device)
 
         memory = self.encoder(

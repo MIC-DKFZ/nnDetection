@@ -247,7 +247,7 @@ class BaseDETR(AbstractDetector):
         # transformer
         out_sequence, memory, reference = self.transformer(mapped_features, self.query_pos.weight, pos_embeds)
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
+        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): encoder output
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
 
         # Calculate Boxes and Class predictions

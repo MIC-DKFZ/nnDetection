@@ -7,8 +7,8 @@ from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.backbone.spine import SpineWrapper
 from nndet.nn.heads.detr.base import DETRHead
-from nndet.nn.transformer.deformable_transformer import (
-    DeformableDETRTransformer,
+from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
+from nndet.nn.transformer.layers.deformable_detr import (
     DeformableDETRTransformerDecoder,
     DeformableDETRTransformerEncoder,
 )

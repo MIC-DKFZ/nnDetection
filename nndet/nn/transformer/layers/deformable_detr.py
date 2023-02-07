@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import torch
-import torch.nn as nn
 from nndet_detr.util.misc import FFN, inverse_sigmoid
+from torch import nn as nn
 
 from nndet.nn.transformer.attention.multi_head_attention_wrapper import (
     MultiheadAttention,
@@ -22,85 +22,10 @@ from nndet.nn.transformer.attention.multi_head_attention_wrapper import (
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
-from nndet.nn.transformer.base_layer.base_transformer_layer import BaseTransformerLayer
-from nndet.nn.transformer.base_layer.transformer_layer_sequence import (
+from nndet.nn.transformer.layers.base_layer import (
+    BaseTransformerLayer,
     TransformerLayerSequence,
 )
-
-
-class DeformableDETRTransformerEncoder(TransformerLayerSequence):
-    def __init__(
-        self,
-        embed_dim: int = 256,
-        num_heads: int = 8,
-        feedforward_dim: int = 1024,
-        attn_dropout: float = 0.1,
-        ffn_dropout: float = 0.1,
-        num_layers: int = 6,
-        post_norm: bool = False,
-        num_feature_levels: int = 4,
-        num_points: int = 4,
-    ):
-        super(DeformableDETRTransformerEncoder, self).__init__(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    MultiScaleDeformableAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        dropout=attn_dropout,
-                        batch_first=True,
-                        num_levels=num_feature_levels,
-                        num_points=num_points,
-                    )
-                ],
-                ffn=FFN(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    output_dim=embed_dim,
-                    num_fcs=2,
-                    ffn_drop=ffn_dropout,
-                ),
-                norm=nn.LayerNorm(embed_dim),
-                operation_order=("self_attn", "norm", "ffn", "norm"),
-            ),
-            num_layers=num_layers,
-        )
-        self.embed_dim = self.layers[0].embed_dim
-        self.pre_norm = self.layers[0].pre_norm
-
-        if post_norm:
-            self.post_norm_layer = nn.LayerNorm(self.embed_dim)
-        else:
-            self.post_norm_layer = None
-
-    def forward(
-        self,
-        query,
-        key,
-        value,
-        query_pos=None,
-        key_pos=None,
-        attn_masks=None,
-        query_key_padding_mask=None,
-        key_padding_mask=None,
-        **kwargs,
-    ):
-
-        for layer in self.layers:
-            query = layer(
-                query,
-                key,
-                value,
-                query_pos=query_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                **kwargs,
-            )
-
-        if self.post_norm_layer is not None:
-            query = self.post_norm_layer(query)
-        return query
 
 
 class DeformableDETRTransformerDecoder(TransformerLayerSequence):
@@ -218,3 +143,78 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
             return torch.stack(intermediate), torch.stack(intermediate_reference_points)
 
         return output, reference_points
+
+
+class DeformableDETRTransformerEncoder(TransformerLayerSequence):
+    def __init__(
+        self,
+        embed_dim: int = 256,
+        num_heads: int = 8,
+        feedforward_dim: int = 1024,
+        attn_dropout: float = 0.1,
+        ffn_dropout: float = 0.1,
+        num_layers: int = 6,
+        post_norm: bool = False,
+        num_feature_levels: int = 4,
+        num_points: int = 4,
+    ):
+        super(DeformableDETRTransformerEncoder, self).__init__(
+            transformer_layers=BaseTransformerLayer(
+                attn=[
+                    MultiScaleDeformableAttention(
+                        embed_dim=embed_dim,
+                        num_heads=num_heads,
+                        dropout=attn_dropout,
+                        batch_first=True,
+                        num_levels=num_feature_levels,
+                        num_points=num_points,
+                    )
+                ],
+                ffn=FFN(
+                    embed_dim=embed_dim,
+                    feedforward_dim=feedforward_dim,
+                    output_dim=embed_dim,
+                    num_fcs=2,
+                    ffn_drop=ffn_dropout,
+                ),
+                norm=nn.LayerNorm(embed_dim),
+                operation_order=("self_attn", "norm", "ffn", "norm"),
+            ),
+            num_layers=num_layers,
+        )
+        self.embed_dim = self.layers[0].embed_dim
+        self.pre_norm = self.layers[0].pre_norm
+
+        if post_norm:
+            self.post_norm_layer = nn.LayerNorm(self.embed_dim)
+        else:
+            self.post_norm_layer = None
+
+    def forward(
+        self,
+        query,
+        key,
+        value,
+        query_pos=None,
+        key_pos=None,
+        attn_masks=None,
+        query_key_padding_mask=None,
+        key_padding_mask=None,
+        **kwargs,
+    ):
+
+        for layer in self.layers:
+            query = layer(
+                query,
+                key,
+                value,
+                query_pos=query_pos,
+                attn_masks=attn_masks,
+                query_key_padding_mask=query_key_padding_mask,
+                key_padding_mask=key_padding_mask,
+                **kwargs,
+            )
+
+        if self.post_norm_layer is not None:
+            query = self.post_norm_layer(query)
+        return query
