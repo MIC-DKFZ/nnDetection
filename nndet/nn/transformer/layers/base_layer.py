@@ -174,10 +174,10 @@ class TransformerLayerSequence(nn.Module):
         num_layers: int,
     ):
         """
-        Base class for TransformerEncoder and TransformerDecoder, which will copy
-        the passed `transformer_layers` module `num_layers` time or save the passed
-        list of `transformer_layers` as parameters named ``self.layers``
-        which is the type of ``nn.ModuleList``.
+        Base class for TransformerEncoder and TransformerDecoder, which will
+        copy the passed `transformer_layers` module `num_layers` time or save
+        the passed list of `transformer_layers` as parameters named
+        ``self.layers`` which is the type of ``nn.ModuleList``.
         The users should inherit `TransformerLayerSequence` and implemente their
         own forward function.
         Args:
