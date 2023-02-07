@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -57,7 +58,7 @@ class AbstractMetric(ABC):
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
         tag: Optional[str] = "",
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute metric
 
@@ -90,10 +91,30 @@ class AbstractMetric(ABC):
 
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
-            Dict[str, np.ndarray]: dictionary with arrays, e.g. for
-                visualization of graphs
+            Dict[str, Any]: Contains additional meta data e.g. underlying
+                curves or debug information.
         """
         raise NotImplementedError
+
+    def plot(
+        self,
+        result_scores: Dict[str, float],
+        result_curves: Dict[str, Any],
+        save_dir: Optional[os.PathLike] = None,
+    ) -> Dict:
+        """
+        Plot curves which might have been generated during the evaluation
+
+        Args:
+            result_scores: single scores from metric
+            result_curves: meta data
+            save_dir: path to directory where files should be saved. If None,
+                the plots won't be saved
+
+        Returns:
+            Dict: figures of create plots
+        """
+        pass
 
 
 class DetectionMetric(AbstractMetric):

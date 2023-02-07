@@ -6,9 +6,11 @@
 # SPDX-FileCopyrightText: 2014, Piotr Dollar and Tsung-Yi Lin
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
+import os
 import time
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
@@ -118,7 +120,11 @@ class COCOMetric(DetectionMetric):
 
         Returns:
             Dict[str, float]: dictionary with coco metrics
-            Dict[str, np.ndarray]: None
+            Dict[str, np.ndarray]: dictionary with meta information such
+                as iou- and recall thresholds, precision-recall curve
+                information. Recall values are saved as `recall_tresholds`
+                and precision values are saved under respective
+                `{cls_str}_{save_name}_IoU_{_iou:.2f}_MaxDet_{_max_det}` key.
         """
         if self.verbose:
             logger.info("Start COCO metric computation...")
@@ -129,13 +135,12 @@ class COCOMetric(DetectionMetric):
             toc = time.time()
             logger.info(f"Statistics for COCO metrics finished (t={(toc - tic):0.2f}s).")
 
-        results = {}
-        results.update(self.compute_ap(dataset_statistics, tag=tag))
+        result_scores, result_meta = self.compute_ap(dataset_statistics, tag=tag)
 
         if self.verbose:
             toc = time.time()
             logger.info(f"COCO metrics computed in t={(toc - tic):0.2f}s.")
-        return results, None
+        return result_scores, result_meta
 
     def compute_ap(
         self,
@@ -197,16 +202,18 @@ class COCOMetric(DetectionMetric):
             key = f"{save_name}_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
             results[key] = self.select_ap(dataset_statistics, iou_idx=[idx], max_det_idx=-1)
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = (
-                    f"{cls_str}_" f"{save_name}_IoU_{self.iou_thresholds[idx]:.2f}_" f"MaxDet_{self.max_detections[-1]}"
-                )
+                key = f"{cls_str}_{save_name}_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=[idx],
                     cls_idx=cls_idx,
                     max_det_idx=-1,
                 )
-        return results
+        meta = self.get_pr_curves(
+            dataset_statistics=dataset_statistics,
+            save_name=save_name,
+        )
+        return results, meta
 
     @staticmethod
     def select_ap(
@@ -255,7 +262,42 @@ class COCOMetric(DetectionMetric):
 
         if np.any(prec != -1):
             return np.mean(prec[prec > -1])
-        return np.array([-1])
+        return float(-1)
+
+    def get_pr_curves(self, dataset_statistics: dict, save_name: str) -> Dict[str, Any]:
+        """
+        Retrieve precision recall curves and meta information of metric
+        """
+        meta = {
+            "_num_thresholds": dataset_statistics["counts"][0],
+            "_num_recall_threshods": dataset_statistics["counts"][1],
+            "_num_classes": dataset_statistics["counts"][2],
+            "_num_max_detection_thresholds": dataset_statistics["counts"][3],
+            "save_name": save_name,
+            "max_detections": self.max_detections,
+            "classes": self.classes,
+            "recall_thresholds": self.recall_thresholds,
+            "iou_thresholds": [],
+        }
+        # iter iou thresholds
+        for iou_idx in self.iou_list_idx:
+            _iou = self.iou_thresholds[iou_idx]
+            _max_det = self.max_detections[-1]
+            curves = dataset_statistics["precision"][iou_idx, :, :, -1]  # num_recall_th, num_classes
+
+            # iter classes
+            for cls_idx, cls_str in enumerate(self.classes):
+                meta[f"{cls_str}_{save_name}_IoU_{_iou:.2f}_MaxDet_{_max_det}"] = {
+                    "iou": _iou,
+                    "iou_str": f"{_iou:.2f}",
+                    "class": cls_str,
+                    "maxdet": _max_det,
+                    "_save_name": save_name,
+                    "_cls_idx": cls_idx,
+                    "curve": curves[..., cls_idx],
+                }
+            meta["iou_thresholds"].append(_iou)
+        return meta
 
     def compute_statistics(
         self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
@@ -374,6 +416,56 @@ class COCOMetric(DetectionMetric):
             "precision": precision,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
             "scores": scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
         }
+
+    def plot(
+        self,
+        result_scores: Dict[str, float],
+        result_meta: Dict[str, Any],
+        save_dir: Optional[os.PathLike] = None,
+    ) -> Dict:
+        """
+        Plot precision recall curves of AP computation
+        (these are alrady interpolated!)
+
+        Args:
+            result_scores: single as obtained from `compute` function
+            result_meta: meta information as obtained from `compute` function
+            save_dir: path to directory where files should be saved. If None,
+                the plots won't be saved
+
+        Returns:
+            Dict: figures of create plots
+        """
+        figures = {}
+        recall_thresholds = result_meta["recall_thresholds"]
+        save_name = result_meta["save_name"]
+        for iou in result_meta["iou_thresholds"]:
+            max_det = result_meta["max_detections"][-1]
+
+            for cls_str in result_meta["classes"]:
+                key = f"{cls_str}_{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
+                prec = result_meta[key]
+
+                # create plot
+                fig, ax = plt.subplots()
+                ax.set_xlim(0, 1)
+                ax.set_ylim(0, 1)
+                ax.set_xlabel("Recall")
+                ax.set_ylabel("Precision")
+                ax.grid(True)
+
+                ax.plot(recall_thresholds, prec, "o-", label=f"AP {result_scores[key]}")
+                ax.set_title(key)
+                ax.legend(loc="lower right")
+
+                # save file
+                if save_dir is not None:
+                    ap_save_dir = save_dir / "results_AP"
+                    ap_save_dir.mkdir(exists_ok=True)
+                    fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.png")
+                    fig.savefig(ap_save_dir / f"{key.replace('.', '_')}.pdf")
+                figures[key] = fig
+        return figures
 
 
 def compute_stats_single_threshold(
