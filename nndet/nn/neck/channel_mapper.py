@@ -16,32 +16,6 @@ from nndet.utils.typing import ND_INT
 
 
 class ChannelMapper(nn.Module):
-    """
-    Channel Mapper for reduce/increase channels of backbone features. Modified
-    from `mmdet <https://github.com/open-mmlab/mmdetection/blob/master/mmdet/models/necks/channel_mapper.py>`_.
-    This is used to reduce/increase the channels of backbone features.
-    Args:
-        dim (int): dimension, either 2 or 3
-        input_shape (List[int]): A dict which contains the backbone features meta infomation,
-            e.g. ``input_shape = {"res5": ShapeSpec(channels=2048)}``.
-        in_features (List[int]): A list contains the keys which maps the features output from the backbone,
-            e.g. ``in_features = ["res"]``.
-        out_channels (int): Number of output channels for each scale.
-        kernel_size (int, optional): Size of the convolving kernel for each scale.
-            Default: 3.
-        stride (int, optional): Stride of convolution for each scale. Default: 1.
-        bias (bool, optional): If True, adds a learnable bias to the output of each scale.
-            Default: True.
-        groups (int, optional): Number of blocked connections from input channels to
-            output channels for each scale. Default: 1.
-        dilation (int, optional): Spacing between kernel elements for each scale.
-            Default: 1.
-        norm_layer (nn.Module, optional): The norm layer used for each scale. Default: None.
-        activation (nn.Module, optional): The activation layer used for each scale. Default: None.
-        num_outs (int, optional): Number of output feature maps. There will be ``extra_convs`` when
-            ``num_outs`` is larger than the length of ``in_features``. Default: None.
-    Examples:"""
-
     def __init__(
         self,
         dim: int,
@@ -58,6 +32,28 @@ class ChannelMapper(nn.Module):
         num_outs: int = None,
         **kwargs,
     ):
+        """
+        Channel Mapper for reduce/increase channels of backbone features.
+        This is used to reduce/increase the channels of backbone features.
+        Args:
+            dim: dimension, either 2 or 3
+            input_shape: A dict which contains the backbone features meta
+                infomation.
+            in_features: A list contains the keys which maps the features output
+                from the backbone
+            out_channels: Number of output channels for each scale.
+            kernel_size: Size of the convolving kernel for each scale.
+            stride: Stride of convolution for each scale.
+            bias: If True, adds a learnable bias to the output of each scale.
+            groups: Number of blocked connections from input channels to output
+                channels for each scale.
+            dilation: Spacing between kernel elements for each scale.
+            norm_layer: The norm layer used for each scale.
+            activation: The activation layer used for each scale.
+            num_outs: Number of output feature maps. There will be
+                ``extra_convs`` when ``num_outs`` is larger than the length of
+                ``in_features``.
+        """
         super(ChannelMapper, self).__init__()
         self.extra_convs = None
 

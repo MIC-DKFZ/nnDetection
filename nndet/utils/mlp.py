@@ -1,23 +1,20 @@
-# coding=utf-8
-# Copyright 2022 The IDEA Authors. All rights reserved.
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Parts of this code are from detrex licensed under
+# SPDX-FileCopyrightText: 2022, The IDEA Authors
+# SPDX-License-Identifier: Apache-2.0
 
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+# Parts of this code are from detr licensed under
+# SPDX-FileCopyrightText: 2020, Facebook, Inc.
+# SPDX-License-Identifier: Apache-2.0
 """
 Misc functions, including distributed helpers.
 Mostly copy-paste from torchvision references.
 """
+from typing import Optional
+
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
@@ -60,14 +57,14 @@ class FFN(nn.Module):
 
     def __init__(
         self,
-        embed_dim=256,
-        feedforward_dim=1024,
-        output_dim=None,
-        num_fcs=2,
-        activation=nn.ReLU(inplace=True),
-        ffn_drop=0.0,
-        fc_bias=True,
-        add_identity=True,
+        embed_dim: int = 256,
+        feedforward_dim: int = 1024,
+        output_dim: int = None,
+        num_fcs: int = 2,
+        activation: nn.Module = nn.ReLU(inplace=True),
+        ffn_drop: Optional[float] = 0.0,
+        fc_bias: Optional[bool] = True,
+        add_identity: Optional[bool] = True,
     ):
         super(FFN, self).__init__()
         assert num_fcs >= 2, "num_fcs should be no less " f"than 2. got {num_fcs}."
@@ -94,15 +91,16 @@ class FFN(nn.Module):
         self.layers = nn.Sequential(*layers)
         self.add_identity = add_identity
 
-    def forward(self, x, identity=None) -> torch.Tensor:
-        """Forward function of `FFN`.
+    def forward(self, x: torch.Tensor, identity: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """
+        Forward function of `FFN`.
         Args:
-            x (torch.Tensor): the input tensor used in `FFN` layers.
-            identity (torch.Tensor): the tensor with the same shape as `x`,
+            x: the input tensor used in `FFN` layers.
+            identity: the tensor with the same shape as `x`,
                 which will be used for identity addition. Default: None.
                 if None, `x` will be used.
         Returns:
-            torch.Tensor: the forward results of `FFN` layer
+            the forward results of `FFN` layer
         """
         out = self.layers(x)
         if not self.add_identity:
