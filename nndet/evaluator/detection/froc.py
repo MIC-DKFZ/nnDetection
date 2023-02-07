@@ -274,7 +274,9 @@ class FROCMetric(DetectionMetric):
         froc_scores_cache = defaultdict(list)  # per metric cache
         for cls_idx, cls_str in enumerate(self.classes):
             # filter current class from list of results and put them into a dict with a single entry
+            num_images_og = len(results_list)
             results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
+            assert len(results_by_cls) == num_images_og, "Inconsistent num images!"
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls, tag=tag)
 
