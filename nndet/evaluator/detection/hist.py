@@ -165,7 +165,8 @@ class PredictionHistogram(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.error("No ground truth found! Returning nothing.")
+            # logger.debug(f"No gt found for {self.get_save_name(tag=tag)} class {cls_i}")
+            logger.debug("No gt found for ")
             return {}, {}
 
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
@@ -246,7 +247,7 @@ class PredictionHistogram(DetectionMetric):
         save_name = self.get_save_name(tag=tag)
         if self.save_dir is not None:
             save_path = self.save_dir / (f"{title_prefix}{save_name}_IoU@{iou}".replace(".", "_") + ".png")
-            logger.info(f"Saving {save_path}")
+            # logger.info(f"Saving {save_path}")
             plt.savefig(save_path)
         plt.close()
         return None

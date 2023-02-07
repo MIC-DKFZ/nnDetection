@@ -186,7 +186,7 @@ class FROCMetric(DetectionMetric):
 
         save_name = self.get_save_name(tag=tag)
         if len(results) == 0:
-            logger.warning("WARNING, no results found for froc computation")
+            logger.warning(f"No results found for {self.get_save_name(tag=tag)}")
             return self.zero_result(
                 save_name=save_name,
                 num_images=num_images,
@@ -203,7 +203,7 @@ class FROCMetric(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.warning("No ground truth found! Returning 0 in FROC.")
+            logger.debug(f"No gt found for {self.get_save_name(tag=tag)}")
             return self.zero_result(
                 save_name=save_name,
                 num_images=num_images,

@@ -131,7 +131,7 @@ class COCOMetric(DetectionMetric):
             logger.info("Start COCO metric computation...")
             tic = time.time()
 
-        dataset_statistics = self.compute_statistics(results_list=results_list)
+        dataset_statistics = self.compute_statistics(results_list=results_list, tag=tag)
         if self.verbose:
             toc = time.time()
             logger.info(f"Statistics for COCO metrics finished (t={(toc - tic):0.2f}s).")
@@ -301,7 +301,9 @@ class COCOMetric(DetectionMetric):
         return meta
 
     def compute_statistics(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str],
     ) -> Dict[str, Union[np.ndarray, List]]:
         """
         Compute statistics needed for COCO metrics (mAP, AP of
@@ -331,6 +333,9 @@ class COCOMetric(DetectionMetric):
                 ``dtIgnore``: np.ndarray
                     detections which should be ignored [T, D], indicate
                     which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             dict: computed statistics over dataset
@@ -366,7 +371,7 @@ class COCOMetric(DetectionMetric):
                 results = [r[cls_idx] for r in results_list if cls_idx in r]
 
                 if len(results) == 0:
-                    logger.error(f"No results found for coco metric for class {cls_i} can not compute AP")
+                    logger.warning(f"No results found for {self.get_save_name(tag=tag)} class {cls_i}")
                     continue
 
                 dt_scores = np.concatenate([r["dtScores"][0:maxDet] for r in results])
@@ -388,7 +393,7 @@ class COCOMetric(DetectionMetric):
                 gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
                 num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
                 if num_gt == 0:
-                    logger.error(f"No gt found for coco metric for class {cls_i} can not compute AP")
+                    logger.debug(f"No gt found for {self.get_save_name(tag=tag)} class {cls_i}")
                     continue
 
                 # ignore cases need to be handled differently for tp and fp
