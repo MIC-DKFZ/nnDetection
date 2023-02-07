@@ -6,6 +6,7 @@ from typing import Type
 
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.nextconv import ConvNeXtBackbone
 from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier import FocalClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
@@ -65,3 +66,8 @@ class RetinaUNetC016Focal(RetinaUNetCV001Focal):
     head_sampler_cls = None
     head_regressor_cls = L1Regressor
     head_classifier_cls = FocalClassifier
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetC016FocalNeXt(RetinaUNetC016Focal):
+    backbone_cls: Type[AbstractBackbone] = ConvNeXtBackbone

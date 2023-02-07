@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from functools import reduce
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -15,6 +15,7 @@ from nndet.nn.backbone.blueprints.level import (
     WrapperBackboneLevel,
 )
 from nndet.nn.layers.wrapper import compute_padding_for_kernel, nd_pool
+from nndet.utils.enums import PoolingMode
 from nndet.utils.typing import CONVGEN, ND_INT
 
 
@@ -116,6 +117,7 @@ class ResConvBackbone(ConvBackbone):
         max_channels: int = 320,
         stem_cfg: Optional[Dict] = None,
         level_cfgs: Optional[List[Dict]] = None,
+        pooling_mode: Union[PoolingMode, str] = "block",
     ) -> None:
         """
         Backbone with plain residual blocks abd conv stem
@@ -125,6 +127,7 @@ class ResConvBackbone(ConvBackbone):
             in_channels: number of input channels (usually number of modalities)
             start_channels: number of channels after initial convolution
             max_channels: maximum number of channels
+
             stem_cfg: configuration parameters of stem. If None, an empty
                 dict will be passed. Ignored, since no stem is used here.
 
@@ -152,6 +155,35 @@ class ResConvBackbone(ConvBackbone):
                 ``'kwargs'``
                     keyword arguments passed to conv in level
 
+            pooling_mode: define pooling type. One of 'res_block' |
+                'conv_kernel' | 'conv_stride' | 'max_kernel' | 'max_stride |
+                'avg_kernel' | 'avg_stride'
+
+                ``'block'``
+                    residual block for downsampling
+
+                ``'conv_kernel'``
+                    uses strided convolutions with same kernel
+                    size as respective layer for pooling.
+
+                ``'conv_stride'``
+                    uses strided convolutions with kernel size
+                    matching the stride (non overlapping) for pooling
+
+                ``'max_kernel'``
+                    max pooling where pooling kernal equals conv
+                    kernel of respective layer
+
+                ``'max_stride'``
+                    max pooling with kernel size matching the
+                    stride (non overlapping)
+
+                ``'avg_kernel'``
+                    same as max with average pooling
+
+                ``'avg_stride'``
+                    same as max with average pooling
+
         """
         super().__init__(
             conv=conv,
@@ -160,6 +192,7 @@ class ResConvBackbone(ConvBackbone):
             max_channels=max_channels,
             stem_cfg=stem_cfg,
             level_cfgs=level_cfgs,
+            pooling_mode=pooling_mode,
         )
 
     def _build_stem(
@@ -231,6 +264,8 @@ class ResConvBackbone(ConvBackbone):
             ND_INT: (relative) stride of level
             BackboneLevel: constructed level
         """
+        assert self.pooling_mode == PoolingMode.BLOCK, "Only block supported for downsampling"
+
         level_num_blocks = level_cfg["num_conv"] // 2
         level_in_channels = self.start_channels if level_idx == 0 else self.out_channels[-1]
         if level_num_blocks == 0:
@@ -320,6 +355,11 @@ class ResConvBackbone(ConvBackbone):
                 ``"stem_kwargs"`` dict
                     [optional] keyword arguments passed to stem
 
+                ``"pooling_mode"`` str
+                    [optional] define a different pooling type. Please refer
+                    to the `init` documentation for mor information.
+                    Default `block`
+
                 ``"kwargs"`` dict
                     [optional] keyword arguments passed to every level of the
                     backbone
@@ -366,6 +406,7 @@ class ResConvBackbone(ConvBackbone):
             logger.info(f"Found max_channels {max_channels} in backbone config.")
         else:
             max_channels = plan_arch["max_channels"]
+        pooling_mode = backbone_cfg.get("pooling_mode", "block")
 
         if "start_channels" in backbone_cfg:
             start_channels = backbone_cfg["start_channels"]
@@ -402,5 +443,156 @@ class ResConvBackbone(ConvBackbone):
             max_channels=max_channels,
             stem_cfg=stem_cfg,
             level_cfgs=level_cfgs,
+            pooling_mode=pooling_mode,
         )
         return backbone
+
+
+class ResConvWithPoolBackbone(ResConvBackbone):
+    def _build_level(
+        self,
+        conv: CONVGEN,
+        level_idx: int,
+        level_cfg: Dict,
+    ) -> Tuple[int, ND_INT, BackboneLevel]:
+        """
+        Build one backbone level. Each level returns the features to propagate
+        deeper through the network and the features which should be returned
+        by the backbone. In contrast to `ResConvBackbone` this implements
+        multiple downsampling methods and the pooling layer does  *not*
+        include the downsampling layers.
+
+        Args:
+            level_idx: index of level
+            level_cfg: configuration of level
+
+        Returns:
+            int: number of output channels
+            ND_INT: (relative) stride of level
+            BackboneLevel: constructed level
+        """
+        level_num_blocks = level_cfg["num_conv"] // 2
+        level_in_channels = self.start_channels if level_idx == 0 else self.out_channels[-1]
+        if level_num_blocks == 0:
+            return (
+                level_in_channels,
+                1,
+                NoOpBackboneLevel(),
+            )
+
+        level_out_channels = min(
+            self.start_channels * (self.expansion**level_idx),
+            self.max_channels,
+        )
+        level_kernel = level_cfg["kernel"]
+        level_padding = compute_padding_for_kernel(level_kernel)
+        level_stride = 1 if level_idx == 0 else level_cfg["stride"]
+
+        if level_cfg["num_conv"] % 2 > 0 and level_idx > 0:
+            logger.warning(
+                f"Found {level_cfg['num_conv']} num convs for "
+                f"level {level_idx} in backbone but each residual "
+                f"block has 2 conv, using {level_num_blocks} res blocks."
+            )
+
+        _modules = []
+        _modules.append(
+            self._build_pooling(
+                conv=conv,
+                in_channels=level_in_channels,
+                out_channels=level_out_channels,
+                kernel=level_kernel,
+                stride=level_stride,
+                **level_cfg.get("kwargs", {}),
+            )
+        )
+
+        for _ in range(level_num_blocks):
+            _modules.append(
+                ResPlain(
+                    conv=conv,
+                    in_channels=level_out_channels,
+                    out_channels=level_out_channels,
+                    kernel_size=level_kernel,
+                    stride=1,
+                    padding=level_padding,
+                    attention=None,
+                    **level_cfg.get("kwargs", {}),
+                )
+            )
+        return (
+            level_out_channels,
+            level_stride,
+            WrapperBackboneLevel(torch.nn.Sequential(*_modules)),
+        )
+
+    def _build_pooling(
+        self,
+        conv: CONVGEN,
+        in_channels: int,
+        out_channels: int,
+        kernel: ND_INT,
+        stride: ND_INT,
+        **kwargs,
+    ) -> torch.nn.Module:
+        """
+        Build pooling layer of respective level
+
+        Args:
+            conv: generator to build a conv with optional act, norm etc.
+            in_channels: number of input channels (usually number of modalities)
+            out_channels: number of output channels
+            kernel: kernel size
+            stride: stride
+
+        Returns:
+            torch.nn.Module: created pooling module
+        """
+        # if non overlapping stride is needed -> set kernel to stride
+        if self.pooling_mode.value.endswith("stride"):
+            _kernel = stride
+        else:
+            _kernel = kernel
+        _padding = compute_padding_for_kernel(_kernel)
+        _padding_orig_kernel = compute_padding_for_kernel(kernel)
+
+        if self.pooling_mode == PoolingMode.BLOCK:
+            _module = ResPlain(
+                conv=conv,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel,
+                stride=stride,
+                padding=_padding_orig_kernel,
+                attention=None,
+                **kwargs,
+            )
+        elif self.pooling_mode.value.startswith("conv"):
+            _module = conv(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=_kernel,
+                stride=stride,
+                padding=_padding,
+                **kwargs,
+            )
+        else:
+            _pool_type = self.pooling_mode.value.split("_")[0].capitalize()
+            _module = torch.nn.Sequential(
+                nd_pool(
+                    pooling_type=_pool_type,
+                    dim=conv.dim,
+                    kernel_size=_kernel,
+                    stride=stride,
+                    padding=_padding,
+                ),
+                conv(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=kernel,
+                    stride=1,
+                    padding=_padding_orig_kernel,
+                    **kwargs,
+                ),
+            )
+        return _module

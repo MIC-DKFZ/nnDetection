@@ -11,7 +11,8 @@ from torch import Tensor, nn
 
 from nndet.losses.classification import BCEWithLogitsLoss
 from nndet.losses.segmentation import SoftDiceLoss
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier
+from nndet.nn.heads.abstract import Classifier
+from nndet.utils.collections import CONV_TYPES
 
 # TODO: cleanup
 

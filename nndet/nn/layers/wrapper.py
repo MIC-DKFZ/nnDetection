@@ -5,7 +5,7 @@ from typing import Sequence
 
 import torch
 
-from nndet.nn.ops.norm import GroupNorm
+from nndet.nn.ops.norm import GroupNorm, LayerNorm
 from nndet.utils.enums import InterpolationMode
 from nndet.utils.typing import ND_INT
 
@@ -185,6 +185,8 @@ def nd_norm(
 
     if norm_type.lower() == "group":
         norm_cls = GroupNorm
+    elif norm_type.lower() == "layer":
+        norm_cls = LayerNorm
     else:
         norm_cls = getattr(torch.nn, f"{norm_type}Norm{dim_str}d")
     return norm_cls(*args, **kwargs)

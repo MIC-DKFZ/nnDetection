@@ -4,7 +4,7 @@ detection_per_img: 24  # number of detections per image
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
-  pooling_mode: conv_kernel # one of 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
+  pooling_mode: conv_kernel # one of 'block' | 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
   start_channels: 48 # number of starting channels
   max_channels: 512 # maximum number of channels
 
