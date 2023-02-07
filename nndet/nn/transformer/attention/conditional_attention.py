@@ -28,14 +28,12 @@ class ConditionalSelfAttention(nn.Module):
         `Conditional DETR for Fast Training Convergence.
         <https://arxiv.org/pdf/2108.06152.pdf>`_
         Args:
-            embed_dim (int): The embedding dimension for attention.
-            num_heads (int): The number of attention heads.
-            attn_drop_value (float): A Dropout layer on attn_output_weights.
-                Default: 0.0.
-            proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
-                Default: 0.0.
-            batch_first (bool): if `True`, then the input and output tensor will be
-                provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
+            embed_dim: The embedding dimension for attention.
+            num_heads: The number of attention heads.
+            attn_drop_value: A Dropout layer on attn_output_weights.
+            proj_drop_value: A Dropout layer after `MultiheadAttention`.
+            batch_first: if `True`, then the input and output tensor will be
+                provided as `(bs, n, embed_dim)`.
         """
         super(ConditionalSelfAttention, self).__init__()
         self.query_content_proj = nn.Linear(embed_dim, embed_dim)
@@ -68,28 +66,28 @@ class ConditionalSelfAttention(nn.Module):
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
         Args:
-            query (torch.Tensor): Query embeddings with shape
+            query: Query embeddings with shape
                 `(num_query, bs, embed_dim)` if self.batch_first is False,
                 else `(bs, num_query, embed_dim)`
-            key (torch.Tensor): Key embeddings with shape
+            key: Key embeddings with shape
                 `(num_key, bs, embed_dim)` if self.batch_first is False,
                 else `(bs, num_key, embed_dim)`
-            value (torch.Tensor): Value embeddings with the same shape as `key`.
-                Same in `torch.nn.MultiheadAttention.forward`. Default: None.
+            value: Value embeddings with the same shape as `key`.
+                Same in `torch.nn.MultiheadAttention.forward`.
                 If None, the `key` will be used.
-            identity (torch.Tensor): The tensor, with the same shape as `query``,
-                which will be used for identity addition. Default: None.
+            identity: The tensor, with the same shape as `query``,
+                which will be used for identity addition.
                 If None, `query` will be used.
-            query_pos (torch.Tensor): The position embedding for query, with the
-                same shape as `query`. Default: None.
-            key_pos (torch.Tensor): The position embedding for key. Default: None.
-                If None, and `query_pos` has the same shape as `key`, then `query_pos`
-                will be used for `key_pos`.
-            attn_mask (torch.Tensor): ByteTensor mask with shape `(num_query, num_key)`.
-                Same as `torch.nn.MultiheadAttention.forward`. Default: None.
-            key_padding_mask (torch.Tensor): ByteTensor with shape `(bs, num_key)` which
-                indicates which elements within `key` to be ignored in attention.
-                Default: None.
+            query_pos: The position embedding for query, with the
+                same shape as `query`.
+            key_pos: The position embedding for key.
+                If None, and `query_pos` has the same shape as `key`, then
+                `query_pos` will be used for `key_pos`.
+            attn_mask: ByteTensor mask with shape `(num_query, num_key)`.
+                Same as `torch.nn.MultiheadAttention.forward`.
+            key_padding_mask: ByteTensor with shape `(bs, num_key)` which
+                indicates which elements within `key` to be ignored in
+                attention.
         """
         if key is None:
             key = query
@@ -163,14 +161,12 @@ class ConditionalCrossAttention(nn.Module):
     `Conditional DETR for Fast Training Convergence.
     <https://arxiv.org/pdf/2108.06152.pdf>`_
     Args:
-        embed_dim (int): The embedding dimension for attention.
-        num_heads (int): The number of attention heads.
-        attn_drop_value (float): A Dropout layer on attn_output_weights.
-            Default: 0.0.
-        proj_drop_value (float): A Dropout layer after `MultiheadAttention`.
-            Default: 0.0.
-        batch_first (bool): if `True`, then the input and output tensor will be
-            provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
+        embed_dim: The embedding dimension for attention.
+        num_heads: The number of attention heads.
+        attn_drop_value: A Dropout layer on attn_output_weights.
+        proj_drop_value: A Dropout layer after `MultiheadAttention`.
+        batch_first: if `True`, then the input and output tensor will be
+            provided as `(bs, n, embed_dim)`.
     """
 
     def __init__(
@@ -209,34 +205,32 @@ class ConditionalCrossAttention(nn.Module):
         key_padding_mask=None,
         **kwargs,
     ):
-        """Forward function for `ConditionalCrossAttention`
+        """
+        Forward function for `ConditionalCrossAttention`
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
         Args:
-            query (torch.Tensor): Query embeddings with shape
-                `(num_query, bs, embed_dim)` if self.batch_first is False,
-                else `(bs, num_query, embed_dim)`
-            key (torch.Tensor): Key embeddings with shape
-                `(num_key, bs, embed_dim)` if self.batch_first is False,
-                else `(bs, num_key, embed_dim)`
-            value (torch.Tensor): Value embeddings with the same shape as `key`.
-                Same in `torch.nn.MultiheadAttention.forward`. Default: None.
-                If None, the `key` will be used.
-            identity (torch.Tensor): The tensor, with the same shape as x, will
-                be used for identity addition. Default: None.
-                If None, `query` will be used.
-            query_pos (torch.Tensor): The position embedding for query, with the
-                same shape as `query`. Default: None.
-            key_pos (torch.Tensor): The position embedding for key. Default: None.
-                If None, and `query_pos` has the same shape as `key`, then `query_pos`
-                will be used for `key_pos`.
-            query_sine_embed (torch.Tensor): None
-            is_first_layer (bool): None
-            attn_mask (torch.Tensor): ByteTensor mask with shape `(num_query, num_key)`.
-                Same as `torch.nn.MultiheadAttention.forward`. Default: None.
-            key_padding_mask (torch.Tensor): ByteTensor with shape `(bs, num_key)` which
-                indicates which elements within `key` to be ignored in attention.
-                Default: None.
+            query: Query embeddings with shape `(num_query, bs, embed_dim)` if
+                self.batch_first is False, else `(bs, num_query, embed_dim)`
+            key: Key embeddings with shape `(num_key, bs, embed_dim)` if
+                self.batch_first is False, else `(bs, num_key, embed_dim)`
+            value: Value embeddings with the same shape as `key`. Same in
+                `torch.nn.MultiheadAttention.forward`. If None, the `key` will
+                be used.
+            identity: The tensor, with the same shape as x, will be used for
+                identity addition. If None, `query` will be used.
+            query_pos: The position embedding for query, with the same shape as
+                `query`.
+            key_pos: The position embedding for key. If None, and `query_pos`
+                has the same shape as `key`, then `query_pos` will be used for
+                `key_pos`.
+            query_sine_embed: None
+            is_first_layer: None
+            attn_mask: ByteTensor mask with shape `(num_query, num_key)`. Same
+                as `torch.nn.MultiheadAttention.forward`.
+            key_padding_mask: ByteTensor with shape `(bs, num_key)` which
+                indicates which elements within `key` to be ignored in
+                attention.
         """
         if key is None:
             key = query

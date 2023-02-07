@@ -21,17 +21,23 @@ class AbstractTransformer(nn.Module):
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[Union[torch.Tensor, None], ...]:
         """
-        Compute the output box embeddings given the input features, position embedding and query embedding
+        Compute the output box embeddings given the input features, position
+        embedding and query embedding
         Args:
-            features: features from the backbone in form of a List[Tensor(bs, C, H, W, (Z))]
+            features: features from the backbone in form of a
+            List[Tensor(bs, C, H, W, (Z))]
             query_embed: object queries = input for the transformer decoder
-            pos_embed: position embedding for the features, same shape as features
-            mask: mask to mask out certain pixels of the feature maps, same shape as features
+            pos_embed: position embedding for the features, same shape as
+                features
+            mask: mask to mask out certain pixels of the feature maps, same
+                shape as features
 
         Returns:
-            Tensor: output box embeddings (output of the decoder) ((num_decoder_layers), bs, num_queries, C)
-            Tensor: refined feature sequence (output of the encoder) (bs, C, H, W, (Z))
-            Optional(Tensor): None
+            Tensor: output box embeddings (output of the decoder)
+                ((num_decoder_layers), bs, num_queries, C)
+            Tensor: refined feature sequence (output of the encoder)
+                (bs, C, H, W, (Z))
+            Optional(Tensor): References from the transformer decoder
+                ((num_decoder_layers), bs, num_queries, dim)
         """
-
         raise NotImplementedError

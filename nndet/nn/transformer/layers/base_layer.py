@@ -15,25 +15,6 @@ import torch.nn as nn
 
 
 class BaseTransformerLayer(nn.Module):
-    """The implementation of Base `TransformerLayer` used in Transformer. Modified
-    from `mmcv <https://github.com/open-mmlab/mmcv/blob/master/mmcv/cnn/bricks/transformer.py>`_.
-    It can be built by directly passing the `Attentions`, `FFNs`, `Norms`
-    module, which support more flexible cusomization combined with
-    `LazyConfig` system. The `BaseTransformerLayer` also supports `prenorm`
-    when you specifying the `norm` as the first element of `operation_order`.
-    More details about the `prenorm`: `On Layer Normalization in the
-    Transformer Architecture <https://arxiv.org/abs/2002.04745>`_ .
-    Args:
-        attn (list[nn.Module] | nn.Module): nn.Module or a list
-            contains the attention module used in TransformerLayer.
-        ffn (nn.Module): FFN module used in TransformerLayer.
-        norm (nn.Module): Normalization layer used in TransformerLayer.
-        operation_order (tuple[str]): The execution order of operation in
-            transformer. Such as ('self_attn', 'norm', 'ffn', 'norm').
-            Support `prenorm` when you specifying the first element as `norm`.
-            Default = None.
-    """
-
     def __init__(
         self,
         attn: Union[nn.Module, List[nn.Module]],
@@ -41,6 +22,22 @@ class BaseTransformerLayer(nn.Module):
         norm: nn.Module,
         operation_order: Tuple[str, ...],
     ):
+        """
+        The implementation of Base `TransformerLayer` used in Transformer.
+        It can be built by directly passing the `Attentions`, `FFNs`, `Norms`
+        module, which support more flexible cusomization combined with
+        `LazyConfig` system. The `BaseTransformerLayer` also supports `prenorm`
+        when specifying the `norm` as the first element of `operation_order`
+        Args:
+            attn: nn.Module or a list
+                contains the attention module used in TransformerLayer.
+            ffn: FFN module used in TransformerLayer.
+            norm: Normalization layer used in TransformerLayer.
+            operation_order: The execution order of operation in
+                transformer. Such as ('self_attn', 'norm', 'ffn', 'norm').
+                Support `prenorm` when specifying the first element as `norm`
+                Default = None.
+        """
         super(BaseTransformerLayer, self).__init__()
         assert set(operation_order).issubset({"self_attn", "norm", "cross_attn", "ffn"})
 
@@ -92,28 +89,23 @@ class BaseTransformerLayer(nn.Module):
         key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
-        """Forward function for `BaseTransformerLayer`.
+        """
+        Forward function for `BaseTransformerLayer`.
         **kwargs contains the specific arguments of attentions.
         Args:
-            query (torch.Tensor): Query embeddings with shape
-                `(num_query, bs, embed_dim)` or `(bs, num_query, embed_dim)`
-                which should be specified follows the attention module used in
-                `BaseTransformerLayer`.
-            key (torch.Tensor): Key embeddings used in `Attention`.
-            value (torch.Tensor): Value embeddings with the same shape as `key`.
-            query_pos (torch.Tensor): The position embedding for `query`.
-                Default: None.
-            key_pos (torch.Tensor): The position embedding for `key`.
-                Default: None.
-            attn_masks (List[Tensor] | None): A list of 2D ByteTensor used
-                in calculation the corresponding attention. The length of
-                `attn_masks` should be equal to the number of `attention` in
-                `operation_order`. Default: None.
-            query_key_padding_mask (torch.Tensor): ByteTensor for `query`, with
+            query: Query embeddings with shape `(num_query, bs, embed_dim)` or
+                `(bs, num_query, embed_dim)` which should be specified follows
+                the attention module used in `BaseTransformerLayer`.
+            key: Key embeddings used in `Attention`.
+            value: Value embeddings with the same shape as `key`.
+            query_pos: The position embedding for `query`.
+            key_pos: The position embedding for `key`.
+            attn_masks: A list of 2D ByteTensor used in calculation the
+                corresponding attention. The length of `attn_masks` should be
+                equal to the number of `attention` in `operation_order`.
+            query_key_padding_mask: ByteTensor for `query`, with
                 shape `(bs, num_query)`. Only used in `self_attn` layer.
-                Defaults to None.
-            key_padding_mask (torch.Tensor): ByteTensor for `key`, with
-                shape `(bs, num_key)`. Default: None.
+            key_padding_mask: ByteTensor for `key`, with shape `(bs, num_key)`.
         """
         norm_index = 0
         attn_index = 0
@@ -176,24 +168,24 @@ class BaseTransformerLayer(nn.Module):
 
 
 class TransformerLayerSequence(nn.Module):
-    """Base class for TransformerEncoder and TransformerDecoder, which will copy
-    the passed `transformer_layers` module `num_layers` time or save the passed
-    list of `transformer_layers` as parameters named ``self.layers``
-    which is the type of ``nn.ModuleList``.
-    The users should inherit `TransformerLayerSequence` and implemente their
-    own forward function.
-    Args:
-        transformer_layers (list[BaseTransformerLayer] | BaseTransformerLayer): A list
-            of BaseTransformerLayer. If it is obj:`BaseTransformerLayer`, it
-            would be repeated `num_layers` times to a list[BaseTransformerLayer]
-        num_layers (int): The number of `TransformerLayer`. Default: None.
-    """
-
     def __init__(
         self,
         transformer_layers: Union[List[BaseTransformerLayer], BaseTransformerLayer],
         num_layers: int,
     ):
+        """
+        Base class for TransformerEncoder and TransformerDecoder, which will copy
+        the passed `transformer_layers` module `num_layers` time or save the passed
+        list of `transformer_layers` as parameters named ``self.layers``
+        which is the type of ``nn.ModuleList``.
+        The users should inherit `TransformerLayerSequence` and implemente their
+        own forward function.
+        Args:
+            transformer_layers: A list of BaseTransformerLayer. If it is
+            obj:`BaseTransformerLayer`, it would be repeated `num_layers` times
+            to a list[BaseTransformerLayer]
+            num_layers: The number of `TransformerLayer`.
+        """
         super(TransformerLayerSequence, self).__init__()
         self.num_layers = num_layers
         self.layers = nn.ModuleList()
@@ -215,7 +207,8 @@ class TransformerLayerSequence(nn.Module):
         key_padding_mask: torch.Tensor = None,
         **kwargs,
     ) -> Tuple[Union[torch.Tensor, None], ...]:
-        """Forward function of `TransformerLayerSequence`. The users should inherit
+        """
+        Forward function of `TransformerLayerSequence`. The users should inherit
         `TransformerLayerSequence` and implement their own forward function.
         """
         raise NotImplementedError()
