@@ -451,8 +451,8 @@ class COCOMetric(DetectionMetric):
             fig, ax = plt.subplots()
             ax.set_xlim(-0.05, 1.05)
             ax.set_ylim(-0.05, 1.05)
-            ax.set_xlabel("Recall")
-            ax.set_ylabel("Precision")
+            ax.set_xlabel("Interpolated Recall")
+            ax.set_ylabel("Interpolated Precision")
             ax.grid(True)
 
             for cls_str in result_meta["classes"]:
