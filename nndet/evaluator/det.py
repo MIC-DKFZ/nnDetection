@@ -12,7 +12,7 @@ import numpy as np
 import nndet.core.ops_np as ops_np
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
-from nndet.evaluator.detection.froc import FROCwpMetric
+from nndet.evaluator.detection.froc import FROCMetric, FROCwpMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
 from nndet.evaluator.detection.matching import matching_batch
 from nndet.utils.info import experimental
@@ -255,6 +255,7 @@ class DetectionEvaluator(AbstractEvaluator):
         save_dir: Optional[Path] = None,
         box_criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
+        froc_wp: bool = True,
     ):
         """
         Create a box evaluator object
@@ -292,8 +293,9 @@ class DetectionEvaluator(AbstractEvaluator):
             criterion_ranges_final.update(criterion_ranges)
 
         metrics = []
+        froc_cls = FROCwpMetric if froc_wp else FROCMetric
         metrics.append(
-            FROCwpMetric(
+            froc_cls(
                 classes,
                 iou_thresholds=iou_thresholds,
                 fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),

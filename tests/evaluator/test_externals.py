@@ -115,6 +115,7 @@ def test_evaluator(snapshot, example):
         fast=False,
         verbose=True,
         save_dir=None,
+        froc_wp=False,
     )
 
     for idx, (p, t) in enumerate(zip(example_preds, example_gt)):
@@ -133,7 +134,7 @@ def test_evaluator(snapshot, example):
     assert res[1]["FROC_num_images"] == n_img
     assert res[1]["FROC_num_gt"] == n_gt_all
     assert res[1]["class0_FROC_num_images"] == res[1]["class1_FROC_num_images"]
-    assert res[1]["class1_FROC_num_images"] == res[1]["class2_num_images"]
+    assert res[1]["class1_FROC_num_images"] == res[1]["class2_FROC_num_images"]
     assert res[1]["class2_FROC_num_images"] == n_img
     assert res[1]["class0_FROC_num_gt"] + res[1]["class1_FROC_num_gt"] + res[1]["class2_FROC_num_gt"] == n_gt_all
     assert res == snapshot
@@ -150,6 +151,7 @@ def test_froc_against_monai(example):
         fast=False,
         verbose=True,
         save_dir=None,
+        froc_wp=False,
     )
 
     for idx, (p, t) in enumerate(zip(example_preds, example_gt)):
