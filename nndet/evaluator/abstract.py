@@ -120,13 +120,12 @@ class AbstractMetric(ABC):
 
 class DetectionMetric(AbstractMetric):
     @staticmethod
-    def get_tags(tag: Optional[str] = None) -> str:
+    def get_name(tag: Optional[str] = None) -> str:
         """
         Return name of file to save
 
         Returns:
             str: Name of the Metric and the chosen setting
-            str: Tag Prefix for meta information
         """
         raise NotImplementedError
 

@@ -69,7 +69,7 @@ class COCOMetric(DetectionMetric):
         self.max_detections = max_detection
 
     @staticmethod
-    def get_tags(tag: Optional[str] = None) -> str:
+    def get_name(tag: Optional[str] = None) -> str:
         """
         Return name of file to save
 
@@ -77,9 +77,7 @@ class COCOMetric(DetectionMetric):
             str: Name of the Metric and the chosen setting
             str: Tag Prefix for meta information
         """
-        metric_tag = f"AP_{tag}" if tag is not None else "AP"
-        meta_tag = "" if tag is None else f"{tag}_"
-        return metric_tag, meta_tag
+        return f"AP_{tag}" if tag is not None else "AP"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -180,7 +178,7 @@ class COCOMetric(DetectionMetric):
                 filenames. If None, no tag will be used
         """
         results = {}
-        metric_name, _ = self.get_tags(tag=tag)
+        metric_name = self.get_name(tag=tag)
         if self.iou_range:  # mAP
             key = (
                 f"m{metric_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
@@ -275,16 +273,16 @@ class COCOMetric(DetectionMetric):
         """
         Retrieve precision recall curves and meta information of metric
         """
-        metric_name, meta_tag = self.get_tags(tag=tag)
+        metric_name = self.get_name(tag=tag)
         meta = {
-            f"{meta_tag}_num_thresholds": dataset_statistics["counts"][0],
-            f"{meta_tag}_num_recall_threshods": dataset_statistics["counts"][1],
-            f"{meta_tag}_num_classes": dataset_statistics["counts"][2],
-            f"{meta_tag}_num_max_detection_thresholds": dataset_statistics["counts"][3],
-            f"{meta_tag}max_detections": self.max_detections,
-            f"{meta_tag}classes": self.classes,
-            f"{meta_tag}recall_thresholds": self.recall_thresholds,
-            f"{meta_tag}iou_thresholds": [],
+            f"{metric_name}_num_thresholds": dataset_statistics["counts"][0],
+            f"{metric_name}_num_recall_threshods": dataset_statistics["counts"][1],
+            f"{metric_name}_num_classes": dataset_statistics["counts"][2],
+            f"{metric_name}_num_max_detection_thresholds": dataset_statistics["counts"][3],
+            f"{metric_name}_max_detections": self.max_detections,
+            f"{metric_name}_classes": self.classes,
+            f"{metric_name}_recall_thresholds": self.recall_thresholds,
+            f"{metric_name}_iou_thresholds": [],
         }
         # iter iou thresholds
         for iou_idx in self.iou_list_idx:
@@ -302,7 +300,7 @@ class COCOMetric(DetectionMetric):
                     "_cls_idx": cls_idx,
                     "curve": curves[..., cls_idx],
                 }
-            meta[f"{meta_tag}iou_thresholds"].append(_iou)
+            meta[f"{metric_name}_iou_thresholds"].append(_iou)
         return meta
 
     def compute_statistics(
@@ -361,7 +359,7 @@ class COCOMetric(DetectionMetric):
                     Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes, num_max_detections]
         """
-        metric_name, _ = self.get_tags(tag=tag)
+        metric_name = self.get_name(tag=tag)
         num_iou_th = len(self.iou_thresholds)
         num_recall_th = len(self.recall_thresholds)
         num_classes = len(self.classes)
@@ -449,10 +447,10 @@ class COCOMetric(DetectionMetric):
         Returns:
             Dict: figures of create plots
         """
-        metric_name, meta_tag = cls.get_tags(tag=tag)
-        recall = result_meta[f"{meta_tag}recall_thresholds"]
-        for iou in result_meta[f"{meta_tag}iou_thresholds"]:
-            max_det = result_meta[f"{meta_tag}max_detections"][-1]
+        metric_name = cls.get_name(tag=tag)
+        recall = result_meta[f"{metric_name}_recall_thresholds"]
+        for iou in result_meta[f"{metric_name}_iou_thresholds"]:
+            max_det = result_meta[f"{metric_name}_max_detections"][-1]
 
             # create plot
             fig, ax = plt.subplots()
@@ -462,7 +460,7 @@ class COCOMetric(DetectionMetric):
             ax.set_ylabel("Interpolated Precision")
             ax.grid(True)
 
-            for cls_str in result_meta[f"{meta_tag}classes"]:
+            for cls_str in result_meta[f"{metric_name}_classes"]:
                 key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
                 prec = result_meta[key]["curve"]
                 ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]:.2f}")

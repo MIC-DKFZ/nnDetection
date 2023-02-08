@@ -38,7 +38,7 @@ class PredictionHistogram(DetectionMetric):
         self.value_range = (0, 1)
 
     @staticmethod
-    def get_tags(tag: Optional[str] = None) -> str:
+    def get_name(tag: Optional[str] = None) -> str:
         """
         Return name of file to save
 
@@ -46,9 +46,7 @@ class PredictionHistogram(DetectionMetric):
             str: Name of the Metric and the chosen setting
             str: Tag Prefix for meta information
         """
-        metric_tag = f"pred_hist_{tag}" if tag is not None else "pred_hist"
-        meta_tag = "" if tag is None else f"{tag}_"
-        return metric_tag, meta_tag
+        return f"pred_hist_{tag}" if tag is not None else "pred_hist"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -95,13 +93,13 @@ class PredictionHistogram(DetectionMetric):
             tag: tag of the current evaluation. Added to metric keys and
                 filenames. If None, no tag will be used
         """
-        _, meta_tag = self.get_tags(tag=tag)
+        metric_name = self.get_name(tag=tag)
         results = {
-            f"{meta_tag}iou_thresholds": self.iou_thresholds,
-            f"{meta_tag}bins": self.bins,
-            f"{meta_tag}value_range": self.value_range,
-            f"{meta_tag}bin_edges": np.histogram([], bins=self.bins, range=self.value_range)[1],
-            f"{meta_tag}classes": self.classes,
+            f"{metric_name}_iou_thresholds": self.iou_thresholds,
+            f"{metric_name}_bins": self.bins,
+            f"{metric_name}_value_range": self.value_range,
+            f"{metric_name}_bin_edges": np.histogram([], bins=self.bins, range=self.value_range)[1],
+            f"{metric_name}_classes": self.classes,
         }
         _, curves = self.compute_hist(results_list=results_list, tag=tag)
         results.update(curves)
@@ -168,7 +166,7 @@ class PredictionHistogram(DetectionMetric):
                 ``'{metric_name}_IoU_{iou_val:.2f}_fn'`` int
                     number of umatched ground truth
         """
-        metric_name, _ = self.get_tags(tag=tag)
+        metric_name = self.get_name(tag=tag)
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
@@ -251,13 +249,13 @@ class PredictionHistogram(DetectionMetric):
         Returns:
             Dict: figures of create plots
         """
-        metric_name, meta_tag = cls.get_tags(tag=tag)
-        edges = result_meta[f"{meta_tag}bin_edges"]
+        metric_name = cls.get_name(tag=tag)
+        edges = result_meta[f"{metric_name}_bin_edges"]
 
         hist_save_dir = Path(save_dir) / "results_histogram"
         hist_save_dir.mkdir(exist_ok=True)
 
-        for iou in result_meta[f"{meta_tag}iou_thresholds"]:
+        for iou in result_meta[f"{metric_name}_iou_thresholds"]:
             # iou histogram
             save_title = f"{metric_name}_IoU_{iou}"
             fig, ax = cls.histogram(
@@ -273,7 +271,7 @@ class PredictionHistogram(DetectionMetric):
             plt.close(fig)
 
             # per class histograms
-            for cls_str in result_meta[f"{meta_tag}classes"]:
+            for cls_str in result_meta[f"{metric_name}_classes"]:
                 save_title = f"{cls_str}_{metric_name}_IoU_{iou}"
                 fig, ax = cls.histogram(
                     edges=edges,

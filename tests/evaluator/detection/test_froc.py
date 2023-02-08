@@ -41,7 +41,7 @@ class TestFROC:
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
         froc_score, froc_curve = metric(results_list)
-        for key in ["iou_thresholds", "fpi_thresholds", "classes"]:
+        for key in ["FROC_iou_thresholds", "FROC_fpi_thresholds", "FROC_classes"]:
             assert key in froc_curve
             froc_curve.pop(key)
 
@@ -71,21 +71,21 @@ class TestFROC:
         for key, item in froc_score.items():
             assert np.isnan(item).all()
 
-        for key in ["iou_thresholds", "fpi_thresholds", "classes"]:
+        for key in ["FROC_iou_thresholds", "FROC_fpi_thresholds", "FROC_classes"]:
             assert key in froc_curve
             froc_curve.pop(key)
 
         # no class
-        assert froc_curve.pop("num_images") == 3
-        assert froc_curve.pop("num_gt") == 0
+        assert froc_curve.pop("FROC_num_images") == 3
+        assert froc_curve.pop("FROC_num_gt") == 0
 
         # benign
-        assert froc_curve.pop("benign_num_images") == 3
-        assert froc_curve.pop("benign_num_gt") == 0
+        assert froc_curve.pop("benign_FROC_num_images") == 3
+        assert froc_curve.pop("benign_FROC_num_gt") == 0
 
         # malignant
-        assert froc_curve.pop("malignant_num_images") == 3
-        assert froc_curve.pop("malignant_num_gt") == 0
+        assert froc_curve.pop("malignant_FROC_num_images") == 3
+        assert froc_curve.pop("malignant_FROC_num_gt") == 0
 
         for key, item in froc_curve.items():
             assert np.isclose(item, 0).all()
