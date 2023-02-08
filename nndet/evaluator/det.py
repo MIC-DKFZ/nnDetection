@@ -277,11 +277,18 @@ class DetectionEvaluator(AbstractEvaluator):
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
         criterion_ranges_final = {
-            "small-V8": (0, 8**3),
-            "medium-V32": (8**3, 32**3),
-            "large-VI": (32**3, np.inf),
+            # non overlapping default set
+            "sVF": (0, 8**3),
+            "mVF": (8**3, 24**3),
+            "lVF": (24**3, np.inf),
+            # extended analysis
+            "xxsVF": (0, 4**3),
+            "xsVF": (0, 6**3),
+            "xlVF": (32**3, np.inf),
+            "xxlVF": (48**3, np.inf),
+            "xxxlVF": (64**3, np.inf),
         }
-        if criterion_ranges is not None:
+        if criterion_ranges is not None and not fast:
             criterion_ranges_final.update(criterion_ranges)
 
         metrics = []
