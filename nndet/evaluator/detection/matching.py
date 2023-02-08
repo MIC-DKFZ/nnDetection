@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
 
-from typing import Callable, Dict, List, Optional, Sequence, Union
+from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 
@@ -23,7 +23,7 @@ def matching_batch(
     gt_boxes: Sequence[np.ndarray],
     gt_classes: Sequence[np.ndarray],
     gt_ignore: Sequence[Sequence[bool]],
-    pred_ignore: Optional[Union[Sequence[np.ndarray], None]] = None,
+    pred_ignore: Optional[Sequence[np.ndarray]] = None,
     max_detections: int = 100,
     case_id: Optional[str] = None,
 ) -> List[Dict[int, Dict[str, np.ndarray]]]:
@@ -113,7 +113,7 @@ def _matching_no_gt(
     iou_thresholds: Sequence[float],
     pred_scores: np.ndarray,
     max_detections: int,
-    pred_ignore: Optional[Union[np.ndarray, None]] = None,
+    pred_ignore: np.ndarray,
     case_id: Optional[str] = None,
 ):
     """
@@ -140,8 +140,6 @@ def _matching_no_gt(
             `dtIgnore`: detections which should be ignored [T, D],
                 indicate which detections should be ignored
     """
-    if pred_ignore is None:
-        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
     dt_scores = pred_scores[dt_ind]
@@ -216,7 +214,7 @@ def _matching_single_image_single_class(
     gt_ignore: np.ndarray,
     max_detections: int,
     iou_thresholds: Sequence[float],
-    pred_ignore: Optional[Union[np.ndarray, None]] = None,
+    pred_ignore: np.ndarray,
     case_id: Optional[str] = None,
 ) -> Dict[str, np.ndarray]:
     """
@@ -250,9 +248,6 @@ def _matching_single_image_single_class(
             `dtIgnore`: detections which should be ignored [T, D],
                 indicate which detections should be ignored
     """
-    if pred_ignore is None:
-        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
-
     # filter for max_detections highest scoring predictions to speed up computation
     dt_ind = np.argsort(-pred_scores, kind="mergesort")
     dt_ind = dt_ind[:max_detections]
