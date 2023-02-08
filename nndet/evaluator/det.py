@@ -276,7 +276,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         # iou_fn = box_iou_np
         iou_range = (0.1, 0.5, 0.05)
-        iou_thresholds = (0.1, 0.5) if fast else np.arange(0.1, 1.0, 0.1)
+        iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
         criterion_ranges_final = {
             # non overlapping default set
             "sVF": (0, 8**3),
