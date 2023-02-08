@@ -9,6 +9,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from nndet.evaluator.detection import FROCMetric
+from nndet.evaluator.detection.froc import FROCwpMetric
 
 
 @pytest.fixture
@@ -144,3 +145,15 @@ class TestFROC:
         assert np.isclose(fps, [0.0, 0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0]).all()
         assert np.isclose(sens, [0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0, 1.0]).all()
         assert np.isclose(th[1:], [0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]).all()
+
+    def test_froc_wp(self):
+        metric = FROCwpMetric(
+            ["benign", "malignant"],
+            iou_thresholds=[0.1],
+            fpi_thresholds=(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0),
+        )
+        fps = [0.14, 0.3, 0.45, 0.55, 1.0, 1.0, 2.0]
+        sens = [0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8]
+        sens_interpolated = metric.get_froc_points(fps, sens)
+        expected_sens_interpolated = np.array([0.3, 0.3, 0.5, 0.75, 0.8, 0.8, 0.8])
+        assert np.allclose(sens_interpolated, expected_sens_interpolated)

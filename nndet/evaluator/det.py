@@ -12,7 +12,7 @@ import numpy as np
 import nndet.core.ops_np as ops_np
 from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
 from nndet.evaluator.detection.coco import COCOMetric
-from nndet.evaluator.detection.froc import FROCMetric
+from nndet.evaluator.detection.froc import FROCwpMetric
 from nndet.evaluator.detection.hist import PredictionHistogram
 from nndet.evaluator.detection.matching import matching_batch
 from nndet.utils.info import experimental
@@ -293,7 +293,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         metrics = []
         metrics.append(
-            FROCMetric(
+            FROCwpMetric(
                 classes,
                 iou_thresholds=iou_thresholds,
                 fpi_thresholds=(1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),

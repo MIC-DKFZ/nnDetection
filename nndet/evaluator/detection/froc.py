@@ -223,12 +223,24 @@ class FROCMetric(DetectionMetric):
             assert len(_scores) == len(_dt_matches)
 
             _fps, _sens, _th = self.compute_froc_curve_one_iou(_dt_matches, _scores, num_images, num_gt)
+            sens_interp = self.get_froc_points(_fps, _sens)
 
             # interpolate at defined fpr thresholds
             sens_interp = np.interp(self.fpi_thresholds, _fps, _sens)
             scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
             meta[f"{metric_name}_IoU_{iou_val:.2f}"] = sens_interp
         return scores, meta
+
+    def get_froc_points(self, fps: np.ndarray, sens: np.ndarray) -> np.ndarray:
+        """
+        Compute sensitivity points at defined fpi thresholds
+
+        Args:
+            fps: number of false positives per image. Needs to be sorted.
+            sens: sensitivty. Needs to be sorted.
+        """
+        assert (np.diff(fps) >= 0).all(), "FPS must monotonically increase"
+        return np.interp(self.fpi_thresholds, fps, sens)
 
     def compute_froc_mul_iou_per_class(
         self,
@@ -410,6 +422,38 @@ class FROCMetric(DetectionMetric):
             ap_save_dir.mkdir(exist_ok=True)
             fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.pdf")
             plt.close(fig)
+
+
+class FROCwpMetric(FROCMetric):
+    """
+    Uses the last working point to derive the sensitivities at specified
+    False Positive Per Image thresholds
+    """
+
+    @staticmethod
+    def get_name(tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        return f"FROCwp_{tag}" if tag is not None else "FROCwp"
+
+    def get_froc_points(self, fps: np.ndarray, sens: np.ndarray) -> np.ndarray:
+        """
+        Compute sensitivity points at defined fpi thresholds
+
+        Args:
+            fps: number of false positives per image. Needs to be sorted.
+            sens: sensitivty. Needs to be sorted.
+        """
+        assert (np.diff(fps) >= 0).all(), "FPS must monotonically increase"
+        assert len(fps) == len(sens)
+        # if fps remain constant we want to choose the highest sensitivity point
+        # for a given fps => thus right
+        idx = np.searchsorted(fps, self.fpi_thresholds, side="right")
+        return np.array([sens[i - 1] if i > 0 else sens[i] for i in idx])
 
 
 def get_froc_ax(
