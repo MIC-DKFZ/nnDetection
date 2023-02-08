@@ -54,14 +54,18 @@ class FROCMetric(DetectionMetric):
         self.fpi_thresholds = fpi_thresholds
         self.verbose = verbose
 
-    def get_save_name(self, tag: Optional[str] = None) -> str:
+    @staticmethod
+    def get_tags(tag: Optional[str] = None) -> str:
         """
         Return name of file to save
 
         Returns:
             str: Name of the Metric and the chosen setting
+            str: Tag Prefix for meta information
         """
-        return f"FROC_{tag}" if tag is not None else "FROC"
+        metric_tag = f"FROC_{tag}" if tag is not None else "FROC"
+        meta_tag = "" if tag is None else f"{tag}_"
+        return metric_tag, meta_tag
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -117,12 +121,12 @@ class FROCMetric(DetectionMetric):
             logger.info("Start FROC metric computation...")
             tic = time.time()
 
+        _, meta_tag = self.get_tags(tag=tag)
         scores = {}
         curves = {
-            "iou_thresholds": list(self.iou_thresholds),
-            "fpi_thresholds": self.fpi_thresholds,
-            "classes": self.classes,
-            "save_name": self.get_save_name(tag=tag),
+            f"{meta_tag}iou_thresholds": list(self.iou_thresholds),
+            f"{meta_tag}fpi_thresholds": self.fpi_thresholds,
+            f"{meta_tag}classes": self.classes,
         }
         _score, _curve = self.compute_froc_mul_iou(results_list, tag=tag)
         scores.update(_score)
@@ -181,16 +185,16 @@ class FROCMetric(DetectionMetric):
             Dict[str,np.ndarray]: FROC curve computed at specified fps
                 thresholds per IoU; [R] R is the number of fps thresholds
         """
+        metric_name, meta_tag = self.get_tags(tag=tag)
         num_images = len(results_list)
         results = [_r for r in results_list for _r in r.values()]
 
-        save_name = self.get_save_name(tag=tag)
         if len(results) == 0:
-            logger.warning(f"No results found for {self.get_save_name(tag=tag)}")
+            logger.warning(f"No results found for {metric_name}")
             return self.zero_result(
-                save_name=save_name,
                 num_images=num_images,
                 num_gt=0,
+                tag=tag,
             )
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
@@ -203,17 +207,17 @@ class FROCMetric(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.debug(f"No gt found for {self.get_save_name(tag=tag)}")
+            logger.debug(f"No gt found for {metric_name}")
             return self.zero_result(
-                save_name=save_name,
                 num_images=num_images,
                 num_gt=num_gt,
+                tag=tag,
             )
 
         scores = {}
         meta = {
-            "num_images": num_images,
-            "num_gt": num_gt,
+            f"{meta_tag}num_images": num_images,
+            f"{meta_tag}num_gt": num_gt,
         }
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
             # filter scores and matches with detection ignores
@@ -225,8 +229,8 @@ class FROCMetric(DetectionMetric):
 
             # interpolate at defined fpr thresholds
             sens_interp = np.interp(self.fpi_thresholds, _fps, _sens)
-            scores[f"{save_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
-            meta[f"{save_name}_IoU_{iou_val:.2f}"] = sens_interp
+            scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
+            meta[f"{metric_name}_IoU_{iou_val:.2f}"] = sens_interp
         return scores, meta
 
     def compute_froc_mul_iou_per_class(
@@ -293,31 +297,32 @@ class FROCMetric(DetectionMetric):
 
     def zero_result(
         self,
-        save_name: str,
         num_images: int,
         num_gt: int,
+        tag: Optional[str],
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Helper function to create zero result
 
         Args:
-            save_name: name of evaluation
             num_images: number of images
             num_gt: number of ground truth objects
+            metric_name: name of metric
 
         Returns:
             Dict[str, float]: FROC score per IoU
             Dict[str,np.ndarray]: FROC curve computed at specified fps
                 thresholds per IoU; [R] R is the number of fps thresholds
         """
+        metric_name, meta_tag = self.get_tags(tag=tag)
         scores = {}
         curves = {
-            "num_images": num_images,
-            "num_gt": num_gt,
+            f"{meta_tag}num_images": num_images,
+            f"{meta_tag}num_gt": num_gt,
         }
         for _, iou_val in enumerate(self.iou_thresholds):
-            scores[f"{save_name}_IoU_{iou_val:.2f}"] = np.nan
-            curves[f"{save_name}_IoU_{iou_val:.2f}"] = np.zeros(len(self.fpi_thresholds))
+            scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.nan
+            curves[f"{metric_name}_IoU_{iou_val:.2f}"] = np.zeros(len(self.fpi_thresholds))
         return scores, curves
 
     @staticmethod
@@ -368,6 +373,7 @@ class FROCMetric(DetectionMetric):
         result_scores: Dict[str, float],
         result_meta: Dict[str, Any],
         save_dir: os.PathLike,
+        tag: Optional[str],
     ) -> None:
         """
         Plot FROC curves
@@ -381,30 +387,30 @@ class FROCMetric(DetectionMetric):
         Returns:
             Dict: figures of create plots
         """
-        fpi = result_meta["fpi_thresholds"]
-        save_name = result_meta["save_name"]
-        for iou in result_meta["iou_thresholds"]:
+        metric_name, meta_tag = cls.get_tags(tag=tag)
+
+        fpi = result_meta[f"{meta_tag}fpi_thresholds"]
+        for iou in result_meta[f"{meta_tag}iou_thresholds"]:
             # parse info
-            froc_score_pool = result_scores[f"{save_name}_IoU_{iou:.2f}"]
-            froc_score_mc = result_scores[f"mc_{save_name}_IoU_{iou:.2f}"]
-            num_images = result_meta["num_images"]
+            froc_score_pool = result_scores[f"{metric_name}_IoU_{iou:.2f}"]
+            froc_score_mc = result_scores[f"mc_{metric_name}_IoU_{iou:.2f}"]
+            num_images = result_meta[f"{meta_tag}num_images"]
 
             # create plot
             fig, ax = get_froc_ax()
-            for cls_str in result_meta["classes"]:
-                key = f"{cls_str}_{save_name}_IoU_{iou:.2f}"
+            for cls_str in result_meta[f"{meta_tag}classes"]:
+                key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}"
                 sens = result_meta[key]
-                num_objects = result_meta[f"{cls_str}_num_gt"]
+                num_objects = result_meta[f"{cls_str}_{meta_tag}num_gt"]
                 ax.plot(fpi, sens, "o-", label=f"{cls_str} FROC {result_scores[key]:.2f} N={num_objects}")
 
-            title = f"{save_name}_IoU_{iou:.2f}"
+            title = f"{metric_name}_IoU_{iou:.2f}"
             ax.set_title(f"{title}: Pool {froc_score_pool:.2f} MC {froc_score_mc:.2f} \n" f"Num images: {num_images}")
             ax.legend(loc="lower right")
 
             # save file
             ap_save_dir = Path(save_dir) / "results_FROC"
             ap_save_dir.mkdir(exist_ok=True)
-            # fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.png")
             fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.pdf")
             plt.close(fig)
 

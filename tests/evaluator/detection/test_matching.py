@@ -129,11 +129,13 @@ class TestMatching:
         pred_boxes, pred_scores, gt_boxes = example
         gt_ignore = np.array([0, 0, 0])
         iou_thresholds = [0.1, 0.5]
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
 
         res = _matching_single_image_single_class(
             iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
             max_detections=100,
@@ -152,11 +154,13 @@ class TestMatching:
         pred_boxes, pred_scores, gt_boxes = example
         gt_ignore = np.array([1, 0, 0])
         iou_thresholds = [0.1, 0.5]
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
 
         res = _matching_single_image_single_class(
             iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
             max_detections=100,
@@ -176,11 +180,13 @@ class TestMatching:
         pred_boxes[0, :] = pred_boxes[2, :]  # simulate duplicate prediction
         gt_ignore = np.array([0, 0, 0])
         iou_thresholds = [0.2, 0.5]
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
 
         res = _matching_single_image_single_class(
             iou_fn=ops_np.box_iou_np,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
             max_detections=100,
@@ -224,10 +230,12 @@ class TestMatching:
     def test_matching_no_gt(self, example):
         _, pred_scores, _ = example
         iou_thresholds = [0.1, 0.5]
+        pred_ignore = np.zeros(pred_scores.shape, dtype=int)
 
         res = _matching_no_gt(
             iou_thresholds=iou_thresholds,
             pred_scores=pred_scores,
+            pred_ignore=pred_ignore,
             max_detections=100,
             case_id="example",
         )

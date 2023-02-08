@@ -74,7 +74,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
-        self.save_dir = Path(save_dir)
+        self.save_dir = Path(save_dir) if save_dir is not None else None
 
     def get_unique_iou_thresholds(self):
         """
@@ -197,7 +197,8 @@ class DetectionEvaluator(AbstractEvaluator):
                 _criterion_key = criterion_key if criterion_key else None
                 iou_filtered_results = list(map(_filter, results))
                 score, curve = metric(iou_filtered_results, tag=_criterion_key)
-                metric.plot(score, curve, save_dir=self.save_dir)
+                if self.save_dir is not None:
+                    metric.plot(score, curve, save_dir=self.save_dir, tag=_criterion_key)
 
                 if score is not None:
                     metric_scores.update(score)

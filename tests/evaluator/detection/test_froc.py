@@ -41,6 +41,10 @@ class TestFROC:
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
         froc_score, froc_curve = metric(results_list)
+        for key in ["iou_thresholds", "fpi_thresholds", "classes"]:
+            assert key in froc_curve
+            froc_curve.pop(key)
+
         assert {"froc_score": 1, "froc_score_cls": 0} == froc_score
         assert {"froc_curve": 2, "froc_curve_cls": 1} == froc_curve
 
@@ -65,22 +69,23 @@ class TestFROC:
         froc_score, froc_curve = metric(results_list)
 
         for key, item in froc_score.items():
-            assert math.isclose(item, 0)
+            assert np.isnan(item).all()
+
+        for key in ["iou_thresholds", "fpi_thresholds", "classes"]:
+            assert key in froc_curve
+            froc_curve.pop(key)
 
         # no class
-        froc_curve.pop("FROC_fpi_thresholds")
-        assert froc_curve.pop("FROC_num_images") == 3
-        assert froc_curve.pop("FROC_num_gt") == 0
+        assert froc_curve.pop("num_images") == 3
+        assert froc_curve.pop("num_gt") == 0
 
         # benign
-        froc_curve.pop("benign_FROC_fpi_thresholds")
-        assert froc_curve.pop("benign_FROC_num_images") == 3
-        assert froc_curve.pop("benign_FROC_num_gt") == 0
+        assert froc_curve.pop("benign_num_images") == 3
+        assert froc_curve.pop("benign_num_gt") == 0
 
         # malignant
-        froc_curve.pop("malignant_FROC_fpi_thresholds")
-        assert froc_curve.pop("malignant_FROC_num_images") == 3
-        assert froc_curve.pop("malignant_FROC_num_gt") == 0
+        assert froc_curve.pop("malignant_num_images") == 3
+        assert froc_curve.pop("malignant_num_gt") == 0
 
         for key, item in froc_curve.items():
             assert np.isclose(item, 0).all()
@@ -102,11 +107,11 @@ class TestFROC:
         ] * 3
 
         froc_score, froc_curve = metric(results_list)
-        assert math.isclose(3.875 / 6, froc_score["FROC_score_IoU_0.10"])
-        assert math.isclose(3.875 / 6, froc_score["benign_FROC_score_IoU_0.10"])
-        assert math.isclose(3.875 / 12, froc_score["mc_FROC_score_IoU_0.10"])
+        assert math.isclose(3.875 / 6, froc_score["FROC_IoU_0.10"])
+        assert math.isclose(3.875 / 6, froc_score["benign_FROC_IoU_0.10"])
+        assert np.isnan(froc_score["mc_FROC_IoU_0.10"]).all()
         assert np.isclose(
-            froc_curve["FROC_curve_IoU_0.10"],
+            froc_curve["FROC_IoU_0.10"],
             np.array([0.125, 0.25, 0.5, 1.0, 1.0, 1.0]),
         ).all()
 
@@ -139,51 +144,3 @@ class TestFROC:
         assert np.isclose(fps, [0.0, 0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0]).all()
         assert np.isclose(sens, [0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0, 1.0]).all()
         assert np.isclose(th[1:], [0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]).all()
-
-    def test_froc_plotting(self, metric):
-        with TemporaryDirectory(dir=os.getcwd()) as _dir:
-            vals = np.array([0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 3.0 / 4, 1.0])
-
-            frocs = {f"FROC_curve_IoU_{iou:.2f}": vals + iou / 10 for iou in range(0, 10)}
-            frocs[f"mal_FROC_curve_IoU_{0.1:.2f}"] = [
-                0.0,
-                1.0 / 4,
-                1.0 / 4,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"ben_FROC_curve_IoU_{0.1:.2f}"] = [
-                0.1,
-                1.0 / 8,
-                1.0 / 2,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"mal_FROC_curve_IoU_{0.2:.2f}"] = [
-                0.0,
-                1.0 / 4,
-                1.0 / 4,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"ben_FROC_curve_IoU_{0.2:.2f}"] = [
-                0.1,
-                1.0 / 8,
-                1.0 / 2,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-
-            frocs["FROC_num_images"] = 10
-            frocs["mal_FROC_num_images"] = 10
-            frocs["ben_FROC_num_images"] = 10
-
-            frocs["FROC_num_gt"] = 10
-            frocs["mal_FROC_num_gt"] = 10
-            frocs["ben_FROC_num_gt"] = 10
-            metric.save_dir = Path(_dir)
-            metric.plot_froc_curves(frocs, tag=None)

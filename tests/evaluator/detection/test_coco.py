@@ -29,13 +29,27 @@ class TestCOCOMetric:
 
     def test_compute(self, mocker: MockerFixture, metric):
         mocker.patch("nndet.evaluator.detection.coco.COCOMetric.select_ap", return_value=1)
+
+        num_iou_th = len(metric.iou_thresholds)
+        num_recall_th = len(metric.recall_thresholds)
+        num_classes = len(metric.classes)
+        num_max_detections = len(metric.max_detections)
+        precision = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
+        recall = -np.ones((num_iou_th, num_classes, num_max_detections))
+        scores = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
+
         mocker.patch(
             "nndet.evaluator.detection.coco.COCOMetric.compute_statistics",
-            return_value={"stats": 0},
+            return_value={
+                "stats": 0,
+                "counts": [1, 1, 1, 1],
+                "precision": precision,
+                "recall": recall,
+                "scores": scores,
+            },
         )
 
         score, curve = metric([0, 1, 2])
-        assert curve is None
         assert score["mAP_IoU_0.10_0.20_0.10_MaxDet_10"] == 1
         assert score["AP_IoU_0.10_MaxDet_10"] == 1
         assert score["AP_IoU_0.30_MaxDet_10"] == 1
@@ -72,7 +86,7 @@ class TestCOCOMetric:
             return_value=(1, [2, 3], [4, 5]),
         )
 
-        stats = metric.compute_statistics(results_list)
+        stats = metric.compute_statistics(results_list, tag=None)
         assert np.isclose(stats["counts"], [1, 2, 2, 2]).all()
         assert np.isclose(stats["recall"], [[[1.0, 1.0], [1.0, 1.0]]]).all()
         assert np.isclose(stats["precision"], [[[[2.0, 2.0], [2.0, 2.0]], [[3.0, 3.0], [3.0, 3.0]]]]).all()

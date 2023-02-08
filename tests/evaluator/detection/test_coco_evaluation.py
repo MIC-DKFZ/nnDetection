@@ -96,7 +96,7 @@ def download_data():
     cache_dir = Path(__file__).parent / "coco_cache_tests"
     annotation_path = cache_dir / "temp_annotations.json"
     prediction_path = cache_dir / "temp_predictions.json"
-    if not cache_dir.is_dir():
+    if not (annotation_path.is_file() and prediction_path.is_file()):
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download data and load into arrays

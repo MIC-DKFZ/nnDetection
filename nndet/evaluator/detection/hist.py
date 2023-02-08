@@ -37,14 +37,18 @@ class PredictionHistogram(DetectionMetric):
         self.bins = bins
         self.value_range = (0, 1)
 
-    def get_save_name(self, tag: Optional[str] = None) -> str:
+    @staticmethod
+    def get_tags(tag: Optional[str] = None) -> str:
         """
         Return name of file to save
 
         Returns:
             str: Name of the Metric and the chosen setting
+            str: Tag Prefix for meta information
         """
-        return f"pred_hist_{tag}" if tag is not None else "pred_hist"
+        metric_tag = f"pred_hist_{tag}" if tag is not None else "pred_hist"
+        meta_tag = "" if tag is None else f"{tag}_"
+        return metric_tag, meta_tag
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -91,13 +95,13 @@ class PredictionHistogram(DetectionMetric):
             tag: tag of the current evaluation. Added to metric keys and
                 filenames. If None, no tag will be used
         """
+        _, meta_tag = self.get_tags(tag=tag)
         results = {
-            "iou_thresholds": self.iou_thresholds,
-            "bins": self.bins,
-            "value_range": self.value_range,
-            "bin_edges": np.histogram([], bins=self.bins, range=self.value_range)[1],
-            "save_name": self.get_save_name(tag=tag),
-            "classes": self.classes,
+            f"{meta_tag}iou_thresholds": self.iou_thresholds,
+            f"{meta_tag}bins": self.bins,
+            f"{meta_tag}value_range": self.value_range,
+            f"{meta_tag}bin_edges": np.histogram([], bins=self.bins, range=self.value_range)[1],
+            f"{meta_tag}classes": self.classes,
         }
         _, curves = self.compute_hist(results_list=results_list, tag=tag)
         results.update(curves)
@@ -149,27 +153,27 @@ class PredictionHistogram(DetectionMetric):
             Dict: empty
             Dict[Dict[str, Any]]: histogram informations
 
-                ``'{save_name}_IoU_{iou_val:.2f}_counts_tp'`` np.ndarray
+                ``'{metric_name}_IoU_{iou_val:.2f}_counts_tp'`` np.ndarray
                     histogram counts for matched predictions
 
-                ``'{save_name}_IoU_{iou_val:.2f}_counts_fp'`` np.ndarray
+                ``'{metric_name}_IoU_{iou_val:.2f}_counts_fp'`` np.ndarray
                     histogram counts for unmatched predictions
 
-                ``'{save_name}_IoU_{iou_val:.2f}_tp'`` int
+                ``'{metric_name}_IoU_{iou_val:.2f}_tp'`` int
                     number of matched predictions
 
-                ``'{save_name}_IoU_{iou_val:.2f}_fp'`` int
+                ``'{metric_name}_IoU_{iou_val:.2f}_fp'`` int
                     number of unmatched predictions
 
-                ``'{save_name}_IoU_{iou_val:.2f}_fn'`` int
+                ``'{metric_name}_IoU_{iou_val:.2f}_fn'`` int
                     number of umatched ground truth
         """
-        save_name = self.get_save_name(tag=tag)
+        metric_name, _ = self.get_tags(tag=tag)
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"No results found for {save_name}")
-            return {}, self.zero_result(save_name=save_name)
+            logger.warning(f"No results found for {metric_name}")
+            return {}, self.zero_result(metric_name=metric_name)
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
         dt_matches = np.concatenate([r["dtMatches"] for r in results], axis=1)
@@ -201,30 +205,30 @@ class PredictionHistogram(DetectionMetric):
                 _dt_scores_with_fn[_dt_matches_with_fn == 0], bins=self.bins, range=self.value_range
             )
 
-            results[f"{save_name}_IoU_{iou_val:.2f}_counts_tp"] = counts_tp
-            results[f"{save_name}_IoU_{iou_val:.2f}_counts_fp"] = counts_fp
-            results[f"{save_name}_IoU_{iou_val:.2f}_tp"] = true_positives
-            results[f"{save_name}_IoU_{iou_val:.2f}_fp"] = false_positives
-            results[f"{save_name}_IoU_{iou_val:.2f}_fn"] = false_negatives
+            results[f"{metric_name}_IoU_{iou_val:.2f}_counts_tp"] = counts_tp
+            results[f"{metric_name}_IoU_{iou_val:.2f}_counts_fp"] = counts_fp
+            results[f"{metric_name}_IoU_{iou_val:.2f}_tp"] = true_positives
+            results[f"{metric_name}_IoU_{iou_val:.2f}_fp"] = false_positives
+            results[f"{metric_name}_IoU_{iou_val:.2f}_fn"] = false_negatives
         return {}, results
 
-    def zero_result(self, save_name: str) -> Dict[str, np.ndarray]:
+    def zero_result(self, metric_name: str) -> Dict[str, np.ndarray]:
         """
         Create results with all zeros
 
         Args:
-            save_name: string used to save results into dict
+            metric_name: tagged metric name
 
         Returns:
             Dict[str, np.ndarray]: computed histogram counts
         """
         results = {}
         for _, iou_val in enumerate(self.iou_thresholds):
-            results[f"{save_name}_IoU_{iou_val:.2f}_counts_fp"] = np.zeros(self.bins)
-            results[f"{save_name}_IoU_{iou_val:.2f}_counts_tp"] = np.zeros(self.bins)
-            results[f"{save_name}_IoU_{iou_val:.2f}_tp"] = 0
-            results[f"{save_name}_IoU_{iou_val:.2f}_fp"] = 0
-            results[f"{save_name}_IoU_{iou_val:.2f}_fn"] = 0
+            results[f"{metric_name}_IoU_{iou_val:.2f}_counts_fp"] = np.zeros(self.bins)
+            results[f"{metric_name}_IoU_{iou_val:.2f}_counts_tp"] = np.zeros(self.bins)
+            results[f"{metric_name}_IoU_{iou_val:.2f}_tp"] = 0
+            results[f"{metric_name}_IoU_{iou_val:.2f}_fp"] = 0
+            results[f"{metric_name}_IoU_{iou_val:.2f}_fn"] = 0
         return results
 
     @classmethod
@@ -233,6 +237,7 @@ class PredictionHistogram(DetectionMetric):
         result_scores: Dict[str, float],
         result_meta: Dict[str, Any],
         save_dir: os.PathLike,
+        tag: Optional[str] = None,
     ) -> None:
         """
         Plot Histograms
@@ -241,41 +246,42 @@ class PredictionHistogram(DetectionMetric):
             result_scores: single as obtained from `compute` function
             result_meta: meta information as obtained from `compute` function
             save_dir: path to directory where files should be saved
+            tag: tag used during computation
 
         Returns:
             Dict: figures of create plots
         """
-        edges = result_meta["bin_edges"]
-        save_name = result_meta["save_name"]
+        metric_name, meta_tag = cls.get_tags(tag=tag)
+        edges = result_meta[f"{meta_tag}bin_edges"]
 
         hist_save_dir = Path(save_dir) / "results_histogram"
         hist_save_dir.mkdir(exist_ok=True)
 
-        for iou in result_meta["iou_thresholds"]:
+        for iou in result_meta[f"{meta_tag}iou_thresholds"]:
             # iou histogram
-            save_title = f"{save_name}_IoU_{iou}"
+            save_title = f"{metric_name}_IoU_{iou}"
             fig, ax = cls.histogram(
                 edges=edges,
-                counts_tp=result_meta[f"{save_name}_IoU_{iou:.2f}_counts_tp"],
-                counts_fp=result_meta[f"{save_name}_IoU_{iou:.2f}_counts_fp"],
-                tp=result_meta[f"{save_name}_IoU_{iou:.2f}_tp"],
-                fp=result_meta[f"{save_name}_IoU_{iou:.2f}_fp"],
-                fn=result_meta[f"{save_name}_IoU_{iou:.2f}_fn"],
+                counts_tp=result_meta[f"{metric_name}_IoU_{iou:.2f}_counts_tp"],
+                counts_fp=result_meta[f"{metric_name}_IoU_{iou:.2f}_counts_fp"],
+                tp=result_meta[f"{metric_name}_IoU_{iou:.2f}_tp"],
+                fp=result_meta[f"{metric_name}_IoU_{iou:.2f}_fp"],
+                fn=result_meta[f"{metric_name}_IoU_{iou:.2f}_fn"],
                 title_prefix=save_title,
             )
             fig.savefig(hist_save_dir / f"{save_title.replace('.', '_')}.pdf")
             plt.close(fig)
 
             # per class histograms
-            for cls_str in result_meta["classes"]:
-                save_title = f"{cls_str}_{save_name}_IoU_{iou}"
+            for cls_str in result_meta[f"{meta_tag}classes"]:
+                save_title = f"{cls_str}_{metric_name}_IoU_{iou}"
                 fig, ax = cls.histogram(
                     edges=edges,
-                    counts_tp=result_meta[f"{cls_str}_{save_name}_IoU_{iou:.2f}_counts_tp"],
-                    counts_fp=result_meta[f"{cls_str}_{save_name}_IoU_{iou:.2f}_counts_fp"],
-                    tp=result_meta[f"{cls_str}_{save_name}_IoU_{iou:.2f}_tp"],
-                    fp=result_meta[f"{cls_str}_{save_name}_IoU_{iou:.2f}_fp"],
-                    fn=result_meta[f"{cls_str}_{save_name}_IoU_{iou:.2f}_fn"],
+                    counts_tp=result_meta[f"{cls_str}_{metric_name}_IoU_{iou:.2f}_counts_tp"],
+                    counts_fp=result_meta[f"{cls_str}_{metric_name}_IoU_{iou:.2f}_counts_fp"],
+                    tp=result_meta[f"{cls_str}_{metric_name}_IoU_{iou:.2f}_tp"],
+                    fp=result_meta[f"{cls_str}_{metric_name}_IoU_{iou:.2f}_fp"],
+                    fn=result_meta[f"{cls_str}_{metric_name}_IoU_{iou:.2f}_fn"],
                     title_prefix=save_title,
                 )
                 fig.savefig(hist_save_dir / f"{save_title.replace('.', '_')}.pdf")
