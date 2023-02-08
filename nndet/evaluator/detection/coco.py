@@ -458,7 +458,7 @@ class COCOMetric(DetectionMetric):
             for cls_str in result_meta["classes"]:
                 key = f"{cls_str}_{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
                 prec = result_meta[key]["curve"]
-                ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]}")
+                ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]:.2f}")
 
             title = f"{save_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
             ax.set_title(title)

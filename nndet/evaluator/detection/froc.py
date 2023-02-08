@@ -386,7 +386,7 @@ class FROCMetric(DetectionMetric):
         for iou in result_meta["iou_thresholds"]:
             # parse info
             froc_score_pool = result_scores[f"{save_name}_IoU_{iou:.2f}"]
-            froc_score_mc = result_scores[f"{save_name}_IoU_{iou:.2f}"]
+            froc_score_mc = result_scores[f"mc_{save_name}_IoU_{iou:.2f}"]
             num_images = result_meta["num_images"]
 
             # create plot
@@ -395,7 +395,7 @@ class FROCMetric(DetectionMetric):
                 key = f"{cls_str}_{save_name}_IoU_{iou:.2f}"
                 sens = result_meta[key]
                 num_objects = result_meta[f"{cls_str}_num_gt"]
-                ax.plot(fpi, sens, "o-", label=f"{cls_str} FROC {result_scores[key]} N={num_objects}")
+                ax.plot(fpi, sens, "o-", label=f"{cls_str} FROC {result_scores[key]:.2f} N={num_objects}")
 
             title = f"{save_name}_IoU_{iou:.2f}"
             ax.set_title(f"{title}: Pool {froc_score_pool:.2f} MC {froc_score_mc:.2f} \n" f"Num images: {num_images}")
