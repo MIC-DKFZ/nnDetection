@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -47,7 +48,8 @@ class AbstractMetric(ABC):
 
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
-            Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+            Dict[str, np.ndarray]: dictionary with arrays, e.g. for
+                visualization of graphs
         """
         return self.compute(*args, **kwargs)
 
@@ -55,29 +57,78 @@ class AbstractMetric(ABC):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        tag: Optional[str] = "",
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute metric
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, G], where T = number of thresholds, G = number of ground truth
-                `gtMatches`: matched ground truth boxes [T, D], where T = number of thresholds,
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
                     D = number of detections
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict[str, float]: dictionary with scalar values for evaluation
-            Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
+            Dict[str, Any]: Contains additional meta data e.g. underlying
+                curves or debug information.
         """
         raise NotImplementedError
 
+    @classmethod
+    def plot(
+        cls,
+        result_scores: Dict[str, float],
+        result_curves: Dict[str, Any],
+        save_dir: Optional[os.PathLike] = None,
+    ) -> Dict:
+        """
+        Plot curves which might have been generated during the evaluation
+
+        Args:
+            result_scores: single scores from metric
+            result_curves: meta data
+            save_dir: path to directory where files should be saved. If None,
+                the plots won't be saved
+
+        Returns:
+            Dict: figures of create plots
+        """
+        pass
+
 
 class DetectionMetric(AbstractMetric):
+    @staticmethod
+    def get_name(tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def get_iou_thresholds(self) -> Sequence[float]:
         """

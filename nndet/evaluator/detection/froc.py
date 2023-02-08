@@ -1,10 +1,11 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +23,6 @@ class FROCMetric(DetectionMetric):
         iou_thresholds: Sequence[float] = (0.1, 0.5),
         fpi_thresholds: Sequence[float] = (1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8),
         verbose: bool = True,
-        save_dir: Optional[Union[str, Path]] = None,
     ):
         """
         Class to compute FROC
@@ -54,10 +54,15 @@ class FROCMetric(DetectionMetric):
         self.fpi_thresholds = fpi_thresholds
         self.verbose = verbose
 
-        if save_dir is None:
-            self.save_dir = save_dir
-        else:
-            self.save_dir = Path(save_dir)
+    @staticmethod
+    def get_name(tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        return f"FROC_{tag}" if tag is not None else "FROC"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -71,23 +76,37 @@ class FROCMetric(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str] = None,
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC
 
         Args:
-            results_list: list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results
-                    obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of
-                    thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where
-                    T = number of thresholds, G = number of  ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
-                    [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
-                    indicate which detections should be ignored
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict[str, float]: FROC score per IoU (key: FROC_score@IoU:{key:2f})
@@ -99,9 +118,14 @@ class FROCMetric(DetectionMetric):
             logger.info("Start FROC metric computation...")
             tic = time.time()
 
+        metric_name = self.get_name(tag=tag)
         scores = {}
-        curves = {}
-        _score, _curve = self.compute_froc_mul_iou(results_list)
+        curves = {
+            f"{metric_name}_iou_thresholds": list(self.iou_thresholds),
+            f"{metric_name}_fpi_thresholds": self.fpi_thresholds,
+            f"{metric_name}_classes": self.classes,
+        }
+        _score, _curve = self.compute_froc_mul_iou(results_list, tag=tag)
         scores.update(_score)
         curves.update(_curve)
 
@@ -109,56 +133,65 @@ class FROCMetric(DetectionMetric):
             toc = time.time()
             logger.info(f"FROC finished (t={(toc - tic):0.2f}s).")
 
-        _score, _curve = self.compute_froc_mul_iou_per_class(results_list)
+        _score, _curve = self.compute_froc_mul_iou_per_class(results_list, tag=tag)
         scores.update(_score)
         curves.update(_curve)
 
         if self.verbose:
             toc = time.time()
             logger.info(f"FROC per class finished (t={(toc - tic):0.2f}s).")
-
-        if self.save_dir is not None:
-            self.plot_froc_curves(curves)
         return scores, curves
 
     def compute_froc_mul_iou(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str],
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
         Compute FROC curve for multiple IoU values
 
         Args:
-            results_list: list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results
-                    obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, G], where T = number of
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
                     thresholds, G = number of ground truth
-                `gtMatches`: matched ground truth boxes [T, D], where
-                    T = number of thresholds, D = number of detections
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
-                    [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
-                    indicate which detections should be ignored
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict[str, float]: FROC score per IoU
             Dict[str,np.ndarray]: FROC curve computed at specified fps
                 thresholds per IoU; [R] R is the number of fps thresholds
         """
+        metric_name = self.get_name(tag=tag)
         num_images = len(results_list)
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning("WARNING, no results found for froc computation")
-            return (
-                {"froc_score": 0},
-                {
-                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
-                    "FROC_fpi_thresholds": self.fpi_thresholds,
-                    "FROC_num_images": num_images,
-                    "FROC_num_gt": 0,
-                },
+            logger.warning(f"No results found for {metric_name}")
+            return self.zero_result(
+                num_images=num_images,
+                num_gt=0,
+                tag=tag,
             )
 
         # r['dtMatches'] [T, R], where R = sum(all detections)
@@ -171,53 +204,154 @@ class FROCMetric(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.error("No ground truth found! Returning 0 in FROC.")
-            return (
-                {"froc_score": 0},
-                {
-                    "froc_curve": np.zeros(len(self.fpi_thresholds)),
-                    "FROC_fpi_thresholds": self.fpi_thresholds,
-                    "FROC_num_images": num_images,
-                    "FROC_num_gt": num_gt,
-                },
+            logger.debug(f"No gt found for {metric_name}")
+            return self.zero_result(
+                num_images=num_images,
+                num_gt=num_gt,
+                tag=tag,
             )
 
-        # keep shape in case of 1 threshold
-        old_shape = dt_matches.shape
-        dt_matches = dt_matches[np.logical_not(dt_ignores)].reshape(old_shape)
-
-        curves = {}
+        scores = {}
+        meta = {
+            f"{metric_name}_num_images": num_images,
+            f"{metric_name}_num_gt": num_gt,
+        }
         for iou_idx, iou_val in enumerate(self.iou_thresholds):
-            # filter scores with ignores detections
+            # filter scores and matches with detection ignores
             _scores = dt_scores[np.logical_not(dt_ignores[iou_idx])]
-            assert len(_scores) == len(dt_matches[iou_idx])
+            _dt_matches = dt_matches[iou_idx][np.logical_not(dt_ignores[iou_idx])]
+            assert len(_scores) == len(_dt_matches)
 
-            _fps, _sens, _th = self.compute_froc_curve_one_iou(dt_matches[iou_idx], _scores, num_images, num_gt)
+            _fps, _sens, _th = self.compute_froc_curve_one_iou(_dt_matches, _scores, num_images, num_gt)
+            sens_interp = self.get_froc_points(_fps, _sens)
 
             # interpolate at defined fpr thresholds
-            curves[iou_val] = np.interp(self.fpi_thresholds, _fps, _sens)
+            sens_interp = np.interp(self.fpi_thresholds, _fps, _sens)
+            scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
+            meta[f"{metric_name}_IoU_{iou_val:.2f}"] = sens_interp
+        return scores, meta
 
-        # linearly interpolate curves for needed fps values
-        scores = {f"FROC_score_IoU_{key:.2f}": np.mean(c) for key, c in curves.items()}
-        curves = {f"FROC_curve_IoU_{key:.2f}": c for key, c in curves.items()}
-        curves["FROC_fpi_thresholds"] = self.fpi_thresholds
-        curves["FROC_num_images"] = num_images
-        curves["FROC_num_gt"] = num_gt
+    def get_froc_points(self, fps: np.ndarray, sens: np.ndarray) -> np.ndarray:
+        """
+        Compute sensitivity points at defined fpi thresholds
+
+        Args:
+            fps: number of false positives per image. Needs to be sorted.
+            sens: sensitivty. Needs to be sorted.
+        """
+        assert (np.diff(fps) >= 0).all(), "FPS must monotonically increase"
+        return np.interp(self.fpi_thresholds, fps, sens)
+
+    def compute_froc_mul_iou_per_class(
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str],
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        """
+        Compute FROC curve for multiple classes
+
+        Args:
+            results_list: list with result s per image (in list) per category
+                (dict). Inner Dict contains multiple results obtained
+                by :func:`box_matching_batch`.
+
+                ``dtMatches``: np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches``: np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores``: np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore``: np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore``: np.ndarray
+                    detections which should be ignored [T, D], indicate
+                    which detections should be ignored
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
+        Returns:
+            Dict[str, float]: FROC score computed  per class per class
+            Dict[str, np.ndarray]: FROC curve computed per class per IoU;
+                [R] R is the number of fps thresholds
+        """
+        froc_scores_cls = {}
+        froc_curves_cls = {}
+        froc_scores_cache = defaultdict(list)  # per metric cache
+        for cls_idx, cls_str in enumerate(self.classes):
+            # filter current class from list of results and put them into a dict with a single entry
+            num_images_og = len(results_list)
+            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
+            assert len(results_by_cls) == num_images_og, "Inconsistent num images!"
+            if results_by_cls:
+                cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls, tag=tag)
+
+                for key, item in cls_scores.items():
+                    froc_scores_cache[key].append(item)
+
+                froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
+                froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
+
+        for metric_str, metric_cache in froc_scores_cache.items():
+            froc_scores_cls[f"mc_{metric_str}"] = float(sum(metric_cache) / len(self.classes))
+
+        return froc_scores_cls, froc_curves_cls
+
+    def zero_result(
+        self,
+        num_images: int,
+        num_gt: int,
+        tag: Optional[str],
+    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        """
+        Helper function to create zero result
+
+        Args:
+            num_images: number of images
+            num_gt: number of ground truth objects
+            metric_name: name of metric
+
+        Returns:
+            Dict[str, float]: FROC score per IoU
+            Dict[str,np.ndarray]: FROC curve computed at specified fps
+                thresholds per IoU; [R] R is the number of fps thresholds
+        """
+        metric_name = self.get_name(tag=tag)
+        scores = {}
+        curves = {
+            f"{metric_name}_num_images": num_images,
+            f"{metric_name}_num_gt": num_gt,
+        }
+        for _, iou_val in enumerate(self.iou_thresholds):
+            scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.nan
+            curves[f"{metric_name}_IoU_{iou_val:.2f}"] = np.zeros(len(self.fpi_thresholds))
         return scores, curves
 
     @staticmethod
-    def compute_froc_curve_one_iou(dt_matches: np.ndarray, dt_scores: np.ndarray, num_images: int, num_gt: int):
+    def compute_froc_curve_one_iou(
+        dt_matches: np.ndarray,
+        dt_scores: np.ndarray,
+        num_images: int,
+        num_gt: int,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute FROC curve for a single IoU value
 
         Args:
-            dt_matches (np.ndarray): binary array indicating which bounding
+            dt_matches: binary array indicating which bounding
                 boxes have a large enough overlap with gt;
                 [R] where R is the number of predictions
-            dt_scores (np.ndarray): prediction score for each bounding box;
+            dt_scores: prediction score for each bounding box;
                 [R] where R is the number of predictions
-            num_images (int): number of images
-            num_gt (int): number of ground truth bounding boxes
+            num_images: number of images
+            num_gt: number of ground truth bounding boxes
 
         Returns:
             np.ndarray: false positives per image
@@ -242,90 +376,84 @@ class FROCMetric(DetectionMetric):
         sens = (tpr * num_matched) / num_gt
         return fps, sens, thresholds
 
-    def compute_froc_mul_iou_per_class(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    @classmethod
+    def plot(
+        cls,
+        result_scores: Dict[str, float],
+        result_meta: Dict[str, Any],
+        save_dir: os.PathLike,
+        tag: Optional[str],
+    ) -> None:
         """
-        Compute FROC curve for multiple classes
+        Plot FROC curves
+        (these are alrady interpolated!)
 
         Args:
-            results_list: list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results
-                    obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, G], where T = number of
-                    thresholds, G = number of ground truth
-                `gtMatches`: matched ground truth boxes [T, D], where
-                    T = number of thresholds, D = number of detections
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
-                    [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
-                    indicate which detections should be ignored
+            result_scores: single as obtained from `compute` function
+            result_meta: meta information as obtained from `compute` function
+            save_dir: path to directory where files should be saved
 
         Returns:
-            Dict[str, float]: FROC score computed  per class per class
-            Dict[str, np.ndarray]: FROC curve computed per class per IoU;
-                [R] R is the number of fps thresholds
+            Dict: figures of create plots
         """
-        froc_scores_cls = {}
-        froc_curves_cls = {}
-        froc_scores_cache = defaultdict(list)  # per metric cache
-        for cls_idx, cls_str in enumerate(self.classes):
-            # filter current class from list of results and put them into a dict with a single entry
-            results_by_cls = [{0: r[cls_idx]} if cls_idx in r else {} for r in results_list]
-            if results_by_cls:
-                cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls)
+        metric_name = cls.get_name(tag=tag)
 
-                for key, item in cls_scores.items():
-                    froc_scores_cache[key].append(item)
+        fpi = result_meta[f"{metric_name}_fpi_thresholds"]
+        for iou in result_meta[f"{metric_name}_iou_thresholds"]:
+            # parse info
+            froc_score_pool = result_scores[f"{metric_name}_IoU_{iou:.2f}"]
+            froc_score_mc = result_scores[f"mc_{metric_name}_IoU_{iou:.2f}"]
+            num_images = result_meta[f"{metric_name}_num_images"]
 
-                froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
-                froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
+            # create plot
+            fig, ax = get_froc_ax()
+            for cls_str in result_meta[f"{metric_name}_classes"]:
+                key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}"
+                sens = result_meta[key]
+                num_objects = result_meta[f"{cls_str}_{metric_name}_num_gt"]
+                ax.plot(fpi, sens, "o-", label=f"{cls_str} FROC {result_scores[key]:.2f} N={num_objects}")
 
-        for metric_str, metric_cache in froc_scores_cache.items():
-            froc_scores_cls[f"mc_{metric_str}"] = float(sum(metric_cache) / len(self.classes))
+            title = f"{metric_name}_IoU_{iou:.2f}"
+            ax.set_title(f"{title}: Pool {froc_score_pool:.2f} MC {froc_score_mc:.2f} \n" f"Num images: {num_images}")
+            ax.legend(loc="lower right")
 
-        return froc_scores_cls, froc_curves_cls
+            # save file
+            ap_save_dir = Path(save_dir) / "results_FROC"
+            ap_save_dir.mkdir(exist_ok=True)
+            fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.pdf")
+            plt.close(fig)
 
-    def plot_froc_curves(self, curves: Dict[str, Sequence[float]]) -> None:
+
+class FROCwpMetric(FROCMetric):
+    """
+    Uses the last working point to derive the sensitivities at specified
+    False Positive Per Image thresholds
+    """
+
+    @staticmethod
+    def get_name(tag: Optional[str] = None) -> str:
         """
-        Plot frocs
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+        """
+        return f"FROCwp_{tag}" if tag is not None else "FROCwp"
+
+    def get_froc_points(self, fps: np.ndarray, sens: np.ndarray) -> np.ndarray:
+        """
+        Compute sensitivity points at defined fpi thresholds
 
         Args:
-            curves: dict with froc curves (as obtained by :method:`compute`)
-                FROC_score_IoU_{key:.2f} for class "normal" FROC
-                {cls_name}_FROC_score_IoU_{key:.2f}: for class specific froc
+            fps: number of false positives per image. Needs to be sorted.
+            sens: sensitivty. Needs to be sorted.
         """
-        # plot normal froc curves
-        _, frocs, ious, num_images, num_gt = select_froc_curves(curves)
-        fig, ax = get_froc_ax(self.fpi_thresholds)
-        for froc, iou in zip(frocs, ious):
-            ax.plot(self.fpi_thresholds, froc, "o-", label=f"IoU:{iou:.2f}")
-        ax.set_title(f"FROC N_img={num_images} N_gt={num_gt}")
-        ax.legend(loc="lower right")
-        fig.savefig(self.save_dir / "FROC.png")
-        plt.close(fig)
-
-        # plot cls frocs
-        selection = select_froc_curves_cls(curves)
-        reordered = defaultdict(list)
-        for class_name, (names, frocs, ious, ni, ng) in selection.items():
-            for froc, iou in zip(frocs, ious):
-                reordered[iou].append((class_name, froc, ni, ng))
-
-        for iou, frocs in reordered.items():
-            fig, ax = get_froc_ax(self.fpi_thresholds)
-
-            title = f"FROC_cls_IoU_{iou:.2f}"
-            ax_title = title
-
-            for class_name, froc, ni, ng in frocs:
-                ax.plot(self.fpi_thresholds, froc, "o-", label=f"{class_name}")
-                ax_title = ax_title + f" N_img_{class_name}={ni} N_gt_{class_name}={ng}"
-            ax.set_title(ax_title)
-            ax.legend(loc="lower right")
-            fig.savefig(self.save_dir / f"{title.replace('.', '_')}.png")
-            plt.close(fig)
+        assert (np.diff(fps) >= 0).all(), "FPS must monotonically increase"
+        assert len(fps) == len(sens)
+        # if fps remain constant we want to choose the highest sensitivity point
+        # for a given fps => thus right
+        idx = np.searchsorted(fps, self.fpi_thresholds, side="right")
+        return np.array([sens[i - 1] if i > 0 else sens[i] for i in idx])
 
 
 def get_froc_ax(
@@ -356,72 +484,3 @@ def get_froc_ax(
     formatter = FuncFormatter(lambda y, _: "{:.3f}".format(y))
     ax.xaxis.set_major_formatter(formatter)
     return fig, ax
-
-
-def select_froc_curves(
-    curves: Dict[str, np.ndarray],
-    prefix: Optional[str] = None,
-) -> Tuple[List[str], List[np.ndarray], List[float]]:
-    """
-    Select froc curves
-
-    Args:
-        curves: dict to select frocs from. Class specific frocs need to
-            follow FROC_score_IoU_{key:.2f} pattern
-
-    Returns:
-        Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
-            dict defines the classes, tuple is output from
-            :method:`select_froc_curves_cls`
-    """
-    if prefix is None:
-        prefix = ""
-    froc_keys = [
-        str(c)
-        for c in curves.keys()
-        if str(c).startswith(f"{prefix}FROC_")
-        and not (str(c).endswith("_thresholds") or str(c).endswith("_num_images") or str(c).endswith("_num_gt"))
-    ]
-    frocs = [curves[c] for c in froc_keys]
-    ious = [float(c.rsplit("_", 1)[1]) for c in froc_keys]
-    if (n := f"{prefix}FROC_num_images") in curves:
-        num_images = curves[n]
-    else:
-        num_images = np.nan
-    if (n := f"{prefix}FROC_num_gt") in curves:
-        num_gt = curves[n]
-    else:
-        num_gt = np.nan
-    return froc_keys, frocs, ious, num_images, num_gt
-
-
-def select_froc_curves_cls(
-    curves: Dict[str, np.ndarray],
-) -> Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
-    """
-    Select class specific froc curves
-
-    Args:
-        curves: dict to select frocs from. Class specific frocs need to follow
-            {cls_name}_FROC_score_IoU_{key:.2f} pattern
-
-    Returns:
-        Dict[str, Tuple[List[str], List[np.ndarray], List[float]]]:
-            dict defines the classes, tuple is output from
-            :method:`select_froc_curves_cls`
-    """
-    all_classes = [
-        str(c).split("_", 1)[0]
-        for c in curves.keys()
-        if not (
-            str(c).startswith("FROC_")
-            or str(c).endswith("_thresholds")
-            or str(c).endswith("_num_images")
-            or str(c).endswith("_num_gt")
-        )
-    ]
-    all_classes = list(set(all_classes))
-    output = {}
-    for cls_name in all_classes:
-        output[cls_name] = select_froc_curves(curves, prefix=f"{cls_name}_")
-    return output
