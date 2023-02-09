@@ -80,6 +80,17 @@ class Poly1BFocalLoss(SigmoidBaseLoss):
             reduction=self.reduction,
         )
 
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"gamma={self.gamma}, "
+            f"epsilon={self.epsilon}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+        )
+
 
 class Poly1BCEWithLogits(SigmoidBaseLoss):
     def __init__(
@@ -146,4 +157,14 @@ class Poly1BCEWithLogits(SigmoidBaseLoss):
             alpha=self.alpha,
             reduction=self.reduction,
             epsilon=self.epsilon,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"epsilon={self.epsilon}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
         )

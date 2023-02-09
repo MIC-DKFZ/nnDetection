@@ -72,6 +72,15 @@ class CESegLoss(Loss):
             )
         return self.loss_weight * loss
 
+    def extra_repr(self) -> str:
+        return (
+            f"weight={self.weight}"
+            f"smoothing={self.smoothing} "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+        )
+
 
 class BCESegLoss(Loss):
     def __init__(
@@ -143,3 +152,12 @@ class BCESegLoss(Loss):
                 weight=self.weight,
             )
         return self.loss_weight * loss
+
+    def extra_repr(self) -> str:
+        return (
+            f"weight={self.weight}"
+            f"smoothing={self.smoothing} "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+        )

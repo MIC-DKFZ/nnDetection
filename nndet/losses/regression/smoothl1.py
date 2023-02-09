@@ -69,3 +69,11 @@ class SmoothL1Loss(Loss):
                 reduction=self.reduction,
             )
         return loss
+
+    def extra_repr(self) -> str:
+        return (
+            f"beta={self.beta}, "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+        )

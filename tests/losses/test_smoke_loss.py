@@ -122,6 +122,10 @@ def test_loss_fp32(loss_fn, pred, target):
 
 @pytest.mark.parametrize("loss_fn,pred,target", TEST_CASES)
 def test_backward(loss_fn, pred, target):
+    # check repr
+    str(loss_fn)
+
+    # check backward
     pred.requires_grad = True
     base_val = loss_fn(pred, target)
     base_val.backward()

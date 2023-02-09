@@ -72,6 +72,16 @@ class BFocalLoss(SigmoidBaseLoss):
             reduction=self.reduction,
         )
 
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"gamma={self.gamma}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+        )
+
 
 class AsymmetricBFocalLoss(SigmoidBaseLoss):
     def __init__(
@@ -135,4 +145,14 @@ class AsymmetricBFocalLoss(SigmoidBaseLoss):
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"gamma={self.gamma}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
         )
