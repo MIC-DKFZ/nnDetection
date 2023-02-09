@@ -6,8 +6,9 @@ from typing import Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 import torch
 import torch.nn as nn
 
-from nndet.losses.classification import CrossEntropyLoss
-from nndet.losses.segmentation import SoftDiceLoss, TopKLoss
+from nndet.losses.segmentation.ce import CESegLoss
+from nndet.losses.segmentation.dice import SoftDiceSegLoss
+from nndet.losses.segmentation.topk import TopKCESegLoss
 from nndet.nn.layers.wrapper import compute_padding_for_kernel
 from nndet.nn.ops.interpolation import InterpolateToShapes
 
@@ -99,7 +100,7 @@ class DiCESegmenter(Segmenter):
         dice_kwargs.setdefault("smooth_nom", 1e-5)
         dice_kwargs.setdefault("smooth_denom", 1e-5)
         dice_kwargs.setdefault("do_bg", False)
-        self.dice_loss = SoftDiceLoss(
+        self.dice_loss = SoftDiceSegLoss(
             nonlin=torch.nn.Softmax(dim=1),
             loss_fp32=loss_fp32,
             **dice_kwargs,
@@ -107,7 +108,7 @@ class DiCESegmenter(Segmenter):
 
         if ce_kwargs is None:
             ce_kwargs = {}
-        self.ce_loss = CrossEntropyLoss(
+        self.ce_loss = CESegLoss(
             loss_fp32=loss_fp32,
             **ce_kwargs,
         )
@@ -325,7 +326,7 @@ class DiceTopKSegmenter(DiCESegmenter):
             ce_kwargs=None,
             **kwargs,
         )
-        self.ce_loss = TopKLoss(
+        self.ce_loss = TopKCESegLoss(
             topk=topk,
             loss_fp32=loss_fp32,
         )
@@ -382,7 +383,7 @@ class DiceTopKSegmenterFgBg(DiCESegmenterFgBg):
             loss_fp32=loss_fp32,
             **kwargs,
         )
-        self.ce_loss = TopKLoss(
+        self.ce_loss = TopKCESegLoss(
             topk=topk,
             loss_fp32=loss_fp32,
         )
@@ -451,7 +452,7 @@ class DiCETopKSegmenter(DiCESegmenter):
             topk_kwargs = {}
         topk_kwargs.setdefault("topk", 0.1)
 
-        self.topk_loss = TopKLoss(
+        self.topk_loss = TopKCESegLoss(
             **topk_kwargs,
             loss_fp32=loss_fp32,
         )

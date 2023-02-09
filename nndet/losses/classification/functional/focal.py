@@ -19,8 +19,8 @@ def focal_loss_with_logits(
     https://arxiv.org/abs/1708.02002
 
     Args:
-        logits: predicted logits [N, dims]
-        target: binary targets [N, dims]
+        logits: predicted logits [*]
+        target: binary targets [*]
         gamma: balance easy and hard examples in focal loss
         alpha: balance positive and negative samples [0, 1] (increasing
             alpha increase weight of foreground classes (better recall))
@@ -43,6 +43,3 @@ def focal_loss_with_logits(
         alpha_t = alpha * target + (1 - alpha) * (1 - target)
         loss = alpha_t * loss
     return reduction_helper(loss, reduction=reduction)
-
-
-focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(focal_loss_with_logits)
