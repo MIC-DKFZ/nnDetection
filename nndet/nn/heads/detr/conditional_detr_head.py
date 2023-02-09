@@ -4,6 +4,8 @@ from torch import Tensor
 from nndet.nn.heads.detr import BaseFocalDETRHead, BaseSoftmaxDETRHead
 from nndet.utils.detr_misc import inverse_sigmoid
 
+# Don't use this
+
 
 class ConditionalDETRForward:
     def forward(self, out_sequence: Tensor, reference: Tensor):

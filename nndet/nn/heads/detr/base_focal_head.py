@@ -6,12 +6,14 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from nndet.core.boxes.ops import box_center_normalized_to_edges_original
-from nndet.losses import FocalLossWithLogits
+from nndet.losses.classification.focal import BFocalLoss
 from nndet.nn.heads.detr import BaseDETRHead, _get_src_permutation_idx
 from nndet.nn.heads.detr.matcher import FocalHungarianMatcher, SimpleHungarianMatcher
 from nndet.nn.heads.detr.util import LinearClassifierFocalLoss
 from nndet.utils.detr_misc import accuracy
 from nndet.utils.mlp import MLP
+
+# Don't use this
 
 
 class BaseFocalDETRHead(BaseDETRHead):
@@ -50,7 +52,7 @@ class BaseFocalDETRHead(BaseDETRHead):
             aux_loss=aux_loss,
         )
 
-        self.class_loss = FocalLossWithLogits(gamma=gamma, alpha=alpha, loss_fp32=True, reduction="sum", loss_weight=1)
+        self.class_loss = BFocalLoss(gamma=gamma, alpha=alpha, loss_fp32=True, reduction="sum", loss_weight=1)
         self.topk = topk
         self.threshold = threshold
         # init prior_prob setting for focal loss
