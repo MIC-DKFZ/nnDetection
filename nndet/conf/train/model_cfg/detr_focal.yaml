@@ -42,7 +42,7 @@ head_classifier_kwargs:
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
   loss_weight: 2 # cls loss weight
-  reduction: "mean_d1_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
+  reduction: mean_last_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
 
 # regressor
 head_regressor_kwargs:
