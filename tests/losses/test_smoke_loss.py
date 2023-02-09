@@ -64,11 +64,12 @@ TEST_CLASSIFICATION_LABEL_LOSSES = [
     Poly1FocalLossWithLogits(reduction="mean"),
     BinaryCrossEntropyLoss(reduction="mean"),
     # test losses with custom reduction (only sigmoid based losses)
-    FocalLossWithLogits(reduction="mean_d1_sum"),
-    AsymmetricFocalLossWithLogits(reduction="mean_d1_sum"),
-    Poly1BCEWithLogits(reduction="mean_d1_sum"),
-    Poly1FocalLossWithLogits(reduction="mean_d1_sum"),
-    BinaryCrossEntropyLoss(reduction="mean_d1_sum"),
+    FocalLossWithLogits(reduction="mean_last_sum"),
+    FocalLossWithLogits(reduction="mean_one_sum"),
+    AsymmetricFocalLossWithLogits(reduction="mean_one_sum"),
+    Poly1BCEWithLogits(reduction="mean_one_sum"),
+    Poly1FocalLossWithLogits(reduction="mean_one_sum"),
+    BinaryCrossEntropyLoss(reduction="mean_one_sum"),
 ]
 TEST_CLASSIFICATION_SIGMOID_LOSSES = [
     BCEWithLogitsLoss(reduction="mean"),
