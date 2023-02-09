@@ -33,7 +33,7 @@ def focal_loss_with_logits(
         torch.Tensor: loss
 
     See Also
-        :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
+        :class:`BFocalLoss`
     """
     p = torch.sigmoid(logits)
     focal_term = (1.0 - (p * target + (1 - p) * (1 - target))) ** float(gamma)

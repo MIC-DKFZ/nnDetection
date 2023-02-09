@@ -10,14 +10,8 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.losses.classification.ce import BCELoss, CELoss
-from nndet.losses.classification.focal import (
-    AsymmetricFocalLossWithLogits,
-    FocalLossWithLogits,
-)
-from nndet.losses.classification.poly1 import (
-    Poly1BCEWithLogits,
-    Poly1FocalLossWithLogits,
-)
+from nndet.losses.classification.focal import AsymmetricBFocalLoss, BFocalLoss
+from nndet.losses.classification.poly1 import Poly1BCEWithLogits, Poly1BFocalLoss
 from nndet.nn.heads.abstract import CONV_TYPES, Classifier
 
 
@@ -406,7 +400,7 @@ class FocalClassifier(DenseClassifier):
             **kwargs,
         )
 
-        self.loss = FocalLossWithLogits(
+        self.loss = BFocalLoss(
             gamma=gamma,
             alpha=alpha,
             loss_fp32=loss_fp32,
@@ -476,7 +470,7 @@ class AsymmetricFocalClassifier(FocalClassifier):
             **kwargs,
         )
 
-        self.loss = AsymmetricFocalLossWithLogits(
+        self.loss = AsymmetricBFocalLoss(
             gamma=gamma,
             alpha=alpha,
             loss_fp32=loss_fp32,
@@ -618,7 +612,7 @@ class Poly1FocalClassifier(DenseClassifier):
             **kwargs,
         )
 
-        self.loss = Poly1FocalLossWithLogits(
+        self.loss = Poly1BFocalLoss(
             gamma=gamma,
             alpha=alpha,
             epsilon=epsilon,

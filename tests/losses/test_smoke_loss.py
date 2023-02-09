@@ -3,14 +3,8 @@ import torch
 
 # classification
 from nndet.losses.classification.ce import BCELoss, CELoss
-from nndet.losses.classification.focal import (
-    AsymmetricFocalLossWithLogits,
-    FocalLossWithLogits,
-)
-from nndet.losses.classification.poly1 import (
-    Poly1BCEWithLogits,
-    Poly1FocalLossWithLogits,
-)
+from nndet.losses.classification.focal import AsymmetricBFocalLoss, BFocalLoss
+from nndet.losses.classification.poly1 import Poly1BCEWithLogits, Poly1BFocalLoss
 from nndet.losses.regression.diou import DIoULoss
 from nndet.losses.regression.giou import GIoULoss, GIoULossPaired
 
@@ -58,10 +52,10 @@ TEST_REGRESSION_LOSSES_WITH_SANITY = [
 TEST_CLASSIFICATION_LABEL_LOSSES = [
     CELoss(reduction="mean"),
     BCELoss(reduction="mean"),
-    FocalLossWithLogits(reduction="mean"),
-    AsymmetricFocalLossWithLogits(reduction="mean"),
+    BFocalLoss(reduction="mean"),
+    AsymmetricBFocalLoss(reduction="mean"),
     Poly1BCEWithLogits(reduction="mean"),
-    Poly1FocalLossWithLogits(reduction="mean"),
+    Poly1BFocalLoss(reduction="mean"),
     # other reductions
     # CELoss(reduction="mean_last_sum"),
     # BCELoss(reduction="mean_last_sum"),

@@ -10,7 +10,7 @@ from nndet.losses.classification.functional.focal import focal_loss_with_logits
 from nndet.losses.ops import SigmoidBaseLoss
 
 
-class FocalLossWithLogits(SigmoidBaseLoss):
+class BFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,
@@ -73,7 +73,7 @@ class FocalLossWithLogits(SigmoidBaseLoss):
         )
 
 
-class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
+class AsymmetricBFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,

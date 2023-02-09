@@ -10,7 +10,7 @@ from nndet.losses.classification.functional.poly1 import (
 from nndet.losses.ops import SigmoidBaseLoss
 
 
-class Poly1FocalLossWithLogits(SigmoidBaseLoss):
+class Poly1BFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,

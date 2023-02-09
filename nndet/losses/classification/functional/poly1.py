@@ -37,7 +37,7 @@ def poly1_focal_loss_with_logits(
         torch.Tensor: loss
 
     See Also
-        :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
+        :class:`BFocalLoss`
     """
     p = torch.sigmoid(logits)
     pt = p * target + (1 - p) * (1 - target)
