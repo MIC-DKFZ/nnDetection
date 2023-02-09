@@ -1,7 +1,6 @@
 from loguru import logger
 from torch import Tensor
 
-from nndet.losses.ops import one_hot_smooth_first
 from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
 
 
@@ -56,7 +55,6 @@ class TopKCESegLoss(CESegLoss):
 class TopKBCESegLoss(BCESegLoss):
     def __init__(
         self,
-        num_classes: int,
         topk: float,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
@@ -68,7 +66,6 @@ class TopKBCESegLoss(BCESegLoss):
         (support multi class through one hot, expects pre sigmoid logits!)
 
         Args:
-            num_classes: number of classes
             topk: percentage of all entries to use for loss computation
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
@@ -85,7 +82,6 @@ class TopKBCESegLoss(BCESegLoss):
         self.smoothing = smoothing
         if smoothing > 0:
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
-        self.num_classes = num_classes
 
         self.topk = topk
 
@@ -102,11 +98,6 @@ class TopKBCESegLoss(BCESegLoss):
         Returns:
             Tensor: final loss
         """
-        target_one_hot = one_hot_smooth_first(
-            target, num_classes=self.num_classes + 1, smoothing=self.smoothing
-        )  # [N, C + 1]
-        target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
-        losses = super().forward(input, target_one_hot.float())
-
+        losses = super().forward(input, target)
         k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()

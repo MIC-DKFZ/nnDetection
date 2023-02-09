@@ -2,6 +2,8 @@ import torch
 from loguru import logger
 from torch.cuda.amp import autocast
 
+from nndet.losses.ops import one_hot_smooth_first
+
 
 class CESegLoss(torch.nn.CrossEntropyLoss):
     def __init__(
@@ -77,9 +79,13 @@ class BCESegLoss(torch.nn.BCEWithLogitsLoss):
         """
         Same as BCE with Logits from pytorch
         """
+        num_classes = input.shape[1]
+        _target = one_hot_smooth_first(target, num_classes=num_classes + 1)
+        _target = _target[:, 1:]
+
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target.float())
+                loss = self.loss_weight * super().forward(input.float(), _target.float())
         else:
-            loss = self.loss_weight * super().forward(input, target)
+            loss = self.loss_weight * super().forward(input, _target.float())
         return loss

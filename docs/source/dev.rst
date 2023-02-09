@@ -243,7 +243,7 @@ These methods can be used to customize the sweeping and inference strategy of th
 Customized Losses
 -----------------
 
-There are three different loss categories in nnDetection:
+There are four different loss categories in nnDetection:
 
 - `regression`: theses losses are usually used for regression tasks (e.g. regression of bounding boxes) 
    and receive inputs in the form `[*, #dims * 2]` where `*` are arbitrary dimensions and `#dims` are
@@ -259,6 +259,10 @@ There are three different loss categories in nnDetection:
 - `segmentation`: these losses are used for per-location classifiation of feature maps.
    They receive input in the form of `[B, C, *]`, where `B` is the batch size, 
    `C` is the number of classes and `*` are arbitrary dimensions.
+- `mask`: these losses are used for per-location binary classification of feature maps.
+   The input follows the same format at segmentation losses but the targets
+   are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
+   the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
 
 
 Evaluation
