@@ -6,18 +6,11 @@ import torch
 from nndet.losses.classification.functional.asymfocal import (
     asymmetric_focal_loss_with_logits,
 )
-
-# from nndet.losses.classification.functional.asymfocal import (
-#     asymmetric_focal_loss_with_logits_jit as asymmetric_focal_loss_with_logits,
-# )
-# from nndet.losses.classification.functional.focal import (
-#     focal_loss_with_logits_jit as focal_loss_with_logits,
-# )
 from nndet.losses.classification.functional.focal import focal_loss_with_logits
 from nndet.losses.ops import SigmoidBaseLoss
 
 
-class FocalLossWithLogits(SigmoidBaseLoss):
+class BFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,
@@ -61,12 +54,12 @@ class FocalLossWithLogits(SigmoidBaseLoss):
         Compute loss with subclass loss function
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: ont-hot targets [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss
@@ -80,7 +73,7 @@ class FocalLossWithLogits(SigmoidBaseLoss):
         )
 
 
-class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
+class AsymmetricBFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,
@@ -126,12 +119,12 @@ class AsymmetricFocalLossWithLogits(SigmoidBaseLoss):
         Compute loss with subclass loss function
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: ont-hot targets [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss

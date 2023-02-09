@@ -1,41 +1,41 @@
-# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
-# SPDX-License-Identifier: Apache-2.0
+from typing import Optional
 
 import torch
 from loguru import logger
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, one_hot_smooth_last
+from nndet.losses.ops import Loss, one_hot_smooth_last, reduction_helper
 
 
-class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
+class BCELoss(Loss):
     def __init__(
         self,
-        *args,
+        weight: Optional[torch.Tensor] = None,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
-        **kwargs,
+        reduction: str = "sum",
     ):
         """
         BCE loss with one hot encoding of targets
 
         Args:
-            num_classes: number of classes
+            weight: equivalent to weight parameter of BCE loss of pytorch
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
-
-        Warning:
-            Only kept for backwards compatibility. Please don't use this class
-            and use `nndet.losses.classification.bce.BinaryCrossEntropyLoss`
+            reduction: 'mean'|'sum'|'none' |'mean_last_sum'
+                mean: mean of loss over entire batch
+                sum: sum of loss over entire batch
+                none: no reduction
+                mean_last_sum: mean over last dimension, sum across others
         """
         super().__init__(
-            *args,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
-            **kwargs,
+            reduction=reduction,
         )
+        self.weight = weight
         self.smoothing = smoothing
         if smoothing > 0:
             logger.info(f"Running label smoothing with smoothing: {smoothing}")
@@ -49,53 +49,67 @@ class BCEWithLogitsLossOneHot(Loss, torch.nn.BCEWithLogitsLoss):
         Compute bce loss based on one hot encoding
 
         Args:
-            input: logits for all foreground classes [N, C]
-                N is the number of anchors, and C is the number of foreground
-                classes
+            input: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
             target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [N] is the number of anchors
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
-            Tensor: final loss
+            Tensor: computed loss
         """
-        num_classes = input.shape[1]
+        num_classes = input.shape[-1]
         target_one_hot = one_hot_smooth_last(
             target, num_classes=num_classes + 1, smoothing=self.smoothing
-        )  # [N, C + 1]
-        target_one_hot = target_one_hot[:, 1:]  # background is implicitly encoded
+        )  # [N, *, C + 1]
+        target_one_hot = target_one_hot[..., 1:]  # background is implicitly encoded
 
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target_one_hot.float())
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                    input.float(),
+                    target_one_hot.float(),
+                    reduction="none",
+                    weight=self.weight,
+                )
         else:
-            loss = self.loss_weight * super().forward(input, target_one_hot.to(dtype=input.dtype))
-        return loss
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                input,
+                target_one_hot.to(dtype=input.dtype),
+                reduction="none",
+                weight=self.weight,
+            )
+        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
 
 
-class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
+class CELoss(Loss):
     def __init__(
         self,
-        *args,
+        weight: Optional[torch.Tensor] = None,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
-        **kwargs,
-    ) -> None:
+        reduction: str = "sum",
+    ):
         """
-        Same as CE from pytorch
-        Targets can be float or long, it is castet to the correct type
+        CE loss
 
         Args:
+            weight: equivalent to weight parameter of CE loss of pytorch
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+            reduction: 'mean'|'sum'|'none'|'mean_last_sum'
+                mean: mean of loss over entire batch
+                sum: sum of loss over entire batch
+                none: no reduction
+                mean_last_sum: mean over last dimension, sum across others
         """
         super().__init__(
-            *args,
-            **kwargs,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
         )
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
-        if loss_fp32:
-            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
+        self.weight = weight
 
     def forward(
         self,
@@ -103,52 +117,46 @@ class CrossEntropyLoss(torch.nn.CrossEntropyLoss):
         target: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Same as CE from pytorch
-        """
-        if self.loss_fp32:
-            with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target.long())
-        else:
-            loss = self.loss_weight * super().forward(input, target.long())
-        return loss
-
-
-class BCEWithLogitsLoss(torch.nn.BCEWithLogitsLoss):
-    def __init__(
-        self,
-        *args,
-        loss_weight: float = 1.0,
-        loss_fp32: bool = False,
-        **kwargs,
-    ) -> None:
-        """
-        Same as BCE with Logits from pytorch
-        Targets can be float or long, it is castet to the correct type
+        Compute loss
 
         Args:
-            loss_weight: scalar to balance multiple losses
-            loss_fp32: If True, loss is forced to be computed in float32
-        """
-        super().__init__(
-            *args,
-            **kwargs,
-        )
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
-        if loss_fp32:
-            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
+            input: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
-    def forward(
-        self,
-        input: torch.Tensor,
-        target: torch.Tensor,
-    ) -> torch.Tensor:
+        Returns:
+            Tensor: computed loss
+
+        Warning:
+            Note the ordering of the input is different from pytorch!
         """
-        Same as BCE with Logits from pytorch
-        """
+        permute_inputs = input.ndim > 2
+        if permute_inputs:
+            # permute class channel to first axis
+            _input = input.movedim(-1, 1)
+        else:
+            _input = input
+
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target.float())
+                loss = torch.nn.functional.cross_entropy(
+                    _input.float(),
+                    target.long(),
+                    weight=self.weight,
+                    reduction="none",
+                )
         else:
-            loss = self.loss_weight * super().forward(input, target)
-        return loss
+            loss = torch.nn.functional.cross_entropy(
+                _input,
+                target.long(),
+                weight=self.weight,
+                reduction="none",
+            )
+
+        if permute_inputs and self.reduction.lower() == "none":
+            # restore permutation
+            loss = loss.movedim(1, -1)
+        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)

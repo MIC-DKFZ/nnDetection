@@ -8,7 +8,8 @@ from typing import Optional, Sequence
 import torch
 from torch import Tensor
 
-from nndet.losses import GIoULoss, SmoothL1Loss
+from nndet.losses.regression.giou import GIoULoss
+from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.nn.heads.abstract import Regressor, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
 

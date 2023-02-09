@@ -8,9 +8,9 @@ import torch.nn as nn
 from loguru import logger
 from torch import Tensor
 
-from nndet.losses import GIoULoss, SmoothL1Loss
 from nndet.losses.regression.diou import DIoULoss
-from nndet.losses.regression.giou import GIoULossPaired
+from nndet.losses.regression.giou import GIoULoss, GIoULossPaired
+from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.nn.heads.abstract import Regressor
 from nndet.nn.ops.scale import Scale, ScalePerDim
 from nndet.utils.collections import CONV_TYPES

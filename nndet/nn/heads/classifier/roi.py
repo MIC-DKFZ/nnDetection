@@ -10,7 +10,7 @@ import torch
 from loguru import logger
 from torch import Tensor
 
-from nndet.losses.classification import BCEWithLogitsLossOneHot, CrossEntropyLoss
+from nndet.losses.classification.ce import BCELoss, CELoss
 from nndet.nn.heads.abstract import Classifier, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
 from nndet.utils.collections import CONV_TYPES
@@ -264,7 +264,7 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
             num_classes=num_classes,
             **kwargs,
         )
-        self.loss = BCEWithLogitsLossOneHot(
+        self.loss = BCELoss(
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -349,7 +349,7 @@ class BCEFCRoIClassifier(FCRoIClassifier):
             num_classes=num_classes,
             **kwargs,
         )
-        self.loss = BCEWithLogitsLossOneHot(
+        self.loss = BCELoss(
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -428,7 +428,7 @@ class CEConvRoIClassifier(ConvRoIClassifier):
             num_classes=num_classes + 1,  # add one channel for background
             **kwargs,
         )
-        self.loss = CrossEntropyLoss(
+        self.loss = CELoss(
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
@@ -496,7 +496,7 @@ class CEFCRoIClassifier(FCRoIClassifier):
             num_classes=num_classes + 1,  # add one channel for background
             **kwargs,
         )
-        self.loss = CrossEntropyLoss(
+        self.loss = CELoss(
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
