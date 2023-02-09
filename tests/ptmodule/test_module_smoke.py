@@ -114,13 +114,13 @@ def example_empty_batch(in_channels, patch_size, device):
 
 CASES = [
     # Base Models
-    # (RetinaUNetV001, "retinaunet_v001"),
-    # (RetinaUNetV001, "retinaunet_v001_mod"),
-    # (RetinaUNetV002, "retinaunet_v002"),
-    # (RetinaUNetV002Focal, "retinaunet_v002_focal"),
-    # (RetinaUNetV002Res, "retinaunet_v002"),
-    # (RetinaNetV002, "retinaunet_v002"),
-    # (RetinaNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaUNetV001, "retinaunet_v001"),
+    (RetinaUNetV001, "retinaunet_v001_mod"),
+    (RetinaUNetV002, "retinaunet_v002"),
+    (RetinaUNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaUNetV002Res, "retinaunet_v002"),
+    (RetinaNetV002, "retinaunet_v002"),
+    (RetinaNetV002Focal, "retinaunet_v002_focal"),
     # (RetinaNetV002Res, "retinaunet_v002"),
     # Dev Models
     (BoxDETRC002, "detr_c002"),
