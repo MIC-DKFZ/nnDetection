@@ -142,21 +142,21 @@ class CELoss(Loss):
 
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * torch.nn.functional.cross_entropy(
+                loss = torch.nn.functional.cross_entropy(
                     _input.float(),
                     target.long(),
                     weight=self.weight,
-                    reduction=self.reduction,
+                    reduction="none",
                 )
         else:
-            loss = self.loss_weight * torch.nn.functional.cross_entropy(
+            loss = torch.nn.functional.cross_entropy(
                 _input,
                 target.long(),
                 weight=self.weight,
-                reduction=self.reduction,
+                reduction="none",
             )
 
         if permute_inputs and self.reduction.lower() == "none":
             # restore permutation
             loss = loss.movedim(1, -1)
-        return loss
+        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)

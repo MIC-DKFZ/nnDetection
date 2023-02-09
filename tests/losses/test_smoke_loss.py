@@ -57,8 +57,8 @@ TEST_CLASSIFICATION_LABEL_LOSSES = [
     Poly1BCEWithLogits(reduction="mean"),
     Poly1BFocalLoss(reduction="mean"),
     # other reductions
-    # CELoss(reduction="mean_last_sum"),
-    # BCELoss(reduction="mean_last_sum"),
+    CELoss(reduction="mean_last_sum"),
+    BCELoss(reduction="mean_last_sum"),
 ]
 TEST_SEGMENTATION_LABEL_LOSSES = [
     CESegLoss(reduction="mean"),
