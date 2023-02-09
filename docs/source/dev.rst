@@ -254,7 +254,7 @@ There are four different loss categories in nnDetection:
    `[*, C]` where `*` are arbitrary dimensions and `C` is the number of classes. The targets
    are encoded as numerical values. Note this is different to pytorch where the number
    of classes is usually located at the first dimension. Example shapes: RetinaNet `[N, C]`,
-   RCNN `[R, C]`, DETR `[B, T, #dims * 2]` where `N` is the number of anchors,
+   RCNN `[R, C]`, DETR `[B, T, C]` where `N` is the number of anchors,
    `R` is the number of RoIs, `B` is the batch size, `T` number of boxes per image.
 - `segmentation`: these losses are used for per-location classifiation of feature maps.
    They receive input in the form of `[B, C, *]`, where `B` is the batch size, 
