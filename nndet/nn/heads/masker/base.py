@@ -10,11 +10,11 @@ from loguru import logger
 from torch import Tensor, nn
 
 from nndet.losses.mask.ce import BCEMaskLoss
-from nndet.losses.segmentation.dice import SoftDiceSegLoss
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier
+from nndet.losses.mask.dice import BDiceMaskLoss
+from nndet.nn.heads.abstract import Classifier
+from nndet.utils.collections import CONV_TYPES
 
 # TODO: cleanup
-# TODO: cleanup seg losses + tests of softmax and ce versionss
 
 
 class Masker(Classifier):
@@ -217,16 +217,12 @@ class BCESingleMasker(Masker):
         return self.logits_convert_fn(logits).squeeze(dim=1)
 
 
-class DiceBCESingleMasker(BCESingleMasker):
+class BDiceBCESingleMasker(BCESingleMasker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO: cleanup
-        raise NotImplementedError()
-        self.loss_dice = SoftDiceSegLoss(
-            nonlin=self.logits_convert_fn,
+        self.loss_dice = BDiceMaskLoss(
             batch_dice=False,
-            do_bg=True,
-            smooth_nom=1e-5,
+            smooth_nom=0,
             smooth_denom=1e-5,
             loss_weight=1.0,
             loss_fp32=True,

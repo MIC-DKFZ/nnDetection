@@ -1,34 +1,40 @@
+from typing import Optional
+
 import torch
-from loguru import logger
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import one_hot_smooth_first
+from nndet.losses.ops import Loss, one_hot_smooth_first
 
 
-class CESegLoss(torch.nn.CrossEntropyLoss):
+class CESegLoss(Loss):
     def __init__(
         self,
-        *args,
+        weight: Optional[torch.Tensor] = None,
+        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
-        **kwargs,
+        reduction: str = "mean",
     ) -> None:
         """
-        Same as CE from pytorch
-        Targets can be float or long, it is castet to the correct type
+        Wrapper for PyTorch CE Loss. Targets will always be casted to long
+        before calling the loss function!
 
         Args:
+            weight: weiught for CE loss, see PyTorch docs for more info.
+            smoothing: Apply label smoothing to loss. See PyTorch docs for
+                more info.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+            reduction: reduction of loss. Refer to
+                `nndet.losses.ops.reduction_helper` for all available options.
         """
         super().__init__(
-            *args,
-            **kwargs,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
         )
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
-        if loss_fp32:
-            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
+        self.weight = weight
+        self.smoothing = smoothing
 
     def forward(
         self,
@@ -36,40 +42,65 @@ class CESegLoss(torch.nn.CrossEntropyLoss):
         target: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Same as CE from pytorch
+        Compute loss
+
+        Args:
+            input: predicted logits. Shape [N, C, *] where N is the batch size,
+                C is the number of classes and * are arbitrary spatial
+                dimensions
+            target: numerical tensor specifying the labels of shape [N, *],
+                where N is the batch size and * are arbitrary dimensions
+
+        Returns:
+            torch.Tensor: computed loss
         """
+        _fn = torch.nn.functional.cross_entropy
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), target.long())
+                loss = _fn(
+                    input.float(),
+                    target.long(),
+                    label_smoothing=self.smoothing,
+                    weight=self.weight,
+                )
         else:
-            loss = self.loss_weight * super().forward(input, target.long())
-        return loss
+            loss = _fn(
+                input,
+                target.long(),
+                label_smoothing=self.smoothing,
+                weight=self.weight,
+            )
+        return self.loss_weight * loss
 
 
-class BCESegLoss(torch.nn.BCEWithLogitsLoss):
+class BCESegLoss(Loss):
     def __init__(
         self,
-        *args,
+        weight: Optional[torch.Tensor] = None,
+        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
-        **kwargs,
+        reduction: str = "mean",
     ) -> None:
         """
-        Same as BCE with Logits from pytorch
-        Targets can be float or long, it is castet to the correct type
+        Wrapper for PyTorch CE Loss. Targets will always be casted to long
+        before calling the loss function!
 
         Args:
+            weight: weiught for CE loss, see PyTorch docs for more info.
+            smoothing: Apply label smoothing to loss.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+            reduction: reduction of loss. Refer to
+                `nndet.losses.ops.reduction_helper` for all available options.
         """
         super().__init__(
-            *args,
-            **kwargs,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+            reduction=reduction,
         )
-        self.loss_weight = loss_weight
-        self.loss_fp32 = loss_fp32
-        if loss_fp32:
-            logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
+        self.weight = weight
+        self.smoothing = smoothing
 
     def forward(
         self,
@@ -77,15 +108,38 @@ class BCESegLoss(torch.nn.BCEWithLogitsLoss):
         target: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Same as BCE with Logits from pytorch
+        Compute loss
+
+        Args:
+            input: predicted logits. Shape [N, C, *] where N is the batch size,
+                C is the number of classes and * are arbitrary spatial
+                dimensions
+            target: numerical tensor specifying the labels of shape [N, *],
+                where N is the batch size and * are arbitrary dimensions
+
+        Returns:
+            torch.Tensor: computed loss
         """
         num_classes = input.shape[1]
-        _target = one_hot_smooth_first(target, num_classes=num_classes + 1)
+        _target = one_hot_smooth_first(
+            target,
+            num_classes=num_classes + 1,
+            smoothing=self.smoothing,
+        )
         _target = _target[:, 1:]
 
+        _fn = torch.nn.functional.binary_cross_entropy_with_logits
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * super().forward(input.float(), _target.float())
+                loss = _fn(
+                    input.float(),
+                    _target.float(),
+                    weight=self.weight,
+                )
         else:
-            loss = self.loss_weight * super().forward(input, _target.float())
-        return loss
+            loss = _fn(
+                input,
+                _target.float(),
+                weight=self.weight,
+            )
+        return self.loss_weight * loss

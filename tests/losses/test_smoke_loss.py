@@ -8,6 +8,7 @@ from nndet.losses.classification.poly1 import Poly1BCEWithLogits, Poly1BFocalLos
 
 # mask
 from nndet.losses.mask.ce import BCEMaskLoss
+from nndet.losses.mask.dice import BDiceMaskLoss
 from nndet.losses.regression.diou import DIoULoss
 from nndet.losses.regression.giou import GIoULoss, GIoULossPaired
 
@@ -16,7 +17,7 @@ from nndet.losses.regression.smoothl1 import SmoothL1Loss
 
 # segmentation
 from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
-from nndet.losses.segmentation.dice import SoftDiceSegLoss
+from nndet.losses.segmentation.dice import BDiceSegLoss, DiceSegLoss
 from nndet.losses.segmentation.topk import TopKBCESegLoss, TopKCESegLoss
 
 """
@@ -70,12 +71,21 @@ TEST_CLASSIFICATION_LOSSES = [
 TEST_SEGMENTATION_LOSSES = [
     CESegLoss(reduction="mean"),
     BCESegLoss(reduction="mean"),
-    SoftDiceSegLoss(reduction="mean"),
     TopKCESegLoss(topk=0.1),
     TopKBCESegLoss(topk=0.1),
+    DiceSegLoss(reduction="mean"),
+    DiceSegLoss(reduction="sum"),
+    DiceSegLoss(reduction="mean", batch_dice=True),
+    DiceSegLoss(reduction="mean", do_bg=True),
+    BDiceSegLoss(reduction="mean"),
+    BDiceSegLoss(reduction="sum"),
+    BDiceSegLoss(reduction="mean", batch_dice=True),
 ]
 TEST_MASK_LOSSES = [
     BCEMaskLoss(reduction="mean"),
+    BDiceMaskLoss(reduction="mean"),
+    BDiceMaskLoss(reduction="sum"),
+    BDiceMaskLoss(reduction="sum", batch_dice=True),
 ]
 
 

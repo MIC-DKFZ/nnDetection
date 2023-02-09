@@ -43,6 +43,13 @@ class Loss(torch.nn.Module):
         if val:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
+    def extra_repr(self) -> str:
+        return (
+            f"loss_weight={self.loss_weight}, ",
+            f"loss_fp32={self.loss_fp32}, ",
+            f"reduction={self.reduction}",
+        )
+
 
 class SigmoidBaseLoss(Loss):
     def __init__(
@@ -124,6 +131,14 @@ class SigmoidBaseLoss(Loss):
             torch.Tensor: loss
         """
         raise NotImplementedError
+
+    def extra_repr(self) -> str:
+        return (
+            f"loss_weight={self.loss_weight}, ",
+            f"loss_fp32={self.loss_fp32}, ",
+            f"reduction={self.reduction}, ",
+            f"smoothing={self.smoothing}",
+        )
 
 
 def reduction_helper(
