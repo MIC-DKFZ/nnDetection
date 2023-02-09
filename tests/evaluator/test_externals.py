@@ -115,6 +115,7 @@ def test_evaluator(snapshot, example):
         fast=False,
         verbose=True,
         save_dir=None,
+        froc_wp=False,
     )
 
     for idx, (p, t) in enumerate(zip(example_preds, example_gt)):
@@ -150,6 +151,7 @@ def test_froc_against_monai(example):
         fast=False,
         verbose=True,
         save_dir=None,
+        froc_wp=False,
     )
 
     for idx, (p, t) in enumerate(zip(example_preds, example_gt)):
@@ -164,9 +166,9 @@ def test_froc_against_monai(example):
         )
 
     res = evaluator.finish_online_evaluation()
-    froc_score_nndet = res[0]["FROC_score_IoU_0.10"]
+    froc_score_nndet = res[0]["FROC_IoU_0.10"]
 
-    results_list = evaluator.results_list
+    results_list = evaluator.results_dict[""]
 
     results = [_r for r in results_list for _r in r.values()]
     tp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 1] for r in results])
