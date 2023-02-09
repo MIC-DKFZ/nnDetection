@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, one_hot_smooth_first
+from nndet.losses.ops import Loss, one_hot_smooth_first, reduction_helper
 
 
 class CESegLoss(Loss):
@@ -62,6 +62,7 @@ class CESegLoss(Loss):
                     target.long(),
                     label_smoothing=self.smoothing,
                     weight=self.weight,
+                    reduction="none",
                 )
         else:
             loss = _fn(
@@ -69,8 +70,9 @@ class CESegLoss(Loss):
                 target.long(),
                 label_smoothing=self.smoothing,
                 weight=self.weight,
+                reduction="none",
             )
-        return self.loss_weight * loss
+        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
 
     def extra_repr(self) -> str:
         return (
@@ -92,11 +94,11 @@ class BCESegLoss(Loss):
         reduction: str = "mean",
     ) -> None:
         """
-        Wrapper for PyTorch CE Loss. Targets will always be casted to long
+        Wrapper for PyTorch BCE Loss. Targets will always be casted to long
         before calling the loss function!
 
         Args:
-            weight: weiught for CE loss, see PyTorch docs for more info.
+            weight: weiught for BCE loss, see PyTorch docs for more info.
             smoothing: Apply label smoothing to loss.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -144,14 +146,16 @@ class BCESegLoss(Loss):
                     input.float(),
                     _target.float(),
                     weight=self.weight,
+                    reduction="none",
                 )
         else:
             loss = _fn(
                 input,
                 _target.float(),
                 weight=self.weight,
+                reduction="none",
             )
-        return self.loss_weight * loss
+        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
 
     def extra_repr(self) -> str:
         return (
