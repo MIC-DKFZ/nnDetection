@@ -598,3 +598,4 @@ if DropPath is not None:
 
 else:
     ConvNeXtBlock = None
+    ConvNeXtBackbone = None
