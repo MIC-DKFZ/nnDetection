@@ -8,8 +8,8 @@ from loguru import logger
 from torch import Tensor
 from torch.cuda.amp import autocast
 
-from nndet.losses.classification import BCEWithLogitsLoss, CrossEntropyLoss
 from nndet.losses.ops import Loss, reduction_helper
+from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
 
 
 def one_hot_smooth_batch(data, num_classes: int, smoothing: float = 0.0):
@@ -198,7 +198,7 @@ class SoftDiceLoss(Loss):
         return loss
 
 
-class TopKLoss(CrossEntropyLoss):
+class TopKLoss(CESegLoss):
     def __init__(
         self,
         topk: float,
@@ -246,7 +246,7 @@ class TopKLoss(CrossEntropyLoss):
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
 
 
-class TopKLossSigmoid(BCEWithLogitsLoss):
+class TopKLossSigmoid(BCESegLoss):
     def __init__(
         self,
         num_classes: int,

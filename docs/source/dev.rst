@@ -240,6 +240,26 @@ Predict Mixins
 The prediction consists of two parts: `sweep` which is executed after the training to determine the best inference parameters and `get_predictor` which will create a predictor object to run inference.
 These methods can be used to customize the sweeping and inference strategy of the module by exchanging the initialization of the `Sweeper` Object and `Predictor` / `Ensembler` objects.
 
+Customized Losses
+-----------------
+
+There are three different loss categories in nnDetection:
+
+- `regression`: theses losses are usually used for regression tasks (e.g. regression of bounding boxes) 
+   and receive inputs in the form `[*, #dims * 2]` where `*` are arbitrary dimensions and `#dims` are
+   the number of spatial dimenesions. Example shapes: RetinaNet `[N, #dims * 2]`, RCNN `[R, #dims * 2]`,
+   DETR `[T, #dims * 2]` where `N` is the number of anchors, `R` is the number of RoIs, `T` number
+   of matched boxes.
+- `classification`: these losses are used for classification task and receive inputs int the form
+   `[*, C]` where `*` are arbitrary dimensions and `C` is the number of classes. The targets
+   are encoded as numerical values. Note this is different to pytorch where the number
+   of classes is usually located at the first dimension. Example shapes: RetinaNet `[N, C]`,
+   RCNN `[R, C]`, DETR `[B, T, #dims * 2]` where `N` is the number of anchors,
+   `R` is the number of RoIs, `B` is the batch size, `T` number of boxes per image.
+- `segmentation`: these losses are used for per-location classifiation of feature maps.
+   They receive input in the form of `[B, C, *]`, where `B` is the batch size, 
+   `C` is the number of classes and `*` are arbitrary dimensions.
+
 
 Evaluation
 ==========

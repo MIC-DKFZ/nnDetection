@@ -9,11 +9,7 @@ import torch.nn as nn
 from loguru import logger
 from torch import Tensor
 
-from nndet.losses.classification.ce import (
-    BCEWithLogitsLossOneHot,
-    BCEWithLogitsLossOneHotV2,
-    CrossEntropyLoss,
-)
+from nndet.losses.classification.ce import BCELoss, CELoss
 from nndet.losses.classification.focal import (
     AsymmetricFocalLossWithLogits,
     FocalLossWithLogits,
@@ -263,7 +259,7 @@ class BCECLassifier(DenseClassifier):
             **kwargs,
         )
 
-        self.loss = BCEWithLogitsLossOneHot(
+        self.loss = BCELoss(
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -328,7 +324,7 @@ class CEClassifier(DenseClassifier):
             **kwargs,
         )
 
-        self.loss = CrossEntropyLoss(
+        self.loss = CELoss(
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
@@ -687,76 +683,3 @@ class FullyConntectedBCECLassifier(BCECLassifier):
             add_act=False,
             bias=True,
         )
-
-
-class BCECLassifierV2(DenseClassifier):
-    def __init__(
-        self,
-        conv,
-        in_channels: int,
-        internal_channels: int,
-        num_classes: int,
-        anchors_per_pos: int,
-        num_levels: int,
-        num_convs: int = 3,
-        add_norm: bool = True,
-        prior_prob: Optional[float] = None,
-        weight: Optional[Tensor] = None,
-        reduction: str = "mean",
-        smoothing: float = 0.0,
-        loss_weight: float = 1.0,
-        loss_fp32: bool = False,
-        **kwargs,
-    ):
-        """
-        Classifier Head with sigmoid based BCE loss computation and prio
-        prob weight init
-        conv(in, internal) -> num_convs x conv(internal, internal) ->
-        conv(internal, out)
-        V2 adds additional reduction modes
-
-        Args:
-            conv: Convolution modules which handles a single layer
-            in_channels: number of input channels
-            internal_channels: number of channels internally used
-            num_classes: number of foreground classes
-            anchors_per_pos: number of anchors per position
-            num_levels: number of decoder levels which are passed through the
-                classifier
-            num_convs: number of convolutions
-                input_conv -> num_convs -> output_convs
-            add_norm: en-/disable normalization layers in internal layers
-            prior_prob: initialize final conv with given prior probability
-            weight: weight in BCEWithLogitsLoss (see pytorch for more info)
-            reduction: 'mean'|'sum'|'none' | 'mean_last_sum'
-                mean: mean of loss over entire batch
-                sum: sum of loss over entire batch
-                none: no reduction
-                mean_one_sum: mean over dim 1, sum across others
-                mean_last_sum: mean over last dimension, sum across others
-            smoothing:  label smoothing
-            loss_weight: scalar to balance multiple losses
-            loss_fp32: If True, loss is forced to be computed in float32
-            kwargs: keyword arguments passed to first and internal convolutions
-        """
-        self.prior_prob = prior_prob
-        super().__init__(
-            conv=conv,
-            in_channels=in_channels,
-            num_convs=num_convs,
-            add_norm=add_norm,
-            internal_channels=internal_channels,
-            num_classes=num_classes,
-            anchors_per_pos=anchors_per_pos,
-            num_levels=num_levels,
-            **kwargs,
-        )
-
-        self.loss = BCEWithLogitsLossOneHotV2(
-            weight=weight,
-            reduction=reduction,
-            smoothing=smoothing,
-            loss_weight=loss_weight,
-            loss_fp32=loss_fp32,
-        )
-        self.logits_convert_fn = nn.Sigmoid()
