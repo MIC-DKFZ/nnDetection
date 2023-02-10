@@ -240,6 +240,7 @@ Predict Mixins
 The prediction consists of two parts: `sweep` which is executed after the training to determine the best inference parameters and `get_predictor` which will create a predictor object to run inference.
 These methods can be used to customize the sweeping and inference strategy of the module by exchanging the initialization of the `Sweeper` Object and `Predictor` / `Ensembler` objects.
 
+
 Customized Losses
 -----------------
 
@@ -269,6 +270,11 @@ There are four different loss categories in nnDetection:
    The input follows the same format at segmentation losses but the targets
    are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
    the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
+
+
+Custom Splits
+-------------
+#TODO: add docs
 
 
 Evaluation
