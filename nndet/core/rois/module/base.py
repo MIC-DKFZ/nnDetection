@@ -209,7 +209,8 @@ class BaseRoIModule(torch.nn.Module):
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
         target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
-        batch_pos_label = torch.cat(pos_label)
+        # TODO: check for consistency
+        batch_pos_label = torch.cat(pos_label) - 1
         assert batch_pos_label.shape[0] == pred_masks.shape[0]
         losses = self.mask_head[stage].compute_loss(
             pred_logits=pred_masks,
@@ -432,8 +433,9 @@ class BaseRoIModule(torch.nn.Module):
         masks_per_image = [len(pl) for pl in pred_labels]
         assert [len(pp) == len(pl) for pp, pl in zip(pred_probs, pred_labels)]
         assert sum(masks_per_image) == masks.shape[0]
+        batched_mask_labels = torch.cat(pred_labels)
 
-        pred_masks = self.mask_head[stage].logits_to_probs(masks, pred_labels)
+        pred_masks = self.mask_head[stage].logits_to_probs(masks, batched_mask_labels)
         pred_masks = pred_masks.split(masks_per_image, 0)
 
         return self.mask_post.process_batch(

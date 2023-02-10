@@ -162,6 +162,7 @@ class RoIBuildMixin:
                 conv,
                 in_channels=plan_arch["fpn_channels"],
                 internal_channels=int(roi_mask_channel_multiplier * plan_arch["fpn_channels"]),
+                num_classes=plan_arch["classifier_classes"],
                 **kwargs,
             )
         else:
@@ -194,7 +195,7 @@ class RoIBuildMixin:
         cls,
         plan_arch: dict,
         model_cfg: dict,
-    ):
+    ):  # TODO: return
         if cls.roi_mask_pooler_cls is not None:
             pooler_name = cls.roi_box_pooler_cls.__name__
             mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)

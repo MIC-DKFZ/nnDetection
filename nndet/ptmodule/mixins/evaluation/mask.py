@@ -61,7 +61,6 @@ class ScoreMasksEvalMixin(EvalMixin):
         assert len(_pred_masks_probs) == len(target_binary_masks) == len(_pred_boxes)
         pred_masks = []
         for idx in range(len(target_binary_masks)):
-            # breakpoint()
             pred_bin_masks = ops_torch.roi_mask_to_image_mask(
                 boxes=_pred_boxes[idx],
                 masks=_pred_masks_probs[idx],
