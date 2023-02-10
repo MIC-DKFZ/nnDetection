@@ -39,17 +39,17 @@ class BCELoss(SigmoidBaseLoss):
 
     def comp_loss(
         self,
-        logits: torch.Tensor,
+        preds: torch.Tensor,
         targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
 
         Args:
-            logits: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -57,7 +57,7 @@ class BCELoss(SigmoidBaseLoss):
             torch.Tensor: loss
         """
         loss = torch.nn.functional.binary_cross_entropy_with_logits(
-            logits,
+            preds,
             targets,
             reduction="none",
             weight=self.weight,
@@ -70,7 +70,7 @@ class BCELoss(SigmoidBaseLoss):
             f"smoothing={self.smoothing} "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )
 
 
@@ -107,17 +107,17 @@ class CELoss(Loss):
 
     def forward(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss
 
         Args:
-            input: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -127,18 +127,18 @@ class CELoss(Loss):
         Warning:
             Note the ordering of the input is different from pytorch!
         """
-        permute_inputs = input.ndim > 2
+        permute_inputs = preds.ndim > 2
         if permute_inputs:
             # permute class channel to first axis
-            _input = input.movedim(-1, 1)
+            _input = preds.movedim(-1, 1)
         else:
-            _input = input
+            _input = preds
 
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = torch.nn.functional.cross_entropy(
                     _input.float(),
-                    target.long(),
+                    targets.long(),
                     weight=self.weight,
                     reduction="none",
                     label_smoothing=self.smoothing,
@@ -146,7 +146,7 @@ class CELoss(Loss):
         else:
             loss = torch.nn.functional.cross_entropy(
                 _input,
-                target.long(),
+                targets.long(),
                 weight=self.weight,
                 reduction="none",
                 label_smoothing=self.smoothing,
@@ -163,5 +163,5 @@ class CELoss(Loss):
             f"smoothing={self.smoothing} "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )

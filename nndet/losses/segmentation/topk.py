@@ -1,4 +1,4 @@
-from torch import Tensor
+import torch
 
 from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
 
@@ -12,8 +12,7 @@ class TopKCESegLoss(CESegLoss):
         **kwargs,
     ):
         """
-        Uses topk percent of values to compute CE loss
-        (expects pre softmax logits!)
+        TopK with CE Loss
 
         Args:
             topk: percentage of all entries to use for loss computation
@@ -33,21 +32,25 @@ class TopKCESegLoss(CESegLoss):
             raise ValueError("topk needs to be in the range [0, 1].")
         self.topk = topk
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
-        Compute loss
+        Compute Loss
 
         Args:
-            input: predicted logits. Shape [N, C, *] where N is the batch size,
-                C is the number of classes and * are arbitrary spatial
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            target: numerical tensor specifying the labels of shape [N, *],
-                where N is the batch size and * are arbitrary dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
         """
-        losses = super().forward(input, target)
+        losses = super().forward(preds, targets)
         k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
 
@@ -83,21 +86,25 @@ class TopKBCESegLoss(BCESegLoss):
         )
         self.topk = topk
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
-        Compute loss
+        Compute Loss
 
         Args:
-            input: predicted logits. Shape [N, C, *] where N is the batch size,
-                C is the number of classes and * are arbitrary spatial
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            target: numerical tensor specifying the labels of shape [N, *],
-                where N is the batch size and * are arbitrary dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
         """
-        losses = super().forward(input, target)
+        losses = super().forward(preds, targets)
         k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
 

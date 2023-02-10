@@ -33,17 +33,17 @@ class BCEMaskLoss(Loss):
 
     def forward(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute Loss
 
         Args:
-            input: predicted probabilities. [N, C, *], where N is the batch
+            preds: predictions (pre act). [N, C, *], where N is the batch
                 size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            target: targets encoded as one hot. [N, C, *], where
+            targets: targets encoded as one hot. [N, C, *], where
                 N is the batch size, C is the number of classes, * are
                 arbitrary spatial dimensions
 
@@ -54,15 +54,15 @@ class BCEMaskLoss(Loss):
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = _fn(
-                    input.float(),
-                    target.float(),
+                    preds.float(),
+                    targets.float(),
                     weight=self.weight,
                     reduction="none",
                 )
         else:
             loss = _fn(
-                input,
-                target,
+                preds,
+                targets,
                 weight=self.weight,
                 reduction="none",
             )
@@ -73,5 +73,5 @@ class BCEMaskLoss(Loss):
             f"weight={self.weight}"
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )

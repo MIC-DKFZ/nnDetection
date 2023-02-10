@@ -40,15 +40,15 @@ class SmoothL1Loss(Loss):
 
     def forward(
         self,
-        inp: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss
 
         Args:
-            inp: predicted tensor (same shape as target)
-            target: target tensor
+            preds: predicted tensor [*], arbitrary shape
+            targets: target tensor, same shape as `preds`
 
         Returns:
             Tensor: computed loss
@@ -56,15 +56,15 @@ class SmoothL1Loss(Loss):
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
-                    inp.float(),
-                    target.float(),
+                    preds.float(),
+                    targets.float(),
                     beta=self.beta,
                     reduction=self.reduction,
                 )
         else:
             loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
-                inp,
-                target,
+                preds,
+                targets,
                 beta=self.beta,
                 reduction=self.reduction,
             )
@@ -75,5 +75,5 @@ class SmoothL1Loss(Loss):
             f"beta={self.beta}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )

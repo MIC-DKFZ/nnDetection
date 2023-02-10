@@ -63,17 +63,20 @@ class DiceSegLoss(Loss):
         self.smoothing = smoothing
         self.do_bg = do_bg
 
-    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute Loss
 
         Args:
-            preds: predicted probabilities. [N, C, *], where N is the batch
+            preds: predictions (without act). [N, C, *], where N is the batch
                 size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            targets_one_hot: targets encoded as one hot. [N, C, *], where
-                N is the batch size, C is the number of classes, * are
-                arbitrary spatial dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
@@ -115,14 +118,14 @@ class DiceSegLoss(Loss):
 
     def extra_repr(self) -> str:
         return (
-            f"do_bg={self.do_bg}"
+            f"do_bg={self.do_bg}, "
             f"batch_dice={self.batch_dice}, "
             f"smooth_nom={self.smooth_nom}, "
             f"smooth_denom={self.smooth_denom}, "
             f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )
 
 
@@ -174,17 +177,20 @@ class BDiceSegLoss(BDiceMaskLoss):
         self.smoothing = smoothing
         self.do_bg = do_bg
 
-    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute Loss
 
         Args:
-            preds: predicted probabilities. [N, C, *], where N is the batch
+            preds: predictions (without act). [N, C, *], where N is the batch
                 size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            targets_one_hot: targets encoded as one hot. [N, C, *], where
-                N is the batch size, C is the number of classes, * are
-                arbitrary spatial dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
@@ -214,5 +220,5 @@ class BDiceSegLoss(BDiceMaskLoss):
             f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )

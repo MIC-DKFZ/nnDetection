@@ -50,15 +50,19 @@ class BDiceMaskLoss(Loss):
         self.smooth_nom = smooth_nom
         self.smooth_denom = smooth_denom
 
-    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
         Compute Loss
 
         Args:
-            preds: predicted probabilities. [N, C, *], where N is the batch
+            preds: predictions (pre act). [N, C, *], where N is the batch
                 size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            targets_one_hot: targets encoded as one hot. [N, C, *], where
+            targets: targets encoded as one hot. [N, C, *], where
                 N is the batch size, C is the number of classes, * are
                 arbitrary spatial dimensions
 
@@ -93,5 +97,5 @@ class BDiceMaskLoss(Loss):
             f"smooth_denom={self.smooth_denom}"
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )

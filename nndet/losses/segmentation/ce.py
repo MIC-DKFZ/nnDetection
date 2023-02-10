@@ -38,18 +38,18 @@ class CESegLoss(Loss):
 
     def forward(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Compute loss
+        Compute Loss
 
         Args:
-            input: predicted logits. Shape [N, C, *] where N is the batch size,
-                C is the number of classes and * are arbitrary spatial
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            target: numerical tensor specifying the labels of shape [N, *],
-                where N is the batch size and * are arbitrary dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
@@ -58,16 +58,16 @@ class CESegLoss(Loss):
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = _fn(
-                    input.float(),
-                    target.long(),
+                    preds.float(),
+                    targets.long(),
                     label_smoothing=self.smoothing,
                     weight=self.weight,
                     reduction="none",
                 )
         else:
             loss = _fn(
-                input,
-                target.long(),
+                preds,
+                targets.long(),
                 label_smoothing=self.smoothing,
                 weight=self.weight,
                 reduction="none",
@@ -80,7 +80,7 @@ class CESegLoss(Loss):
             f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )
 
 
@@ -122,14 +122,14 @@ class BCESegLoss(Loss):
         targets: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Compute loss
+        Compute Loss
 
         Args:
-            preds: predicted logits. Shape [N, C, *] where N is the batch size,
-                C is the number of classes and * are arbitrary spatial
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
                 dimensions
-            targets: numerical tensor specifying the labels of shape [N, *],
-                where N is the batch size and * are arbitrary dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
             torch.Tensor: computed loss
@@ -171,5 +171,5 @@ class BCESegLoss(Loss):
             f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}, "
+            f"reduction={self.reduction}"
         )
