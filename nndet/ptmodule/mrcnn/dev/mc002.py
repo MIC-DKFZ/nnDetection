@@ -28,7 +28,7 @@ from nndet.nn.heads.comb import BoxHeadHNM
 from nndet.nn.heads.comb.anchor_all import BoxHeadAll
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import BCEAgnosticMasker, Masker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter

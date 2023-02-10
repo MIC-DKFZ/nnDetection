@@ -19,7 +19,7 @@ from nndet.nn.heads.classifier.dense import BCECLassifier
 from nndet.nn.heads.classifier.roi import CEConvRoIClassifier
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import BCEAgnosticMasker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg

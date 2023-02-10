@@ -16,7 +16,7 @@ from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.comb.roi import RoIHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 

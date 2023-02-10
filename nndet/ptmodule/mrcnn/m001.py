@@ -16,7 +16,7 @@ from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter

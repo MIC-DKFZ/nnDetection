@@ -17,7 +17,7 @@ from nndet.core.rois.module.base import RoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule.mixins.model.single import SingleStageMixin

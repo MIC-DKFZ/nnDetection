@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from nndet.nn.heads.masker.base import (
+from nndet.nn.heads.masker.roi import (
     BCEAgnosticMasker,
     BCESpecificMasker,
     BDiCEAgnosticMasker,

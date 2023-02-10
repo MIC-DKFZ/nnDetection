@@ -23,7 +23,7 @@ from nndet.nn.heads.classifier.roi import (
 )
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import BCEAgnosticMasker, BDiCEAgnosticMasker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker, BDiCEAgnosticMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg

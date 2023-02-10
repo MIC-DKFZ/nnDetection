@@ -14,7 +14,7 @@ from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.comb.base import RoIHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 
 # TODO: cleanup
 

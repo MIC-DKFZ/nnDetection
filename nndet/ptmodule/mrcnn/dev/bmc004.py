@@ -30,7 +30,7 @@ from nndet.nn.heads.classifier.roi import (
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import BCEAgnosticMasker, BCESpecificMasker, Masker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker, BCESpecificMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import (
     L1ConvRoIRegressor,
