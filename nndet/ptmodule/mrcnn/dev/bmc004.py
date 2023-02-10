@@ -30,7 +30,7 @@ from nndet.nn.heads.classifier.roi import (
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import BCESingleMasker, Masker
+from nndet.nn.heads.masker.base import BCEAgnosticMasker, BCESpecificMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import (
     L1ConvRoIRegressor,
@@ -110,7 +110,7 @@ class BoxMaskURCNNC004(
     roi_box_pooler_cls: Type[RoIPooler] = RoIAlignNaiveAssign  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define roi box postprocessing strategy
 
-    roi_masker_cls: Type[Masker] = BCESingleMasker  # class of RoI mask head
+    roi_masker_cls: Type[Masker] = BCEAgnosticMasker  # class of RoI mask head
     roi_mask_pooler_cls: Type[RoIPooler] = RoIAlignNaiveAssign  # class of RoI mask pooler
     roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy
 
@@ -205,3 +205,8 @@ class BoxMaskURCNNC004HeV2Focal(BoxMaskURCNNC004HeV2):
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[SamplerType]] = None
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004MaskSpecific(BoxMaskURCNNC004):
+    roi_masker_cls = BCESpecificMasker

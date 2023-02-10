@@ -23,8 +23,8 @@ from nndet.nn.heads.classifier.roi import (
 )
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker import BCESingleMasker
-from nndet.nn.heads.masker.base import BDiceBCESingleMasker
+from nndet.nn.heads.masker import BCEAgnosticMasker
+from nndet.nn.heads.masker.base import BDiCEAgnosticMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
 from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
@@ -72,7 +72,7 @@ class MaskRCNNC001(MaskURCNNModule):
     roi_box_post_cls = CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
 
     # optional mask branches
-    roi_masker_cls = BCESingleMasker  # BCESingleMasker
+    roi_masker_cls = BCEAgnosticMasker  # BCEAgnosticMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
     roi_mask_post_cls = NoMaskPostprocessing
 
@@ -122,7 +122,7 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
 class MaskURCNNC001DiceBCE(MaskURCNNC001):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
 
-    roi_masker_cls = BDiceBCESingleMasker
+    roi_masker_cls = BDiCEAgnosticMasker
 
 
 @MODULE_REGISTRY.register
@@ -130,4 +130,4 @@ class MaskURCNNC001RSBDiceBCE(MaskURCNNC001RSB):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
     roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 
-    roi_masker_cls = BDiceBCESingleMasker
+    roi_masker_cls = BDiCEAgnosticMasker

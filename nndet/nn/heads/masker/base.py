@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import math
-from abc import abstractmethod
+from abc import abstractclassmethod
 from typing import Optional
 
 import torch
@@ -56,8 +56,7 @@ class Masker(Classifier):
         self.logits_convert_fn: Optional[nn.Module] = None
         self.init_weights()
 
-    @abstractmethod
-    @classmethod
+    @abstractclassmethod
     def class_agnostic(cls) -> bool:
         """
         Indicate if mask head is class agnositic or class specific

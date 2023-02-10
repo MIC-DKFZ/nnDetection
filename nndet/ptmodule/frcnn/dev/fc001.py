@@ -69,7 +69,7 @@ class FasterRCNNC001(FasterRCNNModule):
     roi_box_post_cls = CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
 
     # optional mask branches
-    roi_masker_cls = None  # BCESingleMasker
+    roi_masker_cls = None  # BCEAgnosticMasker
     roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
     roi_mask_post_cls = None
 
