@@ -29,7 +29,7 @@ class DiceSegLoss(Loss):
         Args:
             batch_dice: compute statistics for each class across the whole batch
                 instead of computing if per image per class. Defaults to False.
-            do_bg: compute batch also for background
+            do_bg: compute loss for background
             smoothing: apply label smoothing to targets. Label smoothing is
                 somewhat experimtal here, use on your own risk!
             loss_weight: scalar to balance multiple losses
@@ -130,6 +130,7 @@ class BDiceSegLoss(BDiceMaskLoss):
     def __init__(
         self,
         batch_dice: bool = False,
+        do_bg: bool = False,
         smoothing: float = 0.0,
         loss_weight: float = 1,
         loss_fp32: bool = False,
@@ -143,6 +144,7 @@ class BDiceSegLoss(BDiceMaskLoss):
         Args:
             batch_dice: compute statistics for each class across the whole batch
                 instead of computing if per image per class. Defaults to False.
+            do_bg: compute loss for background
             smoothing: apply label smoothing to targets. Label smoothing is
                 somewhat experimtal here, use on your own risk!
             loss_weight: scalar to balance multiple losses
@@ -170,6 +172,7 @@ class BDiceSegLoss(BDiceMaskLoss):
             reduction=reduction,
         )
         self.smoothing = smoothing
+        self.do_bg = do_bg
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         """
@@ -186,14 +189,30 @@ class BDiceSegLoss(BDiceMaskLoss):
         Returns:
             torch.Tensor: computed loss
         """
-        num_classes = preds.shape[1]
-        targets_ont_hot = one_hot_smooth_first(
+        targets_one_hot = one_hot_smooth_first(
             targets,
-            num_classes=num_classes + 1,
+            num_classes=preds.shape[1],
             smoothing=self.smoothing,
         )
-        targets_ont_hot = targets_ont_hot[:, 1:]
+        if not self.do_bg:
+            _preds = preds[:, 1:]
+            _targets_one_hot = targets_one_hot[:, 1:]
+        else:
+            _preds = preds
+            _targets_one_hot = targets_one_hot
         return super().forward(
-            preds=preds,
-            targets=targets_ont_hot,
+            preds=_preds,
+            targets=_targets_one_hot,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f"do_bg={self.do_bg}, "
+            f"batch_dice={self.batch_dice}, "
+            f"smooth_nom={self.smooth_nom}, "
+            f"smooth_denom={self.smooth_denom}, "
+            f"smoothing={self.smoothing}, "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
         )

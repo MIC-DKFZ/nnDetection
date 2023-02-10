@@ -76,8 +76,8 @@ class CESegLoss(Loss):
 
     def extra_repr(self) -> str:
         return (
-            f"weight={self.weight}"
-            f"smoothing={self.smoothing} "
+            f"weight={self.weight}, "
+            f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}, "
@@ -88,6 +88,7 @@ class BCESegLoss(Loss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
+        do_bg: bool = False,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
@@ -99,6 +100,7 @@ class BCESegLoss(Loss):
 
         Args:
             weight: weiught for BCE loss, see PyTorch docs for more info.
+            do_bg: compute loss for background
             smoothing: Apply label smoothing to loss.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -112,46 +114,51 @@ class BCESegLoss(Loss):
         )
         self.weight = weight
         self.smoothing = smoothing
+        self.do_bg = do_bg
 
     def forward(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss
 
         Args:
-            input: predicted logits. Shape [N, C, *] where N is the batch size,
+            preds: predicted logits. Shape [N, C, *] where N is the batch size,
                 C is the number of classes and * are arbitrary spatial
                 dimensions
-            target: numerical tensor specifying the labels of shape [N, *],
+            targets: numerical tensor specifying the labels of shape [N, *],
                 where N is the batch size and * are arbitrary dimensions
 
         Returns:
             torch.Tensor: computed loss
         """
-        num_classes = input.shape[1]
-        _target = one_hot_smooth_first(
-            target,
-            num_classes=num_classes + 1,
+        targets_one_hot = one_hot_smooth_first(
+            targets,
+            num_classes=preds.shape[1],
             smoothing=self.smoothing,
         )
-        _target = _target[:, 1:]
+        if not self.do_bg:
+            _preds = preds[:, 1:]
+            _targets_one_hot = targets_one_hot[:, 1:]
+        else:
+            _preds = preds
+            _targets_one_hot = targets_one_hot
 
         _fn = torch.nn.functional.binary_cross_entropy_with_logits
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = _fn(
-                    input.float(),
-                    _target.float(),
+                    _preds.float(),
+                    _targets_one_hot.float(),
                     weight=self.weight,
                     reduction="none",
                 )
         else:
             loss = _fn(
-                input,
-                _target.float(),
+                _preds,
+                _targets_one_hot.float(),
                 weight=self.weight,
                 reduction="none",
             )
@@ -159,8 +166,9 @@ class BCESegLoss(Loss):
 
     def extra_repr(self) -> str:
         return (
-            f"weight={self.weight}"
-            f"smoothing={self.smoothing} "
+            f"weight={self.weight}, "
+            f"do_bg={self.do_bg}, "
+            f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}, "

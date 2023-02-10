@@ -71,6 +71,7 @@ TEST_CLASSIFICATION_LOSSES = [
 TEST_SEGMENTATION_LOSSES = [
     CESegLoss(reduction="mean"),
     BCESegLoss(reduction="mean"),
+    BCESegLoss(reduction="mean", do_bg=True),
     CESegLoss(reduction="mean_last_sum"),
     BCESegLoss(reduction="mean_last_sum"),
     TopKCESegLoss(topk=0.1),
@@ -79,6 +80,7 @@ TEST_SEGMENTATION_LOSSES = [
     DiceSegLoss(reduction="sum"),
     DiceSegLoss(reduction="mean", batch_dice=True),
     DiceSegLoss(reduction="mean", do_bg=True),
+    DiceSegLoss(reduction="mean", batch_dice=True, do_bg=True),
     BDiceSegLoss(reduction="mean"),
     BDiceSegLoss(reduction="sum"),
     BDiceSegLoss(reduction="mean", batch_dice=True),

@@ -27,7 +27,8 @@ def soft_dice(
             instead of computing if per image per class
 
     Returns:
-        torch.Tensor: compute loss
+        torch.Tensor: compute loss. '-1' is the best possible value and '0'
+            is the worst possible value
     """
     if batch_dice:
         dim = [0] + list(range(2, preds.ndim))
@@ -37,4 +38,4 @@ def soft_dice(
     # shapes refer to non-batch_dice version
     union = 2 * (preds * targets_one_hot).sum(dim=dim)  # [N, C] or [C]
     intersection = preds.sum(dim=dim) + targets_one_hot.sum(dim=dim)  # [N, C] or [C]
-    return (union + smooth_nom) / (intersection + smooth_denom)
+    return -1 * (union + smooth_nom) / (intersection + smooth_denom)
