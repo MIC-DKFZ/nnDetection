@@ -184,10 +184,12 @@ class BaseRoIModule(torch.nn.Module):
         # compute mask loss on positive proposals
         pos_matched_gt_idx = []
         pos_proposal_boxes = []
+        pos_label = []
         for gt_l, gt_idx, prop_b in zip(matched_gt_labels, matched_gt_idx, proposal_boxes):
             pos_idx = torch.where(gt_l > 0)[0]
             pos_matched_gt_idx.append(gt_idx[pos_idx])
             pos_proposal_boxes.append(prop_b[pos_idx])
+            pos_label.append(gt_l[pos_idx])
 
         target_masks_prepared = self.mask_pooler.pool_masks(
             binary_masks=target_binary_masks,
@@ -205,11 +207,14 @@ class BaseRoIModule(torch.nn.Module):
         )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
 
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
-        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0).unsqueeze(dim=1)
+        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
+        batch_pos_label = torch.cat(pos_label)
+        assert batch_pos_label.shape[0] == pred_masks.shape[0]
         losses = self.mask_head[stage].compute_loss(
-            pred_masks,
-            target_masks_prepared_batched,
+            pred_logits=pred_masks,
+            target_masks=target_masks_prepared_batched,
+            target_labels=batch_pos_label,
         )
         return losses, None
 
