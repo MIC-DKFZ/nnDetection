@@ -35,6 +35,6 @@ def soft_dice(
         dim = list(range(2, preds.ndim))
 
     # shapes refer to non-batch_dice version
-    union = (preds * targets_one_hot).sum(dim=dim)  # [N, C]
-    intersection = preds.sum(dim=dim) + targets_one_hot.sum(dim=dim)  # [N, C]
+    union = 2 * (preds * targets_one_hot).sum(dim=dim)  # [N, C] or [C]
+    intersection = preds.sum(dim=dim) + targets_one_hot.sum(dim=dim)  # [N, C] or [C]
     return (union + smooth_nom) / (intersection + smooth_denom)
