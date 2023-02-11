@@ -12,7 +12,8 @@ from torch import Tensor
 from nndet.losses.classification.ce import BCELoss, CELoss
 from nndet.losses.classification.focal import AsymmetricBFocalLoss, BFocalLoss
 from nndet.losses.classification.poly1 import Poly1BCEWithLogits, Poly1BFocalLoss
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier
+from nndet.nn.heads.abstract import Classifier
+from nndet.utils.collections import CONV_TYPES
 
 
 class DenseClassifier(Classifier):

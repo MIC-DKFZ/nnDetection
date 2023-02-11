@@ -11,8 +11,9 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.losses.classification.ce import BCELoss, CELoss
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier, RoIConv1x1View
+from nndet.nn.heads.abstract import Classifier, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
+from nndet.utils.collections import CONV_TYPES
 from nndet.utils.typing import CONVGEN
 
 
