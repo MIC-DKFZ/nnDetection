@@ -18,7 +18,7 @@ from nndet.io.load import load_pickle, save_pickle
 from nndet.io.paths import get_case_ids_from_dir, get_paths_from_splitted_dir
 from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.experiment.utils import run_create_label_preprocessed
-from nndet.preprocessing.preprocessor import PreprocessorType
+from nndet.preprocessing.preprocessor import GenericPreprocessor
 
 
 class AbstractPlanner(ABC):
@@ -82,7 +82,7 @@ class AbstractPlanner(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_preprocessor(plan: Dict) -> PreprocessorType:
+    def create_preprocessor(plan: Dict) -> GenericPreprocessor:
         """
         Create Preprocessor
         """

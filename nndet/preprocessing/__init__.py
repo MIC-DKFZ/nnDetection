@@ -2,8 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nndet.preprocessing.crop import ImageCropper
-from nndet.preprocessing.preprocessor import (
-    AbstractPreprocessor,
-    GenericPreprocessor,
-    PreprocessorType,
-)
+from nndet.preprocessing.preprocessor import AbstractPreprocessor, GenericPreprocessor
