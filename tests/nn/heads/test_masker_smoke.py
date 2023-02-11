@@ -47,7 +47,7 @@ def test_forward_backward_smoke(module: Masker):
     labels_roi = torch.tensor([i % NUM_CLASSES for i in range(ROI_SHAPE[0])])
 
     preds = module(roi_batch)[0]  # N, C, dims
-    if module.class_agnostic():
+    if module.is_class_agnostic():
         assert module.get_output_channels() == 1
         assert tuple(preds.shape) == EXPECTED_SHAPE_AGNOSTIC
     else:

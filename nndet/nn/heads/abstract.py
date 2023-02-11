@@ -71,8 +71,11 @@ class Regressor(nn.Module):
         """
         raise NotImplementedError
 
+    # @classmethod
+    # def reg_mode(cls)
+
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls) -> bool:
         """
         True if anchors are regressed in a class agnostic manner.
         False if anchors are regressed for each class separately.
@@ -150,14 +153,13 @@ class BaseHead(nn.Module):
         """
         raise NotImplementedError
 
-    @property
-    def class_agnostic(self) -> bool:
+    def is_class_agnostic(self) -> bool:
         """
         Return if regression is performed per class or not.
         True => each anchor is regressed for each class separately
         False => each anchor is regressed once
         """
-        return self.regressor.class_agnostic()
+        return self.regressor.is_class_agnostic()
 
 
 class RoIConv1x1View(torch.nn.Module):

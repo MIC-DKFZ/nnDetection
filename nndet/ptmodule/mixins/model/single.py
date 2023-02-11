@@ -431,7 +431,7 @@ class SingleStageMixin(ModelMixin):
 
         box_post = cls.box_post_cls(
             num_foreground_classes=plan_arch["classifier_classes"],
-            class_agnostic=cls.head_regressor_cls.class_agnostic(),
+            is_class_agnostic=cls.head_regressor_cls.is_class_agnostic(),
             **kwargs,
         )
         return box_post

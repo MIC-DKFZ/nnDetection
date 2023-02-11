@@ -91,7 +91,7 @@ class AnchorHead(BaseHead):
             logits.append(self.classifier(intermediate, level=level))
 
         sdim = fmaps[0].ndim - 2
-        if self.class_agnostic:
+        if self.is_class_agnostic():
             box_deltas = torch.cat(offsets, dim=1).reshape(-1, sdim * 2)
         else:
             # TODO multi class regression

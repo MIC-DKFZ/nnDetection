@@ -62,7 +62,7 @@ class RoIRegressor(Regressor):
         self.init_weights()
 
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls):
         """
         Indicate if RoI regressor produces per class regression deltas or not
 
@@ -83,7 +83,7 @@ class RoIRegressor(Regressor):
         """
         Build final convolution
         """
-        if self.class_agnostic():
+        if self.is_class_agnostic():
             _out = self.dim * 2
         else:
             _out = self.num_classes * self.dim * 2
@@ -141,7 +141,7 @@ class RoIRegressor(Regressor):
         Returns:
             Tensor: loss
         """
-        if not self.class_agnostic():
+        if not self.is_class_agnostic():
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
             _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
@@ -430,7 +430,7 @@ class GIoUFCRoIAgnosticRegressor(FCRoIRegressor):
 
 class L1ConvRoISpecificRegressor(L1ConvRoIAgnosticRegressor):
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls):
         """
         Indicate if RoI regressor produces per class regression deltas or not
 
@@ -443,7 +443,7 @@ class L1ConvRoISpecificRegressor(L1ConvRoIAgnosticRegressor):
 
 class L1FCRoISpecificRegressor(L1FCRoIAgnosticRegressor):
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls):
         """
         Indicate if RoI regressor produces per class regression deltas or not
 

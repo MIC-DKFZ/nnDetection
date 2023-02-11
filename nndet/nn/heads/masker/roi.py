@@ -57,7 +57,7 @@ class Masker(Classifier):
         self.init_weights()
 
     @abstractclassmethod
-    def class_agnostic(cls) -> bool:
+    def is_class_agnostic(cls) -> bool:
         """
         Indicate if mask head is class agnositic or class specific
 
@@ -76,7 +76,7 @@ class Masker(Classifier):
         Returns:
             int: number of output channels
         """
-        return 1 if self.class_agnostic() else self.num_classes
+        return 1 if self.is_class_agnostic() else self.num_classes
 
     def build_conv_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
@@ -196,7 +196,7 @@ class Masker(Classifier):
             Tensor: loss
         """
         if pred_logits.numel() > 0:
-            if not self.class_agnostic():
+            if not self.is_class_agnostic():
                 roi_idx = torch.arange(pred_logits.shape[0])
                 _pred_logits = pred_logits[roi_idx, target_labels]
             else:
@@ -223,7 +223,7 @@ class Masker(Classifier):
             Tensor: predicted mask probabilities [N, dims], N=number of
                 RoIs, dims = spatial dimensions
         """
-        if self.class_agnostic():
+        if self.is_class_agnostic():
             return self.logits_convert_fn(logits).squeeze(dim=1)
         else:
             roi_idx = torch.arange(logits.shape[0])
@@ -287,7 +287,7 @@ class BCEAgnosticMasker(Masker):
         self.logits_convert_fn = torch.nn.Sigmoid()
 
     @classmethod
-    def class_agnostic(cls) -> bool:
+    def is_class_agnostic(cls) -> bool:
         """
         Indicate if mask head is class agnositic or class specific
 
@@ -417,7 +417,7 @@ class BDiCEAgnosticMasker(BCEAgnosticMasker):
             Tensor: loss
         """
         if pred_logits.numel() > 0:
-            if not self.class_agnostic():
+            if not self.is_class_agnostic():
                 roi_idx = torch.arange(pred_logits.shape[0])
                 _pred_logits = pred_logits[roi_idx, target_labels]
             else:
@@ -437,7 +437,7 @@ class BDiCEAgnosticMasker(BCEAgnosticMasker):
 
 class BCESpecificMasker(BCEAgnosticMasker):
     @classmethod
-    def class_agnostic(cls) -> bool:
+    def is_class_agnostic(cls) -> bool:
         """
         Indicate if mask head is class agnositic or class specific
 
@@ -452,7 +452,7 @@ class BCESpecificMasker(BCEAgnosticMasker):
 
 class BDiCESpecificMasker(BCEAgnosticMasker):
     @classmethod
-    def class_agnostic(cls) -> bool:
+    def is_class_agnostic(cls) -> bool:
         """
         Indicate if mask head is class agnositic or class specific
 

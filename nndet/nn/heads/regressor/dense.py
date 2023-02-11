@@ -180,7 +180,7 @@ class DenseRegressor(Regressor):
         Returns:
             Tensor: loss
         """
-        if not self.class_agnostic():
+        if not self.is_class_agnostic():
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
             _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
@@ -202,7 +202,7 @@ class DenseRegressor(Regressor):
                     torch.nn.init.constant_(layer.bias, 0)
 
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls):
         """
         All dense regressor should be class agnostic
 
@@ -577,7 +577,7 @@ class DualRegressor(DenseRegressor):
         Returns:
             Tensor: loss
         """
-        if not self.class_agnostic():
+        if not self.is_class_agnostic():
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
             _target_labels = target_labels - 1  # matching adds +1 for background which needs to be removed

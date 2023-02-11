@@ -24,7 +24,7 @@ class BoxPostprocessing:
         detections_per_img: Optional[int] = None,
         topk_candidates: Optional[int] = None,
         score_thresh: Optional[float] = None,
-        class_agnostic: bool = True,
+        is_class_agnostic: bool = True,
     ) -> None:
         """
         Provides an abstract interface to postprocess a batch of boxes
@@ -40,7 +40,7 @@ class BoxPostprocessing:
         self.detections_per_img = detections_per_img
         self.topk_candidates = topk_candidates
         self.score_thresh = score_thresh
-        self.class_agnostic = class_agnostic
+        self.is_class_agnostic = is_class_agnostic
 
     def process_batch(
         self,
@@ -51,7 +51,7 @@ class BoxPostprocessing:
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
         all_reps, all_probs, all_labels = [], [], []
         for idx, img_shape in enumerate(image_shapes):
-            if self.class_agnostic:
+            if self.is_class_agnostic:
                 _reps, _probs, _labels = self.process_image_class_agnostic(
                     img_reps=reps[idx],
                     img_probs=probs[idx],

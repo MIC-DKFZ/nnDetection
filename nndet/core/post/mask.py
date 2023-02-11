@@ -21,7 +21,7 @@ class MaskPostprocessing:
             regress_class_agnostic: todo
         """
         super().__init__()
-        self.class_agnostic = class_agnostic
+        self.class_agnostic = class_agnostic  # FIXME
 
     def process_batch(
         self,
