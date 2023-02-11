@@ -397,7 +397,17 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-    ):
+    ) -> BoxPostprocessing:
+        """
+        Define module to perform postprocessing of generated boxes
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            BoxPostprocessing: module to perform postprocessing of boxes
+        """
         kwargs = {}
 
         # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
