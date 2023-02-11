@@ -81,7 +81,7 @@ class RoIBoxHead(RoIHead):
             losses["reg"] = self.regressor.compute_loss(
                 box_deltas[sampled_pos_inds],
                 target_deltas_sampled,
-                target_labels_sampled - 1,
+                target_labels_sampled,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(

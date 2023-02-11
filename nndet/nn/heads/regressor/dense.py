@@ -183,7 +183,8 @@ class DenseRegressor(Regressor):
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
             _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
-            _pred_deltas = _pred_deltas[torch.arange(num_rois), target_labels]
+            _target_labels = target_labels - 1  # matching adds +1 for background which needs to be removed
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), _target_labels]
         else:
             _pred_deltas = pred_deltas
         return self.loss(_pred_deltas, target_deltas, **kwargs)
@@ -578,10 +579,15 @@ class DualRegressor(DenseRegressor):
         if not self.class_agnostic():
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
+            _target_labels = target_labels - 1  # matching adds +1 for background which needs to be removed
+
             _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
-            _pred_deltas = _pred_deltas[torch.arange(num_rois), target_labels]
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), _target_labels]
+
+            _pred_boxes = pred_boxes.reshape(num_rois, self.num_classes, self.dim * 2)
+            _pred_boxes = _pred_boxes[torch.arange(num_rois), _target_labels]
         else:
             _pred_deltas = pred_deltas
         l1 = self.loss_l1(_pred_deltas, target_deltas)
-        giou = self.loss_giou(_pred_deltas, target_boxes)
+        giou = self.loss_giou(_pred_boxes, target_boxes)
         return l1 * self.loss_weight_l1 + giou * self.loss_weight_giou

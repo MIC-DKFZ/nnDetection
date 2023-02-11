@@ -126,7 +126,7 @@ class BoxHeadHNM(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
-                target_labels_sampled - 1,
+                target_labels_sampled,
             ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
@@ -289,7 +289,7 @@ class BoxHeadHNMV2(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
-                target_labels_sampled - 1,
+                target_labels_sampled,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(
@@ -394,7 +394,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
-                target_labels_sampled - 1,
+                target_labels_sampled,
             ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
@@ -485,7 +485,7 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
                 target_deltas=target_deltas_sampled,
                 pred_boxes=pred_boxes_sampled,
                 target_boxes=batch_matched_gt_boxes[sampled_pos_inds],
-                target_label=target_labels[sampled_pos_inds] - 1,
+                target_label=target_labels[sampled_pos_inds],
             ) / max(1, sampled_pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
@@ -550,7 +550,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 pred_boxes_sampled,
                 target_boxes_sampled,
-                target_labels_sampled - 1,
+                target_labels_sampled,
             ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])

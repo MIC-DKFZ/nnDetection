@@ -145,7 +145,8 @@ class RoIRegressor(Regressor):
             # only compute loss on target class
             num_rois, _ = pred_deltas.shape
             _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
-            _pred_deltas = _pred_deltas[torch.arange(num_rois), target_labels]
+            _target_labels = target_labels - 1  # matching adds +1 for background which needs to be removed
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), _target_labels]
         else:
             _pred_deltas = pred_deltas
         return self.loss(_pred_deltas, target_deltas, **kwargs)
