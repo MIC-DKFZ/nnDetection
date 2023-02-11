@@ -21,6 +21,7 @@ class DenseRegressor(Regressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -38,6 +39,7 @@ class DenseRegressor(Regressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -54,6 +56,7 @@ class DenseRegressor(Regressor):
         self.dim = conv.dim
         self.num_levels = num_levels
         self.num_convs = num_convs
+        self.num_classes = num_classes
         self.learn_scale = learn_scale
         self.scale_per_dim = scale_per_dim
 
@@ -160,6 +163,7 @@ class DenseRegressor(Regressor):
         self,
         pred_deltas: Tensor,
         target_deltas: Tensor,
+        target_labels: Tensor,
         **kwargs,
     ) -> Tensor:
         """
@@ -168,11 +172,21 @@ class DenseRegressor(Regressor):
         Args:
             pred_deltas: predicted bounding box deltas [N,  dim * 2]
             target_deltas: target bounding box deltas [N,  dim * 2]
+            target_labels: target labels for boxes [N], where
+                N=number of anchors
+            kwargs: keyword arguments passed to loss function
 
         Returns:
             Tensor: loss
         """
-        return self.loss(pred_deltas, target_deltas, **kwargs)
+        if not self.class_agnostic():
+            # only compute loss on target class
+            num_rois, _ = pred_deltas.shape
+            _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), target_labels]
+        else:
+            _pred_deltas = pred_deltas
+        return self.loss(_pred_deltas, target_deltas, **kwargs)
 
     def init_weights(self) -> None:
         """
@@ -203,6 +217,7 @@ class L1Regressor(DenseRegressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -224,6 +239,7 @@ class L1Regressor(DenseRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -245,6 +261,7 @@ class L1Regressor(DenseRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             num_convs=num_convs,
@@ -267,6 +284,7 @@ class GIoURegressor(DenseRegressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -288,6 +306,7 @@ class GIoURegressor(DenseRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -308,6 +327,7 @@ class GIoURegressor(DenseRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             num_convs=num_convs,
@@ -329,6 +349,7 @@ class GIoUPRegressor(DenseRegressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -353,6 +374,7 @@ class GIoUPRegressor(DenseRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -373,6 +395,7 @@ class GIoUPRegressor(DenseRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             num_convs=num_convs,
@@ -394,6 +417,7 @@ class DIoURegressor(DenseRegressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -415,6 +439,7 @@ class DIoURegressor(DenseRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -435,6 +460,7 @@ class DIoURegressor(DenseRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             num_convs=num_convs,
@@ -456,6 +482,7 @@ class DualRegressor(DenseRegressor):
         conv,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         anchors_per_pos: int,
         num_levels: int,
         num_convs: int = 3,
@@ -479,6 +506,7 @@ class DualRegressor(DenseRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             anchors_per_pos: number of anchors per position
             num_levels: number of decoder levels which are passed through the
                 regressor
@@ -502,6 +530,7 @@ class DualRegressor(DenseRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             anchors_per_pos=anchors_per_pos,
             num_levels=num_levels,
             num_convs=num_convs,
@@ -528,6 +557,7 @@ class DualRegressor(DenseRegressor):
         target_deltas: Tensor,
         pred_boxes: Tensor,
         target_boxes: Tensor,
+        target_labels: torch.Tensor,
         **kwargs,
     ) -> Tensor:
         """
@@ -538,10 +568,20 @@ class DualRegressor(DenseRegressor):
             target_deltas: target bounding box deltas [N,  dim * 2]
             pred_boxes: predicted bounding boxes [N,  dim * 2]
             target_boxes: target bounding boxes [N,  dim * 2]
+            target_labels: target labels for boxes [N], where
+                N=number of anchors
+            kwargs: ignored
 
         Returns:
             Tensor: loss
         """
-        l1 = self.loss_l1(pred_deltas, target_deltas)
-        giou = self.loss_giou(pred_boxes, target_boxes)
+        if not self.class_agnostic():
+            # only compute loss on target class
+            num_rois, _ = pred_deltas.shape
+            _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), target_labels]
+        else:
+            _pred_deltas = pred_deltas
+        l1 = self.loss_l1(_pred_deltas, target_deltas)
+        giou = self.loss_giou(_pred_deltas, target_boxes)
         return l1 * self.loss_weight_l1 + giou * self.loss_weight_giou

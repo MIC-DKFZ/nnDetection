@@ -199,7 +199,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
 
         # filter boxes and labels
         boxes = boxes[idx]
-        labels = boxes[idx]
+        labels = labels[idx]
 
         if self.remove_small_boxes is not None:
             keep = ops_torch.remove_small_boxes(boxes, min_size=self.remove_small_boxes)

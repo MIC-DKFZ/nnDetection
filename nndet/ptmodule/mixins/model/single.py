@@ -325,6 +325,7 @@ class SingleStageMixin(ModelMixin):
             conv=conv,
             in_channels=plan_arch["fpn_channels"],
             internal_channels=plan_arch["head_channels"],
+            num_classes=plan_arch["classifier_classes"],
             anchors_per_pos=anchor_generator.num_anchors_per_location()[0],
             num_levels=len(plan_arch["decoder_levels"]),
             **kwargs,

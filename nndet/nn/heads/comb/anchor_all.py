@@ -117,6 +117,7 @@ class BoxHeadAll(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred[sampled_pos_inds],
                 reg_target[sampled_pos_inds],
+                target_labels[sampled_pos_inds] - 1,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(

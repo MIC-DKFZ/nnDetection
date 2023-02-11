@@ -112,6 +112,7 @@ class BoxHeadHNM(AnchorHead):
             batch_target_boxes=target_boxes[sampled_pos_inds],
             batch_pred_deltas=box_deltas[sampled_pos_inds],
         )
+        target_labels_sampled = target_labels[sampled_pos_inds]
 
         # target_deltas = self.coder.encode(matched_gt_boxes, anchors)
         # target_deltas_sampled = torch.cat(target_deltas, dim=0)[sampled_pos_inds]
@@ -125,6 +126,7 @@ class BoxHeadHNM(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
+                target_labels_sampled - 1,
             ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
@@ -265,6 +267,7 @@ class BoxHeadHNMV2(AnchorHead):
             batch_target_boxes=target_boxes[sampled_pos_inds],
             batch_pred_deltas=box_deltas[sampled_pos_inds],
         )
+        target_labels_sampled = target_labels[sampled_pos_inds]
 
         # target_deltas = self.coder.encode(matched_gt_boxes, anchors)
         # target_deltas_sampled = torch.cat(target_deltas, dim=0)[sampled_pos_inds]
@@ -286,6 +289,7 @@ class BoxHeadHNMV2(AnchorHead):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
+                target_labels_sampled - 1,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(
@@ -379,6 +383,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
             batch_target_boxes=target_boxes[pos_inds],
             batch_pred_deltas=box_deltas[pos_inds],
         )
+        target_labels_sampled = target_labels[sampled_pos_inds]
 
         # assert len(batch_anchors) == len(batch_matched_gt_boxes)
         # assert len(batch_anchors) == len(box_deltas)
@@ -389,6 +394,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
             losses["reg"] = self.regressor.compute_loss(
                 reg_pred_sampled,
                 reg_target_sampled,
+                target_labels_sampled - 1,
             ) / max(1, pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
@@ -479,6 +485,7 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
                 target_deltas=target_deltas_sampled,
                 pred_boxes=pred_boxes_sampled,
                 target_boxes=batch_matched_gt_boxes[sampled_pos_inds],
+                target_label=target_labels[sampled_pos_inds] - 1,
             ) / max(1, sampled_pos_inds.numel())
 
         return losses, sampled_pos_inds, sampled_neg_inds
@@ -493,7 +500,6 @@ class BoxHeadHNMNative(BoxHeadHNM):
     @deprecate(
         replacement="`BoxHeadHNM` with `reg_mode=decode`",
         deprecate="v0.1.2",
-        remove="v0.2",
     )
     def __init__(self, *args, **kwargs):
         """ """
@@ -539,77 +545,13 @@ class BoxHeadHNMNative(BoxHeadHNM):
         pred_boxes_sampled = self.coder.decode_single(box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds])
 
         target_boxes_sampled = torch.cat(matched_gt_boxes, dim=0)[sampled_pos_inds]
+        target_labels_sampled = target_labels[sampled_pos_inds]
         if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
                 pred_boxes_sampled,
                 target_boxes_sampled,
+                target_labels_sampled - 1,
             ) / max(1, sampled_pos_inds.numel())
 
         losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
-        return losses, sampled_pos_inds, sampled_neg_inds
-
-
-class BoxHeadHNMNativeRegAll(BoxHeadHNM):
-    @deprecate(
-        replacement="`BoxHeadHNMRegAll` with `reg_mode=decode`",
-        deprecate="v0.1.2",
-        remove="v0.2",
-    )
-    def __init__(self, *args, **kwargs):
-        """ """
-        super().__init__(*args, **kwargs)
-
-    def compute_loss(
-        self,
-        prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
-        matched_gt_boxes: List[Tensor],
-        anchors: List[Tensor],
-    ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
-        """
-        Compute regression and classification loss
-        N anchors over all images; M anchors per image => sum(M) = N
-
-        This head decodes the relative offsets from the networks and computes
-        the regression loss directly on the bounding boxes (e.g. for GIoU loss)
-
-        Args:
-            prediction: detection predictions for loss computation
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
-            matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
-
-        Returns:
-            Tensor: dict with losses (reg for regression loss, cls for
-                classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
-        """
-        box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
-
-        losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
-        sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-
-        target_labels = torch.cat(target_labels, dim=0)
-        batch_anchors = torch.cat(anchors, dim=0)
-
-        assert len(batch_anchors) == len(box_deltas)
-        assert len(batch_anchors) == len(box_logits)
-        assert len(batch_anchors) == len(target_labels)
-
-        losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
-
-        pos_inds = torch.where(target_labels >= 1)[0]
-        pred_boxes = self.coder.decode_single(box_deltas[pos_inds], batch_anchors[pos_inds])
-        target_boxes = torch.cat(matched_gt_boxes, dim=0)[pos_inds]
-
-        if pos_inds.numel() > 0:
-            losses["reg"] = self.regressor.compute_loss(
-                pred_boxes,
-                target_boxes,
-            ) / max(1, pos_inds.numel())
-
         return losses, sampled_pos_inds, sampled_neg_inds

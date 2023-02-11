@@ -193,6 +193,7 @@ class RoIBuildMixin:
             input_size=cls.get_roi_box_size(plan_arch, model_cfg),
             in_channels=plan_arch["fpn_channels"],
             internal_channels=int(roi_channel_multiplier * plan_arch["fpn_channels"]),
+            num_classes=plan_arch["classifier_classes"],
             **kwargs,
         )
         return regressor

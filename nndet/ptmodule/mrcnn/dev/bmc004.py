@@ -34,6 +34,7 @@ from nndet.nn.heads.masker.roi import BCEAgnosticMasker, BCESpecificMasker, Mask
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.regressor.roi import (
     L1ConvRoIRegressor,
+    L1ConvRoISpecificRegressor,
     L1FCRoIRegressor,
     RoIRegressor,
 )
@@ -210,3 +211,8 @@ class BoxMaskURCNNC004HeV2Focal(BoxMaskURCNNC004HeV2):
 @MODULE_REGISTRY.register
 class BoxMaskURCNNC004MaskSpecific(BoxMaskURCNNC004):
     roi_masker_cls = BCESpecificMasker
+
+
+@MODULE_REGISTRY.register
+class BoxMaskURCNNC004RegSpecific(BoxMaskURCNNC004):
+    roi_regressor_cls = L1ConvRoISpecificRegressor

@@ -60,10 +60,12 @@ class RoIBoxHead(RoIHead):
         sampled_inds = torch.where(target_labels >= 0)[0]
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
+        # TODO: replace with adaptive encoding
         target_deltas_sampled = self.coder.encode_single(
             matched_gt_boxes[sampled_pos_inds],
             proposals[sampled_pos_inds],
         )
+        target_labels_sampled = target_labels[sampled_pos_inds]
 
         _numel_all = sampled_inds.numel()
         _numel_pos = sampled_pos_inds.numel()
@@ -79,10 +81,11 @@ class RoIBoxHead(RoIHead):
             losses["reg"] = self.regressor.compute_loss(
                 box_deltas[sampled_pos_inds],
                 target_deltas_sampled,
+                target_labels_sampled - 1,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds],
-            target_labels[sampled_inds].long(),
+            target_labels[sampled_inds],
         ) / max(1, _numel_all)
         return losses, sampled_pos_inds, None
