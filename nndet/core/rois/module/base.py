@@ -148,9 +148,9 @@ class BaseRoIModule(torch.nn.Module):
         pred_detection = self.box_head[stage](box_roi_features)
         losses, _, _ = self.box_head[stage].compute_loss(
             prediction=pred_detection,
-            target_labels=matched_gt_labels,
+            matched_gt_labels=matched_gt_labels,
             matched_gt_boxes=matched_gt_boxes,
-            proposals=_proposal_boxes,
+            proposal_boxes=_proposal_boxes,
         )
 
         if predict:

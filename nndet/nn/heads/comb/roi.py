@@ -47,25 +47,45 @@ class RoIBoxHead(RoIHead):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: Tensor,
+        matched_gt_labels: Tensor,
         matched_gt_boxes: Tensor,
-        proposals: Tensor,
+        proposal_boxes: Tensor,
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, Optional[torch.Tensor]]:
         """
-        TODO
+        Compute regression and classification loss
+
+        Args:
+            prediction: detection predictions for loss computation
+
+                ``"box_logits"`` (Tensor)
+                    classification logits for each anchor [N, num_classes]
+
+                ``"box_deltas"`` (Tensor)
+                    offsets for each anchor
+                    (x1, y1, x2, y2, (z1, z2))[N (, num_classes), dim * 2]
+
+            matched_gt_labels: assigned classification label for each proposal
+            matched_gt_boxes: matched gt box for each proposal
+                List[[N, dim *  2]], N=number of anchors per image
+            proposal_boxes: proposal from RPN [N, dim *  2]
+
+        Returns:
+            Tensor: dict with losses (reg for regression loss, cls
+                for classification loss)
+            Tensor: sampled positive indices of anchors (after concatenation)
+            Optional[Tensor]: None
         """
-        # TODO: might save additional computation by passing pos indices
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
-        sampled_inds = torch.where(target_labels >= 0)[0]
-        sampled_pos_inds = torch.where(target_labels >= 1)[0]
+        sampled_inds = torch.where(matched_gt_labels >= 0)[0]
+        sampled_pos_inds = torch.where(matched_gt_labels >= 1)[0]
 
-        # TODO: replace with adaptive encoding
-        target_deltas_sampled = self.coder.encode_single(
-            matched_gt_boxes[sampled_pos_inds],
-            proposals[sampled_pos_inds],
+        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+            batch_anchors=proposal_boxes[sampled_pos_inds],
+            batch_target_boxes=matched_gt_boxes[sampled_pos_inds],
+            batch_pred_deltas=box_deltas[sampled_pos_inds],
         )
-        target_labels_sampled = target_labels[sampled_pos_inds]
+        target_labels_sampled = matched_gt_labels[sampled_pos_inds]
 
         _numel_all = sampled_inds.numel()
         _numel_pos = sampled_pos_inds.numel()
@@ -74,18 +94,17 @@ class RoIBoxHead(RoIHead):
             self.pos_ema.add(_numel_pos)
             _numel_all = self.all_ema.get()
             _numel_pos = self.pos_ema.get()
-            # print(f"Sampled: pos {_numel_pos} all {_numel_all}")
 
         losses = {}
         if sampled_pos_inds.numel() > 0:
             losses["reg"] = self.regressor.compute_loss(
-                box_deltas[sampled_pos_inds],
-                target_deltas_sampled,
+                reg_pred_sampled,
+                reg_target_sampled,
                 target_labels_sampled,
             ) / max(1, _numel_pos)
 
         losses["cls"] = self.classifier.compute_loss(
             box_logits[sampled_inds],
-            target_labels[sampled_inds],
+            matched_gt_labels[sampled_inds],
         ) / max(1, _numel_all)
         return losses, sampled_pos_inds, None

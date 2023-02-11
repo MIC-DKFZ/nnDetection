@@ -125,35 +125,6 @@ class AnchorHead(BaseHead):
         }
         return postprocess_predictions
 
-    def get_reg_by_mode(
-        self,
-        batch_anchors: torch.Tensor,
-        batch_target_boxes: torch.Tensor,
-        batch_pred_deltas: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Compute regression targets
-
-        Args:
-            batch_anchors: concatenated anchors
-            batch_target_boxes: concatenated matched ground truth box
-            batch_pred_deltas: concatenated predicted box deltas
-
-        Returns:
-            Tuple[Tensor, Tensor]: (predicted regression values,
-                expected regression values)
-                `encode`: predicted box deltas, target box deltas
-                `decode`: predicted boxes, target boxes
-        """
-        if self.reg_mode == BoxRegressionMode.ENCODE:
-            target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
-            return batch_pred_deltas, target_deltas
-        elif self.reg_mode == BoxRegressionMode.DECODE:
-            pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
-            return pred_boxes, batch_target_boxes
-        else:
-            raise RuntimeError("Wrong mode.")
-
     @abstractmethod
     def compute_loss(
         self,
