@@ -58,6 +58,17 @@ class RoIRegressor(Regressor):
         self.loss: Optional[torch.nn.Module] = None
         self.init_weights()
 
+    @classmethod
+    def class_agnostic(cls):
+        """
+        Indicate if RoI regressor produces per class regression deltas or not
+
+        Returns:
+            bool: `True` if regression deltas apply to all classes, `False`
+                if per class regression deltas are computed
+        """
+        return True
+
     @abstractmethod
     def _build_module_internal(self, conv: CONVGEN, add_norm: bool, **kwargs) -> torch.nn.Module:
         """

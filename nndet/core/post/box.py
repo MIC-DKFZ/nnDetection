@@ -160,7 +160,58 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
+        """
+        Postprocess bounding box deltas and probabilities for a single image
+        Adapted from torchvision https://github.com/pytorch/vision
+
+        Args:
+            img_reps: predicted deltas for proposals [N, C, dim * 2]
+            img_probs: predicted logits for boxes [N, C]
+            img_shape: shape of image
+            num_anchors_per_level: number of anchors per level
+
+        Returns:
+            Tensor: final boxes [R, dim * 2]
+            Tensor: final scores (for final class) [R]
+            Tensor: final class label [R]
+        """
+        assert img_reps.shape[0] == img_probs.shape[0]
+        assert img_reps.shape[1] == img_probs.shape[-1]
+
+        img_labels = torch.arange(self.num_foreground_classes, device=img_probs.device)
+        img_labels = img_labels.view(1, -1).expand_as(img_probs)  # [N, C]
+
+        boxes = img_reps.reshape(-1, img_reps.shape[-1])  # [R, 2 * dims]
+        probs = img_probs.reshape(-1)  # [R]
+        labels = img_labels.reshape(-1)  # [R]
+
+        boxes = ops_torch.clip_boxes_to_image_(boxes, img_shape)
+        if self.topk_candidates is not None:
+            num_topk = min(self.topk_candidates, boxes.size(0))
+            probs, idx = probs.sort(descending=True)
+            probs, idx = probs[:num_topk], idx[:num_topk]
+        else:
+            idx = torch.arange(probs.numel())
+
+        if self.score_thresh is not None:
+            keep_idxs = probs > self.score_thresh
+            probs, idx = probs[keep_idxs], idx[keep_idxs]
+
+        # filter boxes and labels
+        boxes = boxes[idx]
+        labels = boxes[idx]
+
+        if self.remove_small_boxes is not None:
+            keep = ops_torch.remove_small_boxes(boxes, min_size=self.remove_small_boxes)
+            boxes, probs, labels = boxes[keep], probs[keep], labels[keep]
+
+        boxes, probs, labels = self.nms(boxes, probs, labels)
+
+        if self.detections_per_img is not None:
+            boxes = boxes[: self.detections_per_img]
+            probs = probs[: self.detections_per_img]
+            labels = labels[: self.detections_per_img]
+        return boxes, probs, labels
 
     def nms(
         self,

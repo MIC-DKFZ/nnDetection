@@ -185,6 +185,17 @@ class DenseRegressor(Regressor):
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, 0)
 
+    @classmethod
+    def class_agnostic(cls):
+        """
+        All dense regressor should be class agnostic
+
+        Returns:
+            bool: `True` if regression deltas apply to all classes, `False`
+                if per class regression deltas are computed
+        """
+        return True
+
 
 class L1Regressor(DenseRegressor):
     def __init__(

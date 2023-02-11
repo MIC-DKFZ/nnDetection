@@ -163,7 +163,7 @@ class BaseHead(nn.Module):
         True => each anchor is regressed for each class separately
         False => each anchor is regressed once
         """
-        return self.regressor.class_agnostic
+        return self.regressor.class_agnostic()
 
 
 HeadType = TypeVar("HeadType", bound=BaseHead)

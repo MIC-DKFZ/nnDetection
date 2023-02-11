@@ -237,7 +237,7 @@ class BoxCoderND(BoxCoder):
         self,
         rel_codes: Tensor,
         boxes: List[Tensor],
-        per_class: bool = False,
+        class_agnostic: bool = True,
     ) -> Tensor:
         """
         Decode boxes
@@ -267,10 +267,10 @@ class BoxCoderND(BoxCoder):
             box_sum += val
         pred_boxes = self.decode_single(rel_codes.reshape(box_sum, -1), concat_boxes)
 
-        if per_class:
-            return pred_boxes.reshape(box_sum, -1, spatial_dims)
-        else:
+        if class_agnostic:
             return pred_boxes.reshape(box_sum, spatial_dims)
+        else:
+            return pred_boxes.reshape(box_sum, -1, spatial_dims)
 
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         # dtype, device = rel_codes.dtype, rel_codes.device
