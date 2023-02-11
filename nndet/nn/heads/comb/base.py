@@ -119,11 +119,39 @@ class AnchorHead(BaseHead):
             "pred_boxes": self.coder.decode(
                 prediction["box_deltas"],
                 anchors,
-                class_agnostic=self.class_agnostic,
             ),
             "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
+
+    def get_reg_by_mode(
+        self,
+        batch_anchors: torch.Tensor,
+        batch_target_boxes: torch.Tensor,
+        batch_pred_deltas: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute regression targets
+
+        Args:
+            batch_anchors: concatenated anchors
+            batch_target_boxes: concatenated matched ground truth box
+            batch_pred_deltas: concatenated predicted box deltas
+
+        Returns:
+            Tuple[Tensor, Tensor]: (predicted regression values,
+                expected regression values)
+                `encode`: predicted box deltas, target box deltas
+                `decode`: predicted boxes, target boxes
+        """
+        if self.reg_mode == BoxRegressionMode.ENCODE:
+            target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
+            return batch_pred_deltas, target_deltas
+        elif self.reg_mode == BoxRegressionMode.DECODE:
+            pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
+            return pred_boxes, batch_target_boxes
+        else:
+            raise RuntimeError("Wrong mode.")
 
     @abstractmethod
     def compute_loss(
@@ -165,6 +193,45 @@ class AnchorHead(BaseHead):
 
 
 class RoIHead(BaseHead):
+    def __init__(
+        self,
+        classifier: ClassifierType,
+        regressor: RegressorType,
+        coder: BoxCoderND,
+        shared: Optional[torch.nn.Module] = None,
+        reg_mode: Union[str, BoxRegressionMode] = "encode",  # TODO: move this to a regressor function
+    ):
+        """
+        Provides an abstract interface for an module which takes
+        inputs and computed its own loss
+
+        Args:
+            classifier: classifier module
+            regressor: regression module
+            coder: Module to encoder/decoder box delta wrt to anchors/proposals
+            shared: optional shared module which is applied to before the
+                classifier and regression head
+            reg_mode: define regression mode. One of `decode` | `encode`
+
+                ``'decode'``
+                    uses the predicted box deltas to decode the
+                    predicted boxes which are passed to the regression loss
+                    in combination with the matched ground truth boxes
+
+                ``'encode'``
+                    uses the matched ground truth to encode the
+                    expected box deltas which are passed to the regression loss
+                    in combination with the predicted box deltas
+
+        """
+        super().__init__(
+            classifier=classifier,
+            regressor=regressor,
+            shared=shared,
+            coder=coder,
+        )
+        self.reg_mode = BoxRegressionMode(reg_mode)
+
     def forward(
         self,
         fmaps: torch.Tensor,
@@ -223,16 +290,44 @@ class RoIHead(BaseHead):
 
             List[torch.Tensor]: anchors per image
         """
-        # TODO: check if anchors is a list of boxes for rois
+        # TODO: check if anchors is a list of boxes for rois -> decode single
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(
                 prediction["box_deltas"],
                 anchors,
-                class_agnostic=self.class_agnostic,
             ),
             "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
+
+    def get_reg_by_mode(
+        self,
+        batch_anchors: torch.Tensor,
+        batch_target_boxes: torch.Tensor,
+        batch_pred_deltas: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute regression targets
+
+        Args:
+            batch_anchors: concatenated anchors
+            batch_target_boxes: concatenated matched ground truth box
+            batch_pred_deltas: concatenated predicted box deltas
+
+        Returns:
+            Tuple[Tensor, Tensor]: (predicted regression values,
+                expected regression values)
+                `encode`: predicted box deltas, target box deltas
+                `decode`: predicted boxes, target boxes
+        """
+        if self.reg_mode == BoxRegressionMode.ENCODE:
+            target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
+            return batch_pred_deltas, target_deltas
+        elif self.reg_mode == BoxRegressionMode.DECODE:
+            pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
+            return pred_boxes, batch_target_boxes
+        else:
+            raise RuntimeError("Wrong mode.")
 
     @abstractmethod
     def compute_loss(

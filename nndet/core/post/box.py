@@ -165,7 +165,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         Adapted from torchvision https://github.com/pytorch/vision
 
         Args:
-            img_reps: predicted deltas for proposals [N, C, dim * 2]
+            img_reps: predicted deltas for proposals [N, C * dim * 2]
             img_probs: predicted logits for boxes [N, C]
             img_shape: shape of image
             num_anchors_per_level: number of anchors per level
@@ -176,12 +176,14 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             Tensor: final class label [R]
         """
         assert img_reps.shape[0] == img_probs.shape[0]
-        assert img_reps.shape[1] == img_probs.shape[-1]
+        assert img_probs.shape[-1] == self.num_foreground_classes
+        assert (img_reps.shape[1] == img_probs.shape[-1] * 6) or (img_reps.shape[1] == img_probs.shape[-1] * 4)
 
         img_labels = torch.arange(self.num_foreground_classes, device=img_probs.device)
         img_labels = img_labels.view(1, -1).expand_as(img_probs)  # [N, C]
 
-        boxes = img_reps.reshape(-1, img_reps.shape[-1])  # [R, 2 * dims]
+        dims = img_reps.shape[1] // self.num_foreground_classes
+        boxes = img_reps.reshape(-1, dims)  # [R, 2 * dims]
         probs = img_probs.reshape(-1)  # [R]
         labels = img_labels.reshape(-1)  # [R]
 

@@ -237,7 +237,6 @@ class BoxCoderND(BoxCoder):
         self,
         rel_codes: Tensor,
         boxes: List[Tensor],
-        class_agnostic: bool = True,
     ) -> Tensor:
         """
         Decode boxes
@@ -260,17 +259,12 @@ class BoxCoderND(BoxCoder):
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
-        spatial_dims = concat_boxes.shape[1]
 
         box_sum = 0
         for val in boxes_per_image:
             box_sum += val
         pred_boxes = self.decode_single(rel_codes.reshape(box_sum, -1), concat_boxes)
-
-        if class_agnostic:
-            return pred_boxes.reshape(box_sum, spatial_dims)
-        else:
-            return pred_boxes.reshape(box_sum, -1, spatial_dims)
+        return pred_boxes
 
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         # dtype, device = rel_codes.dtype, rel_codes.device
