@@ -11,7 +11,7 @@ from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
 from nndet.core.boxes.coder import BoxCoderND, CoderType
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier.dense import DenseClassifier
@@ -44,7 +44,7 @@ class SingleStageMixin(ModelMixin):
     head_regressor_cls: Type[DenseRegressor] = ...  #: define class for head regressor
 
     head_sampler_cls: Optional[
-        Type[SamplerType]
+        Type[AbstractSampler]
     ] = None  #: [optional] sampler class for negative mining. None = no sampling.
 
     matcher_cls: Type[Matcher] = ...  #: define class to match anchors to ground truth

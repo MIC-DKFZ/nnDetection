@@ -8,7 +8,7 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.core.boxes.coder import BoxCoderND
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.nn.heads.abstract import ClassifierType, RegressorType
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
@@ -24,7 +24,7 @@ class BoxHeadHNM(AnchorHead):
         classifier: DenseClassifier,
         regressor: DenseRegressor,
         coder: BoxCoderND,
-        sampler: SamplerType,
+        sampler: AbstractSampler,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: Union[str, BoxRegressionMode] = "encode",
     ):
@@ -169,7 +169,7 @@ class BoxHeadHNMV2(AnchorHead):
         classifier: DenseClassifier,
         regressor: DenseRegressor,
         coder: BoxCoderND,
-        sampler: SamplerType,
+        sampler: AbstractSampler,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: Union[str, BoxRegressionMode] = "encode",
         ema_loss_norm: bool = False,

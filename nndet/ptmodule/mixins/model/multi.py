@@ -10,7 +10,7 @@ import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractDetector
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import RoIModule
@@ -36,7 +36,7 @@ class RoIBuildMixin:
     roi_regressor_cls: Type[RoIRegressor] = ...  #: define class for box regressor
 
     roi_matcher_cls: Type[Matcher] = ...  #:  define class to match proposals to ground truth
-    roi_sampler_cls: Type[SamplerType] = ...  #: sampler class for negative mining. None = no sampling
+    roi_sampler_cls: Type[AbstractSampler] = ...  #: sampler class for negative mining. None = no sampling
     roi_box_pooler_cls: Type[RoIPooler] = ...  #: define pooling operation of RoIs for box branch
     roi_box_post_cls: Type[BoxPostprocessing] = ...  #: define roi box postprocessing strategy
 

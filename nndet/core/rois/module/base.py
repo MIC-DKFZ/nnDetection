@@ -11,7 +11,7 @@ from torch import Tensor
 import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes import MatcherType
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.pooler import RoIPooler
@@ -30,7 +30,7 @@ class BaseRoIModule(torch.nn.Module):
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
         matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
-        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        sampler: AbstractSampler,  # NegativeSampler default => random balanced sampling
         num_classes: int,
         decoder_levels: Sequence[int],
         gt_to_proposals: bool = True,

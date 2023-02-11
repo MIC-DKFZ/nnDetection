@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
@@ -66,7 +66,7 @@ class CascadeMaskURCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Type[SamplerType] = ...
+    head_sampler_cls: Type[AbstractSampler] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
@@ -84,7 +84,7 @@ class CascadeMaskURCNNModule(
     roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
-    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_sampler_cls: Type[AbstractSampler] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
