@@ -12,10 +12,10 @@ from nndet.nn.heads.classifier.roi import (
     CEFCRoIClassifier,
 )
 from nndet.nn.heads.regressor.roi import (
-    GIoUConvRoIRegressor,
-    GIoUFCRoIRegressor,
-    L1ConvRoIRegressor,
-    L1FCRoIRegressor,
+    GIoUConvRoIAgnosticRegressor,
+    GIoUFCRoIAgnosticRegressor,
+    L1ConvRoIAgnosticRegressor,
+    L1FCRoIAgnosticRegressor,
 )
 from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.wrapper import Generator
@@ -94,25 +94,25 @@ TEST_CASES_CLS = [
 TEST_CASES_REG = [
     # RoI Regressor Tests
     (
-        L1ConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
+        L1ConvRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        L1FCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
+        L1FCRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
+        GIoUConvRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUFCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
+        GIoUFCRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape

@@ -30,7 +30,7 @@ from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.roi import BCEAgnosticMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, RoIRegressor
+from nndet.nn.heads.regressor.roi import L1ConvRoIAgnosticRegressor, RoIRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReLU
 from nndet.nn.neck.abstract import AbstractNeck
@@ -93,7 +93,7 @@ class MaskURCNNC002(
     roi_module_cls: Type[RoIModule] = RoIModule  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = RoIBoxHead  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = BCEConvRoIClassifier  # box head classifier class
-    roi_regressor_cls: Type[RoIRegressor] = L1ConvRoIRegressor  # box head regressor class
+    roi_regressor_cls: Type[RoIRegressor] = L1ConvRoIAgnosticRegressor  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = IoUMatcher  # class of RoI matcher
     roi_sampler_cls: Type[AbstractSampler] = HardNegativeSamplerBatched  # class of RoI sampler

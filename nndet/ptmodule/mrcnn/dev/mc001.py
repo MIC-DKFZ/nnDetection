@@ -25,7 +25,10 @@ from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.roi import BCEAgnosticMasker, BDiCEAgnosticMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
+from nndet.nn.heads.regressor.roi import (
+    L1ConvRoIAgnosticRegressor,
+    L1FCRoIAgnosticRegressor,
+)
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.fpn import UFPN
@@ -63,7 +66,7 @@ class MaskRCNNC001(MaskURCNNModule):
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
     roi_classifier_cls = BCEConvRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1ConvRoIAgnosticRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
@@ -104,7 +107,7 @@ class MaskURCNNC001FC(MaskURCNNC001):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
 
     roi_classifier_cls = BCEFCRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1FCRoIAgnosticRegressor  # RoIRegressorConv
 
 
 @MODULE_REGISTRY.register
@@ -112,7 +115,7 @@ class MaskURCNNC001FCRSB(MaskURCNNC001FC):
     segmenter_cls = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
 
     roi_classifier_cls = BCEFCRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1FCRoIAgnosticRegressor  # RoIRegressorConv
 
     roi_sampler_cls = HardNegativeSamplerBatched  # [optional] segmentation head as in RetinaUNet
 

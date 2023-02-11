@@ -223,7 +223,7 @@ class FCRoIRegressor(RoIRegressor):
         return _conv_internal
 
 
-class L1ConvRoIRegressor(ConvRoIRegressor):
+class L1ConvRoIAgnosticRegressor(ConvRoIRegressor):
     def __init__(
         self,
         conv: CONVGEN,
@@ -276,7 +276,7 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
         )
 
 
-class GIoUConvRoIRegressor(ConvRoIRegressor):
+class GIoUConvRoIAgnosticRegressor(ConvRoIRegressor):
     def __init__(
         self,
         conv: CONVGEN,
@@ -325,7 +325,7 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
         )
 
 
-class L1FCRoIRegressor(FCRoIRegressor):
+class L1FCRoIAgnosticRegressor(FCRoIRegressor):
     def __init__(
         self,
         conv: CONVGEN,
@@ -378,7 +378,7 @@ class L1FCRoIRegressor(FCRoIRegressor):
         )
 
 
-class GIoUFCRoIRegressor(FCRoIRegressor):
+class GIoUFCRoIAgnosticRegressor(FCRoIRegressor):
     def __init__(
         self,
         conv: CONVGEN,
@@ -427,7 +427,7 @@ class GIoUFCRoIRegressor(FCRoIRegressor):
         )
 
 
-class L1ConvRoISpecificRegressor(L1ConvRoIRegressor):
+class L1ConvRoISpecificRegressor(L1ConvRoIAgnosticRegressor):
     @classmethod
     def class_agnostic(cls):
         """
@@ -440,7 +440,7 @@ class L1ConvRoISpecificRegressor(L1ConvRoIRegressor):
         return False
 
 
-class L1FCRoISpecificRegressor(L1FCRoIRegressor):
+class L1FCRoISpecificRegressor(L1FCRoIAgnosticRegressor):
     @classmethod
     def class_agnostic(cls):
         """
