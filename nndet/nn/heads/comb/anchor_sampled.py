@@ -9,7 +9,6 @@ from torch import Tensor
 
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.sampler import AbstractSampler
-from nndet.nn.heads.abstract import ClassifierType, RegressorType
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
@@ -403,8 +402,8 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
 class BoxHeadHNMDualReg(BoxHeadHNM):
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
     ):

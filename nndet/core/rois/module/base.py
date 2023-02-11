@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from loguru import logger
 from torch import Tensor
 
 import nndet.core.ops_torch as ops_torch
-from nndet.core.boxes import MatcherType
+from nndet.core.boxes import Matcher
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
@@ -29,7 +29,7 @@ class BaseRoIModule(torch.nn.Module):
         box_head: Union[RoIHead, List[RoIHead], Tuple[RoIHead]],
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
-        matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
+        matcher: Union[Matcher, List[Matcher], Tuple[Matcher]],
         sampler: AbstractSampler,  # NegativeSampler default => random balanced sampling
         num_classes: int,
         decoder_levels: Sequence[int],
@@ -608,6 +608,3 @@ class RoIModule(BaseRoIModule):
             )
             prediction.update(mask_preds)
         return prediction
-
-
-RoIModuleType = TypeVar("RoIModuleType", bound=BaseRoIModule)

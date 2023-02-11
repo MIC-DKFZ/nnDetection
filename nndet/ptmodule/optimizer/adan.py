@@ -18,7 +18,7 @@ class AdanLWPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         """
         Configure optimizer and scheduler

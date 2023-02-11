@@ -9,12 +9,12 @@ from torch import Tensor
 
 from nndet.core import boxes as box_utils
 from nndet.core.abstract import AbstractDetector
-from nndet.core.boxes.anchors import AnchorGeneratorType
+from nndet.core.boxes.anchors import AnchorGenerator
 from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.heads.comb import AnchorHeadType
-from nndet.nn.heads.segmenter import SegmenterType
+from nndet.nn.heads.comb.base import AnchorHead
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.neck.abstract import AbstractNeck
 
 
@@ -25,12 +25,12 @@ class BaseRetinaNet(AbstractDetector):
         # modules
         backbone: AbstractBackbone,
         neck: AbstractNeck,
-        head: AnchorHeadType,
-        anchor_generator: AnchorGeneratorType,
-        matcher: box_utils.MatcherType,
+        head: AnchorHead,
+        anchor_generator: AnchorGenerator,
+        matcher: box_utils.Matcher,
         box_post: BoxPostprocessing,
         decoder_levels: tuple = (2, 3, 4, 5),
-        segmenter: Optional[SegmenterType] = None,
+        segmenter: Optional[Segmenter] = None,
     ):
         """
         Base Retina(U)Net

@@ -7,4 +7,4 @@ from nndet.nn.heads.comb.anchor_sampled import (
     BoxHeadHNMNative,
     BoxHeadHNMRegAll,
 )
-from nndet.nn.heads.comb.base import AnchorHeadType, RoIHeadType
+from nndet.nn.heads.comb.base import AnchorHead, RoIHead

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Dict, List, Optional, TypeVar
+from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
@@ -80,10 +80,6 @@ class Regressor(nn.Module):
         return True
 
 
-ClassifierType = TypeVar("ClassifierType", bound=Classifier)
-RegressorType = TypeVar("RegressorType", bound=Regressor)
-
-
 class BaseHead(nn.Module):
     """
     Provides an abstract interface for an module which takes
@@ -92,8 +88,8 @@ class BaseHead(nn.Module):
 
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: Classifier,
+        regressor: Regressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
     ):
@@ -162,9 +158,6 @@ class BaseHead(nn.Module):
         False => each anchor is regressed once
         """
         return self.regressor.class_agnostic()
-
-
-HeadType = TypeVar("HeadType", bound=BaseHead)
 
 
 class RoIConv1x1View(torch.nn.Module):

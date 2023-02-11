@@ -10,11 +10,11 @@ from typing import List, Tuple
 
 import torch
 
-from nndet.core.boxes.matcher import MatcherType
+from nndet.core.boxes.matcher import Matcher
 
 
 def assign_targets_to_anchors(
-    proposal_matcher: MatcherType,
+    proposal_matcher: Matcher,
     anchors: List[torch.Tensor],
     target_boxes: List[torch.Tensor],
     target_classes: List[torch.Tensor],

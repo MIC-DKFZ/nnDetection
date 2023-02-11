@@ -8,13 +8,14 @@
 
 
 from itertools import product
-from typing import List, Sequence, Tuple, TypeVar, Union
+from typing import List, Sequence, Tuple, Union
 
 import torch
 from loguru import logger
-from torchvision.models.detection.rpn import AnchorGenerator
 
-AnchorGeneratorType = TypeVar("AnchorGeneratorType", bound=AnchorGenerator)
+
+class AnchorGenerator:
+    pass
 
 
 def get_anchor_generator(

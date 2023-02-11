@@ -8,7 +8,7 @@
 
 from __future__ import division
 
-from typing import Sequence, TypeVar
+from typing import Sequence
 
 import torch
 from torch import Tensor
@@ -269,6 +269,3 @@ class BoxCoderND(BoxCoder):
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         # dtype, device = rel_codes.dtype, rel_codes.device
         return decode_single(rel_codes, boxes, self.weights, self.bbox_xform_clip)
-
-
-CoderType = TypeVar("CoderType", bound=BoxCoderND)

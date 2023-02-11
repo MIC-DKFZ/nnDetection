@@ -2,20 +2,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 
 from nndet.core.boxes import BoxCoderND
-from nndet.nn.heads.abstract import BaseHead, ClassifierType, RegressorType
+from nndet.nn.heads.abstract import BaseHead
+from nndet.nn.heads.classifier.dense import DenseClassifier
+from nndet.nn.heads.classifier.roi import RoIClassifier
+from nndet.nn.heads.regressor.dense import DenseRegressor
+from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.utils.enums import BoxRegressionMode
 
 
 class AnchorHead(BaseHead):
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: DenseClassifier,
+        regressor: DenseRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: Union[str, BoxRegressionMode] = "decode",
@@ -195,8 +199,8 @@ class AnchorHead(BaseHead):
 class RoIHead(BaseHead):
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: RoIClassifier,
+        regressor: RoIRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
         reg_mode: Union[str, BoxRegressionMode] = "encode",  # TODO: move this to a regressor function
@@ -362,7 +366,3 @@ class RoIHead(BaseHead):
                 classification loss)
         """
         raise NotImplementedError
-
-
-AnchorHeadType = TypeVar("AnchorHeadType", bound=AnchorHead)
-RoIHeadType = TypeVar("RoIHeadType", bound=RoIHead)
