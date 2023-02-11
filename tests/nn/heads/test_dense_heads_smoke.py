@@ -42,6 +42,7 @@ EXAMPLE_CONFIG = {
     "internal_channels": 32,
     "num_convs": 1,
     "add_norm": True,
+    "num_classes": NUM_CLASSES,
 }
 
 TEST_CASES_CLS = [
@@ -49,7 +50,6 @@ TEST_CASES_CLS = [
     (
         BCECLassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -61,7 +61,6 @@ TEST_CASES_CLS = [
     (
         CEClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -73,7 +72,6 @@ TEST_CASES_CLS = [
     (
         FocalClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -85,7 +83,6 @@ TEST_CASES_CLS = [
     (
         AsymmetricFocalClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -97,7 +94,6 @@ TEST_CASES_CLS = [
     (
         Poly1BCECLassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -109,7 +105,6 @@ TEST_CASES_CLS = [
     (
         Poly1FocalClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module
@@ -121,7 +116,6 @@ TEST_CASES_CLS = [
     (
         FullyConntectedBCECLassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             anchors_per_pos=ANCHORS_PER_POS,
             num_levels=3,
         ),  # module

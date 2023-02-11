@@ -15,6 +15,8 @@ from torch import Tensor
 from torch.jit.annotations import List
 from torchvision.models.detection._utils import BoxCoder
 
+# FIXME jit script deprecated
+
 
 @torch.jit.script
 def encode_boxes(

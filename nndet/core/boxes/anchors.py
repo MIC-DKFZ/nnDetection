@@ -15,7 +15,7 @@ from loguru import logger
 
 
 class AnchorGenerator:
-    pass
+    pass  # FIXME
 
 
 def get_anchor_generator(

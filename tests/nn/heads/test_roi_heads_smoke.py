@@ -36,6 +36,7 @@ EXAMPLE_CONFIG = {
     "internal_channels": 32,
     "num_convs": 1,
     "input_size": INPUT_SIZE_CONFIG,
+    "num_classes": NUM_CLASSES,
 }
 
 TEST_CASES_UTIL = [
@@ -48,7 +49,6 @@ TEST_CASES_CLS = [
     (
         BCEConvRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=True,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -59,7 +59,6 @@ TEST_CASES_CLS = [
     (
         BCEFCRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=False,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -70,7 +69,6 @@ TEST_CASES_CLS = [
     (
         CEConvRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=True,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -81,7 +79,6 @@ TEST_CASES_CLS = [
     (
         CEFCRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=False,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
