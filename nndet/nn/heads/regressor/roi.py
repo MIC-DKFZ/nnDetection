@@ -12,12 +12,13 @@ from nndet.losses.regression.giou import GIoULoss
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.nn.heads.abstract import Regressor, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
+from nndet.utils.typing import CONVGEN
 
 
 class RoIRegressor(Regressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
@@ -58,13 +59,13 @@ class RoIRegressor(Regressor):
         self.init_weights()
 
     @abstractmethod
-    def _build_module_internal(self, conv, add_norm: bool, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, add_norm: bool, **kwargs) -> torch.nn.Module:
         """
         Build internal modules
         """
         raise NotImplementedError
 
-    def _build_module_out(self, conv):
+    def _build_module_out(self, conv: CONVGEN) -> torch.nn.Module:
         """
         Build final convolution
         """
@@ -122,7 +123,7 @@ class RoIRegressor(Regressor):
 
 
 class ConvRoIRegressor(RoIRegressor):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules conv(s) -> pool -> out
         """
@@ -158,7 +159,7 @@ class ConvRoIRegressor(RoIRegressor):
 
 
 class FCRoIRegressor(RoIRegressor):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules flatten -> FC(s) -> out
         """
@@ -196,7 +197,7 @@ class FCRoIRegressor(RoIRegressor):
 class L1ConvRoIRegressor(ConvRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
         input_size: Sequence[int],
@@ -246,7 +247,7 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
 class GIoUConvRoIRegressor(ConvRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
         input_size: Sequence[int],
@@ -292,7 +293,7 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
 class L1FCRoIRegressor(FCRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
         input_size: Sequence[int],
@@ -342,7 +343,7 @@ class L1FCRoIRegressor(FCRoIRegressor):
 class GIoUFCRoIRegressor(FCRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
         input_size: Sequence[int],
