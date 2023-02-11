@@ -141,5 +141,6 @@ def test_roi_reg_head_smoke(module, inp, target, exp_shape):
     pred_logits = module(inp)
     assert tuple(pred_logits.shape) == exp_shape
 
-    loss = module.compute_loss(pred_logits, target)
+    labels = torch.tensor([i % NUM_CLASSES for i in range(pred_logits.shape[0])])
+    loss = module.compute_loss(pred_logits, target, labels)
     loss.backward()

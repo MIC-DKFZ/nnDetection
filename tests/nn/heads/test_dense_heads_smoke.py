@@ -215,7 +215,8 @@ def test_dense_reg_head_smoke(module, inp, target, exp_shape):
     assert tuple(pred_logits.shape) == exp_shape
 
     pred_logits_flattened = pred_logits.reshape(-1, DIM * 2)
-    loss = module.compute_loss(pred_logits_flattened, target)
+    labels = torch.tensor([i % NUM_CLASSES for i in range(pred_logits_flattened.shape[0])])
+    loss = module.compute_loss(pred_logits_flattened, target, labels)
     loss.backward()
 
 
@@ -225,10 +226,12 @@ def test_dense_dual_reg_head_smoke(module, inp, target, exp_shape):
     assert tuple(pred_logits.shape) == exp_shape
 
     pred_logits_flattened = pred_logits.reshape(-1, DIM * 2)
+    labels = torch.tensor([i % NUM_CLASSES for i in range(pred_logits_flattened.shape[0])])
     loss = module.compute_loss(
         pred_deltas=pred_logits_flattened,
         target_deltas=target,
         pred_boxes=pred_logits_flattened,
         target_boxes=target,
+        target_labels=labels,
     )
     loss.backward()

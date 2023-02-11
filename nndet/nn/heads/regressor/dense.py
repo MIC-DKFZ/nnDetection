@@ -589,6 +589,7 @@ class DualRegressor(DenseRegressor):
             _pred_boxes = _pred_boxes[torch.arange(num_rois), _target_labels]
         else:
             _pred_deltas = pred_deltas
+            _pred_boxes = pred_boxes
         l1 = self.loss_l1(_pred_deltas, target_deltas)
         giou = self.loss_giou(_pred_boxes, target_boxes)
         return l1 * self.loss_weight_l1 + giou * self.loss_weight_giou
