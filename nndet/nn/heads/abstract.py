@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from abc import abstractmethod
+from abc import abstractclassmethod, abstractmethod
 from typing import Dict, List, Optional
 
 import torch
@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from nndet.core.boxes import BoxCoderND
+from nndet.utils.enums import BoxRegressionMode
 
 
 class Classifier(nn.Module):
@@ -71,8 +72,25 @@ class Regressor(nn.Module):
         """
         raise NotImplementedError
 
-    # @classmethod
-    # def reg_mode(cls)
+    @abstractclassmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode
+
+        Raises:
+            NotImplementedError: Needs to overwritten in subclasses
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        raise NotImplementedError
 
     @classmethod
     def is_class_agnostic(cls) -> bool:

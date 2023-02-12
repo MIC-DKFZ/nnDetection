@@ -80,7 +80,7 @@ class RoIBoxHead(RoIHead):
         sampled_inds = torch.where(matched_gt_labels >= 0)[0]
         sampled_pos_inds = torch.where(matched_gt_labels >= 1)[0]
 
-        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+        reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
             batch_anchors=proposal_boxes[sampled_pos_inds],
             batch_target_boxes=matched_gt_boxes[sampled_pos_inds],
             batch_pred_deltas=box_deltas[sampled_pos_inds],

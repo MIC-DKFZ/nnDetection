@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from loguru import logger
@@ -25,7 +25,6 @@ class BoxHeadHNM(AnchorHead):
         coder: BoxCoderND,
         sampler: AbstractSampler,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: Union[str, BoxRegressionMode] = "encode",
     ):
         """
         Box detection head with classifier and regression module.
@@ -38,16 +37,6 @@ class BoxHeadHNM(AnchorHead):
             sampler: sampler for select positive and negative examples
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            reg_mode: define regression mode. One of `decode` | `encode`
-
-                ``"decode"``: uses the predicted box deltas to decode the
-                    predicted boxes which are passed to the regression loss
-                    in combination with the matched ground truth boxes
-
-                ``"encode"``: uses the matched ground truth to encode the
-                    expected box deltas which are passed to the regression loss
-                    in combination with the predicted box deltas
-
         Notes:
             Regression loss will be normalized automatically while
             classification loss is expected to be normalized.
@@ -57,7 +46,6 @@ class BoxHeadHNM(AnchorHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            reg_mode=reg_mode,
         )
 
         self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
@@ -106,7 +94,7 @@ class BoxHeadHNM(AnchorHead):
         target_labels = cat(target_labels, dim=0)
         target_boxes = cat(matched_gt_boxes, dim=0)
 
-        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+        reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
             batch_anchors=batch_anchors[sampled_pos_inds],
             batch_target_boxes=target_boxes[sampled_pos_inds],
             batch_pred_deltas=box_deltas[sampled_pos_inds],
@@ -172,7 +160,6 @@ class BoxHeadHNMV2(AnchorHead):
         coder: BoxCoderND,
         sampler: AbstractSampler,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: Union[str, BoxRegressionMode] = "encode",
         ema_loss_norm: bool = False,
     ):
         """
@@ -187,16 +174,6 @@ class BoxHeadHNMV2(AnchorHead):
             sampler: sampler for select positive and negative examples
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            reg_mode: define regression mode. One of `decode` | `encode`
-
-                ``"decode"``: uses the predicted box deltas to decode the
-                    predicted boxes which are passed to the regression loss
-                    in combination with the matched ground truth boxes
-
-                `"encode"`: uses the matched ground truth to encode the
-                    expected box deltas which are passed to the regression loss
-                    in combination with the predicted box deltas
-
             ema_loss_norm: use ema to normalize denominator of losses
 
         Notes:
@@ -208,7 +185,6 @@ class BoxHeadHNMV2(AnchorHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            reg_mode=reg_mode,
         )
         self.ema_loss_norm = ema_loss_norm
         if self.ema_loss_norm:
@@ -261,7 +237,7 @@ class BoxHeadHNMV2(AnchorHead):
         target_labels = cat(target_labels, dim=0)
         target_boxes = cat(matched_gt_boxes, dim=0)
 
-        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+        reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
             batch_anchors=batch_anchors[sampled_pos_inds],
             batch_target_boxes=target_boxes[sampled_pos_inds],
             batch_pred_deltas=box_deltas[sampled_pos_inds],
@@ -377,7 +353,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
         batch_anchors = cat(anchors, dim=0)
         target_boxes = cat(matched_gt_boxes, dim=0)
 
-        reg_pred_sampled, reg_target_sampled = self.get_reg_by_mode(
+        reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
             batch_anchors=batch_anchors[pos_inds],
             batch_target_boxes=target_boxes[pos_inds],
             batch_pred_deltas=box_deltas[pos_inds],
@@ -423,6 +399,12 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
         self.regressor = regressor
         self.shared = shared
         self.coder = coder
+        if not self.regressor.get_reg_mode() == BoxRegressionMode.DUAL:
+            raise ValueError(
+                f"Provided regressor {self.regressor.__class__.__name__} "
+                f"with reg mode {self.regressor.get_reg_mode()} is not compatible "
+                f"with {self.__class__.__name__} which requires 'dual' reg mode"
+            )
 
     def compute_loss(
         self,
@@ -497,7 +479,7 @@ from nndet.utils.info import deprecate
 
 class BoxHeadHNMNative(BoxHeadHNM):
     @deprecate(
-        replacement="`BoxHeadHNM` with `reg_mode=decode`",
+        replacement="`BoxHeadHNM`",
         deprecate="v0.1.2",
     )
     def __init__(self, *args, **kwargs):

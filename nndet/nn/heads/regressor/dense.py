@@ -14,6 +14,7 @@ from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.nn.heads.abstract import Regressor
 from nndet.nn.ops.scale import Scale, ScalePerDim
 from nndet.utils.collections import CONV_TYPES
+from nndet.utils.enums import BoxRegressionMode
 
 
 class DenseRegressor(Regressor):
@@ -279,6 +280,23 @@ class L1Regressor(DenseRegressor):
             loss_fp32=loss_fp32,
         )
 
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `encode`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.ENCODE
+
 
 class GIoURegressor(DenseRegressor):
     def __init__(
@@ -343,6 +361,23 @@ class GIoURegressor(DenseRegressor):
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
+
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `decode`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DECODE
 
 
 class GIoUPRegressor(DenseRegressor):
@@ -412,6 +447,23 @@ class GIoUPRegressor(DenseRegressor):
             loss_fp32=loss_fp32,
         )
 
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `decode`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DECODE
+
 
 class DIoURegressor(DenseRegressor):
     def __init__(
@@ -476,6 +528,23 @@ class DIoURegressor(DenseRegressor):
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
+
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `decode`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DECODE
 
 
 class DualRegressor(DenseRegressor):
@@ -593,3 +662,20 @@ class DualRegressor(DenseRegressor):
         l1 = self.loss_l1(_pred_deltas, target_deltas)
         giou = self.loss_giou(_pred_boxes, target_boxes)
         return l1 * self.loss_weight_l1 + giou * self.loss_weight_giou
+
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `dual`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DUAL

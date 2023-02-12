@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from loguru import logger
@@ -12,7 +12,6 @@ from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.training.ema import EMA
-from nndet.utils.enums import BoxRegressionMode
 
 
 class BoxHeadAll(AnchorHead):
@@ -22,7 +21,6 @@ class BoxHeadAll(AnchorHead):
         regressor: DenseRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: Union[str, BoxRegressionMode] = "decode",
         ema_loss_norm: bool = False,
     ):
         """
@@ -34,18 +32,6 @@ class BoxHeadAll(AnchorHead):
             regressor: regression module
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            reg_mode: define regression mode. One of `decode` | `encode`
-
-                ``'decode'``
-                    uses the predicted box deltas to decode the
-                    predicted boxes which are passed to the regression loss
-                    in combination with the matched ground truth boxes
-
-                ``'encode'``
-                    uses the matched ground truth to encode the
-                    expected box deltas which are passed to the regression loss
-                    in combination with the predicted box deltas
-
             ema_loss_norm: use ema to normalize denominator of losses
         """
         super().__init__(
@@ -53,7 +39,6 @@ class BoxHeadAll(AnchorHead):
             regressor=regressor,
             coder=coder,
             shared=shared,
-            reg_mode=reg_mode,
         )
         self.ema_loss_norm = ema_loss_norm
         if self.ema_loss_norm:
@@ -99,7 +84,7 @@ class BoxHeadAll(AnchorHead):
         target_labels = torch.cat(target_labels, dim=0)
         target_boxes = torch.cat(matched_gt_boxes, dim=0)
 
-        reg_pred, reg_target = self.get_reg_by_mode(
+        reg_pred, reg_target = self.get_reg_targets_by_mode(
             batch_anchors=batch_anchors,
             batch_target_boxes=target_boxes,
             batch_pred_deltas=box_deltas,

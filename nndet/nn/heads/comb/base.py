@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import torch
 
@@ -22,7 +22,6 @@ class AnchorHead(BaseHead):
         regressor: DenseRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: Union[str, BoxRegressionMode] = "decode",
     ):
         """
         Provides an abstract interface for an module which takes
@@ -34,18 +33,6 @@ class AnchorHead(BaseHead):
             coder: Module to encoder/decoder box delta wrt to anchors/proposals
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            reg_mode: define regression mode. One of `decode` | `encode`
-
-                ``'decode'``
-                    uses the predicted box deltas to decode the
-                    predicted boxes which are passed to the regression loss
-                    in combination with the matched ground truth boxes
-
-                ``'encode'``
-                    uses the matched ground truth to encode the
-                    expected box deltas which are passed to the regression loss
-                    in combination with the predicted box deltas
-
         """
         super().__init__(
             classifier=classifier,
@@ -53,7 +40,6 @@ class AnchorHead(BaseHead):
             shared=shared,
             coder=coder,
         )
-        self.reg_mode = BoxRegressionMode(reg_mode)
 
     def forward(
         self,
@@ -128,7 +114,7 @@ class AnchorHead(BaseHead):
         }
         return postprocess_predictions
 
-    def get_reg_by_mode(
+    def get_reg_targets_by_mode(
         self,
         batch_anchors: torch.Tensor,
         batch_target_boxes: torch.Tensor,
@@ -138,7 +124,7 @@ class AnchorHead(BaseHead):
         Compute regression targets
 
         Args:
-            batch_anchors: concatenated anchors
+            batch_anchors: concatenated anchors/proposals
             batch_target_boxes: concatenated matched ground truth box
             batch_pred_deltas: concatenated predicted box deltas
 
@@ -148,14 +134,18 @@ class AnchorHead(BaseHead):
                 `encode`: predicted box deltas, target box deltas
                 `decode`: predicted boxes, target boxes
         """
-        if self.reg_mode == BoxRegressionMode.ENCODE:
+        if self.regressor.get_reg_mode() == BoxRegressionMode.ENCODE:
             target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
             return batch_pred_deltas, target_deltas
-        elif self.reg_mode == BoxRegressionMode.DECODE:
+        elif self.regressor.get_reg_mode() == BoxRegressionMode.DECODE:
             pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
             return pred_boxes, batch_target_boxes
         else:
-            raise RuntimeError("Wrong mode.")
+            raise ValueError(
+                f"Provided regressor {self.regressor.__class__.__name__} "
+                f"with reg mode {self.regressor.get_reg_mode()} is not compatible "
+                f"with {self.__class__.__name__}"
+            )
 
     @abstractmethod
     def compute_loss(
@@ -203,7 +193,6 @@ class RoIHead(BaseHead):
         regressor: RoIRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        reg_mode: Union[str, BoxRegressionMode] = "encode",  # TODO: move this to a regressor function
     ):
         """
         Provides an abstract interface for an module which takes
@@ -234,7 +223,6 @@ class RoIHead(BaseHead):
             shared=shared,
             coder=coder,
         )
-        self.reg_mode = BoxRegressionMode(reg_mode)
 
     def forward(
         self,
@@ -304,7 +292,7 @@ class RoIHead(BaseHead):
         }
         return postprocess_predictions
 
-    def get_reg_by_mode(
+    def get_reg_targets_by_mode(
         self,
         batch_anchors: torch.Tensor,
         batch_target_boxes: torch.Tensor,
@@ -314,7 +302,7 @@ class RoIHead(BaseHead):
         Compute regression targets
 
         Args:
-            batch_anchors: concatenated anchors
+            batch_anchors: concatenated anchors/proposals
             batch_target_boxes: concatenated matched ground truth box
             batch_pred_deltas: concatenated predicted box deltas
 
@@ -324,14 +312,18 @@ class RoIHead(BaseHead):
                 `encode`: predicted box deltas, target box deltas
                 `decode`: predicted boxes, target boxes
         """
-        if self.reg_mode == BoxRegressionMode.ENCODE:
+        if self.regressor.get_reg_mode() == BoxRegressionMode.ENCODE:
             target_deltas = self.coder.encode_single(batch_target_boxes, batch_anchors)
             return batch_pred_deltas, target_deltas
-        elif self.reg_mode == BoxRegressionMode.DECODE:
+        elif self.regressor.get_reg_mode() == BoxRegressionMode.DECODE:
             pred_boxes = self.coder.decode_single(batch_pred_deltas, batch_anchors)
             return pred_boxes, batch_target_boxes
         else:
-            raise RuntimeError("Wrong mode.")
+            raise ValueError(
+                f"Provided regressor {self.regressor.__class__.__name__} "
+                f"with reg mode {self.regressor.get_reg_mode()} is not compatible "
+                f"with {self.__class__.__name__}"
+            )
 
     @abstractmethod
     def compute_loss(
