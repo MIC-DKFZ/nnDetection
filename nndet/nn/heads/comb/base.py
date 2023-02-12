@@ -80,8 +80,7 @@ class AnchorHead(BaseHead):
         if self.is_class_agnostic():
             box_deltas = torch.cat(offsets, dim=1).reshape(-1, sdim * 2)
         else:
-            # TODO multi class regression
-            raise NotImplementedError
+            raise NotImplementedError("Dense/anchor regressors are currently limited to class agnostic regression.")
         box_logits = torch.cat(logits, dim=1).flatten(0, -2)
         return {"box_deltas": box_deltas, "box_logits": box_logits}
 
@@ -204,18 +203,6 @@ class RoIHead(BaseHead):
             coder: Module to encoder/decoder box delta wrt to anchors/proposals
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            reg_mode: define regression mode. One of `decode` | `encode`
-
-                ``'decode'``
-                    uses the predicted box deltas to decode the
-                    predicted boxes which are passed to the regression loss
-                    in combination with the matched ground truth boxes
-
-                ``'encode'``
-                    uses the matched ground truth to encode the
-                    expected box deltas which are passed to the regression loss
-                    in combination with the predicted box deltas
-
         """
         super().__init__(
             classifier=classifier,
@@ -233,19 +220,23 @@ class RoIHead(BaseHead):
 
         Args:
             fmaps: feature maps exracted from pooling operation for each
-                proposal [num_proposals, C, spatial_dims]
+                proposal [N, C, dims], where N is the number of RoIs,
+                C is the number of input channels and dims are
+                spatial dimensions
 
         Returns:
             Dict[str, torch.Tensor]: predictions
 
                 ``'box_deltas'`` (Tensor)
-                    bounding box offsets
-                    [num_proposals, (num_classes), dim * 2];
-                    num classes is only present if anchors were regressed
-                    for each class individually
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of RoIs, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
                 ``'box_logits'`` (Tensor)
-                    classification logits [num_proposals, num_classes]
+                    classification logits [N, num_classes] where N is the
+                    number of RoIs and num_classes is the number of foreground
+                    classes
         """
         if self.shared is not None:
             intermediate = self.shared(fmaps)
@@ -255,8 +246,7 @@ class RoIHead(BaseHead):
         box_deltas = self.regressor(intermediate)
         box_logits = self.classifier(intermediate)
 
-        # TODO: check if reshape is needed
-
+        # TODO: decide if box deltas should be reshaped to [N, num_classes, dim * 2]
         return {
             "box_deltas": box_deltas,
             "box_logits": box_logits,

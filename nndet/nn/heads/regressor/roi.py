@@ -114,8 +114,10 @@ class RoIRegressor(Regressor):
                 RoIs, C=number of channels, roi_size=spatial size of RoI
 
         Returns:
-            torch.Tensor: predicted logits [N, dim * 2], where N=number of
-                RoIs, dim=number of spatial dimensions
+            torch.Tensor: predicted deltas [N, (num_classes *) dim * 2],
+                where N=number of RoIs, dim=number of spatial dimensions,
+                and num_classes is the number of foreground classes.
+                num_classes is only used for class specific regression.
         """
         x = self.module_out(self.module_internal(features))
         return x.view(x.shape[0], -1)  # [N, C, 1] -> [N, C]
