@@ -22,15 +22,16 @@ class RoIBoxHead(RoIHead):
         ema_loss_norm: bool = False,
     ):
         """
-        Box head with classifier and regression module. Uses all
-        foreground anchors for regression an passes all anchors to classifier
+        Specific implementation of a box head with classifier and regression
+        modules. Optionally, Exponential Moving Averages can be activated
+        to smooth out the denominator of the loss functions.
 
         Args:
             classifier: classifier module
             regressor: regression module
+            coder: Module to encoder/decoder box delta wrt to anchors/proposals
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            ema_loss_norm: use ema to normalize denominator of losses
         """
         super().__init__(
             classifier=classifier,
@@ -57,23 +58,32 @@ class RoIBoxHead(RoIHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``"box_logits"`` (Tensor)
-                    classification logits for each anchor [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of RoIs, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``"box_deltas"`` (Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N (, num_classes), dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of RoIs and num_classes is the number of foreground
+                    classes
 
-            matched_gt_labels: assigned classification label for each proposal
+            matched_gt_labels: target labels for each proposal [N], where
+                N is the number of RoIs
             matched_gt_boxes: matched gt box for each proposal
-                List[[N, dim *  2]], N=number of anchors per image
-            proposal_boxes: proposal from RPN [N, dim *  2]
+                [N, dim *  2], where N is the number of RoIs, and dim
+                is the number of spatial dimensions
+            proposal_boxes: concatenated and extended proposals with batch index
+                (batch_idx, x1, y1, x2, y2, (z1, z2))[N, 1 + dim * 2],
+                where N is the number of RoIs, and dim is the number
+                of spatial dimensions
 
         Returns:
-            Tensor: dict with losses (reg for regression loss, cls
-                for classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Optional[Tensor]: None
+            Tensor: dict with losses (reg for regression loss, cls for
+                classification loss)
+            Tensor: sampled positive indices
+            Tensor: None
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 

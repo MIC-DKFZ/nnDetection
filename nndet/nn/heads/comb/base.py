@@ -55,13 +55,13 @@ class AnchorHead(BaseHead):
         Returns:
             Dict[str, torch.Tensor]: predictions
 
-                ``'box_deltas'`` (Tensor)
+                ``'box_deltas'`` (torch.Tensor)
                     bounding box offsets
                     [Num_Anchors_Batch, (num_classes), dim * 2];
                     num classes is only present if anchors were regressed
                     for each class individually
 
-                ``'box_logits'`` (Tensor)
+                ``'box_logits'`` (torch.Tensor)
                     classification logits
                     [Num_Anchors_Batch, num_classes]
 
@@ -95,20 +95,21 @@ class AnchorHead(BaseHead):
         Args:
             Dict[str, torch.Tensor]: predictions from this head
 
-                ``'box_logits'``
+                ``'box_logits'`` (torch.Tensor)
                     classification logits for each anchor [N]
 
-                ``'box_deltas'``
+                ``'box_deltas'`` (torch.Tensor)
                     offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
 
             List[torch.Tensor]: anchors per image
+
+        # TODO: return
+        # TODO: tests
+        # TODO: docs
         """
         postprocess_predictions = {
-            "pred_boxes": self.coder.decode(
-                prediction["box_deltas"],
-                anchors,
-            ),
+            "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
             "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
@@ -161,14 +162,15 @@ class AnchorHead(BaseHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``'box_logits'``
+                ``'box_logits'`` (torch.Tensor)
                     classification logits for each anchor
                     [N, num_classes]
 
-                ``'box_deltas'``
+                ``'box_deltas'`` (torch.Tensor)
                     offsets for each anchor
                     (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
 
+            # TODO: rename target labels
             target_labels: target labels for each anchor (per image) [M]
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]]
@@ -194,8 +196,10 @@ class RoIHead(BaseHead):
         shared: Optional[torch.nn.Module] = None,
     ):
         """
-        Provides an abstract interface for an module which takes
-        inputs and computed its own loss
+        Provide a base class for heads which can process RoIs. Provides
+        implementations to forward through subnetworks, postprocess
+        predictions and retrieve targets. The loss computation
+        depends on the subclasses.
 
         Args:
             classifier: classifier module
@@ -227,13 +231,13 @@ class RoIHead(BaseHead):
         Returns:
             Dict[str, torch.Tensor]: predictions
 
-                ``'box_deltas'`` (Tensor)
+                ``'box_deltas'`` torch.Tensor
                     bounding box deltas of shape [N, (num_classes *) dim * 2],
                     where N=number of RoIs, dim=number of spatial dimensions,
                     and num_classes is the number of foreground classes.
                     num_classes is only used for class specific regression.
 
-                ``'box_logits'`` (Tensor)
+                ``'box_logits'`` torch.Tensor
                     classification logits [N, num_classes] where N is the
                     number of RoIs and num_classes is the number of foreground
                     classes
@@ -246,7 +250,6 @@ class RoIHead(BaseHead):
         box_deltas = self.regressor(intermediate)
         box_logits = self.classifier(intermediate)
 
-        # TODO: decide if box deltas should be reshaped to [N, num_classes, dim * 2]
         return {
             "box_deltas": box_deltas,
             "box_logits": box_logits,
@@ -263,21 +266,39 @@ class RoIHead(BaseHead):
         Args:
             Dict[str, torch.Tensor]: predictions from this head
 
-                ``'box_logits'``
-                    classification logits for each anchor [N]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of RoIs, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``'box_deltas'``
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of RoIs and num_classes is the number of foreground
+                    classes
 
-            List[torch.Tensor]: anchors per image
+            List[torch.Tensor]: anchor / proposals for each image of shape
+                [N, dim * 2] where N is the number of RoIs per image,
+                and dim is the number of spatial dimensions
+
+        Returns:
+            Dict[str, Tensor]: postprocessed predictions
+
+                ``'pred_boxes'`` torch.Tensor
+                    predicted bounding boxes in
+                    (x1, y1, x2, y2, (z1, z2) (* num_classes)) format with
+                    shape [N, (num_classes *) dim * 2], where N is the number
+                    of RoIs and dim is the number of spatial dimensions.
+                    num_classes is the number of foreground classes
+                    and only present if class specific regression is used.
+
+                ``'pred_probs'`` torch.Tensor
+                    predicted probabilities/scores [N, num_classes], where
+                    N is the number of RoIs and num_classes is the number
+                    of foreground classes
         """
-        # TODO: check if anchors is a list of boxes for rois -> decode single
         postprocess_predictions = {
-            "pred_boxes": self.coder.decode(
-                prediction["box_deltas"],
-                anchors,
-            ),
+            "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
             "pred_probs": self.classifier.logits_to_probs(prediction["box_logits"]),
         }
         return postprocess_predictions
@@ -319,7 +340,7 @@ class RoIHead(BaseHead):
     def compute_loss(
         self,
         prediction: Dict[str, torch.Tensor],
-        target_labels: torch.Tensor,
+        matched_gt_labels: torch.Tensor,
         matched_gt_boxes: torch.Tensor,
         proposal_boxes: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
@@ -329,22 +350,31 @@ class RoIHead(BaseHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``'box_logits'``
-                    classification logits for each proposal
-                    [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of RoIs, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``'box_deltas'``
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of RoIs and num_classes is the number of foreground
+                    classes
 
-            target_labels: target labels for each proposal [N]
+            matched_gt_labels: target labels for each proposal [N], where
+                N is the number of RoIs
             matched_gt_boxes: matched gt box for each proposal
-                [N, dim *  2]
+                [N, dim *  2], where N is the number of RoIs, and dim
+                is the number of spatial dimensions
             proposal_boxes: concatenated and extended proposals with batch index
-                (batch_idx, x1, y1, x2, y2, (z1, z2))[N, 1 + dim * 2]
+                (batch_idx, x1, y1, x2, y2, (z1, z2))[N, 1 + dim * 2],
+                where N is the number of RoIs, and dim is the number
+                of spatial dimensions
 
         Returns:
             Tensor: dict with losses (reg for regression loss, cls for
                 classification loss)
+            Tensor: sampled positive indices
+            Tensor: None
         """
         raise NotImplementedError
