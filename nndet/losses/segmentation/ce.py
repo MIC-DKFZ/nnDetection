@@ -23,7 +23,7 @@ class CESegLoss(Loss):
         before calling the loss function!
 
         Args:
-            weight: weiught for CE loss, see PyTorch docs for more info.
+            weight: weight for CE loss, see PyTorch docs for more info.
             smoothing: Apply label smoothing to loss. See PyTorch docs for
                 more info.
             loss_weight: scalar to balance multiple losses

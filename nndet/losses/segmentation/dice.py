@@ -31,12 +31,12 @@ class DiceSegLoss(Loss):
                 instead of computing if per image per class. Defaults to False.
             do_bg: compute loss for background
             smoothing: apply label smoothing to targets. Label smoothing is
-                somewhat experimtal here, use on your own risk!
+                somewhat experimental here, use on your own risk!
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
-            smooth_nom: constant added to nominator for numerical stabilty.
+            smooth_nom: constant added to nominator for numerical stability.
                 Defaults to 1e-5.
-            smooth_denom: contant added to denominator for numerical stabilty.
+            smooth_denom: constant added to denominator for numerical stability.
                 Defaults to 1e-5.
             reduction: reduction of loss. Refer to
                 `nndet.losses.ops.reduction_helper` for all available options.
@@ -149,12 +149,12 @@ class BDiceSegLoss(BDiceMaskLoss):
                 instead of computing if per image per class. Defaults to False.
             do_bg: compute loss for background
             smoothing: apply label smoothing to targets. Label smoothing is
-                somewhat experimtal here, use on your own risk!
+                somewhat experimental here, use on your own risk!
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
-            smooth_nom: constant added to nominator for numerical stabilty.
+            smooth_nom: constant added to nominator for numerical stability.
                 Defaults to 1e-5.
-            smooth_denom: contant added to denominator for numerical stabilty.
+            smooth_denom: constant added to denominator for numerical stability.
                 Defaults to 1e-5.
             reduction: reduction of loss. Refer to
                 `nndet.losses.ops.reduction_helper` for all available options.
