@@ -54,7 +54,7 @@ class BoxHeadHNM(AnchorHead):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
+        matched_gt_labels: List[Tensor],
         matched_gt_boxes: List[Tensor],
         anchors: List[Tensor],
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
@@ -65,33 +65,42 @@ class BoxHeadHNM(AnchorHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``"box_logits"`` (Tensor)
-                    classification logits for each anchor [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``"box_deltas"`` (Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
-            Tensor: dict with losses (reg for regression loss, cls
-                for classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
+            Tensor: dict with losses (reg for regression loss, cls for
+                classification loss)
+            Tensor: sampled positive indices of anchors
+                (after concatenation if sampled otherwise None)
+            Tensor: sampled negative indices of anchors
+                (after concatenation, if sampled otherwise None)
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(matched_gt_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         batch_anchors = cat(anchors, dim=0)
-        target_labels = cat(target_labels, dim=0)
+        target_labels = cat(matched_gt_labels, dim=0)
         target_boxes = cat(matched_gt_boxes, dim=0)
 
         reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
@@ -198,7 +207,7 @@ class BoxHeadHNMV2(AnchorHead):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
+        matched_gt_labels: List[Tensor],
         matched_gt_boxes: List[Tensor],
         anchors: List[Tensor],
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
@@ -209,32 +218,42 @@ class BoxHeadHNMV2(AnchorHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``"box_logits"`` (Tensor): classification logits for each anchor
-                    [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``"box_deltas"`` (Tensor): offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
-            Tensor: dict with losses (reg for regression loss, cls
-                for classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
+            Tensor: dict with losses (reg for regression loss, cls for
+                classification loss)
+            Tensor: sampled positive indices of anchors
+                (after concatenation if sampled otherwise None)
+            Tensor: sampled negative indices of anchors
+                (after concatenation, if sampled otherwise None)
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(matched_gt_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
         batch_anchors = cat(anchors, dim=0)
-        target_labels = cat(target_labels, dim=0)
+        target_labels = cat(matched_gt_labels, dim=0)
         target_boxes = cat(matched_gt_boxes, dim=0)
 
         reg_pred_sampled, reg_target_sampled = self.get_reg_targets_by_mode(
@@ -310,7 +329,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
+        matched_gt_labels: List[Tensor],
         matched_gt_boxes: List[Tensor],
         anchors: List[Tensor],
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
@@ -321,31 +340,40 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
         Args:
             prediction: detection predictions for loss computation
 
-                ``'box_logits'`` (Tensor)
-                    classification logits for each anchor [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``"box_deltas"`` (Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
-            Tensor: dict with losses (reg for regression loss, cls
-                for classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
+            Tensor: dict with losses (reg for regression loss, cls for
+                classification loss)
+            Tensor: sampled positive indices of anchors
+                (after concatenation if sampled otherwise None)
+            Tensor: sampled negative indices of anchors
+                (after concatenation, if sampled otherwise None)
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(matched_gt_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-        target_labels = cat(target_labels, dim=0)
+        target_labels = cat(matched_gt_labels, dim=0)
 
         losses["cls"] = self.classifier.compute_loss(box_logits[sampled_inds], target_labels[sampled_inds])
 
@@ -409,7 +437,7 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
+        matched_gt_labels: List[Tensor],
         matched_gt_boxes: List[Tensor],
         anchors: List[Tensor],
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
@@ -420,31 +448,40 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
         Args:
             prediction: detection predictions for loss computation
 
-                ``'box_logits'`` (Tensor)
-                    classification logits for each anchor [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``'box_deltas'`` (Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
-            Tensor: dict with losses (reg for regression loss, cls
-                for classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
+            Tensor: dict with losses (reg for regression loss, cls for
+                classification loss)
+            Tensor: sampled positive indices of anchors
+                (after concatenation if sampled otherwise None)
+            Tensor: sampled negative indices of anchors
+                (after concatenation, if sampled otherwise None)
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(matched_gt_labels, box_logits)
         sampled_inds = cat([sampled_pos_inds, sampled_neg_inds], dim=0)
-        target_labels = cat(target_labels, dim=0)
+        target_labels = cat(matched_gt_labels, dim=0)
 
         batch_matched_gt_boxes = cat(matched_gt_boxes, dim=0)
         batch_anchors = cat(anchors, dim=0)
@@ -489,7 +526,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
     def compute_loss(
         self,
         prediction: Dict[str, Tensor],
-        target_labels: List[Tensor],
+        matched_gt_labels: List[Tensor],
         matched_gt_boxes: List[Tensor],
         anchors: List[Tensor],
     ) -> Tuple[Dict[str, Tensor], torch.Tensor, torch.Tensor]:
@@ -497,31 +534,45 @@ class BoxHeadHNMNative(BoxHeadHNM):
         Compute regression and classification loss
         N anchors over all images; M anchors per image => sum(M) = N
 
-        This head decodes the relative offsets from the networks and computes
-        the regression loss directly on the bounding boxes (e.g. for GIoU loss)
-
         Args:
             prediction: detection predictions for loss computation
-            target_labels (List[Tensor]): target labels for each anchor
-                (per image) [M]
+
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
+
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
+
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[N, dim *  2]], N=number of anchors per image
-            anchors: anchors per image List[[N, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
             Tensor: dict with losses (reg for regression loss, cls for
                 classification loss)
-            Tensor: sampled positive indices of anchors (after concatenation)
-            Tensor: sampled negative indices of anchors (after concatenation)
+            Tensor: sampled positive indices of anchors
+                (after concatenation if sampled otherwise None)
+            Tensor: sampled negative indices of anchors
+                (after concatenation, if sampled otherwise None)
         """
         box_logits, box_deltas = prediction["box_logits"], prediction["box_deltas"]
 
         losses = {}
         # with torch.no_grad():
-        sampled_pos_inds, sampled_neg_inds = self.select_indices(target_labels, box_logits)
+        sampled_pos_inds, sampled_neg_inds = self.select_indices(matched_gt_labels, box_logits)
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 
-        target_labels = torch.cat(target_labels, dim=0)
+        target_labels = torch.cat(matched_gt_labels, dim=0)
         batch_anchors = torch.cat(anchors, dim=0)
         pred_boxes_sampled = self.coder.decode_single(box_deltas[sampled_pos_inds], batch_anchors[sampled_pos_inds])
 

@@ -202,7 +202,7 @@ class BaseRetinaNet(AbstractDetector):
 
         pred_detection, anchors, pred_seg, features = self(images)
 
-        labels, matched_gt_boxes, _ = assign_targets_to_anchors(
+        matched_gt_labels, matched_gt_boxes, _ = assign_targets_to_anchors(
             proposal_matcher=self.proposal_matcher,
             anchors=anchors,
             target_boxes=target_boxes,
@@ -212,7 +212,12 @@ class BaseRetinaNet(AbstractDetector):
         )
 
         losses = {}
-        head_losses, pos_idx, neg_idx = self.head.compute_loss(pred_detection, labels, matched_gt_boxes, anchors)
+        head_losses, pos_idx, neg_idx = self.head.compute_loss(
+            prediction=pred_detection,
+            matched_gt_labels=matched_gt_labels,
+            matched_gt_boxes=matched_gt_boxes,
+            anchors=anchors,
+        )
         losses.update(head_losses)
 
         if self.segmenter is not None:

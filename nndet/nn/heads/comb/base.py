@@ -24,8 +24,11 @@ class AnchorHead(BaseHead):
         shared: Optional[torch.nn.Module] = None,
     ):
         """
-        Provides an abstract interface for an module which takes
-        inputs and computed its own loss
+        Provide a base class for heads which can process anchors. Provides
+        implementations to forward through subnetworks, postprocess
+        predictions and retrieve targets. The loss computation
+        depends on the subclasses (usually dense vs sampled anchors
+        computations).
 
         Args:
             classifier: classifier module
@@ -49,22 +52,26 @@ class AnchorHead(BaseHead):
         Forward feature maps through head modules
 
         Args:
-            fmaps: list of feature maps for head module
-                [N, C, spatial_dims]
+            fmaps: feature maps exracted from pooling operation for each
+                proposal [N, C, dims], where N is the number of RoIs,
+                C is the number of input channels and dims are
+                spatial dimensions
 
         Returns:
             Dict[str, torch.Tensor]: predictions
 
-                ``'box_deltas'`` (torch.Tensor)
-                    bounding box offsets
-                    [Num_Anchors_Batch, (num_classes), dim * 2];
-                    num classes is only present if anchors were regressed
-                    for each class individually
+                ``'box_deltas'`` torch.Tensor
+                    predicted bounding box offsets
+                    [Num_Anchors_Batch, dim * 2] where Num_Anchors_Batch
+                    is the total numbers of anchors in the batch and
+                    dim is the number of spatial dimensions
 
-                ``'box_logits'`` (torch.Tensor)
-                    classification logits
-                    [Num_Anchors_Batch, num_classes]
-
+                ``'box_logits'`` torch.Tensor
+                    predicted classification logits
+                    [Num_Anchors_Batch, num_classes] where Num_Anchors_Batch
+                    is the total numbers of anchors in the batch and
+                    num_classes is the number of foreground (+1 if softmax)
+                    classes
         """
         logits, offsets = [], []
         for level, p in enumerate(fmaps):
@@ -95,18 +102,40 @@ class AnchorHead(BaseHead):
         Args:
             Dict[str, torch.Tensor]: predictions from this head
 
-                ``'box_logits'`` (torch.Tensor)
-                    classification logits for each anchor [N]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``'box_deltas'`` (torch.Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            List[torch.Tensor]: anchors per image
+            List[torch.Tensor]: anchor / proposals for each image of shape
+                [N, dim * 2] where N is the number of anchors per image,
+                and dim is the number of spatial dimensions
 
-        # TODO: return
-        # TODO: tests
-        # TODO: docs
+        Returns:
+            Dict[str, Tensor]: postprocessed predictions
+
+                ``'pred_boxes'`` torch.Tensor
+                    predicted bounding boxes in
+                    (x1, y1, x2, y2, (z1, z2) (* num_classes)) format with
+                    shape [N, (num_classes *) dim * 2], where N is the number
+                    of anchors and dim is the number of spatial dimensions.
+                    num_classes is the number of foreground classes
+                    and only present if class specific regression is used.
+
+                ``'pred_probs'`` torch.Tensor
+                    predicted probabilities/scores [N, num_classes], where
+                    N is the number of anchors and num_classes is the number
+                    of foreground classes
+
+        Notes:
+            Class specific regression is not yet implemented and thus
+            num_classes will always be one for the *regression* outputs.
         """
         postprocess_predictions = {
             "pred_boxes": self.coder.decode(prediction["box_deltas"], anchors),
@@ -151,7 +180,7 @@ class AnchorHead(BaseHead):
     def compute_loss(
         self,
         prediction: Dict[str, torch.Tensor],
-        target_labels: List[torch.Tensor],
+        matched_gt_labels: List[torch.Tensor],
         matched_gt_boxes: List[torch.Tensor],
         anchors: List[torch.Tensor],
     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
@@ -162,19 +191,25 @@ class AnchorHead(BaseHead):
         Args:
             prediction: detection predictions for loss computation
 
-                ``'box_logits'`` (torch.Tensor)
-                    classification logits for each anchor
-                    [N, num_classes]
+                ``'box_deltas'`` torch.Tensor
+                    bounding box deltas of shape [N, (num_classes *) dim * 2],
+                    where N=number of anchors, dim=number of spatial dimensions,
+                    and num_classes is the number of foreground classes.
+                    num_classes is only used for class specific regression.
 
-                ``'box_deltas'`` (torch.Tensor)
-                    offsets for each anchor
-                    (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                ``'box_logits'`` torch.Tensor
+                    classification logits [N, num_classes] where N is the
+                    number of anchors and num_classes is the number of
+                    foreground classes
 
-            # TODO: rename target labels
-            target_labels: target labels for each anchor (per image) [M]
+            matched_gt_labels: target labels for each anchor (per image) [M]
+                where M is the number of anchors per image
             matched_gt_boxes: matched gt box for each anchor
-                List[[M, dim *  2]]
-            anchors: anchors per image List[[M, dim *  2]]
+                List[[M, dim *  2]], where M is the number of anchors per
+                image and dim is the number of spatial dimensions
+            anchors: anchors per image List[[M, dim *  2]], where M is the
+                number of anchors per image and dim is the number of
+                spatial dimensions
 
         Returns:
             Tensor: dict with losses (reg for regression loss, cls for
@@ -182,7 +217,7 @@ class AnchorHead(BaseHead):
             Tensor: sampled positive indices of anchors
                 (after concatenation if sampled otherwise None)
             Tensor: sampled negative indices of anchors
-            (after concatenation, if sampled otherwise None)
+                (after concatenation, if sampled otherwise None)
         """
         raise NotImplementedError
 
