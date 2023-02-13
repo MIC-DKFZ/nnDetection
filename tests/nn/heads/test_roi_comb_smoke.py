@@ -31,6 +31,7 @@ EXAMPLE_CONFIG = {
     "num_classes": NUM_CLASSES,
 }
 PROPOSALS = [torch.tensor([[1.0, 1.0, 2.0, 2.0, 1.0, 2.0]]).expand(N // 4, DIM * 2) for _ in range(4)]
+PROPOSAL_BOXES = torch.tensor([[1.0, 1.0, 2.0, 2.0, 1.0, 2.0]]).expand(N, DIM * 2)
 
 
 @pytest.fixture
@@ -83,6 +84,16 @@ def test_head_agnostic(module_cls: Type[RoIHead], classifier, regressor_agnostic
     assert tuple(preds_post["pred_boxes"].shape) == (N, DIM * 2)
     assert tuple(preds_post["pred_probs"].shape) == (N, NUM_CLASSES)
 
+    matched_gt_labels = torch.tensor([x % (NUM_CLASSES + 1) for x in range(N)])
+    loss, pos_inds, neg_inds = head.compute_loss(
+        prediction=preds,
+        matched_gt_labels=matched_gt_labels,
+        matched_gt_boxes=PROPOSAL_BOXES,
+        proposal_boxes=PROPOSAL_BOXES,
+    )
+    assert "reg" in loss
+    assert "cls" in loss
+
 
 @pytest.mark.parametrize("module_cls", [RoIBoxHead])
 def test_head_specific(module_cls: Type[RoIHead], classifier, regressor_specific, coder):
@@ -104,3 +115,16 @@ def test_head_specific(module_cls: Type[RoIHead], classifier, regressor_specific
     assert "pred_probs" in preds_post
     assert tuple(preds_post["pred_boxes"].shape) == (N, DIM * 2 * NUM_CLASSES)
     assert tuple(preds_post["pred_probs"].shape) == (N, NUM_CLASSES)
+
+    matched_gt_labels = torch.tensor([x % (NUM_CLASSES + 1) for x in range(N)])
+    matched_gt_boxes = torch.tensor([[1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0]]).expand(
+        N, DIM * 2 * NUM_CLASSES
+    )
+    loss, pos_inds, neg_inds = head.compute_loss(
+        prediction=preds,
+        matched_gt_labels=matched_gt_labels,
+        matched_gt_boxes=matched_gt_boxes,
+        proposal_boxes=PROPOSAL_BOXES,
+    )
+    assert "reg" in loss
+    assert "cls" in loss
