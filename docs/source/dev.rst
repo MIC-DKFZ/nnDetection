@@ -240,6 +240,7 @@ Predict Mixins
 The prediction consists of two parts: `sweep` which is executed after the training to determine the best inference parameters and `get_predictor` which will create a predictor object to run inference.
 These methods can be used to customize the sweeping and inference strategy of the module by exchanging the initialization of the `Sweeper` Object and `Predictor` / `Ensembler` objects.
 
+
 Customized Losses
 -----------------
 
@@ -250,12 +251,18 @@ There are four different loss categories in nnDetection:
    the number of spatial dimenesions. Example shapes: RetinaNet `[N, #dims * 2]`, RCNN `[R, #dims * 2]`,
    DETR `[T, #dims * 2]` where `N` is the number of anchors, `R` is the number of RoIs, `T` number
    of matched boxes.
-- `classification`: these losses are used for classification task and receive inputs int the form
-   `[*, C]` where `*` are arbitrary dimensions and `C` is the number of classes. The targets
+- `classification`: these losses are used for classification task and receive inputs in the form
+   `[*, C]` where `*` are arbitrary dimensions and `C` is the number of *foreground* classes. The targets
    are encoded as numerical values. Note this is different to pytorch where the number
    of classes is usually located at the first dimension. Example shapes: RetinaNet `[N, C]`,
-   RCNN `[R, C]`, DETR `[B, T, #dims * 2]` where `N` is the number of anchors,
+   RCNN `[R, C]`, DETR `[B, T, C]` where `N` is the number of anchors,
    `R` is the number of RoIs, `B` is the batch size, `T` number of boxes per image.
+   In this setting, the targets are provided as numerical values where `0`
+   is considered background and thus when creating the one hot encoding the 
+   first channel (which is filled with 0s) is removed (so the maximal value in
+   targets is `C+1` in this case). This is different from the segmentation losses
+   where number of classes refers to the total number of clases (i.e. in this
+   case the maximal value in targets should be equal to `C`)!
 - `segmentation`: these losses are used for per-location classifiation of feature maps.
    They receive input in the form of `[B, C, *]`, where `B` is the batch size, 
    `C` is the number of classes and `*` are arbitrary dimensions.
@@ -263,6 +270,11 @@ There are four different loss categories in nnDetection:
    The input follows the same format at segmentation losses but the targets
    are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
    the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
+
+
+Custom Splits
+-------------
+#TODO: add docs
 
 
 Evaluation

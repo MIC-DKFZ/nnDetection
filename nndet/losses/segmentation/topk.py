@@ -1,5 +1,7 @@
-from loguru import logger
-from torch import Tensor
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+import torch
 
 from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
 
@@ -13,16 +15,16 @@ class TopKCESegLoss(CESegLoss):
         **kwargs,
     ):
         """
-        Uses topk percent of values to compute CE loss
-        (expects pre softmax logits!)
+        TopK with CE Loss
 
         Args:
             topk: percentage of all entries to use for loss computation
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: passed to `nndet.losses.segmentation.ce.CESegLoss`
         """
-        if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss." "This will always return the mean!")
+        if "reduction" in kwargs and not kwargs.pop("reduction") == "mean":
+            raise ValueError("TopK Loss only supports 'mean' reduction")
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
@@ -32,31 +34,37 @@ class TopKCESegLoss(CESegLoss):
         if topk < 0 or topk > 1:
             raise ValueError("topk needs to be in the range [0, 1].")
         self.topk = topk
-        logger.info(f"TopK loss uses topk: {self.topk:.2f}")
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
-        Compute CE loss and uses mean of topk percent of the entries
+        Compute Loss
 
         Args:
-            input: logits for all foreground classes [N, C, * ]
-            target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [N, * ]
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
+                dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
-            Tensor: final loss
+            torch.Tensor: computed loss
         """
-        losses = super().forward(input, target)
-
+        losses = super().forward(preds, targets)
         k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
+
+    def extra_repr(self) -> str:
+        return f"topk={self.topk}"
 
 
 class TopKBCESegLoss(BCESegLoss):
     def __init__(
         self,
         topk: float,
-        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         **kwargs,
@@ -67,37 +75,41 @@ class TopKBCESegLoss(BCESegLoss):
 
         Args:
             topk: percentage of all entries to use for loss computation
-            smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: passed to `nndet.losses.segmentation.ce.BCESegLoss`
         """
-        if "reduction" in kwargs:
-            raise ValueError("Reduction is not supported in TopKLoss." "This will always return the mean!")
+        if "reduction" in kwargs and not kwargs.pop("reduction") == "mean":
+            raise ValueError("TopK Loss only supports 'mean' reduction")
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
             reduction="none",
             **kwargs,
         )
-        self.smoothing = smoothing
-        if smoothing > 0:
-            logger.info(f"Running label smoothing with smoothing: {smoothing}")
-
         self.topk = topk
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+    def forward(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
         """
-        Compute BCE loss based on one hot encoding of foreground(!) classes
-        and uses mean of topk percent of the entries
+        Compute Loss
 
         Args:
-            input: logits for all foreground(!) classes [N, C, * ]
-            target: target classes [N, * ]. Targets will be encoded with one
-                hot and 0 is treated as the background class and removed.
+            preds: predictions (without act). [N, C, *], where N is the batch
+                size, C is the number of classes, * are arbitrary spatial
+                dimensions
+            targets: numerical target values. [N, *], where N is the batch
+                size, * are arbitrary spatial dimensions
 
         Returns:
-            Tensor: final loss
+            torch.Tensor: computed loss
         """
-        losses = super().forward(input, target)
+        losses = super().forward(preds, targets)
         k = int(max(losses.numel() * self.topk, 1))
         return losses.view(-1).topk(k=k, sorted=False)[0].mean()
+
+    def extra_repr(self) -> str:
+        return f"topk={self.topk}"
