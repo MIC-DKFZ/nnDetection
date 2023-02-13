@@ -21,8 +21,8 @@ def soft_dice(
         targets_one_hot: targets encoded as one hot. [N, C, *], where
             N is the batch size, C is the number of classes, * are
             arbitrary spatial dimensions
-        smooth_nom: constant added to nominator for numerical stabilty
-        smooth_denom: contant added to denominator for numerical stabilty
+        smooth_nom: constant added to nominator for numerical stability
+        smooth_denom: constant added to denominator for numerical stability
         batch_dice: compute statistics for each class across the whole batch
             instead of computing if per image per class
 
@@ -36,6 +36,6 @@ def soft_dice(
         dim = list(range(2, preds.ndim))
 
     # shapes refer to non-batch_dice version
-    union = 2 * (preds * targets_one_hot).sum(dim=dim)  # [N, C] or [C]
-    intersection = preds.sum(dim=dim) + targets_one_hot.sum(dim=dim)  # [N, C] or [C]
-    return -1 * (union + smooth_nom) / (intersection + smooth_denom)
+    intersection = 2 * (preds * targets_one_hot).sum(dim=dim)  # [N, C] or [C]
+    union = preds.sum(dim=dim) + targets_one_hot.sum(dim=dim)  # [N, C] or [C]
+    return -1 * (intersection + smooth_nom) / (union + smooth_denom)
