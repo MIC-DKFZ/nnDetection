@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -19,7 +19,7 @@ class AbstractTransformer(nn.Module):
         query_embed: torch.Tensor,
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
-    ) -> Tuple[Union[torch.Tensor, None], ...]:
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
         """
         Compute the output box embeddings given the input features, position
         embedding and query embedding
