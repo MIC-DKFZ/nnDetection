@@ -6,7 +6,7 @@
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,11 @@ from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 
 
 class DETRTransformer(nn.Module):
-    def __init__(self, encoder: TransformerLayerSequence, decoder: TransformerLayerSequence):
+    def __init__(
+        self,
+        encoder: TransformerLayerSequence,
+        decoder: TransformerLayerSequence,
+    ):
         """
         Transformer module for DETR.
         Args:
@@ -40,7 +44,7 @@ class DETRTransformer(nn.Module):
         query_embed: torch.Tensor,
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
-    ) -> Tuple[Union[torch.Tensor, None], ...]:
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
         """
         Compute the output box embeddings given the input features, position
         embedding and query embedding
@@ -56,8 +60,7 @@ class DETRTransformer(nn.Module):
         Returns:
             Tensor: output box embeddings (output of the decoder)
                 ((num_decoder_layers), bs, num_queries, C)
-            Tensor: refined feature sequence (output of the encoder)
-                (bs, C, H, W, (Z))
+            Tensor: references from the transformer decoder
             Optional(Tensor): References from the transformer decoder
                 ((num_decoder_layers), bs, num_queries, dim)
         """
@@ -104,4 +107,4 @@ class DETRTransformer(nn.Module):
         else:
             memory = memory.permute(1, 2, 0).reshape(bs, c, h, w, z)
 
-        return hidden_state, memory, references
+        return hidden_state, references, None

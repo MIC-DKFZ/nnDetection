@@ -24,6 +24,7 @@ class BaseDETR(AbstractDetector):
         query_dim: int,
         num_feature_levels: int = 1,
         segmenter: Optional[Segmenter] = None,
+        two_stage: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
@@ -47,6 +48,7 @@ class BaseDETR(AbstractDetector):
         self.channel_mapper = channel_mapper
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
+        self.two_stage = two_stage
 
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
@@ -245,13 +247,24 @@ class BaseDETR(AbstractDetector):
         for feature in mapped_features:
             pos_embeds.append(self.pos_embed(feature))
         # transformer
-        out_sequence, memory, reference = self.transformer(mapped_features, self.query_pos.weight, pos_embeds)
+        out_sequence, reference, encoder_predictions = self.transformer(
+            mapped_features, self.query_pos.weight, pos_embeds
+        )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
+        # predictions: Dict containing already made predictions
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(out_sequence, reference)
+
+        # if a two-stage model is used, add encoder predictions to output
+        if self.two_stage:
+            assert encoder_predictions is not None, "Two stage is not supported by this transformer"
+            enc_outputs_coord = encoder_predictions[1].sigmoid()
+            pred_detections["enc_outputs"] = {
+                "pred_logits": encoder_predictions[0],
+                "pred_boxes": enc_outputs_coord,
+            }
 
         # optionally forward seg head
         pred_seg = self.segmenter(features) if self.segmenter is not None else None
