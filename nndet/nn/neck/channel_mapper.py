@@ -35,6 +35,7 @@ class ChannelMapper(nn.Module):
         """
         Channel Mapper for reduce/increase channels of backbone features.
         This is used to reduce/increase the channels of backbone features.
+
         Args:
             dim: dimension, either 2 or 3
             input_shape: A dict which contains the backbone features meta
@@ -111,10 +112,12 @@ class ChannelMapper(nn.Module):
     def forward(self, inputs: List[torch.Tensor]) -> List[torch.Tensor]:
         """
         Forward function for ChannelMapper
+
         Args:
-            inputs (List[torch.Tensor]): The backbone feature maps.
-        Return:
-            tuple(torch.Tensor): A tuple of the processed features.
+            inputs: The backbone feature maps.
+
+        Returns:
+            tuple: A tuple of the processed features.
         """
         outs = [self.convs[i](inputs[in_feature]) for i, in_feature in enumerate(self.in_features)]
         if self.extra_convs:

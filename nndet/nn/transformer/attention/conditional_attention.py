@@ -27,6 +27,7 @@ class ConditionalSelfAttention(nn.Module):
         Conditional Self-Attention Module used in Conditional-DETR
         `Conditional DETR for Fast Training Convergence.
         <https://arxiv.org/pdf/2108.06152.pdf>`_
+
         Args:
             embed_dim: The embedding dimension for attention.
             num_heads: The number of attention heads.
@@ -65,6 +66,7 @@ class ConditionalSelfAttention(nn.Module):
         """Forward function for `ConditionalSelfAttention`
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
+
         Args:
             query: Query embeddings with shape
                 `(num_query, bs, embed_dim)` if self.batch_first is False,
@@ -160,6 +162,7 @@ class ConditionalCrossAttention(nn.Module):
     """Conditional Cross-Attention Module used in Conditional-DETR
     `Conditional DETR for Fast Training Convergence.
     <https://arxiv.org/pdf/2108.06152.pdf>`_
+
     Args:
         embed_dim: The embedding dimension for attention.
         num_heads: The number of attention heads.
