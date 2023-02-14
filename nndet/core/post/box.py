@@ -18,7 +18,7 @@ from nndet.core.boxes.nms import batched_nms
 class BoxPostprocessing:
     def __init__(
         self,
-        num_foreground_classes: int,
+        num_classes: int,
         nms_thresh: float = 1.0,
         remove_small_boxes: Optional[float] = None,
         detections_per_img: Optional[int] = None,
@@ -31,10 +31,19 @@ class BoxPostprocessing:
         from a detection model.
 
         Args:
-            regress_class_agnostic: todo
+            num_classes: number of foreground classes
+            nms_threshold: IoU threshold for non-maximum supression
+            remove_small_boxes: remove boxes where any side is smaller
+                than the specified threshold
+            detections_per_img: number of detections per image
+            topk_candidates: used to reduce the candidates before applying
+                non-maximum supression
+            score_thresh: minimal score threshold for predictions
+            is_class_agnostic: indicate whether regression predictions
+                are class agnostic or class specific
         """
         super().__init__()
-        self.num_foreground_classes = num_foreground_classes
+        self.num_classes = num_classes
         self.nms_thresh = nms_thresh
         self.remove_small_boxes = remove_small_boxes
         self.detections_per_img = detections_per_img
@@ -137,8 +146,8 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             keep_idxs = probs > self.score_thresh
             probs, idx = probs[keep_idxs], idx[keep_idxs]
 
-        anchor_idxs = torch.div(idx, self.num_foreground_classes, rounding_mode="floor")
-        labels = idx % self.num_foreground_classes
+        anchor_idxs = torch.div(idx, self.num_classes, rounding_mode="floor")
+        labels = idx % self.num_classes
         boxes = boxes[anchor_idxs]
 
         if self.remove_small_boxes is not None:
@@ -176,13 +185,13 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             Tensor: final class label [R]
         """
         assert img_reps.shape[0] == img_probs.shape[0]
-        assert img_probs.shape[-1] == self.num_foreground_classes
+        assert img_probs.shape[-1] == self.num_classes
         assert (img_reps.shape[1] == img_probs.shape[-1] * 6) or (img_reps.shape[1] == img_probs.shape[-1] * 4)
 
-        img_labels = torch.arange(self.num_foreground_classes, device=img_probs.device)
+        img_labels = torch.arange(self.num_classes, device=img_probs.device)
         img_labels = img_labels.view(1, -1).expand_as(img_probs)  # [N, C]
 
-        dims = img_reps.shape[1] // self.num_foreground_classes
+        dims = img_reps.shape[1] // self.num_classes
         boxes = img_reps.reshape(-1, dims)  # [R, 2 * dims]
         probs = img_probs.reshape(-1)  # [R]
         labels = img_labels.reshape(-1)  # [R]

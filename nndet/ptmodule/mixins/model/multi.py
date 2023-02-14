@@ -359,7 +359,7 @@ class RoIBuildMixin:
         logger.info(f"Building:: roi box postprocessing {name}: {kwargs}")
 
         roi_box_post = cls.roi_box_post_cls(
-            num_foreground_classes=plan_arch["classifier_classes"],
+            num_classes=plan_arch["classifier_classes"],
             is_class_agnostic=cls.roi_regressor_cls.is_class_agnostic(),
             **model_cfg["roi_box_post_kwargs"],
         )
@@ -387,7 +387,8 @@ class RoIBuildMixin:
             logger.info(f"Building:: roi mask postprocessing {name}: {kwargs}")
 
             roi_mask_post = cls.roi_mask_post_cls(
-                class_agnostic=cls.roi_masker_cls.is_class_agnostic(),  # FIXME
+                num_classes=plan_arch["classifier_classes"],
+                is_class_agnostic=cls.roi_masker_cls.is_class_agnostic(),
                 **model_cfg["roi_mask_post_kwargs"],
             )
         else:

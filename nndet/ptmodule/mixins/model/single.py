@@ -430,7 +430,7 @@ class SingleStageMixin(ModelMixin):
         logger.info(f"Building:: box postprocessing {name}: {kwargs}")
 
         box_post = cls.box_post_cls(
-            num_foreground_classes=plan_arch["classifier_classes"],
+            num_classes=plan_arch["classifier_classes"],
             is_class_agnostic=cls.head_regressor_cls.is_class_agnostic(),
             **kwargs,
         )
