@@ -99,9 +99,6 @@ class SetModelMixin(ModelMixin):
             channels=backbone.get_channels(),
         )
 
-        transformer = cls._build_transformer(plan_arch=plan_arch, model_cfg=model_cfg)
-
-        # head & matching
         classifier = cls._build_classifier(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -110,6 +107,15 @@ class SetModelMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
+
+        transformer = cls._build_transformer(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            classifier=classifier,
+            regressor=regressor,
+        )
+
+        # head & matching
         matcher = cls._build_matcher(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -172,6 +178,8 @@ class SetModelMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
     ):
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(

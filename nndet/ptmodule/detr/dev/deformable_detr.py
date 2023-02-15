@@ -6,24 +6,37 @@ from typing import Type
 
 from nndet.core.boxes.criterions.base import ClassCriterion
 from nndet.core.boxes.criterions.cls import FocalClassCriterionSigmoid
-from nndet.core.deformable_detr import DeformableDETR
 from nndet.core.post.detr import DETRBoxPost, TopKBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.deformable_detr import DeformableDETRHead
+from nndet.nn.layers.conv.conv_only import ConvOnly
+from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.deformable_detr import (
+    DeformableDETRTransformerDecoder,
+    DeformableDETRTransformerEncoder,
+)
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.dev.c001 import BoxDETRC001
 from nndet.ptmodule.mixins.model.deformable_detr import DeformableSetModelMixin
+from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
 class BoxDeformableDETRC001Focal(DeformableSetModelMixin, BoxDETRC001):
-    detector_cls = DeformableDETR
-    transformer_cls = DeformableDETRTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
+
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
+
+    transformer_encoder_cls: TransformerLayerSequence = DeformableDETRTransformerEncoder
+    transformer_decoder_cls: TransformerLayerSequence = DeformableDETRTransformerDecoder
+    transformer_cls: AbstractTransformer = DeformableDETRTransformer
 
     head_cls: DETRHead = DeformableDETRHead  #: main DETR head
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class

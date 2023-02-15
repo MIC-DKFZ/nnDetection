@@ -1,27 +1,22 @@
-# coding=utf-8
-# Copyright 2022 The IDEA Authors. All rights reserved.
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Parts of this code are from transoar licensed under
+# SPDX-FileCopyrightText: 2022, Bastian Wittmann
+# SPDX-License-Identifier: Apache-2.0
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Parts of this code are from detrex licensed under
+# SPDX-FileCopyrightText: 2022, The IDEA Authors
+# SPDX-License-Identifier: Apache-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ------------------------------------------------------------------------------------------------
-# Deformable DETR
-# Copyright (c) 2020 SenseTime. All Rights Reserved.
-# Licensed under the Apache License, Version 2.0 [see LICENSE for details]
-# ------------------------------------------------------------------------------------------------
-# Modified from:
-# https://github.com/fundamentalvision/Deformable-DETR/blob/main/models/ops/functions/ms_deform_attn_func.py
-# https://github.com/fundamentalvision/Deformable-DETR/blob/main/models/ops/modules/ms_deform_attn.py
-# https://github.com/open-mmlab/mmcv/blob/master/mmcv/ops/multi_scale_deform_attn.py
-# ------------------------------------------------------------------------------------------------
+# Parts of this code are from mmdetection licensed under
+# SPDX-FileCopyrightText: 2022, OpenMMLab
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from Deformable-DETR licensed under
+# SPDX-FileCopyrightText: 2020, SenseTime
+# SPDX-License-Identifier: Apache-2.0
 
 import math
 import warnings

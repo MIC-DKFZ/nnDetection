@@ -1,23 +1,19 @@
-# coding=utf-8
-# Copyright 2022 The IDEA Authors. All rights reserved.
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Parts of this code are from detrex licensed under
+# SPDX-FileCopyrightText: 2022, The IDEA Authors
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 
+from nndet.nn.heads.classifier.ffn import FFNClassifier
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
@@ -29,6 +25,8 @@ class DeformableDETRTransformer(nn.Module):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
         num_feature_levels: int = 4,
         as_two_stage: bool = False,
         two_stage_num_proposals: int = 300,
@@ -218,8 +216,8 @@ class DeformableDETRTransformer(nn.Module):
             spatial_shape = (d, h, w)
             spatial_shapes.append(spatial_shape)
             if mask is None:
-                mask_list.append(torch.zeros((bs, d, h, w)))
-                mask_flatten.append(mask_list[lvl].flatten(2))  # bs, dhw
+                mask_list.append(torch.zeros((bs, d, h, w), dtype=torch.bool, device=feat.device))
+                mask_flatten.append(mask_list[lvl].flatten(1))  # bs, dhw
             else:
                 mask_flatten.append(mask_list[lvl].permute(0, 3, 2, 1).flatten(1))  # bs, dhw
             feat = feat.permute(0, 1, 4, 3, 2).flatten(2).transpose(1, 2)  # bs, dhw, c
@@ -254,7 +252,7 @@ class DeformableDETRTransformer(nn.Module):
             output_memory, output_proposals = self.gen_encoder_output_proposals(memory, mask_flatten, spatial_shapes)
             # output_memory: bs, num_tokens, c
             # output_proposals: bs, num_tokens, 6. unsigmoided.
-
+            # Class Embed and Bbox embed
             enc_outputs_class = self.decoder.class_embed(
                 output_memory,
                 layer=self.decoder.num_layers,
@@ -278,6 +276,7 @@ class DeformableDETRTransformer(nn.Module):
             )
             query_pos, query = torch.split(pos_trans_out, c, dim=2)
         else:
+            # If not using two stage: use the given query embed for content and position queries
             query_pos, query = torch.split(query_embed, c, dim=1)
             query_pos = query_pos.unsqueeze(0).expand(bs, -1, -1)
             query = query.unsqueeze(0).expand(bs, -1, -1)

@@ -1,3 +1,7 @@
+from typing import Optional
+
+from nndet.nn.heads.classifier.ffn import FFNClassifier
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.ptmodule.mixins.model.detr import SetModelMixin
 
 
@@ -7,6 +11,8 @@ class DeformableSetModelMixin(SetModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
     ):
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(

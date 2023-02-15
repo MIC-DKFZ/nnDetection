@@ -4,7 +4,7 @@ detection_per_img: 24  # number of detections per image
 two_stage: True
 
 # global parameters
-hidden_dim: 248 # feature length of the transformer input (must be divisible by the number of attention heads)
+hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
 num_feature_levels: 1
 
 # backbone
