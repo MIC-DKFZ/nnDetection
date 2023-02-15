@@ -32,13 +32,13 @@ class ConvOnly(BaseConvNormAct):
             dim: number of dimensions the convolution should be chosen for
             in_channels: input channels
             out_channels: output_channels
-            norm: type of normalization. If None, no normalization will be applied
+            norm: type of normalization. If None, no normalization will be
+                applied
             kernel_size: size of convolution kernel
             act: class of non linearity; if None no activation is used.
             stride: convolution stride
-            padding: padding value
-                (if input or output padding depends on whether the convolution
-                is transposed or not)
+            padding: padding value (if input or output padding depends on
+                whether the convolution is transposed or not)
             dilation: convolution dilation
             groups: number of convolution groups
             bias: whether to include bias or not

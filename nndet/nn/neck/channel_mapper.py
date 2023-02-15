@@ -27,27 +27,21 @@ class ChannelMapper(nn.Module):
         **kwargs,
     ):
         """
-        Channel Mapper for reduce/increase channels of backbone features.
-        This is used to reduce/increase the channels of backbone features.
+        Channel Mapper for reducing/increasing channels of backbone features to
+        the same dimension.
 
         Args:
-            dim: dimension, either 2 or 3
-            input_shape: A dict which contains the backbone features meta
-                information.
-            in_features: A list contains the keys which maps the features output
-                from the backbone
+            conv: generator to create the convolution
+            in_channels: list containing the number of channels of the backbone
+                features
+            num_in_features: number of backbone feature maps that should be used
+            kernel_size: Size of the convolution kernel for each scale.
             out_channels: Number of output channels for each scale.
-            kernel_size: Size of the convolving kernel for each scale.
-            stride: Stride of convolution for each scale.
-            bias: If True, adds a learnable bias to the output of each scale.
-            groups: Number of blocked connections from input channels to output
-                channels for each scale.
-            dilation: Spacing between kernel elements for each scale.
-            norm_layer: The norm layer used for each scale.
-            activation: The activation layer used for each scale.
             num_outs: (Optional) Number of output feature maps. There will be
                 ``extra_convs`` when ``num_outs`` is larger than the length of
                 ``in_features``.
+            **kwargs: kwargs used by the convolution generator, could be
+                'stride', 'groups', 'bias' or other
         """
         super(ChannelMapper, self).__init__()
         self.extra_convs = None
@@ -111,39 +105,3 @@ class ChannelMapper(nn.Module):
                 else:
                     outs.append(self.extra_convs[i](outs[-1]))
         return outs
-
-
-class GroupNormChannelMapper(ChannelMapper):
-    """
-    Channel Mapper that uses Group Norm
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        in_channels: List[int],
-        in_features: List[int],
-        out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        bias: bool = True,
-        groups: int = 1,
-        dilation: int = 1,
-        activation: nn.Module = None,
-        num_outs: int = None,
-        **kwargs,
-    ):
-        super().__init__(
-            dim=dim,
-            in_channels=in_channels,
-            in_features=in_features,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            bias=bias,
-            groups=groups,
-            dilation=dilation,
-            norm_layer="Group",
-            activation=activation,
-            num_outs=num_outs,
-        )

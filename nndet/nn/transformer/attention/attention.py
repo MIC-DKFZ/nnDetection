@@ -40,6 +40,8 @@ class MultiheadAttention(nn.Module):
             proj_drop_value: A Dropout layer after `MultiheadAttention`.
             batch_first: if `True`, then the input and output tensor will be
                 provided as `(bs, n, embed_dim)`.
+            **kwargs: kwargs for nn.MultiheadAttention, could include
+                'add_bias_kv', 'kdim', 'vdim'
         """
         super(MultiheadAttention, self).__init__()
         self.embed_dim = embed_dim
@@ -69,9 +71,9 @@ class MultiheadAttention(nn.Module):
         **kwargs,
     ) -> torch.Tensor:
         """
-        Forward function for `MultiheadAttention`
-        **kwargs allow passing a more general data flow when combining with
-        other operations in `transformerlayer`.
+        Forward function for `MultiheadAttention`. **kwargs allow passing a more
+        general data flow when combining with other operations in
+        `transformerlayer`.
 
         Args:
             query: Query embeddings with shape `(num_query, bs, embed_dim)` if
