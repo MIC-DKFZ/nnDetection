@@ -11,10 +11,11 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 
 
-class DETRTransformer(nn.Module):
+class DETRTransformer(AbstractTransformer):
     def __init__(
         self,
         encoder: TransformerLayerSequence,
