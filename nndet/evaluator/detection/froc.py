@@ -223,10 +223,8 @@ class FROCMetric(DetectionMetric):
             assert len(_scores) == len(_dt_matches)
 
             _fps, _sens, _th = self.compute_froc_curve_one_iou(_dt_matches, _scores, num_images, num_gt)
-            sens_interp = self.get_froc_points(_fps, _sens)
-
             # interpolate at defined fpr thresholds
-            sens_interp = np.interp(self.fpi_thresholds, _fps, _sens)
+            sens_interp = self.get_froc_points(_fps, _sens)
             scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
             meta[f"{metric_name}_IoU_{iou_val:.2f}"] = sens_interp
         return scores, meta

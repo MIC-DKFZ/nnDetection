@@ -157,3 +157,37 @@ class TestFROC:
         sens_interpolated = metric.get_froc_points(fps, sens)
         expected_sens_interpolated = np.array([0.3, 0.3, 0.5, 0.75, 0.8, 0.8, 0.8])
         assert np.allclose(sens_interpolated, expected_sens_interpolated)
+
+    def test_froc_wp_call(self, mocker: MockerFixture):
+        metric = FROCwpMetric(
+            ["benign", "malignant"],
+            iou_thresholds=[0.1],
+            fpi_thresholds=(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0),
+        )
+
+        fps = [0.14, 0.3, 0.45, 0.55, 1.0, 1.0, 2.0]
+        sens = [0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8]
+
+        froc_mock = mocker.Mock(return_value=(fps, sens, None))
+        metric.compute_froc_curve_one_iou = froc_mock
+
+        # imitate results list with entries otherwise computation won't be called
+        results_list = []
+        results_list += [
+            {
+                0: {
+                    "dtMatches": np.array([[0]]),
+                    "dtIgnore": np.array([[0]]),
+                    "dtScores": np.array([0]),
+                    "gtIgnore": np.array([0]),
+                }
+            }
+        ] * 3
+        froc_score, froc_curve = metric(results_list)
+
+        expected_sens_interpolated = np.array([0.3, 0.3, 0.5, 0.75, 0.8, 0.8, 0.8])
+        assert np.allclose(froc_curve["FROCwp_fpi_thresholds"], np.array([(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0)]))
+        assert np.allclose(froc_curve["FROCwp_IoU_0.10"], expected_sens_interpolated)
+        assert math.isclose(
+            froc_score["FROCwp_IoU_0.10"], sum(expected_sens_interpolated) / len(expected_sens_interpolated)
+        )

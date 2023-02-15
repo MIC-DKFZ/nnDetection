@@ -8,9 +8,11 @@ from nndet.core.boxes import (
     box_cxcywhczd_to_xyxyzz,
     box_edges_pixel_to_center_normalized,
 )
-from nndet.losses import GIoULoss
+from nndet.losses.regression.giou import GIoULoss
 from nndet.nn.heads.detr.matcher import SimpleHungarianMatcher
 from nndet.utils.detr_misc import accuracy
+
+# Don't use this
 
 
 class BaseDETRHead(nn.Module):

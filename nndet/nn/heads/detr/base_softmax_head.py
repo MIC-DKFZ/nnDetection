@@ -5,11 +5,13 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from nndet.core.boxes import box_center_normalized_to_edges_original
-from nndet.losses.classification import CrossEntropyLoss
+from nndet.losses.classification.ce import CELoss
 from nndet.nn.heads.detr import BaseDETRHead
 from nndet.nn.heads.detr.matcher import SimpleHungarianMatcher
 from nndet.nn.heads.detr.util import LinearClassifierCE
 from nndet.utils.mlp import MLP
+
+# Don't use this
 
 
 class BaseSoftmaxDETRHead(BaseDETRHead):
@@ -42,7 +44,7 @@ class BaseSoftmaxDETRHead(BaseDETRHead):
         )
         empty_weight = torch.ones(num_classes + 1)
         empty_weight[-1] = eos_coef
-        self.class_loss = CrossEntropyLoss(weight=empty_weight, loss_weight=1, reduction="mean")
+        self.class_loss = CELoss(weight=empty_weight, loss_weight=1, reduction="mean")
 
     def forward(self, out_sequence: Tensor, reference: Tensor):
         """

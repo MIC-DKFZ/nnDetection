@@ -4,15 +4,13 @@
 import torch
 
 from nndet.losses.classification.functional.poly1 import (
-    poly1_bce_with_logits_jit as poly1_bce_with_logits,
-)
-from nndet.losses.classification.functional.poly1 import (
-    poly1_focal_loss_with_logits_jit as poly1_focal_loss_with_logits,
+    poly1_bce_with_logits,
+    poly1_focal_loss_with_logits,
 )
 from nndet.losses.ops import SigmoidBaseLoss
 
 
-class Poly1FocalLossWithLogits(SigmoidBaseLoss):
+class Poly1BFocalLoss(SigmoidBaseLoss):
     def __init__(
         self,
         gamma: float = 2,
@@ -63,12 +61,12 @@ class Poly1FocalLossWithLogits(SigmoidBaseLoss):
         Compute loss with subclass loss function
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: ont-hot targets [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss
@@ -132,12 +130,12 @@ class Poly1BCEWithLogits(SigmoidBaseLoss):
         Compute loss with subclass loss function
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: ont-hot targets [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss

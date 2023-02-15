@@ -5,7 +5,6 @@ import torch
 from torch.cuda.amp import autocast
 
 from nndet.losses.ops import Loss
-from nndet.losses.regression.functional.smoothl1 import smooth_l1_loss_jit
 
 
 class SmoothL1Loss(Loss):
@@ -56,14 +55,14 @@ class SmoothL1Loss(Loss):
         """
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * smooth_l1_loss_jit(
+                loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
                     inp.float(),
                     target.float(),
                     beta=self.beta,
                     reduction=self.reduction,
                 )
         else:
-            loss = self.loss_weight * smooth_l1_loss_jit(
+            loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
                 inp,
                 target,
                 beta=self.beta,

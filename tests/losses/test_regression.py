@@ -3,10 +3,11 @@ import math
 import pytest
 import torch
 
-from nndet.losses.regression import GIoULoss
+# import torch function to ensure same results as old nnDet implementation
+from torch.nn.functional import smooth_l1_loss
+
 from nndet.losses.regression.diou import DIoULoss
-from nndet.losses.regression.functional.smoothl1 import smooth_l1_loss
-from nndet.losses.regression.giou import GIoULossPaired
+from nndet.losses.regression.giou import GIoULoss, GIoULossPaired
 
 
 @pytest.fixture

@@ -9,7 +9,10 @@ from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.backbone.blueprints.nextconv import ConvNeXtBackbone
 from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier import FocalClassifier
+from nndet.nn.heads.classifier.dense import BCECLassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMV2
+from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
@@ -71,3 +74,18 @@ class RetinaUNetC016Focal(RetinaUNetCV001Focal):
 @MODULE_REGISTRY.register
 class RetinaUNetC016FocalNeXt(RetinaUNetC016Focal):
     backbone_cls: Type[AbstractBackbone] = ConvNeXtBackbone
+
+
+class RetinaUNetC016V2(RetinaUNetC016):
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone
+    backbone_conv_cls = ConvInstanceLReLU
+
+    neck_cls: Type[AbstractNeck] = UFPN
+    neck_conv_cls = ConvInstanceLReLU
+
+    head_cls = BoxHeadHNM
+    head_conv_cls = ConvGroupLReLU
+    head_regressor_cls = L1Regressor
+
+    head_classifier_cls = BCECLassifier
+    head_cls: Type[AnchorHead] = BoxHeadHNMV2  # define class for head

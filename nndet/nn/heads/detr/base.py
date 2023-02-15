@@ -326,7 +326,7 @@ class DETRHead(torch.nn.Module):
             target_classes[idx] = target_classes_o
 
         loss = self.classifier.compute_loss(
-            pred_logits=pred_logits.transpose(1, 2),
+            pred_logits=pred_logits,
             targets=target_classes,
         )
         if self.norm_cls_loss_by_num_boxes:
