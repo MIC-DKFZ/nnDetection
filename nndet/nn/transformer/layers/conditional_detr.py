@@ -20,7 +20,7 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.mlp import FFN, MLP
+from nndet.utils.fully_connected import FCN, SimpleFCN
 
 
 def gen_sine_embed_for_position(pos_tensor: torch.Tensor, num_pos_feats: int, temperature: int = 10000) -> torch.Tensor:
@@ -119,7 +119,7 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
                         batch_first=batch_first,
                     ),
                 ],
-                ffn=FFN(
+                ffn=FCN(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
@@ -134,8 +134,8 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
         )
         self.return_intermediate = return_intermediate
         self.embed_dim = self.layers[0].embed_dim
-        self.query_scale = MLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
-        self.ref_point_head = MLP(self.embed_dim, self.embed_dim, dim, 2)
+        self.query_scale = SimpleFCN(self.embed_dim, self.embed_dim, self.embed_dim, 2)
+        self.ref_point_head = SimpleFCN(self.embed_dim, self.embed_dim, dim, 2)
         self.dim = dim
         self.bbox_embed = None
 
