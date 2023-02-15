@@ -13,12 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import torch
-from nndet_detr.util.misc import FFN, inverse_sigmoid
 from torch import nn as nn
 
-from nndet.nn.transformer.attention.multi_head_attention_wrapper import (
-    MultiheadAttention,
-)
+import nndet.core.ops_torch as ops_torch
+from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
@@ -26,6 +24,7 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
+from nndet.utils.mlp import FFN
 
 
 class DeformableDETRTransformerDecoder(TransformerLayerSequence):
@@ -126,12 +125,12 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
                 tmp = self.bbox_embed(output, layer_idx)
                 # FIXME the order xyz,whd might be wrong here
                 if reference_points.shape[-1] == 6:
-                    new_reference_points = tmp + inverse_sigmoid(reference_points)
+                    new_reference_points = tmp + ops_torch.inverse_sigmoid(reference_points)
                     new_reference_points = new_reference_points.sigmoid()
                 else:
                     assert reference_points.shape[-1] == 3
                     new_reference_points = tmp
-                    new_reference_points[..., :3] = tmp[..., :3] + inverse_sigmoid(reference_points)
+                    new_reference_points[..., :3] = tmp[..., :3] + ops_torch.inverse_sigmoid(reference_points)
                     new_reference_points = new_reference_points.sigmoid()
                 reference_points = new_reference_points.detach()
 

@@ -116,9 +116,9 @@ class DeformableDETR(BaseDETR):
             multi_level_position_embeddings,
             query_embeds,
         )
-        final_references = torch.cat([init_reference.unsqueeze(0), inter_references], dim=0)
+
         # Calculate Boxes and Class predictions
-        pred_detections = self.head(inter_states, final_references)
+        pred_detections = self.head(inter_states, inter_references)
 
         if self.two_stage:
             enc_outputs_coord = enc_outputs_coord_unact.sigmoid()

@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import List, Optional, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -19,26 +21,29 @@ import torch.nn as nn
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 
 
 class DeformableDETRTransformer(nn.Module):
-    """Transformer module for DINO
-    Args:
-        encoder (nn.Module): encoder module.
-        decoder (nn.Module): decoder module.
-        as_two_stage (bool): whether to use two-stage transformer. Default False.
-        num_feature_levels (int): number of feature levels. Default 4.
-        two_stage_num_proposals (int): number of proposals in two-stage transformer. Default 900.
-    """
-
     def __init__(
         self,
-        encoder=None,
-        decoder=None,
-        num_feature_levels=4,
-        as_two_stage=False,
-        two_stage_num_proposals=300,
+        encoder: TransformerLayerSequence,
+        decoder: TransformerLayerSequence,
+        num_feature_levels: int = 4,
+        as_two_stage: bool = False,
+        two_stage_num_proposals: int = 300,
     ):
+        """
+        Transformer module for Deformable DETR
+
+        Args:
+            encoder: encoder module.
+            decoder: decoder module.
+            as_two_stage: whether to use two-stage transformer
+            num_feature_levels: number of feature levels
+            two_stage_num_proposals: number of proposals in two-stage
+                transformer
+        """
         super(DeformableDETRTransformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -111,7 +116,9 @@ class DeformableDETRTransformer(nn.Module):
 
     @staticmethod
     def get_reference_points(spatial_shapes, valid_ratios, device):
-        """Get the reference points used in decoder.
+        """
+        Get the reference points used in decoder.
+
         Args:
             spatial_shapes (Tensor): The shape of all
                 feature maps, has shape (num_level, 3).
@@ -120,6 +127,7 @@ class DeformableDETRTransformer(nn.Module):
                 (bs, num_levels, 3)
             device (obj:`device`): The device where
                 reference_points should be.
+
         Returns:
             Tensor: reference points used in decoder, has \
                 shape (bs, num_keys, num_levels, 3).
@@ -156,7 +164,9 @@ class DeformableDETRTransformer(nn.Module):
         return valid_ratio
 
     def get_proposal_pos_embed(self, proposals, num_pos_feats=64, temperature=10000):
-        """Get the position embedding of proposal."""
+        """
+        Get the position embedding of proposal.
+        """
         scale = 2 * np.pi
         dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=proposals.device)
         dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / num_pos_feats)
@@ -170,33 +180,60 @@ class DeformableDETRTransformer(nn.Module):
 
     def forward(
         self,
-        multi_level_feats,
-        query_embed,
-        multi_level_pos_embeds,
-        multi_level_masks=None,
+        features: List[torch.Tensor],
+        query_embed: torch.Tensor,
+        pos_embed: List[torch.Tensor],
+        mask: Optional[List[torch.Tensor]] = None,
         **kwargs,
-    ):
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
+        """
+        Compute the output box embeddings given the input features, position
+        embedding and query embedding
+
+        Args:
+            features: features from the backbone in form of a
+            List[Tensor(bs, C, H, W, (Z))]
+            query_embed: object queries = input for the transformer decoder
+            pos_embed: position embedding for the features, same shape as
+                features
+            mask: mask to mask out certain pixels of the feature maps, same
+                shape as features
+
+        Returns:
+            Tensor: output box embeddings (output of the decoder)
+                ((num_decoder_layers), bs, num_queries, C)
+            Tensor: references from the transformer decoder
+            Optional(Tensor): References from the transformer decoder
+                ((num_decoder_layers), bs, num_queries, dim)
+        """
         assert self.as_two_stage or query_embed is not None
         feat_flatten = []
-        mask_flatten = []
         lvl_pos_embed_flatten = []
         spatial_shapes = []
-        for lvl, (feat, pos_embed) in enumerate(zip(multi_level_feats, multi_level_pos_embeds)):
-            bs, c, d, h, w = feat.shape
+        mask_list = [] if mask is None else mask
+        mask_flatten = []
+        # Permute to d, h, w format
+        for lvl, (feat, pos_embed) in enumerate(zip(features, pos_embed)):
+            bs, c, w, h, d = feat.shape
             spatial_shape = (d, h, w)
             spatial_shapes.append(spatial_shape)
-
-            feat = feat.flatten(2).transpose(1, 2)  # bs, dhw, c
-            pos_embed = pos_embed.flatten(2).transpose(1, 2)  # bs, dhw, c
+            if mask is None:
+                mask_list.append(torch.zeros((bs, d, h, w)))
+                mask_flatten.append(mask_list[lvl].flatten(2))  # bs, dhw
+            else:
+                mask_flatten.append(mask_list[lvl].permute(0, 3, 2, 1).flatten(1))  # bs, dhw
+            feat = feat.permute(0, 1, 4, 3, 2).flatten(2).transpose(1, 2)  # bs, dhw, c
+            feat_flatten.append(feat)
+            pos_embed = pos_embed.permute(0, 1, 4, 3, 2).flatten(2).transpose(1, 2)  # bs, dhw, c
             lvl_pos_embed = pos_embed + self.level_embeds[lvl].view(1, 1, -1)
             lvl_pos_embed_flatten.append(lvl_pos_embed)
-            feat_flatten.append(feat)
+
         feat_flatten = torch.cat(feat_flatten, 1)
-        mask_flatten = torch.zeros_like(feat_flatten)
+        mask_flatten = torch.cat(mask_flatten, 1)
         lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)
         spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=feat_flatten.device)
         level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
-        valid_ratios = torch.stack([self.get_valid_ratio(m) for m in multi_level_masks], 1)
+        valid_ratios = torch.stack([self.get_valid_ratio(m) for m in mask_list], 1)
         reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=feat_flatten[-1].device)
 
         memory = self.encoder(
@@ -260,15 +297,8 @@ class DeformableDETRTransformer(nn.Module):
             valid_ratios=valid_ratios,  # bs, nlvl, 2
             **kwargs,
         )
-
-        inter_references_out = inter_references
+        reference_out = torch.cat([init_reference_out.unsqueeze(0), inter_references], dim=0)
         if self.as_two_stage:
-            return (
-                inter_states,
-                init_reference_out,
-                inter_references_out,
-                enc_outputs_class,
-                enc_outputs_coord_unact,
-            )
+            return inter_states, reference_out, (enc_outputs_class, enc_outputs_coord_unact)
         else:
-            return inter_states, init_reference_out, inter_references_out, None, None
+            return inter_states, memory, reference_out, None

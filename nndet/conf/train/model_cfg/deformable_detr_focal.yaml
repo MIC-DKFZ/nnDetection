@@ -1,6 +1,11 @@
 # DETR
 # detection parameters
 detection_per_img: 24  # number of detections per image
+two_stage: True
+
+# global parameters
+hidden_dim: 248 # feature length of the transformer input (must be divisible by the number of attention heads)
+num_feature_levels: 1
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
@@ -8,20 +13,34 @@ backbone_kwargs: # keyword arguments passed to encoder
   start_channels: 32 # number of starting channels
   max_channels: 512 # maximum number of channels
 
-# transformer
-transformer_kwargs: {} # Transformer kwargs: needed
-num_encoder_layers: 3
-num_decoder_layers: 3
-dim_feedforward: 1024
-hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
-query_dim: 384 # should be the same as hidden_dim except for DABDETR
-attention_heads: 8  # number of attention heads in the transformer
-transformer_attn_dropout: 0.0
-transformer_ffn_dropout: 0.0
-num_points: 4 # number of points for deformable attention
-num_feature_levels: 4
-two_stage: True
-box_refine: True
+# Channel Mapper
+channel_mapper_kwargs:
+  num_feature_levels: 1
+  num_total_levels: 1
+  kernel_size: 1
+  conv_kwargs: {}
+
+# Transformer Encoder
+transformer_encoder_kwargs:
+  num_layers: 3
+  post_norm: False
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
+  attention_heads: 8  # number of attention heads in the transformer
+  num_points: 4 # number of pixels attended to by deformable attention
+
+transformer_decoder_kwargs:
+  num_layers: 3
+  post_norm: True
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
+  attention_heads: 8  # number of attention heads in the transformer
 
 # positional embedding keyword arguments
 pos_embed:
