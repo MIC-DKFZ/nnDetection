@@ -9,10 +9,7 @@
 # Parts of this code are from detr licensed under
 # SPDX-FileCopyrightText: 2020, Facebook, Inc.
 # SPDX-License-Identifier: Apache-2.0
-"""
-Misc functions, including distributed helpers.
-Mostly copy-paste from torchvision references.
-"""
+
 from typing import Optional
 
 import torch
