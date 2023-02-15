@@ -81,7 +81,7 @@ def test_ffn_cls_head_smoke(module, inp, outp, exp_logits_shape, exp_prob_shape)
 
     # compute loss for one head
     # logits [B, R, C]; targets [B, R]
-    loss = module.compute_loss(pred_logits[-1].permute(0, 2, 1), outp)
+    loss = module.compute_loss(pred_logits[-1], outp)
     sum(loss.values()).backward()
 
     # last head output will be passsed to postprocess logits

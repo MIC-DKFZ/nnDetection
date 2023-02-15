@@ -20,8 +20,8 @@ def asymmetric_focal_loss_with_logits(
     and https://arxiv.org/abs/1907.10982 (without margin)
 
     Args:
-        logits: predicted logits [N, dims]
-        target: binary targets [N, dims]
+        logits: predicted logits [*]
+        target: binary targets [*]
         gamma: balance easy and hard examples in focal loss
         alpha: balance factor for background (different from focal loss)
         reduction: 'mean'|'sum'|'none'
@@ -33,7 +33,7 @@ def asymmetric_focal_loss_with_logits(
         torch.Tensor: loss
 
     See Also
-        :class:`BFocalLossWithLogits`, :class:`FocalLossWithLogits`
+        :class:`BFocalLoss`
     """
     p = torch.sigmoid(logits)
     focal_term = (1 - (1 - p) * (1 - target)) ** float(gamma)
@@ -43,6 +43,3 @@ def asymmetric_focal_loss_with_logits(
         alpha_t = alpha * target + (1 - alpha) * (1 - target)
         loss = alpha_t * loss
     return reduction_helper(loss, reduction=reduction)
-
-
-asymmetric_focal_loss_with_logits_jit: torch.jit.ScriptFunction = torch.jit.script(asymmetric_focal_loss_with_logits)

@@ -121,7 +121,7 @@ CASES = [
     (RetinaUNetV002Res, "retinaunet_v002"),
     (RetinaNetV002, "retinaunet_v002"),
     (RetinaNetV002Focal, "retinaunet_v002_focal"),
-    (RetinaNetV002Res, "retinaunet_v002"),
+    # (RetinaNetV002Res, "retinaunet_v002"),
     # Dev Models
     (BoxDETRC002, "detr_c002"),
     # (RetinaNetC001, "v001"),

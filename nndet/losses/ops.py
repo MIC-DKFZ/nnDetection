@@ -72,23 +72,23 @@ class SigmoidBaseLoss(Loss):
         Compute loss
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: targets encoded as numbers [N, dims], where N is the
-                batch size, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss
         """
-        num_classes = logits.shape[1] + 1
-        target_onehot = ont_hot_smooth_first(
+        num_classes = logits.shape[-1]
+        target_onehot = one_hot_smooth_last(
             targets,
-            num_classes=num_classes,
+            num_classes=num_classes + 1,
             smoothing=self.smoothing,
         )
-        target_onehot = target_onehot[:, 1:]
+        target_onehot = target_onehot[..., 1:]
 
         if self.loss_fp32:
             with autocast(enabled=False):
@@ -113,12 +113,12 @@ class SigmoidBaseLoss(Loss):
         Compute loss with subclass loss function
 
         Args:
-            logits: predicted logits [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
-                (background classes should be located at channel 0 if
-                ignore background is enabled)
-            targets: ont-hot targets [N, C, dims], where N is the batch size,
-                C number of classes, dims are arbitrary spatial dimensions
+            logits: logits for all foreground classes [*, C]
+                * are arbitrary spatial dimensions, C is the number of
+                foreground classes
+            target: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
 
         Returns:
             torch.Tensor: loss
@@ -146,8 +146,10 @@ def reduction_helper(
         return data
     if reduction.lower() == "sum":
         return torch.sum(data)
-    if reduction.lower() == "mean_d1_sum":
+    if reduction.lower() == "mean_one_sum":
         return torch.mean(data, dim=1).sum()
+    if reduction.lower() == "mean_last_sum":
+        return torch.mean(data, dim=-1).sum()
     raise AttributeError("Reduction parameter unknown.")
 
 
@@ -176,7 +178,7 @@ def one_hot_smooth_last(
     return targets
 
 
-def ont_hot_smooth_first(
+def one_hot_smooth_first(
     data: torch.Tensor,
     num_classes: int,
     smoothing: float = 0.0,

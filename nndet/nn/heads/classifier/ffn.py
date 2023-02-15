@@ -6,9 +6,8 @@ from typing import Dict, Optional
 import torch
 from loguru import logger
 
-from nndet.losses.classification.bce import BinaryCrossEntropyLoss
-from nndet.losses.classification.ce import CrossEntropyLoss
-from nndet.losses.classification.focal import FocalLossWithLogits
+from nndet.losses.classification.ce import BCELoss, CELoss
+from nndet.losses.classification.focal import BFocalLoss
 from nndet.utils.typing import LINEARSEQ
 
 
@@ -140,7 +139,7 @@ class FFNClassifier(torch.nn.Module):
         Compute loss for given predictions and targets
 
         Args:
-            pred_logits: predicted logits [N, num_classes, R] where
+            pred_logits: predicted logits [N, R, num_classes] where
                 N=batch size, R=number of boxes, C=number of classes
             targets: classification targets [N, R] where N=batch size
                 (numerical classes as expected by torch CE loss),
@@ -365,7 +364,7 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             weight[0] = background_weight
 
         self.loss_name = "ffn_ce"
-        self.loss = CrossEntropyLoss(
+        self.loss = CELoss(
             weight=weight,
             reduction=reduction,
             loss_weight=loss_weight,
@@ -423,7 +422,7 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
             **kwargs,
         )
         self.loss_name = "ffn_bce"
-        self.loss = BinaryCrossEntropyLoss(
+        self.loss = BCELoss(
             weight=weight,
             reduction=reduction,
             smoothing=smoothing,
@@ -484,7 +483,7 @@ class FocalFFNClassifier(SigmoidFFNClassifier):
             **kwargs,
         )
         self.loss_name = "ffn_focal"
-        self.loss = FocalLossWithLogits(
+        self.loss = BFocalLoss(
             gamma=gamma,
             alpha=alpha,
             loss_fp32=loss_fp32,

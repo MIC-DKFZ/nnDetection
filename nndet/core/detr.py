@@ -9,6 +9,7 @@ from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
 from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 
 
 class BaseDETR(AbstractDetector):
@@ -16,7 +17,7 @@ class BaseDETR(AbstractDetector):
         self,
         backbone: AbstractBackbone,
         channel_mapper: ChannelMapper,
-        transformer: nn.Module,
+        transformer: AbstractTransformer,
         head: DETRHead,
         pos_embed: BasePositionEmbedding,
         hidden_dim: int,
@@ -31,6 +32,8 @@ class BaseDETR(AbstractDetector):
 
         Args:
             backbone: Backbone network to compute image features
+            # TODO fix 80 character
+            channel_mapper: Module that maps the features channel dimension to the hidden_dim in the transformer
             transformer: Transformer Model
             head: Head used for classification, regression, loss computation and postprocessing
             hidden_dim: Dimension of the transformer sequence
@@ -39,6 +42,8 @@ class BaseDETR(AbstractDetector):
             query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
             num_feature_levels: which levels of backbone input should be used for the transformer input
                                 (currently only one supported)
+            segmenter: (Optional) segmenter to predict a semantic segmentations from the feature maps
+            two_stage: toggle whether the encoder should predict objects and use those as query candidates
         """
         super().__init__()
         # Obtain important hyperparameters
@@ -217,7 +222,7 @@ class BaseDETR(AbstractDetector):
     def forward(
         self,
         inp: torch.Tensor,
-    ) -> Tuple[Dict[str, torch.Tensor], List, Dict, List[torch.Tensor]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict, List[torch.Tensor]]:
         """
         Compute predicted bounding boxes, scores and segmentations
 
@@ -232,9 +237,7 @@ class BaseDETR(AbstractDetector):
 
                 ``"pred_boxes"´´ Tensor
                     predicted bounding boxes in normalized center format
-
-            List[torch.Tensor]: list of anchors, empty list for DETR
-            Dict: segmentation prediction. None, for segmentation use DETRSegmentation
+            Dict: semantic segmentation prediction, None if no segmenter was given
             List[torch.Tensor]: feature maps from decoder
         """
 

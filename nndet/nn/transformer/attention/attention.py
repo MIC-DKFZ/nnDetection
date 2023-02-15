@@ -1,23 +1,15 @@
-# coding=utf-8
-# Copyright 2022 The IDEA Authors. All rights reserved.
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Parts of this code are from detrex licensed under
+# SPDX-FileCopyrightText: 2022, The IDEA Authors
+# SPDX-License-Identifier: Apache-2.0
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ------------------------------------------------------------------------------------------------
-# Copyright (c) OpenMMLab. All rights reserved.
-# ------------------------------------------------------------------------------------------------
-# Modified from:
-# https://github.com/open-mmlab/mmcv/blob/master/mmcv/cnn/bricks/transformer.py
-# ------------------------------------------------------------------------------------------------
+# Parts of this code are from mmdetection licensed under
+# SPDX-FileCopyrightText: 2022, OpenMMLab
+# SPDX-License-Identifier: Apache-2.0
+
 
 import warnings
 from typing import Optional
@@ -40,6 +32,7 @@ class MultiheadAttention(nn.Module):
         A wrapper for ``torch.nn.MultiheadAttention``
         Implemented MultiheadAttention with identity connection,
         and position embedding is also passed as input.
+
         Args:
             embed_dim: The embedding dimension for attention.
             num_heads: The number of attention heads.
@@ -47,6 +40,8 @@ class MultiheadAttention(nn.Module):
             proj_drop_value: A Dropout layer after `MultiheadAttention`.
             batch_first: if `True`, then the input and output tensor will be
                 provided as `(bs, n, embed_dim)`.
+            **kwargs: kwargs for nn.MultiheadAttention, could include
+                'add_bias_kv', 'kdim', 'vdim'
         """
         super(MultiheadAttention, self).__init__()
         self.embed_dim = embed_dim
@@ -76,9 +71,10 @@ class MultiheadAttention(nn.Module):
         **kwargs,
     ) -> torch.Tensor:
         """
-        Forward function for `MultiheadAttention`
-        **kwargs allow passing a more general data flow when combining with
-        other operations in `transformerlayer`.
+        Forward function for `MultiheadAttention`. **kwargs allow passing a more
+        general data flow when combining with other operations in
+        `transformerlayer`.
+
         Args:
             query: Query embeddings with shape `(num_query, bs, embed_dim)` if
                 self.batch_first is False, else `(bs, num_query, embed_dim)`
@@ -99,6 +95,9 @@ class MultiheadAttention(nn.Module):
             key_padding_mask: ByteTensor with shape `(bs, num_key)` which
                 indicates which elements within `key` to be ignored in
                 attention.
+
+        Returns:
+            the output sequence
         """
         if key is None:
             key = query

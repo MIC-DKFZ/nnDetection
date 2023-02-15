@@ -34,6 +34,7 @@ class SetModelMixin(ModelMixin):
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
 
     channel_mapper_cls: ChannelMapper = ...  #: define channel mapper
+    channel_mapper_conv_cls: Type[CONVSEQ] = ...
 
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
@@ -60,7 +61,7 @@ class SetModelMixin(ModelMixin):
     neck_cls: Optional[Type[AbstractNeck]] = None  #: [optional] define class for neck
     neck_conv_cls: Optional[Type[CONVSEQ]] = None  #: [optional] conv class used for neck
 
-    # [Optional] Semantic Segmenation Head
+    # [Optional] Semantic Segmentation Head
     segmenter_cls: Optional[Type[Segmenter]] = None  #: [optional] segmentation head
 
     @classmethod
@@ -93,7 +94,9 @@ class SetModelMixin(ModelMixin):
         )
 
         channel_mapper = cls._build_channel_mapper(
-            plan_arch=plan_arch, channels=backbone.get_channels(), model_cfg=model_cfg
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            channels=backbone.get_channels(),
         )
 
         transformer = cls._build_transformer(plan_arch=plan_arch, model_cfg=model_cfg)
@@ -159,7 +162,7 @@ class SetModelMixin(ModelMixin):
             pos_embed=pos_embed,
             hidden_dim=hidden_dim,
             detection_per_img=model_cfg["detection_per_img"],
-            query_dim=model_cfg["query_dim"],
+            query_dim=model_cfg["hidden_dim"],
             segmenter=segmenter,
             **model_kwargs,
         )
@@ -170,26 +173,28 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ):
+        encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
-            embed_dim=model_cfg["hidden_dim"],
-            num_heads=model_cfg["attention_heads"],
-            num_layers=model_cfg["num_encoder_layers"],
-            attn_dropout=model_cfg["transformer_attn_dropout"],
-            proj_dropout=model_cfg["transformer_proj_dropout"],
-            feedforward_dim=model_cfg["dim_feedforward"],
-            ffn_dropout=model_cfg["transformer_ffn_dropout"],
-            post_norm=model_cfg["encoder_post_norm"],
+            embed_dim=encoder_kwargs["hidden_dim"],
+            num_heads=encoder_kwargs["attention_heads"],
+            num_layers=encoder_kwargs["num_layers"],
+            attn_dropout=encoder_kwargs["attn_dropout"],
+            proj_dropout=encoder_kwargs["proj_dropout"],
+            feedforward_dim=encoder_kwargs["dim_feedforward"],
+            ffn_dropout=encoder_kwargs["ffn_dropout"],
+            post_norm=encoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
         )
+        decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
         decoder = cls.transformer_decoder_cls(
-            embed_dim=model_cfg["hidden_dim"],
-            num_heads=model_cfg["attention_heads"],
-            num_layers=model_cfg["num_decoder_layers"],
-            attn_dropout=model_cfg["transformer_attn_dropout"],
-            proj_dropout=model_cfg["transformer_proj_dropout"],
-            feedforward_dim=model_cfg["dim_feedforward"],
-            ffn_dropout=model_cfg["transformer_ffn_dropout"],
-            post_norm=model_cfg["decoder_post_norm"],
+            embed_dim=decoder_kwargs["hidden_dim"],
+            num_heads=decoder_kwargs["attention_heads"],
+            num_layers=decoder_kwargs["num_layers"],
+            attn_dropout=decoder_kwargs["attn_dropout"],
+            proj_dropout=decoder_kwargs["proj_dropout"],
+            feedforward_dim=decoder_kwargs["dim_feedforward"],
+            ffn_dropout=decoder_kwargs["ffn_dropout"],
+            post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
         )
         return cls.transformer_cls(encoder=encoder, decoder=decoder)
@@ -201,17 +206,16 @@ class SetModelMixin(ModelMixin):
         model_cfg: dict,
         channels: List[int],
     ):
-        num_in_features = model_cfg["num_feature_levels"]
-        # get the last num_in_features
-        in_features = [i for i in range(len(channels) - 1, len(channels) - 1 - num_in_features, -1)]
-        # Change norm or activation or other using kwargs
+        conv = Generator(cls.channel_mapper_conv_cls, plan_arch["dim"])
         channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
+        num_in_features = channel_mapper_kwargs["num_feature_levels"]
         return cls.channel_mapper_cls(
-            dim=plan_arch["dim"],
+            conv=conv,
             in_channels=channels,
-            in_features=in_features,
+            num_in_features=num_in_features,
+            kernel_size=channel_mapper_kwargs["kernel_size"],
             out_channels=model_cfg["hidden_dim"],
-            **channel_mapper_kwargs,
+            **channel_mapper_kwargs["conv_kwargs"],
         )
 
     @classmethod

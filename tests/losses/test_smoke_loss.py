@@ -1,22 +1,23 @@
 import pytest
 import torch
 
-from nndet.losses.classification import (
-    AsymmetricFocalLossWithLogits,
-    BCEWithLogitsLoss,
-    BCEWithLogitsLossOneHot,
-    CrossEntropyLoss,
-    FocalLossWithLogits,
-)
-from nndet.losses.classification.bce import BinaryCrossEntropyLoss
-from nndet.losses.classification.poly1 import (
-    Poly1BCEWithLogits,
-    Poly1FocalLossWithLogits,
-)
-from nndet.losses.regression import GIoULoss, SmoothL1Loss
+# classification
+from nndet.losses.classification.ce import BCELoss, CELoss
+from nndet.losses.classification.focal import AsymmetricBFocalLoss, BFocalLoss
+from nndet.losses.classification.poly1 import Poly1BCEWithLogits, Poly1BFocalLoss
+
+# mask
+from nndet.losses.mask.ce import BCEMaskLoss
 from nndet.losses.regression.diou import DIoULoss
-from nndet.losses.regression.giou import GIoULossPaired
-from nndet.losses.segmentation import SoftDiceLoss, TopKLoss, TopKLossSigmoid
+from nndet.losses.regression.giou import GIoULoss, GIoULossPaired
+
+# regression
+from nndet.losses.regression.smoothl1 import SmoothL1Loss
+
+# segmentation
+from nndet.losses.segmentation.ce import BCESegLoss, CESegLoss
+from nndet.losses.segmentation.dice import SoftDiceSegLoss
+from nndet.losses.segmentation.topk import TopKBCESegLoss, TopKCESegLoss
 
 """
 Add all nnDetection Losses to this list
@@ -33,16 +34,16 @@ BOXES_TARGET = torch.Tensor([[1.0, 1.0, 2.0, 3.0, 1.0, 4.0]])
 BOXES_TARGET_SANITY = torch.Tensor([[0.0, 0.0, 1.0, 1.0, 0.0, 1.0]])
 
 CLS_PRED = torch.zeros(10, 3, dtype=torch.float)
-CLS_SIGMOID_TARGET = torch.ones(10, 3, dtype=torch.float)
-CLS_SIGMOID_TARGET_SANITY = torch.zeros(10, 3, dtype=torch.float)
-CLS_LABEL_TARGET = torch.ones(10, dtype=torch.float)
-CLS_LABEL_TARGET_SANITY = torch.zeros(10, dtype=torch.float)
+CLS_TARGET = torch.ones(10, dtype=torch.float)
+CLS_TARGET_SANITY = torch.zeros(10, dtype=torch.float)
 
 SEG_PRED = torch.zeros(1, 3, 10, dtype=torch.float)
-SEG_SIGMOID_TARGET = torch.ones(1, 3, 10, dtype=torch.float)
-SEG_SIGMOID_TARGET_SANITY = torch.zeros(1, 3, 10, dtype=torch.float)
-SEG_LABEL_TARGET = torch.ones(1, 10, dtype=torch.float)
-SEG_LABEL_TARGET_SANITY = torch.zeros(1, 10, dtype=torch.float)
+SEG_TARGET = torch.ones(1, 10, dtype=torch.float)
+SEG_TARGET_SANITY = torch.zeros(1, 10, dtype=torch.float)
+
+MASK_PRED = torch.zeros(1, 3, 10, dtype=torch.float)
+MASK_TARGET = torch.ones(1, 3, 10, dtype=torch.float)
+MASK_TARGET_SANITY = torch.zeros(1, 3, 10, dtype=torch.float)
 
 
 TEST_REGRESSION_LOSSES = [
@@ -55,38 +56,34 @@ TEST_REGRESSION_LOSSES_WITH_SANITY = [
     SmoothL1Loss(beta=1.0, reduction="mean"),
     DIoULoss(reduction="mean", eps=1e-12),
 ]
-TEST_CLASSIFICATION_LABEL_LOSSES = [
-    FocalLossWithLogits(reduction="mean"),
-    AsymmetricFocalLossWithLogits(reduction="mean"),
-    CrossEntropyLoss(reduction="mean"),
-    BCEWithLogitsLossOneHot(reduction="mean"),
+TEST_CLASSIFICATION_LOSSES = [
+    CELoss(reduction="mean"),
+    BCELoss(reduction="mean"),
+    BFocalLoss(reduction="mean"),
+    AsymmetricBFocalLoss(reduction="mean"),
     Poly1BCEWithLogits(reduction="mean"),
-    Poly1FocalLossWithLogits(reduction="mean"),
-    BinaryCrossEntropyLoss(reduction="mean"),
-    # test losses with custom reduction (only sigmoid based losses)
-    FocalLossWithLogits(reduction="mean_d1_sum"),
-    AsymmetricFocalLossWithLogits(reduction="mean_d1_sum"),
-    Poly1BCEWithLogits(reduction="mean_d1_sum"),
-    Poly1FocalLossWithLogits(reduction="mean_d1_sum"),
-    BinaryCrossEntropyLoss(reduction="mean_d1_sum"),
+    Poly1BFocalLoss(reduction="mean"),
+    # other reductions
+    CELoss(reduction="mean_last_sum"),
+    BCELoss(reduction="mean_last_sum"),
 ]
-TEST_CLASSIFICATION_SIGMOID_LOSSES = [
-    BCEWithLogitsLoss(reduction="mean"),
+TEST_SEGMENTATION_LOSSES = [
+    CESegLoss(reduction="mean"),
+    BCESegLoss(reduction="mean"),
+    SoftDiceSegLoss(reduction="mean"),
+    TopKCESegLoss(topk=0.1),
+    TopKBCESegLoss(topk=0.1),
 ]
-TEST_SEGMENTATION_LABEL_LOSSES = [
-    TopKLossSigmoid(num_classes=3, topk=0.0),
-    SoftDiceLoss(reduction="mean"),
-    TopKLoss(topk=0.1),
+TEST_MASK_LOSSES = [
+    BCEMaskLoss(reduction="mean"),
 ]
-TEST_SEGMENTATION_SIGMOID_LOSSES = []
 
 
 TEST_CASES = (
     [(l, BOXES_PRED, BOXES_TARGET) for l in TEST_REGRESSION_LOSSES]
-    + [(l, CLS_PRED, CLS_LABEL_TARGET) for l in TEST_CLASSIFICATION_LABEL_LOSSES]
-    + [(l, CLS_PRED, CLS_SIGMOID_TARGET) for l in TEST_CLASSIFICATION_SIGMOID_LOSSES]
-    + [(l, SEG_PRED, SEG_LABEL_TARGET) for l in TEST_SEGMENTATION_LABEL_LOSSES]
-    + [(l, SEG_PRED, SEG_SIGMOID_TARGET) for l in TEST_SEGMENTATION_SIGMOID_LOSSES]
+    + [(l, CLS_PRED, CLS_TARGET) for l in TEST_CLASSIFICATION_LOSSES]
+    + [(l, SEG_PRED, SEG_TARGET) for l in TEST_SEGMENTATION_LOSSES]
+    + [(l, MASK_PRED, MASK_TARGET) for l in TEST_MASK_LOSSES]
 )
 TEST_CASES_SANITY = [(l, BOXES_PRED, BOXES_TARGET_SANITY) for l in TEST_REGRESSION_LOSSES_WITH_SANITY]
 

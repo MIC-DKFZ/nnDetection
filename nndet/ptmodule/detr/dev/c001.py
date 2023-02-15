@@ -24,10 +24,13 @@ from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1GIoUFFNRegressor
 from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.conv.conv_only import ConvOnly
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 from nndet.nn.transformer.layers.conditional_detr import (
     ConditionalDETRTransformerDecoder,
 )
@@ -46,11 +49,12 @@ class BoxDETRC001(BoxDETRModule):
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
     channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
     # transformer
     pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
-    transformer_encoder_cls = DETRTransformerEncoder
-    transformer_decoder_cls = DETRTransformerDecoder
-    transformer_cls = DETRTransformer
+    transformer_encoder_cls: TransformerLayerSequence = DETRTransformerEncoder
+    transformer_decoder_cls: TransformerLayerSequence = DETRTransformerDecoder
+    transformer_cls: AbstractTransformer = DETRTransformer
 
     # head blocks
     head_cls: DETRHead = DETRHead  #: main DETR head
@@ -150,9 +154,9 @@ class BoxDETRC001FocalRes(BoxDETRC001):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001Focal(BoxDETRC001):
-    transformer_encoder_cls = DETRTransformerEncoder
-    transformer_decoder_cls = ConditionalDETRTransformerDecoder
-    transformer_cls = DETRTransformer
+    transformer_encoder_cls: TransformerLayerSequence = DETRTransformerEncoder
+    transformer_decoder_cls: TransformerLayerSequence = ConditionalDETRTransformerDecoder
+    transformer_cls: AbstractTransformer = DETRTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
