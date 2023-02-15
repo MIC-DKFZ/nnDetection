@@ -12,6 +12,7 @@ from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.neck.abstract import AbstractNeck
+from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
@@ -34,6 +35,10 @@ class BoxDETRModule(
 
     backbone_cls: Type[AbstractBackbone] = ...  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
+    # Channel Mapper
+    channel_mapper_cls: Type[ChannelMapper] = ...
+    channel_mapper_conv_cls: Type[CONVSEQ] = ...
+
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
     transformer_encoder_cls: Type[TransformerLayerSequence] = ...

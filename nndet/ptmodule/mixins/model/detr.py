@@ -33,7 +33,7 @@ class SetModelMixin(ModelMixin):
     backbone_cls: Type[AbstractBackbone] = ...  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
 
-    channel_mapper_cls: ChannelMapper = ...  #: define channel mapper
+    channel_mapper_cls: Type[ChannelMapper] = ...  #: define channel mapper
     channel_mapper_conv_cls: Type[CONVSEQ] = ...
 
     # transformer
