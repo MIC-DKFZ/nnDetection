@@ -58,6 +58,31 @@ class BoxPostprocessing:
         image_shapes: List[Union[Tuple[int, int], Tuple[int, int, int]]],
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+        """
+        Apply postprocessing to a batch of predictions
+
+        Args:
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, (num_classes * ) dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
+
+        Returns:
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [N, dims * 2],
+                probabilitie [N], labels [N], where N is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
+        """
         all_reps, all_probs, all_labels = [], [], []
         for idx, img_shape in enumerate(image_shapes):
             if self.is_class_agnostic:
@@ -88,6 +113,32 @@ class BoxPostprocessing:
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Apply postprocessing to a batch of predictions. Regression
+        predictions are class agnostic.
+
+        Args:
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
+
+        Returns:
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [R, dims * 2],
+                probabilitie [R], labels [R], where R is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -98,13 +149,54 @@ class BoxPostprocessing:
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Apply postprocessing to a batch of predictions. Regression
+        predictions are class specific.
+
+        Args:
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, num_classes * dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
+
+        Returns:
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [N, dims * 2],
+                probabilitie [N], labels [N], where N is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
+        """
         raise NotImplementedError
 
     @abstractmethod
     def nms(
         img_reps: torch.Tensor,
         img_probs: torch.Tensor,
+        *args,
+        **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Apply non-maximum supression
+
+        Args:
+            img_reps: object representations [N, dims * 2]
+            img_probs: object probabilities [N]
+            args: additional positional arguments necessary in subclasses
+            kwargs: additional keyword arguments necessary in subclasses
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                boxes [N, dims * 2], probs [N], labels [N]
+        """
         pass
 
 
@@ -117,19 +209,31 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Postprocess bounding box deltas and probabilities for a single image
-        Adapted from torchvision https://github.com/pytorch/vision
+        Apply postprocessing to a batch of predictions: all filtering
+        and NMS operations are computed across all feature levels.
+        Regression predictions are class agnostic.
 
         Args:
-            img_reps: predicted deltas for proposals [N, dim * 2]
-            img_probs: predicted logits for boxes [N, C]
-            img_shape: shape of image
-            num_anchors_per_level: number of anchors per level
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
 
         Returns:
-            Tensor: final boxes [R, dim * 2]
-            Tensor: final scores (for final class) [R]
-            Tensor: final class label [R]
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [R, dims * 2],
+                probabilitie [R], labels [R], where R is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
         """
         assert img_reps.shape[0] == img_probs.shape[0]
         boxes = ops_torch.clip_boxes_to_image_(img_reps, img_shape)
@@ -170,19 +274,31 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Postprocess bounding box deltas and probabilities for a single image
-        Adapted from torchvision https://github.com/pytorch/vision
+        Apply postprocessing to a batch of predictions: all filtering
+        and NMS operations are computed across all feature levels.
+        Regression predictions are class specific.
 
         Args:
-            img_reps: predicted deltas for proposals [N, C * dim * 2]
-            img_probs: predicted logits for boxes [N, C]
-            img_shape: shape of image
-            num_anchors_per_level: number of anchors per level
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, num_classes * dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
 
         Returns:
-            Tensor: final boxes [R, dim * 2]
-            Tensor: final scores (for final class) [R]
-            Tensor: final class label [R]
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [R, dims * 2],
+                probabilitie [R], labels [R], where R is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
         """
         assert img_reps.shape[0] == img_probs.shape[0]
         assert img_probs.shape[-1] == self.num_classes
@@ -230,6 +346,18 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
         img_probs: torch.Tensor,
         img_labels: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Apply non-maximum supression
+
+        Args:
+            img_reps: object representations [N, dims * 2]
+            img_probs: object probabilities [N]
+            img_labels: object labels [N]
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                boxes [N, dims * 2], probs [N], labels [N]
+        """
         res = batched_nms(
             boxes=img_reps,
             scores=img_probs,
@@ -253,21 +381,35 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Postprocess bounding box deltas and probabilities for a single image
-        Adapted from torchvision https://github.com/pytorch/vision
-        (Note: in contrast to torchvision this performs some
-        operations per image which could be parallelized across the batch)
+        Apply postprocessing to a batch of predictions: applied TopK and,
+        NMS are computed across per feature level. Regression predictions are
+        class agnostic.
 
         Args:
-            img_reps: predicted deltas for proposals [N, dim * 2]
-            img_probs: predicted logits for boxes [N, C]
-            img_shape: shape of image
-            num_anchors_per_level: number of anchors per level
+            reps: decoded bounding boxes for each image in format
+                (x1, y1, x2, y2, (z1, z2)) [N, dims * 2]
+                where N is the number of predictions per image and dims is the
+                number of spatial dimensions
+            probs: predicted proabilities of network [N, num_classes] where N
+                is the number of prediction per image and num_classes
+                is the number of foreground classes (only present
+                if class specific regression is active)
+            image_shapes: shape of each image (usually the same for all
+                of them)
+            num_anchors_per_level: for anchor based detectors with FPN
+                provide the number of anchors per level. Defaults to None.
 
         Returns:
-            Tensor: final boxes [R, dim * 2]
-            Tensor: final scores (for final class) [R]
-            Tensor: final class label [R]
+            Tuple[List[torch.Tensor], List[torch.Tensor], List[torch.Tensor]]:
+                predicted bounding boxes, probabilities, and labels. Boxes
+                in format (x1, y1, x2, y2, (z1, z2)) [R, dims * 2],
+                probabilitie [R], labels [R], where R is the number of
+                predictions after postprocessing and dims is the number
+                spatial dimensions
+
+        Warning:
+            Only supports predictions of a single class (foreground vs
+            background) since the all labels will be 0!
         """
         assert img_reps.shape[0] == img_probs.shape[0]
         if img_probs.shape[1] != 1:
@@ -306,7 +448,7 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
             boxes = boxes[: self.detections_per_img]
             probs = probs[: self.detections_per_img]
 
-        labels = torch.ones(probs.shape, dtype=torch.long, device=probs.device)
+        labels = torch.zeros(probs.shape, dtype=torch.long, device=probs.device)
         return boxes, probs, labels
 
     def topk_per_level(
@@ -314,6 +456,16 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
         probs: torch.Tensor,
         num_anchors_per_level: Sequence[int],
     ) -> torch.Tensor:
+        """
+        Compute topk indeices per feature level
+
+        Args:
+            probs: predicted probabilities [N]
+            num_anchors_per_level: anchor per level
+
+        Returns:
+            torch.Tensor: indices of top k predictions per level
+        """
         all_idx = []
         idx_offset = 0
         for probs_per_level in probs.split(num_anchors_per_level):
@@ -332,6 +484,18 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
         img_probs: torch.Tensor,
         levels: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Apply non-maximum supression
+
+        Args:
+            img_reps: object representations [N, dims * 2]
+            img_probs: object probabilities [N]
+            img_labels: object labels [N]
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+                boxes [N, dims * 2], probs [N], labels [N]
+        """
         res = batched_nms(
             boxes=img_reps,
             scores=img_probs,
@@ -347,4 +511,9 @@ class PerLevelBoxPostprocessing(BoxPostprocessing):
         img_shape: Union[Tuple[int, int], Tuple[int, int, int]],
         num_anchors_per_level: Optional[Sequence[int]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
+        """
+        Not implemented
+        """
+        raise NotImplementedError(
+            "Class specific box postprocessing is not " "supported in 'PerLevelBoxPostprocessing'"
+        )
