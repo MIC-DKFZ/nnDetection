@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from nndet.losses.segmentation.ce import CESegLoss
-from nndet.losses.segmentation.dice import SoftDiceSegLoss
+from nndet.losses.segmentation.dice import DiceSegLoss
 from nndet.losses.segmentation.topk import TopKCESegLoss
 from nndet.nn.layers.wrapper import compute_padding_for_kernel
 from nndet.nn.ops.interpolation import InterpolateToShapes
@@ -100,8 +100,7 @@ class DiCESegmenter(Segmenter):
         dice_kwargs.setdefault("smooth_nom", 1e-5)
         dice_kwargs.setdefault("smooth_denom", 1e-5)
         dice_kwargs.setdefault("do_bg", False)
-        self.dice_loss = SoftDiceSegLoss(
-            nonlin=torch.nn.Softmax(dim=1),
+        self.dice_loss = DiceSegLoss(
             loss_fp32=loss_fp32,
             **dice_kwargs,
         )
