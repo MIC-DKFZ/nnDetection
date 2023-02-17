@@ -233,26 +233,26 @@ class DETRTransformerDecoder(TransformerLayerSequence):
             if self.post_norm_layer is not None:
                 query = self.post_norm_layer(query)[None]
             return query, None
+        else:
+            # return intermediate
+            intermediate = []
+            for layer in self.layers:
+                query = layer(
+                    query,
+                    key,
+                    value,
+                    query_pos=query_pos,
+                    key_pos=key_pos,
+                    attn_masks=attn_masks,
+                    query_key_padding_mask=query_key_padding_mask,
+                    key_padding_mask=key_padding_mask,
+                    **kwargs,
+                )
 
-        # return intermediate
-        intermediate = []
-        for layer in self.layers:
-            query = layer(
-                query,
-                key,
-                value,
-                query_pos=query_pos,
-                key_pos=key_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                **kwargs,
-            )
+                if self.return_intermediate:
+                    if self.post_norm_layer is not None:
+                        intermediate.append(self.post_norm_layer(query))
+                    else:
+                        intermediate.append(query)
 
-            if self.return_intermediate:
-                if self.post_norm_layer is not None:
-                    intermediate.append(self.post_norm_layer(query))
-                else:
-                    intermediate.append(query)
-
-        return torch.stack(intermediate), None
+            return torch.stack(intermediate), None
