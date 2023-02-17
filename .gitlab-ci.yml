@@ -32,7 +32,7 @@ format-job:
     - pre-commit run --all-files --show-diff-on-failure
     - reuse --root nndet lint
 
-build-job:
+pytest-job:
   stage: test
   script:
     - echo "Check Versions"
