@@ -19,7 +19,9 @@ class FFNRegressor(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
-        num_mlps: int = 1,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -38,22 +40,28 @@ class FFNRegressor(torch.nn.Module):
         super().__init__()
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
-
         self.in_channels = in_channels
         self.internal_channels = internal_channels
         self.num_layers = num_layers
         self.dim = dim
 
+        # Create final output mlp
         self.mlp = self._build_module(
             linear=linear,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
             **kwargs,
         )
-        assert num_mlps >= 1
-        self.share_mlp = num_mlps == 1
+        self.encoder_mlp = None
+        self.aux_mlp = None
+        self.share_mlp = share_mlp
+        self.num_decoder_layers = num_decoder_layers
         if not self.share_mlp:
-            self.mlp = [copy.deepcopy(self.mlp) for i in range(num_mlps + 1)]
+            self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(self.mlp) for i in range(num_decoder_layers - 1)])
+            if use_encoder_mlp:
+                self.encoder_mlp = copy.deepcopy(self.mlp)
+        elif use_encoder_mlp:
+            self.encoder_mlp = self.mlp
 
         self.loss_name: str = "ffn_reg_spec"
         self.box_loss_name: str = "ffn_reg_box"
@@ -127,10 +135,20 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-        if self.share_mlp:
+        # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
+        if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
             return self.mlp(features)
-        else:
-            return self.mlp[layer](features)
+        # else it is a not shared aux layer
+        return self.aux_mlp[layer](features)
+
+    def get_encoder_regressor(self):
+        """
+        Get the regressor module for the encoder outputs
+
+        Returns:
+            nn.Module containing the encoder classifier
+        """
+        return self.encoder_mlp
 
     def apply_non_lin(self, x: torch.Tensor) -> torch.Tensor:
         """

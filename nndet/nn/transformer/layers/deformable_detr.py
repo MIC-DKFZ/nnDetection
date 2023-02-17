@@ -5,11 +5,13 @@
 # Parts of this code are from detrex licensed under
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
+from typing import Optional
 
 import torch
 from torch import nn as nn
 
 import nndet.core.ops_torch as ops_torch
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
@@ -18,7 +20,7 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.mlp import FFN
+from nndet.utils.fully_connected import FCN
 
 
 class DeformableDETRTransformerEncoder(TransformerLayerSequence):
@@ -49,7 +51,7 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
                         num_points=num_points,
                     )
                 ],
-                ffn=FFN(
+                ffn=FCN(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     output_dim=embed_dim,
@@ -115,6 +117,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
         batch_first: bool = True,
         num_feature_levels: int = 4,
         num_points: int = 4,
+        regressor: Optional[FFNRegressor] = None,
     ):
         super(DeformableDETRTransformerDecoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
@@ -124,7 +127,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
                         num_heads=num_heads,
                         attn_drop_value=attn_dropout,
                         proj_drop_value=proj_dropout,
-                        batch_first=True,
+                        batch_first=batch_first,
                     ),
                     MultiScaleDeformableAttention(
                         embed_dim=embed_dim,
@@ -135,7 +138,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
                         num_points=num_points,
                     ),
                 ],
-                ffn=FFN(
+                ffn=FCN(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     output_dim=embed_dim,
@@ -154,9 +157,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-
-        self.bbox_embed = None
-        self.class_embed = None
+        self.regressor = regressor
 
     def forward(
         self,
@@ -198,8 +199,8 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
                 **kwargs,
             )
 
-            if self.bbox_embed is not None:
-                tmp = self.bbox_embed(output, layer_idx)
+            if self.regressor is not None:
+                tmp = self.regressor(output, layer_idx)
                 # FIXME the order xyz,whd might be wrong here
                 if reference_points.shape[-1] == 6:
                     new_reference_points = tmp + ops_torch.inverse_sigmoid(reference_points)

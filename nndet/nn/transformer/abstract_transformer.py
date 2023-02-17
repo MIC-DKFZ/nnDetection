@@ -5,8 +5,7 @@
 # Parts of this code are from detrex licensed under
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
-
-
+from abc import abstractmethod
 from typing import List, Optional, Tuple
 
 import torch
@@ -18,6 +17,7 @@ class AbstractTransformer(nn.Module):
     Abstract Transformer Class for DETR like models
     """
 
+    @abstractmethod
     def forward(
         self,
         features: List[torch.Tensor],

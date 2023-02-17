@@ -41,7 +41,7 @@ class DeformableDETR(BaseDETR):
         self.box_refine = box_refine
         self.two_stage = two_stage
         # two-stage
-        self.transformer.decoder.bbox_embed = self.head.regressor if two_stage else None
+        self.transformer.decoder.regressor = self.head.regressor if two_stage else None
         self.transformer.decoder.class_embed = self.head.classifier if two_stage else None
 
     def forward(

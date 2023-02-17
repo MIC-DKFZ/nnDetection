@@ -12,12 +12,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from nndet.nn.heads.classifier.ffn import FFNClassifier
-from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.utils.typing import LINEARSEQ
 
 
 class DeformableDETRTransformer(nn.Module):
@@ -25,10 +24,10 @@ class DeformableDETRTransformer(nn.Module):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
-        classifier: Optional[FFNClassifier] = None,
-        regressor: Optional[FFNRegressor] = None,
+        encoder_classifier: Optional[LINEARSEQ] = None,
+        encoder_regressor: Optional[LINEARSEQ] = None,
         num_feature_levels: int = 4,
-        as_two_stage: bool = False,
+        two_stage: bool = False,
         two_stage_num_proposals: int = 300,
     ):
         """
@@ -37,7 +36,9 @@ class DeformableDETRTransformer(nn.Module):
         Args:
             encoder: encoder module.
             decoder: decoder module.
-            as_two_stage: whether to use two-stage transformer
+            encoder_classifier:
+            encoder_regressor:  TODO
+            two_stage: whether to use two-stage transformer
             num_feature_levels: number of feature levels
             two_stage_num_proposals: number of proposals in two-stage
                 transformer
@@ -45,15 +46,17 @@ class DeformableDETRTransformer(nn.Module):
         super(DeformableDETRTransformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.encoder_classifier = encoder_classifier
+        self.encoder_regressor = encoder_regressor
         self.num_feature_levels = num_feature_levels
-        self.as_two_stage = as_two_stage
+        self.two_stage = two_stage
         self.two_stage_num_proposals = two_stage_num_proposals
 
         self.embed_dim = self.encoder.embed_dim
 
         self.level_embeds = nn.Parameter(torch.Tensor(self.num_feature_levels, self.embed_dim))
 
-        if self.as_two_stage:
+        if self.two_stage:
             self.enc_output = nn.Linear(self.embed_dim, self.embed_dim)
             self.enc_output_norm = nn.LayerNorm(self.embed_dim)
             self.pos_trans = nn.Linear(self.embed_dim * 3, self.embed_dim * 2)
@@ -70,7 +73,7 @@ class DeformableDETRTransformer(nn.Module):
         for m in self.modules():
             if isinstance(m, MultiScaleDeformableAttention):
                 m.init_weights()
-        if not self.as_two_stage:
+        if not self.two_stage:
             nn.init.xavier_normal_(self.reference_points.weight.data, gain=1.0)
             nn.init.constant_(self.reference_points.bias.data, 0.0)
         nn.init.normal_(self.level_embeds)
@@ -204,7 +207,7 @@ class DeformableDETRTransformer(nn.Module):
             Optional(Tensor): References from the transformer decoder
                 ((num_decoder_layers), bs, num_queries, dim)
         """
-        assert self.as_two_stage or query_embed is not None
+        assert self.two_stage or query_embed is not None
         feat_flatten = []
         lvl_pos_embed_flatten = []
         spatial_shapes = []
@@ -247,19 +250,16 @@ class DeformableDETRTransformer(nn.Module):
             **kwargs,
         )
         bs, _, c = memory.shape
-        if self.as_two_stage:
+        if self.two_stage:
 
             output_memory, output_proposals = self.gen_encoder_output_proposals(memory, mask_flatten, spatial_shapes)
             # output_memory: bs, num_tokens, c
             # output_proposals: bs, num_tokens, 6. unsigmoided.
             # Class Embed and Bbox embed
-            enc_outputs_class = self.decoder.class_embed(
+            enc_outputs_class = self.encoder_classifier(
                 output_memory,
-                layer=self.decoder.num_layers,
             )
-            enc_outputs_coord_unact = (
-                self.decoder.bbox_embed(output_memory, self.decoder.num_layers) + output_proposals
-            )  # unsigmoided.
+            enc_outputs_coord_unact = self.encoder_regressor(output_memory) + output_proposals  # unsigmoided.
 
             topk = self.two_stage_num_proposals
             topk_proposals = torch.topk(enc_outputs_class.max(-1)[0], topk, dim=1)[1]
@@ -296,8 +296,9 @@ class DeformableDETRTransformer(nn.Module):
             valid_ratios=valid_ratios,  # bs, nlvl, 2
             **kwargs,
         )
+        # Concatenate references into one array
         reference_out = torch.cat([init_reference_out.unsqueeze(0), inter_references], dim=0)
-        if self.as_two_stage:
+        if self.two_stage:
             return inter_states, reference_out, (enc_outputs_class, enc_outputs_coord_unact)
         else:
             return inter_states, memory, reference_out, None
