@@ -9,10 +9,7 @@
 # Parts of this code are from detr licensed under
 # SPDX-FileCopyrightText: 2020, Facebook, Inc.
 # SPDX-License-Identifier: Apache-2.0
-"""
-Misc functions, including distributed helpers.
-Mostly copy-paste from torchvision references.
-"""
+
 from typing import Optional
 
 import torch
@@ -20,41 +17,45 @@ from torch import nn as nn
 from torch.nn import functional as F
 
 
-class MLP(nn.Module):
-    """Very simple multi-layer perceptron (also called FFN)"""
+class SimpleFCN(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        output_dim: int,
+        num_layers: int,
+    ):
+        """
+        Very simple multi-layer perceptron with a relu activation. Without
+        dropout or extra residual connections.
 
-    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+        Args:
+            input_dim: number of input neurons
+            hidden_dim: number of neurons in the hidden layers
+            output_dim: number of output neurons
+            num_layers: number of layers
+        """
         super().__init__()
         self.num_layers = num_layers
         h = [hidden_dim] * (num_layers - 1)
         self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward call of the fully connected network
+
+        Args:
+            x: input tensor
+
+        Returns:
+
+        """
         for i, layer in enumerate(self.layers):
             x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
         return x
 
 
-class FFN(nn.Module):
-    """The implementation of feed-forward networks (FFNs)
-    with identity connection.
-    Args:
-        embed_dim (int): The feature dimension. Same as
-            `MultiheadAttention`. Defaults: 256.
-        feedforward_dim (int): The hidden dimension of FFNs.
-            Defaults: 1024.
-        output_dim (int): The output feature dimension of FFNs.
-            Default: None. If None, the `embed_dim` will be used.
-        num_fcs (int, optional): The number of fully-connected layers in
-            FFNs. Default: 2.
-        activation (nn.Module): The activation layer used in FFNs.
-            Default: nn.ReLU(inplace=True).
-        ffn_drop (float, optional): Probability of an element to be
-            zeroed in FFN. Default 0.0.
-        add_identity (bool, optional): Whether to add the
-            identity connection. Default: `True`.
-    """
-
+class FCN(nn.Module):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -66,7 +67,20 @@ class FFN(nn.Module):
         fc_bias: Optional[bool] = True,
         add_identity: Optional[bool] = True,
     ):
-        super(FFN, self).__init__()
+        """
+        The implementation of a fully connected network with identity connection.
+
+        Args:
+            embed_dim: The feature dimension.
+            feedforward_dim: The hidden dimension of FFNs.
+            output_dim: The output feature dimension of FFNs. If None, the
+                `embed_dim` will be used.
+            num_fcs: The number of fully-connected layers in FFNs.
+            activation: The activation layer used in FFNs.
+            ffn_drop: Probability of an element to be zeroed in FFN.
+            add_identity: Whether to add the identity connection.
+        """
+        super(FCN, self).__init__()
         assert num_fcs >= 2, "num_fcs should be no less " f"than 2. got {num_fcs}."
         self.embed_dim = embed_dim
         self.feedforward_dim = feedforward_dim
@@ -94,11 +108,12 @@ class FFN(nn.Module):
     def forward(self, x: torch.Tensor, identity: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Forward function of `FFN`.
+
         Args:
             x: the input tensor used in `FFN` layers.
-            identity: the tensor with the same shape as `x`,
-                which will be used for identity addition. Default: None.
-                if None, `x` will be used.
+            identity: the tensor with the same shape as `x`, which will be used
+                for identity addition. If None, `x` will be used.
+
         Returns:
             the forward results of `FFN` layer
         """

@@ -16,7 +16,7 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.mlp import FFN
+from nndet.utils.fully_connected import FCN
 
 
 class DETRTransformerEncoder(TransformerLayerSequence):
@@ -59,7 +59,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FFN(
+                ffn=FCN(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
@@ -166,7 +166,7 @@ class DETRTransformerDecoder(TransformerLayerSequence):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FFN(
+                ffn=FCN(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
