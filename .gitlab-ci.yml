@@ -12,7 +12,7 @@ cache:
 
 stages:
   - format
-  - build
+  - test
   - deploy
 
 format-job:
@@ -33,7 +33,7 @@ format-job:
     - reuse --root nndet lint
 
 build-job:
-  stage: build
+  stage: test
   script:
     - echo "Check Versions"
     - python --version
