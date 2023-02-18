@@ -36,9 +36,12 @@ class DeformableDETRTransformer(nn.Module):
         Args:
             encoder: encoder module.
             decoder: decoder module.
-            encoder_classifier:
-            encoder_regressor:  TODO
-            two_stage: whether to use two-stage transformer
+            encoder_classifier: mlp to calculate the class of the encoder
+                predictions
+            encoder_regressor:  mlp to calculate the boxes of the encoder
+                predictions
+            two_stage: whether to use encoder predictions as initialization
+                for the decoder
             num_feature_levels: number of feature levels
             two_stage_num_proposals: number of proposals in two-stage
                 transformer
@@ -67,6 +70,9 @@ class DeformableDETRTransformer(nn.Module):
         self.init_weights()
 
     def init_weights(self):
+        """
+        Initialize the weights of the transformer modules
+        """
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
@@ -78,7 +84,23 @@ class DeformableDETRTransformer(nn.Module):
             nn.init.constant_(self.reference_points.bias.data, 0.0)
         nn.init.normal_(self.level_embeds)
 
-    def gen_encoder_output_proposals(self, memory, memory_padding_mask, spatial_shapes):
+    def gen_encoder_output_proposals(
+        self,
+        memory: torch.Tensor,
+        memory_padding_mask: torch.Tensor,
+        spatial_shapes: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute Encoder proposals from the encoder output (memory)
+
+        Args:
+            memory:
+            memory_padding_mask:
+            spatial_shapes:
+
+        Returns:
+
+        """
         N, S, C = memory.shape
         proposals = []
         _cur = 0
@@ -116,17 +138,21 @@ class DeformableDETRTransformer(nn.Module):
         return output_memory, output_proposals
 
     @staticmethod
-    def get_reference_points(spatial_shapes, valid_ratios, device):
+    def get_reference_points(
+        spatial_shapes: torch.Tensor,
+        valid_ratios: torch.Tensor,
+        device: torch.device,
+    ) -> torch.Tensor:
         """
         Get the reference points used in decoder.
 
         Args:
-            spatial_shapes (Tensor): The shape of all
+            spatial_shapes: The shape of all
                 feature maps, has shape (num_level, 3).
-            valid_ratios (Tensor): The ratios of valid
+            valid_ratios: The ratios of valid
                 points on the feature map, has shape
                 (bs, num_levels, 3)
-            device (obj:`device`): The device where
+            device: The device where
                 reference_points should be.
 
         Returns:
@@ -152,7 +178,16 @@ class DeformableDETRTransformer(nn.Module):
         return reference_points
 
     @staticmethod
-    def get_valid_ratio(mask):
+    def get_valid_ratio(mask: torch.Tensor) -> torch.Tensor:
+        """
+        Get array of relative positions from [0,1] through the image
+
+        Args:
+            mask: mask of the image with shape (N, D, H, W)
+
+        Returns:
+            Tensor: ratios with shape (N, ?)
+        """
         _, D, H, W = mask.shape
         valid_D = torch.sum(~mask[:, :, 0, 0], 1)
         valid_H = torch.sum(~mask[:, 0, :, 0], 1)
@@ -164,9 +199,22 @@ class DeformableDETRTransformer(nn.Module):
         valid_ratio = torch.stack([valid_ratio_w, valid_ratio_h, valid_ratio_d], -1)
         return valid_ratio
 
-    def get_proposal_pos_embed(self, proposals, num_pos_feats=64, temperature=10000):
+    def get_proposal_pos_embed(
+        self,
+        proposals: torch.Tensor,
+        num_pos_feats: int = 64,
+        temperature: int = 10000,
+    ) -> torch.Tensor:
         """
         Get the position embedding of proposal.
+
+        Args:
+            proposals:
+            num_pos_feats:
+            temperature:
+
+        Returns:
+
         """
         scale = 2 * np.pi
         dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=proposals.device)
