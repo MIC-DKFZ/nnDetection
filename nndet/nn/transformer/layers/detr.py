@@ -29,7 +29,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
+        activation: nn.Module = nn.ReLU(inplace=True),
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = False,
@@ -51,7 +51,6 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         """
         super(DETRTransformerEncoder, self).__init__(
             transformer_layers=BaseTransformerLayer(
-                # Added this list, might be wrong
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
                     num_heads=num_heads,
@@ -94,6 +93,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
     ) -> torch.Tensor:
         """
         Compute a sequence of refined features. Typical inputs are query and query_pos.
+
         Args:
             query: sequence of input features (sequence_length, bs, C)
             key: (Optional) key for attention
@@ -104,6 +104,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
             query_key_padding_mask: (Optional) query key padding mask for attention
             key_padding_mask: (Optional) key padding mask for attention
             **kwargs:
+
         Returns:
             Tensor: Sequence of refined features (sequence_length, bs, C)
         """

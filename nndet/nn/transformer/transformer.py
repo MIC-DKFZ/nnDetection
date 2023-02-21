@@ -20,19 +20,24 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
+        do_weight_init: bool = True,
     ):
         """
         Transformer module for DETR.
+
         Args:
             encoder: Transformer encoder
             decoder: Transformer decoder
+            do_weight_init: toggle whether weights should be
+                initialized
         """
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.encoder.embed_dim
         self.dim = decoder.dim
-        self.init_weights()
+        if do_weight_init:
+            self.init_weights()
 
     def init_weights(self):
         for p in self.parameters():
@@ -49,6 +54,7 @@ class DETRTransformer(AbstractTransformer):
         """
         Compute the output box embeddings given the input features, position
         embedding and query embedding
+
         Args:
             features: features from the backbone in form of a
             List[Tensor(bs, C, H, W, (Z))]
@@ -69,7 +75,7 @@ class DETRTransformer(AbstractTransformer):
         # This is single resolution so unpack the multiscale lists
         assert len(features) == len(pos_embed) == 1
         features, pos_embed = features[0], pos_embed[0]
-        dim = self.decoder.dim
+        dim = self.dim
         assert dim == features.dim() - 2  # subtract batch size and sequence length
         if dim == 2:
             bs, c, h, w = features.shape
