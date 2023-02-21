@@ -97,7 +97,7 @@ class MultiheadAttention(nn.Module):
                 attention.
 
         Returns:
-            the output sequence
+            the output sequence with shape `(num_query, bs, embed_dim)`
         """
         if key is None:
             key = query

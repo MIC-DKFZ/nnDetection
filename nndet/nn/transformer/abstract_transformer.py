@@ -28,6 +28,7 @@ class AbstractTransformer(nn.Module):
         """
         Compute the output box embeddings given the input features, position
         embedding and query embedding
+
         Args:
             features: features from the backbone in form of a
                 List[Tensor(bs, C, x, y, (z))]

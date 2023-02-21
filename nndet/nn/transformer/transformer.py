@@ -24,6 +24,7 @@ class DETRTransformer(AbstractTransformer):
         encoder_classifier: Optional[LINEARSEQ] = None,
         encoder_regressor: Optional[LINEARSEQ] = None,
         two_stage: bool = False,
+        do_weight_init: bool = True,
     ):
         """
         Transformer module for DETR.
@@ -42,7 +43,8 @@ class DETRTransformer(AbstractTransformer):
         self.encoder_regressor = encoder_regressor
         self.embed_dim = self.encoder.embed_dim
         self.dim = decoder.dim
-        self.init_weights()
+        if do_weight_init:
+            self.init_weights()
 
     def init_weights(self):
         for p in self.parameters():
@@ -79,7 +81,7 @@ class DETRTransformer(AbstractTransformer):
         # This is single resolution so unpack the multiscale lists
         assert len(features) == len(pos_embed) == 1
         features, pos_embed = features[0], pos_embed[0]
-        dim = self.decoder.dim
+        dim = self.dim
         assert dim == features.dim() - 2  # subtract batch size and sequence length
         if dim == 2:
             bs, c, h, w = features.shape

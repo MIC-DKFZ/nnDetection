@@ -25,21 +25,20 @@ class BaseTransformerLayer(nn.Module):
         """
         The implementation of Base `TransformerLayer` used in Transformer.
         It can be built by directly passing the `Attentions`, `FFNs`, `Norms`
-        module, which support more flexible cusomization combined with
-        `LazyConfig` system. The `BaseTransformerLayer` also supports `prenorm`
+        module. The `BaseTransformerLayer` also supports `prenorm`
         when specifying the `norm` as the first element of `operation_order`
         Args:
-            attn: nn.Module or a list
-                contains the attention module used in TransformerLayer.
+            attn: nn.Module or a list contains the attention module used in
+                TransformerLayer.
             ffn: FFN module used in TransformerLayer.
             norm: Normalization layer used in TransformerLayer.
-            operation_order: The execution order of operation in
-                transformer. Such as ('self_attn', 'norm', 'ffn', 'norm').
-                Support `prenorm` when specifying the first element as `norm`
-                Default = None.
+            operation_order: The execution order of operation in transformer.
+                Such as ('self_attn', 'norm', 'ffn', 'norm'). Support
+                `prenorm` when specifying the first element as `norm`.
         """
         super(BaseTransformerLayer, self).__init__()
-        assert set(operation_order).issubset({"self_attn", "norm", "cross_attn", "ffn"})
+        if not set(operation_order).issubset({"self_attn", "norm", "cross_attn", "ffn"}):
+            raise ValueError(f"An operation from {operation_order} is not supported for a transformer layer")
 
         # count attention nums
         num_attn = operation_order.count("self_attn") + operation_order.count("cross_attn")
@@ -47,11 +46,12 @@ class BaseTransformerLayer(nn.Module):
         if isinstance(attn, nn.Module):
             attn = [copy.deepcopy(attn) for _ in range(num_attn)]
         else:
-            assert len(attn) == num_attn, (
-                f"The length of attn (nn.Module or List[nn.Module]) {num_attn}"
-                f"is not consistent with the number of attention in "
-                f"operation_order {operation_order}"
-            )
+            if not len(attn) == num_attn:
+                raise ValueError(
+                    f"The length of attn (nn.Module or List[nn.Module]) {num_attn}"
+                    f"is not consistent with the number of attention in "
+                    f"operation_order {operation_order}"
+                )
 
         self.num_attn = num_attn
         self.operation_order = operation_order
@@ -92,6 +92,7 @@ class BaseTransformerLayer(nn.Module):
         """
         Forward function for `BaseTransformerLayer`.
         **kwargs contains the specific arguments of attentions.
+
         Args:
             query: Query embeddings with shape `(num_query, bs, embed_dim)` or
                 `(bs, num_query, embed_dim)` which should be specified follows
