@@ -2,8 +2,10 @@
 # detection parameters
 detection_per_img: 24  # number of detections per image
 
-# global parameter
+# global parameters
 hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+num_feature_levels: 1
+two_stage: False
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
@@ -13,7 +15,7 @@ backbone_kwargs: # keyword arguments passed to encoder
 
 # Channel Mapper
 channel_mapper_kwargs:
-  num_feature_levels: 1
+  num_feature_levels: ${model_cfg.num_feature_levels}
   num_total_levels: 1
   kernel_size: 1
   conv_kwargs: {}
@@ -60,6 +62,10 @@ head_classifier_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
+  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
+  share_mlp: True
+  use_encoder_mlp: ${model_cfg.two_stage}
+  class_agnostic_aux: False
   # loss
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
@@ -72,6 +78,9 @@ head_regressor_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
+  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
+  share_mlp: True
+  use_encoder_mlp: ${model_cfg.two_stage}
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

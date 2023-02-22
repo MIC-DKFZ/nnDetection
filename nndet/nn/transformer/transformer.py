@@ -13,6 +13,7 @@ import torch.nn as nn
 
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.utils.typing import LINEARSEQ
 
 
 class DETRTransformer(AbstractTransformer):
@@ -20,20 +21,26 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
+        encoder_classifier: Optional[LINEARSEQ] = None,
+        encoder_regressor: Optional[LINEARSEQ] = None,
+        two_stage: bool = False,
         do_weight_init: bool = True,
     ):
         """
         Transformer module for DETR.
-
         Args:
             encoder: Transformer encoder
             decoder: Transformer decoder
-            do_weight_init: toggle whether weights should be
-                initialized
+            encoder_classifier:
+            encoder_regressor:
         """
         super().__init__()
+        if two_stage:
+            raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
         self.encoder = encoder
         self.decoder = decoder
+        self.encoder_classifier = encoder_classifier
+        self.encoder_regressor = encoder_regressor
         self.embed_dim = self.encoder.embed_dim
         self.dim = decoder.dim
         if do_weight_init:
@@ -54,7 +61,6 @@ class DETRTransformer(AbstractTransformer):
         """
         Compute the output box embeddings given the input features, position
         embedding and query embedding
-
         Args:
             features: features from the backbone in form of a
             List[Tensor(bs, C, H, W, (Z))]

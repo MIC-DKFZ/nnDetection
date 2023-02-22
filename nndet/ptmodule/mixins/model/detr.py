@@ -99,9 +99,6 @@ class SetModelMixin(ModelMixin):
             channels=backbone.get_channels(),
         )
 
-        transformer = cls._build_transformer(plan_arch=plan_arch, model_cfg=model_cfg)
-
-        # head & matching
         classifier = cls._build_classifier(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -110,6 +107,15 @@ class SetModelMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
+
+        transformer = cls._build_transformer(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            classifier=classifier,
+            regressor=regressor,
+        )
+
+        # head & matching
         matcher = cls._build_matcher(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -172,6 +178,8 @@ class SetModelMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
     ):
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
@@ -197,6 +205,15 @@ class SetModelMixin(ModelMixin):
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
         )
+        if model_cfg["two_stage"]:
+            encoder_classifier = classifier.get_encoder_classifier()
+            encoder_regressor = regressor.get_encoder_regressor()
+            return cls.transformer_cls(
+                encoder=encoder,
+                regressor=regressor,
+                encoder_classifier=encoder_classifier,
+                encoder_regressor=encoder_regressor,
+            )
         return cls.transformer_cls(encoder=encoder, decoder=decoder)
 
     @classmethod
@@ -281,7 +298,6 @@ class SetModelMixin(ModelMixin):
     ) -> FFNClassifier:
         num_classes = plan_arch["classifier_classes"]
         hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
-
         name = cls.head_classifier_cls.__name__
         kwargs = model_cfg["head_classifier_kwargs"]
 
@@ -301,7 +317,6 @@ class SetModelMixin(ModelMixin):
     ) -> FFNRegressor:
         dim = plan_arch["dim"]
         hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
-
         name = cls.head_regressor_cls.__name__
         kwargs = model_cfg["head_regressor_kwargs"]
 
