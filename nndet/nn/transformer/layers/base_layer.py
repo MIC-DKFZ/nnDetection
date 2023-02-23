@@ -27,6 +27,7 @@ class BaseTransformerLayer(nn.Module):
         It can be built by directly passing the `Attentions`, `FFNs`, `Norms`
         module. The `BaseTransformerLayer` also supports `prenorm`
         when specifying the `norm` as the first element of `operation_order`
+
         Args:
             attn: nn.Module or a list contains the attention module used in
                 TransformerLayer.
@@ -179,12 +180,12 @@ class TransformerLayerSequence(nn.Module):
         copy the passed `transformer_layers` module `num_layers` time or save
         the passed list of `transformer_layers` as parameters named
         ``self.layers`` which is the type of ``nn.ModuleList``.
-        The users should inherit `TransformerLayerSequence` and implemente their
-        own forward function.
+
         Args:
             transformer_layers: A list of BaseTransformerLayer. If it is
-            obj:`BaseTransformerLayer`, it would be repeated `num_layers` times
-            to a list[BaseTransformerLayer]
+                obj:`BaseTransformerLayer`, it would be repeated `num_layers`
+                times
+                to a list[BaseTransformerLayer]
             num_layers: The number of `TransformerLayer`.
         """
         super(TransformerLayerSequence, self).__init__()
@@ -195,21 +196,3 @@ class TransformerLayerSequence(nn.Module):
                 self.layers.append(copy.deepcopy(transformer_layers))
         else:
             assert isinstance(transformer_layers, list) and len(transformer_layers) == num_layers
-
-    def forward(
-        self,
-        query: torch.Tensor,
-        key: torch.Tensor,
-        value: torch.Tensor,
-        query_pos: torch.Tensor = None,
-        key_pos: torch.Tensor = None,
-        attn_masks: torch.Tensor = None,
-        query_key_padding_mask: torch.Tensor = None,
-        key_padding_mask: torch.Tensor = None,
-        **kwargs,
-    ) -> Tuple[Union[torch.Tensor, None], ...]:
-        """
-        Forward function of `TransformerLayerSequence`. The users should inherit
-        `TransformerLayerSequence` and implement their own forward function.
-        """
-        raise NotImplementedError()

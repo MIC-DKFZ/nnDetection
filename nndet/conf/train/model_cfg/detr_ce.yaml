@@ -4,6 +4,8 @@ detection_per_img: 24  # number of detections per image
 
 # global parameter
 hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+num_feature_levels: 1
+two_stage: False
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder

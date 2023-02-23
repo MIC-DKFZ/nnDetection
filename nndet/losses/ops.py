@@ -43,6 +43,9 @@ class Loss(torch.nn.Module):
         if val:
             logger.info(f"{self.__class__.__name__} uses FP32 loss computation.")
 
+    def extra_repr(self) -> str:
+        return f"loss_weight={self.loss_weight}, " f"loss_fp32={self.loss_fp32}, " f"reduction={self.reduction}"
+
 
 class SigmoidBaseLoss(Loss):
     def __init__(
@@ -65,58 +68,56 @@ class SigmoidBaseLoss(Loss):
 
     def forward(
         self,
-        logits: torch.Tensor,
-        targets: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Compute loss
-
-        Args:
-            logits: logits for all foreground classes [*, C]
-                * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [*] where * are arbitrary
-                spatial dimensions
-
-        Returns:
-            torch.Tensor: loss
-        """
-        num_classes = logits.shape[-1]
-        target_onehot = one_hot_smooth_last(
-            targets,
-            num_classes=num_classes + 1,
-            smoothing=self.smoothing,
-        )
-        target_onehot = target_onehot[..., 1:]
-
-        if self.loss_fp32:
-            with autocast(enabled=False):
-                loss = self.comp_loss(
-                    logits=logits.float(),
-                    targets=target_onehot.float(),
-                )
-        else:
-            loss = self.comp_loss(
-                logits=logits,
-                targets=target_onehot.to(dtype=logits.dtype),
-            )
-        return self.loss_weight * loss
-
-    @abstractmethod
-    def comp_loss(
-        self,
-        logits: torch.Tensor,
+        preds: torch.Tensor,
         targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
 
         Args:
-            logits: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
+                treated as foreground classes. [*] where * are arbitrary
+                spatial dimensions
+
+        Returns:
+            torch.Tensor: loss
+        """
+        target_onehot = one_hot_smooth_last(
+            targets,
+            num_classes=preds.shape[-1] + 1,
+            smoothing=self.smoothing,
+        )[..., 1:]
+
+        if self.loss_fp32:
+            with autocast(enabled=False):
+                loss = self.comp_loss(
+                    preds=preds.float(),
+                    targets=target_onehot.float(),
+                )
+        else:
+            loss = self.comp_loss(
+                preds=preds,
+                targets=target_onehot.to(dtype=preds.dtype),
+            )
+        return self.loss_weight * loss
+
+    @abstractmethod
+    def comp_loss(
+        self,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute loss with subclass loss function
+
+        Args:
+            preds: predictions (pre act) with shape [*, C], where
+                * are arbitrary spatial dimensions, C is the number of
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -124,6 +125,14 @@ class SigmoidBaseLoss(Loss):
             torch.Tensor: loss
         """
         raise NotImplementedError
+
+    def extra_repr(self) -> str:
+        return (
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}, "
+            f"smoothing={self.smoothing}"
+        )
 
 
 def reduction_helper(

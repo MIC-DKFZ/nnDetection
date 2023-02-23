@@ -12,6 +12,10 @@ import torch
 import torch.nn as nn
 
 from nndet.nn.transformer.attention.attention import MultiheadAttention
+from nndet.nn.transformer.layers.abstract import (
+    AbstractTransformerDecoder,
+    AbstractTransformerEncoder,
+)
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
@@ -19,7 +23,7 @@ from nndet.nn.transformer.layers.base_layer import (
 from nndet.utils.fully_connected import FCN
 
 
-class DETRTransformerEncoder(TransformerLayerSequence):
+class DETRTransformerEncoder(AbstractTransformerEncoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -35,21 +39,26 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         batch_first: bool = False,
     ):
         """
-        Transformer Encoder for DETR. Consists of num_layers transformer encoder layers refining the input feature
-        sequence.
+        Transformer Encoder for DETR. Consists of num_layers transformer encoder
+            layers refining the input feature sequence.
+
         Args:
-            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            embed_dim: embed dimension (hidden dimension) of the transformer
+                decoder
             num_heads: number of attention heads
             num_layers: number of decoder layers
             attn_dropout: dropout in the attention modules
-            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            proj_dropout: dropout of the final linear projection after attention
+            feedforward_dim: hidden dimension of the feed forward network in the
+                transformer layer
             ffn_dropout: dropout of the feed forward network
             activation: activation of the feed forward network
             post_norm: apply an additional layer norm to all outputs
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super(DETRTransformerEncoder, self).__init__(
+        super().__init__()
+        self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
@@ -71,8 +80,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
             ),
             num_layers=num_layers,
         )
-        self.embed_dim = self.layers[0].embed_dim
-        self.pre_norm = self.layers[0].pre_norm
+        self.embed_dim = embed_dim
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -92,16 +100,19 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         **kwargs,
     ) -> torch.Tensor:
         """
-        Compute a sequence of refined features. Typical inputs are query and query_pos.
+        Compute a sequence of refined features. Typical inputs are query and
+        query_pos.
 
         Args:
             query: sequence of input features (sequence_length, bs, C)
             key: (Optional) key for attention
             value: (Optional) value for attention
-            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            query_pos: (Optional) position embedding for the given query
+                (sequence_length, bs, C)
             key_pos: (Optional) position embedding for the given key
             attn_masks: (Optional) mask for the attention layer
-            query_key_padding_mask: (Optional) query key padding mask for attention
+            query_key_padding_mask: (Optional) query key padding mask for
+                attention
             key_padding_mask: (Optional) key padding mask for attention
             **kwargs:
 
@@ -109,7 +120,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
             Tensor: Sequence of refined features (sequence_length, bs, C)
         """
 
-        for layer in self.layers:
+        for layer in self.layer_sequence.layers:
             query = layer(
                 query,
                 key,
@@ -127,7 +138,7 @@ class DETRTransformerEncoder(TransformerLayerSequence):
         return query
 
 
-class DETRTransformerDecoder(TransformerLayerSequence):
+class DETRTransformerDecoder(AbstractTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -145,12 +156,16 @@ class DETRTransformerDecoder(TransformerLayerSequence):
     ):
         """
         Transformer Decoder for DETR
+
         Args:
-            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            embed_dim: embed dimension (hidden dimension) of the transformer
+                decoder
             num_heads: number of attention heads
             num_layers: number of decoder layers
             attn_dropout: dropout in the attention modules
-            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            proj_dropout: dropout of the final linear projection after attention
+            feedforward_dim: hidden dimension of the feed forward network in the
+                transformer layer
             ffn_dropout: dropout of the feed forward network
             activation: activation of the feed forward network
             post_norm: apply an additional layer norm to all outputs
@@ -158,7 +173,8 @@ class DETRTransformerDecoder(TransformerLayerSequence):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super(DETRTransformerDecoder, self).__init__(
+        super().__init__()
+        self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
                     embed_dim=embed_dim,
@@ -181,7 +197,7 @@ class DETRTransformerDecoder(TransformerLayerSequence):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = self.layers[0].embed_dim
+        self.embed_dim = embed_dim
         self.dim = dim
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -201,24 +217,32 @@ class DETRTransformerDecoder(TransformerLayerSequence):
         **kwargs,
     ) -> Tuple[torch.Tensor, None]:
         """
-        Compute a sequence of output box embeddings given object queries and features.
+        Compute a sequence of output box embeddings given object queries and
+            features.
+
         Args:
             query: Object queries (num_queries, bs, C)
-            key: features from the transformer encoder used as keys in cross-attention
-            value: features from the transformer encoder used as values in cross-attention
-            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            key: features from the transformer encoder used as keys in
+                cross-attention
+            value: features from the transformer encoder used as values in
+                cross-attention
+            query_pos: (Optional) position embedding for the given query
+                shape (sequence_length, bs, C)
             key_pos: (Optional) position embedding for the given key
             attn_masks: (Optional) mask for the attention layer
-            query_key_padding_mask: (Optional) query key padding mask for attention
+            query_key_padding_mask: (Optional) query key padding mask for
+                attention
             key_padding_mask: (Optional) key padding mask for attention
             **kwargs:
+
         Returns:
-            Tensor: Sequence of output embeddings, either of the last layer if return_intermediate is false  or of all
-                layers with shape ((num_decoder_layers), num_queries, bs, C)
+            Tensor: Sequence of output embeddings, either of the last layer if
+                return_intermediate is false  or of all layers with shape
+                ((num_decoder_layers), num_queries, bs, C)
         """
 
         if not self.return_intermediate:
-            for layer in self.layers:
+            for layer in self.layer_sequence.layers:
                 query = layer(
                     query,
                     key,
@@ -234,26 +258,26 @@ class DETRTransformerDecoder(TransformerLayerSequence):
             if self.post_norm_layer is not None:
                 query = self.post_norm_layer(query)[None]
             return query, None
+        else:
+            # return intermediate
+            intermediate = []
+            for layer in self.layer_sequence.layers:
+                query = layer(
+                    query,
+                    key,
+                    value,
+                    query_pos=query_pos,
+                    key_pos=key_pos,
+                    attn_masks=attn_masks,
+                    query_key_padding_mask=query_key_padding_mask,
+                    key_padding_mask=key_padding_mask,
+                    **kwargs,
+                )
 
-        # return intermediate
-        intermediate = []
-        for layer in self.layers:
-            query = layer(
-                query,
-                key,
-                value,
-                query_pos=query_pos,
-                key_pos=key_pos,
-                attn_masks=attn_masks,
-                query_key_padding_mask=query_key_padding_mask,
-                key_padding_mask=key_padding_mask,
-                **kwargs,
-            )
+                if self.return_intermediate:
+                    if self.post_norm_layer is not None:
+                        intermediate.append(self.post_norm_layer(query))
+                    else:
+                        intermediate.append(query)
 
-            if self.return_intermediate:
-                if self.post_norm_layer is not None:
-                    intermediate.append(self.post_norm_layer(query))
-                else:
-                    intermediate.append(query)
-
-        return torch.stack(intermediate), None
+            return torch.stack(intermediate), None

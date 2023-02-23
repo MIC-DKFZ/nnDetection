@@ -16,6 +16,7 @@ from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
 )
+from nndet.nn.transformer.layers.abstract import AbstractTransformerDecoder
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
@@ -69,7 +70,7 @@ def gen_sine_embed_for_position(pos_tensor: torch.Tensor, num_pos_feats: int, te
     return torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
 
 
-class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
+class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -87,12 +88,16 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
     ):
         """
         Transformer Decoder for Conditional DETR
+
         Args:
-            embed_dim: embed dimension (hidden dimension) of the transformer decoder
+            embed_dim: embed dimension (hidden dimension) of the transformer
+                decoder
             num_heads: number of attention heads
             num_layers: number of decoder layers
             attn_dropout: dropout in the attention modules
-            feedforward_dim: hidden dimension of the feed forward network in the transformer layer
+            proj_dropout: dropout of the final linear projection after attention
+            feedforward_dim: hidden dimension of the feed forward network in the
+                transformer layer
             ffn_dropout: dropout of the feed forward network
             activation: activation of the feed forward network
             post_norm: apply an additional layer norm to all outputs
@@ -100,8 +105,8 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-
-        super(ConditionalDETRTransformerDecoder, self).__init__(
+        super().__init__()
+        self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=[
                     ConditionalSelfAttention(
@@ -133,7 +138,7 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = self.layers[0].embed_dim
+        self.embed_dim = embed_dim
         self.query_scale = SimpleFCN(self.embed_dim, self.embed_dim, self.embed_dim, 2)
         self.ref_point_head = SimpleFCN(self.embed_dim, self.embed_dim, dim, 2)
         self.dim = dim
@@ -145,7 +150,7 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
             self.post_norm_layer = None
 
         for idx in range(num_layers - 1):
-            self.layers[idx + 1].attentions[1].query_pos_proj = None
+            self.layer_sequence.layers[idx + 1].attentions[1].query_pos_proj = None
 
     def forward(
         self,
@@ -160,27 +165,35 @@ class ConditionalDETRTransformerDecoder(TransformerLayerSequence):
         **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Compute a sequence of output box embeddings given object queries and features.
+        Compute a sequence of output box embeddings given object queries and
+            features.
+
         Args:
             query: Object queries (num_queries, bs, C)
-            key: features from the transformer encoder used as keys in cross-attention
-            value: features from the transformer encoder used as values in cross-attention
-            query_pos: (Optional) position embedding for the given query (sequence_length, bs, C)
+            key: features from the transformer encoder used as keys in
+                cross-attention
+            value: features from the transformer encoder used as values in
+                cross-attention
+            query_pos: (Optional) position embedding for the given query
+                shape (sequence_length, bs, C)
             key_pos: (Optional) position embedding for the given key
             attn_masks: (Optional) mask for the attention layer
-            query_key_padding_mask: (Optional) query key padding mask for attention
+            query_key_padding_mask: (Optional) query key padding mask for
+                attention
             key_padding_mask: (Optional) key padding mask for attention
             **kwargs:
+
         Returns:
-            Tensor: Sequence of output embeddings, either of the last layer if return_intermediate is false  or of all
-                layers with shape ((num_decoder_layers), num_queries, bs, C)
+            Tensor: Sequence of output embeddings, either of the last layer if
+                return_intermediate is false  or of all layers with shape
+                ((num_decoder_layers), num_queries, bs, C)
         """
 
         intermediate = []
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
         reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
 
-        for idx, layer in enumerate(self.layers):
+        for idx, layer in enumerate(self.layer_sequence.layers):
             obj_center = reference_points[..., : self.dim].transpose(0, 1)  # [num_queries, batch_size, dim]
 
             # do not apply transform in position in the first decoder layer
