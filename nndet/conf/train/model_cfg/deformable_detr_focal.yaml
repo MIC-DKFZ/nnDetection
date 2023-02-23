@@ -4,19 +4,19 @@ detection_per_img: 24  # number of detections per image
 two_stage: True
 
 # global parameters
-hidden_dim: 256 # feature length of the transformer input (must be divisible by the number of attention heads)
+hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
 num_feature_levels: 1
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
   pooling_mode: conv_kernel # one of 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
   start_channels: 32 # number of starting channels
-  max_channels: 512 # maximum number of channels
+  max_channels: 384 # maximum number of channels
 
 # Channel Mapper
 channel_mapper_kwargs:
-  num_feature_levels: 1
-  num_total_levels: 1
+  num_feature_levels: ${model_cfg.num_feature_levels}
+  extra_levels: 0
   kernel_size: 1
   conv_kwargs: {}
 
