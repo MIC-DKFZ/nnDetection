@@ -4,7 +4,7 @@ detection_per_img: 24  # number of detections per image
 two_stage: True
 
 # global parameters
-hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
+hidden_dim: 256 # feature length of the transformer input (must be divisible by the number of attention heads)
 num_feature_levels: 1
 
 # backbone
@@ -18,7 +18,9 @@ channel_mapper_kwargs:
   num_feature_levels: ${model_cfg.num_feature_levels}
   extra_levels: 0
   kernel_size: 1
-  conv_kwargs: {}
+  conv_kwargs:
+    norm_channels_per_group: 16
+    add_act: False
 
 # Transformer Encoder
 transformer_encoder_kwargs:

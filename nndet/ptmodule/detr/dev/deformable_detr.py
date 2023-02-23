@@ -12,7 +12,7 @@ from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.deformable_detr import DeformableDETRHead
-from nndet.nn.layers.conv.conv_only import ConvOnly
+from nndet.nn.layers.conv import ConvGroupRelu
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
@@ -32,7 +32,7 @@ class BoxDeformableDETRC001Focal(DeformableSetModelMixin, BoxDETRC001):
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
     channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
-    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvGroupRelu
 
     transformer_encoder_cls: TransformerLayerSequence = DeformableDETRTransformerEncoder
     transformer_decoder_cls: TransformerLayerSequence = DeformableDETRTransformerDecoder

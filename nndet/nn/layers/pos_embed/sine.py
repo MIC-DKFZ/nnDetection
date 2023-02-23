@@ -72,9 +72,9 @@ class PositionEmbeddingSine(BasePositionEmbedding):
                 N = batch size, dims = spatial dimensions
         """
         if self.dim == 3:
-            _num_pos_feats = math.ceil(self.num_pos_feats / 3)
+            _num_pos_feats = 2 * math.ceil(self.num_pos_feats / 6)
         else:
-            _num_pos_feats = math.ceil(self.num_pos_feats / 2)
+            _num_pos_feats = 2 * math.ceil(self.num_pos_feats / 4)
 
         if data.ndim == 4:  # 2D
             stack_dim = 4
@@ -111,8 +111,19 @@ class PositionEmbeddingSine(BasePositionEmbedding):
         if data.ndim == 5:
             pos_z = z_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), _num_pos_feats]
             pos_z = torch.stack((pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim).flatten(-2)
-            pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
+            # reduce dimension in a symmetric way
+            cut_dims = 3 * _num_pos_feats - self.num_pos_feats
+            slice_x, slice_y, slice_z = _num_pos_feats - torch.clamp(
+                torch.div(cut_dims + torch.arange(0, 3, device=data.device), 3, rounding_mode="floor"), 0
+            )
+            pos = torch.cat((pos_x[..., :slice_x], pos_y[..., :slice_y], pos_z[..., :slice_z]), dim=4).permute(
+                0, 4, 1, 2, 3
+            )
         else:
-            pos = torch.cat((pos_x, pos_y), dim=3).permute(0, 3, 1, 2)
+            cut_dims = 2 * _num_pos_feats - self.num_pos_feats
+            slice_x, slice_y = _num_pos_feats - torch.clamp(
+                torch.div(cut_dims + torch.arange(0, 2, device=data.device), 2, rounding_mode="floor"), 0
+            )
+            pos = torch.cat((pos_x[..., :slice_x], pos_y[..., :slice_y]), dim=3).permute(0, 3, 1, 2)
         # Remove channels, this only removes z positions
-        return pos[:, : self.num_pos_feats]
+        return pos
