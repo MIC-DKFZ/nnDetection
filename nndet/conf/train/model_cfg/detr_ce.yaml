@@ -16,7 +16,7 @@ backbone_kwargs: # keyword arguments passed to encoder
 # Channel Mapper
 channel_mapper_kwargs:
   num_feature_levels: 1
-  num_total_levels: 1
+  extra_levels: 0
   kernel_size: 1
   conv_kwargs: {}
 

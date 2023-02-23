@@ -226,12 +226,14 @@ class SetModelMixin(ModelMixin):
         conv = Generator(cls.channel_mapper_conv_cls, plan_arch["dim"])
         channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
         num_in_features = channel_mapper_kwargs["num_feature_levels"]
+        num_total_levels = num_in_features + channel_mapper_kwargs["extra_levels"]
         return cls.channel_mapper_cls(
             conv=conv,
             in_channels=channels,
             num_in_features=num_in_features,
             kernel_size=channel_mapper_kwargs["kernel_size"],
             out_channels=model_cfg["hidden_dim"],
+            num_outs=num_total_levels,
             **channel_mapper_kwargs["conv_kwargs"],
         )
 
