@@ -23,7 +23,6 @@ class BaseDETR(AbstractDetector):
         hidden_dim: int,
         detection_per_img: int,
         query_dim: int,
-        num_feature_levels: int = 1,
         segmenter: Optional[Segmenter] = None,
         two_stage: bool = False,
     ):
@@ -32,18 +31,19 @@ class BaseDETR(AbstractDetector):
 
         Args:
             backbone: Backbone network to compute image features
-            # TODO fix 80 character
-            channel_mapper: Module that maps the features channel dimension to the hidden_dim in the transformer
+            channel_mapper: Module that maps the features channel dimension to
+                the hidden_dim in the transformer
             transformer: Transformer Model
-            head: Head used for classification, regression, loss computation and postprocessing
+            head: Head used for classification, regression, loss computation and
+                postprocessing
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
             pos_embed: module to generate positional embedding
-            query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
-            num_feature_levels: which levels of backbone input should be used for the transformer input
-                                (currently only one supported)
-            segmenter: (Optional) segmenter to predict a semantic segmentations from the feature maps
-            two_stage: toggle whether the encoder should predict objects and use those as query candidates
+            query_dim: dimension of object queries in the decoder
+            segmenter: (Optional) segmenter to predict a semantic segmentations
+                from the feature maps
+            two_stage: toggle whether the encoder should predict objects and use
+                those as query candidates
         """
         super().__init__()
         # Obtain important hyperparameters
@@ -52,7 +52,6 @@ class BaseDETR(AbstractDetector):
         self.backbone = backbone
         self.channel_mapper = channel_mapper
         self.hidden_dim = hidden_dim
-        self.num_feature_levels = num_feature_levels
         self.two_stage = two_stage
 
         # Build Transformer Specific Architecture
@@ -264,8 +263,8 @@ class BaseDETR(AbstractDetector):
         if self.two_stage:
             assert encoder_predictions is not None, "Two stage is not supported by this transformer"
             pred_detections["enc_outputs"] = {
-                "pred_logits": encoder_predictions[0],
-                "pred_boxes": encoder_predictions[1].sigmoid(),
+                "pred_cls_logits": encoder_predictions[0],
+                "pred_box_coords": encoder_predictions[1].sigmoid(),
             }
 
         # optionally forward seg head

@@ -170,7 +170,7 @@ class SetModelMixin(ModelMixin):
             detection_per_img=model_cfg["detection_per_img"],
             query_dim=model_cfg["hidden_dim"],
             segmenter=segmenter,
-            **model_kwargs,
+            two_stage=model_cfg["two_stage"],
         )
 
     @classmethod

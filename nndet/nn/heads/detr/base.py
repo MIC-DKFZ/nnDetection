@@ -179,6 +179,18 @@ class DETRHead(torch.nn.Module):
                     num_boxes_all=num_boxes_all,
                 )
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
+
+        if "enc_outputs" in pred_detection:
+            enc_outputs = pred_detection["enc_outputs"]
+            l_dict = self._match_and_compute_loss(
+                pred_logits=enc_outputs["pred_cls_logits"],
+                pred_coords=enc_outputs["pred_box_coords"],
+                target_boxes=target_boxes,
+                target_labels=target_labels,
+                num_boxes_all=num_boxes_all,
+            )
+            # TODO might want to scale this
+            losses.update(l_dict)
         return losses
 
     def format_scale_aux_losses(
