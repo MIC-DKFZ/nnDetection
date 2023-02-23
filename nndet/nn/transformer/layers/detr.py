@@ -41,6 +41,7 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
         """
         Transformer Encoder for DETR. Consists of num_layers transformer encoder
             layers refining the input feature sequence.
+
         Args:
             embed_dim: embed dimension (hidden dimension) of the transformer
                 decoder
@@ -260,7 +261,7 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
         else:
             # return intermediate
             intermediate = []
-            for layer in self.layers:
+            for layer in self.layer_sequence.layers:
                 query = layer(
                     query,
                     key,

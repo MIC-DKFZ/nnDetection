@@ -23,7 +23,8 @@ class AbstractTransformerEncoder(nn.Module):
         **kwargs,
     ) -> torch.Tensor:
         """
-        Compute a sequence of refined features. Typical inputs are query and query_pos.
+        Compute a sequence of refined features. Typical inputs are query and
+        query_pos.
 
         Args:
             query: sequence of input features (sequence_length, bs, C)
