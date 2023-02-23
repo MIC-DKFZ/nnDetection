@@ -47,17 +47,17 @@ class BFocalLoss(SigmoidBaseLoss):
 
     def comp_loss(
         self,
-        logits: torch.Tensor,
+        preds: torch.Tensor,
         targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
 
         Args:
-            logits: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -65,11 +65,21 @@ class BFocalLoss(SigmoidBaseLoss):
             torch.Tensor: loss
         """
         return focal_loss_with_logits(
-            logits,
+            preds,
             targets,
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"gamma={self.gamma}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}"
         )
 
 
@@ -112,17 +122,17 @@ class AsymmetricBFocalLoss(SigmoidBaseLoss):
 
     def comp_loss(
         self,
-        logits: torch.Tensor,
+        preds: torch.Tensor,
         targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
 
         Args:
-            logits: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -130,9 +140,19 @@ class AsymmetricBFocalLoss(SigmoidBaseLoss):
             torch.Tensor: loss
         """
         return asymmetric_focal_loss_with_logits(
-            logits,
+            preds,
             targets,
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
+        )
+
+    def extra_repr(self) -> str:
+        return (
+            f"alpha={self.alpha}, "
+            f"gamma={self.gamma}, "
+            f"smoothing={self.smoothing}"
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}"
         )

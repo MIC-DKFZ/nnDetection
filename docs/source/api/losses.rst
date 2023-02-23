@@ -48,19 +48,42 @@ Regression
 
    diou
    giou
-   smoothl1
+
+
+Mask
+----
+
+.. currentmodule:: nndet.losses.mask
+
+.. autosummary::
+   :toctree: Mask
+   :nosignatures:
+
+   ce
+   dice
+
+
+.. currentmodule:: nndet.losses.mask.functional
+
+.. autosummary::
+   :toctree: Mask
+   :nosignatures:
+
+   dice
 
 
 Segmentation
 ------------
 
-.. currentmodule:: nndet.losses
+.. currentmodule:: nndet.losses.segmentation
 
 .. autosummary::
    :toctree: Segmentation
    :nosignatures:
 
-   segmentation
+   ce
+   dice
+   topk
 
 
 Ops

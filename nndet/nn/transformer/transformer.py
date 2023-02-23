@@ -84,19 +84,19 @@ class DETRTransformer(AbstractTransformer):
         dim = self.dim
         assert dim == features.dim() - 2  # subtract batch size and sequence length
         if dim == 2:
-            bs, c, h, w = features.shape
+            bs, c, x, y = features.shape
         elif dim == 3:
-            bs, c, h, w, z = features.shape
+            bs, c, x, y, z = features.shape
         else:
             raise ValueError(f"Number of feature dimensions {dim} not supported.")
 
-        features = features.view(bs, c, -1).permute(2, 0, 1)  # [bs, c, h, w] -> [h*w*z, bs, c]
+        features = features.view(bs, c, -1).permute(2, 0, 1)  # [bs, c, dims] -> [mul(dims), bs, c]
         pos_embed = pos_embed.view(bs, c, -1).permute(2, 0, 1)
-        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)  # [num_query, dim] -> [num_query, bs, dim]
+        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)  # [num_query, c] -> [num_query, bs, c]
 
         if mask is not None:
             assert len(mask) == 0
-            mask = mask[0].view(bs, -1)  # [bs, h, w] -> [bs, h*w]
+            mask = mask[0].view(bs, -1)  # [bs, dims] -> [bs, mul(dims)]
 
         memory = self.encoder(
             query=features,
@@ -116,8 +116,8 @@ class DETRTransformer(AbstractTransformer):
         )
         hidden_state = hidden_state.transpose(1, 2)
         if dim == 4:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, h, w)
+            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y)
         else:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, h, w, z)
+            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y, z)
 
         return hidden_state, references, None

@@ -1,13 +1,15 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Optional
 
 import torch
-from loguru import logger
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, one_hot_smooth_last, reduction_helper
+from nndet.losses.ops import Loss, SigmoidBaseLoss, reduction_helper
 
 
-class BCELoss(Loss):
+class BCELoss(SigmoidBaseLoss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
@@ -34,59 +36,52 @@ class BCELoss(Loss):
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
             reduction=reduction,
+            smoothing=smoothing,
         )
         self.weight = weight
-        self.smoothing = smoothing
-        if smoothing > 0:
-            logger.info(f"Running label smoothing with smoothing: {smoothing}")
 
-    def forward(
+    def comp_loss(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Compute bce loss based on one hot encoding
+        Compute loss with subclass loss function
 
         Args:
-            input: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
         Returns:
-            Tensor: computed loss
+            torch.Tensor: loss
         """
-        num_classes = input.shape[-1]
-        target_one_hot = one_hot_smooth_last(
-            target, num_classes=num_classes + 1, smoothing=self.smoothing
-        )  # [N, *, C + 1]
-        target_one_hot = target_one_hot[..., 1:]  # background is implicitly encoded
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(
+            preds,
+            targets,
+            reduction="none",
+            weight=self.weight,
+        )
+        return reduction_helper(loss, reduction=self.reduction)
 
-        if self.loss_fp32:
-            with autocast(enabled=False):
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(
-                    input.float(),
-                    target_one_hot.float(),
-                    reduction="none",
-                    weight=self.weight,
-                )
-        else:
-            loss = torch.nn.functional.binary_cross_entropy_with_logits(
-                input,
-                target_one_hot.to(dtype=input.dtype),
-                reduction="none",
-                weight=self.weight,
-            )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+    def extra_repr(self) -> str:
+        return (
+            f"weight={self.weight}"
+            f"smoothing={self.smoothing} "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}"
+        )
 
 
 class CELoss(Loss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
+        smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         reduction: str = "sum",
@@ -96,6 +91,7 @@ class CELoss(Loss):
 
         Args:
             weight: equivalent to weight parameter of CE loss of pytorch
+            smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             reduction: 'mean'|'sum'|'none'|'mean_last_sum'
@@ -110,20 +106,21 @@ class CELoss(Loss):
             reduction=reduction,
         )
         self.weight = weight
+        self.smoothing = smoothing
 
     def forward(
         self,
-        input: torch.Tensor,
-        target: torch.Tensor,
+        preds: torch.Tensor,
+        targets: torch.Tensor,
     ) -> torch.Tensor:
         """
         Compute loss
 
         Args:
-            input: logits for all foreground classes [*, C]
+            preds: predictions (pre act) with shape [*, C], where
                 * are arbitrary spatial dimensions, C is the number of
-                foreground classes
-            target: target classes. 0 is treated as background, >0 are
+                *foreground* classes
+            targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
 
@@ -133,30 +130,41 @@ class CELoss(Loss):
         Warning:
             Note the ordering of the input is different from pytorch!
         """
-        permute_inputs = input.ndim > 2
+        permute_inputs = preds.ndim > 2
         if permute_inputs:
             # permute class channel to first axis
-            _input = input.movedim(-1, 1)
+            _input = preds.movedim(-1, 1)
         else:
-            _input = input
+            _input = preds
 
         if self.loss_fp32:
             with autocast(enabled=False):
                 loss = torch.nn.functional.cross_entropy(
                     _input.float(),
-                    target.long(),
+                    targets.long(),
                     weight=self.weight,
                     reduction="none",
+                    label_smoothing=self.smoothing,
                 )
         else:
             loss = torch.nn.functional.cross_entropy(
                 _input,
-                target.long(),
+                targets.long(),
                 weight=self.weight,
                 reduction="none",
+                label_smoothing=self.smoothing,
             )
 
         if permute_inputs and self.reduction.lower() == "none":
             # restore permutation
             loss = loss.movedim(1, -1)
         return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+
+    def extra_repr(self) -> str:
+        return (
+            f"weight={self.weight}"
+            f"smoothing={self.smoothing} "
+            f"loss_weight={self.loss_weight}, "
+            f"loss_fp32={self.loss_fp32}, "
+            f"reduction={self.reduction}"
+        )
