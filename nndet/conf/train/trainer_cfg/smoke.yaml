@@ -18,7 +18,7 @@ sweep_key: mAP_IoU_0.10_0.50_0.05_MaxDet_100
 monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model
 monitor_mode: "max" # metric operation mode "min" or "max"
 
-max_num_epochs: 50 # max number of epochs
+max_num_epochs: 2 # max number of epochs
 num_train_batches_per_epoch: 250 # number of train batches per epoch
 num_val_batches_per_epoch: 50 # number of val batches per epoch
 
