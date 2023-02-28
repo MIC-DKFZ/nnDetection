@@ -17,7 +17,7 @@ from nndet.nn.backbone.blueprints.resconv import ConvBackbone, ResConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
-from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMV2
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
@@ -36,7 +36,7 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002(
+class RetinaUNetHNMC017(
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
@@ -58,7 +58,7 @@ class RetinaUNetV002(
         ConvGroupLReLU, initializer=InitHeV2(mode="fan_out")
     )  # conv class used for neck
 
-    head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
+    head_cls: Type[AnchorHead] = BoxHeadHNMV2  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupLReLU  # conv class used for head
     head_classifier_cls: Type[DenseClassifier] = BCECLassifier  # define class for head classifier
     head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
@@ -73,7 +73,7 @@ class RetinaUNetV002(
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002Focal(RetinaUNetV002):
+class RetinaUNetFocalC017(RetinaUNetHNMC017):
     """
     Focal Loss based RetinaUNet V002
     """
@@ -85,7 +85,7 @@ class RetinaUNetV002Focal(RetinaUNetV002):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002Res(RetinaUNetV002):
+class RetinaUNetC017Res(RetinaUNetHNMC017):
     """
     Residual Conv Backbone
     """
