@@ -61,10 +61,6 @@ head_classifier_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
-  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
-  share_mlp: True
-  use_encoder_mlp: ${model_cfg.two_stage}
-  class_agnostic_aux: False
   # loss
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
@@ -77,9 +73,6 @@ head_regressor_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
-  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
-  share_mlp: True
-  use_encoder_mlp: ${model_cfg.two_stage}
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

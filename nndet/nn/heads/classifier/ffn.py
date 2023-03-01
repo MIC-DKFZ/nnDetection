@@ -1,4 +1,3 @@
-import copy
 import math
 from abc import abstractmethod
 from typing import Dict, Optional
@@ -21,11 +20,6 @@ class FFNClassifier(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
-        num_decoder_layers: int = 0,
-        share_mlp: bool = True,
-        use_encoder_mlp: bool = False,
-        class_agnostic_aux: bool = False,
-        binary_classes: Optional[int] = None,
         **kwargs,
     ) -> None:
         """
@@ -50,26 +44,10 @@ class FFNClassifier(torch.nn.Module):
 
         self.mlp = self._build_module(
             linear=linear,
-            output_channels=self.num_classes,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
             **kwargs,
         )
-
-        self.encoder_mlp = None
-        self.aux_mlp = None
-        self.share_mlp = share_mlp
-        self.num_decoder_layers = num_decoder_layers
-        if not self.share_mlp:
-            if not class_agnostic_aux:
-                aux_mlp = self.mlp
-            else:
-                aux_mlp = self._build_module(linear, binary_classes, add_norm, dropout_rate, **kwargs)
-            self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(aux_mlp) for i in range(num_decoder_layers - 1)])
-            if use_encoder_mlp:
-                self.encoder_mlp = copy.deepcopy(aux_mlp)
-        elif use_encoder_mlp:
-            self.encoder_mlp = self.mlp
 
         self.loss_name: str = "ffn_cls"
         self.loss: Optional[torch.nn.Module] = None
@@ -79,7 +57,6 @@ class FFNClassifier(torch.nn.Module):
     def _build_module(
         self,
         linear: LINEARSEQ,
-        output_channels: int,
         add_norm: bool,
         dropout_rate: float,
         **kwargs,
@@ -99,7 +76,7 @@ class FFNClassifier(torch.nn.Module):
         modules = []
         for idx in range(self.num_layers):
             in_channels = self.in_channels if idx == 0 else self.internal_channels
-            out_channels = output_channels if idx == self.num_layers - 1 else self.internal_channels
+            out_channels = self.num_classes if idx == self.num_layers - 1 else self.internal_channels
             # no norm and act in last layer
             add_norm = add_norm if idx < self.num_layers - 1 else False
             add_act = True if idx < self.num_layers - 1 else False
@@ -127,12 +104,11 @@ class FFNClassifier(torch.nn.Module):
         """
         pass
 
-    def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
         """
         Forward feature through module
 
         Args:
-            layer: index to know which MLP to use
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
                 channels
@@ -142,20 +118,7 @@ class FFNClassifier(torch.nn.Module):
                 D=number of decoder layers, B=batch size, R=number of
                 predictions, num_classes=number of classes
         """
-        # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
-        if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
-            return self.mlp(features)
-        # else it is a not shared aux layer
-        return self.aux_mlp[layer](features)
-
-    def get_encoder_classifier(self):
-        """
-        Get the classifier module for the encoder outputs
-
-        Returns:
-            nn.Module containing the encoder classifier
-        """
-        return self.encoder_mlp
+        return self.mlp(features)
 
     def compute_loss(
         self,
@@ -243,7 +206,6 @@ class SoftmaxFFNClassifier(FFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
-            binary_classes=2,
             **kwargs,
         )
         self.logits_convert_fn = torch.nn.Softmax(dim=-1)
@@ -301,7 +263,6 @@ class SigmoidFFNClassifier(FFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
-            binary_classes=1,
             **kwargs,
         )
         self.logits_convert_fn = torch.nn.Sigmoid()

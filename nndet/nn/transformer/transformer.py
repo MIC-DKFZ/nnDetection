@@ -13,7 +13,6 @@ import torch.nn as nn
 
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
-from nndet.utils.typing import LINEARSEQ
 
 
 class DETRTransformer(AbstractTransformer):
@@ -21,8 +20,6 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
-        encoder_classifier: Optional[LINEARSEQ] = None,
-        encoder_regressor: Optional[LINEARSEQ] = None,
         two_stage: bool = False,
         do_weight_init: bool = True,
     ):
@@ -39,8 +36,6 @@ class DETRTransformer(AbstractTransformer):
             raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
         self.encoder = encoder
         self.decoder = decoder
-        self.encoder_classifier = encoder_classifier
-        self.encoder_regressor = encoder_regressor
         self.embed_dim = self.encoder.embed_dim
         self.dim = decoder.dim
         if do_weight_init:
@@ -115,9 +110,5 @@ class DETRTransformer(AbstractTransformer):
             query_pos=query_embed,
         )
         hidden_state = hidden_state.transpose(1, 2)
-        if dim == 4:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y)
-        else:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y, z)
 
         return hidden_state, references, None

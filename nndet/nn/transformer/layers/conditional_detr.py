@@ -24,16 +24,20 @@ from nndet.nn.transformer.layers.base_layer import (
 from nndet.utils.fully_connected import FCN, SimpleFCN
 
 
-def gen_sine_embed_for_position(pos_tensor: torch.Tensor, num_pos_feats: int, temperature: int = 10000) -> torch.Tensor:
+def gen_sine_embed_for_position(
+    pos_tensor: torch.Tensor,
+    num_pos_feats: int,
+    temperature: int = 10000,
+) -> torch.Tensor:
     """
-    2D or 3D Positional Encoding to encode given positions (different to the normal position encoding which computes
-    position based on pixels)
+    2D or 3D Positional Encoding to encode given positions (different to the
+    normal position encoding which computes position based on pixels)
     Args:
-        pos_tensor: tensor of shape (bs, num_pos, 2|3)
+        pos_tensor: tensor of shape (bs, num_pos, dim)
         num_pos_feats: number of out features (output dimension)
         temperature: temperature of the position encoding
     Returns:
-        Tensor:
+        Tensor: tensor containing position embedding
     """
     dim = pos_tensor.shape[2]
     assert dim in [2, 3]

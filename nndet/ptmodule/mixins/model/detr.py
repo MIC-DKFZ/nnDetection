@@ -111,8 +111,6 @@ class SetModelMixin(ModelMixin):
         transformer = cls._build_transformer(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
-            classifier=classifier,
-            regressor=regressor,
         )
 
         # head & matching
@@ -178,8 +176,6 @@ class SetModelMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        classifier: Optional[FFNClassifier] = None,
-        regressor: Optional[FFNRegressor] = None,
     ):
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
@@ -205,15 +201,6 @@ class SetModelMixin(ModelMixin):
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
         )
-        if model_cfg["two_stage"]:
-            encoder_classifier = classifier.get_encoder_classifier()
-            encoder_regressor = regressor.get_encoder_regressor()
-            return cls.transformer_cls(
-                encoder=encoder,
-                regressor=regressor,
-                encoder_classifier=encoder_classifier,
-                encoder_regressor=encoder_regressor,
-            )
         return cls.transformer_cls(encoder=encoder, decoder=decoder)
 
     @classmethod
