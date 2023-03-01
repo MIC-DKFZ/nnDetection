@@ -32,7 +32,8 @@ class BCEMaskLoss(Loss):
             loss_fp32=loss_fp32,
             reduction=reduction,
         )
-        self.weight = weight
+        self.register_buffer("weight", weight)
+        self.weight: Optional[torch.Tensor]
 
     def forward(
         self,
