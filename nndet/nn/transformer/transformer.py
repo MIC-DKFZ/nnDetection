@@ -28,8 +28,6 @@ class DETRTransformer(AbstractTransformer):
         Args:
             encoder: Transformer encoder
             decoder: Transformer decoder
-            encoder_classifier:
-            encoder_regressor:
         """
         super().__init__()
         if two_stage:
@@ -98,6 +96,7 @@ class DETRTransformer(AbstractTransformer):
             key=None,
             value=None,
             query_pos=pos_embed,
+            key_pos=None,
             query_key_padding_mask=mask,
         )
 
@@ -106,8 +105,8 @@ class DETRTransformer(AbstractTransformer):
             query=target,
             key=memory,
             value=memory,
-            key_pos=pos_embed,
             query_pos=query_embed,
+            key_pos=pos_embed,
         )
         hidden_state = hidden_state.transpose(1, 2)
 
