@@ -1,4 +1,6 @@
-# from functools import lru_cache
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict, Hashable, List, Optional, Sequence
 
 import numpy as np

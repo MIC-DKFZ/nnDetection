@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict, Optional
 
 import torch
@@ -36,7 +39,6 @@ class FFNRegressor(torch.nn.Module):
         super().__init__()
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
-
         self.in_channels = in_channels
         self.internal_channels = internal_channels
         self.num_layers = num_layers

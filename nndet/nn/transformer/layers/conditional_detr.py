@@ -12,6 +12,7 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.layers.fc import FCN, SimpleFCN
 from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
@@ -21,7 +22,6 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.fully_connected import FCN, SimpleFCN
 
 
 def gen_sine_embed_for_position(
