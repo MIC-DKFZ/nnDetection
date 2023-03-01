@@ -1,3 +1,15 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from DETR https://github.com/facebookresearch/detr
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from Conditional DETR https://github.com/Atten4Vis/ConditionalDETR
+# SPDX-FileCopyrightText: 2020 SenseTime
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict, List, Optional, Tuple
 
 import torch

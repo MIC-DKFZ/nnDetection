@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -32,18 +35,22 @@ class BaseDETR(AbstractDetector):
 
         Args:
             backbone: Backbone network to compute image features
-            # TODO fix 80 character
-            channel_mapper: Module that maps the features channel dimension to the hidden_dim in the transformer
+            channel_mapper: Module that maps the features channel dimension
+                to the hidden_dim in the transformer
             transformer: Transformer Model
-            head: Head used for classification, regression, loss computation and postprocessing
+            head: Head used for classification, regression, loss computation
+                and postprocessing
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
             pos_embed: module to generate positional embedding
-            query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
-            num_feature_levels: which levels of backbone input should be used for the transformer input
-                                (currently only one supported)
-            segmenter: (Optional) segmenter to predict a semantic segmentations from the feature maps
-            two_stage: toggle whether the encoder should predict objects and use those as query candidates
+            query_dim: dimension of object queries in the decoder (usually
+                same as hidden dim except for DABDETR)
+            num_feature_levels: which levels of backbone input should be used
+                for the transformer input (currently only one supported)
+            segmenter: (Optional) segmenter to predict a semantic segmentations
+                from the feature maps
+            two_stage: toggle whether the encoder should predict objects and
+                use those as query candidates
         """
         super().__init__()
         # Obtain important hyperparameters
@@ -136,8 +143,9 @@ class BaseDETR(AbstractDetector):
                     X= number of ground truth boxes in image
 
                 ``"target_seg"`` (Tensor)
-                    segmentation ground truth (only needed if ::param::`segmenter`
-                    was provided in init) (classes start from 1, 0 background)
+                    segmentation ground truth (only needed if
+                    ::param::`segmenter` was provided in init) (classes start
+                    from 1, 0 background)
 
             predict: compute final predictions (includes detection
                 postprocessing)

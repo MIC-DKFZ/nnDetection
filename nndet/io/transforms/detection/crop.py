@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Hashable, List, Optional, Tuple
 
 import numpy as np
@@ -11,14 +14,10 @@ import nndet.core.ops_np as ops_np
 
 
 class CenterCropTransform(AbstractTransform):
-    """Crops data and seg (if available) in the center
-
-    Args:
-        output_size (int or tuple of int): Output patch size
-
     """
-
-    # FIXME # TODO add docs
+    Crops data and seg (if available) in the center
+    Modified from batchgenerators to support points.
+    """
 
     def __init__(
         self,
