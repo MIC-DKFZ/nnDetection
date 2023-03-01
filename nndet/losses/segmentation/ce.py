@@ -36,7 +36,8 @@ class CESegLoss(Loss):
             loss_fp32=loss_fp32,
             reduction=reduction,
         )
-        self.weight = weight
+        self.register_buffer("weight", weight)
+        self.weight: Optional[torch.Tensor]
         self.smoothing = smoothing
 
     def forward(
@@ -115,7 +116,8 @@ class BCESegLoss(Loss):
             loss_fp32=loss_fp32,
             reduction=reduction,
         )
-        self.weight = weight
+        self.register_buffer("weight", weight)
+        self.weight: Optional[torch.Tensor]
         self.smoothing = smoothing
         self.do_bg = do_bg
 

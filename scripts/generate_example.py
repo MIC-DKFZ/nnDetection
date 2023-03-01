@@ -25,8 +25,9 @@ modalities = 1
 
 # 3D example
 dim = 3
-image_size = [512, 512, 512]
+# image_size = [512, 512, 512]
 image_size = [256, 256, 256]
+zero_pad = 24
 object_size = [16, 32]
 object_width = 4
 
@@ -39,20 +40,24 @@ def generate_image(image_dir, label_dir, idx):
     selected_size = np.random.randint(object_size[0], object_size[1])
     selected_class = np.random.randint(0, 3)
 
-    data = np.random.rand(*image_size)
+    padded_image_size = [i + 2 * zero_pad for i in image_size]
+    data = np.zeros(padded_image_size, dtype=float)
+    data_slices = tuple([slice(zero_pad, zero_pad + i) for i in image_size])
+    data[data_slices] = np.random.rand(*image_size)
     mask = np.zeros_like(data)
 
     top_left = [np.random.randint(0, image_size[i] - selected_size) for i in range(dim)]
 
     if selected_class == 1:
-        slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
+        slicing = tuple([slice(tp + zero_pad, tp + zero_pad + selected_size) for tp in top_left])
         data[slicing] = data[slicing] + 0.4
         data = data.clip(0, 1)
         mask[slicing] = 1
     elif selected_class == 2:
-        slicing = tuple([slice(tp, tp + selected_size) for tp in top_left])
-
-        inner_slicing = [slice(tp + object_width, tp + selected_size - object_width) for tp in top_left]
+        slicing = tuple([slice(tp + zero_pad, tp + zero_pad + selected_size) for tp in top_left])
+        inner_slicing = [
+            slice(tp + zero_pad + object_width, tp + zero_pad + selected_size - object_width) for tp in top_left
+        ]
         if len(inner_slicing) == 3:
             inner_slicing[0] = slice(0, image_size[0])
         inner_slicing = tuple(inner_slicing)
@@ -117,8 +122,8 @@ def main():
     full = args.full
     num_processes = args.num_processes
 
-    num_images_tr = 1000 if full else 20
-    num_images_ts = 1000 if full else 10
+    num_images_tr = 1000 if full else 50
+    num_images_ts = 1000 if full else 20
 
     meta = {
         "task": f"Task000D{dim}M{modalities}_Example",
