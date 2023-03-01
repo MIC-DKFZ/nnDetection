@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.layers.fc import FCN
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.layers.abstract import (
     AbstractTransformerDecoder,
@@ -20,7 +21,6 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.fully_connected import FCN
 
 
 class DETRTransformerEncoder(AbstractTransformerEncoder):
