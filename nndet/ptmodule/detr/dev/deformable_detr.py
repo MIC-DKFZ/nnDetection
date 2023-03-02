@@ -5,13 +5,21 @@
 from typing import Type
 
 from nndet.core.boxes.criterions.base import ClassCriterion
-from nndet.core.boxes.criterions.cls import FocalClassCriterionSigmoid
-from nndet.core.post.detr import DETRBoxPost, TopKBoxPost
+from nndet.core.boxes.criterions.cls import (
+    FocalClassCriterionSigmoid,
+    SimpleClassCriterionSoftmax,
+)
+from nndet.core.post.detr import DETRBoxPost, MaxFGBoxPost, TopKBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
-from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
+from nndet.nn.heads.classifier.ffn import (
+    CEFFNClassifier,
+    FFNClassifier,
+    FocalFFNClassifier,
+)
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.deformable_detr import DeformableDETRHead
+from nndet.nn.heads.regressor.ffn import FFNRegressor, L1UGIoUFFNRegressor
 from nndet.nn.layers.conv import ConvGroupRelu
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
@@ -40,5 +48,13 @@ class BoxDeformableDETRC001Focal(DeformableSetModelMixin, BoxDETRC001):
 
     head_cls: DETRHead = DeformableDETRHead  #: main DETR head
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_regressor_cls: FFNRegressor = L1UGIoUFFNRegressor  #: define regressor class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxDeformableDETRC001CE(BoxDeformableDETRC001Focal):
+    head_classifier_cls: FFNClassifier = CEFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = MaxFGBoxPost  #: define postprocessing strategy during inference
+    matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
