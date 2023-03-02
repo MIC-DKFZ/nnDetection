@@ -115,11 +115,7 @@ class FFNClassifier(torch.nn.Module):
                     **kwargs,
                 )
             )
-
-        if len(modules) == 1:
-            return modules[0]
-        else:
-            return torch.nn.Sequential(*modules)
+        return torch.nn.Sequential(*modules)
 
     def init_weights(self):
         """
@@ -334,7 +330,12 @@ class SigmoidFFNClassifier(FFNClassifier):
 
             # Use prior in model initialization to improve stability
             bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)
-            torch.nn.init.constant_(self.mlp[-1].fc.bias, bias_value)
+            torch.nn.init.constant_(self.mlp[-1][-1].bias, bias_value)
+            if self.aux_mlp is not None and not self.share_mlp:
+                for mlp in self.aux_mlp:
+                    torch.nn.init.constant_(mlp[-1][-1].bias, bias_value)
+            if self.encoder_mlp is not None and not self.share_mlp:
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias, bias_value)
         else:
             logger.info("Init FFN classifier weights: default")
 
@@ -390,7 +391,7 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
         if background_weight is not None:
             if weight is not None:
                 raise ValueError("Received background weight and weight tensor for CE loss")
-            weight = torch.ones(self.num_classes)
+            weight = torch.ones(self.num_classes, device="cuda")
             weight[0] = background_weight
 
         self.loss_name = "ffn_ce"

@@ -5,7 +5,7 @@ import torch
 
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
-from nndet.losses.regression.smoothl1 import SmoothL1Loss
+from nndet.losses.regression.smoothl1 import L1Loss, SmoothL1Loss
 from nndet.utils.typing import LINEARSEQ
 
 
@@ -107,17 +107,19 @@ class FFNRegressor(torch.nn.Module):
                     **kwargs,
                 )
             )
-
-        if len(modules) == 1:
-            return modules[0]
-        else:
-            return torch.nn.Sequential(*modules)
+        return torch.nn.Sequential(*modules)
 
     def init_weights(self):
         """
         Init weights
         """
-        pass
+        if self.encoder_mlp is not None:
+            # Two stage model
+            torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
+            if self.aux_mlp is not None:
+                for mlp in self.aux_mlp:
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
 
     def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
         """
@@ -135,6 +137,7 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
+
         # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
         if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
             return self.mlp(features)
@@ -369,6 +372,68 @@ class L1GIoUFFNRegressor(FFNRegressor):
         self.loss_name = "ffn_reg_l1"
         self.loss = SmoothL1Loss(
             beta=beta,
+            reduction=reduction,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+        )
+        self.box_loss_name = "ffn_reg_giou"
+        self.box_loss = GIoULossPaired(
+            reduction=reduction,
+            loss_weight=box_loss_weight,
+            loss_fp32=box_loss_fp32,
+        )
+
+
+class L1UGIoUFFNRegressor(FFNRegressor):
+    def __init__(
+        self,
+        linear: LINEARSEQ,
+        in_channels: int,
+        internal_channels: int,
+        dim: int,
+        num_layers: int = 1,
+        add_norm: bool = False,
+        dropout_rate: float = 0.0,
+        # Loss parameter
+        beta: float = 1.0,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        box_loss_weight: float = 1.0,
+        box_loss_fp32: bool = False,
+        **kwargs,
+    ) -> None:
+        """
+        Feed forward network head (usually used in DETR like models)
+        trained with L1 + GIoU loss
+
+        Args:
+            linear: generator object to obtain linear layer blocks
+            in_channels: number of input channels
+            internal_channels: number of internal channels to use
+            dim: number of spatial dimensions
+            num_layers: Number of linear layers to use. Defaults to 1.
+            add_norm: Add normalisation layers. Defaults to False.
+            dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            beta: L1 to L2 change point.
+                For beta values < 1e-5, L1 loss is computed.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: passed to linear generator class
+        """
+        super().__init__(
+            linear=linear,
+            in_channels=in_channels,
+            internal_channels=internal_channels,
+            dim=dim,
+            num_layers=num_layers,
+            add_norm=add_norm,
+            dropout_rate=dropout_rate,
+            **kwargs,
+        )
+        self.loss_name = "ffn_reg_l1"
+        self.loss = L1Loss(
             reduction=reduction,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
