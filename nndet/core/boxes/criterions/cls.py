@@ -129,4 +129,4 @@ class FocalClassCriterionSigmoid(ClassCriterion):
         pos_cost_class = self.alpha * ((1 - pred_probs) ** self.gamma) * (-(pred_probs + self.eps).log())
 
         cost_class = pos_cost_class[:, target_labels_idx] - neg_cost_class[:, target_labels_idx]
-        return cost_class
+        return self.loss_weight * cost_class
