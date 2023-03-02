@@ -71,8 +71,12 @@ class GIoUCenterBoxCriterion(BoxCriterion):
                 R=number of predictions, L is the number of ground truth
                 objects
         """
-        return self.loss_weight * -1 - ops_torch.generalized_box_iou(
-            ops_torch.box_center2point_format(pred_coords),
-            ops_torch.box_center2point_format(target_boxes),
-            eps=self.eps,
+        return (
+            self.loss_weight
+            * -1
+            * ops_torch.generalized_box_iou(
+                ops_torch.box_center2point_format(pred_coords),
+                ops_torch.box_center2point_format(target_boxes),
+                eps=self.eps,
+            )
         )
