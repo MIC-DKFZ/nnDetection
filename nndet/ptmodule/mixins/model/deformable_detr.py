@@ -15,8 +15,8 @@ class DeformableSetModelMixin(SetModelMixin):
         regressor: Optional[FFNRegressor] = None,
     ):
         if model_cfg["two_stage"]:
-            encoder_classifier = classifier.get_encoder_classifier()
-            encoder_regressor = regressor.get_encoder_regressor()
+            encoder_classifier = classifier
+            encoder_regressor = regressor
             decoder_regressor = regressor
         else:
             encoder_classifier, encoder_regressor, decoder_regressor = None, None, None
@@ -53,8 +53,8 @@ class DeformableSetModelMixin(SetModelMixin):
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
-            encoder_classifier=encoder_classifier,
-            encoder_regressor=encoder_regressor,
+            classifier=encoder_classifier,
+            regressor=encoder_regressor,
             num_feature_levels=model_cfg["num_feature_levels"],
             two_stage=model_cfg["two_stage"],
             two_stage_num_proposals=model_cfg["detection_per_img"],

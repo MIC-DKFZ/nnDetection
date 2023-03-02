@@ -12,11 +12,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from nndet.nn.heads.classifier.ffn import FFNClassifier
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
-from nndet.utils.typing import LINEARSEQ
 
 
 class DeformableDETRTransformer(nn.Module):
@@ -24,8 +25,8 @@ class DeformableDETRTransformer(nn.Module):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
-        encoder_classifier: Optional[LINEARSEQ] = None,
-        encoder_regressor: Optional[LINEARSEQ] = None,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
         num_feature_levels: int = 4,
         two_stage: bool = False,
         two_stage_num_proposals: int = 300,
@@ -36,9 +37,9 @@ class DeformableDETRTransformer(nn.Module):
         Args:
             encoder: encoder module.
             decoder: decoder module.
-            encoder_classifier: mlp to calculate the class of the encoder
+            classifier: mlp to calculate the class of the encoder
                 predictions
-            encoder_regressor:  mlp to calculate the boxes of the encoder
+            regressor:  mlp to calculate the boxes of the encoder
                 predictions
             two_stage: whether to use encoder predictions as initialization
                 for the decoder
@@ -49,8 +50,6 @@ class DeformableDETRTransformer(nn.Module):
         super(DeformableDETRTransformer, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.encoder_classifier = encoder_classifier
-        self.encoder_regressor = encoder_regressor
         self.num_feature_levels = num_feature_levels
         self.two_stage = two_stage
         self.two_stage_num_proposals = two_stage_num_proposals
@@ -68,6 +67,9 @@ class DeformableDETRTransformer(nn.Module):
             self.reference_points = nn.Linear(self.embed_dim, 3)
 
         self.init_weights()
+        # Classifier and regressor are already initialized
+        self.classifier = classifier
+        self.regressor = regressor
 
     def init_weights(self):
         """
@@ -299,15 +301,14 @@ class DeformableDETRTransformer(nn.Module):
         )
         bs, _, c = memory.shape
         if self.two_stage:
-
             output_memory, output_proposals = self.gen_encoder_output_proposals(memory, mask_flatten, spatial_shapes)
             # output_memory: bs, num_tokens, c
             # output_proposals: bs, num_tokens, 6. unsigmoided.
             # Class Embed and Bbox embed
-            enc_outputs_class = self.encoder_classifier(
+            enc_outputs_class = self.classifier.encoder_mlp(
                 output_memory,
             )
-            enc_outputs_coord_unact = self.encoder_regressor(output_memory) + output_proposals  # unsigmoided.
+            enc_outputs_coord_unact = self.regressor.encoder_mlp(output_memory) + output_proposals  # unsigmoided.
 
             topk = self.two_stage_num_proposals
             topk_proposals = torch.topk(enc_outputs_class.max(-1)[0], topk, dim=1)[1]
@@ -349,4 +350,4 @@ class DeformableDETRTransformer(nn.Module):
         if self.two_stage:
             return inter_states, reference_out, (enc_outputs_class, enc_outputs_coord_unact)
         else:
-            return inter_states, memory, reference_out, None
+            return inter_states, reference_out, None
