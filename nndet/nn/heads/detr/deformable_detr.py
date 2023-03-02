@@ -9,13 +9,13 @@ class DeformableDETRHead(DETRHead):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        reference: torch.Tensor,
+        references: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using two MLPs
         Args:
             out_sequence:
-            reference:
+            references:
         Returns:
             Dict containing "pred_logits" and "pred_boxes"
         """
@@ -24,15 +24,15 @@ class DeformableDETRHead(DETRHead):
         box_logits_list = []
         for lvl in range(out_sequence.shape[0]):
             # TODO references passed must be all be stored in reference
-            current_reference = reference[lvl]
-            current_reference = self.regressor.apply_inverse_non_lin(current_reference)
+            reference = references[lvl]
+            reference = self.regressor.apply_inverse_non_lin(reference)
             outputs_class = self.classifier(out_sequence[lvl], lvl)
             tmp = self.regressor(out_sequence[lvl], lvl)
-            if current_reference.shape[-1] == 6:
-                tmp += current_reference
+            if reference.shape[-1] == 6:
+                tmp += reference
             else:
-                assert current_reference.shape[-1] == 3
-                tmp[..., :3] += current_reference
+                assert reference.shape[-1] == 3
+                tmp[..., :3] += reference
             outputs_coord = tmp.sigmoid()
             class_logit_list.append(outputs_class)
             box_logits_list.append(outputs_coord)
