@@ -190,14 +190,14 @@ class DETRHead(torch.nn.Module):
                 num_boxes_all=num_boxes_all,
             )
             # TODO might want to scale this
-            losses.update(l_dict)
+            losses.update(self.format_scale_aux_losses(l_dict, 1, "enc"))
         return losses
 
     def format_scale_aux_losses(
         self,
         loss_dict: Dict[str, torch.Tensor],
         num_aux_outputs: int,
-        aux_idx: int,
+        aux_idx: Union[int, str],
     ) -> Dict[str, torch.Tensor]:
         """
         Format and optionally scale the auxiliary losses
