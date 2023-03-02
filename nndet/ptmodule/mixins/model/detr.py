@@ -171,6 +171,7 @@ class SetModelMixin(ModelMixin):
             query_dim=model_cfg["hidden_dim"],
             segmenter=segmenter,
             two_stage=model_cfg["two_stage"],
+            **model_kwargs,
         )
 
     @classmethod

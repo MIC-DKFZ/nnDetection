@@ -25,6 +25,7 @@ class BaseDETR(AbstractDetector):
         query_dim: int,
         segmenter: Optional[Segmenter] = None,
         two_stage: bool = False,
+        use_pos_queries: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
@@ -57,7 +58,9 @@ class BaseDETR(AbstractDetector):
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
         self.transformer = transformer
-        self.query_pos = nn.Embedding(detection_per_img, query_dim)
+        if use_pos_queries:
+            query_dim = 2 * query_dim
+        self.query_pos = nn.Embedding(detection_per_img, query_dim) if not two_stage else None
 
         # Build the final layers for classification and box regression
         self.head = head
@@ -239,19 +242,17 @@ class BaseDETR(AbstractDetector):
             Dict: semantic segmentation prediction, None if no segmenter was given
             List[torch.Tensor]: feature maps from decoder
         """
-
         # Compute feature list from backbone
         features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
         mapped_features = self.channel_mapper(features)  # [num_feature_levels] (N, C, px, py, (pz))
         # Get Position Embedding
-        pos_embeds = []
-        for feature in mapped_features:
-            pos_embeds.append(self.pos_embed(feature))
+        pos_embeds = [self.pos_embed(feature) for feature in mapped_features]
         # transformer
-        out_sequence, reference, encoder_predictions = self.transformer(
-            mapped_features, self.query_pos.weight, pos_embeds
-        )
+        query_embeds = None
+        if not self.two_stage:
+            query_embeds = self.query_pos.weight
+        out_sequence, reference, encoder_predictions = self.transformer(mapped_features, query_embeds, pos_embeds)
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
         # predictions: Dict containing already made predictions
@@ -264,7 +265,7 @@ class BaseDETR(AbstractDetector):
             assert encoder_predictions is not None, "Two stage is not supported by this transformer"
             pred_detections["enc_outputs"] = {
                 "pred_cls_logits": encoder_predictions[0],
-                "pred_box_coords": encoder_predictions[1].sigmoid(),
+                "pred_box_coords": encoder_predictions[1][..., [0, 1, 3, 4, 2, 5]].sigmoid(),
             }
 
         # optionally forward seg head
