@@ -4,14 +4,14 @@ detection_per_img: 24  # number of detections per image
 two_stage: True
 
 # global parameters
-hidden_dim: 256 # feature length of the transformer input (must be divisible by the number of attention heads)
-num_feature_levels: 1
+hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
+num_feature_levels: 3
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
   pooling_mode: conv_kernel # one of 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
   start_channels: 32 # number of starting channels
-  max_channels: 384 # maximum number of channels
+  max_channels: 320 # maximum number of channels
 
 # Channel Mapper
 channel_mapper_kwargs:
@@ -19,27 +19,28 @@ channel_mapper_kwargs:
   extra_levels: 0
   kernel_size: 1
   conv_kwargs:
-    norm_channels_per_group: 16
+    num_groups: 16
+    bias: True
     add_act: False
 
 # Transformer Encoder
 transformer_encoder_kwargs:
   num_layers: 3
   post_norm: False
-  attn_dropout: 0.1
-  proj_dropout: 0.1
-  ffn_dropout: 0.1
+  attn_dropout: 0.0
+  proj_dropout: 0.0
+  ffn_dropout: 0.0
   dim_feedforward: 1024
   hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
   num_points: 4 # number of pixels attended to by deformable attention
 
 transformer_decoder_kwargs:
-  num_layers: 3
+  num_layers: 6
   post_norm: True
-  attn_dropout: 0.1
-  proj_dropout: 0.1
-  ffn_dropout: 0.1
+  attn_dropout: 0.0
+  proj_dropout: 0.0
+  ffn_dropout: 0.0
   dim_feedforward: 1024
   hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
@@ -62,23 +63,25 @@ head_kwargs:
 # classifier
 head_classifier_kwargs:
   internal_channels: ${model_cfg.hidden_dim}
-  num_layers: 2
+  num_layers: 1
   add_norm: False
   dropout_rate: 0.0
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
   share_mlp: False
   use_encoder_mlp: ${model_cfg.two_stage}
   class_agnostic_aux: False
+  prior_prob: 0.05
   # loss
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
-  loss_weight: 2 # cls loss weight
+  loss_weight: 1 # cls loss weight
   reduction: "mean_last_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
+  loss_fp32: True
 
 # regressor
 head_regressor_kwargs:
   internal_channels: ${model_cfg.hidden_dim}
-  num_layers: 2
+  num_layers: 3
   add_norm: False
   dropout_rate: 0.0
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
@@ -88,6 +91,7 @@ head_regressor_kwargs:
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
+  loss_fp32: True
 
 # postprocessing
 head_box_post_kwargs:
