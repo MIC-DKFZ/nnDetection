@@ -40,9 +40,9 @@ class BaseDETR(AbstractDetector):
             transformer: Transformer Model
             head: Head used for classification, regression, loss computation
                 and postprocessing
+            pos_embed: module to generate positional embedding
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
-            pos_embed: module to generate positional embedding
             query_dim: dimension of object queries in the decoder (usually
                 same as hidden dim except for DABDETR)
             num_feature_levels: which levels of backbone input should be used
