@@ -25,8 +25,6 @@ class ConditionalSelfAttention(nn.Module):
     ):
         """
         Conditional Self-Attention Module used in Conditional-DETR
-        `Conditional DETR for Fast Training Convergence.
-        <https://arxiv.org/pdf/2108.06152.pdf>`_
 
         Args:
             embed_dim: The embedding dimension for attention.
@@ -34,7 +32,8 @@ class ConditionalSelfAttention(nn.Module):
             attn_drop_value: A Dropout layer on attn_output_weights.
             proj_drop_value: A Dropout layer after `MultiheadAttention`.
             batch_first: if `True`, then the input and output tensor will be
-                provided as `(bs, n, embed_dim)`.
+                provided as `(bs, n, embed_dim)`
+            kwargs: ignored
         """
         super(ConditionalSelfAttention, self).__init__()
         self.query_content_proj = nn.Linear(embed_dim, embed_dim)
@@ -63,7 +62,8 @@ class ConditionalSelfAttention(nn.Module):
         key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> torch.Tensor:
-        """Forward function for `ConditionalSelfAttention`
+        """
+        Forward function for `ConditionalSelfAttention`
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
 
@@ -159,19 +159,6 @@ class ConditionalSelfAttention(nn.Module):
 
 
 class ConditionalCrossAttention(nn.Module):
-    """Conditional Cross-Attention Module used in Conditional-DETR
-    `Conditional DETR for Fast Training Convergence.
-    <https://arxiv.org/pdf/2108.06152.pdf>`_
-
-    Args:
-        embed_dim: The embedding dimension for attention.
-        num_heads: The number of attention heads.
-        attn_drop_value: A Dropout layer on attn_output_weights.
-        proj_drop_value: A Dropout layer after `MultiheadAttention`.
-        batch_first: if `True`, then the input and output tensor will be
-            provided as `(bs, n, embed_dim)`.
-    """
-
     def __init__(
         self,
         embed_dim,
@@ -181,6 +168,19 @@ class ConditionalCrossAttention(nn.Module):
         batch_first=False,
         **kwargs,
     ):
+        """
+        Conditional Cross-Attention Module used in Conditional-DETR
+
+        Args:
+            embed_dim: The embedding dimension for attention.
+            num_heads: The number of attention heads.
+            attn_drop_value: A Dropout layer on attn_output_weights.
+            proj_drop_value: A Dropout layer after `MultiheadAttention`.
+            batch_first: if `True`, then the input and output tensor will be
+                provided as `(bs, n, embed_dim)`.
+            kwargs: ignored
+        """
+
         super(ConditionalCrossAttention, self).__init__()
         self.query_content_proj = nn.Linear(embed_dim, embed_dim)
         self.query_pos_proj = nn.Linear(embed_dim, embed_dim)
@@ -212,6 +212,7 @@ class ConditionalCrossAttention(nn.Module):
         Forward function for `ConditionalCrossAttention`
         **kwargs allow passing a more general data flow when combining
         with other operations in `transformerlayer`.
+
         Args:
             query: Query embeddings with shape `(num_query, bs, embed_dim)` if
                 self.batch_first is False, else `(bs, num_query, embed_dim)`
