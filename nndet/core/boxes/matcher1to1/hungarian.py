@@ -59,13 +59,16 @@ class HungarianMatcher(BaseMatcher):
 
         tgt_labels = torch.cat(target_labels, dim=0)
         tgt_bbox = torch.cat(target_boxes, dim=0)
-
-        cost_class = sum(
-            self.class_criterion[idx](out_logits, tgt_labels) for idx in range(len(self.class_criterion))
-        )  # [batch_size * num_queries, num_gt_elements]
-        cost_box = sum(
-            self.box_criterion[idx](out_bbox, tgt_bbox) for idx in range(len(self.box_criterion))
-        )  # [batch_size * num_queries, num_gt_elements]
+        cost_classes = {
+            f"__class_criterion_{idx}": self.class_criterion[idx](out_logits, tgt_labels)
+            for idx in range(len(self.class_criterion))
+        }
+        cost_boxes = {
+            f"__box_criterion_{idx}": self.box_criterion[idx](out_bbox, tgt_bbox)
+            for idx in range(len(self.box_criterion))
+        }
+        cost_class = sum(cost_classes.values())  # [batch_size * num_queries, num_gt_elements]
+        cost_box = sum(cost_boxes.values())  # [batch_size * num_queries, num_gt_elements]
 
         C = cost_class + cost_box
         C = C.view(bs, num_queries, -1).cpu()

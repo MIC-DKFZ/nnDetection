@@ -161,7 +161,7 @@ class DETRHead(torch.nn.Module):
         )
 
         # compute losses
-        losses = self._match_and_compute_loss(
+        losses, match_criterions = self._match_and_compute_loss(
             pred_logits=pred_detection["pred_cls_logits"],
             pred_coords=pred_detection["pred_box_coords"],
             target_boxes=target_boxes,
@@ -171,7 +171,7 @@ class DETRHead(torch.nn.Module):
         if "aux_outputs" in pred_detection:
             num_aux_outputs = len(pred_detection["aux_outputs"])
             for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
-                l_dict = self._match_and_compute_loss(
+                l_dict, m_dict = self._match_and_compute_loss(
                     pred_logits=aux_outputs["pred_cls_logits"],
                     pred_coords=aux_outputs["pred_box_coords"],
                     target_boxes=target_boxes,
@@ -179,6 +179,7 @@ class DETRHead(torch.nn.Module):
                     num_boxes_all=num_boxes_all,
                 )
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
+                match_criterions.update(m_dict)
         return losses
 
     def format_scale_aux_losses(
