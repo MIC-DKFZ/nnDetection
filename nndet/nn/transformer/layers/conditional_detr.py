@@ -61,17 +61,20 @@ def gen_sine_embed_for_position(
         z_embed = pos_tensor[:, :, 2] * scale
         pos_z = z_embed[:, :, None] / dim_t
         pos_z = torch.stack((pos_z[:, :, 0::2].sin(), pos_z[:, :, 1::2].cos()), dim=3).flatten(2)
-        # If num_pos_feats is not divisible by 3 we have to
+        # If num_pos_feats is not divisible by 3 we have to remove some values
         if num_pos_feats % dim == 0:
-            return torch.cat((pos_x, pos_y, pos_z), dim=2)
+            pos_embed = torch.cat((pos_x, pos_y, pos_z), dim=2)
         elif num_pos_feats % dim == 1:
-            return torch.cat((pos_x, pos_y, pos_z[:, :, :-1]), dim=2)
+            pos_embed = torch.cat((pos_x, pos_y, pos_z[:, :, :-1]), dim=2)
         else:
-            return torch.cat((pos_x, pos_y[:, :, :-1], pos_z[:, :, :-1]), dim=2)
-    # 2D Case
-    if num_pos_feats % dim == 0:
-        return torch.cat((pos_x, pos_y), dim=2)
-    return torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
+            pos_embed = torch.cat((pos_x, pos_y[:, :, :-1], pos_z[:, :, :-1]), dim=2)
+
+    else:  # 2D Case
+        if num_pos_feats % dim == 0:
+            pos_embed = torch.cat((pos_x, pos_y), dim=2)
+        else:
+            pos_embed = torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
+    return pos_embed
 
 
 class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
@@ -185,7 +188,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             query_key_padding_mask: (Optional) query key padding mask for
                 attention
             key_padding_mask: (Optional) key padding mask for attention
-            **kwargs:
+            **kwargs: kwargs for the transformer layers
 
         Returns:
             Tensor: Sequence of output embeddings, either of the last layer if

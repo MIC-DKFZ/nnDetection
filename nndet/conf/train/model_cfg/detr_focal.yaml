@@ -80,6 +80,7 @@ head_regressor_kwargs:
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
+  # weight_init_mode: "base" or "last_layer_zero"
 
 # postprocessing
 head_box_post_kwargs:

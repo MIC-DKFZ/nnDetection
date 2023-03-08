@@ -233,7 +233,7 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             query_key_padding_mask: (Optional) query key padding mask for
                 attention
             key_padding_mask: (Optional) key padding mask for attention
-            **kwargs:
+            **kwargs: kwargs for the transformer layers
 
         Returns:
             Tensor: Sequence of output embeddings, either of the last layer if

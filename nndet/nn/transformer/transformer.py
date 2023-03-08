@@ -108,6 +108,8 @@ class DETRTransformer(AbstractTransformer):
             query_pos=query_embed,
             key_pos=pos_embed,
         )
-        hidden_state = hidden_state.transpose(1, 2)
+        hidden_state = hidden_state.transpose(
+            1, 2
+        )  # [num_decoder_layers, num_queries, bs, C] -> [, bs, num_queries, C]
 
         return hidden_state, references, None

@@ -5,12 +5,35 @@
 # Parts of this code are from detrex licensed under
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
-
+import math
 import warnings
 from typing import Optional
 
 import torch
 from torch import nn as nn
+
+
+def _convert_mask(
+    mask: Optional[torch.Tensor],
+    target_type: torch.dtype,
+) -> Optional[torch.Tensor]:
+    """
+    Check if the mask is None or contains bools or floats. If not, raise error.
+    If bool, fill the mask with -inf. If float, keep it.
+
+    Args:
+        mask: mask for the scaled dot-product attention
+
+    Returns:
+
+    """
+    if mask is not None:
+        is_float = torch.is_floating_point(mask)
+        if mask.dtype != torch.bool and not is_float:
+            raise AssertionError("Only bool and floating types of attention masks are supported!")
+        if not is_float:
+            mask = torch.zeros_like(mask, dtype=target_type).masked_fill_(mask, float("-inf"))
+    return mask
 
 
 class ConditionalSelfAttention(nn.Module):
@@ -47,7 +70,7 @@ class ConditionalSelfAttention(nn.Module):
         self.num_heads = num_heads
         self.embed_dim = embed_dim
         head_dim = embed_dim // num_heads
-        self.scale = head_dim**-0.5
+        self.scale = math.sqrt(head_dim)
         self.batch_first = batch_first
 
     def forward(
@@ -125,35 +148,46 @@ class ConditionalSelfAttention(nn.Module):
         key_pos = self.key_pos_proj(key_pos)
         value = self.value_proj(value)
 
+        # Check for masks and convert
+        attn_mask = _convert_mask(attn_mask, query_content.dtype)
+        key_padding_mask = _convert_mask(key_padding_mask, query_content.dtype)
+
         # attention calculation
         N, B, C = query_content.shape
         q = query_content + query_pos
         k = key_content + key_pos
         v = value
 
-        q = q.reshape(N, B, self.num_heads, C // self.num_heads).permute(1, 2, 0, 3)  # (B, num_heads, N, head_dim)
-        k = k.reshape(N, B, self.num_heads, C // self.num_heads).permute(1, 2, 0, 3)
-        v = v.reshape(N, B, self.num_heads, C // self.num_heads).permute(1, 2, 0, 3)
+        # Split into num_heads heads and permute to batch first
+        q = q.reshape(N, B * self.num_heads, C // self.num_heads).transpose(0, 1)  # (B * num_heads, N, head_dim)
+        k = k.reshape(N, B * self.num_heads, C // self.num_heads).transpose(0, 1)
+        v = v.reshape(N, B * self.num_heads, C // self.num_heads).transpose(0, 1)
 
-        q = q * self.scale
-        attn = q @ k.transpose(-2, -1)
+        # merge key padding (B, N) and attention masks
+        if key_padding_mask is not None:
+            key_padding_mask = (
+                key_padding_mask.view(B, 1, 1, N).expand(-1, self.num_heads, -1, -1).reshape(B * self.num_heads, 1, N)
+            )
+            if attn_mask is None:
+                attn_mask = key_padding_mask
+            else:
+                attn_mask = attn_mask + key_padding_mask
 
+        q = q / self.scale
         # add attention mask
         if attn_mask is not None:
-            if attn_mask.dtype == torch.bool:
-                attn.masked_fill_(attn_mask, float("-inf"))
-            else:
-                attn += attn_mask
-        if key_padding_mask is not None:
-            attn = attn.masked_fill_(key_padding_mask.unsqueeze(1).unsqueeze(2), float("-inf"))
+            attn = torch.baddbmm(attn_mask, q, k.transpose(-2, -1))
+        else:
+            attn = torch.bmm(q, k.transpose(-2, -1))
 
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
-        out = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        out = torch.bmm(attn, v).transpose(0, 1).contiguous().view(B * N, C)
         out = self.out_proj(out)
+        out = out.view(N, B, C)
 
-        if not self.batch_first:
+        if self.batch_first:
             out = out.transpose(0, 1)
         return identity + self.proj_drop(out)
 
@@ -196,18 +230,18 @@ class ConditionalCrossAttention(nn.Module):
 
     def forward(
         self,
-        query,
-        key=None,
-        value=None,
-        identity=None,
-        query_pos=None,
-        key_pos=None,
-        query_sine_embed=None,
-        is_first_layer=False,
-        attn_mask=None,
-        key_padding_mask=None,
+        query: torch.Tensor,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
+        identity: Optional[torch.Tensor] = None,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        query_sine_embed: Optional[torch.Tensor] = None,
+        attn_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
+        is_first_layer: bool = False,
         **kwargs,
-    ):
+    ) -> torch.Tensor:
         """
         Forward function for `ConditionalCrossAttention`
         **kwargs allow passing a more general data flow when combining
@@ -228,13 +262,14 @@ class ConditionalCrossAttention(nn.Module):
             key_pos: The position embedding for key. If None, and `query_pos`
                 has the same shape as `key`, then `query_pos` will be used for
                 `key_pos`.
-            query_sine_embed: None
-            is_first_layer: None
+            query_sine_embed: positional encoding of the center points used for
+                the positional part in the cross attention
             attn_mask: ByteTensor mask with shape `(num_query, num_key)`. Same
                 as `torch.nn.MultiheadAttention.forward`.
             key_padding_mask: ByteTensor with shape `(bs, num_key)` which
                 indicates which elements within `key` to be ignored in
                 attention.
+            is_first_layer: bool whether its the first decoder layer
         """
         if key is None:
             key = query
@@ -270,7 +305,7 @@ class ConditionalCrossAttention(nn.Module):
 
         # shape info
         N, B, C = query_content.shape
-        HW, _, _ = key_content.shape
+        XYZ, _, _ = key_content.shape
 
         # position projection
         key_pos = self.key_pos_proj(key_pos)
@@ -283,40 +318,50 @@ class ConditionalCrossAttention(nn.Module):
             k = key_content
         v = value
 
+        # Check for masks and convert
+        attn_mask = _convert_mask(attn_mask, q.dtype)
+        key_padding_mask = _convert_mask(key_padding_mask, q.dtype)
+
         # preprocess
         q = q.view(N, B, self.num_heads, C // self.num_heads)
         query_sine_embed = self.query_pos_sine_proj(query_sine_embed).view(N, B, self.num_heads, C // self.num_heads)
         q = torch.cat([q, query_sine_embed], dim=3).view(N, B, C * 2)
 
-        k = k.view(HW, B, self.num_heads, C // self.num_heads)  # N, 16, 256
-        key_pos = key_pos.view(HW, B, self.num_heads, C // self.num_heads)
-        k = torch.cat([k, key_pos], dim=3).view(HW, B, C * 2)
+        k = k.view(XYZ, B, self.num_heads, C // self.num_heads)
+        key_pos = key_pos.view(XYZ, B, self.num_heads, C // self.num_heads)
+        k = torch.cat([k, key_pos], dim=3).view(XYZ, B, C * 2)
 
         # attention calculation
-        q = q.reshape(N, B, self.num_heads, C * 2 // self.num_heads).permute(1, 2, 0, 3)  # (B, num_heads, N, head_dim)
-        k = k.reshape(HW, B, self.num_heads, C * 2 // self.num_heads).permute(1, 2, 0, 3)
-        v = v.reshape(HW, B, self.num_heads, C // self.num_heads).permute(1, 2, 0, 3)
+        q = q.reshape(N, B * self.num_heads, C * 2 // self.num_heads).transpose(0, 1)  # (B * num_heads, N, head_dim)
+        k = k.reshape(XYZ, B * self.num_heads, C * 2 // self.num_heads).transpose(0, 1)
+        v = v.reshape(XYZ, B * self.num_heads, C // self.num_heads).transpose(0, 1)
 
-        scale = (C * 2 // self.num_heads) ** -0.5
-        q = q * scale
-        attn = q @ k.transpose(-2, -1)
-
-        # add attention mask
-        if attn_mask is not None:
-            if attn_mask.dtype == torch.bool:
-                attn.masked_fill_(attn_mask, float("-inf"))
-            else:
-                attn += attn_mask
+        # merge key padding (B, N) and attention masks
         if key_padding_mask is not None:
-            attn = attn.masked_fill_(key_padding_mask.unsqueeze(1).unsqueeze(2), float("-inf"))
+            key_padding_mask = (
+                key_padding_mask.view(B, 1, 1, N).expand(-1, self.num_heads, -1, -1).reshape(B * self.num_heads, 1, N)
+            )
+            if attn_mask is None:
+                attn_mask = key_padding_mask
+            else:
+                attn_mask = attn_mask + key_padding_mask
+
+        scale = math.sqrt(C * 2 // self.num_heads)
+        q = q / scale
+
+        if attn_mask is not None:
+            attn = torch.baddbmm(attn_mask, q, k.transpose(-2, -1))
+        else:
+            attn = torch.bmm(q, k.transpose(-2, -1))
 
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
-        out = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        out = torch.bmm(attn, v).transpose(0, 1).contiguous().view(B * N, C)
         out = self.out_proj(out)
+        out = out.view(N, B, C)
 
-        if not self.batch_first:
+        if self.batch_first:
             out = out.transpose(0, 1)
 
         return identity + self.proj_drop(out)
