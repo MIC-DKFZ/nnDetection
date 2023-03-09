@@ -17,7 +17,7 @@ from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
 )
-from nndet.nn.transformer.layers.abstract import AbstractTransformerDecoder
+from nndet.nn.transformer.layers.abstract import BaseTransformerDecoder
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
@@ -32,10 +32,12 @@ def gen_sine_embed_for_position(
     """
     2D or 3D Positional Encoding to encode given positions (different to the
     normal position encoding which computes position based on pixels)
+
     Args:
         pos_tensor: tensor of shape (bs, num_pos, dim)
         num_pos_feats: number of out features (output dimension)
         temperature: temperature of the position encoding
+
     Returns:
         Tensor: tensor containing position embedding
     """
@@ -77,7 +79,7 @@ def gen_sine_embed_for_position(
     return pos_embed
 
 
-class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
+class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -112,7 +114,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=[
@@ -145,11 +147,8 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = embed_dim
         self.query_scale = SimpleFCN(self.embed_dim, self.embed_dim, self.embed_dim, 2)
         self.ref_point_head = SimpleFCN(self.embed_dim, self.embed_dim, dim, 2)
-        self.dim = dim
-        self.bbox_embed = None
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)

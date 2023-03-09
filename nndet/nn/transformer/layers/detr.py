@@ -14,8 +14,8 @@ import torch.nn as nn
 from nndet.nn.layers.fc import FCN
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.layers.abstract import (
-    AbstractTransformerDecoder,
-    AbstractTransformerEncoder,
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
 )
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
@@ -23,7 +23,7 @@ from nndet.nn.transformer.layers.base_layer import (
 )
 
 
-class DETRTransformerEncoder(AbstractTransformerEncoder):
+class DETRTransformerEncoder(BaseTransformerEncoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -57,7 +57,7 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
@@ -80,8 +80,6 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
             ),
             num_layers=num_layers,
         )
-        self.embed_dim = embed_dim
-
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
@@ -138,7 +136,7 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
         return query
 
 
-class DETRTransformerDecoder(AbstractTransformerDecoder):
+class DETRTransformerDecoder(BaseTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -173,7 +171,7 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
@@ -197,8 +195,6 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = embed_dim
-        self.dim = dim
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
