@@ -12,7 +12,7 @@ amp_level: # when mixed precision backend is APEX use O1
 # cudnn.benchmark which can give up to 20% performance. Set this to false
 # to perform non-deterministic training
 deterministic: False
-benchmark: True
+benchmark: False
 terminate_on_nan: False # [optional; Default True]
 
 # pytorch 2.0 features
