@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-from nndet.nn.layers.fc import FCN, SimpleFCN
+from nndet.nn.layers.mlp import ReluDropIdentityMLP, ReluMLP
 from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
@@ -89,7 +89,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
+        num_ffn_layers: int = 2,
         post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
@@ -108,7 +108,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             return_intermediate: return the outputs of all
             dim: dimension of the input, has to be 2 or 3
@@ -133,11 +133,11 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
                         batch_first=batch_first,
                     ),
                 ],
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -147,8 +147,8 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.query_scale = SimpleFCN(self.embed_dim, self.embed_dim, self.embed_dim, 2)
-        self.ref_point_head = SimpleFCN(self.embed_dim, self.embed_dim, dim, 2)
+        self.query_scale = ReluMLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
+        self.ref_point_head = ReluMLP(self.embed_dim, self.embed_dim, dim, 2)
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)

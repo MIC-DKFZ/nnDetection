@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-from nndet.nn.layers.fc import FCN
+from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
@@ -33,7 +33,7 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(inplace=True),
+        num_ffn_layers: int = 2,
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = False,
@@ -52,7 +52,7 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
@@ -67,11 +67,11 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -146,7 +146,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
+        num_ffn_layers: int = 2,
         post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
@@ -165,7 +165,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             return_intermediate: return the outputs of all
             dim: dimension of the input, has to be 2 or 3
@@ -181,11 +181,11 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
