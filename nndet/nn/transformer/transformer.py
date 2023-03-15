@@ -13,7 +13,6 @@ import torch.nn as nn
 
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
-from nndet.utils.typing import LINEARSEQ
 
 
 class DETRTransformer(AbstractTransformer):
@@ -21,8 +20,6 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: TransformerLayerSequence,
         decoder: TransformerLayerSequence,
-        encoder_classifier: Optional[LINEARSEQ] = None,
-        encoder_regressor: Optional[LINEARSEQ] = None,
         two_stage: bool = False,
         do_weight_init: bool = True,
     ):
@@ -31,16 +28,12 @@ class DETRTransformer(AbstractTransformer):
         Args:
             encoder: Transformer encoder
             decoder: Transformer decoder
-            encoder_classifier:
-            encoder_regressor:
         """
         super().__init__()
         if two_stage:
             raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
         self.encoder = encoder
         self.decoder = decoder
-        self.encoder_classifier = encoder_classifier
-        self.encoder_regressor = encoder_regressor
         self.embed_dim = self.encoder.embed_dim
         self.dim = decoder.dim
         if do_weight_init:
@@ -103,6 +96,7 @@ class DETRTransformer(AbstractTransformer):
             key=None,
             value=None,
             query_pos=pos_embed,
+            key_pos=None,
             query_key_padding_mask=mask,
         )
 
@@ -111,13 +105,11 @@ class DETRTransformer(AbstractTransformer):
             query=target,
             key=memory,
             value=memory,
-            key_pos=pos_embed,
             query_pos=query_embed,
+            key_pos=pos_embed,
         )
-        hidden_state = hidden_state.transpose(1, 2)
-        if dim == 4:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y)
-        else:
-            memory = memory.permute(1, 2, 0).reshape(bs, c, x, y, z)
+        hidden_state = hidden_state.transpose(
+            1, 2
+        )  # [num_decoder_layers, num_queries, bs, C] -> [, bs, num_queries, C]
 
         return hidden_state, references, None

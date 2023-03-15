@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # SimpleClassCriterionSoftmax was adapted from original DETR code
-# SPDX-FileCopyrightText: 2020 Facebook
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 #
 # FocalClassCriterionSigmoid was adapted from Deformable DETR code

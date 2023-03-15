@@ -8,7 +8,24 @@ import torch
 import torch.nn as nn
 
 
-class AbstractTransformerEncoder(nn.Module):
+class BaseTransformerEncoder(nn.Module):
+    def __init__(
+        self,
+        embed_dim: int,
+        dim: int,
+    ):
+        """
+        Abstract Transformer Encoder. Defines the required variables embed dim
+        and dim.
+
+        Args:
+            embed_dim: embedding (channel) dimension for the sequence
+            dim: spatial dimension of the detection problem either 2 or 3
+        """
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.dim = dim
+
     @abstractmethod
     def forward(
         self,
@@ -42,9 +59,27 @@ class AbstractTransformerEncoder(nn.Module):
         Returns:
             Tensor: Sequence of refined features (sequence_length, bs, C)
         """
+        raise NotImplementedError
 
 
-class AbstractTransformerDecoder(nn.Module):
+class BaseTransformerDecoder(nn.Module):
+    def __init__(
+        self,
+        embed_dim: int,
+        dim: int,
+    ):
+        """
+        Abstract Transformer Decoder. Defines the required variables embed dim
+        and dim.
+
+        Args:
+            embed_dim: embedding (channel) dimension for the sequence
+            dim: spatial dimension of the detection problem either 2 or 3
+        """
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.dim = dim
+
     @abstractmethod
     def forward(
         self,
@@ -82,3 +117,4 @@ class AbstractTransformerDecoder(nn.Module):
                 return_intermediate is false  or of all layers with shape
                 ((num_decoder_layers), num_queries, bs, C)
         """
+        raise NotImplementedError

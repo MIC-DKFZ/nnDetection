@@ -1,4 +1,6 @@
-import copy
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict, Optional
 
 import torch
@@ -6,6 +8,7 @@ import torch
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.losses.regression.smoothl1 import L1Loss, SmoothL1Loss
+from nndet.utils.enums import FFNRegWeightInit
 from nndet.utils.typing import LINEARSEQ
 
 
@@ -19,9 +22,7 @@ class FFNRegressor(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
-        num_decoder_layers: int = 0,
-        share_mlp: bool = True,
-        use_encoder_mlp: bool = False,
+        weight_init_mode: str = "base",
         **kwargs,
     ) -> None:
         """
@@ -44,24 +45,14 @@ class FFNRegressor(torch.nn.Module):
         self.internal_channels = internal_channels
         self.num_layers = num_layers
         self.dim = dim
+        self.weight_init_mode = FFNRegWeightInit(weight_init_mode)
 
-        # Create final output mlp
         self.mlp = self._build_module(
             linear=linear,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
             **kwargs,
         )
-        self.encoder_mlp = None
-        self.aux_mlp = None
-        self.share_mlp = share_mlp
-        self.num_decoder_layers = num_decoder_layers
-        if not self.share_mlp:
-            self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(self.mlp) for i in range(num_decoder_layers - 1)])
-            if use_encoder_mlp:
-                self.encoder_mlp = copy.deepcopy(self.mlp)
-        elif use_encoder_mlp:
-            self.encoder_mlp = self.mlp
 
         self.loss_name: str = "ffn_reg_spec"
         self.box_loss_name: str = "ffn_reg_box"
@@ -120,13 +111,15 @@ class FFNRegressor(torch.nn.Module):
             if self.aux_mlp is not None:
                 for mlp in self.aux_mlp:
                     torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
+        if self.weight_init_mode == FFNRegWeightInit.LAST_LAYER_ZERO:
+            torch.nn.init.constant_(self.mlp[-1].fc.weight, 0)
+            torch.nn.init.constant_(self.mlp[-1].fc.bias, 0)
 
     def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
         """
         Forward feature through module
 
         Args:
-            layer: index for
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
                 channels

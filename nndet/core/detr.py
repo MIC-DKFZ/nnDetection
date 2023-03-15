@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -32,11 +35,12 @@ class BaseDETR(AbstractDetector):
 
         Args:
             backbone: Backbone network to compute image features
-            channel_mapper: Module that maps the features channel dimension to
-                the hidden_dim in the transformer
+            channel_mapper: Module that maps the features channel dimension
+                to the hidden_dim in the transformer
             transformer: Transformer Model
             head: Head used for classification, regression, loss computation and
                 postprocessing
+            pos_embed: module to generate positional embedding
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
             pos_embed: module to generate positional embedding
@@ -45,6 +49,7 @@ class BaseDETR(AbstractDetector):
                 from the feature maps
             two_stage: toggle whether the encoder should predict objects and use
                 those as query candidates
+
         """
         super().__init__()
         # Obtain important hyperparameters
@@ -138,8 +143,9 @@ class BaseDETR(AbstractDetector):
                     X= number of ground truth boxes in image
 
                 ``"target_seg"`` (Tensor)
-                    segmentation ground truth (only needed if ::param::`segmenter`
-                    was provided in init) (classes start from 1, 0 background)
+                    segmentation ground truth (only needed if
+                    ::param::`segmenter` was provided in init) (classes start
+                    from 1, 0 background)
 
             predict: compute final predictions (includes detection
                 postprocessing)

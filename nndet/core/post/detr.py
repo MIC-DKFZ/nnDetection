@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # MaxFGBoxPost adapted from DETR https://github.com/facebookresearch/detr
-# SPDX-FileCopyrightText: 2020 Facebook
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 #
 # TopKBoxPost adapted from Deformable-DETR https://github.com/fundamentalvision/Deformable-DETR

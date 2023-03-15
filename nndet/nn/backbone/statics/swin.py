@@ -10,6 +10,7 @@ from nndet.utils.format import to_nd_tuple
 from nndet.utils.typing import CONVGEN, ND_INT, ND_TUPLE_INT
 
 try:
+    from einops import rearrange  # noqa: F401
     from monai.networks.nets.swin_unetr import SwinTransformer as BaseSwinTransformer
 except ImportError:
     BaseSwinTransformer = None

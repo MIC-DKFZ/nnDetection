@@ -11,19 +11,19 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.layers.abstract import (
-    AbstractTransformerDecoder,
-    AbstractTransformerEncoder,
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
 )
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.fully_connected import FCN
 
 
-class DETRTransformerEncoder(AbstractTransformerEncoder):
+class DETRTransformerEncoder(BaseTransformerEncoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -33,14 +33,14 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(inplace=True),
+        num_ffn_layers: int = 2,
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = False,
     ):
         """
         Transformer Encoder for DETR. Consists of num_layers transformer encoder
-            layers refining the input feature sequence.
+        layers refining the input feature sequence.
 
         Args:
             embed_dim: embed dimension (hidden dimension) of the transformer
@@ -52,12 +52,12 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
@@ -67,11 +67,11 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -80,8 +80,6 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
             ),
             num_layers=num_layers,
         )
-        self.embed_dim = embed_dim
-
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
@@ -138,7 +136,7 @@ class DETRTransformerEncoder(AbstractTransformerEncoder):
         return query
 
 
-class DETRTransformerDecoder(AbstractTransformerDecoder):
+class DETRTransformerDecoder(BaseTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -148,7 +146,7 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
+        num_ffn_layers: int = 2,
         post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
@@ -167,13 +165,13 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             return_intermediate: return the outputs of all
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=MultiheadAttention(
@@ -183,11 +181,11 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
                     proj_drop_value=proj_dropout,
                     batch_first=batch_first,
                 ),
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -197,8 +195,6 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = embed_dim
-        self.dim = dim
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
@@ -233,7 +229,7 @@ class DETRTransformerDecoder(AbstractTransformerDecoder):
             query_key_padding_mask: (Optional) query key padding mask for
                 attention
             key_padding_mask: (Optional) key padding mask for attention
-            **kwargs:
+            **kwargs: kwargs for the transformer layers
 
         Returns:
             Tensor: Sequence of output embeddings, either of the last layer if

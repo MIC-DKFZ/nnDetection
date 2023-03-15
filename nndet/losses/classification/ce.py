@@ -38,7 +38,8 @@ class BCELoss(SigmoidBaseLoss):
             reduction=reduction,
             smoothing=smoothing,
         )
-        self.weight = weight
+        self.register_buffer("weight", weight)
+        self.weight: Optional[torch.Tensor]
 
     def comp_loss(
         self,
