@@ -12,6 +12,7 @@ from torch import nn as nn
 
 import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.regressor.ffn import FFNRegressor
+from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
@@ -20,7 +21,6 @@ from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
-from nndet.utils.fully_connected import FCN
 
 
 class DeformableDETRTransformerEncoder(TransformerLayerSequence):
@@ -33,6 +33,7 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
+        num_ffn_layers: int = 2,
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = True,
@@ -51,12 +52,11 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
                         num_points=num_points,
                     )
                 ],
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
-                    output_dim=embed_dim,
-                    num_fcs=2,
                     ffn_drop=ffn_dropout,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(embed_dim),
                 operation_order=("self_attn", "norm", "ffn", "norm"),
@@ -111,6 +111,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
         proj_dropout: float = 0.1,
         ffn_dropout: float = 0.1,
         feedforward_dim: int = 1024,
+        num_ffn_layers: int = 2,
         post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
@@ -138,11 +139,11 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
                         num_points=num_points,
                     ),
                 ],
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
-                    output_dim=embed_dim,
                     ffn_drop=ffn_dropout,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(embed_dim),
                 operation_order=(

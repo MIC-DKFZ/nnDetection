@@ -114,6 +114,8 @@ class SetModelMixin(ModelMixin):
         transformer = cls._build_transformer(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
+            classifier=classifier,
+            regressor=regressor,
         )
 
         # head & matching
@@ -180,7 +182,15 @@ class SetModelMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
     ):
+        if model_cfg["two_stage"]:
+            encoder_classifier = classifier
+            encoder_regressor = regressor
+        else:
+            encoder_classifier, encoder_regressor = None, None
+
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
             embed_dim=encoder_kwargs["hidden_dim"],
@@ -204,8 +214,15 @@ class SetModelMixin(ModelMixin):
             ffn_dropout=decoder_kwargs["ffn_dropout"],
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
+            mean_noise=decoder_kwargs.get("mean_noise", 0.0),
+            std_noise=decoder_kwargs.get("std_noise", 0.0),
         )
-        return cls.transformer_cls(encoder=encoder, decoder=decoder)
+        return cls.transformer_cls(
+            encoder=encoder,
+            decoder=decoder,
+            classifier=encoder_classifier,
+            regressor=encoder_regressor,
+        )
 
     @classmethod
     def _build_channel_mapper(
