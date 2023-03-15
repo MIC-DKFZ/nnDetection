@@ -17,13 +17,17 @@ from nndet.nn.transformer.attention.attention import MultiheadAttention
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
 )
 
 
-class DeformableDETRTransformerEncoder(TransformerLayerSequence):
+class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -40,7 +44,11 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
         num_feature_levels: int = 4,
         num_points: int = 4,
     ):
-        super(DeformableDETRTransformerEncoder, self).__init__(
+        super().__init__(
+            embed_dim=embed_dim,
+            dim=dim,
+        )
+        self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=[
                     MultiScaleDeformableAttention(
@@ -63,8 +71,8 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
             ),
             num_layers=num_layers,
         )
-        self.embed_dim = self.layers[0].embed_dim
-        self.pre_norm = self.layers[0].pre_norm
+        self.embed_dim = embed_dim
+        self.pre_norm = self.layer_sequence.layers[0].pre_norm
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -84,7 +92,7 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
         **kwargs,
     ):
 
-        for layer in self.layers:
+        for layer in self.layer_sequence.layers:
             query = layer(
                 query,
                 key,
@@ -101,7 +109,7 @@ class DeformableDETRTransformerEncoder(TransformerLayerSequence):
         return query
 
 
-class DeformableDETRTransformerDecoder(TransformerLayerSequence):
+class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -120,7 +128,11 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
         num_points: int = 4,
         regressor: Optional[FFNRegressor] = None,
     ):
-        super(DeformableDETRTransformerDecoder, self).__init__(
+        super().__init__(
+            embed_dim=embed_dim,
+            dim=dim,
+        )
+        self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=[
                     MultiheadAttention(
@@ -178,7 +190,7 @@ class DeformableDETRTransformerDecoder(TransformerLayerSequence):
 
         intermediate = []
         intermediate_reference_points = []
-        for layer_idx, layer in enumerate(self.layers):
+        for layer_idx, layer in enumerate(self.layer_sequence.layers):
             if reference_points.shape[-1] == 6:
                 reference_points_input = (
                     reference_points[:, :, None] * torch.cat([valid_ratios, valid_ratios], -1)[:, None]
