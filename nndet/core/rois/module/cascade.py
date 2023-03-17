@@ -200,7 +200,7 @@ class CascadeRoIModule(BaseRoIModule):
                     matched_gt_labels=matched_gt_labels,
                     matched_gt_idx=matched_gt_idx,
                     proposal_boxes=proposal_boxes,
-                    target_binary_masks=targets["target_binary_masks"],
+                    gt_binary_masks=targets["target_binary_masks"],
                     image_size=image_size,
                     stage=stage_idx,
                     predict=False,
@@ -265,17 +265,17 @@ class CascadeRoIModule(BaseRoIModule):
                 ``"pred_image_spatial_size"`` ND_TUPLE_INT
                     image size which was used for prediction. Needed to restore
                     correct size of image when pasting binary masks.
-
         """
         fpn_features = [features[i] for i in self.decoder_levels]
+        image_size = tuple(images.shape[2:])
 
         for stage_idx in range(self.num_stages):
             if stage_idx > 0:
                 proposals = prediction  # noqa: F821
 
             prediction = self._inference_step_boxes(
-                images=images,
                 features=fpn_features,
+                image_size=image_size,
                 proposal_boxes=proposals["pred_boxes"],
                 stage=stage_idx,
             )
@@ -290,8 +290,8 @@ class CascadeRoIModule(BaseRoIModule):
                     proposal_labels = proposals["pred_labels"]
 
                 mask_preds = self._inference_step_masks(
-                    images=images,
                     features=fpn_features,
+                    image_size=image_size,
                     pred_boxes=proposal_boxes,
                     pred_probs=proposal_probs,
                     pred_labels=proposal_labels,

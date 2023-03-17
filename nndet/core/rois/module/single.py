@@ -167,7 +167,7 @@ class RoIModule(BaseRoIModule):
                 matched_gt_labels=matched_gt_labels,
                 matched_gt_idx=matched_gt_idx,
                 proposal_boxes=proposal_boxes,
-                target_binary_masks=targets["target_binary_masks"],
+                gt_binary_masks=targets["target_binary_masks"],
                 image_size=image_size,
                 stage=0,
                 predict=False,
@@ -234,17 +234,19 @@ class RoIModule(BaseRoIModule):
 
         """
         _features = [features[i] for i in self.decoder_levels]
+        image_size = tuple(images.shape[2:])
+
         prediction = self._inference_step_boxes(
-            images=images,
             features=_features,
+            image_size=image_size,
             proposal_boxes=proposals["pred_boxes"],
             proposal_scores=proposals["pred_scores"],
         )
 
         if self.mask_mode:
             mask_preds = self._inference_step_masks(
-                images=images,
                 features=_features,
+                image_size=image_size,
                 pred_boxes=prediction["pred_boxes"],
                 pred_probs=prediction["pred_scores"],
                 pred_labels=prediction["pred_labels"],
