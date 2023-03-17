@@ -328,7 +328,7 @@ class BaseRoIModule(torch.nn.Module):
         image_size: ND_TUPLE_INT,
         stage: int = 0,
         predict: bool = False,
-    ) -> Dict[str, Tensor]:
+    ) -> Tuple[Dict[str, Tensor], None]:
         """
         Compute losses for Mask Head
 
@@ -353,10 +353,8 @@ class BaseRoIModule(torch.nn.Module):
 
         Returns:
             Dict[str, Tensor]: losses
-            Optional[Dict[str, List[Tensor]]]: None is `predict=False`
-                otherwise is contains the predictions
-
-                # TODO
+            Optional[Dict[str, List[Tensor]]]: None. Kept for consistency
+                of steps
         """
         # compute mask loss on positive proposals
         pos_matched_gt_idx = []
@@ -394,8 +392,6 @@ class BaseRoIModule(torch.nn.Module):
             target_masks=target_masks_prepared_batched,
             target_labels=batch_pos_label,
         )
-
-        # TODO inference masks
 
         return losses, None
 
