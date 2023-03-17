@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import torch
 
@@ -309,6 +309,3 @@ class OverlapMap:
         """
         self.overlap_map = torch.zeros_like(self.overlap_map)
         self.overlap_map = float(val)
-
-
-BaseEnsemblerType = TypeVar("BaseEnsemblerType", bound=BaseEnsembler)

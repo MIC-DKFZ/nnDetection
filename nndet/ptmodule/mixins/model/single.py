@@ -8,16 +8,16 @@ from loguru import logger
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractOneStageDetector
-from nndet.core.boxes.anchors import AnchorGeneratorType, get_anchor_generator
-from nndet.core.boxes.coder import BoxCoderND, CoderType
+from nndet.core.boxes.anchors import AnchorGenerator, get_anchor_generator
+from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.classifier.dense import DenseClassifier
-from nndet.nn.heads.comb.base import AnchorHead, AnchorHeadType
+from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
-from nndet.nn.heads.segmenter import Segmenter, SegmenterType
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.wrapper import Generator
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule.mixins.model.base import ModelMixin
@@ -44,7 +44,7 @@ class SingleStageMixin(ModelMixin):
     head_regressor_cls: Type[DenseRegressor] = ...  #: define class for head regressor
 
     head_sampler_cls: Optional[
-        Type[SamplerType]
+        Type[AbstractSampler]
     ] = None  #: [optional] sampler class for negative mining. None = no sampling.
 
     matcher_cls: Type[Matcher] = ...  #: define class to match anchors to ground truth
@@ -269,7 +269,7 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorGeneratorType,
+        anchor_generator: AnchorGenerator,
     ) -> DenseClassifier:
         """
         Build classification subnetwork for detection head
@@ -280,7 +280,7 @@ class SingleStageMixin(ModelMixin):
             model_cfg: additional architecture settings
 
         Returns:
-            ClassifierType: classification instance
+            DenseClassifier: classification instance
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_classifier_cls.__name__
@@ -303,7 +303,7 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-        anchor_generator: AnchorGeneratorType,
+        anchor_generator: AnchorGenerator,
     ) -> DenseRegressor:
         """
         Build regression subnetwork for detection head
@@ -314,7 +314,7 @@ class SingleStageMixin(ModelMixin):
             anchor_generator: anchor generator instance
 
         Returns:
-            RegressorType: classification instance
+            DenseRegressor: classification instance
         """
         conv = Generator(cls.head_conv_cls, plan_arch["dim"])
         name = cls.head_regressor_cls.__name__
@@ -325,6 +325,7 @@ class SingleStageMixin(ModelMixin):
             conv=conv,
             in_channels=plan_arch["fpn_channels"],
             internal_channels=plan_arch["head_channels"],
+            num_classes=plan_arch["classifier_classes"],
             anchors_per_pos=anchor_generator.num_anchors_per_location()[0],
             num_levels=len(plan_arch["decoder_levels"]),
             **kwargs,
@@ -338,8 +339,8 @@ class SingleStageMixin(ModelMixin):
         model_cfg: dict,
         classifier: DenseClassifier,
         regressor: DenseRegressor,
-        coder: CoderType,
-    ) -> AnchorHeadType:
+        coder: BoxCoderND,
+    ) -> AnchorHead:
         """
         Build detection head
 
@@ -351,7 +352,7 @@ class SingleStageMixin(ModelMixin):
             coder: coder instance to encode boxes
 
         Returns:
-            HeadType: instantiated head
+            AnchorHead: instantiated head
         """
         head_name = cls.head_cls.__name__
         head_kwargs = model_cfg["head_kwargs"]
@@ -397,7 +398,17 @@ class SingleStageMixin(ModelMixin):
         cls,
         plan_arch: dict,
         model_cfg: dict,
-    ):
+    ) -> BoxPostprocessing:
+        """
+        Define module to perform postprocessing of generated boxes
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            BoxPostprocessing: module to perform postprocessing of boxes
+        """
         kwargs = {}
 
         # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
@@ -419,8 +430,8 @@ class SingleStageMixin(ModelMixin):
         logger.info(f"Building:: box postprocessing {name}: {kwargs}")
 
         box_post = cls.box_post_cls(
-            num_foreground_classes=plan_arch["classifier_classes"],
-            class_agnostic=cls.head_regressor_cls.class_agnostic(),
+            num_classes=plan_arch["classifier_classes"],
+            is_class_agnostic=cls.head_regressor_cls.is_class_agnostic(),
             **kwargs,
         )
         return box_post
@@ -441,7 +452,7 @@ class SingleStageMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
         neck: AbstractNeck,
-    ) -> SegmenterType:
+    ) -> Segmenter:
         """
         Build segmenter head
 
@@ -451,7 +462,7 @@ class SingleStageMixin(ModelMixin):
             neck: neck instance
 
         Returns:
-            SegmenterType: segmenter head
+            Segmenter: segmenter head
         """
         name = cls.segmenter_cls.__name__
         kwargs = model_cfg["segmenter_kwargs"]

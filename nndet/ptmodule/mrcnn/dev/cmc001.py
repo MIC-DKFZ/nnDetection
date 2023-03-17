@@ -19,9 +19,9 @@ from nndet.nn.heads.classifier.dense import BCECLassifier
 from nndet.nn.heads.classifier.roi import CEConvRoIClassifier
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker import BCESingleMasker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker
 from nndet.nn.heads.regressor.dense import L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor
+from nndet.nn.heads.regressor.roi import L1ConvRoIAgnosticRegressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.fpn import UFPN
@@ -59,7 +59,7 @@ class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
     roi_module_cls = CascadeRoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
     roi_classifier_cls = CEConvRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1ConvRoIAgnosticRegressor  # RoIRegressorConv
     roi_box_post_cls = CrossLevelBoxPostprocessing
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
@@ -67,6 +67,6 @@ class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
     roi_box_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
 
     # optional mask branches
-    roi_masker_cls = BCESingleMasker  # BCESingleMasker
+    roi_masker_cls = BCEAgnosticMasker  # BCEAgnosticMasker
     roi_mask_pooler_cls = RoIAlignNaiveAssign  # RoIAlignNaiveAssign
     roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy

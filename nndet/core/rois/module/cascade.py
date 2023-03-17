@@ -6,16 +6,18 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import torch
 from loguru import logger
 
-from nndet.core.boxes import MatcherType
+from nndet.core.boxes import Matcher
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.comb.base import RoIHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.utils.typing import ND_TUPLE_INT
+
+# TODO: cleanup
 
 
 class CascadeRoIModule(BaseRoIModule):
@@ -24,8 +26,8 @@ class CascadeRoIModule(BaseRoIModule):
         box_head: Union[RoIHead, List[RoIHead], Tuple[RoIHead]],
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
-        matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
-        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        matcher: Union[Matcher, List[Matcher], Tuple[Matcher]],
+        sampler: AbstractSampler,  # NegativeSampler default => random balanced sampling
         num_classes: int,
         decoder_levels: Sequence[int],
         gt_to_proposals: bool = True,

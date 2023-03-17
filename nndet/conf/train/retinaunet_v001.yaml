@@ -77,8 +77,7 @@ model_cfg:
     norm_out: False
     activation_out: False
 
-  head_kwargs:  # keyword arguments to passed to head
-    reg_mode: "encode"
+  head_kwargs: {} # keyword arguments to passed to head
 
   head_classifier_kwargs: # keyword arguments passed to classifier in head
     num_convs: 1

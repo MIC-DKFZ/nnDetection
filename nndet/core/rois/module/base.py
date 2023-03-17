@@ -9,14 +9,14 @@ from loguru import logger
 from torch import Tensor
 
 import nndet.core.ops_torch as ops_torch
-from nndet.core.boxes import MatcherType
+from nndet.core.boxes import Matcher
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.comb.roi import RoIHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
@@ -29,8 +29,8 @@ class BaseRoIModule(torch.nn.Module):
         box_head: Union[RoIHead, List[RoIHead], Tuple[RoIHead]],
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
-        matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
-        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        matcher: Union[Matcher, List[Matcher], Tuple[Matcher]],
+        sampler: AbstractSampler,  # NegativeSampler default => random balanced sampling
         num_classes: int,
         decoder_levels: Sequence[int],
         gt_to_proposals: bool = True,
@@ -296,9 +296,9 @@ class BaseRoIModule(torch.nn.Module):
         pred_detection = self.box_head[stage](box_roi_features)
         losses, _, _ = self.box_head[stage].compute_loss(
             prediction=pred_detection,
-            target_labels=matched_gt_labels,
+            matched_gt_labels=matched_gt_labels,
             matched_gt_boxes=matched_gt_boxes,
-            proposals=_proposal_boxes,
+            proposal_boxes=_proposal_boxes,
         )
 
         if predict:
@@ -328,7 +328,7 @@ class BaseRoIModule(torch.nn.Module):
         image_size: ND_TUPLE_INT,
         stage: int = 0,
         predict: bool = False,
-    ) -> Dict[str, Tensor]:
+    ) -> Tuple[Dict[str, Tensor], None]:
         """
         Compute losses for Mask Head
 
@@ -353,18 +353,18 @@ class BaseRoIModule(torch.nn.Module):
 
         Returns:
             Dict[str, Tensor]: losses
-            Optional[Dict[str, List[Tensor]]]: None is `predict=False`
-                otherwise is contains the predictions
-
-                # TODO
+            Optional[Dict[str, List[Tensor]]]: None. Kept for consistency
+                of steps
         """
         # compute mask loss on positive proposals
         pos_matched_gt_idx = []
         pos_proposal_boxes = []
+        pos_label = []
         for gt_l, gt_idx, prop_b in zip(matched_gt_labels, matched_gt_idx, proposal_boxes):
             pos_idx = torch.where(gt_l > 0)[0]
             pos_matched_gt_idx.append(gt_idx[pos_idx])
             pos_proposal_boxes.append(prop_b[pos_idx])
+            pos_label.append(gt_l[pos_idx])
 
         target_masks_prepared = self.mask_pooler.pool_masks(
             binary_masks=gt_binary_masks,
@@ -382,14 +382,16 @@ class BaseRoIModule(torch.nn.Module):
         )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
 
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
-        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0).unsqueeze(dim=1)
+        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
+        # TODO: check for consistency
+        batch_pos_label = torch.cat(pos_label) - 1
+        assert batch_pos_label.shape[0] == pred_masks.shape[0]
         losses = self.mask_head[stage].compute_loss(
-            pred_masks,
-            target_masks_prepared_batched,
+            pred_logits=pred_masks,
+            target_masks=target_masks_prepared_batched,
+            target_labels=batch_pos_label,
         )
-
-        # TODO inference masks
 
         return losses, None
 
@@ -751,7 +753,9 @@ class BaseRoIModule(torch.nn.Module):
         Perform postprocessing of box predictions
 
         Args:
-            masks: predicted masks of shape #TODO
+            masks: predicted masks [N, num_classes, dims], where N is the
+                number of RoIs, num_classes is the number of foreground classes
+                and dims are spatial dimensions
             pred_probs: predicted probabilities for each mask
                 List[N] where N is the number of predictions/RoIs
             pred_labels: predicted label for each mask
@@ -770,8 +774,9 @@ class BaseRoIModule(torch.nn.Module):
         masks_per_image = [len(pl) for pl in pred_labels]
         assert [len(pp) == len(pl) for pp, pl in zip(pred_probs, pred_labels)]
         assert sum(masks_per_image) == masks.shape[0]
+        batched_mask_labels = torch.cat(pred_labels)
 
-        pred_masks = self.mask_head[stage].logits_to_probs(masks, pred_labels)
+        pred_masks = self.mask_head[stage].logits_to_probs(masks, batched_mask_labels)
         pred_masks = pred_masks.split(masks_per_image, 0)
 
         return self.mask_post.process_batch(

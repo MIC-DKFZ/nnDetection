@@ -19,7 +19,7 @@ class SGDLWPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         """
         Configure optimizer and scheduler
@@ -94,7 +94,7 @@ class SGDPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         """
         Configure optimizer and scheduler
@@ -160,7 +160,7 @@ class TwoStageSGDLWPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         """
         Configure optimizer and scheduler for two stage detector
