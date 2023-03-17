@@ -13,7 +13,7 @@ from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
-from nndet.core.rois.module.base import RoIModule
+from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.roi import RoIBoxHead
@@ -30,7 +30,7 @@ class RoIBuildMixin:
 
     # RoI classes
     roi_conv_cls: Type[CONVSEQ] = ...  #: conv class for RoI head
-    roi_module_cls: Type[RoIModule] = ...  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
+    roi_module_cls: Type[BaseRoIModule] = ...  #: define class of RoI module (usually `RoIModule` or `CascadeRoIModule`)
     roi_head_cls: Type[RoIBoxHead] = ...  #: define class for RoI box head
     roi_classifier_cls: Type[RoIClassifier] = ...  #: define class for box classifier
     roi_regressor_cls: Type[RoIRegressor] = ...  #: define class for box regressor

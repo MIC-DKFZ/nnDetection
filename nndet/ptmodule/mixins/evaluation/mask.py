@@ -56,7 +56,7 @@ class ScoreMasksEvalMixin(EvalMixin):
 
         _pred_boxes: List[torch.Tensor] = predictions["pred_boxes"]
         _pred_masks_probs: List[torch.Tensor] = predictions["pred_masks"]
-        _image_spatial_size: ND_TUPLE_INT = predictions["__pred_image_spatial_size"]
+        _image_spatial_size: ND_TUPLE_INT = predictions["pred_image_spatial_size"]
         target_binary_masks: List[torch.Tensor] = targets["target_binary_masks"]
         assert len(_pred_masks_probs) == len(target_binary_masks) == len(_pred_boxes)
         pred_masks = []

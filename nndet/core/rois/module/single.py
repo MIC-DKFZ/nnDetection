@@ -7,54 +7,49 @@ import torch
 from loguru import logger
 
 from nndet.core.boxes import MatcherType
-from nndet.core.boxes.assign import assign_targets_to_anchors
 from nndet.core.boxes.sampler import SamplerType
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPooler
-from nndet.nn.heads.comb.base import RoIHead
+from nndet.nn.heads.comb.roi import RoIHead
 from nndet.nn.heads.masker.base import Masker
 from nndet.utils.typing import ND_TUPLE_INT
 
 
-class CascadeRoIModule(BaseRoIModule):
+class RoIModule(BaseRoIModule):
     def __init__(
         self,
-        box_head: Union[RoIHead, List[RoIHead], Tuple[RoIHead]],
+        box_head: RoIHead,
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
-        matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
-        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        matcher: MatcherType,
+        sampler: SamplerType,
         num_classes: int,
         decoder_levels: Sequence[int],
         gt_to_proposals: bool = True,
-        # mask
         mask_head: Optional[Union[Masker, List[Masker], Tuple[Masker]]] = None,
         mask_pooler: Optional[RoIPooler] = None,
         mask_post: Optional[MaskPostprocessing] = None,
-        mask_interleaved_execution: bool = False,
-        # post-processing
-        # no postprocessing option here
-        # cascade settings
-        loss_weight_stage: Optional[Sequence[float]] = None,
+        inference_prob_rpn: bool = False,
     ) -> None:
         """
-        RoI Module to perform multiple sequential/cascaded RoI based detections
-        "Cascade R-CNN: Delving into High Quality Object Detection"
-        https://arxiv.org/abs/1712.00726
-        "Hybrid Task Cascade for Instance Segmentation"
-        https://arxiv.org/abs/1901.07518
+        RoI Module to perform RoI based detection
+        "Faster R-CNN: Towards Real-Time Object Detection with Region
+        Proposal Networks"
+        https://arxiv.org/abs/1506.01497
+        "Mask R-CNN"
+        https://arxiv.org/abs/1703.06870
+        (experimental) "Probabilistic two-stage detection"
+        https://arxiv.org/abs/2103.07461
 
         Args:
             box_head: module to perform box regression and classification of
-                RoIs; if only a single head is provided, it will be replicated
-                for all stages
+                RoIs
             box_pooler: module to perform pooling of features to be passed
                 to head
             box_post: module to perform postprocessing of the box predictions
-            matcher: module to assign labels to the proposal boxes. if only a
-                single head is provided, it will be replicated for all stages
+            matcher: module to assign labels to the proposal boxes
             sampler: module to sample a subset of the proposals to compute
                 the loss during training
             num_classes: number of foreground classes
@@ -63,20 +58,15 @@ class CascadeRoIModule(BaseRoIModule):
             gt_to_proposals: Add ground truth objects to the proposals during
                 the training setp for improved stability at the beginning of
                 the trainign. Defaults to True.
-            mask_head: module to perform mask predictions of RoIs;
-                if only a single head is provided, it will be replicated
-                for all stages. Defaults to None.
+            mask_head: module to perform mask predictions of RoIs
             mask_pooler: module to perform pooling of features to be passed
                 to head. Defaults to None.
             mask_post:  module to perform postprocessing of the mask
                 predictions. Defaults to None.
-            mask_interleaved_execution: Interleaved mask execution as proposed
-                in HTC. Defaults to False.
-            loss_weight_stage: Provide loss weights for each stage to scale
-                the losses. Defaults to None.
-
-        Raises:
-            ValueError: Need to provide loss weight for each stage
+            inference_prob_rpn: (experiental) predictions from RoI module
+                are conditioned on the predictions of the RPN, which
+                is realized by multiplying the predicted proposal probabilities
+                with the predicted RoI probabilities.
         """
         super().__init__(
             box_head=box_head,
@@ -87,22 +77,17 @@ class CascadeRoIModule(BaseRoIModule):
             num_classes=num_classes,
             decoder_levels=decoder_levels,
             gt_to_proposals=gt_to_proposals,
-            # mask
             mask_head=mask_head,
             mask_pooler=mask_pooler,
             mask_post=mask_post,
+            inference_prob_rpn=inference_prob_rpn,
         )
-        if loss_weight_stage is None:
-            self.loss_weight_stage = [1.0] * self.num_stages
-        else:
-            if len(loss_weight_stage) != self.num_stages:
-                raise ValueError(
-                    "If loss weight is provided, each stage needs one! "
-                    f"Found {loss_weight_stage} but {self.num_stages} stages."
-                )
-            self.loss_weight_stage = list(map(float, loss_weight_stage))
-        logger.info(f"Running Cascade RoI Module with {self.num_stages} stages and " f"train mask {self.mask_mode}")
-        self.mask_interleaved_execution = mask_interleaved_execution
+        if len(self.box_head) > 1:
+            raise ValueError("Found more than one box head, use Cascade RoI head instead")
+        if len(self.matcher) > 1:
+            raise ValueError("Found more than one matcher, use Cascade RoI head instead")
+        if self.mask_head is not None and len(self.mask_head) > 1:
+            raise ValueError("Found more than one mask head, use Cascade RoI head instead")
 
     def train_step(
         self,
@@ -146,7 +131,7 @@ class CascadeRoIModule(BaseRoIModule):
         Returns:
             Dict[str, torch.Tensor]: computed losses
         """
-        fpn_features = [features[i] for i in self.decoder_levels]
+        _features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
 
         proposals = self.detach_proposals(proposals)
@@ -157,57 +142,38 @@ class CascadeRoIModule(BaseRoIModule):
             matched_gt_idx,
         ) = self.assign_and_sample(proposals=proposals, targets=targets)
 
-        losses = {}
-        for stage_idx in range(self.num_stages):
-            if stage_idx > 0:
-                proposals = self.detach_proposals(new_proposals)  # noqa: F821
-                proposal_boxes = proposals["pred_boxes"]
-                # match proposals to ground truth
-                (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
-                    proposal_matcher=self.matcher[stage_idx],
-                    anchors=proposal_boxes,
-                    target_boxes=targets["target_boxes"],
-                    target_classes=targets["target_roi_classes"],
-                )  # List([N]), List([N, dims * 2]), List([N])
-
-            # box loss
-            box_losses, new_proposals = self._train_step_boxes(
-                features=fpn_features,
-                matched_gt_boxes=matched_gt_boxes,
-                matched_gt_labels=matched_gt_labels,
-                proposal_boxes=proposal_boxes,
-                image_size=image_size,
-                stage=stage_idx,
-                predict=True,
+        if sum(pb.numel() for pb in proposal_boxes) == 0:
+            logger.info(
+                "No proposals found return zero loss for RoI head "
+                f"with initial proposals {proposals} and targets {targets}"
             )
-            for k, i in box_losses.items():
-                losses[f"roi_s{stage_idx}_{k}"] = i * self.loss_weight_stage[stage_idx]
+            return {}
 
-            # mask loss
-            if self.mask_mode:
-                if self.mask_interleaved_execution:  # use new boxes for mask
-                    proposals = self.detach_proposals(new_proposals)
-                    proposal_boxes = proposals["pred_boxes"]
-                    (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
-                        proposal_matcher=self.matcher[stage_idx],
-                        anchors=proposal_boxes,
-                        target_boxes=targets["target_boxes"],
-                        target_classes=targets["target_roi_classes"],
-                    )  # List([N]), List([N, dims * 2]), List([N])
+        # box loss
+        losses, _ = self._train_step_boxes(
+            features=_features,
+            matched_gt_boxes=matched_gt_boxes,
+            matched_gt_labels=matched_gt_labels,
+            proposal_boxes=proposal_boxes,
+            image_size=image_size,
+            stage=0,
+            predict=False,
+        )
 
-                mask_losses, _ = self._train_step_masks(
-                    features=fpn_features,
-                    matched_gt_labels=matched_gt_labels,
-                    matched_gt_idx=matched_gt_idx,
-                    proposal_boxes=proposal_boxes,
-                    target_binary_masks=targets["target_binary_masks"],
-                    image_size=image_size,
-                    stage=stage_idx,
-                    predict=False,
-                )
-                for k, i in mask_losses.items():
-                    losses[f"roi_s{stage_idx}_{k}"] = i * self.loss_weight_stage[stage_idx]
-        return losses
+        # mask loss
+        if self.mask_mode:
+            mask_losses, _ = self._train_step_masks(
+                features=_features,
+                matched_gt_labels=matched_gt_labels,
+                matched_gt_idx=matched_gt_idx,
+                proposal_boxes=proposal_boxes,
+                target_binary_masks=targets["target_binary_masks"],
+                image_size=image_size,
+                stage=0,
+                predict=False,
+            )
+            losses.update(mask_losses)
+        return {f"roi_s0_{k}": i for k, i in losses.items()}
 
     @torch.no_grad()
     def inference_step(
@@ -267,35 +233,21 @@ class CascadeRoIModule(BaseRoIModule):
                     correct size of image when pasting binary masks.
 
         """
-        fpn_features = [features[i] for i in self.decoder_levels]
+        _features = [features[i] for i in self.decoder_levels]
+        prediction = self._inference_step_boxes(
+            images=images,
+            features=_features,
+            proposal_boxes=proposals["pred_boxes"],
+            proposal_scores=proposals["pred_scores"],
+        )
 
-        for stage_idx in range(self.num_stages):
-            if stage_idx > 0:
-                proposals = prediction  # noqa: F821
-
-            prediction = self._inference_step_boxes(
+        if self.mask_mode:
+            mask_preds = self._inference_step_masks(
                 images=images,
-                features=fpn_features,
-                proposal_boxes=proposals["pred_boxes"],
-                stage=stage_idx,
+                features=_features,
+                pred_boxes=prediction["pred_boxes"],
+                pred_probs=prediction["pred_scores"],
+                pred_labels=prediction["pred_labels"],
             )
-            if self.mask_mode:
-                if self.mask_interleaved_execution:
-                    proposal_boxes = prediction["pred_boxes"]
-                    proposal_probs = prediction["pred_scores"]
-                    proposal_labels = prediction["pred_labels"]
-                else:
-                    proposal_boxes = proposals["pred_boxes"]
-                    proposal_probs = proposals["pred_scores"]
-                    proposal_labels = proposals["pred_labels"]
-
-                mask_preds = self._inference_step_masks(
-                    images=images,
-                    features=fpn_features,
-                    pred_boxes=proposal_boxes,
-                    pred_probs=proposal_probs,
-                    pred_labels=proposal_labels,
-                    stage=stage_idx,
-                )
-                prediction.update(mask_preds)
+            prediction.update(mask_preds)
         return prediction
