@@ -17,7 +17,7 @@ from nndet.nn.backbone.blueprints.resconv import ConvBackbone, ResConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
-from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMV2
+from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM, BoxHeadHNMV2
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
@@ -70,6 +70,15 @@ class RetinaUNetHNMC017(
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
     segmenter_cls: Type[Segmenter] = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetHNMC017MH(RetinaUNetHNMC017):
+    """
+    Use old head since V2 Head produced worse results
+    """
+
+    head_cls: Type[AnchorHead] = BoxHeadHNM  # define class for head
 
 
 @MODULE_REGISTRY.register
