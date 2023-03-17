@@ -757,7 +757,9 @@ class BaseRoIModule(torch.nn.Module):
         Perform postprocessing of box predictions
 
         Args:
-            masks: predicted masks of shape #TODO
+            masks: predicted masks [N, num_classes, dims], where N is the
+                number of RoIs, num_classes is the number of foreground classes
+                and dims are spatial dimensions
             pred_probs: predicted probabilities for each mask
                 List[N] where N is the number of predictions/RoIs
             pred_labels: predicted label for each mask

@@ -9,7 +9,7 @@ from typing import Optional, Type
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.core.boxes.matcher.base import Matcher
-from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
+from nndet.core.boxes.sampler import AbstractSampler, HardNegativeSamplerBatched
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
@@ -64,7 +64,7 @@ class RetinaUNetHNMC017(
     head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
+    head_sampler_cls: Optional[Type[AbstractSampler]] = HardNegativeSamplerBatched
 
     matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
@@ -90,7 +90,7 @@ class RetinaUNetFocalC017(RetinaUNetHNMC017):
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
-    head_sampler_cls: Optional[Type[SamplerType]] = None
+    head_sampler_cls: Optional[Type[AbstractSampler]] = None
 
 
 @MODULE_REGISTRY.register
