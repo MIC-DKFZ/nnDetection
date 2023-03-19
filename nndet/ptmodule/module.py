@@ -129,7 +129,9 @@ class LightningBaseModule(pl.LightningModule):
             targets=targets,
             batch_num=batch_idx,
         )
-        loss = sum(losses.values())
+
+        # Exclude criterion logging keys starting with __
+        loss = sum([value for key, value in losses.items() if not key.startswith("__")])
 
         # self.log_dict(losses, prog_bar=True)
 
