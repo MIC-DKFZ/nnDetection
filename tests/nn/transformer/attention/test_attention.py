@@ -4,7 +4,7 @@ import torch
 from nndet.nn.transformer.attention.attention import MultiheadAttention
 
 TEST_SETTINGS = [
-    (64, 4, 1, 2, False),
+    (64, 4, 0.4, 0.3, False),
     (512, 8, 0.2, 0.1, False),
 ]
 
@@ -24,10 +24,10 @@ TEST_SHAPE = [
             embed_dim=256,
             num_heads=16,
         ),
-        torch.ones((40, 8, 256)),  # use different sequence lengths
+        torch.ones((32, 8, 256)),  # use different sequence lengths
         torch.ones((80, 8, 256)),
         torch.ones((80, 8, 256)),
-        (40, 8, 256),
+        (32, 8, 256),
     ),
 ]
 
