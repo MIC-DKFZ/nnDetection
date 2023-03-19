@@ -5,8 +5,7 @@
 # Original code from DETR https://github.com/facebookresearch/detr
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
-
-
+import os
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
@@ -58,6 +57,7 @@ class DETRHead(torch.nn.Module):
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
         self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
+        self.extended_logging = os.getenv("det_extended_logging")
 
     def forward(
         self,
@@ -161,7 +161,7 @@ class DETRHead(torch.nn.Module):
         )
 
         # compute losses
-        losses, match_criterions = self._match_and_compute_loss(
+        losses, criterion_log = self._match_and_compute_loss(
             pred_logits=pred_detection["pred_cls_logits"],
             pred_coords=pred_detection["pred_box_coords"],
             target_boxes=target_boxes,
@@ -179,7 +179,12 @@ class DETRHead(torch.nn.Module):
                     num_boxes_all=num_boxes_all,
                 )
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
-                match_criterions.update(m_dict)
+                # Don't log auxiliary criteria
+                # criterion_log.update(m_dict)
+
+        if self.extended_logging:
+            losses.update(criterion_log)
+
         return losses
 
     def format_scale_aux_losses(
@@ -244,7 +249,7 @@ class DETRHead(torch.nn.Module):
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
         num_boxes_all: int,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
         """
         Perform matching of predictions and ground truth objects and
         compute losses
@@ -265,7 +270,7 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed losses. Exact entries depend on
                 FFNClassifier and FFNRegressor
         """
-        indices = self.matcher(
+        indices, criterion_log = self.matcher(
             pred_logits=pred_logits,
             pred_coords=pred_coords,
             target_boxes=target_boxes,
@@ -289,7 +294,7 @@ class DETRHead(torch.nn.Module):
                 num_boxes_all=num_boxes_all,
             )
         )
-        return losses
+        return losses, criterion_log
 
     def compute_class_loss(
         self,

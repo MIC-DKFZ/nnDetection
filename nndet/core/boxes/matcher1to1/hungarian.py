@@ -6,12 +6,11 @@
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import torch
 from loguru import logger
 from scipy.optimize import linear_sum_assignment
-from torch import Tensor
 
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 
@@ -24,7 +23,7 @@ class HungarianMatcher(BaseMatcher):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-    ) -> List[Tuple[Tensor, Tensor]]:
+    ) -> Tuple[List[Tuple[torch.Tensor, torch.Tensor]], Dict[str, torch.Tensor]]:
         """
         Perform matching over batch elements with at least one ground truth
         element in them
@@ -59,16 +58,12 @@ class HungarianMatcher(BaseMatcher):
 
         tgt_labels = torch.cat(target_labels, dim=0)
         tgt_bbox = torch.cat(target_boxes, dim=0)
-        cost_classes = {
-            f"__class_criterion_{idx}": self.class_criterion[idx](out_logits, tgt_labels)
-            for idx in range(len(self.class_criterion))
-        }
-        cost_boxes = {
-            f"__box_criterion_{idx}": self.box_criterion[idx](out_bbox, tgt_bbox)
-            for idx in range(len(self.box_criterion))
-        }
-        cost_class = sum(cost_classes.values())  # [batch_size * num_queries, num_gt_elements]
-        cost_box = sum(cost_boxes.values())  # [batch_size * num_queries, num_gt_elements]
+        num_class_criterion = len(self.class_criterion)
+        num_box_criterion = len(self.box_criterion)
+        cost_classes = [self.class_criterion[idx](out_logits, tgt_labels) for idx in range(num_class_criterion)]
+        cost_boxes = [self.box_criterion[idx](out_bbox, tgt_bbox) for idx in range(num_box_criterion)]
+        cost_class = sum(cost_classes)  # [batch_size * num_queries, num_gt_elements]
+        cost_box = sum(cost_boxes)  # [batch_size * num_queries, num_gt_elements]
 
         C = cost_class + cost_box
         C = C.view(bs, num_queries, -1).cpu()
@@ -87,10 +82,26 @@ class HungarianMatcher(BaseMatcher):
             logger.info(f"BS {bs} NQ: {num_queries}")
             raise RuntimeError
 
-        return [
+        out_indices = [
             (
                 torch.as_tensor(i, dtype=torch.int64),
                 torch.as_tensor(j, dtype=torch.int64),
             )
             for i, j in indices
         ]
+        crit_log_dict = {}
+        for i, (pred_indices, gt_indices) in enumerate(out_indices):
+            for j in range(num_class_criterion):
+                cost_classes_tmp = cost_classes[j][pred_indices, gt_indices]
+                cdict = {
+                    f"__class_crit_{j}_img_{i}_box_{k}": cost_class_tmp
+                    for k, cost_class_tmp in enumerate(cost_classes_tmp)
+                }
+                crit_log_dict.update(cdict)
+            for j in range(num_box_criterion):
+                cost_boxes_tmp = cost_boxes[j][pred_indices, gt_indices]
+                bdict = {
+                    f"__box_crit_{j}_img_{i}_box_{k}": cost_box_tmp for k, cost_box_tmp in enumerate(cost_boxes_tmp)
+                }
+                crit_log_dict.update(bdict)
+        return out_indices, crit_log_dict

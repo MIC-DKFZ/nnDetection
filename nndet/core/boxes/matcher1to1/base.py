@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -46,7 +46,7 @@ class BaseMatcher(nn.Module):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-    ) -> List[Tuple[Optional[Tensor], Optional[Tensor]]]:
+    ) -> Tuple[List[Tuple[Optional[Tensor], Optional[Tensor]]], Dict[str, torch.Tensor]]:
         """
         Perform matching over whole batch
 
@@ -89,7 +89,7 @@ class BaseMatcher(nn.Module):
                 mask.append(True)
 
         if num_boxes > 0:
-            masked_indices = self.match(
+            masked_indices, log_dict = self.match(
                 pred_logits=pred_logits[mask],
                 pred_coords=pred_coords[mask],
                 target_boxes=masked_boxes,
@@ -97,9 +97,10 @@ class BaseMatcher(nn.Module):
             )
         else:
             masked_indices = []
+            log_dict = {}
 
         indices = self.unmask_indices(mask, masked_indices)
-        return indices
+        return indices, log_dict
 
     @classmethod
     def unmask_indices(
