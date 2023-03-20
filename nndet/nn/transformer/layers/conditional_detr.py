@@ -45,10 +45,7 @@ def gen_sine_embed_for_position(
     assert dim in [2, 3]
 
     scale = 2 * math.pi
-    if num_pos_feats % dim == 0:
-        feats = num_pos_feats // dim
-    else:
-        feats = num_pos_feats // dim + 1
+    feats = 2 * math.ceil(num_pos_feats / (2 * dim))
     dim_t = torch.arange(feats, dtype=torch.float32, device=pos_tensor.device)
     dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / feats)
     x_embed = pos_tensor[:, :, 0] * scale
@@ -64,18 +61,26 @@ def gen_sine_embed_for_position(
         pos_z = z_embed[:, :, None] / dim_t
         pos_z = torch.stack((pos_z[:, :, 0::2].sin(), pos_z[:, :, 1::2].cos()), dim=3).flatten(2)
         # If num_pos_feats is not divisible by 3 we have to remove some values
-        if num_pos_feats % dim == 0:
-            pos_embed = torch.cat((pos_x, pos_y, pos_z), dim=2)
-        elif num_pos_feats % dim == 1:
-            pos_embed = torch.cat((pos_x, pos_y, pos_z[:, :, :-1]), dim=2)
+        dimension_delta = dim * feats - num_pos_feats
+        cut = feats
+        if dimension_delta >= 3:
+            cut = feats - 1
+        if dimension_delta % dim == 0:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, :cut]), dim=2)
+        elif dimension_delta % dim == 1:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, : cut - 1]), dim=2)
         else:
-            pos_embed = torch.cat((pos_x, pos_y[:, :, :-1], pos_z[:, :, :-1]), dim=2)
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, : cut - 1], pos_z[:, :, : cut - 1]), dim=2)
 
     else:  # 2D Case
+        dimension_delta = dim * feats - num_pos_feats
+        cut = feats
+        if dimension_delta >= 2:
+            cut = feats - 1
         if num_pos_feats % dim == 0:
-            pos_embed = torch.cat((pos_x, pos_y), dim=2)
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut]), dim=2)
         else:
-            pos_embed = torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, : cut - 1]), dim=2)
     return pos_embed
 
 
@@ -211,7 +216,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             # get sine embedding for the query vector
             query_sine_embed = gen_sine_embed_for_position(obj_center, self.embed_dim)
             # apply position transform
-            query_sine_embed = query_sine_embed[..., : self.embed_dim] * position_transform
+            query_sine_embed = query_sine_embed * position_transform
 
             query = layer(
                 query,
