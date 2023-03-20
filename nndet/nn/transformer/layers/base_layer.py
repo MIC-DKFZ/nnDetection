@@ -176,10 +176,11 @@ class TransformerLayerSequence(nn.Module):
         num_layers: int,
     ):
         """
-        Base class for TransformerEncoder and TransformerDecoder, which will
-        copy the passed `transformer_layers` module `num_layers` time or save
-        the passed list of `transformer_layers` as parameters named
-        ``self.layers`` which is the type of ``nn.ModuleList``.
+        Base class for the layers of the TransformerEncoder and
+        TransformerDecoder, which will copy the passed `transformer_layers`
+        module `num_layers` time or save the passed list of `transformer_layers`
+        as parameters named ``self.layers`` which is the type of
+        ``nn.ModuleList``.
 
         Args:
             transformer_layers: A list of BaseTransformerLayer. If it is
@@ -196,3 +197,5 @@ class TransformerLayerSequence(nn.Module):
                 self.layers.append(copy.deepcopy(transformer_layers))
         else:
             assert isinstance(transformer_layers, list) and len(transformer_layers) == num_layers
+            for i in range(num_layers):
+                self.layers.append(transformer_layers[i])

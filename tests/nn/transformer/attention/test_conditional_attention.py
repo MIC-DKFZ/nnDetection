@@ -128,3 +128,128 @@ def test_conditional_cross_attention_shape(
 ):
     out = attention(query, key, value, query_pos=query_pos, key_pos=key_pos, query_sine_embed=query_sine_embed)
     assert tuple(out.shape) == expected_out_shape
+
+
+TEST_SELF_VALUE = [
+    (
+        ConditionalSelfAttention(
+            embed_dim=512,
+            num_heads=1,
+            bias=False,
+        ),
+        torch.ones((100, 4, 512)),  # [N, bs, C]
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+        None,
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+    ),
+    (
+        ConditionalSelfAttention(
+            embed_dim=256,
+            num_heads=8,
+            bias=False,
+        ),
+        torch.ones((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.randn((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+    ),
+]
+
+
+@pytest.mark.parametrize("attention,query,key,value,identity,query_pos,key_pos", TEST_SELF_VALUE)
+def test_conditional_self_attention_value(attention, query, key, value, identity, query_pos, key_pos):
+    for module in attention.modules():
+        if isinstance(module, torch.nn.Linear):
+            module.weight = torch.nn.Parameter(torch.eye(*module.weight.shape))
+            module.bias = torch.nn.Parameter(torch.zeros_like(module.bias))
+    out = attention(query, key, value, identity=identity, query_pos=query_pos, key_pos=key_pos)
+    if identity is None:
+        identity = query
+    # The attention matrix has the same value in every entry so the output depends on the value of value
+    out_expected = torch.zeros_like(query)
+    torch.fill_(out_expected, value.mean())
+    assert torch.allclose(out, out_expected + identity, atol=1e-6)
+
+
+TEST_CROSS_VALUE = [
+    (
+        ConditionalCrossAttention(
+            embed_dim=512,
+            num_heads=1,
+            bias=False,
+        ),
+        torch.ones((100, 4, 512)),  # [N, bs, C]
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+        torch.ones((100, 4, 512)),
+    ),
+    (
+        ConditionalCrossAttention(
+            embed_dim=256,
+            num_heads=8,
+            bias=False,
+        ),
+        torch.ones((80, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.randn((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.ones((80, 8, 256)),
+    ),
+    (
+        ConditionalCrossAttention(
+            embed_dim=256,
+            num_heads=8,
+            bias=False,
+        ),
+        torch.ones((80, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.zeros((80, 8, 256)),
+        torch.zeros((32, 8, 256)),
+        torch.zeros((80, 8, 256)),
+    ),
+    (
+        ConditionalCrossAttention(
+            embed_dim=256,
+            num_heads=8,
+            bias=False,
+        ),
+        torch.zeros((80, 8, 256)),
+        torch.zeros((32, 8, 256)),
+        torch.zeros((32, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.ones((80, 8, 256)),
+        torch.ones((32, 8, 256)),
+        torch.ones((80, 8, 256)),
+    ),
+]
+
+
+@pytest.mark.parametrize("attention,query,key,value,identity,query_pos,key_pos,query_sine_embed", TEST_CROSS_VALUE)
+def test_conditional_cross_attention_value(
+    attention, query, key, value, identity, query_pos, key_pos, query_sine_embed
+):
+    for module in attention.modules():
+        if isinstance(module, torch.nn.Linear):
+            module.weight = torch.nn.Parameter(torch.eye(*module.weight.shape))
+            module.bias = torch.nn.Parameter(torch.zeros_like(module.bias))
+    # This should output query + identity (identity connection) (ONLY GIVEN THE EXACT SETTINGS IN TEST_VALUE)
+    out = attention(
+        query, key, value, identity=identity, query_pos=query_pos, key_pos=key_pos, query_sine_embed=query_sine_embed
+    )
+    if identity is None:
+        identity = query
+    # The attention matrix has the same value in every entry so the output depends on the value of value
+    out_expected = torch.zeros_like(query)
+    torch.fill_(out_expected, value.mean())
+    assert torch.allclose(out, out_expected + identity, atol=1e-6)
