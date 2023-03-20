@@ -94,16 +94,12 @@ class RetinaUNetFocalC017(RetinaUNetHNMC017):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetFocalC017Mish(RetinaUNetHNMC017):
+class RetinaUNetFocalC017Mish(RetinaUNetFocalC017):
     """
     Focal Loss based RetinaUNet V002
     """
 
-    head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
     head_conv_cls: Type[CONVSEQ] = ConvGroupMish
-    head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
-    # [optional] sampler class for negative mining
-    head_sampler_cls: Optional[Type[SamplerType]] = None
 
 
 @MODULE_REGISTRY.register
