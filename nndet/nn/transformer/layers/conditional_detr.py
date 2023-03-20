@@ -205,7 +205,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
 
         for idx, layer in enumerate(self.layer_sequence.layers):
-            obj_center = reference_points[..., : self.dim].transpose(0, 1)  # [num_queries, batch_size, dim]
+            obj_center = reference_points.transpose(0, 1)  # [num_queries, batch_size, dim]
 
             # do not apply transform in position in the first decoder layer
             if idx == 0:
