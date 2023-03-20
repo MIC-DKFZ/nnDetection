@@ -21,7 +21,7 @@ from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM, BoxHeadHNMV2
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
-from nndet.nn.layers.conv.group import ConvGroupLReLU
+from nndet.nn.layers.conv.group import ConvGroupLReLU, ConvGroupMish
 from nndet.nn.layers.conv.instance import ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.neck.abstract import AbstractNeck
@@ -88,6 +88,19 @@ class RetinaUNetFocalC017(RetinaUNetHNMC017):
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
+    head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
+    # [optional] sampler class for negative mining
+    head_sampler_cls: Optional[Type[SamplerType]] = None
+
+
+@MODULE_REGISTRY.register
+class RetinaUNetFocalC017Mish(RetinaUNetHNMC017):
+    """
+    Focal Loss based RetinaUNet V002
+    """
+
+    head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
+    head_conv_cls: Type[CONVSEQ] = ConvGroupMish
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[SamplerType]] = None
