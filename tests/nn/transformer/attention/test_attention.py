@@ -32,24 +32,16 @@ TEST_SHAPE = [
 ]
 
 
-@pytest.fixture
-def attention():
-    return MultiheadAttention(
-        embed_dim=512,
-        num_heads=8,
-    )
+@pytest.mark.parametrize("embed_dim,num_heads,attn_drop_value,proj_drop_value,batch_first", TEST_SETTINGS)
+def test_multi_head_attention_settings(embed_dim, num_heads, attn_drop_value, proj_drop_value, batch_first):
+    attention = MultiheadAttention(embed_dim, num_heads, attn_drop_value, proj_drop_value, batch_first)
+    assert attention.embed_dim == attention.attn.embed_dim == embed_dim
+    assert attention.num_heads == attention.attn.num_heads == num_heads
+    assert attention.attn.dropout == attn_drop_value
+    assert attention.proj_drop.p == proj_drop_value
 
 
-class TestMultiheadAttention:
-    @pytest.mark.parametrize("embed_dim,num_heads,attn_drop_value,proj_drop_value,batch_first", TEST_SETTINGS)
-    def test_settings(self, embed_dim, num_heads, attn_drop_value, proj_drop_value, batch_first):
-        attention = MultiheadAttention(embed_dim, num_heads, attn_drop_value, proj_drop_value, batch_first)
-        assert attention.embed_dim == attention.attn.embed_dim == embed_dim
-        assert attention.num_heads == attention.attn.num_heads == num_heads
-        assert attention.attn.dropout == attn_drop_value
-        assert attention.proj_drop.p == proj_drop_value
-
-    @pytest.mark.parametrize("attention,query,key,value,expected_out_shape", TEST_SHAPE)
-    def test_output_shape(self, attention, query, key, value, expected_out_shape):
-        out = attention(query, key, value)
-        assert tuple(out.shape) == expected_out_shape
+@pytest.mark.parametrize("attention,query,key,value,expected_out_shape", TEST_SHAPE)
+def test_multi_head_attention_output_shape(attention, query, key, value, expected_out_shape):
+    out = attention(query, key, value)
+    assert tuple(out.shape) == expected_out_shape
