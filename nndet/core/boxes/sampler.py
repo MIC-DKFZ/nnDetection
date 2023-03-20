@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC
-from typing import List, Tuple, TypeVar, Union
+from typing import List, Tuple, Union
 
 import torch
 from loguru import logger
@@ -386,6 +386,3 @@ class HardNegativeSamplerFgAll(HardNegativeSamplerMixin):
             neg_idx.append(neg_idx_per_image_mask)
 
         return pos_idx, neg_idx
-
-
-SamplerType = TypeVar("SamplerType", bound=AbstractSampler)

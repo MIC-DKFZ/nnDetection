@@ -24,7 +24,10 @@ from nndet.nn.heads.classifier.roi import (
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.regressor.dense import L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIRegressor, L1FCRoIRegressor
+from nndet.nn.heads.regressor.roi import (
+    L1ConvRoIAgnosticRegressor,
+    L1FCRoIAgnosticRegressor,
+)
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.fpn import FPN
 from nndet.ptmodule import MODULE_REGISTRY
@@ -61,7 +64,7 @@ class FasterRCNNC001(FasterRCNNModule):
     roi_module_cls = RoIModule  # RoIModule
     roi_head_cls = RoIBoxHead  # RoIBoxHead
     roi_classifier_cls = BCEConvRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1ConvRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1ConvRoIAgnosticRegressor  # RoIRegressorConv
 
     roi_matcher_cls = IoUMatcher  # IoUMatcher
     roi_sampler_cls = BalancedHardNegativeSampler  # BalancedHardNegativeSampler
@@ -69,7 +72,7 @@ class FasterRCNNC001(FasterRCNNModule):
     roi_box_post_cls = CrossLevelBoxPostprocessing  #: define roi box postprocessing strategy
 
     # optional mask branches
-    roi_masker_cls = None  # BCESingleMasker
+    roi_masker_cls = None  # BCEAgnosticMasker
     roi_mask_pooler_cls = None  # RoIAlignNaiveAssign
     roi_mask_post_cls = None
 
@@ -112,10 +115,10 @@ class FasterRCNNC001RSBCE(FasterRCNNC001RSB):
 # @MODULE_REGISTRY.register
 # class FasterRCNNC001FC(BoxRCNN):
 #     roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
-#     roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+#     roi_regressor_cls = L1FCRoIAgnosticRegressor  # RoIRegressorConv
 
 
 @MODULE_REGISTRY.register
 class FasterRCNNC001FCF(FasterRCNNC001):
     roi_classifier_cls = CEFCRoIClassifier  # RoIClassifierTwoMLP
-    roi_regressor_cls = L1FCRoIRegressor  # RoIRegressorConv
+    roi_regressor_cls = L1FCRoIAgnosticRegressor  # RoIRegressorConv

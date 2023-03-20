@@ -11,14 +11,16 @@ from loguru import logger
 from torch import Tensor
 
 from nndet.losses.classification.ce import BCELoss, CELoss
-from nndet.nn.heads.abstract import CONV_TYPES, Classifier, RoIConv1x1View
+from nndet.nn.heads.abstract import Classifier, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
+from nndet.utils.collections import CONV_TYPES
+from nndet.utils.typing import CONVGEN
 
 
 class RoIClassifier(Classifier):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
@@ -63,13 +65,13 @@ class RoIClassifier(Classifier):
         self.init_weights()
 
     @abstractmethod
-    def _build_module_internal(self, conv, add_norm: bool, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, add_norm: bool, **kwargs) -> torch.nn.Module:
         """
         Build internal modules
         """
         raise NotImplementedError
 
-    def _build_module_out(self, conv):
+    def _build_module_out(self, conv: CONVGEN) -> torch.nn.Module:
         """
         Build final convolution
         """
@@ -142,7 +144,7 @@ class RoIClassifier(Classifier):
 
 
 class ConvRoIClassifier(RoIClassifier):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules conv(s) -> pool -> out
         """
@@ -178,7 +180,7 @@ class ConvRoIClassifier(RoIClassifier):
 
 
 class FCRoIClassifier(RoIClassifier):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules flatten -> FC(s) -> out
         """
@@ -216,7 +218,7 @@ class FCRoIClassifier(RoIClassifier):
 class BCEConvRoIClassifier(ConvRoIClassifier):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
@@ -301,7 +303,7 @@ class BCEConvRoIClassifier(ConvRoIClassifier):
 class BCEFCRoIClassifier(FCRoIClassifier):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
@@ -386,7 +388,7 @@ class BCEFCRoIClassifier(FCRoIClassifier):
 class CEConvRoIClassifier(ConvRoIClassifier):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
@@ -454,7 +456,7 @@ class CEConvRoIClassifier(ConvRoIClassifier):
 class CEFCRoIClassifier(FCRoIClassifier):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
