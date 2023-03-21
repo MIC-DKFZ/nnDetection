@@ -12,14 +12,17 @@ import torch
 import torch.nn as nn
 
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
-from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 
 
 class DETRTransformer(AbstractTransformer):
     def __init__(
         self,
-        encoder: TransformerLayerSequence,
-        decoder: TransformerLayerSequence,
+        encoder: BaseTransformerEncoder,
+        decoder: BaseTransformerDecoder,
         two_stage: bool = False,
         do_weight_init: bool = True,
     ):
@@ -34,7 +37,7 @@ class DETRTransformer(AbstractTransformer):
             raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
         self.encoder = encoder
         self.decoder = decoder
-        self.embed_dim = self.encoder.embed_dim
+        self.embed_dim = self.decoder.embed_dim
         self.dim = decoder.dim
         if do_weight_init:
             self.init_weights()

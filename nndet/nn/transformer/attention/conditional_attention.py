@@ -25,7 +25,7 @@ def _convert_mask(
         mask: mask for the scaled dot-product attention
 
     Returns:
-
+        Mask converted to floats or None
     """
     if mask is not None:
         is_float = torch.is_floating_point(mask)
