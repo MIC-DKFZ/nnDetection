@@ -57,6 +57,7 @@ class HungarianMatcher(BaseMatcher):
         out_bbox = pred_coords.flatten(0, 1)  # [batch_size * num_queries, dims * 2]
 
         tgt_labels = torch.cat(target_labels, dim=0)
+        num_boxes = tgt_labels.shape[0]
         tgt_bbox = torch.cat(target_boxes, dim=0)
         num_class_criterion = len(self.class_criterion)
         num_box_criterion = len(self.box_criterion)
@@ -90,9 +91,16 @@ class HungarianMatcher(BaseMatcher):
             for i, j in indices
         ]
         crit_log_dict = {}
+        # Initialize average keys (normalized by number of boxes)
+        for j in range(num_class_criterion):
+            crit_log_dict[f"__class_crit_{j}_avg"] = 0
+        for j in range(num_box_criterion):
+            crit_log_dict[f"__box_crit_{j}_avg"] = 0
+
         for i, (pred_indices, gt_indices) in enumerate(out_indices):
             for j in range(num_class_criterion):
                 cost_classes_tmp = cost_classes[j][pred_indices, gt_indices]
+                crit_log_dict[f"__class_crit_{j}_avg"] += cost_classes_tmp.sum() / num_boxes
                 cdict = {
                     f"__class_crit_{j}_img_{i}_box_{k}": cost_class_tmp
                     for k, cost_class_tmp in enumerate(cost_classes_tmp)
@@ -100,8 +108,12 @@ class HungarianMatcher(BaseMatcher):
                 crit_log_dict.update(cdict)
             for j in range(num_box_criterion):
                 cost_boxes_tmp = cost_boxes[j][pred_indices, gt_indices]
+                crit_log_dict[f"__box_crit_{j}_avg"] += cost_boxes_tmp.sum() / num_boxes
                 bdict = {
                     f"__box_crit_{j}_img_{i}_box_{k}": cost_box_tmp for k, cost_box_tmp in enumerate(cost_boxes_tmp)
                 }
                 crit_log_dict.update(bdict)
+
+        # Get total average
+        crit_log_dict["__crit_avg"] = sum([value if "avg" in key else 0 for key, value in crit_log_dict.items()])
         return out_indices, crit_log_dict
