@@ -6,7 +6,7 @@
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from loguru import logger
@@ -23,7 +23,7 @@ class HungarianMatcher(BaseMatcher):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-    ) -> Tuple[List[Tuple[torch.Tensor, torch.Tensor]], Dict[str, torch.Tensor]]:
+    ) -> Tuple[List[Tuple[torch.Tensor, torch.Tensor]], Optional[Dict[str, torch.Tensor]]]:
         """
         Perform matching over batch elements with at least one ground truth
         element in them
@@ -49,6 +49,7 @@ class HungarianMatcher(BaseMatcher):
                 (in order) and the second tensor contains the selected ground
                 truth objects (in order). It holds for each elements:
                 len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
+            Optional[Dict]: Dict containing the matching cost
         """
         bs, num_queries = pred_logits.shape[:2]
 
@@ -90,30 +91,32 @@ class HungarianMatcher(BaseMatcher):
             )
             for i, j in indices
         ]
-        crit_log_dict = {}
-        # Initialize average keys (normalized by number of boxes)
-        for j in range(num_class_criterion):
-            crit_log_dict[f"__class_crit_{j}_avg"] = 0
-        for j in range(num_box_criterion):
-            crit_log_dict[f"__box_crit_{j}_avg"] = 0
-
-        for i, (pred_indices, gt_indices) in enumerate(out_indices):
+        crit_log_dict = None
+        if self.return_log_dict:
+            crit_log_dict = {}
+            # Initialize average keys (normalized by number of boxes)
             for j in range(num_class_criterion):
-                cost_classes_tmp = cost_classes[j][pred_indices, gt_indices]
-                crit_log_dict[f"__class_crit_{j}_avg"] += cost_classes_tmp.sum() / num_boxes
-                cdict = {
-                    f"__class_crit_{j}_img_{i}_box_{k}": cost_class_tmp
-                    for k, cost_class_tmp in enumerate(cost_classes_tmp)
-                }
-                crit_log_dict.update(cdict)
+                crit_log_dict[f"__class_crit_{j}_avg"] = 0
             for j in range(num_box_criterion):
-                cost_boxes_tmp = cost_boxes[j][pred_indices, gt_indices]
-                crit_log_dict[f"__box_crit_{j}_avg"] += cost_boxes_tmp.sum() / num_boxes
-                bdict = {
-                    f"__box_crit_{j}_img_{i}_box_{k}": cost_box_tmp for k, cost_box_tmp in enumerate(cost_boxes_tmp)
-                }
-                crit_log_dict.update(bdict)
+                crit_log_dict[f"__box_crit_{j}_avg"] = 0
 
-        # Get total average
-        crit_log_dict["__crit_avg"] = sum([value if "avg" in key else 0 for key, value in crit_log_dict.items()])
+            for i, (pred_indices, gt_indices) in enumerate(out_indices):
+                for j in range(num_class_criterion):
+                    cost_classes_tmp = cost_classes[j][pred_indices, gt_indices]
+                    crit_log_dict[f"__class_crit_{j}_avg"] += cost_classes_tmp.sum() / num_boxes
+                    cdict = {
+                        f"__class_crit_{j}_img_{i}_box_{k}": cost_class_tmp
+                        for k, cost_class_tmp in enumerate(cost_classes_tmp)
+                    }
+                    crit_log_dict.update(cdict)
+                for j in range(num_box_criterion):
+                    cost_boxes_tmp = cost_boxes[j][pred_indices, gt_indices]
+                    crit_log_dict[f"__box_crit_{j}_avg"] += cost_boxes_tmp.sum() / num_boxes
+                    bdict = {
+                        f"__box_crit_{j}_img_{i}_box_{k}": cost_box_tmp for k, cost_box_tmp in enumerate(cost_boxes_tmp)
+                    }
+                    crit_log_dict.update(bdict)
+
+            # Get total average
+            crit_log_dict["__crit_avg"] = sum([value if "avg" in key else 0 for key, value in crit_log_dict.items()])
         return out_indices, crit_log_dict
