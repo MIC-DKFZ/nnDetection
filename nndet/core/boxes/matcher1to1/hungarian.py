@@ -102,7 +102,9 @@ class HungarianMatcher(BaseMatcher):
 
             for i, (pred_indices, gt_indices) in enumerate(out_indices):
                 for j in range(num_class_criterion):
-                    cost_classes_tmp = cost_classes[j][pred_indices, gt_indices]
+                    cost_classes_tmp = (
+                        cost_classes[j].view(bs, num_queries, -1).split(sizes, -1)[i][i][pred_indices, gt_indices]
+                    )
                     crit_log_dict[f"__class_crit_{j}_avg"] += cost_classes_tmp.sum() / num_boxes
                     cdict = {
                         f"__class_crit_{j}_img_{i}_box_{k}": cost_class_tmp
@@ -110,7 +112,9 @@ class HungarianMatcher(BaseMatcher):
                     }
                     crit_log_dict.update(cdict)
                 for j in range(num_box_criterion):
-                    cost_boxes_tmp = cost_boxes[j][pred_indices, gt_indices]
+                    cost_boxes_tmp = (
+                        cost_boxes[j].view(bs, num_queries, -1).split(sizes, -1)[i][i][pred_indices, gt_indices]
+                    )
                     crit_log_dict[f"__box_crit_{j}_avg"] += cost_boxes_tmp.sum() / num_boxes
                     bdict = {
                         f"__box_crit_{j}_img_{i}_box_{k}": cost_box_tmp for k, cost_box_tmp in enumerate(cost_boxes_tmp)
