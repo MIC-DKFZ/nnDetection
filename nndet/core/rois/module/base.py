@@ -255,7 +255,8 @@ class BaseRoIModule(torch.nn.Module):
                 List[[N, dim * 2]] where N is the number of (sampled) proposals
                 in (x_min, y_min, x_max, y_max, z_min, z_max) format
             matched_gt_labels: ground truth labels matched to proposals
-                List[N] where N is the number of (sampled) proposals
+                (0 is background) List[N] where N is the number of (sampled)
+                proposals
             proposal_boxes: proposal boxes
                 List[[N, dim * 2]] where N is the number of proposals
                 in (x_min, y_min, x_max, y_max, z_min, z_max) format
@@ -335,7 +336,8 @@ class BaseRoIModule(torch.nn.Module):
         Args:
             features: multi-scale features which should be used for pooling
             matched_gt_labels: ground truth labels matched to proposals
-                List[N] where N is the number of (sampled) proposals
+                (0 is background) List[N] where N is the number of (sampled)
+                proposals
             matched_gt_idx: index of ground truth matched to proposals
                 List[N] where N is the number of (sampled) proposals
             proposal_boxes: proposal boxes
@@ -383,16 +385,14 @@ class BaseRoIModule(torch.nn.Module):
 
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
         target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
+        batch_pos_label = torch.cat(pos_label)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
-        # TODO: check for consistency
-        batch_pos_label = torch.cat(pos_label) - 1
         assert batch_pos_label.shape[0] == pred_masks.shape[0]
         losses = self.mask_head[stage].compute_loss(
             pred_logits=pred_masks,
             target_masks=target_masks_prepared_batched,
             target_labels=batch_pos_label,
         )
-
         return losses, None
 
     def detach_proposals(
@@ -450,7 +450,8 @@ class BaseRoIModule(torch.nn.Module):
                 proposals in (x_min, y_min, x_max, y_max, z_min, z_max)
                 format
             List[Tensor]: ground truth labels matched to proposals
-                List[N] where N is the number of (sampled) proposals
+                (0 is background) List[N] where N is the number of (sampled)
+                proposals
             List[Tensor]: ground truth boxes matched to proposals
                 List[[N, dim * 2]] where N is the number of (sampled)
                 proposals in (x_min, y_min, x_max, y_max, z_min, z_max)

@@ -175,7 +175,7 @@ class DenseRegressor(Regressor):
             pred_deltas: predicted bounding box deltas [N,  dim * 2]
             target_deltas: target bounding box deltas [N,  dim * 2]
             target_labels: target labels for boxes [N], where
-                N=number of anchors
+                N=number of anchors  (0 is background)
             kwargs: keyword arguments passed to loss function
 
         Returns:
@@ -640,7 +640,7 @@ class DualRegressor(DenseRegressor):
             pred_boxes: predicted bounding boxes [N,  dim * 2]
             target_boxes: target bounding boxes [N,  dim * 2]
             target_labels: target labels for boxes [N], where
-                N=number of anchors
+                N=number of anchors  (0 is background)
             kwargs: ignored
 
         Returns:

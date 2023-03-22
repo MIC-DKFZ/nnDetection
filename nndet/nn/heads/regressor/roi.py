@@ -138,7 +138,7 @@ class RoIRegressor(Regressor):
             target_deltas: target bounding box deltas [N,  dim * 2] where
                 N=number of RoIs, dim=number of spatial dimeneions
             target_labels: target labels for boxes [N], where
-                N=number of RoIs
+                N=number of RoIs  (0 is background)
             kwargs: keyword arguments passed to loss function
 
         Returns:

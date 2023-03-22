@@ -17,8 +17,6 @@ from nndet.nn.heads.comb.base import RoIHead
 from nndet.nn.heads.masker.roi import Masker
 from nndet.utils.typing import ND_TUPLE_INT
 
-# TODO: cleanup
-
 
 class CascadeRoIModule(BaseRoIModule):
     def __init__(

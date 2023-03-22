@@ -70,7 +70,7 @@ class RoIBoxHead(RoIHead):
                     classes
 
             matched_gt_labels: target labels for each proposal [N], where
-                N is the number of RoIs
+                N is the number of RoIs (0 is background)
             matched_gt_boxes: matched gt box for each proposal
                 [N, dim *  2], where N is the number of RoIs, and dim
                 is the number of spatial dimensions

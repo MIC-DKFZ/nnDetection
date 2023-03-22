@@ -203,7 +203,7 @@ class AnchorHead(BaseHead):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions
@@ -397,7 +397,7 @@ class RoIHead(BaseHead):
                     classes
 
             matched_gt_labels: target labels for each proposal [N], where
-                N is the number of RoIs
+                N is the number of RoIs (0 is background)
             matched_gt_boxes: matched gt box for each proposal
                 [N, dim *  2], where N is the number of RoIs, and dim
                 is the number of spatial dimensions

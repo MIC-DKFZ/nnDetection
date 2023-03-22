@@ -190,7 +190,7 @@ class Masker(Classifier):
             target_masks: mask targets as binary masks [N, dims]
                 where N is the number of RoIs and dims are spatial dimensions
             target_labels: classification label for each mask [N]
-                where N is the number of RoIs
+                where N is the number of RoIs (0 is background)
 
         Returns:
             Tensor: loss
@@ -198,7 +198,8 @@ class Masker(Classifier):
         if pred_logits.numel() > 0:
             if not self.is_class_agnostic():
                 roi_idx = torch.arange(pred_logits.shape[0])
-                _pred_logits = pred_logits[roi_idx, target_labels]
+                _target_labels = target_labels - 1  # remove background label
+                _pred_logits = pred_logits[roi_idx, _target_labels]
             else:
                 _pred_logits = pred_logits.squeeze(dim=1)
 
@@ -411,7 +412,7 @@ class BDiCEAgnosticMasker(BCEAgnosticMasker):
             target_masks: mask targets as binary masks [N, dims]
                 where N is the number of RoIs and dims are spatial dimensions
             target_labels: classification label for each mask [N]
-                where N is the number of RoIs
+                where N is the number of RoIs (0 is background)
 
         Returns:
             Tensor: loss
@@ -419,7 +420,8 @@ class BDiCEAgnosticMasker(BCEAgnosticMasker):
         if pred_logits.numel() > 0:
             if not self.is_class_agnostic():
                 roi_idx = torch.arange(pred_logits.shape[0])
-                _pred_logits = pred_logits[roi_idx, target_labels]
+                _target_labels = target_labels - 1  # remove background label
+                _pred_logits = pred_logits[roi_idx, _target_labels]
             else:
                 _pred_logits = pred_logits.squeeze(dim=1)
 

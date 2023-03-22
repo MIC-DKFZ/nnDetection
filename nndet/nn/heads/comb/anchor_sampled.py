@@ -77,7 +77,7 @@ class BoxHeadHNM(AnchorHead):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image  (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions
@@ -230,7 +230,7 @@ class BoxHeadHNMV2(AnchorHead):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image  (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions
@@ -352,7 +352,7 @@ class BoxHeadHNMRegAll(BoxHeadHNM):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image  (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions
@@ -460,7 +460,7 @@ class BoxHeadHNMDualReg(BoxHeadHNM):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions
@@ -549,7 +549,7 @@ class BoxHeadHNMNative(BoxHeadHNM):
                     foreground classes
 
             matched_gt_labels: target labels for each anchor (per image) [M]
-                where M is the number of anchors per image
+                where M is the number of anchors per image (0 is background)
             matched_gt_boxes: matched gt box for each anchor
                 List[[M, dim *  2]], where M is the number of anchors per
                 image and dim is the number of spatial dimensions

@@ -119,7 +119,7 @@ class RoIClassifier(Classifier):
                 C=number of classes
             targets: classification targets [N], where N=number of RoIs
                 (targets need to be provided in numerical format as
-                expected by CE loss from torch)
+                expected by CE loss from torch), (0 is background)
 
         Returns:
             Tensor: classification loss (scalar)
