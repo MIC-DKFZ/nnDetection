@@ -26,7 +26,7 @@ class L1RegCriterion(BoxCriterion):
             pred_coords: predicted bounding box coords [B * R, dims * 2]
                 where B=batch size, R=number of predictions, dims=number of
                 spatial dimensions (format corresponds to model format)
-            target_labels: target ground truth boxes [L, dims * 2] where
+            target_boxes: target ground truth boxes [L, dims * 2] where
                 L is the number of ground truth objects  (format corresponds
                 to model format)
 
@@ -62,7 +62,7 @@ class GIoUCenterBoxCriterion(BoxCriterion):
             pred_coords: predicted bounding box coords [B * R, dims * 2]
                 where B=batch size, R=number of predictions, dims=number of
                 spatial dimensions (format corresponds to model format)
-            target_labels: target ground truth boxes [L, dims * 2] where
+            target_boxes: target ground truth boxes [L, dims * 2] where
                 L is the number of ground truth objects  (format corresponds
                 to model format)
 
