@@ -21,7 +21,6 @@ from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
 
-# TODO: cleanup
 # FIXME: no proposals case -> matcher
 class BaseRoIModule(torch.nn.Module):
     def __init__(
@@ -382,8 +381,8 @@ class BaseRoIModule(torch.nn.Module):
             batch_idx=batch_idx,
             image_size=image_size,
         )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
-
         pred_masks, _ = self.mask_head[stage](mask_roi_features)
+
         target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
         batch_pos_label = torch.cat(pos_label)
         assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
