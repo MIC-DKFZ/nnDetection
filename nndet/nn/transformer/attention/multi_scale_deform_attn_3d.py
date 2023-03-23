@@ -400,9 +400,9 @@ def create_dummy_func(func, dependency, message=""):
 
 
 try:
-    from nndet_detr import _C
+    from nndet import _C
 except ImportError:
     # TODO: register ops natively so there is no need to import _C.
-    _msg = "nndet_detr is not compiled successfully, please build following the instructions!"
-    _args = ("nndet_detr._C", _msg)
+    _msg = "nndet is not compiled successfully, please build following the instructions!"
+    _args = ("nndet._C", _msg)
     MultiScaleDeformableAttention = create_dummy_class("MultiScaleDeformableAttention", *_args)  # noqa
