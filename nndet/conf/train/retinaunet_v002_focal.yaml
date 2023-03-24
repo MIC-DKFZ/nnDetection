@@ -3,15 +3,12 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-#################################################################################
-# THIS IS A MODIFICED VERSION OF THE V2 MODEL WITH FOCAL LOSS AND NOT THE DEFAULT
-#################################################################################
 
 defaults:
-  - augment_cfg: more_modular
+  - augment_cfg: more_modular_ord1
   - io_cfg: offsetV2_obj_bal
-  - trainer_cfg: sgd99_base
-  - model_cfg: retinaunet_l1_focal_atss
+  - trainer_cfg: sgd_base
+  - model_cfg: retinaunet_l1_focal_atss_ms
 
 module: RetinaUNetV002Focal
 plan: D3V001_3d # plan used for training

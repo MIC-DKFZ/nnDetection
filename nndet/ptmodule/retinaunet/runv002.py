@@ -13,7 +13,7 @@ from nndet.core.boxes.sampler import AbstractSampler, HardNegativeSamplerBatched
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
-from nndet.nn.backbone.blueprints.resconv import ConvBackbone, ResConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ConvBackbone
 from nndet.nn.heads.classifier import BCECLassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll
@@ -36,7 +36,7 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002(
+class RetinaUNetV002HNM(
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
@@ -45,6 +45,10 @@ class RetinaUNetV002(
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
+    """
+    HNM based RetinaUNet V002
+    """
+
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -73,7 +77,7 @@ class RetinaUNetV002(
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002Focal(RetinaUNetV002):
+class RetinaUNetV002Focal(RetinaUNetV002HNM):
     """
     Focal Loss based RetinaUNet V002
     """
@@ -82,12 +86,3 @@ class RetinaUNetV002Focal(RetinaUNetV002):
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
     head_sampler_cls: Optional[Type[AbstractSampler]] = None
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetV002Res(RetinaUNetV002):
-    """
-    Residual Conv Backbone
-    """
-
-    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
