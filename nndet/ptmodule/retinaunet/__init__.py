@@ -4,4 +4,4 @@
 from nndet.ptmodule.retinaunet.dev import *
 from nndet.ptmodule.retinaunet.run001 import RetinaUNetModule
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import RetinaUNetV002, RetinaUNetV002Focal
+from nndet.ptmodule.retinaunet.runv002 import RetinaUNetV002Focal, RetinaUNetV002HNM
