@@ -143,17 +143,18 @@ def cat(t: Union[List[Tensor], Tensor], *args, **kwrags):
         return torch.cat(t, *args, **kwrags)
 
 
-def detach_all(inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]) -> Union[Sequence[np.ndarray], np.ndarray, Any]:
+def detach_all(
+    inp: Union[Sequence[torch.Tensor], torch.Tensor, Any]
+) -> Union[Sequence[torch.Tensor], torch.Tensor, Any]:
     """
-    Detach
-    # TODO: docu
+    Detach all tensors in nested structures
 
     Args:
-        inp (Union[Sequence[torch.Tensor], torch.Tensor]): tensor or sequence of tensors
+        inp: tensor(s) nested in external structure such as list, dict
 
     Returns:
-        Union[Sequence[np.ndarray], np.ndarray]: array or seq. of arrays at target device
-         (non tensor entries are forwarded as they are)
+        Union[Sequence[torch.Tensor], torch.Tensor, Any]: same external
+            structure as input but all tensors are detached now
     """
     if isinstance(inp, (tuple, list)):
         old_type = type(inp)

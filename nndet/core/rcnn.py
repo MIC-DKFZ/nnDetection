@@ -6,14 +6,14 @@ from typing import Any, Dict, Tuple
 import torch
 
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
-from nndet.core.rois.module import RoIModule
+from nndet.core.rois.module import BaseRoIModule
 
 
 class RCNN(AbstractDetector):
     def __init__(
         self,
         rpn: AbstractOneStageDetector,
-        roi_module: RoIModule,
+        roi_module: BaseRoIModule,
     ) -> None:
         """
         Two stage detection module

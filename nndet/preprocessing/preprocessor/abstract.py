@@ -4,7 +4,7 @@
 from abc import ABC, abstractmethod
 from os import PathLike
 from pathlib import Path
-from typing import Sequence, Tuple, TypeVar
+from typing import Sequence, Tuple
 
 import numpy as np
 
@@ -82,6 +82,3 @@ class AbstractPreprocessor(ABC):
             dict: updated properties
         """
         raise NotImplementedError
-
-
-PreprocessorType = TypeVar("PreprocessorType", bound=AbstractPreprocessor)

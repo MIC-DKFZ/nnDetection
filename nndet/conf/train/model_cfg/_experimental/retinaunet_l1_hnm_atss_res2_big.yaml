@@ -18,8 +18,7 @@ neck_kwargs: # keyword arguments passed to decoder
   norm_out: False
   activation_out: False
 
-head_kwargs:  # keyword arguments to passed to head
-  reg_mode: "encode"
+head_kwargs: {} # keyword arguments to passed to head
 
 head_sampler_kwargs: # keyword arguments passed to sampler
   batch_size_per_image: 32 # number of anchors sampled per image

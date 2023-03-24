@@ -1,22 +1,21 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from loguru import logger
 
-from nndet.core.boxes import MatcherType
+from nndet.core.boxes import Matcher
 from nndet.core.boxes.assign import assign_targets_to_anchors
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.pooler import RoIPooler
 from nndet.nn.heads.comb.base import RoIHead
-from nndet.nn.heads.masker.base import Masker
-
-# TODO: cleanup
+from nndet.nn.heads.masker.roi import Masker
+from nndet.utils.typing import ND_TUPLE_INT
 
 
 class CascadeRoIModule(BaseRoIModule):
@@ -25,8 +24,8 @@ class CascadeRoIModule(BaseRoIModule):
         box_head: Union[RoIHead, List[RoIHead], Tuple[RoIHead]],
         box_pooler: RoIPooler,
         box_post: BoxPostprocessing,
-        matcher: Union[MatcherType, List[MatcherType], Tuple[MatcherType]],
-        sampler: SamplerType,  # NegativeSampler default => random balanced sampling
+        matcher: Union[Matcher, List[Matcher], Tuple[Matcher]],
+        sampler: AbstractSampler,  # NegativeSampler default => random balanced sampling
         num_classes: int,
         decoder_levels: Sequence[int],
         gt_to_proposals: bool = True,
@@ -36,12 +35,49 @@ class CascadeRoIModule(BaseRoIModule):
         mask_post: Optional[MaskPostprocessing] = None,
         mask_interleaved_execution: bool = False,
         # post-processing
-        roi_score_thresh: float = None,
-        roi_detections_per_img: int = 100,
-        roi_nms_thresh: float = 0.6,
+        # no postprocessing option here
         # cascade settings
         loss_weight_stage: Optional[Sequence[float]] = None,
     ) -> None:
+        """
+        RoI Module to perform multiple sequential/cascaded RoI based detections
+        "Cascade R-CNN: Delving into High Quality Object Detection"
+        https://arxiv.org/abs/1712.00726
+        "Hybrid Task Cascade for Instance Segmentation"
+        https://arxiv.org/abs/1901.07518
+
+        Args:
+            box_head: module to perform box regression and classification of
+                RoIs; if only a single head is provided, it will be replicated
+                for all stages
+            box_pooler: module to perform pooling of features to be passed
+                to head
+            box_post: module to perform postprocessing of the box predictions
+            matcher: module to assign labels to the proposal boxes. if only a
+                single head is provided, it will be replicated for all stages
+            sampler: module to sample a subset of the proposals to compute
+                the loss during training
+            num_classes: number of foreground classes
+            decoder_levels: specify which levels should be used for the
+                pooling operations
+            gt_to_proposals: Add ground truth objects to the proposals during
+                the training setp for improved stability at the beginning of
+                the trainign. Defaults to True.
+            mask_head: module to perform mask predictions of RoIs;
+                if only a single head is provided, it will be replicated
+                for all stages. Defaults to None.
+            mask_pooler: module to perform pooling of features to be passed
+                to head. Defaults to None.
+            mask_post:  module to perform postprocessing of the mask
+                predictions. Defaults to None.
+            mask_interleaved_execution: Interleaved mask execution as proposed
+                in HTC. Defaults to False.
+            loss_weight_stage: Provide loss weights for each stage to scale
+                the losses. Defaults to None.
+
+        Raises:
+            ValueError: Need to provide loss weight for each stage
+        """
         super().__init__(
             box_head=box_head,
             box_pooler=box_pooler,
@@ -55,10 +91,6 @@ class CascadeRoIModule(BaseRoIModule):
             mask_head=mask_head,
             mask_pooler=mask_pooler,
             mask_post=mask_post,
-            # post-processing
-            roi_score_thresh=roi_score_thresh,
-            roi_detections_per_img=roi_detections_per_img,
-            roi_nms_thresh=roi_nms_thresh,
         )
         if loss_weight_stage is None:
             self.loss_weight_stage = [1.0] * self.num_stages
@@ -78,7 +110,42 @@ class CascadeRoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
-    ):
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Perform a training step of the RoI Module
+
+        Args:
+            images: batch of input images
+            features: multi-scale features from neck
+            proposals: proposals, usually from Region Proposal Network
+
+                ``"pred_boxes"`` List[Tensor]
+                    proposed boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each proposal [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated label for each proposal [N]
+
+            targets: ground truth
+                ``"target_boxes"`` List[Tensor]
+                    ground truth boxes [R, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"target_roi_classes"`` List[Tensor]
+                    associated class for each ground truth object [R]
+
+                ``"target_binary_masks"`` List[Tensor]
+                    Only required when additional mask head is provided.
+                    associated binary mask for each ground truth object
+                    [R, image_size]. The i-th entry along the first dimension
+                    corresponds to the i-th object / box / class.
+
+        Returns:
+            Dict[str, torch.Tensor]: computed losses
+        """
         fpn_features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
 
@@ -92,12 +159,12 @@ class CascadeRoIModule(BaseRoIModule):
 
         losses = {}
         for stage_idx in range(self.num_stages):
-            if stage_idx != 0:
+            if stage_idx > 0:
                 proposals = self.detach_proposals(new_proposals)  # noqa: F821
                 proposal_boxes = proposals["pred_boxes"]
                 # match proposals to ground truth
                 (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
-                    proposal_matcher=self.matcher[0],
+                    proposal_matcher=self.matcher[stage_idx],
                     anchors=proposal_boxes,
                     target_boxes=targets["target_boxes"],
                     target_classes=targets["target_roi_classes"],
@@ -122,7 +189,7 @@ class CascadeRoIModule(BaseRoIModule):
                     proposals = self.detach_proposals(new_proposals)
                     proposal_boxes = proposals["pred_boxes"]
                     (matched_gt_labels, matched_gt_boxes, matched_gt_idx,) = assign_targets_to_anchors(
-                        proposal_matcher=self.matcher[0],
+                        proposal_matcher=self.matcher[stage_idx],
                         anchors=proposal_boxes,
                         target_boxes=targets["target_boxes"],
                         target_classes=targets["target_roi_classes"],
@@ -133,7 +200,7 @@ class CascadeRoIModule(BaseRoIModule):
                     matched_gt_labels=matched_gt_labels,
                     matched_gt_idx=matched_gt_idx,
                     proposal_boxes=proposal_boxes,
-                    target_binary_masks=targets["target_binary_masks"],
+                    gt_binary_masks=targets["target_binary_masks"],
                     image_size=image_size,
                     stage=stage_idx,
                     predict=False,
@@ -149,16 +216,66 @@ class CascadeRoIModule(BaseRoIModule):
         features: List[torch.Tensor],
         proposals: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Union[List[torch.Tensor], torch.Tensor, ND_TUPLE_INT]]:
+        """
+        Perform an inference step of the RoI Module
+
+        Args:
+            images: batch of input images
+            features: multi-scale features from neck
+            proposals: proposals, usually from Region Proposal Network
+
+                ``"pred_boxes"`` List[Tensor]
+                    proposed boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each proposal [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated label for each proposal [N]
+
+            kwargs: ignored
+
+        Returns:
+            Dict[str, Any]: predictions
+
+                ``"pred_boxes"`` List[Tensor]
+                    predicted boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each predicted box [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated labels for each predicted box [N]
+
+                ``"pred_masks"`` List[Tensor]
+                    predicted probability masks from mask head [N, RoI_dims]
+                    The output size of the masks are determined by the Masker
+                    RoI Module. To compute the evaluated additional post-
+                    processing will be required.
+
+                ``"pred_mask_scores"`` List[Tensor]
+                    associated scores for each predicted masks [N]
+
+                ``"pred_mask_labels"`` List[Tensor]
+                    associated labels for each predicted masks [N]
+
+                ``"pred_image_spatial_size"`` ND_TUPLE_INT
+                    image size which was used for prediction. Needed to restore
+                    correct size of image when pasting binary masks.
+        """
         fpn_features = [features[i] for i in self.decoder_levels]
+        image_size = tuple(images.shape[2:])
 
         for stage_idx in range(self.num_stages):
-            if stage_idx != 0:
+            if stage_idx > 0:
                 proposals = prediction  # noqa: F821
 
             prediction = self._inference_step_boxes(
-                images=images,
                 features=fpn_features,
+                image_size=image_size,
                 proposal_boxes=proposals["pred_boxes"],
                 stage=stage_idx,
             )
@@ -173,8 +290,8 @@ class CascadeRoIModule(BaseRoIModule):
                     proposal_labels = proposals["pred_labels"]
 
                 mask_preds = self._inference_step_masks(
-                    images=images,
                     features=fpn_features,
+                    image_size=image_size,
                     pred_boxes=proposal_boxes,
                     pred_probs=proposal_probs,
                     pred_labels=proposal_labels,

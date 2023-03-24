@@ -1,14 +1,15 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from abc import abstractmethod
-from typing import Dict, List, Optional, TypeVar
+from abc import abstractclassmethod, abstractmethod
+from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
 from nndet.core.boxes import BoxCoderND
+from nndet.utils.enums import BoxRegressionMode
 
 
 class Classifier(nn.Module):
@@ -71,17 +72,33 @@ class Regressor(nn.Module):
         """
         raise NotImplementedError
 
+    @abstractclassmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode
+
+        Raises:
+            NotImplementedError: Needs to overwritten in subclasses
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        raise NotImplementedError
+
     @classmethod
-    def class_agnostic(cls):
+    def is_class_agnostic(cls) -> bool:
         """
         True if anchors are regressed in a class agnostic manner.
         False if anchors are regressed for each class separately.
         """
         return True
-
-
-ClassifierType = TypeVar("ClassifierType", bound=Classifier)
-RegressorType = TypeVar("RegressorType", bound=Regressor)
 
 
 class BaseHead(nn.Module):
@@ -92,8 +109,8 @@ class BaseHead(nn.Module):
 
     def __init__(
         self,
-        classifier: ClassifierType,
-        regressor: RegressorType,
+        classifier: Classifier,
+        regressor: Regressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
     ):
@@ -154,17 +171,13 @@ class BaseHead(nn.Module):
         """
         raise NotImplementedError
 
-    @property
-    def class_agnostic(self) -> bool:
+    def is_class_agnostic(self) -> bool:
         """
         Return if regression is performed per class or not.
         True => each anchor is regressed for each class separately
         False => each anchor is regressed once
         """
-        return self.regressor.class_agnostic
-
-
-HeadType = TypeVar("HeadType", bound=BaseHead)
+        return self.regressor.is_class_agnostic()
 
 
 class RoIConv1x1View(torch.nn.Module):

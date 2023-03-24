@@ -9,6 +9,6 @@ defaults:
   - trainer_cfg: sgd_base
   - model_cfg: mrcnn_l1_hnm_atss_c0
 
-module: BoxMaskURCNNC004ResEnc
+module: BoxMaskURCNNC007
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
