@@ -174,7 +174,7 @@ class CELoss(TorchLoss):
                 label_smoothing=self.smoothing,
             )
 
-        if permute_inputs and self.helper_reduction.lower() == "none":
+        if permute_inputs and self.torch_reduction.lower() == "none":
             # restore permutation
             loss = loss.movedim(1, -1)
         return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
