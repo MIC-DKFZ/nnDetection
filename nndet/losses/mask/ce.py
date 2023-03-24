@@ -35,6 +35,23 @@ class BCEMaskLoss(Loss):
         self.register_buffer("weight", weight)
         self.weight: Optional[torch.Tensor]
 
+    @property
+    def reduction(self) -> str:
+        if self.torch_reduction.lower() == "mean":
+            return self.torch_reduction
+        else:
+            return self.helper_reduction
+
+    @reduction.setter
+    def reduction(self, key: str):
+        _key = key.lower()
+        if _key == "mean":
+            self.torch_reduction = "mean"
+            self.helper_reduction = "none"
+        else:
+            self.torch_reduction = "none"
+            self.helper_reduction = _key
+
     def forward(
         self,
         preds: torch.Tensor,
@@ -61,20 +78,20 @@ class BCEMaskLoss(Loss):
                     preds.float(),
                     targets.float(),
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                 )
         else:
             loss = _fn(
                 preds,
                 targets,
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
             )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (
-            f"weight={self.weight}"
+            f"weight={self.weight}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}"

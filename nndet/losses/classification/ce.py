@@ -6,7 +6,7 @@ from typing import Optional
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, SigmoidBaseLoss, reduction_helper
+from nndet.losses.ops import SigmoidBaseLoss, TorchLoss, reduction_helper
 
 
 class BCELoss(SigmoidBaseLoss):
@@ -41,6 +41,23 @@ class BCELoss(SigmoidBaseLoss):
         self.register_buffer("weight", weight)
         self.weight: Optional[torch.Tensor]
 
+    @property
+    def reduction(self) -> str:
+        if self.torch_reduction.lower() == "mean":
+            return self.torch_reduction
+        else:
+            return self.helper_reduction
+
+    @reduction.setter
+    def reduction(self, key: str):
+        _key = key.lower()
+        if _key == "mean":
+            self.torch_reduction = "mean"
+            self.helper_reduction = "none"
+        else:
+            self.torch_reduction = "none"
+            self.helper_reduction = _key
+
     def comp_loss(
         self,
         preds: torch.Tensor,
@@ -63,22 +80,22 @@ class BCELoss(SigmoidBaseLoss):
         loss = torch.nn.functional.binary_cross_entropy_with_logits(
             preds,
             targets,
-            reduction="none",
+            reduction=self.torch_reduction,
             weight=self.weight,
         )
-        return reduction_helper(loss, reduction=self.reduction)
+        return reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (
-            f"weight={self.weight}"
-            f"smoothing={self.smoothing} "
+            f"weight={self.weight}, "
+            f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}"
         )
 
 
-class CELoss(Loss):
+class CELoss(TorchLoss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
@@ -145,7 +162,7 @@ class CELoss(Loss):
                     _input.float(),
                     targets.long(),
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                     label_smoothing=self.smoothing,
                 )
         else:
@@ -153,19 +170,19 @@ class CELoss(Loss):
                 _input,
                 targets.long(),
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
                 label_smoothing=self.smoothing,
             )
 
-        if permute_inputs and self.reduction.lower() == "none":
+        if permute_inputs and self.helper_reduction.lower() == "none":
             # restore permutation
             loss = loss.movedim(1, -1)
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (
-            f"weight={self.weight}"
-            f"smoothing={self.smoothing} "
+            f"weight={self.weight}, "
+            f"smoothing={self.smoothing}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}"

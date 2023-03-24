@@ -97,7 +97,7 @@ class BDiceMaskLoss(Loss):
         return (
             f"batch_dice={self.batch_dice}, "
             f"smooth_nom={self.smooth_nom}, "
-            f"smooth_denom={self.smooth_denom}"
+            f"smooth_denom={self.smooth_denom}, "
             f"loss_weight={self.loss_weight}, "
             f"loss_fp32={self.loss_fp32}, "
             f"reduction={self.reduction}"
