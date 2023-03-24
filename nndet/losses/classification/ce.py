@@ -12,17 +12,20 @@ from nndet.losses.ops import SigmoidBaseLoss, TorchLoss, reduction_helper
 class BCELoss(SigmoidBaseLoss):
     def __init__(
         self,
-        weight: Optional[torch.Tensor] = None,
+        pos_weight: Optional[torch.Tensor] = None,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         reduction: str = "sum",
+        weight: Optional[torch.Tensor] = None,
     ):
         """
-        BCE loss with one hot encoding of targets
+        BCE loss with one hot encoding of targets (loss is only computed
+        on foreground classes!)
 
         Args:
-            weight: equivalent to weight parameter of BCE loss of pytorch
+            pos_weight: equivalent to pos_weight parameter of BCE loss of
+                pytorch (weights positive class)
             smoothing:  label smoothing
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -31,6 +34,8 @@ class BCELoss(SigmoidBaseLoss):
                 sum: sum of loss over entire batch
                 none: no reduction
                 mean_last_sum: mean over last dimension, sum across others
+            weight: equivalent to weight parameter of BCE loss of pytorch
+                (weights batch elements)
         """
         super().__init__(
             loss_weight=loss_weight,
@@ -38,6 +43,8 @@ class BCELoss(SigmoidBaseLoss):
             reduction=reduction,
             smoothing=smoothing,
         )
+        self.register_buffer("pos_weight", pos_weight)
+        self.pos_weight: Optional[torch.Tensor]
         self.register_buffer("weight", weight)
         self.weight: Optional[torch.Tensor]
 
@@ -82,6 +89,7 @@ class BCELoss(SigmoidBaseLoss):
             targets,
             reduction=self.torch_reduction,
             weight=self.weight,
+            pos_weight=self.pos_weight,
         )
         return reduction_helper(loss, reduction=self.helper_reduction)
 
