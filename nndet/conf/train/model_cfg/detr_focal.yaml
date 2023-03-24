@@ -38,6 +38,7 @@ head_classifier_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
+  prior_prob: 0.01
   # loss
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
