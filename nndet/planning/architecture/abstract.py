@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC, abstractmethod
-from typing import TypeVar
 
 
 class ArchitecturePlanner(ABC):
@@ -44,6 +43,3 @@ class ArchitecturePlanner(ABC):
             str: identifier
         """
         return self.__class__.__name__
-
-
-ArchitecturePlannerType = TypeVar("ArchitecturePlannerType", bound=ArchitecturePlanner)

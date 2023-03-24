@@ -6,10 +6,10 @@ from typing import Optional
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, one_hot_smooth_first, reduction_helper
+from nndet.losses.ops import TorchLoss, one_hot_smooth_first, reduction_helper
 
 
-class CESegLoss(Loss):
+class CESegLoss(TorchLoss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
@@ -66,7 +66,7 @@ class CESegLoss(Loss):
                     targets.long(),
                     label_smoothing=self.smoothing,
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                 )
         else:
             loss = _fn(
@@ -74,9 +74,9 @@ class CESegLoss(Loss):
                 targets.long(),
                 label_smoothing=self.smoothing,
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
             )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (
@@ -88,7 +88,7 @@ class CESegLoss(Loss):
         )
 
 
-class BCESegLoss(Loss):
+class BCESegLoss(TorchLoss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
@@ -158,16 +158,16 @@ class BCESegLoss(Loss):
                     _preds.float(),
                     _targets_one_hot.float(),
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                 )
         else:
             loss = _fn(
                 _preds,
                 _targets_one_hot.float(),
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
             )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (

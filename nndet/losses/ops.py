@@ -47,6 +47,37 @@ class Loss(torch.nn.Module):
         return f"loss_weight={self.loss_weight}, " f"loss_fp32={self.loss_fp32}, " f"reduction={self.reduction}"
 
 
+class TorchLoss(Loss):
+    @property
+    def reduction(self) -> str:
+        """
+        Retrieve reduction parameter
+
+        Returns:
+            str: reduction
+        """
+        if self.torch_reduction.lower() == "mean":
+            return self.torch_reduction
+        else:
+            return self.helper_reduction
+
+    @reduction.setter
+    def reduction(self, key: str):
+        """
+        Set reduction parameter
+
+        Returns:
+            str: reduction
+        """
+        _key = key.lower()
+        if _key == "mean":
+            self.torch_reduction = "mean"
+            self.helper_reduction = "none"
+        else:
+            self.torch_reduction = "none"
+            self.helper_reduction = _key
+
+
 class SigmoidBaseLoss(Loss):
     def __init__(
         self,

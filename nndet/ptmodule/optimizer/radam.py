@@ -21,7 +21,7 @@ class RAdamLWPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         try:
             import torch_optimizer as optim

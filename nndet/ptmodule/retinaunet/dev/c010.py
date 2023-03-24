@@ -4,7 +4,7 @@
 import torch
 from loguru import logger
 
-from nndet.core.boxes.coder import CoderType
+from nndet.core.boxes.coder import BoxCoderND
 
 # from nndet.nn.decoder.base import SmallerUFPN, SmallUFPN
 from nndet.nn.heads.classifier import (
@@ -13,7 +13,7 @@ from nndet.nn.heads.classifier import (
     FocalClassifier,
     FullyConntectedBCECLassifier,
 )
-from nndet.nn.heads.comb import AnchorHeadType, BoxHeadAll
+from nndet.nn.heads.comb import AnchorHead, BoxHeadAll
 from nndet.nn.heads.regressor import DenseRegressor
 from nndet.nn.heads.segmenter import DiceTopKSegmenterFgBg
 from nndet.nn.layers.conv import (
@@ -50,8 +50,8 @@ class RetinaUNetC010Focal(RetinaUNetC010):
         model_cfg: dict,
         classifier: DenseClassifier,
         regressor: DenseRegressor,
-        coder: CoderType,
-    ) -> AnchorHeadType:
+        coder: BoxCoderND,
+    ) -> AnchorHead:
         """
         Build detection head
 

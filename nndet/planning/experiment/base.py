@@ -9,16 +9,16 @@ from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, TypeVar
+from typing import Dict, List
 
 import numpy as np
 from loguru import logger
 
 from nndet.io.load import load_pickle, save_pickle
 from nndet.io.paths import get_case_ids_from_dir, get_paths_from_splitted_dir
-from nndet.planning.architecture.abstract import ArchitecturePlannerType
+from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.experiment.utils import run_create_label_preprocessed
-from nndet.preprocessing.preprocessor import PreprocessorType
+from nndet.preprocessing.preprocessor import GenericPreprocessor
 
 
 class AbstractPlanner(ABC):
@@ -69,7 +69,7 @@ class AbstractPlanner(ABC):
         model_name: str,
         model_cfg: dict,
         mode: str,
-    ) -> ArchitecturePlannerType:
+    ) -> ArchitecturePlanner:
         """
         Create Architecture planner
 
@@ -82,7 +82,7 @@ class AbstractPlanner(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_preprocessor(plan: Dict) -> PreprocessorType:
+    def create_preprocessor(plan: Dict) -> GenericPreprocessor:
         """
         Create Preprocessor
         """
@@ -455,6 +455,3 @@ class AbstractPlanner(ABC):
         else:
             for c in cases:
                 preprocessor.run_test(c, plan["target_spacing"], target_dir)
-
-
-PlannerType = TypeVar("PlannerType", bound=AbstractPlanner)
