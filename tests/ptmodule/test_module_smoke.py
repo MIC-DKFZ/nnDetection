@@ -20,11 +20,7 @@ from nndet.ptmodule.retinanet.rnv002 import (
 
 # base modules
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import (
-    RetinaUNetV002,
-    RetinaUNetV002Focal,
-    RetinaUNetV002Res,
-)
+from nndet.ptmodule.retinaunet.runv002 import RetinaUNetV002Focal, RetinaUNetV002HNM
 
 
 @pytest.fixture
@@ -115,9 +111,8 @@ CASES = [
     # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
-    (RetinaUNetV002, "retinaunet_v002"),
+    (RetinaUNetV002HNM, "retinaunet_v002_hnm"),
     (RetinaUNetV002Focal, "retinaunet_v002_focal"),
-    (RetinaUNetV002Res, "retinaunet_v002"),
     (RetinaNetV002, "retinaunet_v002"),
     (RetinaNetV002Focal, "retinaunet_v002_focal"),
     (RetinaNetV002Res, "retinaunet_v002"),
