@@ -97,7 +97,7 @@ Mask Heads
    :toctree: Mask Heads
    :nosignatures:
 
-   base
+   roi
 
 
 Segmentation Heads

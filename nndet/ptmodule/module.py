@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict
 
 import pytorch_lightning as pl
 import torch
@@ -292,6 +292,3 @@ class LightningBaseModule(pl.LightningModule):
                 )
             )
         return callbacks
-
-
-LightningBaseModuleType = TypeVar("LightningBaseModuleType", bound=LightningBaseModule)

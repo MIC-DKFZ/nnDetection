@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC
-from typing import Callable, Optional, Sequence, Tuple, TypeVar
+from typing import Callable, Optional, Sequence, Tuple
 
 import torch
 from torch import Tensor
@@ -104,6 +104,3 @@ class Matcher(ABC):
                 [M]
         """
         raise NotImplementedError
-
-
-MatcherType = TypeVar("MatcherType", bound=Matcher)

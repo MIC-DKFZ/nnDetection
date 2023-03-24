@@ -14,6 +14,7 @@ class SelectionMode(Enum):
 class BoxRegressionMode(Enum):
     ENCODE = "encode"
     DECODE = "decode"
+    DUAL = "dual"
 
 
 # Postprocessing / Inference

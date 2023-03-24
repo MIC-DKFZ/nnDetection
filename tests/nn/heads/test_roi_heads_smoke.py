@@ -12,10 +12,10 @@ from nndet.nn.heads.classifier.roi import (
     CEFCRoIClassifier,
 )
 from nndet.nn.heads.regressor.roi import (
-    GIoUConvRoIRegressor,
-    GIoUFCRoIRegressor,
-    L1ConvRoIRegressor,
-    L1FCRoIRegressor,
+    GIoUConvRoIAgnosticRegressor,
+    GIoUFCRoIAgnosticRegressor,
+    L1ConvRoIAgnosticRegressor,
+    L1FCRoIAgnosticRegressor,
 )
 from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.wrapper import Generator
@@ -36,6 +36,7 @@ EXAMPLE_CONFIG = {
     "internal_channels": 32,
     "num_convs": 1,
     "input_size": INPUT_SIZE_CONFIG,
+    "num_classes": NUM_CLASSES,
 }
 
 TEST_CASES_UTIL = [
@@ -48,7 +49,6 @@ TEST_CASES_CLS = [
     (
         BCEConvRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=True,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -59,7 +59,6 @@ TEST_CASES_CLS = [
     (
         BCEFCRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=False,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -70,7 +69,6 @@ TEST_CASES_CLS = [
     (
         CEConvRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=True,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -81,7 +79,6 @@ TEST_CASES_CLS = [
     (
         CEFCRoIClassifier(
             **EXAMPLE_CONFIG,
-            num_classes=NUM_CLASSES,
             add_norm=False,
         ),  # module
         torch.zeros(INPUT_SIZE_TENSOR),  # input
@@ -94,25 +91,25 @@ TEST_CASES_CLS = [
 TEST_CASES_REG = [
     # RoI Regressor Tests
     (
-        L1ConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
+        L1ConvRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        L1FCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
+        L1FCRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUConvRoIRegressor(**EXAMPLE_CONFIG, add_norm=True),
+        GIoUConvRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=True),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
     ),
     (
-        GIoUFCRoIRegressor(**EXAMPLE_CONFIG, add_norm=False),
+        GIoUFCRoIAgnosticRegressor(**EXAMPLE_CONFIG, add_norm=False),
         torch.zeros(INPUT_SIZE_TENSOR),  # input
         torch.ones(TARGET_SIZE_REG),  # target
         (N, DIM * 2),  # logits shape
@@ -144,5 +141,6 @@ def test_roi_reg_head_smoke(module, inp, target, exp_shape):
     pred_logits = module(inp)
     assert tuple(pred_logits.shape) == exp_shape
 
-    loss = module.compute_loss(pred_logits, target)
+    labels = torch.tensor([i % NUM_CLASSES for i in range(pred_logits.shape[0])])
+    loss = module.compute_loss(pred_logits, target, labels)
     loss.backward()

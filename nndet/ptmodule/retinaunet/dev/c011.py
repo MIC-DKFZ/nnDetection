@@ -4,7 +4,7 @@
 import torch
 from loguru import logger
 
-from nndet.core.boxes.coder import CoderType
+from nndet.core.boxes.coder import BoxCoderND
 
 # from nndet.nn.blocks.basic import (
 #     MySEBlockExp2,
@@ -18,7 +18,7 @@ from nndet.nn.heads.classifier import AsymmetricFocalClassifier, FocalClassifier
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNMDualReg, BoxHeadHNMRegAll
-from nndet.nn.heads.comb.base import AnchorHeadType
+from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.heads.regressor.dense import DenseRegressor, DualRegressor
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
@@ -75,8 +75,8 @@ class RetinaUNetC011Focal(RetinaUNetC011):
         model_cfg: dict,
         classifier: DenseClassifier,
         regressor: DenseRegressor,
-        coder: CoderType,
-    ) -> AnchorHeadType:
+        coder: BoxCoderND,
+    ) -> AnchorHead:
         """
         Build detection head
 

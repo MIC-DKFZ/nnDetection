@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -668,6 +668,3 @@ class DeepSupervisionSegmenterFGBG(DiCESegmenterFgBg):
 
     def _compute_loss(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return self.alpha * self.ce_loss(pred, target.long()) + (1 - self.alpha) * self.dice_loss(pred, target)
-
-
-SegmenterType = TypeVar("SegmenterType", bound=Segmenter)

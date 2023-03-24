@@ -12,15 +12,18 @@ from nndet.losses.regression.giou import GIoULoss
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.nn.heads.abstract import Regressor, RoIConv1x1View
 from nndet.nn.layers.wrapper import nd_pool
+from nndet.utils.enums import BoxRegressionMode
+from nndet.utils.typing import CONVGEN
 
 
 class RoIRegressor(Regressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         input_size: Sequence[int],
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         num_convs: int = 1,
         add_norm: bool = True,
         **kwargs,
@@ -35,6 +38,7 @@ class RoIRegressor(Regressor):
             input_size: specify spatial dimensions of RoI
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             num_convs: number of convolutions
                 input_conv -> num_convs -> output_convs
             add_norm: en-/disable normalization layers in internal layers
@@ -49,6 +53,7 @@ class RoIRegressor(Regressor):
 
         self.in_channels = in_channels
         self.internal_channels = internal_channels
+        self.num_classes = num_classes
         self.input_size = input_size
 
         self.module_internal = self._build_module_internal(conv=conv, add_norm=add_norm, **kwargs)
@@ -57,20 +62,35 @@ class RoIRegressor(Regressor):
         self.loss: Optional[torch.nn.Module] = None
         self.init_weights()
 
+    @classmethod
+    def is_class_agnostic(cls):
+        """
+        Indicate if RoI regressor produces per class regression deltas or not
+
+        Returns:
+            bool: `True` if regression deltas apply to all classes, `False`
+                if per class regression deltas are computed
+        """
+        return True
+
     @abstractmethod
-    def _build_module_internal(self, conv, add_norm: bool, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, add_norm: bool, **kwargs) -> torch.nn.Module:
         """
         Build internal modules
         """
         raise NotImplementedError
 
-    def _build_module_out(self, conv):
+    def _build_module_out(self, conv: CONVGEN) -> torch.nn.Module:
         """
         Build final convolution
         """
+        if self.is_class_agnostic():
+            _out = self.dim * 2
+        else:
+            _out = self.num_classes * self.dim * 2
         return conv(
             self.internal_channels,
-            self.dim * 2,
+            _out,
             kernel_size=1,
             stride=1,
             padding=0,
@@ -94,8 +114,10 @@ class RoIRegressor(Regressor):
                 RoIs, C=number of channels, roi_size=spatial size of RoI
 
         Returns:
-            torch.Tensor: predicted logits [N, dim * 2], where N=number of
-                RoIs, dim=number of spatial dimensions
+            torch.Tensor: predicted deltas [N, (num_classes *) dim * 2],
+                where N=number of RoIs, dim=number of spatial dimensions,
+                and num_classes is the number of foreground classes.
+                num_classes is only used for class specific regression.
         """
         x = self.module_out(self.module_internal(features))
         return x.view(x.shape[0], -1)  # [N, C, 1] -> [N, C]
@@ -104,25 +126,37 @@ class RoIRegressor(Regressor):
         self,
         pred_deltas: Tensor,
         target_deltas: Tensor,
+        target_labels: Tensor,
         **kwargs,
     ) -> Tensor:
         """
         Compute regression loss
 
         Args:
-            pred_deltas: predicted bounding box deltas [N,  dim * 2] where
+            pred_deltas: predicted bounding box deltas [N,  (num_classes *) dim * 2] where
                 N=number of RoIs, dim=number of spatial dimeneions
             target_deltas: target bounding box deltas [N,  dim * 2] where
                 N=number of RoIs, dim=number of spatial dimeneions
+            target_labels: target labels for boxes [N], where
+                N=number of RoIs  (0 is background)
+            kwargs: keyword arguments passed to loss function
 
         Returns:
             Tensor: loss
         """
-        return self.loss(pred_deltas, target_deltas, **kwargs)
+        if not self.is_class_agnostic():
+            # only compute loss on target class
+            num_rois, _ = pred_deltas.shape
+            _pred_deltas = pred_deltas.reshape(num_rois, self.num_classes, self.dim * 2)
+            _target_labels = target_labels - 1  # matching adds +1 for background which needs to be removed
+            _pred_deltas = _pred_deltas[torch.arange(num_rois), _target_labels]
+        else:
+            _pred_deltas = pred_deltas
+        return self.loss(_pred_deltas, target_deltas, **kwargs)
 
 
 class ConvRoIRegressor(RoIRegressor):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules conv(s) -> pool -> out
         """
@@ -158,7 +192,7 @@ class ConvRoIRegressor(RoIRegressor):
 
 
 class FCRoIRegressor(RoIRegressor):
-    def _build_module_internal(self, conv, **kwargs):
+    def _build_module_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """
         Build internal modules flatten -> FC(s) -> out
         """
@@ -193,12 +227,13 @@ class FCRoIRegressor(RoIRegressor):
         return _conv_internal
 
 
-class L1ConvRoIRegressor(ConvRoIRegressor):
+class L1ConvRoIAgnosticRegressor(ConvRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
@@ -215,6 +250,7 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             input_size: specify spatial dimensions of RoI
             num_convs: number of convolutions
                 input_conv -> num_convs -> output_convs
@@ -233,6 +269,7 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
             input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
+            num_classes=num_classes,
             **kwargs,
         )
         self.loss = SmoothL1Loss(
@@ -242,13 +279,31 @@ class L1ConvRoIRegressor(ConvRoIRegressor):
             loss_fp32=loss_fp32,
         )
 
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `encode`
 
-class GIoUConvRoIRegressor(ConvRoIRegressor):
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.ENCODE
+
+
+class GIoUConvRoIAgnosticRegressor(ConvRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
@@ -264,6 +319,7 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             input_size: specify spatial dimensions of RoI
             num_convs: number of convolutions
                 input_conv -> num_convs -> output_convs
@@ -277,6 +333,7 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
@@ -288,13 +345,31 @@ class GIoUConvRoIRegressor(ConvRoIRegressor):
             loss_fp32=loss_fp32,
         )
 
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `decode`
 
-class L1FCRoIRegressor(FCRoIRegressor):
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DECODE
+
+
+class L1FCRoIAgnosticRegressor(FCRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
@@ -311,6 +386,7 @@ class L1FCRoIRegressor(FCRoIRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             input_size: specify spatial dimensions of RoI
             num_convs: number of convolutions
                 input_conv -> num_convs -> output_convs
@@ -326,6 +402,7 @@ class L1FCRoIRegressor(FCRoIRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
@@ -338,13 +415,31 @@ class L1FCRoIRegressor(FCRoIRegressor):
             loss_fp32=loss_fp32,
         )
 
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `encode`
 
-class GIoUFCRoIRegressor(FCRoIRegressor):
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.ENCODE
+
+
+class GIoUFCRoIAgnosticRegressor(FCRoIRegressor):
     def __init__(
         self,
-        conv,
+        conv: CONVGEN,
         in_channels: int,
         internal_channels: int,
+        num_classes: int,
         input_size: Sequence[int],
         num_convs: int = 1,
         add_norm: bool = True,
@@ -360,6 +455,7 @@ class GIoUFCRoIRegressor(FCRoIRegressor):
             conv: Convolution modules which handles a single layer
             in_channels: number of input channels
             internal_channels: number of channels internally used
+            num_classes: number of foreground classes
             input_size: specify spatial dimensions of RoI
             num_convs: number of convolutions
                 input_conv -> num_convs -> output_convs
@@ -373,6 +469,7 @@ class GIoUFCRoIRegressor(FCRoIRegressor):
             conv=conv,
             in_channels=in_channels,
             internal_channels=internal_channels,
+            num_classes=num_classes,
             input_size=input_size,
             num_convs=num_convs,
             add_norm=add_norm,
@@ -383,3 +480,46 @@ class GIoUFCRoIRegressor(FCRoIRegressor):
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
         )
+
+    @classmethod
+    def get_reg_mode(cls) -> BoxRegressionMode:
+        """
+        Return regession mode: `decode`
+
+        Returns:
+            BoxRegressionMode: regression mode to use.
+                `encode`: target boxes are encoded with respect to a set
+                    of anchors/proposals to target deltas
+                `decode`: predicted deltas are used to refine a set of
+                    of anchors/proposals to generate predicted bounding boxes
+                `dual`: a set of combined losses which requires both
+                    `encode` and `decode`. Only supported by a subset of
+                    combined heads.
+        """
+        return BoxRegressionMode.DECODE
+
+
+class L1ConvRoISpecificRegressor(L1ConvRoIAgnosticRegressor):
+    @classmethod
+    def is_class_agnostic(cls):
+        """
+        Indicate if RoI regressor produces per class regression deltas or not
+
+        Returns:
+            bool: `True` if regression deltas apply to all classes, `False`
+                if per class regression deltas are computed
+        """
+        return False
+
+
+class L1FCRoISpecificRegressor(L1FCRoIAgnosticRegressor):
+    @classmethod
+    def is_class_agnostic(cls):
+        """
+        Indicate if RoI regressor produces per class regression deltas or not
+
+        Returns:
+            bool: `True` if regression deltas apply to all classes, `False`
+                if per class regression deltas are computed
+        """
+        return False
