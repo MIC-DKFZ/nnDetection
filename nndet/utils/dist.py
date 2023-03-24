@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 #
-# Original code from DETR httpshttps://github.com/facebookresearch/detrgithub.com/facebookresearch/detr/blob/main/models/matcher.py  # noqa: E501
-# SPDX-FileCopyrightText: 2020 Facebook
+# Original code from DETR https://github.com/facebookresearch/detr https://github.com/facebookresearch/detr/blob/main/models/matcher.py  # noqa: E501
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
 import torch.distributed as dist

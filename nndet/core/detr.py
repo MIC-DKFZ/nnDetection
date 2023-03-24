@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -8,13 +11,16 @@ from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.pos_embed.sine import BasePositionEmbedding
+from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 
 
 class BaseDETR(AbstractDetector):
     def __init__(
         self,
         backbone: AbstractBackbone,
-        transformer: nn.Module,
+        channel_mapper: ChannelMapper,
+        transformer: AbstractTransformer,
         head: DETRHead,
         pos_embed: BasePositionEmbedding,
         hidden_dim: int,
@@ -22,40 +28,43 @@ class BaseDETR(AbstractDetector):
         query_dim: int,
         num_feature_levels: int = 1,
         segmenter: Optional[Segmenter] = None,
+        two_stage: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
 
         Args:
             backbone: Backbone network to compute image features
+            channel_mapper: Module that maps the features channel dimension
+                to the hidden_dim in the transformer
             transformer: Transformer Model
-            head: Head used for classification, regression, loss computation and postprocessing
+            head: Head used for classification, regression, loss computation
+                and postprocessing
+            pos_embed: module to generate positional embedding
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
-            pos_embed: module to generate positional embedding
-            query_dim: dimension of object queries in the decoder (usually same as hidden dim except for DABDETR)
-            num_feature_levels: which levels of backbone input should be used for the transformer input
-                                (currently only one supported)
+            query_dim: dimension of object queries in the decoder (usually
+                same as hidden dim except for DABDETR)
+            num_feature_levels: which levels of backbone input should be used
+                for the transformer input (currently only one supported)
+            segmenter: (Optional) segmenter to predict a semantic segmentations
+                from the feature maps
+            two_stage: toggle whether the encoder should predict objects and
+                use those as query candidates
         """
         super().__init__()
         # Obtain important hyperparameters
         self.detection_per_img = detection_per_img
         # Set Backbone and get channels and feature levels
         self.backbone = backbone
-        channels = self.backbone.get_channels()
+        self.channel_mapper = channel_mapper
         self.hidden_dim = hidden_dim
         self.num_feature_levels = num_feature_levels
-
-        # For future multi feature
-        if num_feature_levels == 1:
-            self.input_proj = nn.ModuleList([nn.Conv3d(channels[-1], self.hidden_dim, kernel_size=1)])
-        else:
-            raise NotImplementedError
+        self.two_stage = two_stage
 
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
         self.transformer = transformer
-        self.decoder_layers = transformer.dec_layers
         self.query_pos = nn.Embedding(detection_per_img, query_dim)
 
         # Build the final layers for classification and box regression
@@ -134,8 +143,9 @@ class BaseDETR(AbstractDetector):
                     X= number of ground truth boxes in image
 
                 ``"target_seg"`` (Tensor)
-                    segmentation ground truth (only needed if ::param::`segmenter`
-                    was provided in init) (classes start from 1, 0 background)
+                    segmentation ground truth (only needed if
+                    ::param::`segmenter` was provided in init) (classes start
+                    from 1, 0 background)
 
             predict: compute final predictions (includes detection
                 postprocessing)
@@ -220,7 +230,7 @@ class BaseDETR(AbstractDetector):
     def forward(
         self,
         inp: torch.Tensor,
-    ) -> Tuple[Dict[str, torch.Tensor], List, Dict, List[torch.Tensor]]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict, List[torch.Tensor]]:
         """
         Compute predicted bounding boxes, scores and segmentations
 
@@ -235,25 +245,37 @@ class BaseDETR(AbstractDetector):
 
                 ``"pred_boxes"´´ Tensor
                     predicted bounding boxes in normalized center format
-
-            List[torch.Tensor]: list of anchors, empty list for DETR
-            Dict: segmentation prediction. None, for segmentation use DETRSegmentation
+            Dict: semantic segmentation prediction, None if no segmenter was given
             List[torch.Tensor]: feature maps from decoder
         """
 
         # Compute feature list from backbone
-        features = self.backbone(inp)  # [l] (N, C_i, px, py, pz)
+        features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
-        srcs_sequence = self.input_proj[0](features[-1]).unsqueeze(dim=1)  # (N, 1, C, px, py, pz)
-        # Get Position Embedding and pass through transformer
-        pos_embed = self.pos_embed(srcs_sequence.squeeze(dim=1))  # (N, C, px, py, pz)
-        out_sequence, memory, reference = self.transformer(srcs_sequence, self.query_pos.weight, pos_embed)
+        mapped_features = self.channel_mapper(features)  # [num_feature_levels] (N, C, px, py, (pz))
+        # Get Position Embedding
+        pos_embeds = []
+        for feature in mapped_features:
+            pos_embeds.append(self.pos_embed(feature))
+        # transformer
+        out_sequence, reference, encoder_predictions = self.transformer(
+            mapped_features, self.query_pos.weight, pos_embeds
+        )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # memory: (bs, hidden_dim, h/stride, w/stride, d/stride): used for segmentation head
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
+        # predictions: Dict containing already made predictions
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(out_sequence, reference)
+
+        # if a two-stage model is used, add encoder predictions to output
+        if self.two_stage:
+            assert encoder_predictions is not None, "Two stage is not supported by this transformer"
+            enc_outputs_coord = encoder_predictions[1].sigmoid()
+            pred_detections["enc_outputs"] = {
+                "pred_logits": encoder_predictions[0],
+                "pred_boxes": enc_outputs_coord,
+            }
 
         # optionally forward seg head
         pred_seg = self.segmenter(features) if self.segmenter is not None else None

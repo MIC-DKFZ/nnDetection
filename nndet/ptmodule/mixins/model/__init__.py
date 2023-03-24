@@ -2,6 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nndet.ptmodule.mixins.model.base import ModelMixin
-from nndet.ptmodule.mixins.model.detr import DETRMixin
 from nndet.ptmodule.mixins.model.multi import MultiStageMixin, TwoStageMixin
 from nndet.ptmodule.mixins.model.single import SingleStageMixin

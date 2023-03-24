@@ -2,7 +2,7 @@ monai
 pytest
 pytest-cov
 pytest-mock
-syrupy
+syrupy==3.0.5
 pre-commit
 sphinx
 pydata-sphinx-theme

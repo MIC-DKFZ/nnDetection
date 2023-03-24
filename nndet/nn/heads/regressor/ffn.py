@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import Dict, Optional
 
 import torch
@@ -5,6 +8,7 @@ import torch
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
+from nndet.utils.enums import FFNRegWeightInit
 from nndet.utils.typing import LINEARSEQ
 
 
@@ -18,6 +22,7 @@ class FFNRegressor(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        weight_init_mode: str = "base",
         **kwargs,
     ) -> None:
         """
@@ -36,11 +41,11 @@ class FFNRegressor(torch.nn.Module):
         super().__init__()
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
-
         self.in_channels = in_channels
         self.internal_channels = internal_channels
         self.num_layers = num_layers
         self.dim = dim
+        self.weight_init_mode = FFNRegWeightInit(weight_init_mode)
 
         self.mlp = self._build_module(
             linear=linear,
@@ -103,7 +108,9 @@ class FFNRegressor(torch.nn.Module):
         """
         Init weights
         """
-        pass
+        if self.weight_init_mode == FFNRegWeightInit.LAST_LAYER_ZERO:
+            torch.nn.init.constant_(self.mlp[-1].fc.weight, 0)
+            torch.nn.init.constant_(self.mlp[-1].fc.bias, 0)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         """

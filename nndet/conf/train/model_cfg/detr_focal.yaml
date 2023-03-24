@@ -1,6 +1,13 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 # DETR
 # detection parameters
 detection_per_img: 24  # number of detections per image
+
+# global parameters
+hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+two_stage: False
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
@@ -8,14 +15,33 @@ backbone_kwargs: # keyword arguments passed to encoder
   start_channels: 48 # number of starting channels
   max_channels: 512 # maximum number of channels
 
-# transformer
-transformer_kwargs: {} # Transformer kwargs: needed
-num_encoder_layers: 3
-num_decoder_layers: 3
-dim_feedforward: 1024
-hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
-query_dim: 384 # should be the same as hidden_dim except for DABDETR
-attention_heads: 8  # number of attention heads in the transformer
+# Channel Mapper
+channel_mapper_kwargs:
+  num_feature_levels: 1
+  extra_levels: 0
+  kernel_size: 1
+  conv_kwargs: {}
+
+# Transformer Encoder
+transformer_encoder_kwargs:
+  num_layers: 3
+  post_norm: False
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
+  attention_heads: 8  # number of attention heads in the transformer
+
+transformer_decoder_kwargs:
+  num_layers: 3
+  post_norm: True
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  hidden_dim: ${model_cfg.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
+  attention_heads: 8  # number of attention heads in the transformer
 
 # positional embedding keyword arguments
 pos_embed:
@@ -55,6 +81,7 @@ head_regressor_kwargs:
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
+  # weight_init_mode: "base" or "last_layer_zero"
 
 # postprocessing
 head_box_post_kwargs:

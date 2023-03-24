@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Original code from https://github.com/facebookresearch/detr licensed under:
-# SPDX-FileCopyrightText: 2020 Facebook
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
 import math
@@ -26,7 +26,7 @@ class PositionEmbeddingSine(BasePositionEmbedding):
         """
         Implement sine positional embedding for 2/3D data
 
-        It computed the encoding along each dimensions separately and
+        It computed the encoding along each dimension separately and
         concatenates them at the end. Each dimension follows this rule:
 
             p_i = sin(w_k * t) if i = 2k cos(w_k * t) if i = 2k + 1

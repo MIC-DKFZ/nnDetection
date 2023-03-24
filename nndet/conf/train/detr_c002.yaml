@@ -1,6 +1,10 @@
 # @package __global__
+
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 defaults:
-  - augment_cfg: base_more_faster
+  - augment_cfg: base_more_faster_ord1
   - io_cfg: offset
   - trainer_cfg: adamw_long
   - model_cfg: detr_focal

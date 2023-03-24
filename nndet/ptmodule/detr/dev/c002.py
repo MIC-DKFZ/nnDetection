@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import copy
 from typing import Optional, Sequence, Type
 
@@ -16,11 +19,19 @@ from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1GIoUFFNRegressor
 from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.conv.conv_only import ConvOnly
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
-from nndet.nn.transformer import TransformerFacebook
-from nndet.nn.transformer.conditional_transformer import ConditionalTransformer
+from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.layers.conditional_detr import (
+    ConditionalDETRTransformerDecoder,
+)
+from nndet.nn.transformer.layers.detr import (
+    DETRTransformerDecoder,
+    DETRTransformerEncoder,
+)
+from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.box_detr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
@@ -31,9 +42,14 @@ class BoxDETRC002(BoxDETRModule):
     # Stride 16 + Focal Loss
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
-    # transformer
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
+
     pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
-    transformer_cls = TransformerFacebook
+    # transformer
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = DETRTransformerDecoder
+    transformer_cls = DETRTransformer
 
     # head blocks
     head_cls: DETRHead = DETRHead  #: main DETR head
@@ -79,7 +95,9 @@ class BoxIODETRC002(BoxDETRC002):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC002(BoxDETRC002):
-    transformer_cls = ConditionalTransformer
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder
+    transformer_cls = DETRTransformer
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
 
 

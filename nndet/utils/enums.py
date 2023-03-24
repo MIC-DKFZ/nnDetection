@@ -65,3 +65,8 @@ class AuxLossNorm(Enum):
 class BoxPointMode(Enum):
     CORNERS = "corners"
     CENTERS = "centers"
+
+
+class FFNRegWeightInit(Enum):
+    BASE = "base"
+    LAST_LAYER_ZERO = "last_layer_zero"

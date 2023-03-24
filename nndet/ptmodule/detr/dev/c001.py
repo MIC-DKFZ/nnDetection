@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 import copy
 from typing import Optional, Sequence, Type
 
@@ -24,11 +27,21 @@ from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1GIoUFFNRegressor
 from nndet.nn.layers.conv import ConvInstanceRelu
+from nndet.nn.layers.conv.conv_only import ConvOnly
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
-from nndet.nn.transformer import TransformerFacebook
-from nndet.nn.transformer.conditional_transformer import ConditionalTransformer
+from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.abstract_transformer import AbstractTransformer
+from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.conditional_detr import (
+    ConditionalDETRTransformerDecoder,
+)
+from nndet.nn.transformer.layers.detr import (
+    DETRTransformerDecoder,
+    DETRTransformerEncoder,
+)
+from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.box_detr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
@@ -38,9 +51,13 @@ from nndet.utils.typing import CONVSEQ, LINEARSEQ
 class BoxDETRC001(BoxDETRModule):
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
     # transformer
     pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
-    transformer_cls = TransformerFacebook
+    transformer_encoder_cls: TransformerLayerSequence = DETRTransformerEncoder
+    transformer_decoder_cls: TransformerLayerSequence = DETRTransformerDecoder
+    transformer_cls: AbstractTransformer = DETRTransformer
 
     # head blocks
     head_cls: DETRHead = DETRHead  #: main DETR head
@@ -140,7 +157,9 @@ class BoxDETRC001FocalRes(BoxDETRC001):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001Focal(BoxDETRC001):
-    transformer_cls = ConditionalTransformer
+    transformer_encoder_cls: TransformerLayerSequence = DETRTransformerEncoder
+    transformer_decoder_cls: TransformerLayerSequence = ConditionalDETRTransformerDecoder
+    transformer_cls: AbstractTransformer = DETRTransformer
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
@@ -170,7 +189,9 @@ class BoxCDETRC001Focal_S16(BoxCDETRC001Focal):
 
 @MODULE_REGISTRY.register
 class BoxCDETRC001ResFocal(BoxDETRC001):
-    transformer_cls = ConditionalTransformer
+    transformer_encoder_cls = DETRTransformerEncoder
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder
+    transformer_cls = DETRTransformer
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  #: define class for backbone
 
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head

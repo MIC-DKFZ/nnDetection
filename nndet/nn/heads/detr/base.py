@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Original code from DETR https://github.com/facebookresearch/detr
-# SPDX-FileCopyrightText: 2020 Facebook
+# SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -101,7 +101,7 @@ class DETRHead(torch.nn.Module):
         # Predict for all decoder levels but only propagate last decoder output
 
         if self.aux_loss:
-            # put remaining oututs into aux info
+            # put remaining outputs into aux info
             aux = [{"pred_cls_logits": a, "pred_box_coords": b} for a, b in zip(class_logits[:-1], box_logits[:-1])]
             preds["aux_outputs"] = aux
         return preds
