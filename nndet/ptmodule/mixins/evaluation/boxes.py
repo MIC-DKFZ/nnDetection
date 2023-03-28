@@ -93,9 +93,9 @@ class BoxEvalMixin(EvalMixin):
             f"mAP@0.1:0.5:0.05: {box_scores.get('mAP_IoU_0.10_0.50_0.05_MaxDet_100', np.nan):0.3f}  "
             f"AP@0.1: {box_scores.get('AP_IoU_0.10_MaxDet_100', np.nan):0.3f}  "
             f"AP@0.5: {box_scores.get('AP_IoU_0.50_MaxDet_100', np.nan):0.3f} "
-            f"FROC@0.1: {box_scores.get('mc_FROC_score_IoU_0.10', np.nan):0.3f} "
-            f"FROC@0.5: {box_scores.get('mc_FROC_score_IoU_0.50', np.nan):0.3f} "
-            f"FROC@0.1 (pool): {box_scores.get('FROC_score_IoU_0.10', np.nan):0.3f} "
+            f"FROC@0.1: {box_scores.get('mc_FROCwp_IoU_0.10', np.nan):0.3f} "
+            f"FROC@0.5: {box_scores.get('mc_FROCwp_IoU_0.50', np.nan):0.3f} "
+            f"FROC@0.1 (pool): {box_scores.get('FROCwp_IoU_0.10', np.nan):0.3f} "
         )
 
         # log own scores
