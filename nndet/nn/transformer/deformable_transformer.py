@@ -182,7 +182,7 @@ class DeformableDETRTransformer(nn.Module):
     @staticmethod
     def get_valid_ratio(mask: torch.Tensor) -> torch.Tensor:
         """
-        Get array of relative positions from [0,1] through the image
+        Get ratio of non-masked pixels for each dimension through the image
 
         Args:
             mask: mask of the image with shape (N, D, H, W)
