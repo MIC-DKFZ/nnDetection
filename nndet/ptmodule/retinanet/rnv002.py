@@ -44,7 +44,7 @@ class RetinaNetHNMV002(
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     """
-    Retina U-Net V002 with Hard Negative Mining
+    Retina Net V002 with Hard Negative Mining
     """
 
     # define detector cls
@@ -78,7 +78,7 @@ class RetinaNetHNMV002(
 @MODULE_REGISTRY.register
 class RetinaNetFocalV002(RetinaNetHNMV002):
     """
-    Retina U-Net V002 with Focal Loss
+    Retina Net V002 with Focal Loss
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
@@ -90,7 +90,7 @@ class RetinaNetFocalV002(RetinaNetHNMV002):
 @MODULE_REGISTRY.register
 class RetinaNetFocalResV002(RetinaNetFocalV002):
     """
-    Retina U-Net V002 with Focal Loss and residual blocks
+    Retina Net V002 with Focal Loss and residual blocks
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
