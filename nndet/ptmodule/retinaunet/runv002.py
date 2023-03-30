@@ -36,7 +36,7 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002(
+class RetinaUNetHNMV002(
     LightningBaseModule,  # Detection Base
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
@@ -45,6 +45,10 @@ class RetinaUNetV002(
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
+    """
+    Retina U-Net V002 with Hard Negative Mining
+    """
+
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -73,9 +77,9 @@ class RetinaUNetV002(
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002Focal(RetinaUNetV002):
+class RetinaUNetFocalV002(RetinaUNetHNMV002):
     """
-    Focal Loss based RetinaUNet V002
+    Retina U-Net V002 with Focal Loss
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
@@ -85,9 +89,9 @@ class RetinaUNetV002Focal(RetinaUNetV002):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetV002Res(RetinaUNetV002):
+class RetinaUNetFocalResV002(RetinaUNetFocalV002):
     """
-    Residual Conv Backbone
+    Retina U-Net V002 with Focal Loss and residual blocks
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
