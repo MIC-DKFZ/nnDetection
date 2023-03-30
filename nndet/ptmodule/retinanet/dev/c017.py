@@ -36,17 +36,13 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaNetHNMV002(
+class RetinaNetHNMC017(
     LightningBaseModule,  # Detection Base
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
-    """
-    Retina Net V002 with Hard Negative Mining
-    """
-
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -71,14 +67,13 @@ class RetinaNetHNMV002(
     matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    # use Retina U-Net for segmentation supervision
     segmenter_cls: Type[Segmenter] = None  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
-class RetinaNetFocalV002(RetinaNetHNMV002):
+class RetinaNetFocalC017(RetinaNetHNMC017):
     """
-    Retina Net V002 with Focal Loss
+    Focal Loss based RetinaUNet V002
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
@@ -88,9 +83,9 @@ class RetinaNetFocalV002(RetinaNetHNMV002):
 
 
 @MODULE_REGISTRY.register
-class RetinaNetFocalResV002(RetinaNetFocalV002):
+class RetinaNetFocalC017Res(RetinaNetFocalC017):
     """
-    Retina Net V002 with Focal Loss and residual blocks
+    Residual Conv Backbone
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

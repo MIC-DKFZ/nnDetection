@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-backbone_kwargs: {} # keyword arguments passed to encoder
+backbone_kwargs: # keyword arguments passed to encoder
+  max_channels: 384
+  res_p0: False
+  num_conv: [0, 4, 4, 6] # 2 blocks in first/second levels, 3 blocks in deeper levels
+  num_conv_stem: 2 # 2 conv init
+
 neck_kwargs: # keyword arguments passed to decoder
   min_out_channels: 8
   upsampling_mode: "transpose"
@@ -46,11 +51,3 @@ matcher_kwargs: # keyword arguments passed to matcher
 
 plan_arch_overwrites: {} # overwrite arguments of architecture
 plan_anchors_overwrites: {} # overwrite arguments of anchors
-
-# Scaling
-# backbone_kwargs: # keyword arguments passed to encoder
-#   max_channels: 384
-# plan_arch_overwrites: # overwrite arguments of architecture
-#   start_channels: 48
-#   fpn_channels: 192
-#   head_channels: 192
