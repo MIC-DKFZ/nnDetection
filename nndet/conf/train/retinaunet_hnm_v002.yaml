@@ -7,8 +7,8 @@ defaults:
   - augment_cfg: more_modular_ord1
   - io_cfg: offsetV2_obj_bal
   - trainer_cfg: sgd99_base
-  - model_cfg: retinaunet_l1_hnm_atss
+  - model_cfg: retinaunet_l1_hnm_atss_no_prior
 
-module: RetinaUNetHNMV002
+module: RetinaUNetHNMV002 # RetinaUNetHNMC017MH
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
