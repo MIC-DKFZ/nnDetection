@@ -22,8 +22,8 @@ from nndet.ptmodule.retinanet.rnv002 import (
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 from nndet.ptmodule.retinaunet.runv002 import (
     RetinaUNetFocalResV002,
-    RetinaUNetV002Focal,
-    RetinaUNetV002HNM,
+    RetinaUNetFocalV002,
+    RetinaUNetHNMV002,
 )
 
 
@@ -115,8 +115,8 @@ CASES = [
     # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
-    (RetinaUNetV002HNM, "retinaunet_v002_hnm"),
-    (RetinaUNetV002Focal, "retinaunet_v002_focal"),
+    (RetinaUNetHNMV002, "retinaunet_v002_hnm"),
+    (RetinaUNetFocalV002, "retinaunet_v002_focal"),
     (RetinaUNetFocalResV002, "retinaunet_v002_focal"),
     (RetinaNetHNMV002, "retinaunet_v002_hnm"),
     (RetinaNetFocalV002, "retinaunet_v002_focal"),
