@@ -13,14 +13,18 @@ from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 # specific modules
 from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
 from nndet.ptmodule.retinanet.rnv002 import (
-    RetinaNetV002,
-    RetinaNetV002Focal,
-    RetinaNetV002Res,
+    RetinaNetFocalResV002,
+    RetinaNetFocalV002,
+    RetinaNetHNMV002,
 )
 
 # base modules
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import RetinaUNetV002Focal, RetinaUNetV002HNM
+from nndet.ptmodule.retinaunet.runv002 import (
+    RetinaUNetFocalResV002,
+    RetinaUNetV002Focal,
+    RetinaUNetV002HNM,
+)
 
 
 @pytest.fixture
@@ -113,9 +117,10 @@ CASES = [
     (RetinaUNetV001, "retinaunet_v001_mod"),
     (RetinaUNetV002HNM, "retinaunet_v002_hnm"),
     (RetinaUNetV002Focal, "retinaunet_v002_focal"),
-    (RetinaNetV002, "retinaunet_v002"),
-    (RetinaNetV002Focal, "retinaunet_v002_focal"),
-    (RetinaNetV002Res, "retinaunet_v002"),
+    (RetinaUNetFocalResV002, "retinaunet_v002_focal"),
+    (RetinaNetHNMV002, "retinaunet_v002_hnm"),
+    (RetinaNetFocalV002, "retinaunet_v002_focal"),
+    (RetinaNetFocalResV002, "retinaunet_v002_focal"),
     # Dev Models
     # (RetinaNetC001, "v001"),
     # (RetinaNetC001Focal, "c014_focal"),
