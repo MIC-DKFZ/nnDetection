@@ -115,12 +115,12 @@ CASES = [
     # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
-    (RetinaUNetHNMV002, "retinaunet_v002_hnm"),
-    (RetinaUNetFocalV002, "retinaunet_v002_focal"),
-    (RetinaUNetFocalResV002, "retinaunet_v002_focal"),
-    (RetinaNetHNMV002, "retinaunet_v002_hnm"),
-    (RetinaNetFocalV002, "retinaunet_v002_focal"),
-    (RetinaNetFocalResV002, "retinaunet_v002_focal"),
+    (RetinaUNetHNMV002, "retinaunet_hnm_v002"),
+    (RetinaUNetFocalV002, "retinaunet_focal_v002"),
+    (RetinaUNetFocalResV002, "retinaunet_focal_v002"),
+    (RetinaNetHNMV002, "retinaunet_hnm_v002"),
+    (RetinaNetFocalV002, "retinaunet_focal_v002"),
+    (RetinaNetFocalResV002, "retinaunet_focal_v002"),
     # Dev Models
     # (RetinaNetC001, "v001"),
     # (RetinaNetC001Focal, "c014_focal"),
