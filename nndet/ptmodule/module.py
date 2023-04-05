@@ -15,6 +15,7 @@ from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
+from nndet.utils.check import check_torch_version
 
 
 class LightningBaseModule(pl.LightningModule):
@@ -55,6 +56,14 @@ class LightningBaseModule(pl.LightningModule):
             plan_anchors=self.plan["anchors"],
             patch_size=plan["patch_size"],
         )
+        if self.trainer_cfg.get("do_compile", False):
+            if check_torch_version(major_version=2):
+                self.model = torch.compile(self.model, **self.trainer_cfg.get("compile", {}))
+            else:
+                logger.error(
+                    "Torch compile was enabled in config but minimal "
+                    "PyTorch Version of 2.0.0 was not met! Skipping compile."
+                )
 
         # initialize pre transforms from ModeMixin
         trafos = self.get_pre_transforms(plan=plan)
