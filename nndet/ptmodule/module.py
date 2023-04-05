@@ -58,6 +58,7 @@ class LightningBaseModule(pl.LightningModule):
         )
         if self.trainer_cfg.get("do_compile", False):
             if check_torch_version(major_version=2):
+                logger.info("Using torch.compile to speed up model.")
                 self.model = torch.compile(self.model, **self.trainer_cfg.get("compile", {}))
             else:
                 logger.error(
