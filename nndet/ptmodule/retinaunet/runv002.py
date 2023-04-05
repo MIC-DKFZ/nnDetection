@@ -89,6 +89,15 @@ class RetinaUNetFocalV002(RetinaUNetHNMV002):
 
 
 @MODULE_REGISTRY.register
+class RetinaUNetHNMResV002(RetinaUNetHNMV002):
+    """
+    Retina U-Net V002 with Hard Negative Mining and residual blocks
+    """
+
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
+
+
+@MODULE_REGISTRY.register
 class RetinaUNetFocalResV002(RetinaUNetFocalV002):
     """
     Retina U-Net V002 with Focal Loss and residual blocks
