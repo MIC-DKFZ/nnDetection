@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=docs/source/_static/nnDetection.svg width="600px">
+<img src=docs/source/_static/logos_nndet.png width="600px">
 
 ![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
