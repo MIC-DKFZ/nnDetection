@@ -50,6 +50,15 @@ When running a training inside the container it is necessary to [increase the sh
 
 ## Source
 
+### Tested Versions
+
+If possible stick to this versions when installing from source:
+
+| nnDetection | CUDA  | Python | PyTorch | Vision |
+|-------------|-------|--------|---------|--------|
+| 0.2         | 11.0  | 3.8    | 1.13    |        |
+
+
 *Please note that nndetection requires Python 3.8+.*
 
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
