@@ -145,7 +145,7 @@ class ReluDropIdentityMLP(MLP):
             feedforward_dim=feedforward_dim,
             output_dim=output_dim,
             num_layers=num_layers,
-            activation=nn.ReLU(),
+            activation=nn.ReLU(inplace=True),
             ffn_drop=ffn_drop,
             fc_bias=fc_bias,
             add_identity=True,
