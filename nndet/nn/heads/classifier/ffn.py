@@ -313,12 +313,6 @@ class SigmoidFFNClassifier(FFNClassifier):
         """
         if self.prior_prob is not None:
             logger.info(f"Init FFN classifier weights: prior prob {self.prior_prob}")
-            for layer in self.modules():
-                if isinstance(layer, torch.nn.Linear):
-                    torch.nn.init.normal_(layer.weight, mean=0, std=0.01)
-                    if layer.bias is not None:
-                        torch.nn.init.constant_(layer.bias, 0)
-
             # Use prior in model initialization to improve stability
             bias_value = -math.log((1 - self.prior_prob) / self.prior_prob)
             torch.nn.init.constant_(self.mlp[-1][-1].bias, bias_value)
