@@ -7,10 +7,9 @@ from torch.cuda.amp import autocast
 from nndet.losses.ops import Loss
 
 
-class SmoothL1Loss(Loss):
+class L1Loss(Loss):
     def __init__(
         self,
-        beta: float,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         reduction: str = "none",
@@ -36,7 +35,6 @@ class SmoothL1Loss(Loss):
             loss_fp32=loss_fp32,
             reduction=reduction,
         )
-        self.beta = beta
 
     def forward(
         self,
@@ -55,25 +53,18 @@ class SmoothL1Loss(Loss):
         """
         if self.loss_fp32:
             with autocast(enabled=False):
-                loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
+                loss = self.loss_weight * torch.nn.functional.l1_loss(
                     preds.float(),
                     targets.float(),
-                    beta=self.beta,
                     reduction=self.reduction,
                 )
         else:
-            loss = self.loss_weight * torch.nn.functional.smooth_l1_loss(
+            loss = self.loss_weight * torch.nn.functional.l1_loss(
                 preds,
                 targets,
-                beta=self.beta,
                 reduction=self.reduction,
             )
         return loss
 
     def extra_repr(self) -> str:
-        return (
-            f"beta={self.beta}, "
-            f"loss_weight={self.loss_weight}, "
-            f"loss_fp32={self.loss_fp32}, "
-            f"reduction={self.reduction}"
-        )
+        return f"loss_weight={self.loss_weight}, " f"loss_fp32={self.loss_fp32}, " f"reduction={self.reduction}"
