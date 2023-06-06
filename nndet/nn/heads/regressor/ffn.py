@@ -5,7 +5,8 @@ import torch
 
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
-from nndet.losses.regression.smoothl1 import L1Loss, SmoothL1Loss
+from nndet.losses.regression.l1 import L1Loss
+from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.utils.typing import LINEARSEQ
 
 
