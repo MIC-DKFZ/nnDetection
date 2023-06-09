@@ -93,6 +93,7 @@ head_regressor_kwargs:
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
   loss_fp32: True
+  box_loss_fp32: True
 
 # postprocessing
 head_box_post_kwargs:
