@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import datetime
 import importlib
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
@@ -46,7 +46,7 @@ def _setup_logger(log_dir: os.PathLike):
 
 def _preprocess(
     training_dir: os.PathLike,
-    raw_splitted_dir: os.PathLike,
+    data_dir: os.PathLike,
     preprocessed_dir: os.PathLike,
     num_processes: int,
 ) -> str:
@@ -56,25 +56,25 @@ def _preprocess(
     Args:
         training_dir: cirectory containing the model which should be predicted
             afterwards. Specifically, the plan file is used here.
-        raw_splitted_dir: directory containing the data to predict in nndet
+        data_dir: directory containing the data to predict in nndet
             format (i.e. with _0000.nii.gz) ending. Data needs to have the same
             format as training data!
         preprocessed_dir: directory where preprocessed data is placed.
             Specifically, data is saved in
-            `preprocessed_dir/data_identifier/imagesTs`
+            `preprocessed_dir/data_identifier`
         num_processes: number of processes to use for preprocessing
 
     Returns:
         str: data identifier
     """
     training_dir = Path(training_dir)
-    raw_splitted_dir = Path(raw_splitted_dir)
+    data_dir = Path(data_dir)
     preprocessed_dir = Path(preprocessed_dir)
 
     if not training_dir.is_dir():
         raise ValueError(f"Training dir {training_dir} needs exist.")
-    if not raw_splitted_dir.is_dir():
-        raise ValueError(f"Raw splitted dir {raw_splitted_dir} need to exist.")
+    if not data_dir.is_dir():
+        raise ValueError(f"Data dir {data_dir} need to exist.")
     if preprocessed_dir.is_dir():
         print(
             f"Warning: Preprocessed dir {preprocessed_dir} already exists, "
@@ -82,7 +82,7 @@ def _preprocess(
         )
     preprocessed_dir.mkdir(exist_ok=True, parents=True)
 
-    _setup_logger(raw_splitted_dir)
+    _setup_logger(data_dir)
 
     # load plan
     plan_inference_path = training_dir / "plan_inference.pkl"
@@ -105,25 +105,23 @@ def _preprocess(
         importlib.import_module(imp)
 
     # run preprocessing
-    logger.info(f"++ Running preprocessing of {raw_splitted_dir} saving" f" into {preprocessed_dir} ++")
+    logger.info(f"++ Running preprocessing of {data_dir} saving" f" into {preprocessed_dir} ++")
     planner_cls = PLANNER_REGISTRY.get(plan["planner_id"])
 
-    planner_cls.run_preprocessing_test(
-        splitted_4d_output_dir=raw_splitted_dir,
-        preprocessed_output_dir=preprocessed_dir,
+    planner_cls.run_preprocessing_test2(
+        data_dir=data_dir,
+        preprocessed_dir=preprocessed_dir,
         plan=plan,
         num_processes=num_processes,
     )
     data_identifier = plan["data_identifier"]
-    logger.info(
-        "++ Finished preprocessing, results located in " f"{preprocessed_dir / data_identifier / 'imagesTs'} ++"
-    )
+    logger.info("++ Finished preprocessing, results located in " f"{preprocessed_dir / data_identifier} ++")
     return data_identifier
 
 
 def _predict(
     training_dir: os.PathLike,
-    preprocessed_images_dir: os.PathLike,
+    preprocessed_data_dir: os.PathLike,
     prediction_dir: os.PathLike,
     num_tta_transforms: int,
     overwrites: Sequence[Any],
@@ -137,7 +135,7 @@ def _predict(
     Args:
         training_dir: training directory containing plan_inference, config and
             model weights
-        preprocessed_images_dir: directory containing preprocessed data
+        preprocessed_data_dir: directory containing preprocessed data
         prediction_dir: directory to save prediction into
         num_tta_transforms: number of TTA transforms to perform during
             inference
@@ -151,13 +149,13 @@ def _predict(
             Defaults to None.
     """
     training_dir = Path(training_dir)
-    preprocessed_images_dir = Path(preprocessed_images_dir)
+    preprocessed_data_dir = Path(preprocessed_data_dir)
     prediction_dir = Path(prediction_dir)
 
     if not training_dir.is_dir():
         raise ValueError(f"Training dir {training_dir} needs to exist.")
-    if not preprocessed_images_dir.is_dir():
-        raise ValueError(f"Preprocessed images dir {preprocessed_images_dir} needs to exist.")
+    if not preprocessed_data_dir.is_dir():
+        raise ValueError(f"Preprocessed images dir {preprocessed_data_dir} needs to exist.")
     prediction_dir.mkdir(parents=True, exist_ok=True)
     _setup_logger(prediction_dir)
 
@@ -166,7 +164,8 @@ def _predict(
     if not config_path.is_file():
         raise RuntimeError(f"Expected {config_path} to contain the config for running inference.")
     cfg = OmegaConf.load(training_dir / "config.yaml")
-    cfg.merge_with_dotlist(overwrites)
+    if overwrites is not None:
+        cfg.merge_with_dotlist(overwrites)
 
     for imp in cfg.get("additional_imports", []):
         logger.info(f"Additional import found {imp}")
@@ -206,14 +205,14 @@ def _predict(
 
     inference_kwargs = cfg.get("inference_kwargs", {})
     logger.info(
-        f"++ Running prediction of {preprocessed_images_dir} saving"
+        f"++ Running prediction of {preprocessed_data_dir} saving"
         f" into {prediction_dir} with inference kwargs {inference_kwargs},"
         f" {num_tta_transforms} tta transformations and {load_models} weights ++"
     )
     if case_ids is not None:
         logger.info(f"Running inference on provided case ids: {case_ids}")
     predict_dir(
-        source_dir=preprocessed_images_dir,
+        source_dir=preprocessed_data_dir,
         target_dir=prediction_dir,
         case_ids=case_ids,
         cfg=cfg,
@@ -262,9 +261,9 @@ def entrypoint_preprocess_for_inference():
     preprocessed_dir: Path = data_dir / "preprocessed"
     preprocessed_dir.mkdir(exist_ok=True)
     _ = _preprocess(
-        training_dir=training_dir,
-        raw_splitted_dir=data_dir,
+        data_dir=data_dir,
         preprocessed_dir=preprocessed_dir,
+        training_dir=training_dir,
         num_processes=num_processes_preprocessing,
     )
 
@@ -357,21 +356,29 @@ def entrypoint_predict_with_task():
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
     if skip_preprocessing:
-        preprocessed_images_dir = data_dir
+        plan_inference_path = training_dir / "plan_inference.pkl"
+        if not plan_inference_path.is_file():
+            raise RuntimeError(
+                f"Expected {plan_inference_path} to contain the plan for "
+                "running inference. Either run nndet_consolidate to predict "
+                "ensembles or nndet_sweep for single fold models."
+            )
+        plan = load_pickle(plan_inference_path)
+        preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = data_dir / "preprocessed"
         preprocessed_dir.mkdir(exist_ok=True)
         data_identifier = _preprocess(
-            training_dir=training_dir,
-            raw_splitted_dir=data_dir,
+            data_dir=data_dir,
             preprocessed_dir=preprocessed_dir,
+            training_dir=training_dir,
             num_processes=num_processes_preprocessing,
         )
-        preprocessed_images_dir = preprocessed_dir / data_identifier / "imagesTs"
+        preprocessed_data_dir = preprocessed_dir / data_identifier
 
     _predict(
         training_dir=training_dir,
-        preprocessed_images_dir=preprocessed_images_dir,
+        preprocessed_data_dir=preprocessed_data_dir,
         prediction_dir=prediction_dir,
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
@@ -390,7 +397,7 @@ def entrypoint_predict_with_folders():
         type=Path,
         help="Path to directory where predictions should be saved.",
     )
-    parser.add_argument("training", type=str, help="Directory to models weights, plan and config.")
+    parser.add_argument("training", type=Path, help="Directory to models weights, plan and config.")
     parser.add_argument(
         "--skip_preprocessing",
         action="store_true",
@@ -457,21 +464,29 @@ def entrypoint_predict_with_folders():
 
     # setup folders
     if skip_preprocessing:
-        preprocessed_images_dir = data_dir
+        plan_inference_path = training_dir / "plan_inference.pkl"
+        if not plan_inference_path.is_file():
+            raise RuntimeError(
+                f"Expected {plan_inference_path} to contain the plan for "
+                "running inference. Either run nndet_consolidate to predict "
+                "ensembles or nndet_sweep for single fold models."
+            )
+        plan = load_pickle(plan_inference_path)
+        preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = data_dir / "preprocessed"
         preprocessed_dir.mkdir(exist_ok=True)
         data_identifier = _preprocess(
-            training_dir=training_dir,
-            raw_splitted_dir=data_dir,
+            data_dir=data_dir,
             preprocessed_dir=preprocessed_dir,
+            training_dir=training_dir,
             num_processes=num_processes_preprocessing,
         )
-        preprocessed_images_dir = preprocessed_dir / data_identifier / "imagesTs"
+        preprocessed_data_dir = preprocessed_dir / data_identifier
 
     _predict(
         training_dir=training_dir,
-        preprocessed_images_dir=preprocessed_images_dir,
+        preprocessed_data_dir=preprocessed_data_dir,
         prediction_dir=prediction_dir,
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
@@ -577,7 +592,7 @@ def entrypoint_predict_test_split():
             "ensembles or nndet_sweep for single fold models."
         )
     plan = load_pickle(plan_inference_path)
-    preprocessed_images_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
+    preprocessed_data_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     # determine case ids
     splits_path = training_dir / "splits.pkl"
@@ -587,7 +602,7 @@ def entrypoint_predict_test_split():
 
     _predict(
         training_dir=training_dir,
-        preprocessed_images_dir=preprocessed_images_dir,
+        preprocessed_data_dir=preprocessed_data_dir,
         prediction_dir=prediction_dir,
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
