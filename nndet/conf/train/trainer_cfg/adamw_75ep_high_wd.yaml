@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
 # AdamW Optimizer with Poly Learn rate
 
 gpus: 1 # number of gpus
@@ -11,6 +14,13 @@ amp_level: # when mixed precision backend is APEX use O1
 deterministic: False
 benchmark: False
 terminate_on_nan: False # [optional; Default True]
+
+# pytorch 2.0 features
+do_compile: False
+compile_kwargs:
+  mode: "default"
+  backend: "inductor"
+  fullgraph: false
 
 save_top_k: 1 # topk model selection [optonal; Default 1]
 sweep_key: mAP_IoU_0.10_0.50_0.05_MaxDet_100

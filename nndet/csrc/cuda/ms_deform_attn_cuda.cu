@@ -1,12 +1,18 @@
-/*!
-**************************************************************************************************
-* Deformable DETR
-* Copyright (c) 2020 SenseTime. All Rights Reserved.
-* Licensed under the Apache License, Version 2.0 [see LICENSE for details]
-**************************************************************************************************
-* Modified from https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0
-**************************************************************************************************
-*/
+// Modifications licensed under:
+// SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+// SPDX-License-Identifier: Apache-2.0
+//
+// Parts of this code are from transoar licensed under
+// SPDX-FileCopyrightText: 2022, Bastian Wittmann
+// SPDX-License-Identifier: Apache-2.0
+//
+// Parts of this code are from detrex licensed under
+// SPDX-FileCopyrightText: 2022, The IDEA Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// Parts of this code are from Deformable-DETR licensed under
+// SPDX-FileCopyrightText: 2020, SenseTime
+// SPDX-License-Identifier: Apache-2.0
 
 #include <vector>
 #include "ms_deform_im2col_cuda.cuh"
