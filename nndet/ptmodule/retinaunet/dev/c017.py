@@ -103,7 +103,7 @@ class RetinaUNetFocalC017Mish(RetinaUNetFocalC017):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetC017Res(RetinaUNetHNMC017):
+class RetinaUNetFocalC017Res(RetinaUNetFocalC017):
     """
     Residual Conv Backbone
     """

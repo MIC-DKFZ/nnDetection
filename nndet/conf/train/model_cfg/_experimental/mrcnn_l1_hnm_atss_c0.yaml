@@ -32,7 +32,7 @@ head_classifier_kwargs: # keyword arguments passed to classifier in head
   norm_affine: True
   reduction: "mean"
   loss_weight: 1.
-  # prior_prob: 0.01
+  prior_prob: 0.01
 
 head_regressor_kwargs: # keyword arguments passed to regressor in head
   num_convs: 1
@@ -79,30 +79,20 @@ roi_pooling:
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 3
-  norm_channels_per_group: 16
-  norm_affine: True
   add_norm: True
   reduction: sum
-  # prior_prob: 0.01
-  loss_fp32: True
 
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 3
-  norm_channels_per_group: 16
-  norm_affine: True
   add_norm: True
   reduction: sum
-  loss_fp32: True
 
 roi_head_kwargs:
   ema_loss_norm: False
 
 roi_masker_kwargs:
   num_convs: 3
-  norm_channels_per_group: 16
-  norm_affine: True
   add_norm: True
-  # prior_prob: 0.01
 
 roi_matcher_kwargs:
   low_threshold: 0.2

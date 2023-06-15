@@ -10,11 +10,37 @@ from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import SimpleITK as sitk
+import torch
 
 from nndet.io import load_json, load_sitk
 from nndet.io.paths import get_paths_from_splitted_dir, get_task
 from nndet.utils.config import load_dataset_info
 from nndet.utils.info import maybe_verbose_iterable
+
+
+def check_torch_version(major_version: int, minor_version: Optional[int] = None) -> bool:
+    """
+    Check if pytorch version meets at least the specified major and minor
+    version.
+
+    Args:
+        major_version: Minimal major version of pytorch
+        minor_version: Minimal minor version of pytorch. Defaults to None.
+
+    Returns:
+        bool: `True` is present pytorch version is at least as high as
+            specfied major and minor version, `False` otherwise
+    """
+    major, minor, _ = torch.__version__.split(".", 2)
+    major = int(major)
+    minor = int(minor)
+    passed = False
+    if major >= major_version:
+        if minor_version is None:
+            passed = True
+        elif minor >= minor_version:
+            passed = True
+    return passed
 
 
 def env_guard(func):

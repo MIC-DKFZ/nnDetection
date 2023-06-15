@@ -20,35 +20,29 @@ from nndet.nn.heads.comb import BoxHeadAll
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
-from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.conv.group import ConvGroupLReLU
 from nndet.nn.layers.conv.instance import ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetHNMV002(
+class RetinaNetHNMC017(
     LightningBaseModule,  # Detection Base
-    SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
-    SemanticFgEvalMixin,  # Semantic Segmentation Evaluation
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
-    """
-    Retina U-Net V002 with Hard Negative Mining
-    """
-
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -73,13 +67,13 @@ class RetinaUNetHNMV002(
     matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    segmenter_cls: Type[Segmenter] = DiCESegmenterFgBg  # [optional] segmentation head as in RetinaUNet
+    segmenter_cls: Type[Segmenter] = None  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetFocalV002(RetinaUNetHNMV002):
+class RetinaNetFocalC017(RetinaNetHNMC017):
     """
-    Retina U-Net V002 with Focal Loss
+    Focal Loss based RetinaUNet V002
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
@@ -89,18 +83,9 @@ class RetinaUNetFocalV002(RetinaUNetHNMV002):
 
 
 @MODULE_REGISTRY.register
-class RetinaUNetHNMResV002(RetinaUNetHNMV002):
+class RetinaNetFocalC017Res(RetinaNetFocalC017):
     """
-    Retina U-Net V002 with Hard Negative Mining and residual blocks
-    """
-
-    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
-
-
-@MODULE_REGISTRY.register
-class RetinaUNetFocalResV002(RetinaUNetFocalV002):
-    """
-    Retina U-Net V002 with Focal Loss and residual blocks
+    Residual Conv Backbone
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

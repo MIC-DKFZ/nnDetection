@@ -20,6 +20,7 @@ from nndet.nn.heads.comb import BoxHeadAll
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.conv.group import ConvGroupLReLU
 from nndet.nn.layers.conv.instance import ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
@@ -35,13 +36,17 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaNetV002(
+class RetinaNetHNMV002(
     LightningBaseModule,  # Detection Base
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
+    """
+    Retina Net V002 with Hard Negative Mining
+    """
+
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -66,14 +71,14 @@ class RetinaNetV002(
     matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    # Not suported here; See `RetinaUNet`
-    segmenter_cls = None
+    # use Retina U-Net for segmentation supervision
+    segmenter_cls: Type[Segmenter] = None  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
-class RetinaNetV002Focal(RetinaNetV002):
+class RetinaNetFocalV002(RetinaNetHNMV002):
     """
-    Focal Loss based RetinaNet V002
+    Retina Net V002 with Focal Loss
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
@@ -83,16 +88,9 @@ class RetinaNetV002Focal(RetinaNetV002):
 
 
 @MODULE_REGISTRY.register
-class BoxIORetinaNetV002Focal(RetinaNetV002Focal):
-    @classmethod
-    def use_box_io(self):
-        return True
-
-
-@MODULE_REGISTRY.register
-class RetinaNetV002Res(RetinaNetV002):
+class RetinaNetFocalResV002(RetinaNetFocalV002):
     """
-    Residual Conv Backbone
+    Retina Net V002 with Focal Loss and residual blocks
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

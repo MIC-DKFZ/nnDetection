@@ -14,17 +14,17 @@ from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 # specific modules
 from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
 from nndet.ptmodule.retinanet.rnv002 import (
-    RetinaNetV002,
-    RetinaNetV002Focal,
-    RetinaNetV002Res,
+    RetinaNetFocalResV002,
+    RetinaNetFocalV002,
+    RetinaNetHNMV002,
 )
 
 # base modules
 from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
 from nndet.ptmodule.retinaunet.runv002 import (
-    RetinaUNetV002,
-    RetinaUNetV002Focal,
-    RetinaUNetV002Res,
+    RetinaUNetFocalResV002,
+    RetinaUNetFocalV002,
+    RetinaUNetHNMV002,
 )
 
 
@@ -116,12 +116,12 @@ CASES = [
     # Base Models
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
-    (RetinaUNetV002, "retinaunet_v002"),
-    (RetinaUNetV002Focal, "retinaunet_v002_focal"),
-    (RetinaUNetV002Res, "retinaunet_v002"),
-    (RetinaNetV002, "retinaunet_v002"),
-    (RetinaNetV002Focal, "retinaunet_v002_focal"),
-    # (RetinaNetV002Res, "retinaunet_v002"),
+    (RetinaUNetHNMV002, "retinaunet_hnm_v002"),
+    (RetinaUNetFocalV002, "retinaunet_focal_v002"),
+    (RetinaUNetFocalResV002, "retinaunet_focal_v002"),
+    (RetinaNetHNMV002, "retinaunet_hnm_v002"),
+    (RetinaNetFocalV002, "retinaunet_focal_v002"),
+    (RetinaNetFocalResV002, "retinaunet_focal_v002"),
     # Dev Models
     (BoxDETRC002, "detr_c002"),
     # (RetinaNetC001, "v001"),

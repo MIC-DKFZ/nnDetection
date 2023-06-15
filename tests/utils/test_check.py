@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -11,6 +12,7 @@ from nndet.utils.check import (
     _check_instances_json,
     _check_itk_params,
     check_dataset_file,
+    check_torch_version,
 )
 
 
@@ -208,3 +210,23 @@ def test_check_itk_params_origin():
 
     with pytest.raises(ValueError):
         _check_itk_params([ref, ref2], [None, None])
+
+
+@patch("torch.__version__", "2.0.0+cu118")
+def test_check_torch_major_true():
+    assert check_torch_version(major_version=2)
+
+
+@patch("torch.__version__", "2.0.0+cu118")
+def test_check_torch_minor_true():
+    assert check_torch_version(major_version=2, minor_version=0)
+
+
+@patch("torch.__version__", "1.12.1+cu116")
+def test_check_torch_major_false():
+    assert not check_torch_version(major_version=2)
+
+
+@patch("torch.__version__", "1.12.1+cu116")
+def test_check_torch_minor_false():
+    assert not check_torch_version(major_version=1, minor_version=13)

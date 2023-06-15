@@ -20,7 +20,7 @@ from nndet.nn.layers.conv import BaseConvNormAct, ConvGroupLReLU, ConvInstanceLR
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import FPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinanet.rn001 import RetinaNetModule
+from nndet.ptmodule.retinanet.rnv001 import RetinaNetModule
 from nndet.utils.typing import CONVSEQ
 
 
