@@ -555,7 +555,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             target_dir: directory to save data to
         """
         target_dir = Path(target_dir)
-        data, seg, properties = self.preprocess_test_case(
+        data, _, properties = self.preprocess_test_case(
             data_files=data_files,
             target_spacing=target_spacing,
         )
