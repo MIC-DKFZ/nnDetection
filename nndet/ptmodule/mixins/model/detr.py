@@ -214,8 +214,6 @@ class SetModelMixin(ModelMixin):
             ffn_dropout=decoder_kwargs["ffn_dropout"],
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
-            mean_noise=decoder_kwargs.get("mean_noise", 0.0),
-            std_noise=decoder_kwargs.get("std_noise", 0.0),
         )
         return cls.transformer_cls(
             encoder=encoder,
