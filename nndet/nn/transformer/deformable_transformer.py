@@ -47,7 +47,7 @@ class DeformableDETRTransformer(nn.Module):
             two_stage_num_proposals: number of proposals in two-stage
                 transformer
         """
-        super(DeformableDETRTransformer, self).__init__()
+        super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.num_feature_levels = num_feature_levels
