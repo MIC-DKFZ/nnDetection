@@ -248,13 +248,12 @@ class MultiScaleDeformableAttention(nn.Module):
             key_padding_mask (torch.Tensor): ByteTensor for `query`, with shape `(bs, num_key)`,
                 indicating which elements within `key` to be ignored in attention.
             reference_points (torch.Tensor): The normalized reference points
-                with shape `(bs, num_query, num_levels, 2)`,
-                all elements is range in [0, 1], top-left (0, 0),
-                bottom-right (1, 1), including padding are.
-                or `(N, Length_{query}, num_levels, 4)`, add additional
-                two dimensions `(h, w)` to form reference boxes.
+                with shape `(bs, num_query, num_levels, 3)`,
+                all elements is range in [0, 1]
+                or `(N, Length_{query}, num_levels, 6)`, add additional
+                two dimensions `(h, w, d)` to form reference boxes.
             spatial_shapes (torch.Tensor): Spatial shape of features in different levels.
-                With shape `(num_levels, 2)`, last dimension represents `(h, w)`.
+                With shape `(num_levels, 3)`, last dimension represents `(d_x, d_y, d_z)`.
             level_start_index (torch.Tensor): The start index of each level. A tensor with
                 shape `(num_levels, )` which can be represented as
                 `[0, h_0 * w_0, h_0 * w_0 + h_1 * w_1, ...]`.
