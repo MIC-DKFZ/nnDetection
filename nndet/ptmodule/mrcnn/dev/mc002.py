@@ -15,7 +15,7 @@ from nndet.core.rois.pooler import RoIAlignNaiveAssign, RoIPooler
 from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.ensembler.detection import BoxEnsemblerSelective
 from nndet.inference.ensembler.mask import MaskViaBoxesSelectiveEnsembler
-from nndet.inference.sweeper import BoxSweeper, MaskSweeper, Sweeper
+from nndet.inference.sweeper import BoxSweeper, Sweeper
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.heads.classifier.dense import (
@@ -36,9 +36,8 @@ from nndet.nn.layers.conv import ConvGroupLReLU, ConvGroupMish, ConvInstanceLReL
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import MaskViaBoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -56,8 +55,6 @@ class MaskURCNNC002(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
@@ -149,7 +146,8 @@ class MaskURCNNC002FullMask(MaskURCNNC002):
         Returns:
             Type[Sweeper]: return class of sweeper to use for this class
         """
-        return MaskSweeper
+        raise DeprecationWarning("Nont available anymore")
+        raise RuntimeError
 
 
 @MODULE_REGISTRY.register
