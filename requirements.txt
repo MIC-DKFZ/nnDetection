@@ -1,5 +1,5 @@
 pytorch_lightning>=1.3.1,<=1.4.2
-batchgenerators==0.21
+batchgenerators==0.23
 nnunet==1.7.1
 scipy
 scikit-learn
