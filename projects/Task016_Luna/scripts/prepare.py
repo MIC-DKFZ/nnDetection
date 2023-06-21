@@ -38,7 +38,7 @@ def create_masks(source: Path, target: Path, df: pd.DataFrame, num_processes: in
         c = []
         r = []
         try:
-            series_df = df.loc[{f.name.rsplit('.', 1)[0]}]
+            series_df = df.loc[[f.name.rsplit('.', 1)[0]]]
         except KeyError:
             pass
         else:
