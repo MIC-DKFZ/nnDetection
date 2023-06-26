@@ -17,14 +17,17 @@ from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
 )
-from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 
 
 class DeformableDETRTransformer(nn.Module):
     def __init__(
         self,
-        encoder: TransformerLayerSequence,
-        decoder: TransformerLayerSequence,
+        encoder: BaseTransformerEncoder,
+        decoder: BaseTransformerDecoder,
         classifier: Optional[FFNClassifier] = None,
         regressor: Optional[FFNRegressor] = None,
         num_feature_levels: int = 4,
