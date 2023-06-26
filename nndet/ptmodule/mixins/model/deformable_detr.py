@@ -47,7 +47,6 @@ class DeformableSetModelMixin(SetModelMixin):
             proj_dropout=decoder_kwargs["proj_dropout"],
             feedforward_dim=decoder_kwargs["dim_feedforward"],
             ffn_dropout=decoder_kwargs["ffn_dropout"],
-            post_norm=decoder_kwargs["post_norm"],
             num_feature_levels=model_cfg["num_feature_levels"],
             num_points=encoder_kwargs["num_points"],
             dim=plan_arch["dim"],

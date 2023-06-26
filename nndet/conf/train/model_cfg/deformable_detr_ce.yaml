@@ -40,7 +40,6 @@ transformer_encoder_kwargs:
 
 transformer_decoder_kwargs:
   num_layers: 3
-  post_norm: True
   attn_dropout: 0.1
   proj_dropout: 0.1
   ffn_dropout: 0.1

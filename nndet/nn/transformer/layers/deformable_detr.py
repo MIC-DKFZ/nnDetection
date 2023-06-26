@@ -120,7 +120,6 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
         ffn_dropout: float = 0.1,
         feedforward_dim: int = 1024,
         num_ffn_layers: int = 2,
-        post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
         batch_first: bool = True,
