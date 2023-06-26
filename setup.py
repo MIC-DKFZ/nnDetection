@@ -128,9 +128,9 @@ setup(
             "nndet_train = nndet_scripts.train:train",
             "nndet_sweep = nndet_scripts.train:sweep",
             "nndet_consolidate = nndet_scripts.consolidate:main",
-            "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task"
-            "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders"
-            "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split"
+            "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",
+            "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
+            "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split",
             "nndet_preprocess_for_inference = nndet_scripts.predict2:entrypoint_preprocess_for_inference",
             # utils
             "nndet_example = nndet_scripts.generate_example:main",
