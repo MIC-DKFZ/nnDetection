@@ -334,10 +334,6 @@ class BoxEvaluator(DetectionEvaluator):
     similarity_fn = ops_np.box_iou_np
 
 
-class MaskEvaluator(DetectionEvaluator):
-    similarity_fn = ops_np.bin_mask_iou_np
-
-
 class CountDifferenceEvaluator(AbstractEvaluator):
     @experimental
     def __init__(self, min_prob: float = 0.5):

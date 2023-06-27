@@ -240,6 +240,22 @@ def del_npy(folder: os.PathLike):
         os.remove(n)
 
 
+def load_yaml(path: os.PathLike, **kwargs) -> Any:
+    """
+    Load yaml file
+
+    Args:
+        path: path to yaml file
+        **kwargs: keyword arguments passed to :func:`yaml.full_load`
+
+    Returns:
+        Any: json data
+    """
+    with open(path, "r") as f:
+        data = yaml.full_load(f, **kwargs)
+    return data
+
+
 def load_json(path: Path, **kwargs) -> Any:
     """
     Load json file

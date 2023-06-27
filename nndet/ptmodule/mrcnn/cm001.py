@@ -22,7 +22,7 @@ from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # MaskPredictionMixin,
 from nndet.ptmodule.mixins.prepare import (
@@ -43,7 +43,6 @@ class CascadeMaskURCNNModule(
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     MultiStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
     # MaskPredictionMixin,  # Mask Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN

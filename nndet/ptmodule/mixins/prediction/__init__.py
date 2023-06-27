@@ -3,4 +3,3 @@
 
 from nndet.ptmodule.mixins.prediction.base import PredictionMixin
 from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixin
-from nndet.ptmodule.mixins.prediction.mask import MaskViaBoxPredictionMixin

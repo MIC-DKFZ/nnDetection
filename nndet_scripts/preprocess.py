@@ -18,7 +18,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from nndet.io.load import load_npz_looped, load_pickle
-from nndet.io.paths import get_case_id_from_path, get_paths_from_splitted_dir
+from nndet.io.paths import get_case_id_from_path, get_paths_from_splitted_dir, get_task
 from nndet.planning import PLANNER_REGISTRY, DatasetAnalyzer
 from nndet.planning.experiment.utils import create_labels
 from nndet.planning.properties.registry import medical_instance_props
@@ -441,15 +441,6 @@ def main_prep_labels():
         help="Single or multiple task identifiers to process consecutively",
     )
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        default=[],
-        required=False,
-    )
-    parser.add_argument(
         "-np",
         "--num_processes",
         type=int,
@@ -460,17 +451,13 @@ def main_prep_labels():
 
     args = parser.parse_args()
     tasks = args.tasks
-    ov = args.overwrites
     num_processes = args.num_processes
 
-    initialize_config_module(config_module="nndet.conf", version_base="1.1")
     for task in tasks:
-        _ov = copy.deepcopy(ov) if ov is not None else []
-        cfg = compose(task, "config.yaml", overrides=_ov)
-
+        task_path = get_task(task)
         create_labels(
-            source_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            source_dir=task_path / "raw_splitted",
+            preprocessed_output_dir=task_path / "preprocessed",
             num_processes=num_processes,
         )
 

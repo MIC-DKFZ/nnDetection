@@ -24,16 +24,10 @@ from pytorch_lightning.loggers import (
 )
 
 import nndet
-from nndet.evaluator.registry import (
-    evaluate_box_dir,
-    evaluate_case_dir,
-    evaluate_mask_dir,
-    evaluate_seg_dir,
-    save_metric_output,
-)
+from nndet.evaluator.registry import evaluate_box_dir, evaluate_case_dir
 from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
-from nndet.io.load import load_pickle, save_json, save_pickle
+from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
@@ -50,7 +44,7 @@ from nndet.utils.info import (
 
 
 @env_guard
-def train():
+def train() -> None:
     """
     Training entry
     """
@@ -97,7 +91,7 @@ def train():
 
 
 @env_guard
-def sweep():
+def sweep() -> None:
     """
     Sweep entry
     """
@@ -128,7 +122,7 @@ def sweep():
 
 
 @env_guard
-def evaluate():
+def evaluate() -> None:
     """
     Evaluation entry
 
@@ -146,8 +140,6 @@ def evaluate():
     )
     parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
     parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
-    parser.add_argument("--seg", help="Run Semantic Segmentation Evaluation", action="store_true")
-    parser.add_argument("--masks", help="Run Mask Evaluation", action="store_true")
     parser.add_argument("--analyze_boxes", help="Analyze Box Results", action="store_true")
     parser.add_argument(
         "--eval_preprocessed",
@@ -160,27 +152,74 @@ def evaluate():
     fold = args.fold
     task = args.task
     test = args.test
+    eval_preprocessed = args.eval_preprocessed
 
     do_boxes_eval = args.boxes
     do_case_eval = args.case
-    do_seg_eval = args.seg
-    do_masks_eval = args.masks
-
     do_analyze_boxes = args.analyze_boxes
 
-    eval_preprocessed = args.eval_preprocessed
-
-    _evaluate(
+    _evaluate_task(
         task=task,
         model=model,
         fold=fold,
         test=test,
+        preprocessed=eval_preprocessed,
         do_boxes_eval=do_boxes_eval,
         do_case_eval=do_case_eval,
-        do_seg_eval=do_seg_eval,
-        do_masks_eval=do_masks_eval,
         do_analyze_boxes=do_analyze_boxes,
-        eval_preprocessed=eval_preprocessed,
+    )
+
+
+@env_guard
+def evaluate_with_folders() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("pred_dir", type=Path, help="path to directory with predictions")
+    parser.add_argument("gt_dir", type=Path, help="path to directory with ground truth data")
+    parser.add_argument("save_dir", type=Path, help="path to directory where results should be saved")
+    parser.add_argument("data_cfg_path", type=Path, help="path to dataset.yaml or dataset.json file of data")
+
+    parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
+    parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
+    parser.add_argument("--analyze_boxes", help="Analyze Box Results", action="store_true")
+
+    args = parser.parse_args()
+    pred_dir: Path = args.pred_dir
+    gt_dir: Path = args.gt_dir
+    save_dir: Path = args.save_dir
+    data_cfg_path: Path = args.data_cfg_path
+
+    if not data_cfg_path.is_file():
+        raise ValueError(f"data cfg path needs to be a file, {data_cfg_path} is not.")
+    if data_cfg_path.suffix == ".json":
+        data_cfg = load_json(data_cfg_path)
+    else:
+        data_cfg = load_yaml(data_cfg_path)
+
+    do_case_eval = args.case
+    do_boxes_eval = args.boxes
+    do_analyze_boxes = args.analyze_boxes
+
+    # logging
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+    )
+    logger.add(save_dir / "evaluation.log", level="INFO")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running prepare {current_time_str} +++")
+
+    _evaluate(
+        data_cfg=data_cfg,
+        pred_dir=pred_dir,
+        gt_dir=gt_dir,
+        save_dir=save_dir,
+        do_case_eval=do_case_eval,
+        do_boxes_eval=do_boxes_eval,
+        do_analyze_boxes=do_analyze_boxes,
     )
 
 
@@ -462,17 +501,15 @@ def _train(
                 restore=restore,
                 **inference_plan,
             )
-        _evaluate(
+        _evaluate_task(
             task=cfg["task"],
             model=cfg["exp"]["id"],
             fold=cfg["exp"]["fold"],
             test=False,
+            preprocessed=True,
             do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
             do_boxes_eval=module.requires_box_eval(),
             do_analyze_boxes=module.requires_box_eval(),
-            do_masks_eval=module.requires_mask_eval(),
-            do_analyze_masks=module.requires_mask_eval(),
-            do_seg_eval=module.requires_seg_eval(),
         )
         eval_end = time.time()
         eval_time = eval_end - eval_start
@@ -552,35 +589,30 @@ def _sweep(
             **inference_plan,
         )
 
-    _evaluate(
+    _evaluate_task(
         task=cfg["task"],
         model=cfg["exp"]["id"],
         fold=cfg["exp"]["fold"],
         test=False,
+        preprocessed=True,
         do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
         do_boxes_eval=module.requires_box_eval(),
         do_analyze_boxes=module.requires_box_eval(),
-        do_masks_eval=module.requires_mask_eval(),
-        do_analyze_masks=module.requires_mask_eval(),
-        do_seg_eval=module.requires_seg_eval(),
     )
 
 
-def _evaluate(
+def _evaluate_task(
     task: str,
     model: str,
     fold: int,
     test: bool = False,
+    preprocessed: bool = False,
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
-    do_masks_eval: bool = False,
-    do_seg_eval: bool = False,
     do_analyze_boxes: bool = False,
-    do_analyze_masks: bool = False,
-    eval_preprocessed: bool = False,
-):
+) -> None:
     """
-    This entrypoint runs the evaluation
+    Run evaluation on task (old behavior of _evaluate function in V0.1)
 
     Args:
         task: current task
@@ -588,27 +620,26 @@ def _evaluate(
             e.g. RetinaUNetV001_D3V001_3d
         fold: current fold
         test: use test split
+        preprocessed: indicate if predictions and labels are preprocessed
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
-        do_masks_eval: perform instance segmentation evaluation
-        do_seg_eval: perform semantic segmentation evaluation
         do_analyze_boxes: run analysis of box results
-        do_analyze_masks: run analysis of mask results
     """
     # prepare paths
     task = get_task(task, name=True)
     model_dir = Path(os.getenv("det_models")) / task / model
-    training_dir = get_training_dir(model_dir, fold)
 
     data_dir_task = Path(os.getenv("det_data")) / task
     data_cfg = load_dataset_info(data_dir_task)
 
+    training_dir = get_training_dir(model_dir, fold)
     prefix = "test" if test else "val"
 
+    # prepare paths
     modes = [True]
-    if not test and eval_preprocessed:
+    if not test and preprocessed:
         modes.append(False)
-    if test and eval_preprocessed:
+    if test and preprocessed:
         logger.warning("Evaluation of preprocessed data only supported on validation data.")
 
     for restore in modes:
@@ -624,57 +655,81 @@ def _evaluate(
         pred_dir = training_dir / pred_dir_name
         save_dir = training_dir / f"{prefix}_results" if restore else training_dir / f"{prefix}_results_preprocessed"
 
-        # compute metrics
-        if do_boxes_eval:
-            logger.info(f"Computing box metrics: restore {restore}")
-            scores, curves = evaluate_box_dir(
-                pred_dir=pred_dir,
-                gt_dir=gt_dir,
-                classes=list(data_cfg["labels"].keys()),
-                save_dir=save_dir / "boxes",
-            )
-            save_metric_output(scores, curves, save_dir, "results_boxes")
+    # logging
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+    )
+    logger.add(save_dir / "evaluation.log", level="INFO")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running prepare {current_time_str} +++")
 
-        if do_case_eval:
-            logger.info(f"Computing case metrics: restore {restore}")
-            scores, curves = evaluate_case_dir(
-                pred_dir=pred_dir,
-                gt_dir=gt_dir,
-                classes=list(data_cfg["labels"].keys()),
-                target_class=data_cfg["target_class"],
-            )
-            save_metric_output(scores, curves, save_dir, "results_case")
+    _evaluate(
+        data_cfg=data_cfg,
+        pred_dir=pred_dir,
+        gt_dir=gt_dir,
+        save_dir=save_dir,
+        do_case_eval=do_case_eval,
+        do_boxes_eval=do_boxes_eval,
+        do_analyze_boxes=do_analyze_boxes,
+    )
 
-        if do_seg_eval:
-            raise NotImplementedError()
-            logger.info(f"Computing seg metrics: restore {restore}")
-            scores, curves = evaluate_seg_dir(
-                pred_dir=pred_dir,
-                gt_dir=gt_dir,
-            )
-            save_metric_output(scores, curves, save_dir, "results_seg")
 
-        if do_masks_eval:
-            logger.info(f"Computing mask metrics: restore {restore}")
-            scores, curves = evaluate_mask_dir(
-                pred_dir=pred_dir,
-                gt_dir=gt_dir,
-                classes=list(data_cfg["labels"].keys()),
-                save_dir=save_dir / "masks",
-            )
-            save_metric_output(scores, curves, save_dir, "results_masks")
+@env_guard
+def _evaluate(
+    data_cfg: dict,
+    pred_dir: os.PathLike,
+    gt_dir: os.PathLike,
+    save_dir: os.PathLike,
+    do_case_eval: bool = False,
+    do_boxes_eval: bool = False,
+    do_analyze_boxes: bool = False,
+) -> None:
+    """
+    Run evaluation
 
-        # run analysis
-        save_dir = training_dir / f"{prefix}_analysis" if restore else training_dir / f"{prefix}_analysis_preprocessed"
-        if do_analyze_boxes:
-            logger.info(f"Analyze box predictions: restore {restore}")
-            run_analysis_suite(
-                prediction_dir=pred_dir,
-                gt_dir=gt_dir,
-                save_dir=save_dir / "boxes",
-            )
-        if do_analyze_masks:
-            logger.info("Analyze mask predictions is not implemented yet.")
+    Args:
+        prediction_dir: path to directory containing the predictions
+        label_dir: path to directory containing the ground truth labels
+        save_dir: path to directory where results should be saved
+        do_case_eval: evaluate patient metrics
+        do_boxes_eval: perform box evaluation
+        do_analyze_boxes: run analysis of box results
+    """
+    # handle case level evaluation
+    if do_case_eval:
+        logger.info("Computing case metrics")
+        scores, curves = evaluate_case_dir(
+            pred_dir=pred_dir,
+            gt_dir=gt_dir,
+            classes=list(data_cfg["labels"].keys()),
+            target_class=data_cfg["target_class"],
+        )
+        save_json({str(key): str(item) for key, item in scores.items()}, save_dir / "results_case.json")
+        save_pickle({"scores": scores, "curves": curves}, save_dir / "results_case.pkl")
+
+    # handle box level evaluation
+    if do_boxes_eval:
+        logger.info("Computing box metrics")
+        scores, curves = evaluate_box_dir(
+            pred_dir=pred_dir,
+            gt_dir=gt_dir,
+            classes=list(data_cfg["labels"].keys()),
+            save_dir=save_dir / "boxes",
+        )
+        save_json({str(key): str(item) for key, item in scores.items()}, save_dir / "results_boxes.json")
+        save_pickle({"scores": scores, "curves": curves}, save_dir / "results_boxes.pkl")
+    if do_analyze_boxes:
+        logger.info("Analyse box predictions")
+        run_analysis_suite(
+            prediction_dir=pred_dir,
+            gt_dir=gt_dir,
+            save_dir=save_dir / "analysis" / "boxes",
+        )
 
 
 if __name__ == "__main__":
