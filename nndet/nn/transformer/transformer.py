@@ -11,6 +11,8 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.heads.classifier.ffn import FFNClassifier
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
@@ -23,6 +25,8 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: BaseTransformerEncoder,
         decoder: BaseTransformerDecoder,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
         two_stage: bool = False,
         do_weight_init: bool = True,
     ):
@@ -41,6 +45,10 @@ class DETRTransformer(AbstractTransformer):
         self.dim = decoder.dim
         if do_weight_init:
             self.init_weights()
+        if classifier is not None:
+            self.classifier = classifier
+        if regressor is not None:
+            self.regressor = regressor
 
     def init_weights(self):
         for p in self.parameters():
