@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import os
-from abc import ABC, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
@@ -460,3 +460,7 @@ class AbstractPlanner(ABC):
         else:
             for c in cases_paths:
                 preprocessor.run_test(c, plan["target_spacing"], preprocessed_data_dir)
+
+    @abstractclassmethod
+    def get_plan_identifiers(cls):
+        raise NotImplementedError
