@@ -19,6 +19,7 @@ from nndet.io.augmentation import AUGMENTATION_REGISTRY
 from nndet.io.augmentation.base import AugmentationSetup
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.base import BaseModule
+from nndet.utils.check import check_torch_version
 
 
 class FixedLengthSingleThreadedAugmenter(SingleThreadedAugmenter):
@@ -344,7 +345,9 @@ class PtDatamodule(BaseDatamodule):
         if not multiprocessing:
             num_processes = 0
             persistent_workers = False
-            num_cached_per_queue = None
+            # torch 2.* requires this to be None if multiprocessing is False, torch 1.* requires it to be 2
+            if check_torch_version(major_version=2):
+                num_cached_per_queue = None
         else:
             persistent_workers = True
 
