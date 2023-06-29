@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import List
+
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
 
@@ -398,6 +400,37 @@ def unpack():
     p = args.path
     num_processes = args.num_processes
     unpack_dataset(p, num_processes, False)
+
+
+@env_guard
+def unpack_task():
+    import argparse
+
+    from nndet.io.load import unpack_dataset
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "data_identifiers", type=str, nargs="+", help="Data identifiers to unpack, e.g. D3V001_3d and D3V001_3dlr1"
+    )
+    parser.add_argument(
+        "-p", "--num_processes", type=int, help="Number of processes to use for unpacking", default=6, required=False
+    )
+    args = parser.parse_args()
+
+    task: str = args.task
+    data_identifiers: List[str] = args.data_identifiers
+    num_processes: int = args.num_processes
+
+    task_path = get_task(task)
+    preprocessed_path = task_path / "preprocessed"
+    if not preprocessed_path.is_dir():
+        raise ValueError(f"Expected {preprocessed_path} to exist, please run preprocessing first.")
+    for di in data_identifiers:
+        _data_identifier_path = preprocessed_path / di
+        if not _data_identifier_path.is_dir():
+            raise ValueError(f"{di} is not a valid data identifier since {_data_identifier_path} does not exist")
+        unpack_dataset(_data_identifier_path / "imagesTr", num_processes, False)
 
 
 def env():

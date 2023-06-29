@@ -144,6 +144,7 @@ setup(
             "nndet_masks2nii = nndet_scripts.utils:masks2nii",
             "nndet_seg2nii = nndet_scripts.utils:seg2nii",
             "nndet_unpack = nndet_scripts.utils:unpack",
+            "nndet_unpack_task = nndet_scripts.utils:unpack_task",
             "nndet_env = nndet_scripts.utils:env",
             "nndet_print_reg = nndet_scripts.utils:print_reg",
             "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
