@@ -108,17 +108,23 @@ def multi_scale_deformable_attn_3d_pytorch(
     for level, (D_, H_, W_) in enumerate(value_spatial_shapes):
         # bs, H_*W_, num_heads, embed_dims ->
         # bs, H_*W_, num_heads*embed_dims ->
-        # bs, num_heads*embed_dims, H_*W_ ->
-        # bs*num_heads, embed_dims, H_, W_
+        # bs, num_heads*embed_dims, D_*H_*W_ ->
+        # bs*num_heads, embed_dims, D_, H_, W_
+        # Resize the input features back to a 3D grid, flatten batch and head to have 5D tensor
         value_l_ = value_list[level].flatten(2).transpose(1, 2).reshape(bs * num_heads, embed_dims, D_, H_, W_)
-        # bs, num_queries, num_heads, num_points, 2 ->
-        # bs, num_heads, num_queries, num_points, 2 ->
-        # bs*num_heads, num_queries, num_points, 2
-        sampling_grid_l_ = sampling_grids[:, :, :, level].transpose(1, 2).flatten(0, 1)
-        # bs*num_heads, embed_dims, num_queries, num_points
+        # sampling grid shape: bs, num_queries, num_heads, num_levels, num_points, dim=3
+        # pick a level
+        # bs, num_queries, num_heads, num_points, 3 ->
+        # transpose
+        # bs, num_heads, num_queries, num_points, 3 ->
+        # flatten batch and head
+        # bs*num_heads, num_queries, num_points, 3
+        # The output requires to have 3 "spatial" dimensions -> unsqueeze dimension 1 (will be squeezed later)
+        sampling_grid_l_ = sampling_grids[:, :, :, level].transpose(1, 2).flatten(0, 1).unsqueeze(1)
+        # bs*num_heads, 1, embed_dims, num_queries, num_points
         sampling_value_l_ = F.grid_sample(
             value_l_,
-            sampling_grid_l_[:, None],
+            sampling_grid_l_,
             mode="bilinear",
             padding_mode="zeros",
             align_corners=False,
@@ -127,11 +133,13 @@ def multi_scale_deformable_attn_3d_pytorch(
     # (bs, num_queries, num_heads, num_levels, num_points) ->
     # (bs, num_heads, num_queries, num_levels, num_points) ->
     # (bs, num_heads, 1, num_queries, num_levels*num_points)
+
     attention_weights = attention_weights.transpose(1, 2).reshape(
         bs * num_heads, 1, num_queries, num_levels * num_points
     )
+    # squeeze dimension of size 1 again
     output = (
-        (torch.stack(sampling_value_list, dim=-2).flatten(-2) * attention_weights)
+        (torch.stack(sampling_value_list, dim=-2).flatten(-2).squeeze(2) * attention_weights)
         .sum(-1)
         .view(bs, num_heads * embed_dims, num_queries)
     )
