@@ -56,7 +56,7 @@ def resample_patient(data,
     return nn_preprocessing.resample_patient(data=data, seg=seg, original_spacing=original_spacing,
                                              target_spacing=target_spacing, order_data=order_data,
                                              order_seg=order_seg, force_separate_z=force_separate_z,
-                                             cval_data=cval_data, cval_seg=cval_seg, order_z_data=order_z_data,
+                                             order_z_data=order_z_data,
                                              order_z_seg=order_z_seg,
                                              separate_z_anisotropy_threshold=separate_z_anisotropy_threshold)
 
