@@ -118,6 +118,7 @@ class DeformableDETRTransformer(nn.Module):
                 torch.linspace(0, W - 1, W, dtype=torch.float32, device=memory.device),
                 torch.linspace(0, H - 1, H, dtype=torch.float32, device=memory.device),
                 torch.linspace(0, D - 1, D, dtype=torch.float32, device=memory.device),
+                indexing="ij",
             )
             grid = torch.cat([grid_x.unsqueeze(-1), grid_y.unsqueeze(-1), grid_z.unsqueeze(-1)], -1)
 
@@ -171,6 +172,7 @@ class DeformableDETRTransformer(nn.Module):
                 torch.linspace(0.5, W - 0.5, W, dtype=torch.float32, device=device),
                 torch.linspace(0.5, H - 0.5, H, dtype=torch.float32, device=device),
                 torch.linspace(0.5, D - 0.5, D, dtype=torch.float32, device=device),
+                indexing="ij",
             )
             ref_x = ref_x.reshape(-1)[None] / (valid_ratios[:, None, lvl, 0] * W)
             ref_y = ref_y.reshape(-1)[None] / (valid_ratios[:, None, lvl, 1] * H)
@@ -246,7 +248,7 @@ class DeformableDETRTransformer(nn.Module):
 
         Args:
             features: features from the backbone in form of a
-            List[Tensor(bs, C, H, W, (Z))]
+            List[Tensor(bs, C, X, Y, Z)]
             query_embed: object queries = input for the transformer decoder
             pos_embed: position embedding for the features, same shape as
                 features
