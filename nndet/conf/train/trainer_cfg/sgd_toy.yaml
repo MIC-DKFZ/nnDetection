@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+gpus: 1 # number of gpus
+accelerator: # distributed backend
+precision: 16 # mixed precision
+amp_backend: native # mixed precision backend
+amp_level: # when mixed precision backend is APEX use O1
+# Per default training is deterministic, non-deterministic allows
+# cudnn.benchmark which can give up to 20% performance. Set this to false
+# to perform non-deterministic training
+deterministic: False
+benchmark: False
+terminate_on_nan: False # [optional; Default True]
+
+save_top_k: 1 # topk model selection [optonal; Default 1]
+sweep_key: mAP_IoU_0.10_0.50_0.05_MaxDet_100
+monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model
+monitor_mode: "max" # metric operation mode "min" or "max"
+
+max_num_epochs: 10 # max number of epochs
+num_train_batches_per_epoch: 250 # number of train batches per epoch
+num_val_batches_per_epoch: 50 # number of val batches per epoch
+
+opt_class: "SGDLWPoly"
+initial_lr: 0.01 # initial learning rate to start with
+weight_decay: 3.e-5 # weight decay for optimizer
+
+# SGD specific parameters
+sgd_momentum: 0.9 # momentum term
+sgd_nesterov: True # nesterov momentum
+
+warm_iterations: 4000 # number of iterations with warmup
+warm_lr: 1.e-6 # learning rate to start warmup from
+
+poly_gamma: 0.9 # poly learning rate gamma
+
+swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
+# sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
