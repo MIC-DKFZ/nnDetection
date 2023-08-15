@@ -185,8 +185,6 @@ def main():
     # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
     ov = ov if ov is not None else []
-    ov.append("host.parent_data=${oc.env:det_data}")
-    ov.append("host.parent_results=${oc.env:det_models}")
     if ov is not None:
         cfg.merge_with_dotlist(ov)
 
@@ -194,7 +192,7 @@ def main():
         print(f"Additional import found {imp}")
         importlib.import_module(imp)
 
-    preprocessed_output_dir = Path(cfg["host"]["preprocessed_output_dir"])
+    preprocessed_output_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed"
     plan = load_pickle(target_dir / "plan.pkl")
     gt_dir = preprocessed_output_dir / plan["data_identifier"] / "labelsTr"
 

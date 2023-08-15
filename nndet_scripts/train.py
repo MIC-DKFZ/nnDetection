@@ -228,7 +228,7 @@ def init_train_dir(cfg) -> Path:
     Initialize training directory and make it the current working directory
     """
     # determine folder for experiment
-    output_dir = Path(cfg.host.parent_results) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
+    output_dir = Path(os.getenv("det_models")) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
 
     if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
@@ -322,9 +322,6 @@ def _train(
     initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
 
-    assert cfg.host.parent_data is not None, "Parent data can not be None"
-    assert cfg.host.parent_results is not None, "Output dir can not be None"
-
     train_dir = init_train_dir(cfg)
     pl_logger = get_pl_logger(cfg)
     if pl_logger:
@@ -360,10 +357,9 @@ def _train(
     # except Exception as e:
     #     logger.error(f"Could not log req: {e}")
 
-    plan_path = Path(str(cfg.host["plan_path"]))
+    plan_path = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / f"{cfg['plan']}.pkl"
     plan = load_pickle(plan_path)
-
-    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     datamodule = Datamodule(
         io_cfg=OmegaConf.to_container(cfg["io_cfg"], resolve=True),
@@ -399,7 +395,7 @@ def _train(
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
     save_pickle(plan, train_dir / "plan.pkl")  # backup plan
     save_json(create_debug_plan(plan), "./plan_debug.json")  # easy read backup
-    splits = load_pickle(Path(cfg.host.preprocessed_output_dir) / datamodule.splits_file)
+    splits = load_pickle(Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / datamodule.splits_file)
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
@@ -547,7 +543,7 @@ def _sweep(
     logger.info(f"Log file at {log_file}")
 
     plan = load_pickle(train_dir / "plan.pkl")
-    data_dir = Path(cfg.host["preprocessed_output_dir"]) / plan["data_identifier"] / "imagesTr"
+    data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),

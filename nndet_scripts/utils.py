@@ -29,14 +29,6 @@ def boxes2nii():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -49,7 +41,6 @@ def boxes2nii():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -57,10 +48,6 @@ def boxes2nii():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
@@ -137,14 +124,6 @@ def boxes2nii2():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -157,7 +136,6 @@ def boxes2nii2():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -165,10 +143,6 @@ def boxes2nii2():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii2" if test else training_dir / "val_predictions_nii2"
@@ -248,14 +222,6 @@ def masks2nii():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="fold to sweep.")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -268,7 +234,6 @@ def masks2nii():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -276,10 +241,6 @@ def masks2nii():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
@@ -345,31 +306,18 @@ def seg2nii():
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
-    parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
     parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
 
     task_name = get_task(task, name=True, models=True)
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"

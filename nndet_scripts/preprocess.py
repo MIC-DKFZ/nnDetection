@@ -301,6 +301,7 @@ def run(
     skip_analyze: bool,
     skip_plan: bool,
     skip_process: bool,
+    overwrite_existing: bool,
     num_processes: int,
     num_processes_preprocessing: int,
 ):
@@ -311,46 +312,52 @@ def run(
         cfg: dict with config
         instances_from_seg: convert semantic segmentation to instance segmentation
     """
+    task_data_dir = Path(os.getenv("det_data")) / cfg["task"]
+
     logger.remove()
     logger.add(sys.stdout, level="INFO")
-    logger.add(Path(cfg["host"]["data_dir"]) / "logging.log", level="DEBUG")
+    logger.add(task_data_dir / "preprocessing.log", level="DEBUG")
     data_info = cfg["data"]
 
     current_time = datetime.now()
     current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
     logger.info(f"+++ Running nndet_prep {current_time_str} +++")
 
+    splitted_4d_output_dir = task_data_dir / "raw_splitted"
+    cropped_output_dir = task_data_dir / "raw_cropped"
+    preprocessed_output_dir = task_data_dir / "preprocessed"
+
     if not skip_crop:
         run_cropping_and_convert(
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
+            splitted_4d_output_dir=splitted_4d_output_dir,
+            cropped_output_dir=cropped_output_dir,
             data_info=data_info,
-            overwrite=cfg["prep"]["overwrite"],
+            overwrite=overwrite_existing,
             num_processes=num_processes,
         )
     if not skip_analyze:
         run_dataset_analysis(
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            cropped_output_dir=cropped_output_dir,
+            preprocessed_output_dir=preprocessed_output_dir,
             data_info=data_info,
             num_processes=num_processes,
             intensity_properties=True,
-            overwrite=cfg["prep"]["overwrite"],
+            overwrite=overwrite_existing,
         )
     if not skip_plan:
         run_planning(
             model_name=cfg["module"],
             model_cfg=cfg["model_cfg"],
             planner_name=cfg["planner"],
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            preprocessed_output_dir=preprocessed_output_dir,
         )
     if not skip_process:
         run_preprocess(
             dim=data_info["dim"],
             planner_name=cfg["planner"],
-            splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            splitted_4d_output_dir=splitted_4d_output_dir,
+            cropped_output_dir=cropped_output_dir,
+            preprocessed_output_dir=preprocessed_output_dir,
             num_processes=num_processes_preprocessing,
         )
 
@@ -404,6 +411,11 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--overwrite_existing",
+        help="Overwrite existing cropped data and properties",
+        action="store_true",
+    )
+    parser.add_argument(
         "-np",
         "--num_processes",
         type=int,
@@ -429,6 +441,8 @@ def main():
     skip_analyze = args.skip_analyze
     skip_plan = args.skip_plan
     skip_process = args.skip_process
+
+    overwrite_existing = args.overwrite_existing
 
     num_processes = args.num_processes
     num_processes_preprocessing = args.num_processes_preprocessing
@@ -464,6 +478,7 @@ def main():
             skip_analyze=skip_analyze,
             skip_plan=skip_plan,
             skip_process=skip_process,
+            overwrite_existing=overwrite_existing,
             num_processes=num_processes,
             num_processes_preprocessing=num_processes_preprocessing,
         )

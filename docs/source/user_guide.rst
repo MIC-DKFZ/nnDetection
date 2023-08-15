@@ -334,6 +334,7 @@ Data which is located in `raw_splitted/imagesTs` will be automatically preproces
 
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
 
+# TODO: udpate predict command to predict2
 # TODO: pretrained models
 # TODO: continue training
 # TODO: move nnU-Net for detection into a separate project page
