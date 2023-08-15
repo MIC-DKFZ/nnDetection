@@ -10,8 +10,6 @@ dataloader_kwargs:
   offset_magn: 0.7
   max_size_pct: 0.7
 
-num_threads: ${oc.env:det_num_threads, "12"}
-# num_cached_per_thread: 2 # deprecated
 multiprocessing: True # only deactivate this if debugging
 patch_size: [128, 128, 128]
 

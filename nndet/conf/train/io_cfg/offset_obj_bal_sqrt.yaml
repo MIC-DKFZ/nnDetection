@@ -13,8 +13,6 @@ dataloader_kwargs:
 # offset_magn
 # selection_mode
 
-num_threads: ${oc.env:det_num_threads, "12"}
-# num_cached_per_thread: 2 # deprecated
 multiprocessing: True # only deactivate this if debugging
 
 # Additional overwrites
