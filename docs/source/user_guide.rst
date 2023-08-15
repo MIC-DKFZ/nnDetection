@@ -45,27 +45,27 @@ Besides the self-configuring method, nnDetection acts as a standard interface fo
 We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
 Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
 
-:doc:`Task 003 Liver <./projects/Task001_Decathlon/README.md>`
-:doc:`Task 007 Pancreas <./projects/Task001_Decathlon/README.md>`
-:doc:`Task 008 Hepatic Vessel <./projects/Task001_Decathlon/README.md>`
-:doc:`Task 010 Colon <./projects/Task001_Decathlon/README.md>`
-:doc:`Task 017 CADA <./projects/Task017_CADA/README.md>`
-:doc:`Task 020 RibFrac <./projects/Task020_RibFrac/README.md>`
-:doc:`Task 016 Luna <./projects/Task016_Luna/README.md>`
+* :doc:`Task 003 Liver <./projects/Task001_Decathlon/README.md>`
+* :doc:`Task 007 Pancreas <./projects/Task001_Decathlon/README.md>`
+* :doc:`Task 008 Hepatic Vessel <./projects/Task001_Decathlon/README.md>`
+* :doc:`Task 010 Colon <./projects/Task001_Decathlon/README.md>`
+* :doc:`Task 017 CADA <./projects/Task017_CADA/README.md>`
+* :doc:`Task 020 RibFrac <./projects/Task020_RibFrac/README.md>`
+* :doc:`Task 016 Luna <./projects/Task016_Luna/README.md>`
 
 # TODO: finish V2 datasets
 Additional data sets from nnDetection V2 (recommended):
-:doc:`Task 035 KiTS21 <./projects/Task_035_KiTS21/README.md>`
-:doc:`Task 036 PICAI <./projects/Task_036_PICAI/README.md>`
-:doc:`Task 037 ADAM TOF A <./projects/Task_037_ADAM_TOF_A/README.md>`
-:doc:`Task 038 LIDC <./projects/Task017_CADA/README.md>`
+* :doc:`Task 035 KiTS21 <./projects/Task_035_KiTS21/README.md>`
+* :doc:`Task 036 PICAI <./projects/Task_036_PICAI/README.md>`
+* :doc:`Task 037 ADAM TOF A <./projects/Task_037_ADAM_TOF_A/README.md>`
+* :doc:`Task 038 LIDC <./projects/Task017_CADA/README.md>`
 
 Additional data sets from nnDetection V1:
-:doc:`Task 011 Kits <./projects/Task011_Kits/README.md>`
-:doc:`Task 019 ADAM <./projects/Task019_ADAM/README.md>`
-:doc:`Task 021 ProstateX <./projects/Task021_ProstateX/README.md>`
-:doc:`Task 012 LIDC <./projects/Task012_LIDC/README.md>`
-:doc:`Task 025 LymphNodes <./projects/Task025_LymphNodes/README.md>`
+* :doc:`Task 011 Kits <./projects/Task011_Kits/README.md>`
+* :doc:`Task 019 ADAM <./projects/Task019_ADAM/README.md>`
+* :doc:`Task 021 ProstateX <./projects/Task021_ProstateX/README.md>`
+* :doc:`Task 012 LIDC <./projects/Task012_LIDC/README.md>`
+* :doc:`Task 025 LymphNodes <./projects/Task025_LymphNodes/README.md>`
 
 Check the Projects tab for additional projects and results of nnDetection.
 
@@ -181,7 +181,7 @@ A typical flow of commands would look like this:
 
 .. note::
 
-    nndet_prep -> nndet_unpack -> nndet_train -> nndet_consolidate -> nndet_predict
+    nndet_prep -> nndet_unpack -> nndet_cv_split -> nndet_train -> nndet_consolidate -> nndet_predict
 
 Eachs of this commands is explained below and more detailt information can be obtained by running `nndet_[command] -h` in the terminal.
 
@@ -192,7 +192,7 @@ Planning & Preprocessing
 Before training the networks, nnDetection needs to preprocess and analyze the data.
 The preprocessing stage normalizes and resamples the data while the analyzed properties are used to create a plan which will be used for configuring the training.
 nnDetectionV0 requires a GPU with approximately the same amount of VRAM you are planning to use for training (we used a RTX2080TI; no monitor attached to it) to perform live estimation of the VRAM used by the network.
-Future releases aim at improving this process...
+(Future releases aim at improving this process...)
 
 .. code-block:: bash
 
@@ -212,20 +212,20 @@ After planning and preprocessing the resulting data folder structure should look
 
 .. code-block:: text
 
-[Task000_Example]
-    [raw_splitted]
-    [raw_cropped] # only needed for different resampling strategies
-        [imagesTr] # stores cropped image data; contains npz files
-        [labelsTr] # stores labels
-    [preprocessed]
-        [analysis] # some plots to visualize properties of the underlying data set
-        [properties] # sufficient for new plans
-        [labelsTr] # labels in original format (original spacing)
-        [labelsTs] # optional
-        [Data identifier; e.g. D3V001_3d]
-            [imagesTr] # preprocessed data
-            [labelsTr] # preprocessed labels (resampled spacing)
-        - {name of plan}.pkl e.g. D3V001_3d.pkl
+    [Task000_Example]
+        [raw_splitted]
+        [raw_cropped] # only needed for different resampling strategies
+            [imagesTr] # stores cropped image data; contains npz files
+            [labelsTr] # stores labels
+        [preprocessed]
+            [analysis] # some plots to visualize properties of the underlying data set
+            [properties] # sufficient for new plans
+            [labelsTr] # labels in original format (original spacing)
+            [labelsTs] # optional
+            [Data identifier; e.g. D3V001_3d]
+                [imagesTr] # preprocessed data
+                [labelsTr] # preprocessed labels (resampled spacing)
+            - {name of plan}.pkl # e.g. D3V001_3d.pkl
 
 Befor starting a training copy the data (Task Folder, data set info and preprocessed folder are needed) to a SSD (highly recommended) and unpack the image data with
 
@@ -289,6 +289,7 @@ Sweeping can also be performed later by running the following command:
 
 
 Evaluation can be invoked by the following command (requires access to the model and preprocessed data):
+
 .. code-block:: bash
 
     nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--seg] [--instances] [--analyze_boxes]
@@ -343,20 +344,20 @@ Results
 -------
 
 The final model directory will contain multiple subfolders with different information:
-- `sweep`: contain information from the parameter sweeps and are only used for debugging purposes
-- `sweep_predictions`: these contain prediction with additional ensembler state information which are used during the empirical parameter optimization. Since these save the model output in a fairly raw format they are bigger than the predictions seen during normal inference to avoid multiple model prediction runs during the parameter sweeps
-- `[val/test]_predictions`: Contains the prediction of the validation/test set in the restored image space.
-- `val_predictions_preprocessed`: This contains prediction in the preprocessed image space, i.e. the predictions from the resampled and cropped data. they are saved for debugging purposes.
-- `[val/test]_results`: this folder contains the validation/test rsults computed by nnDetection. More information on the metrics can be found below.
-- `val_results_preprocessed`: contains validation results inside the preprocessed image space are saved for debugging purposes
-- `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
+* `sweep`: contain information from the parameter sweeps and are only used for debugging purposes
+* `sweep_predictions`: these contain prediction with additional ensembler state information which are used during the empirical parameter optimization. Since these save the model output in a fairly raw format they are bigger than the predictions seen during normal inference to avoid multiple model prediction runs during the parameter sweeps
+* `[val/test]_predictions`: Contains the prediction of the validation/test set in the restored image space.
+* `val_predictions_preprocessed`: This contains prediction in the preprocessed image space, i.e. the predictions from the resampled and cropped data. they are saved for debugging purposes.
+* `[val/test]_results`: this folder contains the validation/test rsults computed by nnDetection. More information on the metrics can be found below.
+* `val_results_preprocessed`: contains validation results inside the preprocessed image space are saved for debugging purposes
+* `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
 
 The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
-- `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
-- `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
-- `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
-- `FROC_score_IoU_0.10` FROC score with default FPPI (1/8, 1/4, 1/2, 1, 2, 4, 8). Note (in contrast to the AP implementation): the multi-class case does not compute the metric per class but puts all predictions/gt into a single large pool (similar to AP_pool from https://arxiv.org/abs/2102.01066) and thus inter class calibration is important here. In most cases simply averaging the `[num]_FROC` scores manually to assign the same weight to each class should be prefered.
-- case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
+* `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
+* `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
+* `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
+* `FROC_score_IoU_0.10` FROC score with default FPPI (1/8, 1/4, 1/2, 1, 2, 4, 8). Note (in contrast to the AP implementation): the multi-class case does not compute the metric per class but puts all predictions/gt into a single large pool (similar to AP_pool from https://arxiv.org/abs/2102.01066) and thus inter class calibration is important here. In most cases simply averaging the `[num]_FROC` scores manually to assign the same weight to each class should be prefered.
+* case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
 
 .. warning::
 
