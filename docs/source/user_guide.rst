@@ -167,10 +167,9 @@ The nifty file should contain all annotated instances where each instance has a 
 
 Each label file needs a corresponding json file to define the classes.
 
-# TODOs
-# - all images need to have the same number of modalities
-# - images (all modalities) and corresponding label need to have the same size (number of pixels)
-# - modalities need to be registered (bias field correction?)
+# TODO: all images need to have the same number of modalities
+# TODO: images (all modalities) and corresponding label need to have the same size (number of pixels)
+# TODO: modalities need to be registered (bias field correction?)
 
 
 Using nnDetection
@@ -335,10 +334,9 @@ Data which is located in `raw_splitted/imagesTs` will be automatically preproces
 
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
 
-# TODOs
-# - pretrained models
-# - continue training
-# - move nnU-Net for detection into a separate project page
+# TODO: pretrained models
+# TODO: continue training
+# TODO: move nnU-Net for detection into a separate project page
 
 Results
 -------
@@ -362,14 +360,20 @@ The following section contains some additional information regarding the metrics
 .. warning::
 
     nnDetection provides some additional analysis files (located in the analysis folders) which are purely for qualitative analysis purposes and should never be used for quantitative evaluation!
+    Since they are not part of the official functionality we do not provide extensive documentation nor support for this.
 
-
-# TODOs
-# - update FROC describtions
-# - Evaluation and Analysis
+# TODO: update FROC describtions
 
 Advanced Use Cases
 ******************
+
+Custom Applications
+-------------------
+
+# TODO: custom split
+# TODO: custom network -> refer to developer guide
+# TODO: Running unit tests
+
 
 Detection Zoo
 -------------
@@ -394,5 +398,5 @@ Detection Zoo
 
 Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
 
-Trainning Different Versions of RetinaU-Net:
+
 # TODO: focal loss training
