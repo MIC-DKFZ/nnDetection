@@ -210,7 +210,7 @@ def evaluate_with_folders() -> None:
     logger.add(save_dir / "evaluation.log", level="INFO")
     current_time = datetime.now()
     current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
-    logger.info(f"+++ Running prepare {current_time_str} +++")
+    logger.info(f"+++ Running evaluation {current_time_str} +++")
 
     _evaluate(
         data_cfg=data_cfg,
@@ -344,6 +344,9 @@ def _train(
     )
     log_file = Path(os.getcwd()) / "train.log"
     logger.add(log_file, level="INFO")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running train {current_time_str} +++")
     logger.info(f"Log file at {log_file}")
 
     meta_data = {}
@@ -540,6 +543,9 @@ def _sweep(
     logger.add(sys.stdout, format="{level} {message}", level="INFO")
     log_file = Path(os.getcwd()) / "sweep.log"
     logger.add(log_file, level="INFO")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running sweep {current_time_str} +++")
     logger.info(f"Log file at {log_file}")
 
     plan = load_pickle(train_dir / "plan.pkl")

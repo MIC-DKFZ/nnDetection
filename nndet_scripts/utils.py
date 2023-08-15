@@ -462,6 +462,7 @@ def create_test_data_split():
     import argparse
     import os
     import sys
+    from datetime import datetime
     from pathlib import Path
 
     from loguru import logger
@@ -484,6 +485,10 @@ def create_test_data_split():
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="DEBUG")
     logger.add(raw_splitted_dir.parent / "split.log", level="DEBUG")
+
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_test_split {current_time_str} +++")
 
     meta = load_dataset_info(task_dir)
 
@@ -533,6 +538,7 @@ def create_cv_split():
     import argparse
     import os
     import sys
+    from datetime import datetime
     from pathlib import Path
 
     import numpy as np
@@ -583,6 +589,10 @@ def create_cv_split():
     logger.remove()
     logger.add(sys.stdout, level="INFO")
     logger.add(task_dir / "split.log", level="DEBUG")
+
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_cv_split {current_time_str} +++")
 
     # parse case ids
     case_ids = [p.stem for p in label_dir.glob("*") if p.suffix == ".json"]
