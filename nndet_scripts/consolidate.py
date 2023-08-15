@@ -6,6 +6,7 @@ import importlib
 import os
 import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -156,6 +157,9 @@ def main():
         colorize=True,
     )
     logger.add(Path(target_dir) / "consolidate.log", level="DEBUG")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_consolidate {current_time_str} +++")
 
     logger.info(f"looking for models in {model_dir}")
     training_dirs = [get_latest_model(model_dir, fold) for fold in range(num_folds)]
@@ -180,13 +184,16 @@ def main():
     )
 
     shutil.copy2(training_dirs[0] / "plan.pkl", target_dir)
-    shutil.copy2(training_dirs[0] / "config.yaml", target_dir)
 
     # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
     ov = ov if ov is not None else []
     if ov is not None:
         cfg.merge_with_dotlist(ov)
+
+    cfg["exp"]["fold"] = -1  # update fold to consolidated
+    OmegaConf.save(cfg, str(target_dir / "config.yaml"))
+    OmegaConf.save(cfg, str(target_dir / "config_resolved.yaml"), resolve=True)
 
     for imp in cfg.get("additional_imports", []):
         print(f"Additional import found {imp}")
