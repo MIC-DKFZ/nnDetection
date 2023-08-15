@@ -45,33 +45,35 @@ Besides the self-configuring method, nnDetection acts as a standard interface fo
 We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
 Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
 
-* :doc:`Task 003 Liver <./projects/Task001_Decathlon/README.md>`
-* :doc:`Task 007 Pancreas <./projects/Task001_Decathlon/README.md>`
-* :doc:`Task 008 Hepatic Vessel <./projects/Task001_Decathlon/README.md>`
-* :doc:`Task 010 Colon <./projects/Task001_Decathlon/README.md>`
-* :doc:`Task 017 CADA <./projects/Task017_CADA/README.md>`
-* :doc:`Task 020 RibFrac <./projects/Task020_RibFrac/README.md>`
-* :doc:`Task 016 Luna <./projects/Task016_Luna/README.md>`
+* Task 003 Liver: nndetection/projects/Task001_Decathlon
+* Task 007 Pancreas: nndetection/projects/Task001_Decathlon
+* Task 008 HepaticVessel: nndetection/projects/Task001_Decathlon
+* Task 010 Colon: nndetection/projects/Task001_Decathlon
+* Task 017 CADA: nndetection/projects/Task017_CADA
+* Task 020 RibFrac: nndetection/projects/Task020_RibFrac
+* Task 016 Luna: nndetection/projects/Task016_Luna
 
 # TODO: finish V2 datasets
 Additional data sets from nnDetection V2 (recommended):
-* :doc:`Task 035 KiTS21 <./projects/Task_035_KiTS21/README.md>`
-* :doc:`Task 036 PICAI <./projects/Task_036_PICAI/README.md>`
-* :doc:`Task 037 ADAM TOF A <./projects/Task_037_ADAM_TOF_A/README.md>`
-* :doc:`Task 038 LIDC <./projects/Task017_CADA/README.md>`
+
+* Task 035 KiTS21: nndetection/projects/Task_035_KiTS21
+* Task 036 PICAI: nndetection/projects/Task_036_PICAI
+* Task 037 ADAM TOF A: nndetection/projects/Task_037_ADAM_TOF_A
+* Task 038 LIDC: nndetection/projects/Task017_CADA
 
 Additional data sets from nnDetection V1:
-* :doc:`Task 011 Kits <./projects/Task011_Kits/README.md>`
-* :doc:`Task 019 ADAM <./projects/Task019_ADAM/README.md>`
-* :doc:`Task 021 ProstateX <./projects/Task021_ProstateX/README.md>`
-* :doc:`Task 012 LIDC <./projects/Task012_LIDC/README.md>`
-* :doc:`Task 025 LymphNodes <./projects/Task025_LymphNodes/README.md>`
+
+* Task 011 Kits: nndetection/projects/Task011_Kits
+* Task 019 ADAM: nndetection/projects/Task019_ADAM
+* Task 021 ProstateX: nndetection/projects/Task021_ProstateX
+* Task 012 LIDC: nndetection/projects/Task012_LIDC
+* Task 025 LymphNodes: nndetection/projects/Task025_LymphNodes
 
 Check the Projects tab for additional projects and results of nnDetection.
 
-Adding New Data sets
+Adding New Data Sets
 --------------------
-nnDetection relies on a standardized input format which is very similar to :doc:`nnU-Net <https://github.com/MIC-DKFZ/nnUNet>` and allows easy integration of new data sets.
+nnDetection relies on a standardized input format which is very similar to `nnU-Net <https://github.com/MIC-DKFZ/nnUNet>`_ and allows easy integration of new data sets.
 More details about the format can be found below.
 
 Folders
@@ -242,7 +244,7 @@ Finally, it is necessary to create a data set split for the underlying data by r
 
 .. code-block:: bash
 
-    nndet_cv_split [task] [] [--num_folds] [--with_patients]
+    nndet_cv_split [task] [--num_folds] [--with_patients]
 
     # Example
     nndet_cv_split Task000D3_Example
@@ -343,6 +345,7 @@ Results
 -------
 
 The final model directory will contain multiple subfolders with different information:
+
 * `sweep`: contain information from the parameter sweeps and are only used for debugging purposes
 * `sweep_predictions`: these contain prediction with additional ensembler state information which are used during the empirical parameter optimization. Since these save the model output in a fairly raw format they are bigger than the predictions seen during normal inference to avoid multiple model prediction runs during the parameter sweeps
 * `[val/test]_predictions`: Contains the prediction of the validation/test set in the restored image space.
@@ -352,6 +355,7 @@ The final model directory will contain multiple subfolders with different inform
 * `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
 
 The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
+
 * `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
 * `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
 * `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
