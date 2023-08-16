@@ -18,8 +18,8 @@ io_cfg:
   oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
   dataloader_kwargs: {}
 
-  num_threads: ${oc.env:det_num_threads, "12"}
-  # num_cached_per_thread: 2
+  # num_threads: ${oc.env:det_num_threads, "12"}  # depreacted
+  # num_cached_per_thread: 2  # depreacted
   multiprocessing: True # only deactivate this if debugging
 
   # Additional overwrites
