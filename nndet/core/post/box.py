@@ -244,7 +244,7 @@ class CrossLevelBoxPostprocessing(BoxPostprocessing):
             probs, idx = probs.sort(descending=True)
             probs, idx = probs[:num_topk], idx[:num_topk]
         else:
-            idx = torch.arange(probs.numel())
+            idx = torch.arange(probs.numel(), device=probs.device)
 
         if self.score_thresh is not None:
             keep_idxs = probs > self.score_thresh

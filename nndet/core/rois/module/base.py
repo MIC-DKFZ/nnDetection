@@ -282,33 +282,41 @@ class BaseRoIModule(torch.nn.Module):
                     associated labels for each predicted box [N]
         """
         batch_size = len(proposal_boxes)
-        matched_gt_labels = cat(matched_gt_labels)
-        matched_gt_boxes = cat(matched_gt_boxes)
-        _proposal_boxes, batch_idx = ops_torch.cat_and_index(proposal_boxes)
+        empty_proposals = sum(pb.numel() for pb in proposal_boxes) == 0
 
-        box_roi_features = self.box_pooler(
-            features=features,
-            proposal_boxes=_proposal_boxes,
-            batch_idx=batch_idx,
-            image_size=image_size,
-        )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
+        if empty_proposals:
+            losses = {}
+        else:
+            matched_gt_labels = cat(matched_gt_labels)
+            matched_gt_boxes = cat(matched_gt_boxes)
+            _proposal_boxes, batch_idx = ops_torch.cat_and_index(proposal_boxes)
 
-        pred_detection = self.box_head[stage](box_roi_features)
-        losses, _, _ = self.box_head[stage].compute_loss(
-            prediction=pred_detection,
-            matched_gt_labels=matched_gt_labels,
-            matched_gt_boxes=matched_gt_boxes,
-            proposal_boxes=_proposal_boxes,
-        )
+            box_roi_features = self.box_pooler(
+                features=features,
+                proposal_boxes=_proposal_boxes,
+                batch_idx=batch_idx,
+                image_size=image_size,
+            )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
+
+            pred_detection = self.box_head[stage](box_roi_features)
+            losses, _, _ = self.box_head[stage].compute_loss(
+                prediction=pred_detection,
+                matched_gt_labels=matched_gt_labels,
+                matched_gt_boxes=matched_gt_boxes,
+                proposal_boxes=_proposal_boxes,
+            )
 
         if predict:
-            image_shapes = [image_size] * batch_size
-            boxes, probs, labels = self.postprocess_detections(
-                pred_detection=pred_detection,
-                proposal_boxes=proposal_boxes,
-                image_shapes=image_shapes,
-                stage=stage,
-            )
+            if empty_proposals:
+                boxes, probs, labels = self.empty_box_predictions(proposal_boxes)
+            else:
+                image_shapes = [image_size] * batch_size
+                boxes, probs, labels = self.postprocess_detections(
+                    pred_detection=pred_detection,
+                    proposal_boxes=proposal_boxes,
+                    image_shapes=image_shapes,
+                    stage=stage,
+                )
             prediction = {
                 "pred_boxes": boxes,
                 "pred_scores": probs,
@@ -357,41 +365,45 @@ class BaseRoIModule(torch.nn.Module):
             Optional[Dict[str, List[Tensor]]]: None. Kept for consistency
                 of steps
         """
-        # compute mask loss on positive proposals
-        pos_matched_gt_idx = []
-        pos_proposal_boxes = []
-        pos_label = []
-        for gt_l, gt_idx, prop_b in zip(matched_gt_labels, matched_gt_idx, proposal_boxes):
-            pos_idx = torch.where(gt_l > 0)[0]
-            pos_matched_gt_idx.append(gt_idx[pos_idx])
-            pos_proposal_boxes.append(prop_b[pos_idx])
-            pos_label.append(gt_l[pos_idx])
+        empty_proposals = sum(pb.numel() for pb in proposal_boxes) == 0
+        if empty_proposals:
+            losses = {}
+        else:
+            # compute mask loss on positive proposals
+            pos_matched_gt_idx = []
+            pos_proposal_boxes = []
+            pos_label = []
+            for gt_l, gt_idx, prop_b in zip(matched_gt_labels, matched_gt_idx, proposal_boxes):
+                pos_idx = torch.where(gt_l > 0)[0]
+                pos_matched_gt_idx.append(gt_idx[pos_idx])
+                pos_proposal_boxes.append(prop_b[pos_idx])
+                pos_label.append(gt_l[pos_idx])
 
-        target_masks_prepared = self.mask_pooler.pool_masks(
-            binary_masks=gt_binary_masks,
-            proposal_boxes=pos_proposal_boxes,
-            matched_gt_idx=pos_matched_gt_idx,
-        )  # List[[R, output_size]]
+            target_masks_prepared = self.mask_pooler.pool_masks(
+                binary_masks=gt_binary_masks,
+                proposal_boxes=pos_proposal_boxes,
+                matched_gt_idx=pos_matched_gt_idx,
+            )  # List[[R, output_size]]
 
-        pos_proposal_boxes, batch_idx = ops_torch.cat_and_index(pos_proposal_boxes)
+            pos_proposal_boxes, batch_idx = ops_torch.cat_and_index(pos_proposal_boxes)
 
-        mask_roi_features = self.mask_pooler(
-            features=features,
-            proposal_boxes=pos_proposal_boxes,
-            batch_idx=batch_idx,
-            image_size=image_size,
-        )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
-        pred_masks, _ = self.mask_head[stage](mask_roi_features)
+            mask_roi_features = self.mask_pooler(
+                features=features,
+                proposal_boxes=pos_proposal_boxes,
+                batch_idx=batch_idx,
+                image_size=image_size,
+            )  # [N, C, spatial]; N=num proposals passed, C=number of feature channels
+            pred_masks, _ = self.mask_head[stage](mask_roi_features)
 
-        target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
-        batch_pos_label = torch.cat(pos_label)
-        assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
-        assert batch_pos_label.shape[0] == pred_masks.shape[0]
-        losses = self.mask_head[stage].compute_loss(
-            pred_logits=pred_masks,
-            target_masks=target_masks_prepared_batched,
-            target_labels=batch_pos_label,
-        )
+            target_masks_prepared_batched = torch.cat(target_masks_prepared, dim=0)
+            batch_pos_label = torch.cat(pos_label)
+            assert pred_masks.shape[0] == target_masks_prepared_batched.shape[0]
+            assert batch_pos_label.shape[0] == pred_masks.shape[0]
+            losses = self.mask_head[stage].compute_loss(
+                pred_logits=pred_masks,
+                target_masks=target_masks_prepared_batched,
+                target_labels=batch_pos_label,
+            )
         return losses, None
 
     def detach_proposals(
@@ -569,11 +581,7 @@ class BaseRoIModule(torch.nn.Module):
         batch_size = len(proposal_boxes)
 
         if _proposal_boxes.numel() == 0:
-            dtype = proposal_boxes[0].dtype
-            device = proposal_boxes[0].device
-            boxes = [torch.zeros_like(proposal_boxes[b]) for b in range(batch_size)]
-            probs = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
-            labels = [torch.tensor([], dtype=torch.int64, device=device) for b in range(batch_size)]
+            boxes, probs, labels = self.empty_box_predictions(proposal_boxes)
         else:
             roi_features = self.box_pooler(
                 features=features,
@@ -646,11 +654,7 @@ class BaseRoIModule(torch.nn.Module):
         batch_size = len(pred_boxes)
 
         if _boxes.numel() == 0:
-            dtype = pred_boxes[0].dtype
-            device = pred_boxes[0].device
-            masks = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
-            probs = [torch.tensor([], dtype=dtype, device=device) for b in range(batch_size)]
-            labels = [torch.tensor([], dtype=torch.int64, device=device) for b in range(batch_size)]
+            masks, probs, labels = self.empty_mask_predictions(pred_boxes)
         else:
             roi_features = self.mask_pooler(
                 features=features,
@@ -784,3 +788,45 @@ class BaseRoIModule(torch.nn.Module):
             probs=pred_probs,
             labels=pred_labels,
         )
+
+    def empty_box_predictions(boxes: List[torch.Tensor]) -> List[torch.Tensor]:
+        """
+        Create empty box predictions
+
+        Args:
+            boxes: empty boxes e.g. from proposals. Used to extract
+                dimensionality, device and batch size.
+
+        Returns:
+            torch.Tensor: empty box predictions
+            torch.Tensor: empty probability predictions
+            torch.Tensor: empty label predictions
+        """
+        batch_size = len(boxes)
+        dtype = boxes[0].dtype
+        device = boxes[0].device
+        empty_boxes = [torch.zeros_like(boxes[b]) for b in range(batch_size)]
+        empty_probs = [torch.tensor([], dtype=dtype, device=device) for _ in range(batch_size)]
+        empty_labels = [torch.tensor([], dtype=torch.int64, device=device) for _ in range(batch_size)]
+        return empty_boxes, empty_probs, empty_labels
+
+    def empty_mask_predictions(boxes: List[torch.Tensor]) -> List[torch.Tensor]:
+        """
+        Create empty mask predictions
+
+        Args:
+            boxes: empty boxes e.g. from proposals. Used to extract
+                dimensionality, device and batch size.
+
+        Returns:
+            torch.Tensor: empty mask predictions
+            torch.Tensor: empty probability predictions
+            torch.Tensor: empty label predictions
+        """
+        batch_size = len(boxes)
+        dtype = boxes[0].dtype
+        device = boxes[0].device
+        empty_masks = [torch.tensor([], dtype=dtype, device=device) for _ in range(batch_size)]
+        empty_probs = [torch.tensor([], dtype=dtype, device=device) for _ in range(batch_size)]
+        empty_labels = [torch.tensor([], dtype=torch.int64, device=device) for _ in range(batch_size)]
+        return empty_masks, empty_probs, empty_labels
