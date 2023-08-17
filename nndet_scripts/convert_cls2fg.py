@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -14,6 +15,7 @@ from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
 
 
+@env_guard
 def convert_raw(task, overwrite, ov):
     task_name_full = get_task(task, name=True)
     task_num, task_name = task_name_full[4:].split("_", 1)
@@ -22,7 +24,7 @@ def convert_raw(task, overwrite, ov):
     cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
     print(cfg)
 
-    source_splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
+    source_splitted_dir = Path(os.getenv("det_data")) / cfg["task"] / "raw_splitted"
     target_splitted_dir = Path(str(source_splitted_dir).replace(task_name_full, new_task_name_full))
     if target_splitted_dir.is_dir() and overwrite:
         shutil.rmtree(target_splitted_dir)
@@ -33,7 +35,7 @@ def convert_raw(task, overwrite, ov):
     logger.add(target_splitted_dir.parent / "convert_cls2fg.log", level="DEBUG")
 
     # update dataset_info
-    source_data_info = Path(cfg["host"]["data_dir"])
+    source_data_info = Path(os.getenv("det_data")) / cfg["task"]
     data_info = load_dataset_info(source_data_info)
     data_info.pop("labels")
     data_info["labels"] = {"0": "fg"}

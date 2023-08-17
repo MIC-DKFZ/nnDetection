@@ -22,12 +22,9 @@ from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import (
-    BoxPredictionMixin,
-    MaskViaBoxPredictionMixin,
-)
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -44,8 +41,6 @@ class MaskRCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     """
     MaskRCNNModule with Instance Segmentation Output
@@ -109,8 +104,6 @@ class MaskURCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     """
     MaskRCNNModule with Instance Segmentation Output

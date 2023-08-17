@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import defaultdict
-from typing import Dict, Sequence, Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 from loguru import logger
@@ -113,89 +113,3 @@ class SegmentationEvaluator(AbstractEvaluator):
             per_class=per_class,
             fg_mode=fg_mode,
         )
-
-
-class PerCaseSegmentationEvaluator(AbstractEvaluator):
-    def __init__(
-        self,
-        classes: Sequence[str],
-        *args,
-        **kwargs,
-    ):
-        """
-        Compute dice score per case and average results over dataset
-        """
-        self.classes = classes
-        self.results = []
-
-    def reset(self):
-        """
-        Reset internal state for new epoch
-        """
-        self.results = []
-
-    def run_online_evaluation(
-        self,
-        seg: np.ndarray,
-        target: np.ndarray,
-    ) -> Dict:
-        """
-        Run evaluation of one batch and save internal results for later
-
-        Args:
-            seg: output segmentation [N, dims]
-            target: ground truth segmentation [N, dims], where N is the batch
-                size and dims are spatial dimensions
-
-        Returns:
-            Dict: empty dict
-        """
-        assert len(seg) == len(target)
-
-        num_classes = len(self.classes)
-        output_seg = seg.reshape((seg.shape[0], -1))  # N, X
-        target = target.reshape((target.shape[0], -1))  # N, X
-
-        tp_hard = np.zeros((target.shape[0], num_classes - 1))  # N, FG
-        fp_hard = np.zeros((target.shape[0], num_classes - 1))  # N ,FG
-        fn_hard = np.zeros((target.shape[0], num_classes - 1))  # N, FG
-        fg_present = np.zeros((target.shape[0], num_classes - 1))  # N, FG
-
-        for c in range(1, num_classes):
-            tp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
-            fp_hard[:, c - 1] = ((output_seg == c).astype(np.float32) * (target != c).astype(np.float32)).sum(axis=1)
-            fn_hard[:, c - 1] = ((output_seg != c).astype(np.float32) * (target == c).astype(np.float32)).sum(axis=1)
-            fg_present[:, c - 1] = (target == c).any(axis=1).astype(np.int32)
-
-        dice = np.where(fg_present, 2.0 * tp_hard / (2 * tp_hard + fp_hard + fn_hard), np.nan)  # N, FG
-        self.results.append(dice)
-        return {}
-
-    def finish_online_evaluation(
-        self,
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
-        """
-        Summarize results from batches and compute global dice and global
-        dice per class
-
-        Returns:
-            Dict: results
-                `{cls_idx}_seg_dice`: global dice per class
-                `seg_dice`: global dice over all classes
-        """
-        dice_full = np.concatenate(self.results, axis=0)
-        dice_per_class = dice_full.mean(axies=0)  # C
-        dice = dice_full.mean()  # 1
-
-        results = {}
-        for cls_idx, value in enumerate(dice_per_class):
-            results[f"dice_cls_{cls_idx}"] = float(value)
-        results["dice"] = float(dice)
-        return results, None
-
-    @classmethod
-    def create(
-        cls,
-        classes: Sequence[str],
-    ):
-        return cls(classes=classes)

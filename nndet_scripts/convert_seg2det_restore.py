@@ -33,7 +33,7 @@ def main():
         cfg = compose(task, "config.yaml", overrides=[])
         print(cfg)
 
-        splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
+        splitted_dir = Path(os.getenv("det_data")) / cfg["task"] / "raw_splitted"
         for postfix in ["Tr", "Ts"]:
             if (p := splitted_dir / f"labels{postfix}").is_dir():
                 # delete everything except original files
