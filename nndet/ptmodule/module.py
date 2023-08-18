@@ -105,7 +105,7 @@ class LightningBaseModule(pl.LightningModule):
         the input through the network which does not include
         detection spcific postprocessing!
         """
-        return self.model.inference_step(x)  # FIXME
+        return self.model.inference_step(x)
         # return self.model(x)
 
     def training_step(self, batch, batch_idx):
