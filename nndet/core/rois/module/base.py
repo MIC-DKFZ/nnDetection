@@ -789,6 +789,7 @@ class BaseRoIModule(torch.nn.Module):
             labels=pred_labels,
         )
 
+    @staticmethod
     def empty_box_predictions(boxes: List[torch.Tensor]) -> List[torch.Tensor]:
         """
         Create empty box predictions
@@ -810,6 +811,7 @@ class BaseRoIModule(torch.nn.Module):
         empty_labels = [torch.tensor([], dtype=torch.int64, device=device) for _ in range(batch_size)]
         return empty_boxes, empty_probs, empty_labels
 
+    @staticmethod
     def empty_mask_predictions(boxes: List[torch.Tensor]) -> List[torch.Tensor]:
         """
         Create empty mask predictions
