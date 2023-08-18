@@ -3,12 +3,11 @@
 # TODO: test detach all
 ###
 
-
-# TODO: extend integration tests to mask heads
-
 # TODO: test assign and sample
 # TODO: add_gt_to_proposals
 # TODO assign_targets_to_anchors empty check
+
+# TODO: extend steps to batch size 2
 
 import pytest
 import torch
@@ -417,3 +416,46 @@ def test_inference_step_empty(roi_module: BaseRoIModule, device: torch.device):
     assert len(preds["pred_labels"]) == 1
     assert preds["pred_labels"][0].numel() == 0
     assert preds["pred_labels"][0].ndim == 1
+
+
+def test_add_gt_to_proposal(base_roi_module: BaseRoIModule):
+    proposal_boxes = [
+        torch.zeros(2, 6),
+        torch.zeros(3, 6),
+    ]
+    proposal_scores = [torch.zeros(2), torch.zeros(3)]
+    proposal_labels = [torch.zeros(2), torch.zeros(3)]
+
+    target_boxes = [torch.ones(2, 6), torch.ones(3, 6)]
+    target_roi_classes = [torch.ones(2), torch.ones(3)]
+
+    new_proposals = base_roi_module.add_gt_to_proposals(
+        proposals={
+            "pred_boxes": proposal_boxes,
+            "pred_scores": proposal_scores,
+            "pred_labels": proposal_labels,
+        },
+        targets={
+            "target_boxes": target_boxes,
+            "target_roi_classes": target_roi_classes,
+        },
+    )
+
+    expected_box_shapes = [(4, 6), (6, 6)]
+    expected_score_shapes = [(4,), (6,)]
+    expected_label_shapes = [(4,), (6,)]
+
+    assert len(expected_box_shapes) == len(new_proposals["pred_boxes"])
+    assert len(expected_score_shapes) == len(new_proposals["pred_scores"])
+    assert len(expected_label_shapes) == len(new_proposals["pred_labels"])
+
+    for exp, new in zip(expected_box_shapes, new_proposals["pred_boxes"]):
+        assert exp == tuple(new.shape)
+    for exp, new in zip(expected_score_shapes, new_proposals["pred_scores"]):
+        assert exp == tuple(new.shape)
+    for exp, new in zip(expected_label_shapes, new_proposals["pred_labels"]):
+        assert exp == tuple(new.shape)
+
+
+def test_assign_and_sample():
+    pass

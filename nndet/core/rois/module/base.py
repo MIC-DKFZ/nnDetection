@@ -21,7 +21,6 @@ from nndet.utils.tensor import cat, detach_all
 from nndet.utils.typing import ND_TUPLE_INT
 
 
-# FIXME: no proposals case -> matcher
 class BaseRoIModule(torch.nn.Module):
     def __init__(
         self,
@@ -429,7 +428,7 @@ class BaseRoIModule(torch.nn.Module):
         targets: Dict[str, Union[torch.Tensor, List[torch.Tensor]]],
     ) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]:
         """
-        Assign boxes and labels to proposals and sample a supset of them
+        Assign boxes and labels to proposals and sample a subset of them
         to compute the loss. If `gt_to_proposals=True` ground truth
         objects are added to the proposals to (potentially) improve the
         training stability in the beginning of the training.
@@ -520,8 +519,26 @@ class BaseRoIModule(torch.nn.Module):
         Args:
             proposals: box proposals for each image
                 List[[N, dim * 2]], N=number of proposals per image
+
+                ``"pred_boxes"`` List[Tensor]
+                    proposed boxes [N, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"pred_scores"`` List[Tensor]
+                    associated scores for each proposal [N]
+
+                ``"pred_labels"`` List[Tensor]
+                    associated label for each proposal [N]
+
             gt: ground truth boxes for each image
                 List[[N, dim * 2]], N=number of ground truth per image
+
+                ``"target_boxes"`` List[Tensor]
+                    ground truth boxes [R, dims * 2]
+                    (x_min, y_min, x_max, y_max, z_min, z_max)
+
+                ``"target_roi_classes"`` List[Tensor]
+                    associated class for each ground truth object [R]
 
         Returns:
             List[torch.Tensor]: proposals with gt boxes
