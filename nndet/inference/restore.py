@@ -106,7 +106,7 @@ def restore_fmap(fmap: np.ndarray,
         logger.info(f"Resampling: do separate z: {do_separate_z}; lowres axis: {lowres_axis}")
         fmap_old_spacing = resample_data_or_seg(fmap_transposed, size_after_cropping, is_seg=False,
                                                 axis=lowres_axis, order=interpolation_order,
-                                                do_separate_z=do_separate_z, cval=0,
+                                                do_separate_z=do_separate_z,
                                                 order_z=interpolation_order_z)
     else:
         logger.info(f"Resampling: no resampling necessary")
