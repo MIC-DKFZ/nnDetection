@@ -20,7 +20,7 @@ from nndet.core.post.box import CrossLevelBoxPostprocessing
 from nndet.core.post.mask import NoMaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.module.single import RoIModule
-from nndet.core.rois.pooler.roi_align import RoIAlignNaiveAssign
+from nndet.core.rois.pooler.roi_align import RoIAlignNaiveAssign, roi_align_3d
 from nndet.losses.classification.ce import BCELoss
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier
 from nndet.nn.heads.comb.roi import RoIBoxHead
@@ -199,6 +199,10 @@ def roi_module_mask():
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(
+    roi_align_3d is None,
+    reason="nnDetection was not build with GPU support",
+)
 @pytest.mark.parametrize("device", DEVICES)
 def test_train_step_boxes(base_roi_module: BaseRoIModule, device: torch.device):
     # inputs
@@ -245,6 +249,10 @@ def test_train_step_boxes(base_roi_module: BaseRoIModule, device: torch.device):
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(
+    roi_align_3d is None,
+    reason="nnDetection was not build with GPU support",
+)
 @pytest.mark.parametrize("device", DEVICES)
 def test_inference_step_boxes(base_roi_module: BaseRoIModule, device: torch.device):
     # inputs
@@ -280,6 +288,10 @@ def test_inference_step_boxes(base_roi_module: BaseRoIModule, device: torch.devi
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(
+    roi_align_3d is None,
+    reason="nnDetection was not build with GPU support",
+)
 @pytest.mark.parametrize("device", DEVICES)
 def test_train_step_masks(roi_module_mask: BaseRoIModule, device: torch.device):
     # inputs
@@ -315,6 +327,10 @@ def test_train_step_masks(roi_module_mask: BaseRoIModule, device: torch.device):
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(
+    roi_align_3d is None,
+    reason="nnDetection was not build with GPU support",
+)
 @pytest.mark.parametrize("device", DEVICES)
 def test_inference_step_masks(roi_module_mask: BaseRoIModule, device: torch.device):
     # inputs
