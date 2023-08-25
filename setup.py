@@ -122,16 +122,23 @@ setup(
     },
     entry_points={
         "console_scripts": [
+            # preprocessing + preparation
             "nndet_prep = nndet_scripts.preprocess:main",
             "nndet_prep_labels = nndet_scripts.preprocess:main_prep_labels",
             "nndet_cv_split = nndet_scripts.utils:create_cv_split",
+            # training
             "nndet_train = nndet_scripts.train:train",
             "nndet_sweep = nndet_scripts.train:sweep",
             "nndet_consolidate = nndet_scripts.consolidate:main",
+            # prediction
             "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",
             "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
             "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split",
             "nndet_preprocess_for_inference = nndet_scripts.predict2:entrypoint_preprocess_for_inference",
+            # manual ensembling
+            "nndet_ensemble_with_task = nndet_scripts.ensemble:entrypoint_ensemble_with_task",
+            "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
+            "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
             # utils
             "nndet_example = nndet_scripts.generate_example:main",
             "nndet_cls2fg = nndet_scripts.convert_cls2fg:main",
