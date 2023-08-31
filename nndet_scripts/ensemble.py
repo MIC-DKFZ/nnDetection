@@ -76,7 +76,7 @@ def entrypoint_ensemble_with_task():
     fold = "consolidated" if fold == -1 else f"fold{fold}"
     predictions_dir_name = "test_predictions" if test else "val_predictions"
 
-    target_model_dir: Path = det_models / target_model / fold
+    target_model_dir: Path = det_models / task / target_model / fold
     target_model_dir.mkdir(parents=True, exist_ok=True)
     target_prediction_dir = target_model_dir / predictions_dir_name
 
