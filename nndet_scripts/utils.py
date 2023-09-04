@@ -644,11 +644,17 @@ def create_cv_split():
         val_cids = [case_ids[_i] for _i in val_idx]
         intersection_cids = set(train_cids).intersection(val_cids)
 
+        train_reduced_classes = [reduced_classes[_i] for _i in train_idx]
+        val_reduced_classes = [reduced_classes[_i] for _i in val_idx]
+        train_reduced_classes = {k: i for k, i in zip(*np.unique(train_reduced_classes, return_counts=True))}
+        val_reduced_classes = {k: i for k, i in zip(*np.unique(val_reduced_classes, return_counts=True))}
+
         assert not intersection_cids
         logger.info(
             f"Generated fold {fold_idx} with {len(train_cids)} "
             f"train {len(val_cids)} val cases. "
-            f"Intersection {intersection_cids} (should be empty)"
+            f"Intersection {intersection_cids} (should be empty)."
+            f"Reduced classes: train {train_reduced_classes} val {val_reduced_classes}"
         )
 
         splits.append({"train": train_cids, "val": val_cids})
