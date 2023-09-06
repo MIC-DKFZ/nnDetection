@@ -15,7 +15,7 @@ from loguru import logger
 from nndet.eval import DetectionMetric
 
 
-class COCOMetric(DetectionMetric):
+class CocoAPMetric(DetectionMetric):
     def __init__(
         self,
         classes: Sequence[str],

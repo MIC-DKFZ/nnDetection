@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from nndet.eval.det.coco import COCOMetric, compute_stats_single_threshold
+from nndet.eval.det.ap import CocoAPMetric, compute_stats_single_threshold
 
 
 @pytest.fixture
 def metric():
-    return COCOMetric(
+    return CocoAPMetric(
         classes=["benign", "malignant"],
         iou_list=(0.1, 0.3),
         iou_range=(0.1, 0.2, 0.1),
@@ -19,7 +19,7 @@ def metric():
 
 class TestCOCOMetric:
     def test_get_iou_thresholds(self):
-        metric = COCOMetric(
+        metric = CocoAPMetric(
             classes=["benign", "malignant"],
             iou_list=(0.1, 0.2, 0.3),
             iou_range=(0.1, 0.2, 0.05),
@@ -28,9 +28,9 @@ class TestCOCOMetric:
         assert np.isclose(metric.get_iou_thresholds(), [0.1, 0.15, 0.2, 0.3]).all()
 
     def test_compute(self, mocker: MockerFixture, metric):
-        mocker.patch("nndet.evaluator.detection.coco.COCOMetric.select_ap", return_value=1)
+        mocker.patch("nndet.evaluator.detection.coco.CocoAPMetric.select_ap", return_value=1)
         mocker.patch(
-            "nndet.evaluator.detection.coco.COCOMetric.compute_statistics",
+            "nndet.evaluator.detection.coco.CocoAPMetric.compute_statistics",
             return_value={"stats": 0},
         )
 

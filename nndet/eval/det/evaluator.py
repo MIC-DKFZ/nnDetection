@@ -12,7 +12,7 @@ import numpy as np
 
 import nndet.core.ops_np as ops_np
 from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
-from nndet.eval.det.coco import COCOMetric
+from nndet.eval.det.ap import CocoAPMetric
 from nndet.eval.det.froc import FROCMetric
 from nndet.eval.det.hist import PredictionHistogram
 from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
@@ -232,7 +232,7 @@ class BoxEvaluator(DetectionEvaluator):
             )
         )
         metrics.append(
-            COCOMetric(
+            CocoAPMetric(
                 classes,
                 iou_list=iou_thresholds,
                 iou_range=iou_range,
