@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from nndet.eval.detection.coco import COCOMetric, compute_stats_single_threshold
+from nndet.eval.det.coco import COCOMetric, compute_stats_single_threshold
 
 
 @pytest.fixture

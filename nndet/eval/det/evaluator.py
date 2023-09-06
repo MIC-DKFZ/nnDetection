@@ -12,9 +12,9 @@ import numpy as np
 
 import nndet.core.ops_np as ops_np
 from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
-from nndet.eval.detection.coco import COCOMetric
-from nndet.eval.detection.froc import FROCMetric
-from nndet.eval.detection.hist import PredictionHistogram
+from nndet.eval.det.coco import COCOMetric
+from nndet.eval.det.froc import FROCMetric
+from nndet.eval.det.hist import PredictionHistogram
 from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 from nndet.utils.info import experimental
 
