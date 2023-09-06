@@ -11,15 +11,11 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 import nndet.core.ops_np as ops_np
-from nndet.evaluator.abstract import (
-    AbstractEvalMatching,
-    AbstractEvaluator,
-    DetectionMetric,
-)
-from nndet.evaluator.detection.coco import COCOMetric
-from nndet.evaluator.detection.froc import FROCMetric
-from nndet.evaluator.detection.hist import PredictionHistogram
-from nndet.evaluator.matching import EvalMatchingPerElementGreedyScoreNP
+from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
+from nndet.eval.detection.coco import COCOMetric
+from nndet.eval.detection.froc import FROCMetric
+from nndet.eval.detection.hist import PredictionHistogram
+from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 from nndet.utils.info import experimental
 
 __all__ = ["DetectionEvaluator"]

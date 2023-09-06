@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.abstract import AbstractEvalMatching
+from nndet.eval.abstract import AbstractEvalMatching
 
 
 class EvalMatchingNP(AbstractEvalMatching):

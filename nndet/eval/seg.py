@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator import AbstractEvaluator
+from nndet.eval import AbstractEvaluator
 
 __all__ = ["SegmentationEvaluator"]
 

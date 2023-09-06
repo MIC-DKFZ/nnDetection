@@ -12,7 +12,7 @@ from typing import Dict, List, Sequence, Tuple, Union
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator import DetectionMetric
+from nndet.eval import DetectionMetric
 
 
 class COCOMetric(DetectionMetric):

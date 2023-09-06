@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from nndet.evaluator import AbstractEvaluator, AbstractMetric, DetectionMetric
+from nndet.eval import AbstractEvaluator, AbstractMetric, DetectionMetric
 
 
 class DummyEvaluator(AbstractEvaluator):

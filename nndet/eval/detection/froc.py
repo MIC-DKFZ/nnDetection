@@ -12,7 +12,7 @@ from loguru import logger
 from matplotlib.ticker import FuncFormatter
 from sklearn.metrics import roc_curve
 
-from nndet.evaluator import DetectionMetric
+from nndet.eval import DetectionMetric
 
 
 class FROCMetric(DetectionMetric):

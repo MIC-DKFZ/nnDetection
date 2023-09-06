@@ -15,7 +15,7 @@ import numpy as np
 from hydra import initialize_config_module
 from loguru import logger
 
-from nndet.evaluator.registry import evaluate_box_dir
+from nndet.eval.registry import evaluate_box_dir
 from nndet.io import get_task, load_json, load_pickle, save_pickle
 from nndet.io.load import save_json
 from nndet.utils.clustering import softmax_to_instances

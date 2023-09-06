@@ -3,7 +3,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-from nndet.evaluator.detection.matching import (
+from nndet.eval.detection.matching import (
     _matching_no_gt,
     _matching_no_pred,
     _matching_single_image_single_class,

@@ -3,8 +3,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-import nndet.evaluator.detection.matching as matching
-from nndet.evaluator.det import DetectionEvaluator
+import nndet.eval.detection.matching as matching
+from nndet.eval.det import DetectionEvaluator
 
 
 class DummyMetric:

@@ -8,8 +8,8 @@ from typing import Dict, Optional, Sequence, Tuple
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.case import CaseEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.eval.case import CaseEvaluator
+from nndet.eval.det import BoxEvaluator
 from nndet.io.load import load_pickle
 
 
