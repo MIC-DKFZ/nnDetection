@@ -77,26 +77,27 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
     Args:
         iou_fn: compute overlap for each pair
-        iou_thresholds: defined which IoU thresholds should be evaluated
         max_detections: maximum number of detections which should be
             evaluated (per class)
     """
 
-    def matching_batch(
+    def match(
         self,
+        iou_thresholds: Sequence[float],
         pred_boxes: Sequence[np.ndarray],
         pred_classes: Sequence[np.ndarray],
         pred_scores: Sequence[np.ndarray],
         gt_boxes: Sequence[np.ndarray],
         gt_classes: Sequence[np.ndarray],
         gt_ignore: Sequence[Sequence[bool]],
-        case_id: Optional[str] = None,
+        case_ids: Optional[Sequence[str]] = None,
     ) -> List[Dict[int, Dict[str, np.ndarray]]]:
         """
         Match boxes of a batch to corresponding ground truth for each category
         independently
 
         Args:
+            iou_thresholds: defined which IoU thresholds should be evaluated
             pred_boxes: predicted boxes from single batch; List[[D, dim * 2]],
                 D number of predictions
             pred_classes: predicted classes from a single batch; List[[D]],
@@ -105,12 +106,13 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 D number of predictions
             gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
                 truth
-            gt_classes: ground truth classes; List[[G]], G number of ground truth
+            gt_classes: ground truth classes; List[[G]], G number of ground
+                truth
             gt_ignore: specified if which ground truth boxes are not counted as
                 true positives
                 (detections which match theses boxes are not counted as false
                 positives either); List[[G]], G number of ground truth
-            case_id: optionally provide a case id which will be returned to
+            case_ids: optionally provide case ids which will be returned to
                 identify the matching result
 
         Returns:
@@ -121,8 +123,25 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         """
         results = []
 
+        batch_size = len(pred_boxes)
+        if len(pred_classes) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_classes.")
+        if len(pred_scores) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_scores.")
+        if len(gt_boxes) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_boxes.")
+        if len(gt_classes) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_classes.")
+        if len(gt_ignore) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_ignore.")
+        if case_ids is None:
+            case_ids = [None] * batch_size
+        else:
+            if len(case_ids) != batch_size:
+                raise ValueError("Unequal batch size encountered for case ids.")
+
         # iterate over images/batches
-        for batch_idx, (pboxes, pclasses, pscores, gboxes, gclasses, gignore,) in enumerate(
+        for batch_idx, (pboxes, pclasses, pscores, gboxes, gclasses, gignore, cid,) in enumerate(
             zip(
                 pred_boxes,
                 pred_classes,
@@ -130,6 +149,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 gt_boxes,
                 gt_classes,
                 gt_ignore,
+                case_ids,
             )
         ):
             self._check_element(
@@ -150,28 +170,34 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 gt_mask = gclasses == c  # mask ground trtuh with current class
 
                 if not np.any(gt_mask):  # no ground truth
-                    result[c] = self._matching_no_gt(
+                    r = self._matching_no_gt(
+                        iou_thresholds=iou_thresholds,
                         pred_scores=pscores[pred_mask],
-                        case_id=case_id,
+                        case_id=cid,
                     )
                 elif not np.any(pred_mask):  # no predictions
-                    result[c] = self._matching_no_pred(
+                    r = self._matching_no_pred(
+                        iou_thresholds=iou_thresholds,
                         gt_ignore=gignore[gt_mask],
-                        case_id=case_id,
+                        case_id=cid,
                     )
                 else:  # at least one prediction and one ground truth
-                    result[c] = self._matching_single_image_single_class(
+                    r = self._matching_single_image_single_class(
+                        iou_thresholds=iou_thresholds,
                         pred_boxes=pboxes[pred_mask],
                         pred_scores=pscores[pred_mask],
                         gt_boxes=gboxes[gt_mask],
                         gt_ignore=gignore[gt_mask],
-                        case_id=case_id,
+                        case_id=cid,
                     )
+                r["case_id"] = cid
+                result[c] = r
             results.append(result)
         return results
 
     def _matching_no_gt(
         self,
+        iou_thresholds: Sequence[float],
         pred_scores: np.ndarray,
         case_id: Optional[str] = None,
     ):
@@ -207,9 +233,9 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         num_preds = len(dt_scores)
 
-        gt_match = np.array([[]] * len(self.iou_thresholds))
-        dt_match = np.zeros((len(self.iou_thresholds), num_preds))
-        dt_ignore = np.zeros((len(self.iou_thresholds), num_preds))
+        gt_match = np.array([[]] * len(iou_thresholds))
+        dt_match = np.zeros((len(iou_thresholds), num_preds))
+        dt_ignore = np.zeros((len(iou_thresholds), num_preds))
 
         return {
             "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
@@ -217,11 +243,11 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             "dtScores": dt_scores,  # [D] detection scores
             "gtIgnore": np.array([]).reshape(-1),  # [G] indicate whether ground truth should be ignored
             "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
-            "case_id": case_id,
         }
 
     def _matching_no_pred(
         self,
+        iou_thresholds: Sequence[float],
         gt_ignore: np.ndarray,
         case_id: Optional[str] = None,
     ):
@@ -232,7 +258,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             iou_thresholds: defined which IoU thresholds should be evaluated
             gt_ignore: specified if which ground truth boxes are not counted as
                 true positives (detections which match theses boxes are not
-                counted as false positives either); [G], G number of ground truth
+                counted as false positives either); [G], G number of ground
+                truth
             case_id: optionally provide a case id which will be return to
                 identify the matching result
 
@@ -251,11 +278,11 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         assert gt_ignore.ndim == 1
 
         dt_scores = np.array([])
-        dt_match = np.array([[]] * len(self.iou_thresholds))
-        dt_ignore = np.array([[]] * len(self.iou_thresholds))
+        dt_match = np.array([[]] * len(iou_thresholds))
+        dt_ignore = np.array([[]] * len(iou_thresholds))
 
         n_gt = 0 if gt_ignore.size == 0 else gt_ignore.shape[0]
-        gt_match = np.zeros((len(self.iou_thresholds), n_gt))
+        gt_match = np.zeros((len(iou_thresholds), n_gt))
 
         if n_gt > self.warning_ratio * self.max_detections:
             logger.warning(
@@ -269,11 +296,11 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             "dtScores": dt_scores,  # [D] detection scores
             "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
             "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
-            "case_id": case_id,
         }
 
     def _matching_single_image_single_class(
         self,
+        iou_thresholds: Sequence[float],
         pred_boxes: np.ndarray,
         pred_scores: np.ndarray,
         gt_boxes: np.ndarray,
@@ -284,17 +311,16 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
 
         Args:
-            iou_fn: compute overlap for each pair
             iou_thresholds: defined which IoU thresholds should be evaluated
-            pred_boxes: predicted boxes from single batch; [D, dim * 2], D number
-                of predictions
+            pred_boxes: predicted boxes from single batch; [D, dim * 2], D
+                number of predictions
             pred_scores: predicted score for each bounding box; [D], D number of
                 predictions
             gt_boxes: ground truth boxes; [G, dim * 2], G number of ground truth
             gt_ignore: specified if which ground truth boxes are not counted as
                 true positives (detections which match theses boxes are not
-                counted as false positives either); [G], G number of ground truth
-            max_detections: maximum number of detections which should be evaluated
+                counted as false positives either); [G], G number of ground
+                truth
             case_id: optionally provide a case id which will be return to
                 identify the matching result
 
@@ -338,11 +364,11 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 "which may need to be increased."
             )
 
-        gt_match = np.zeros((len(self.iou_thresholds), num_gts))
-        dt_match = np.zeros((len(self.iou_thresholds), num_preds))
-        dt_ignore = np.zeros((len(self.iou_thresholds), num_preds))
+        gt_match = np.zeros((len(iou_thresholds), num_gts))
+        dt_match = np.zeros((len(iou_thresholds), num_preds))
+        dt_ignore = np.zeros((len(iou_thresholds), num_preds))
 
-        for tind, t in enumerate(self.iou_thresholds):
+        for tind, t in enumerate(iou_thresholds):
             for dind, _d in enumerate(pred_boxes):  # iterate detections starting from highest scoring one
                 # information about best match so far (m=-1 -> unmatched)
                 iou = min([t, 1 - 1e-10])
@@ -380,5 +406,4 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             "dtScores": pred_scores,  # [D] detection scores
             "gtIgnore": gt_ignore.reshape(-1),  # [G] indicate whether ground truth should be ignored
             "dtIgnore": dt_ignore,  # [T, D], indicate which detections should be ignored
-            "case_id": case_id,
         }

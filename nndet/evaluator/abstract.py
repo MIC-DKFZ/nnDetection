@@ -105,7 +105,6 @@ class AbstractEvalMatching(ABC):
     def __init__(
         self,
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
-        iou_thresholds: Sequence[float],
         max_detections: int = 100,
         warning_ratio: float = 0.25,
     ) -> None:
@@ -114,7 +113,6 @@ class AbstractEvalMatching(ABC):
 
         Args:
             iou_fn: compute overlap for each pair
-            iou_thresholds: defined which IoU thresholds should be evaluated
             max_detections: maximum number of detections which should be
                 evaluated (per class)
             warning_ratio: if number of ground truth exceeds
@@ -123,13 +121,13 @@ class AbstractEvalMatching(ABC):
         """
         super().__init__()
         self.iou_fn = iou_fn
-        self.iou_thresholds = iou_thresholds
         self.max_detections = max_detections
         self.warning_ratio = warning_ratio
 
     @abstractmethod
-    def matching_batch(
+    def match(
         self,
+        iou_thresholds: Sequence[float],
         pred_boxes: Sequence[np.ndarray],
         pred_classes: Sequence[np.ndarray],
         pred_scores: Sequence[np.ndarray],
@@ -143,6 +141,7 @@ class AbstractEvalMatching(ABC):
         independently
 
         Args:
+            iou_thresholds: defined which IoU thresholds should be evaluated
             pred_boxes: predicted boxes from single batch; List[[D, dim * 2]],
                 D number of predictions
             pred_classes: predicted classes from a single batch; List[[D]],
