@@ -47,7 +47,7 @@ def matching_batch(
             (detections which match theses boxes are not counted as false
             positives either); List[[G]], G number of ground truth
         max_detections: maximum number of detections which should be evaluated
-        case_id: optionally provide a case id which will be return to
+        case_id: optionally provide a case id which will be returned to
             identify the matching result
 
     Returns:
