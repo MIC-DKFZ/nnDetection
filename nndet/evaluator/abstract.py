@@ -125,6 +125,16 @@ class AbstractEvalMatching(ABC):
         self.warning_ratio = warning_ratio
 
     @abstractmethod
+    def get_filter_keys() -> List[str]:
+        """
+        Return keys which need to be filtered by IoU values
+
+        Returns:
+            List[str]: name of keys which need to be filtered
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def match(
         self,
         iou_thresholds: Sequence[float],

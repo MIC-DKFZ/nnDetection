@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from loguru import logger
@@ -67,6 +67,15 @@ class EvalMatchingNP(AbstractEvalMatching):
                 f"Found element {batch_idx} with ground truth: box "
                 f"shape {gt_boxes.shape} and score shape {gt_ignore.shape}"
             )
+
+    def get_filter_keys() -> Tuple[str]:
+        """
+        Return keys which need to be filtered by IoU values
+
+        Returns:
+            List[str]: name of keys which need to be filtered
+        """
+        return ("dtMatches", "gtMatches", "dtIgnore")
 
 
 class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):

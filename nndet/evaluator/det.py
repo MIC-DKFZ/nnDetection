@@ -30,7 +30,6 @@ class DetectionEvaluator(AbstractEvaluator):
         self,
         metrics: Sequence[DetectionMetric],
         matching: AbstractEvalMatching,
-        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
     ):
         """
         Class for evaluate detection metrics
@@ -42,9 +41,9 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         self.metrics = metrics
         self.matching = matching
-        self.filter_keys = filter_keys
 
         self.results_list = []  # store results of each image
+        self.filter_keys = self.matching.get_filter_keys()
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
 
