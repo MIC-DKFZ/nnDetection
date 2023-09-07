@@ -26,7 +26,7 @@ class TestCOCOMetric:
         assert np.isclose(metric.get_iou_thresholds(), [0.1, 0.15, 0.2, 0.3]).all()
 
     def test_compute(self, mocker: MockerFixture, metric):
-        mocker.patch("nndet.eval.det.coco.CocoAPMetric.select_ap", return_value=1)
+        mocker.patch("nndet.eval.det.ap.CocoAPMetric.select_ap", return_value=1)
 
         num_iou_th = len(metric.iou_thresholds)
         num_recall_th = len(metric.recall_thresholds)
@@ -36,7 +36,7 @@ class TestCOCOMetric:
         scores = -np.ones((num_iou_th, num_recall_th, num_classes))
 
         mocker.patch(
-            "nndet.eval.det.coco.CocoAPMetric.compute_statistics",
+            "nndet.eval.det.ap.CocoAPMetric.compute_statistics",
             return_value={
                 "stats": 0,
                 "counts": [1, 1, 1],
@@ -83,7 +83,7 @@ class TestCOCOMetric:
             return_value=(1, [2, 3], [4, 5]),
         )
 
-        stats = metric.compute_statistics(results_list)
+        stats = metric.compute_statistics(results_list, tag=None)
         assert stats["recall"].shape == (1, 2)
         assert stats["precision"].shape == (1, 2, 2)
         assert stats["scores"].shape == (1, 2, 2)
