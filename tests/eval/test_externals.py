@@ -170,7 +170,7 @@ def test_froc_against_monai(example):
 
     results_list = evaluator.results_dict[""]
 
-    results = [_r for r in results_list for _r in r.values()]
+    results = [_r for r in results_list.values() for _r in r.values()]
     tp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 1] for r in results])
     fp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 0] for r in results])
 

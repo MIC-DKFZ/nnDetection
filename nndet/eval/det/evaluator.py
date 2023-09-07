@@ -137,7 +137,7 @@ class DetectionEvaluator(AbstractEvaluator):
         ]
         # Loop over all evaluated criterion ranges
         for results_key, criterion_range in self.criterion_ranges.items():
-            pred_ignore, gt_ignore = self.get_criterion_ignores(
+            criterion_pred_ignore, criterion_gt_ignore = self.get_criterion_ignores(
                 criterion_range=criterion_range,
                 gt_ignore=gt_ignore,
                 gt_boxes_criterion=gt_boxes_criterion,
@@ -148,10 +148,10 @@ class DetectionEvaluator(AbstractEvaluator):
                 pred_boxes=pred_boxes,
                 pred_classes=pred_classes,
                 pred_scores=pred_scores,
-                pred_ignore=pred_ignore,
+                pred_ignore=criterion_pred_ignore,
                 gt_boxes=gt_boxes,
                 gt_classes=gt_classes,
-                gt_ignore=gt_ignore,
+                gt_ignore=criterion_gt_ignore,
                 case_ids=case_ids,
             )
         return {}
