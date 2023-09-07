@@ -35,7 +35,7 @@ def evaluate_box_dir(
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
 
     See Also:
-        :class:`nndet.evaluator.registry.BoxEvaluator`
+        :class:`nndet.eval.registry.BoxEvaluator`
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
@@ -89,7 +89,7 @@ def evaluate_case_dir(
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graph)
 
     See Also:
-        :class:`nndet.evaluator.registry.CaseEvaluator`
+        :class:`nndet.eval.registry.CaseEvaluator`
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)

@@ -13,8 +13,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 from nndet.core import ops_np
-from nndet.evaluator.det import BoxEvaluator
-from nndet.evaluator.detection import COCOMetric
+from nndet.eval.det import BoxEvaluator, CocoAPMetric
 
 
 def filter_dataset(predictions: Dict, annotations: Dict) -> Tuple[Dict, Dict]:
@@ -143,7 +142,7 @@ def download_data():
 
     # Create COCO Metric
     classes = [cat["name"] for cat in filtered_annotations["categories"]]
-    coco = COCOMetric(
+    coco = CocoAPMetric(
         classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), max_detection=(1, 10, 100), verbose=True
     )
     ranges = {"small": (0**2, 32**2), "medium": (32**2, 96**2), "large": (96**2, 1e5**2)}

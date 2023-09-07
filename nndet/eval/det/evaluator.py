@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 from abc import abstractclassmethod
-from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -146,7 +145,10 @@ class DetectionEvaluator(AbstractEvaluator):
 
             # Find detections that are outside the criterion
             pred_outside = [
-                np.logical_or(dt_box_criterion < criterion_range[0], dt_box_criterion >= criterion_range[1])
+                np.logical_or(
+                    dt_box_criterion < criterion_range[0],
+                    dt_box_criterion >= criterion_range[1],
+                )
                 for dt_box_criterion in dt_boxes_criterion
             ]
 
@@ -161,7 +163,6 @@ class DetectionEvaluator(AbstractEvaluator):
                     gt_boxes=gt_boxes,
                     gt_classes=gt_classes,
                     gt_ignore=gt_ignore_final,
-                    max_detections=self.max_detections,
                     case_ids=case_ids,
                 )
             )
@@ -181,13 +182,16 @@ class DetectionEvaluator(AbstractEvaluator):
         metric_curves = {}
         for metric_idx, metric in enumerate(self.metrics):
             for criterion_key, results in self.results_dict.items():
-                _filter = partial(
-                    self.iou_filter,
-                    iou_idx=self.iou_mapping[metric_idx],
-                    filter_keys=self.filter_keys,
-                )
+                iou_filtered_results = [
+                    self.iou_filter(
+                        r,
+                        iou_idx=self.iou_mapping[metric_idx],
+                        filter_keys=self.filter_keys,
+                    )
+                    for r in results
+                ]
+
                 _criterion_key = criterion_key if criterion_key else None
-                iou_filtered_results = list(map(_filter, results))
                 score, curve = metric(iou_filtered_results, tag=_criterion_key)
                 if self.save_dir is not None:
                     metric.plot(score, curve, save_dir=self.save_dir, tag=_criterion_key)
@@ -325,7 +329,6 @@ class BoxEvaluator(DetectionEvaluator):
                 classes,
                 iou_list=iou_thresholds,
                 iou_range=iou_range,
-                max_detection=(100,),
                 verbose=verbose,
             )
         )

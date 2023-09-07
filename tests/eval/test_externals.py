@@ -8,7 +8,7 @@ try:
 except ImportError:
     monai = None
 
-from nndet.evaluator.registry import BoxEvaluator
+from nndet.eval.registry import BoxEvaluator
 
 
 @pytest.fixture
@@ -126,7 +126,7 @@ def test_evaluator(snapshot, example):
             gt_boxes=[t["target_boxes"]],
             gt_classes=[t["target_classes"]],
             gt_ignore=None,
-            case_id=[f"case{idx}"],
+            case_ids=[f"case{idx}"],
         )
 
     res = evaluator.finish_online_evaluation()
@@ -162,7 +162,7 @@ def test_froc_against_monai(example):
             gt_boxes=[t["target_boxes"]],
             gt_classes=[t["target_classes"]],
             gt_ignore=None,
-            case_id=[f"case{idx}"],
+            case_ids=[f"case{idx}"],
         )
 
     res = evaluator.finish_online_evaluation()

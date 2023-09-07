@@ -195,7 +195,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
             # perform matching
             img_classes = np.union1d(pclasses, gclasses)
-            result = {"case_id": cid}  # dict contains results for each class in one image
+            result = {}  # dict contains results for each class in one image
             for c in img_classes:
                 pred_mask = pclasses == c  # mask predictions with current class
                 gt_mask = gclasses == c  # mask ground trtuh with current class
