@@ -6,8 +6,8 @@ from typing import Dict
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator import AbstractEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.eval import AbstractEvaluator
+from nndet.eval.det import BoxEvaluator
 from nndet.ptmodule.mixins.evaluation.base import EvalMixin
 from nndet.utils.tensor import to_numpy
 

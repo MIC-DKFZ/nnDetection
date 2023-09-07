@@ -3,7 +3,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-from nndet.evaluator.det import DetectionEvaluator
+from nndet.eval.det import BoxEvaluator
+from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 
 
 class DummyMetric:
@@ -16,43 +17,66 @@ class DummyMetric:
 
 @pytest.fixture
 def evaluator():
-    return DetectionEvaluator([DummyMetric()], iou_fn=ops_np.box_iou_np)
+    matching = EvalMatchingPerElementGreedyScoreNP(
+        iou_fn=ops_np.box_iou_np,
+        max_detections=100,
+    )
+    return BoxEvaluator([DummyMetric()], matching=matching)
 
 
-class TestDetectionEvaluator:
+class TestBoxEvaluator:
     def test_init(self):
-        self.evaluator = DetectionEvaluator(
+        matching = EvalMatchingPerElementGreedyScoreNP(
+            iou_fn=ops_np.box_iou_np,
+            max_detections=100,
+        )
+        evaluator = BoxEvaluator(
             [
                 DummyMetric((0.1, 0.2)),
                 DummyMetric((0.3, 0.4)),
             ],
-            iou_fn=ops_np.box_iou_np,
+            matching=matching,
         )
-        assert all([a == b for a, b in zip(self.evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
-        assert all([a == b for a, b in zip(self.evaluator.iou_mapping, [[0, 1], [2, 3]])])
-        assert "" in self.evaluator.criterion_ranges.keys()
-        assert self.evaluator.criterion_ranges[""][0] == np.NINF
-        assert self.evaluator.criterion_ranges[""][1] == np.inf
+        assert all([a == b for a, b in zip(evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
+        assert all([a == b for a, b in zip(evaluator.iou_mapping, [[0, 1], [2, 3]])])
+        assert "" in evaluator.criterion_ranges.keys()
+        assert evaluator.criterion_ranges[""][0] == np.NINF
+        assert evaluator.criterion_ranges[""][1] == np.inf
+
+    def test_run_online_evaluation_smoke(self, evaluator):
+        _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
+        _pred_classes = np.array([1])
+        _pred_scores = np.array([0.1])
+        _gt_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
+        _gt_classes = np.array([2])
+        res = evaluator.run_online_evaluation(
+            [_pred_boxes],
+            [_pred_classes],
+            [_pred_scores],
+            [_gt_boxes],
+            [_gt_classes],
+        )
+        assert not res
 
     def test_run_online_evaluation(self, mocker: MockerFixture, evaluator):
-        _pred_boxes = np.array([[0]])[None]
-        _pred_classes = np.array([[1]])[None]
-        _pred_scores = np.array([[2]])[None]
-        _gt_boxes = np.array([[3]])[None]
-        _gt_classes = np.array([[4]])[None]
-        # Use pred and gt class here
         mock_matches = {
             1: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
             4: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
         }
-        evaluator.match_fn = mocker.MagicMock(return_value=[mock_matches])
+        evaluator.matching.match = mocker.MagicMock(return_value=[mock_matches])
         evaluator.box_criterion = mocker.MagicMock(return_value=np.array([0]))
+
+        _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
+        _pred_classes = np.array([1])
+        _pred_scores = np.array([0.1])
+        _gt_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
+        _gt_classes = np.array([2])
         res = evaluator.run_online_evaluation(
-            _pred_boxes,
-            _pred_classes,
-            _pred_scores,
-            _gt_classes,
-            _gt_classes,
+            [_pred_boxes],
+            [_pred_classes],
+            [_pred_scores],
+            [_gt_boxes],
+            [_gt_classes],
         )
 
         assert not res

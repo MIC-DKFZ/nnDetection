@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from nndet.evaluator.detection import FROCMetric
-from nndet.evaluator.detection.froc import FROCwpMetric
+from nndet.eval.det import FROCMetric
+from nndet.eval.det.froc import FROCwpMetric
 
 
 @pytest.fixture

@@ -1,20 +1,22 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from __future__ import annotations
 
 import os
+from abc import abstractclassmethod
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Callable
 
 import numpy as np
 
 import nndet.core.ops_np as ops_np
-from nndet.evaluator.abstract import AbstractEvaluator, DetectionMetric
-from nndet.evaluator.detection.coco import COCOMetric
-from nndet.evaluator.detection.froc import FROCMetric, FROCwpMetric
-from nndet.evaluator.detection.hist import PredictionHistogram
-from nndet.evaluator.detection.matching import matching_batch
+from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
+from nndet.eval.det.ap import CocoAPMetric
+from nndet.eval.det.froc import FROCMetric, FROCwpMetric
+from nndet.eval.det.hist import PredictionHistogram
+from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 from nndet.utils.info import experimental
 
 __all__ = ["DetectionEvaluator"]
@@ -24,10 +26,7 @@ class DetectionEvaluator(AbstractEvaluator):
     def __init__(
         self,
         metrics: Sequence[DetectionMetric],
-        iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
-        max_detections: int = 100,
-        match_fn: Callable = matching_batch,
-        filter_keys: Sequence[str] = ("dtMatches", "gtMatches", "dtIgnore"),
+        matching: AbstractEvalMatching,
         box_criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
         save_dir: Optional[os.PathLike] = None,
@@ -37,10 +36,7 @@ class DetectionEvaluator(AbstractEvaluator):
 
         Args:
             metrics: detection metrics to evaluate
-            iou_fn: compute overlap for each pair
-            max_detections: number of maximum detections per image
-                (reduces computation)
-            match_fn: function to match predictions to ground truth
+            matching: object to perform matching for batches
             filter_keys: define keys which need to be filtered by the IoU value
             box_criterion: function that takes array of boxes [N, 4/6] and
                 computes scalar criterion value array [N]
@@ -49,10 +45,6 @@ class DetectionEvaluator(AbstractEvaluator):
             save_dir: if provided, this will call the plot function of the
                 metric with the defined save_dir to create additional plots
         """
-        self.iou_fn = iou_fn
-        self.match_fn = match_fn
-
-        self.max_detections = max_detections
         self.box_criterion = box_criterion
         # set range to cover every object
         self.criterion_ranges = {"": (np.NINF, np.inf)}
@@ -68,10 +60,10 @@ class DetectionEvaluator(AbstractEvaluator):
                     )
             self.criterion_ranges.update(criterion_ranges)
         self.metrics = metrics
-        self.filter_keys = filter_keys
+        self.matching = matching
 
         self.results_dict = {key: [] for key in self.criterion_ranges.keys()}  # store results of each image
-
+        self.filter_keys = self.matching.get_filter_keys()
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
         self.save_dir = Path(save_dir) if save_dir is not None else None
@@ -99,7 +91,7 @@ class DetectionEvaluator(AbstractEvaluator):
         gt_boxes: Sequence[np.ndarray],
         gt_classes: Sequence[np.ndarray],
         gt_ignore: Sequence[Sequence[bool]] = None,
-        case_id: Optional[str] = None,
+        case_ids: Optional[Sequence[str]] = None,
     ) -> Dict:
         """
         Preprocess batch results for final evaluation
@@ -119,7 +111,7 @@ class DetectionEvaluator(AbstractEvaluator):
                 as true positives (detections which match theses boxes are
                 not counted as false positives either);
                 List[[G]], G number of ground truth
-            case_id: optionally provide a case id which will be return to
+            case_ids: optionally provide a case ids which will be return to
                 identify the matching result
 
         Returns
@@ -157,11 +149,11 @@ class DetectionEvaluator(AbstractEvaluator):
                 np.logical_or(dt_box_criterion < criterion_range[0], dt_box_criterion >= criterion_range[1])
                 for dt_box_criterion in dt_boxes_criterion
             ]
+
             # Get all matches
             self.results_dict[results_key].extend(
-                self.match_fn(
-                    self.iou_fn,
-                    self.iou_thresholds,
+                self.matching.match(
+                    iou_thresholds=self.iou_thresholds,
                     pred_boxes=pred_boxes,
                     pred_classes=pred_classes,
                     pred_scores=pred_scores,
@@ -170,7 +162,7 @@ class DetectionEvaluator(AbstractEvaluator):
                     gt_classes=gt_classes,
                     gt_ignore=gt_ignore_final,
                     max_detections=self.max_detections,
-                    case_id=case_id,
+                    case_ids=case_ids,
                 )
             )
         return {}
@@ -228,8 +220,7 @@ class DetectionEvaluator(AbstractEvaluator):
             image_dict: dictionary containin :param:`filter_keys`
                 which contains IoUs in the first dimension
             iou_idx: indices of IoU values to filter from keys
-            filter_keys: keys to filter, by default
-                ('dtMatches', 'gtMatches', 'dtIgnore')
+            filter_keys: keys to filter, defined by matching
 
         Returns
             dict: filtered dictionary
@@ -245,6 +236,33 @@ class DetectionEvaluator(AbstractEvaluator):
         Reset internal state of evaluator
         """
         self.results_dict = {key: [] for key in self.criterion_ranges.keys()}
+
+    @abstractclassmethod
+    def create(
+        cls,
+        classes: Sequence[str],
+        fast: bool = True,
+        verbose: bool = False,
+        save_dir: Optional[Path] = None,
+    ) -> DetectionEvaluator:
+        """
+        Create an evaluator object
+
+        Args:
+            classes: classes present in the dataset
+            fast: Reduces the evaluation suite to save time (e.g. during
+                training)
+            verbose: Additional logging output
+            save_dir: Path to save information
+
+        Returns:
+            DetectionEvaluator: evaluator to efficiently compute metrics
+        """
+        raise NotImplementedError
+
+
+class BoxEvaluator(DetectionEvaluator):
+    similarity_fn = ops_np.box_iou_np
 
     @classmethod
     def create(
@@ -274,7 +292,7 @@ class DetectionEvaluator(AbstractEvaluator):
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        # iou_fn = box_iou_np
+        max_detections = 100
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
         criterion_ranges_final = {
@@ -303,7 +321,7 @@ class DetectionEvaluator(AbstractEvaluator):
             )
         )
         metrics.append(
-            COCOMetric(
+            CocoAPMetric(
                 classes,
                 iou_list=iou_thresholds,
                 iou_range=iou_range,
@@ -321,17 +339,23 @@ class DetectionEvaluator(AbstractEvaluator):
                 )
             )
 
+        matching = EvalMatchingPerElementGreedyScoreNP(
+            iou_fn=cls.similarity_fn,
+            max_detections=max_detections,
+            warning_ratio=0.25,
+        )
         return cls(
             metrics=tuple(metrics),
-            iou_fn=cls.similarity_fn,
+            matching=matching,
             box_criterion=box_criterion,
             criterion_ranges=criterion_ranges_final,
             save_dir=save_dir,
         )
 
 
-class BoxEvaluator(DetectionEvaluator):
-    similarity_fn = ops_np.box_iou_np
+"""
+############ Experimental Evaluators ############
+"""
 
 
 class CountDifferenceEvaluator(AbstractEvaluator):
