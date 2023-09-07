@@ -13,7 +13,6 @@ def metric():
         classes=["benign", "malignant"],
         iou_list=(0.1, 0.3),
         iou_range=(0.1, 0.2, 0.1),
-        max_detection=(1, 10),
     )
 
 
@@ -23,22 +22,21 @@ class TestCOCOMetric:
             classes=["benign", "malignant"],
             iou_list=(0.1, 0.2, 0.3),
             iou_range=(0.1, 0.2, 0.05),
-            max_detection=(1, 5, 100),
         )
         assert np.isclose(metric.get_iou_thresholds(), [0.1, 0.15, 0.2, 0.3]).all()
 
     def test_compute(self, mocker: MockerFixture, metric):
-        mocker.patch("nndet.evaluator.detection.coco.CocoAPMetric.select_ap", return_value=1)
+        mocker.patch("nndet.eval.det.ap.CocoAPMetric.select_ap", return_value=1)
         mocker.patch(
-            "nndet.evaluator.detection.coco.CocoAPMetric.compute_statistics",
+            "nndet.eval.det.ap.CocoAPMetric.compute_statistics",
             return_value={"stats": 0},
         )
 
         score, curve = metric([0, 1, 2])
         assert curve is None
-        assert score["mAP_IoU_0.10_0.20_0.10_MaxDet_10"] == 1
-        assert score["AP_IoU_0.10_MaxDet_10"] == 1
-        assert score["AP_IoU_0.30_MaxDet_10"] == 1
+        assert score["mAP_IoU_0.10_0.20_0.10"] == 1
+        assert score["AP_IoU_0.10"] == 1
+        assert score["AP_IoU_0.30"] == 1
 
     def test_select_ap(self, metric):
         stats = {"precision": np.array([[0.0, 0.5, 1.0], [1.0, 1.0, 1.0], [1.0, 0.5, 3.0]])[:, :, None, None]}
@@ -68,15 +66,19 @@ class TestCOCOMetric:
             }
         ] * 3
         mocker.patch(
-            "nndet.evaluator.detection.coco.compute_stats_single_threshold",
+            "nndet.eval.det.ap.compute_stats_single_threshold",
             return_value=(1, [2, 3], [4, 5]),
         )
 
         stats = metric.compute_statistics(results_list)
-        assert np.isclose(stats["counts"], [1, 2, 2, 2]).all()
-        assert np.isclose(stats["recall"], [[[1.0, 1.0], [1.0, 1.0]]]).all()
-        assert np.isclose(stats["precision"], [[[[2.0, 2.0], [2.0, 2.0]], [[3.0, 3.0], [3.0, 3.0]]]]).all()
-        assert np.isclose(stats["scores"], [[[[4.0, 4.0], [4.0, 4.0]], [[5.0, 5.0], [5.0, 5.0]]]]).all()
+        assert stats["recall"].shape == (1, 2)
+        assert stats["precision"].shape == (1, 2, 2)
+        assert stats["scores"].shape == (1, 2, 2)
+
+        assert np.isclose(stats["counts"], [1, 2, 2]).all()
+        assert np.isclose(stats["recall"], [[1.0, 1.0]]).all()
+        assert np.isclose(stats["precision"], [[[2.0, 2.0], [3.0, 3.0]]]).all()
+        assert np.isclose(stats["scores"], [[[4.0, 4.0], [5.0, 5.0]]]).all()
 
     def test_compute_stats_single_threshold(self):
         tp = np.array([1, 2, 3, 4, 5, 6])
@@ -86,6 +88,6 @@ class TestCOCOMetric:
         num_gt = 2
         rc, prec, ths = compute_stats_single_threshold(tp, fp, dt_scores_sorted, recall_thresholds, num_gt)
 
-        assert math.isclose(rc, 3.0)  # used different num_gt so number are nice
+        assert math.isclose(rc, 3.0)  # used different num_gt so numbers are nice
         assert np.isclose(prec, [1.0, 0.75, 0.75]).all()
         assert np.isclose(ths, [0.9, 0.8, 0.8]).all()

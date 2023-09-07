@@ -150,8 +150,7 @@ class DetectionEvaluator(AbstractEvaluator):
             image_dict: dictionary containin :param:`filter_keys`
                 which contains IoUs in the first dimension
             iou_idx: indices of IoU values to filter from keys
-            filter_keys: keys to filter, by default
-                ('dtMatches', 'gtMatches', 'dtIgnore')
+            filter_keys: keys to filter, defined by matching
 
         Returns
             dict: filtered dictionary

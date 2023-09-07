@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -124,8 +124,8 @@ class AbstractEvalMatching(ABC):
         self.max_detections = max_detections
         self.warning_ratio = warning_ratio
 
-    @abstractmethod
-    def get_filter_keys() -> List[str]:
+    @abstractclassmethod
+    def get_filter_keys(cls) -> List[str]:
         """
         Return keys which need to be filtered by IoU values
 

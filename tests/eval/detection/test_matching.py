@@ -3,12 +3,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import nndet.core.ops_np as ops_np
-from nndet.eval.detection.matching import (
-    _matching_no_gt,
-    _matching_no_pred,
-    _matching_single_image_single_class,
-    matching_batch,
-)
+from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 
 
 @pytest.fixture
@@ -33,11 +28,9 @@ def example():
 
 class TestMatching:
     def test_box_matching_batch(self, mocker: MockerFixture):
-        box_match_single_mock = mocker.patch(
-            "nndet.evaluator.detection.matching._matching_single_image_single_class",
-            return_value=0,
-        )
-        iou_fn = mocker.Mock(return_value=None)
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+        matching._matching_single_image_single_class = mocker.Mock(return_value=0)
+        # iou_fn = mocker.Mock(return_value=None)
         iou_tresholds = [0.1, 0.5]
 
         pred_boxes = np.array([[0, 1, 2, 3], [0, 1, 2, 3]])
@@ -48,8 +41,8 @@ class TestMatching:
         gt_classes = np.array([0, 1])
         gt_ignore = np.array([0, 0])
 
-        res = matching_batch(
-            iou_fn,
+        res = matching.match(
+            # iou_fn,
             iou_tresholds,
             [pred_boxes],
             [pred_classes],
@@ -57,30 +50,27 @@ class TestMatching:
             [gt_boxes],
             [gt_classes],
             [gt_ignore],
+            ["case0"],
         )
 
         assert len(res) == 1
-        assert {0: 0, 1: 0} == res[0]
-        box_match_single_mock.assert_called()
+        assert {"case_id": "case0", 0: 0, 1: 0} == res[0]
+        matching._matching_single_image_single_class.assert_called()
 
     def test_box_matching_batch_no_gt(self, mocker: MockerFixture):
-        match_fn_mocker = mocker.patch(
-            "nndet.evaluator.detection.matching._matching_no_gt",
-            return_value=0,
-        )
-        iou_fn = mocker.Mock(return_value=None)
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+        matching._matching_no_gt = mocker.Mock(return_value=0)
         iou_tresholds = [0.1, 0.5]
 
         pred_boxes = np.array([[0.0, 1.0, 2.0, 3.0]])
         pred_classes = np.array([0])
         pred_scores = np.array([1.0])
 
-        gt_boxes = np.array([[]])
+        gt_boxes = np.array([[]]).reshape(-1, 6)
         gt_classes = np.array([])
         gt_ignore = np.array([])
 
-        res = matching_batch(
-            iou_fn,
+        res = matching.match(
             iou_tresholds,
             [pred_boxes],
             [pred_classes],
@@ -91,18 +81,15 @@ class TestMatching:
         )
 
         assert len(res) == 1
-        assert res == [{0: 0}]
-        match_fn_mocker.assert_called()
+        assert res[0] == {"case_id": None, 0: 0}
+        matching._matching_no_gt.assert_called()
 
     def test_box_matching_batch_no_pred(self, mocker: MockerFixture):
-        match_fn_mocker = mocker.patch(
-            "nndet.evaluator.detection.matching._matching_no_pred",
-            return_value=0,
-        )
-        iou_fn = mocker.Mock(return_value=None)
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+        matching._matching_no_pred = mocker.Mock(return_value=0)
         iou_tresholds = [0.1, 0.5]
 
-        pred_boxes = np.array([[]])
+        pred_boxes = np.array([[]]).reshape(-1, 6)
         pred_classes = np.array([])
         pred_scores = np.array([])
 
@@ -110,8 +97,7 @@ class TestMatching:
         gt_classes = np.array([0])
         gt_ignore = np.array([1.0])
 
-        res = matching_batch(
-            iou_fn,
+        res = matching.match(
             iou_tresholds,
             [pred_boxes],
             [pred_classes],
@@ -122,22 +108,22 @@ class TestMatching:
         )
 
         assert len(res) == 1
-        assert res == [{0: 0}]
-        match_fn_mocker.assert_called()
+        assert res[0] == {"case_id": None, 0: 0}
+        matching._matching_no_pred.assert_called()
 
     def test_box_matching_single_image_single_class_no_ignore(self, example):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         pred_boxes, pred_scores, gt_boxes = example
         gt_ignore = np.array([0, 0, 0])
         iou_thresholds = [0.1, 0.5]
 
-        res = _matching_single_image_single_class(
-            iou_fn=ops_np.box_iou_np,
+        res = matching._matching_single_image_single_class(
+            iou_thresholds=iou_thresholds,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            max_detections=100,
-            iou_thresholds=iou_thresholds,
             case_id="example",
         )
 
@@ -146,21 +132,20 @@ class TestMatching:
         assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
         assert np.isclose(res["gtIgnore"], [0.0, 0.0, 0.0]).all()
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
-        assert res["case_id"] == "example"
 
     def test_box_matching_single_image_single_class_ignore(self, example):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         pred_boxes, pred_scores, gt_boxes = example
         gt_ignore = np.array([1, 0, 0])
         iou_thresholds = [0.1, 0.5]
 
-        res = _matching_single_image_single_class(
-            iou_fn=ops_np.box_iou_np,
+        res = matching._matching_single_image_single_class(
+            iou_thresholds=iou_thresholds,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            max_detections=100,
-            iou_thresholds=iou_thresholds,
             case_id="example",
         )
 
@@ -169,22 +154,21 @@ class TestMatching:
         assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
         assert np.isclose(res["gtIgnore"], [0.0, 0.0, 1.0]).all()
         assert np.isclose(res["dtIgnore"], [[0.0, 1.0, 0.0], [0.0, 0.0, 0.0]]).all()
-        assert res["case_id"] == "example"
 
     def test_box_matching_single_image_single_class_mul_matches(self, example):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         pred_boxes, pred_scores, gt_boxes = example
         pred_boxes[0, :] = pred_boxes[2, :]  # simulate duplicate prediction
         gt_ignore = np.array([0, 0, 0])
         iou_thresholds = [0.2, 0.5]
 
-        res = _matching_single_image_single_class(
-            iou_fn=ops_np.box_iou_np,
+        res = matching._matching_single_image_single_class(
+            iou_thresholds=iou_thresholds,
             pred_boxes=pred_boxes,
             pred_scores=pred_scores,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            max_detections=100,
-            iou_thresholds=iou_thresholds,
             case_id="example",
         )
 
@@ -193,16 +177,16 @@ class TestMatching:
         assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
         assert np.isclose(res["gtIgnore"], [0.0, 0.0, 0.0]).all()
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
-        assert res["case_id"] == "example"
 
     def test_matching_no_gt(self, example):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         _, pred_scores, _ = example
         iou_thresholds = [0.1, 0.5]
 
-        res = _matching_no_gt(
+        res = matching._matching_no_gt(
             iou_thresholds=iou_thresholds,
             pred_scores=pred_scores,
-            max_detections=100,
             case_id="example",
         )
 
@@ -213,13 +197,14 @@ class TestMatching:
         assert res["gtIgnore"].size == 0
         assert res["gtIgnore"].shape == (0,)
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
-        assert res["case_id"] == "example"
 
-    def test_matching_no_pred(self, example):
+    def test_matching_no_pred(self):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         iou_thresholds = [0.1, 0.5]
         gt_ignore = np.array([0.0, 0.0, 1.0])
 
-        res = _matching_no_pred(
+        res = matching._matching_no_pred(
             iou_thresholds=iou_thresholds,
             gt_ignore=gt_ignore,
             case_id="example",
@@ -233,9 +218,10 @@ class TestMatching:
         assert np.isclose(res["gtIgnore"], [0.0, 0.0, 1.0]).all()
         assert res["dtIgnore"].size == 0
         assert res["dtIgnore"].shape == (2, 0)
-        assert res["case_id"] == "example"
 
     def test_smoke_box_matching_batch(self):
+        matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
+
         _pd_boxes = [
             np.array(
                 [
@@ -259,8 +245,7 @@ class TestMatching:
         ]
         _gt_classes = [np.array([1, 1, 1, 0])]
         _gt_ignore = [np.array([0, 0, 0, 0])]
-        matching_batch(
-            ops_np.box_iou_np,
+        matching.match(
             [0.1, 0.5, 0.75],
             _pd_boxes,
             _pd_classes,

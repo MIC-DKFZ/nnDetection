@@ -7,6 +7,7 @@ from nndet.eval.abstract import AbstractEvalMatching
 
 
 class EvalMatchingNP(AbstractEvalMatching):
+    @staticmethod
     def _check_element(
         batch_idx: int,
         pred_boxes: np.ndarray,
@@ -68,7 +69,8 @@ class EvalMatchingNP(AbstractEvalMatching):
                 f"shape {gt_boxes.shape} and score shape {gt_ignore.shape}"
             )
 
-    def get_filter_keys() -> Tuple[str]:
+    @classmethod
+    def get_filter_keys(cls) -> Tuple[str]:
         """
         Return keys which need to be filtered by IoU values
 
@@ -173,7 +175,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
             # perform matching
             img_classes = np.union1d(pclasses, gclasses)
-            result = {}  # dict contains results for each class in one image
+            result = {"case_id": cid}  # dict contains results for each class in one image
             for c in img_classes:
                 pred_mask = pclasses == c  # mask predictions with current class
                 gt_mask = gclasses == c  # mask ground trtuh with current class
@@ -199,7 +201,6 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                         gt_ignore=gignore[gt_mask],
                         case_id=cid,
                     )
-                r["case_id"] = cid
                 result[c] = r
             results.append(result)
         return results
