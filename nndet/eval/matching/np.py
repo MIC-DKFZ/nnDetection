@@ -1,3 +1,12 @@
+# Modifications licensed under:
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+#
+# Parts of this code are from cocoapi licensed under
+# SPDX-FileCopyrightText: 2014, Piotr Dollar and Tsung-Yi Lin
+# SPDX-License-Identifier: BSD-2-Clause-Views
+
+
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
