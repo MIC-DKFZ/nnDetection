@@ -13,6 +13,7 @@ class EvalMatchingNP(AbstractEvalMatching):
         pred_boxes: np.ndarray,
         pred_scores: np.ndarray,
         pred_classes: np.ndarray,
+        pred_ignore: np.ndarray,
         gt_boxes: np.ndarray,
         gt_classes: np.ndarray,
         gt_ignore: np.ndarray,
@@ -26,6 +27,9 @@ class EvalMatchingNP(AbstractEvalMatching):
             pred_classes: predicted classes from a single element; [D],
                 D number of predictions
             pred_scores: predicted score for each bounding box; [D],
+                D number of predictions
+            pred_ignore: boolean array to indicate if given prediction
+                should be ignores throughout matching [D],
                 D number of predictions
             gt_boxes: ground truth boxes; [G, dim * 2], G number of ground
                 truth
@@ -41,6 +45,8 @@ class EvalMatchingNP(AbstractEvalMatching):
             raise ValueError(f"Expected prediction scores to have one dimensions found {pred_scores.ndim}")
         if not pred_classes.ndim == 1:
             raise ValueError(f"Expected prediction classes to have one dimensions found {pred_classes.ndim}")
+        if not pred_ignore.ndim == 1:
+            raise ValueError(f"Expected prediction ignore to have one dimensions found {pred_ignore.ndim}")
         if not gt_boxes.ndim == 2:
             raise ValueError(f"Expected ground truth boxes to have two dimensions found {gt_boxes.ndim}")
         if not gt_classes.ndim == 1:
@@ -57,6 +63,11 @@ class EvalMatchingNP(AbstractEvalMatching):
             raise ValueError(
                 f"Found element {batch_idx} with predictions: box "
                 f"shape {pred_boxes.shape} and score shape {pred_scores.shape}"
+            )
+        if not (pred_boxes.shape[0] == pred_ignore.shape[0]):
+            raise ValueError(
+                f"Found element {batch_idx} with predictions: box "
+                f"shape {pred_boxes.shape} and ignore shape {pred_ignore.shape}"
             )
         if not (gt_boxes.shape[0] == gt_classes.shape[0]):
             raise ValueError(
@@ -125,7 +136,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 (detections which match theses boxes are not counted as false
                 positives either); List[[G]], G number of ground truth
             pred_ignore: boolean whether the predicted box should be ignored if
-                it is not matched
+                it is not matched List[[D]]
             case_ids: optionally provide case ids which will be returned to
                 identify the matching result
 
@@ -176,6 +187,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 pred_boxes=pboxes,
                 pred_scores=pscores,
                 pred_classes=pclasses,
+                pred_ignore=pignore,
                 gt_boxes=gboxes,
                 gt_classes=gclasses,
                 gt_ignore=gignore,
@@ -228,20 +240,32 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         Args:
             iou_thresholds: defined which IoU thresholds should be evaluated
             pred_scores: predicted scores
-            pred_ignore: detections that should be ignored if they are not matched
+            pred_ignore: detections that should be ignored if they are not
+                matched
             case_id: optionally provide a case id which will be return to
                 identify the matching result
 
         Returns:
-            dict: computed matching # TODO: fix doc formatting
-                `dtMatches`: matched detections [T, D], where T = number of
+            dict: computed matching
+
+                ``dtMatches`` np.ndarray
+
+                    matched detections [T, D], where T = number of
                     thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number
+
+                ``gtMatches`` np.ndarray
+                    matched ground truth boxes [T, G], where T = number
                     of thresholds, G = number of ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
+
+                ``dtScores`` np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore`` np.ndarray
+                    ground truth boxes which should be ignored
                     [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
+
+                ``dtIgnore`` np.ndarray
+                    detections which should be ignored [T, D],
                     indicate which detections should be ignored
         """
         assert pred_scores.ndim == 1
@@ -285,14 +309,25 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         Returns:
             dict: computed matching
-                `dtMatches`: matched detections [T, D], where T = number of
+
+                ``dtMatches`` np.ndarray
+
+                    matched detections [T, D], where T = number of
                     thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number
+
+                ``gtMatches`` np.ndarray
+                    matched ground truth boxes [T, G], where T = number
                     of thresholds, G = number of ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
+
+                ``dtScores`` np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore`` np.ndarray
+                    ground truth boxes which should be ignored
                     [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
+
+                ``dtIgnore`` np.ndarray
+                    detections which should be ignored [T, D],
                     indicate which detections should be ignored
         """
         assert gt_ignore.ndim == 1
@@ -329,7 +364,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         case_id: Optional[str] = None,
     ) -> Dict[str, np.ndarray]:
         """
-        Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
+        Adapted from `https://github.com/cocodataset/cocoapi/blob/master/
+        PythonAPI/pycocotools/cocoeval.py`
 
         Args:
             iou_thresholds: defined which IoU thresholds should be evaluated
@@ -337,7 +373,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 number of predictions
             pred_scores: predicted score for each bounding box; [D], D number of
                 predictions
-            pred_ignore: detections that should be ignored if they are not matched
+            pred_ignore: detections that should be ignored if they are not
+                matched
             gt_boxes: ground truth boxes; [G, dim * 2], G number of ground truth
             gt_ignore: specified if which ground truth boxes are not counted as
                 true positives (detections which match theses boxes are not
@@ -348,14 +385,25 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         Returns:
             dict: computed matching
-                `dtMatches`: matched detections [T, D], where T = number of
+
+                ``dtMatches`` np.ndarray
+
+                    matched detections [T, D], where T = number of
                     thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number
+
+                ``gtMatches`` np.ndarray
+                    matched ground truth boxes [T, G], where T = number
                     of thresholds, G = number of ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored
+
+                ``dtScores`` np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore`` np.ndarray
+                    ground truth boxes which should be ignored
                     [G] indicate whether ground truth should be ignored
-                `dtIgnore`: detections which should be ignored [T, D],
+
+                ``dtIgnore`` np.ndarray
+                    detections which should be ignored [T, D],
                     indicate which detections should be ignored
         """
         assert pred_boxes.ndim == 2

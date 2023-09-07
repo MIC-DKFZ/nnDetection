@@ -96,7 +96,7 @@ class CocoAPMetric(DetectionMetric):
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
         tag: Optional[str] = None,
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute AP metric similar to COCO implementation (no limit on
         detections per image in this class)
@@ -130,7 +130,7 @@ class CocoAPMetric(DetectionMetric):
 
         Returns:
             Dict[str, float]: dictionary with AP metrics
-            Dict[str, np.ndarray]: dictionary with meta information such
+            Dict[str, Any]: dictionary with meta information such
                 as iou- and recall thresholds, precision-recall curve
                 information. Recall values are saved as `recall_tresholds`
                 and precision values are saved under respective
@@ -156,7 +156,7 @@ class CocoAPMetric(DetectionMetric):
         self,
         dataset_statistics: dict,
         tag: Optional[str],
-    ) -> dict:
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute AP metrics
 
@@ -182,7 +182,13 @@ class CocoAPMetric(DetectionMetric):
             tag: tag of the current evaluation. Added to metric keys and
                 filenames. If None, no tag will be used
 
-            #TODO: add return docs
+        Returns:
+            Dict[str, float]: dictionary with AP metrics
+            Dict[str, Any]: dictionary with meta information such
+                as iou- and recall thresholds, precision-recall curve
+                information. Recall values are saved as `recall_tresholds`
+                and precision values are saved under respective
+                `{cls_str}_{metric_name}_IoU_{_iou:.2f}` key.
         """
         results = {}
         metric_name = self.get_name(tag=tag)
@@ -269,8 +275,11 @@ class CocoAPMetric(DetectionMetric):
             return np.mean(prec[prec > -1])
         return float(-1)
 
-    # TODO: check
-    def get_pr_curves(self, dataset_statistics: dict, tag: Optional[str]) -> Dict[str, Any]:
+    def get_pr_curves(
+        self,
+        dataset_statistics: dict,
+        tag: Optional[str],
+    ) -> Dict[str, Any]:
         """
         Retrieve precision recall curves and meta information of metric
         """
@@ -279,8 +288,6 @@ class CocoAPMetric(DetectionMetric):
             f"{metric_name}_num_thresholds": dataset_statistics["counts"][0],
             f"{metric_name}_num_recall_threshods": dataset_statistics["counts"][1],
             f"{metric_name}_num_classes": dataset_statistics["counts"][2],
-            f"{metric_name}_num_max_detection_thresholds": dataset_statistics["counts"][3],
-            f"{metric_name}_max_detections": self.max_detections,
             f"{metric_name}_classes": self.classes,
             f"{metric_name}_recall_thresholds": self.recall_thresholds,
             f"{metric_name}_iou_thresholds": [],
@@ -288,16 +295,14 @@ class CocoAPMetric(DetectionMetric):
         # iter iou thresholds
         for iou_idx in self.iou_list_idx:
             _iou = self.iou_thresholds[iou_idx]
-            _max_det = self.max_detections[-1]
-            curves = dataset_statistics["precision"][iou_idx, :, :, -1]  # num_recall_th, num_classes
+            curves = dataset_statistics["precision"][iou_idx, :, :]  # num_recall_th, num_classes
 
             # iter classes
             for cls_idx, cls_str in enumerate(self.classes):
-                meta[f"{cls_str}_{metric_name}_IoU_{_iou:.2f}_MaxDet_{_max_det}"] = {
+                meta[f"{cls_str}_{metric_name}_IoU_{_iou:.2f}"] = {
                     "iou": _iou,
                     "iou_str": f"{_iou:.2f}",
                     "class": cls_str,
-                    "maxdet": _max_det,
                     "_cls_idx": cls_idx,
                     "curve": curves[..., cls_idx],
                 }
@@ -440,6 +445,8 @@ class CocoAPMetric(DetectionMetric):
             result_scores: single as obtained from `compute` function
             result_meta: meta information as obtained from `compute` function
             save_dir: path to directory where files should be saved
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
 
         Returns:
             Dict: figures of create plots
@@ -447,8 +454,6 @@ class CocoAPMetric(DetectionMetric):
         metric_name = cls.get_name(tag=tag)
         recall = result_meta[f"{metric_name}_recall_thresholds"]
         for iou in result_meta[f"{metric_name}_iou_thresholds"]:
-            max_det = result_meta[f"{metric_name}_max_detections"][-1]
-
             # create plot
             fig, ax = plt.subplots()
             ax.set_xlim(-0.05, 1.05)
@@ -458,11 +463,11 @@ class CocoAPMetric(DetectionMetric):
             ax.grid(True)
 
             for cls_str in result_meta[f"{metric_name}_classes"]:
-                key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
+                key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}"
                 prec = result_meta[key]["curve"]
                 ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]:.2f}")
 
-            title = f"{metric_name}_IoU_{iou:.2f}_MaxDet_{max_det}"
+            title = f"{metric_name}_IoU_{iou:.2f}"
             ax.set_title(title)
             ax.legend(loc="lower right")
 
