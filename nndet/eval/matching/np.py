@@ -18,7 +18,6 @@ from nndet.eval.abstract import AbstractEvalMatching
 class EvalMatchingNP(AbstractEvalMatching):
     @staticmethod
     def _check_element(
-        batch_idx: int,
         pred_boxes: np.ndarray,
         pred_scores: np.ndarray,
         pred_classes: np.ndarray,
@@ -65,28 +64,23 @@ class EvalMatchingNP(AbstractEvalMatching):
 
         if not (pred_boxes.shape[0] == pred_classes.shape[0]):
             raise ValueError(
-                f"Found element {batch_idx} with predictions: box "
-                f"shape {pred_boxes.shape} and class shape {pred_classes.shape}"
+                f"Found element with predictions: box " f"shape {pred_boxes.shape} and class shape {pred_classes.shape}"
             )
         if not (pred_boxes.shape[0] == pred_scores.shape[0]):
             raise ValueError(
-                f"Found element {batch_idx} with predictions: box "
-                f"shape {pred_boxes.shape} and score shape {pred_scores.shape}"
+                f"Found element with predictions: box " f"shape {pred_boxes.shape} and score shape {pred_scores.shape}"
             )
         if not (pred_boxes.shape[0] == pred_ignore.shape[0]):
             raise ValueError(
-                f"Found element {batch_idx} with predictions: box "
-                f"shape {pred_boxes.shape} and ignore shape {pred_ignore.shape}"
+                f"Found element with predictions: box " f"shape {pred_boxes.shape} and ignore shape {pred_ignore.shape}"
             )
         if not (gt_boxes.shape[0] == gt_classes.shape[0]):
             raise ValueError(
-                f"Found element {batch_idx} with ground truth: box "
-                f"shape {gt_boxes.shape} and class shape {gt_classes.shape}"
+                f"Found element with ground truth: box " f"shape {gt_boxes.shape} and class shape {gt_classes.shape}"
             )
         if not (gt_boxes.shape[0] == gt_ignore.shape[0]):
             raise ValueError(
-                f"Found element {batch_idx} with ground truth: box "
-                f"shape {gt_boxes.shape} and score shape {gt_ignore.shape}"
+                f"Found element with ground truth: box " f"shape {gt_boxes.shape} and score shape {gt_ignore.shape}"
             )
 
     @classmethod
@@ -114,15 +108,14 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
     def match(
         self,
-        iou_thresholds: Sequence[float],
-        pred_boxes: Sequence[np.ndarray],
-        pred_classes: Sequence[np.ndarray],
-        pred_scores: Sequence[np.ndarray],
-        gt_boxes: Sequence[np.ndarray],
-        gt_classes: Sequence[np.ndarray],
-        gt_ignore: Sequence[Sequence[bool]],
-        pred_ignore: Optional[Sequence[np.ndarray]] = None,
-        case_ids: Optional[Sequence[str]] = None,
+        iou_thresholds: float,
+        pred_boxes: np.ndarray,
+        pred_classes: np.ndarray,
+        pred_scores: np.ndarray,
+        gt_boxes: np.ndarray,
+        gt_classes: np.ndarray,
+        pred_ignore: Optional[np.ndarray] = None,
+        gt_ignore: Optional[np.ndarray] = None,
     ) -> List[Dict[int, Dict[str, np.ndarray]]]:
         """
         Match boxes of a batch to corresponding ground truth for each category
@@ -130,118 +123,76 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         Args:
             iou_thresholds: defined which IoU thresholds should be evaluated
-            pred_boxes: predicted boxes from single batch; List[[D, dim * 2]],
-                D number of predictions
-            pred_classes: predicted classes from a single batch; List[[D]],
-                D number of predictions
-            pred_scores: predicted score for each bounding box; List[[D]],
-                D number of predictions
-            gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
-                truth
-            gt_classes: ground truth classes; List[[G]], G number of ground
-                truth
+            pred_boxes: predicted boxes from single batch; [D, dim * 2], D
+                number of predictions
+            pred_scores: predicted score for each bounding box; [D], D number of
+                predictions
+            pred_ignore: detections that should be ignored if they are not
+                matched
+            gt_boxes: ground truth boxes; [G, dim * 2], G number of ground truth
             gt_ignore: specified if which ground truth boxes are not counted as
-                true positives
-                (detections which match theses boxes are not counted as false
-                positives either); List[[G]], G number of ground truth
-            pred_ignore: boolean whether the predicted box should be ignored if
-                it is not matched List[[D]]
-            case_ids: optionally provide case ids which will be returned to
+                true positives (detections which match theses boxes are not
+                counted as false positives either); [G], G number of ground
+                truth
+            case_id: optionally provide a case id which will be return to
                 identify the matching result
 
         Returns:
-            List[Dict[int, Dict[str, np.ndarray]]]
+            Dict[int, np.ndarray]
                 matched detections [dtMatches] and ground truth [gtMatches]
-                boxes [str, np.ndarray] for each category (stored in dict keys)
-                for each image (list)
+                boxes [int, np.ndarray] for each category (stored in dict keys)
         """
-        results = []
         if pred_ignore is None:
-            pred_ignore = [np.zeros(pclasses.shape, dtype=int) for pclasses in pred_classes]
+            n_pred = 0 if pred_classes.size == 0 else pred_classes.shape[0]
+            pred_ignore = np.zeros(n_pred, dtype=int)
+        if gt_ignore is None:
+            n_gt = 0 if gt_boxes.size == 0 else gt_boxes.shape[0]
+            gt_ignore = np.zeros(n_gt).reshape(-1)
 
-        batch_size = len(pred_boxes)
-        if len(pred_classes) != batch_size:
-            raise ValueError("Unequal batch size encountered for pred_classes.")
-        if len(pred_scores) != batch_size:
-            raise ValueError("Unequal batch size encountered for pred_scores.")
-        if len(gt_boxes) != batch_size:
-            raise ValueError("Unequal batch size encountered for gt_boxes.")
-        if len(gt_classes) != batch_size:
-            raise ValueError("Unequal batch size encountered for gt_classes.")
-        if len(gt_ignore) != batch_size:
-            raise ValueError("Unequal batch size encountered for gt_ignore.")
-        if len(pred_ignore) != batch_size:
-            raise ValueError("Unequal batch size encountered for pred_ignore.")
-        if case_ids is None:
-            case_ids = [None] * batch_size
-        else:
-            if len(case_ids) != batch_size:
-                raise ValueError("Unequal batch size encountered for case ids.")
+        self._check_element(
+            pred_boxes=pred_boxes,
+            pred_scores=pred_scores,
+            pred_classes=pred_classes,
+            pred_ignore=pred_ignore,
+            gt_boxes=gt_boxes,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
+        )
 
-        # iterate over images/batches
-        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid) in enumerate(
-            zip(
-                pred_boxes,
-                pred_classes,
-                pred_scores,
-                pred_ignore,
-                gt_boxes,
-                gt_classes,
-                gt_ignore,
-                case_ids,
-            )
-        ):
-            self._check_element(
-                batch_idx=batch_idx,
-                pred_boxes=pboxes,
-                pred_scores=pscores,
-                pred_classes=pclasses,
-                pred_ignore=pignore,
-                gt_boxes=gboxes,
-                gt_classes=gclasses,
-                gt_ignore=gignore,
-            )
+        # perform matching
+        result = {}
+        img_classes = np.union1d(pred_classes, gt_classes)
+        for c in img_classes:
+            pred_mask = pred_classes == c  # mask predictions with current class
+            gt_mask = gt_classes == c  # mask ground trtuh with current class
 
-            # perform matching
-            img_classes = np.union1d(pclasses, gclasses)
-            result = {}  # dict contains results for each class in one image
-            for c in img_classes:
-                pred_mask = pclasses == c  # mask predictions with current class
-                gt_mask = gclasses == c  # mask ground trtuh with current class
-
-                if not np.any(gt_mask):  # no ground truth
-                    r = self._matching_no_gt(
-                        iou_thresholds=iou_thresholds,
-                        pred_scores=pscores[pred_mask],
-                        pred_ignore=pignore[pred_mask],
-                        case_id=cid,
-                    )
-                elif not np.any(pred_mask):  # no predictions
-                    r = self._matching_no_pred(
-                        iou_thresholds=iou_thresholds,
-                        gt_ignore=gignore[gt_mask],
-                        case_id=cid,
-                    )
-                else:  # at least one prediction and one ground truth
-                    r = self._matching_single_image_single_class(
-                        iou_thresholds=iou_thresholds,
-                        pred_boxes=pboxes[pred_mask],
-                        pred_scores=pscores[pred_mask],
-                        pred_ignore=pignore[pred_mask],
-                        gt_boxes=gboxes[gt_mask],
-                        gt_ignore=gignore[gt_mask],
-                        case_id=cid,
-                    )
-                result[c] = r
-            results.append(result)
-        return results
+            if not np.any(gt_mask):  # no ground truth
+                result[c] = self._matching_no_gt(
+                    iou_thresholds=iou_thresholds,
+                    pred_scores=pred_scores[pred_mask],
+                    pred_ignore=pred_ignore[pred_mask],
+                )
+            elif not np.any(pred_mask):  # no predictions
+                result[c] = self._matching_no_pred(
+                    iou_thresholds=iou_thresholds,
+                    gt_ignore=gt_ignore[gt_mask],
+                )
+            else:  # at least one prediction and one ground truth
+                result[c] = self._matching_single_image_single_class(
+                    iou_thresholds=iou_thresholds,
+                    pred_boxes=pred_boxes[pred_mask],
+                    pred_scores=pred_scores[pred_mask],
+                    pred_ignore=pred_ignore[pred_mask],
+                    gt_boxes=gt_boxes[gt_mask],
+                    gt_ignore=gt_ignore[gt_mask],
+                )
+        return result
 
     def _matching_no_gt(
         self,
         iou_thresholds: Sequence[float],
         pred_scores: np.ndarray,
         pred_ignore: np.ndarray,
-        case_id: Optional[str] = None,
     ):
         """
         Matching result with not ground truth in image
@@ -251,8 +202,6 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             pred_scores: predicted scores
             pred_ignore: detections that should be ignored if they are not
                 matched
-            case_id: optionally provide a case id which will be return to
-                identify the matching result
 
         Returns:
             dict: computed matching
@@ -302,7 +251,6 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         self,
         iou_thresholds: Sequence[float],
         gt_ignore: np.ndarray,
-        case_id: Optional[str] = None,
     ):
         """
         Matching result with no predictions
@@ -313,8 +261,6 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 true positives (detections which match theses boxes are not
                 counted as false positives either); [G], G number of ground
                 truth
-            case_id: optionally provide a case id which will be return to
-                identify the matching result
 
         Returns:
             dict: computed matching
@@ -350,8 +296,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         if n_gt > self.warning_ratio * self.max_detections:
             logger.warning(
-                f"Found case id {case_id} with number of ground truth {n_gt} and {self.max_detections} "
-                "which may need to be increased."
+                f"Found number of ground truth {n_gt} and {self.max_detections} " "which may need to be increased."
             )
 
         return {
@@ -370,7 +315,6 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         pred_ignore: np.ndarray,
         gt_boxes: np.ndarray,
         gt_ignore: np.ndarray,
-        case_id: Optional[str] = None,
     ) -> Dict[str, np.ndarray]:
         """
         Adapted from `https://github.com/cocodataset/cocoapi/blob/master/
@@ -440,8 +384,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         if num_gts > self.warning_ratio * self.max_detections:
             logger.warning(
-                f"Found case id {case_id} with number of ground truth {num_gts} and {self.max_detections} "
-                "which may need to be increased."
+                f"Found number of ground truth {num_gts} and {self.max_detections} " "which may need to be increased."
             )
 
         gt_match = np.zeros((len(iou_thresholds), num_gts))

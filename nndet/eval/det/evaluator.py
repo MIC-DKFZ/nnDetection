@@ -168,6 +168,99 @@ class DetectionEvaluator(AbstractEvaluator):
             )
         return {}
 
+    def match_batch(
+        self,
+        pred_boxes: Sequence[np.ndarray],
+        pred_classes: Sequence[np.ndarray],
+        pred_scores: Sequence[np.ndarray],
+        gt_boxes: Sequence[np.ndarray],
+        gt_classes: Sequence[np.ndarray],
+        gt_ignore: Sequence[Sequence[bool]],
+        pred_ignore: Optional[Sequence[np.ndarray]] = None,
+        case_ids: Optional[Sequence[str]] = None,
+    ):
+        """
+        Match boxes of a batch to corresponding ground truth for each category
+        independently
+
+        Args:
+            iou_thresholds: defined which IoU thresholds should be evaluated
+            pred_boxes: predicted boxes from single batch; List[[D, dim * 2]],
+                D number of predictions
+            pred_classes: predicted classes from a single batch; List[[D]],
+                D number of predictions
+            pred_scores: predicted score for each bounding box; List[[D]],
+                D number of predictions
+            gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
+                truth
+            gt_classes: ground truth classes; List[[G]], G number of ground
+                truth
+            gt_ignore: specified if which ground truth boxes are not counted as
+                true positives
+                (detections which match theses boxes are not counted as false
+                positives either); List[[G]], G number of ground truth
+            pred_ignore: boolean whether the predicted box should be ignored if
+                it is not matched List[[D]]
+            case_ids: optionally provide case ids which will be returned to
+                identify the matching result
+
+        Returns:
+            List[Dict[int, Dict[str, np.ndarray]]]
+                matched detections [dtMatches] and ground truth [gtMatches]
+                boxes [str, np.ndarray] for each category (stored in dict keys)
+                for each image (list)
+        """
+        results = []
+        if pred_ignore is None:
+            pred_ignore = [np.zeros(pclasses.shape, dtype=int) for pclasses in pred_classes]
+
+        batch_size = len(pred_boxes)
+        if len(pred_classes) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_classes.")
+        if len(pred_scores) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_scores.")
+        if len(gt_boxes) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_boxes.")
+        if len(gt_classes) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_classes.")
+        if len(gt_ignore) != batch_size:
+            raise ValueError("Unequal batch size encountered for gt_ignore.")
+        if len(pred_ignore) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_ignore.")
+        if case_ids is None:
+            case_ids = [None] * batch_size
+        else:
+            if len(case_ids) != batch_size:
+                raise ValueError("Unequal batch size encountered for case ids.")
+
+        # iterate over images/batches
+        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid) in enumerate(
+            zip(
+                pred_boxes,
+                pred_classes,
+                pred_scores,
+                pred_ignore,
+                gt_boxes,
+                gt_classes,
+                gt_ignore,
+                case_ids,
+            )
+        ):
+            # Get all matches
+            self.results_dict[results_key].extend(
+                self.matching.match(
+                    iou_thresholds=self.iou_thresholds,
+                    pred_boxes=pred_boxes,
+                    pred_classes=pred_classes,
+                    pred_scores=pred_scores,
+                    pred_ignore=pred_outside,
+                    gt_boxes=gt_boxes,
+                    gt_classes=gt_classes,
+                    gt_ignore=gt_ignore_final,
+                    case_ids=case_ids,
+                )
+            )
+
     def finish_online_evaluation(
         self,
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:

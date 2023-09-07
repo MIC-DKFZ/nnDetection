@@ -44,17 +44,15 @@ class TestMatching:
         res = matching.match(
             # iou_fn,
             iou_thresholds=iou_tresholds,
-            pred_boxes=[pred_boxes],
-            pred_classes=[pred_classes],
-            pred_scores=[pred_scores],
-            gt_boxes=[gt_boxes],
-            gt_classes=[gt_classes],
-            gt_ignore=[gt_ignore],
-            case_ids=["case0"],
+            pred_boxes=pred_boxes,
+            pred_classes=pred_classes,
+            pred_scores=pred_scores,
+            gt_boxes=gt_boxes,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
         )
 
-        assert len(res) == 1
-        assert {0: 0, 1: 0} == res[0]
+        assert {0: 0, 1: 0} == res
         matching._matching_single_image_single_class.assert_called()
 
     def test_box_matching_batch_no_gt(self, mocker: MockerFixture):
@@ -72,16 +70,15 @@ class TestMatching:
 
         res = matching.match(
             iou_thresholds=iou_tresholds,
-            pred_boxes=[pred_boxes],
-            pred_classes=[pred_classes],
-            pred_scores=[pred_scores],
-            gt_boxes=[gt_boxes],
-            gt_classes=[gt_classes],
-            gt_ignore=[gt_ignore],
+            pred_boxes=pred_boxes,
+            pred_classes=pred_classes,
+            pred_scores=pred_scores,
+            gt_boxes=gt_boxes,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
         )
 
-        assert len(res) == 1
-        assert res[0] == {0: 0}
+        assert res == {0: 0}
         matching._matching_no_gt.assert_called()
 
     def test_box_matching_batch_no_pred(self, mocker: MockerFixture):
@@ -99,16 +96,15 @@ class TestMatching:
 
         res = matching.match(
             iou_thresholds=iou_tresholds,
-            pred_boxes=[pred_boxes],
-            pred_classes=[pred_classes],
-            pred_scores=[pred_scores],
-            gt_boxes=[gt_boxes],
-            gt_classes=[gt_classes],
-            gt_ignore=[gt_ignore],
+            pred_boxes=pred_boxes,
+            pred_classes=pred_classes,
+            pred_scores=pred_scores,
+            gt_boxes=gt_boxes,
+            gt_classes=gt_classes,
+            gt_ignore=gt_ignore,
         )
 
-        assert len(res) == 1
-        assert res[0] == {0: 0}
+        assert res == {0: 0}
         matching._matching_no_pred.assert_called()
 
     def test_box_matching_single_image_single_class_no_ignore(self, example):
@@ -126,7 +122,6 @@ class TestMatching:
             pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[1.0, 1.0, 1.0], [1.0, 0.0, 1.0]]).all()
@@ -150,7 +145,6 @@ class TestMatching:
             pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[1.0, 1.0, 1.0], [1.0, 0.0, 1.0]]).all()
@@ -175,7 +169,6 @@ class TestMatching:
             pred_ignore=pred_ignore,
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0]]).all()
@@ -200,7 +193,6 @@ class TestMatching:
             gt_boxes=gt_boxes,
             gt_ignore=gt_ignore,
             iou_thresholds=iou_thresholds,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0]]).all()
@@ -208,7 +200,6 @@ class TestMatching:
         assert np.isclose(res["dtScores"], [0.9, 0.5, 0.3]).all()
         assert np.isclose(res["gtIgnore"], [0.0, 0.0, 0.0]).all()
         assert np.isclose(res["dtIgnore"], [[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]).all()
-        # assert res["case_id"] == "example"
 
     def test_matching_no_gt(self, example):
         matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
@@ -221,7 +212,6 @@ class TestMatching:
             iou_thresholds=iou_thresholds,
             pred_scores=pred_scores,
             pred_ignore=pred_ignore,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
@@ -243,7 +233,6 @@ class TestMatching:
             iou_thresholds=iou_thresholds,
             pred_scores=pred_scores,
             pred_ignore=pred_ignore,
-            case_id="example",
         )
 
         assert np.isclose(res["dtMatches"], [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]).all()
@@ -253,7 +242,6 @@ class TestMatching:
         assert res["gtIgnore"].size == 0
         assert res["gtIgnore"].shape == (0,)
         assert np.isclose(res["dtIgnore"], [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]).all()
-        # assert res["case_id"] == "example"
 
     def test_matching_no_pred(self):
         matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
@@ -264,7 +252,6 @@ class TestMatching:
         res = matching._matching_no_pred(
             iou_thresholds=iou_thresholds,
             gt_ignore=gt_ignore,
-            case_id="example",
         )
 
         assert res["dtMatches"].size == 0
@@ -279,29 +266,26 @@ class TestMatching:
     def test_smoke_box_matching_batch(self):
         matching = EvalMatchingPerElementGreedyScoreNP(iou_fn=ops_np.box_iou_np)
 
-        _pd_boxes = [
-            np.array(
-                [
-                    [0.0, 0.0, 10.0, 10.0],
-                    [2.0, 2.0, 10.0, 10.0],
-                    [20.0, 20.0, 30.0, 30.0],
-                ]
-            )
-        ]
-        _pd_classes = [np.array([0, 1, 1])]
-        _pd_scores = [np.array([0.9, 0.5, 0.6])]
-        _gt_boxes = [
-            np.array(
-                [
-                    [0.0, 0.0, 10.0, 10.0],
-                    [2.0, 2.0, 10.0, 10.0],
-                    [20.0, 20.0, 30.0, 30.0],
-                    [30.0, 30.0, 40.0, 40.0],
-                ]
-            )
-        ]
-        _gt_classes = [np.array([1, 1, 1, 0])]
-        _gt_ignore = [np.array([0, 0, 0, 0])]
+        _pd_boxes = np.array(
+            [
+                [0.0, 0.0, 10.0, 10.0],
+                [2.0, 2.0, 10.0, 10.0],
+                [20.0, 20.0, 30.0, 30.0],
+            ]
+        )
+        _pd_classes = np.array([0, 1, 1])
+        _pd_scores = np.array([0.9, 0.5, 0.6])
+        _gt_boxes = np.array(
+            [
+                [0.0, 0.0, 10.0, 10.0],
+                [2.0, 2.0, 10.0, 10.0],
+                [20.0, 20.0, 30.0, 30.0],
+                [30.0, 30.0, 40.0, 40.0],
+            ]
+        )
+
+        _gt_classes = np.array([1, 1, 1, 0])
+        _gt_ignore = np.array([0, 0, 0, 0])
         matching.match(
             iou_thresholds=[0.1, 0.5, 0.75],
             pred_boxes=_pd_boxes,
