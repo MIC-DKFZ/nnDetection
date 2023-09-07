@@ -21,22 +21,31 @@ class CocoAPMetric(DetectionMetric):
         classes: Sequence[str],
         iou_list: Sequence[float] = (0.1, 0.5, 0.75),
         iou_range: Sequence[float] = (0.1, 0.5, 0.05),
-        max_detection: Sequence[int] = (1, 5, 100),
         verbose: bool = True,
     ):
         """
-        Class to compute COCO metrics
+        Computes AP metric similar to COCO implementation. In contrast
+        to the original COCO implementation this class does *not* limit
+        the predictions per class per image! The number of predictions
+        is already limited before the matching to reduce compute beforehand
+        and move it to one place.
+
         Metrics computed:
-            mAP over the IoU range specified by :param:`iou_range` at last value of :param:`max_detection`
-            AP values at IoU thresholds specified by :param:`iou_list` at last value of :param:`max_detection`
-            AR over max detections thresholds defined by :param:`max_detection` (over iou range)
+        - mAP over the IoU range specified by `iou_range`
+        - AP values at IoU thresholds specified by `iou_list`
 
         Args:
-            classes (Sequence[str]): name of each class (index needs to correspond to predicted class indices!)
-            iou_list (Sequence[float]): specific thresholds where ap is evaluated and saved
-            iou_range (Sequence[float]): (start, stop, step) for mAP iou thresholds
-            max_detection (Sequence[int]): maximum number of detections per image
-            verbose (bool): log time needed for evaluation
+            classes: name of each class (index needs to correspond to
+                predicted class indices!)
+            iou_list: specific thresholds where ap is evaluated and saved
+            iou_range: (start, stop, step) for mAP iou thresholds
+            verbose: log time needed for evaluation
+
+        Warning:
+            In contrast to the original COCO implementation this class does
+            *not* limit the predictions per class per image! The number of
+            predictions is already limited before the matching to reduce
+            compute beforehand and move it to one place.
         """
         self.verbose = verbose
         self.classes = classes
@@ -59,7 +68,6 @@ class CocoAPMetric(DetectionMetric):
         assert (self.iou_thresholds[self.iou_range_idx] == _iou_range).all()
 
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
-        self.max_detections = max_detection
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -75,21 +83,35 @@ class CocoAPMetric(DetectionMetric):
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
     ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
         """
-        Compute COCO metrics
+        Compute AP metric similar to COCO implementation (no limit on
+        detections per image in this class)
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per category (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth
-                    should be ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            results_list: list with result s per image (in list) per cateory
+                (dict). Inner Dict contains multiple results obtained
+                by `AbstractEvalMatching`.
+
+                ``dtMatches`` np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches`` np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores`` np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore`` np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore`` np.ndarray
+                    detections which should be ignored [T, D], indicate which
+                    detections should be ignored
 
         Returns:
-            Dict[str, float]: dictionary with coco metrics
+            Dict[str, float]: dictionary with AP metrics
             Dict[str, np.ndarray]: None
         """
         if self.verbose:
@@ -114,51 +136,50 @@ class CocoAPMetric(DetectionMetric):
         Compute AP metrics
 
         Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
+            dataset_statistics: computed statistics over dataset
+
+                ``counts``: (int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
         """
         results = {}
         if self.iou_range:  # mAP
-            key = (
-                f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                f"MaxDet_{self.max_detections[-1]}"
-            )
+            key = f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
             results[key] = self.select_ap(
                 dataset_statistics,
                 iou_idx=self.iou_range_idx,
-                max_det_idx=-1,
             )
 
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = (
-                    f"{cls_str}_"
-                    f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}_"
-                    f"MaxDet_{self.max_detections[-1]}"
-                )
+                key = f"{cls_str}_" f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=self.iou_range_idx,
                     cls_idx=cls_idx,
-                    max_det_idx=-1,
                 )
 
         for idx in self.iou_list_idx:  # AP@IoU
-            key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}_MaxDet_{self.max_detections[-1]}"
-            results[key] = self.select_ap(dataset_statistics, iou_idx=[idx], max_det_idx=-1)
+            key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}"
+            results[key] = self.select_ap(dataset_statistics, iou_idx=[idx])
 
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = f"{cls_str}_" f"AP_IoU_{self.iou_thresholds[idx]:.2f}_" f"MaxDet_{self.max_detections[-1]}"
+                key = f"{cls_str}_AP_IoU_{self.iou_thresholds[idx]:.2f}"
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=[idx],
                     cls_idx=cls_idx,
-                    max_det_idx=-1,
                 )
         return results
 
@@ -167,128 +188,157 @@ class CocoAPMetric(DetectionMetric):
         dataset_statistics: dict,
         iou_idx: Union[int, List[int]] = None,
         cls_idx: Union[int, Sequence[int]] = None,
-        max_det_idx: int = -1,
     ) -> np.ndarray:
         """
         Compute average precision
 
         Args:
-            dataset_statistics (dict): computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            iou_idx: index of IoU values to select for evaluation(if None, all values are used)
-            cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
+            dataset_statistics: computed statistics over dataset
+
+                ``counts``: (int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+            iou_idx: index of IoU values to select for evaluation
+                (if None, all values are used)
+            cls_idx: class indices to select, if None all classes
+                will be selected
 
         Returns:
             np.ndarray: AP value
         """
+
         prec = dataset_statistics["precision"]
         if iou_idx is not None:
             prec = prec[iou_idx]
         if cls_idx is not None:
-            prec = prec[..., cls_idx, :]
-        prec = prec[..., max_det_idx]
+            prec = prec[..., cls_idx]
         return np.mean(prec)
 
     def compute_statistics(
         self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
     ) -> Dict[str, Union[np.ndarray, List]]:
         """
-        Compute statistics needed for COCO metrics (mAP, AP of individual classes, mAP@IoU_Thresholds, AR)
-        Adapted from https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocotools/cocoeval.py
+        Compute statistics needed for metric computation
+        Adapted from `https://github.com/cocodataset/cocoapi/blob/
+        master/PythonAPI/pycocotools/cocoeval.py`
 
         Args:
-            results_list (List[Dict[int, Dict[str, np.ndarray]]]): list with result s per image (in list)
-                per cateory (dict). Inner Dict contains multiple results obtained by :func:`box_matching_batch`.
-                `dtMatches`: matched detections [T, D], where T = number of thresholds, D = number of detections
-                `gtMatches`: matched ground truth boxes [T, G], where T = number of thresholds, G = number of
-                    ground truth
-                `dtScores`: prediction scores [D] detection scores
-                `gtIgnore`: ground truth boxes which should be ignored [G] indicate whether ground truth should be
-                    ignored
-                `dtIgnore`: detections which should be ignored [T, D], indicate which detections should be ignored
+            results_list: list with result s per image (in list) per cateory
+                (dict). Inner Dict contains multiple results obtained
+                by `AbstractEvalMatching`.
+
+                ``dtMatches`` np.ndarray
+                    matched detections [T, D], where T = number of thresholds,
+                    D = number of detections
+
+                ``gtMatches`` np.ndarray
+                    matched ground truth boxes [T, G], where T = number of
+                    thresholds, G = number of ground truth
+
+                ``dtScores`` np.ndarray
+                    prediction scores [D] detection scores
+
+                ``gtIgnore`` np.ndarray
+                    ground truth boxes which should be ignored [G] indicate
+                    whether ground truth should be ignored
+
+                ``dtIgnore`` np.ndarray
+                    detections which should be ignored [T, D], indicate which
+                    detections should be ignored
 
         Returns:
             dict: computed statistics over dataset
-                `counts`: Number of thresholds, Number recall thresholds, Number of classes, Number of max
-                    detection thresholds
-                `recall`: Computed recall values [num_iou_th, num_classes, num_max_detections]
-                `precision`: Precision values at specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
-                `scores`: Scores corresponding to specified recall thresholds
-                    [num_iou_th, num_recall_th, num_classes, num_max_detections]
+                ``counts`` List[int]
+                    Number of thresholds, Number of recall thresholds,
+                    Number of classes
+
+                ``recall`` np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes]
+
+                ``precision`` np.ndarray
+                    Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+                ``scores`` np.ndarray
+                    Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
         """
         num_iou_th = len(self.iou_thresholds)
         num_recall_th = len(self.recall_thresholds)
         num_classes = len(self.classes)
-        num_max_detections = len(self.max_detections)
 
         # -1 for the precision of absent categories
-        precision = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
-        recall = -np.ones((num_iou_th, num_classes, num_max_detections))
-        scores = -np.ones((num_iou_th, num_recall_th, num_classes, num_max_detections))
+        precision = -np.ones((num_iou_th, num_recall_th, num_classes))
+        recall = -np.ones((num_iou_th, num_classes))
+        scores = -np.ones((num_iou_th, num_recall_th, num_classes))
 
         for cls_idx, cls_i in enumerate(self.classes):  # for each class
-            for maxDet_idx, maxDet in enumerate(self.max_detections):  # for each maximum number of detections
-                results = [r[cls_idx] for r in results_list if cls_idx in r]
+            results = [r[cls_idx] for r in results_list if cls_idx in r]
 
-                if len(results) == 0:
-                    logger.error(f"No results found for coco metric for class {cls_i} can not compute AP")
-                    continue
+            if len(results) == 0:
+                logger.error(f"No results found for coco metric for class {cls_i} can not compute AP")
+                continue
 
-                dt_scores = np.concatenate([r["dtScores"][0:maxDet] for r in results])
-                # different sorting method generates slightly different results.
-                # mergesort is used to be consistent as Matlab implementation.
-                inds = np.argsort(-dt_scores, kind="mergesort")
-                dt_scores_sorted = dt_scores[inds]
+            dt_scores = np.concatenate([r["dtScores"] for r in results])
+            # different sorting method generates slightly different results.
+            # mergesort is used to be consistent as Matlab implementation.
+            inds = np.argsort(-dt_scores, kind="mergesort")
+            dt_scores_sorted = dt_scores[inds]
 
-                # r['dtMatches'] [T, R], where R = sum(all detections)
-                dt_matches = np.concatenate([r["dtMatches"][:, 0:maxDet] for r in results], axis=1)[:, inds]
-                dt_ignores = np.concatenate([r["dtIgnore"][:, 0:maxDet] for r in results], axis=1)[:, inds]
+            # r['dtMatches'] [T, R], where R = sum(all detections)
+            dt_matches = np.concatenate([r["dtMatches"] for r in results], axis=1)[:, inds]
+            dt_ignores = np.concatenate([r["dtIgnore"] for r in results], axis=1)[:, inds]
 
-                # case_ids = []
-                # for r in results:
-                #     case_ids.extend([r['case_id']] * min(len(r['dtMatches'][0]), maxDet))
-                # case_ids_sorted = [case_ids[i] for i in inds]
+            # case_ids = []
+            # for r in results:
+            #     case_ids.extend([r['case_id']] * min(len(r['dtMatches'][0]), maxDet))
+            # case_ids_sorted = [case_ids[i] for i in inds]
 
-                self.check_number_of_iou(dt_matches, dt_ignores)
-                gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
-                num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
-                if num_gt == 0:
-                    logger.error(f"No gt found for coco metric for class {cls_i} can not compute AP")
-                    continue
+            self.check_number_of_iou(dt_matches, dt_ignores)
+            gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
+            num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
+            if num_gt == 0:
+                logger.error(f"No gt found for coco metric for class {cls_i} can not compute AP")
+                continue
 
-                # ignore cases need to be handled differently for tp and fp
-                tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
-                fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
+            # ignore cases need to be handled differently for tp and fp
+            tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
+            fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
-                tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
-                fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float32)
+            tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
+            fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float32)
 
-                for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
-                    tp, fp = np.array(tp), np.array(fp)
-                    r, p, s = compute_stats_single_threshold(tp, fp, dt_scores_sorted, self.recall_thresholds, num_gt)
-                    recall[th_ind, cls_idx, maxDet_idx] = r
-                    precision[th_ind, :, cls_idx, maxDet_idx] = p
-                    # corresponding score thresholds for recall steps
-                    scores[th_ind, :, cls_idx, maxDet_idx] = s
+            for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
+                tp, fp = np.array(tp), np.array(fp)
+                r, p, s = compute_stats_single_threshold(tp, fp, dt_scores_sorted, self.recall_thresholds, num_gt)
+                recall[th_ind, cls_idx] = r
+                precision[th_ind, :, cls_idx] = p
+                # corresponding score thresholds for recall steps
+                scores[th_ind, :, cls_idx] = s
 
         return {
             "counts": [
                 num_iou_th,
                 num_recall_th,
                 num_classes,
-                num_max_detections,
-            ],  # [4]
-            "recall": recall,  # [num_iou_th, num_classes, num_max_detections]
-            "precision": precision,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
-            "scores": scores,  # [num_iou_th, num_recall_th, num_classes, num_max_detections]
+            ],  # [3]
+            "recall": recall,  # [num_iou_th, num_classes]
+            "precision": precision,  # [num_iou_th, num_recall_th, num_classes]
+            "scores": scores,  # [num_iou_th, num_recall_th, num_classes]
         }
 
 
