@@ -170,7 +170,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 raise ValueError("Unequal batch size encountered for case ids.")
 
         # iterate over images/batches
-        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid,) in enumerate(
+        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid) in enumerate(
             zip(
                 pred_boxes,
                 pred_classes,
