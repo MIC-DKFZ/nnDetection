@@ -101,6 +101,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         gt_boxes: Sequence[np.ndarray],
         gt_classes: Sequence[np.ndarray],
         gt_ignore: Sequence[Sequence[bool]],
+        pred_ignore: Optional[Sequence[np.ndarray]] = None,
         case_ids: Optional[Sequence[str]] = None,
     ) -> List[Dict[int, Dict[str, np.ndarray]]]:
         """
@@ -123,6 +124,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 true positives
                 (detections which match theses boxes are not counted as false
                 positives either); List[[G]], G number of ground truth
+            pred_ignore: boolean whether the predicted box should be ignored if
+                it is not matched
             case_ids: optionally provide case ids which will be returned to
                 identify the matching result
 
@@ -133,6 +136,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 for each image (list)
         """
         results = []
+        if pred_ignore is None:
+            pred_ignore = [np.zeros(pclasses.shape, dtype=int) for pclasses in pred_classes]
 
         batch_size = len(pred_boxes)
         if len(pred_classes) != batch_size:
@@ -145,6 +150,8 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
             raise ValueError("Unequal batch size encountered for gt_classes.")
         if len(gt_ignore) != batch_size:
             raise ValueError("Unequal batch size encountered for gt_ignore.")
+        if len(pred_ignore) != batch_size:
+            raise ValueError("Unequal batch size encountered for pred_ignore.")
         if case_ids is None:
             case_ids = [None] * batch_size
         else:
@@ -152,11 +159,12 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 raise ValueError("Unequal batch size encountered for case ids.")
 
         # iterate over images/batches
-        for batch_idx, (pboxes, pclasses, pscores, gboxes, gclasses, gignore, cid,) in enumerate(
+        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid,) in enumerate(
             zip(
                 pred_boxes,
                 pred_classes,
                 pred_scores,
+                pred_ignore,
                 gt_boxes,
                 gt_classes,
                 gt_ignore,
@@ -184,6 +192,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                     r = self._matching_no_gt(
                         iou_thresholds=iou_thresholds,
                         pred_scores=pscores[pred_mask],
+                        pred_ignore=pignore[pred_mask],
                         case_id=cid,
                     )
                 elif not np.any(pred_mask):  # no predictions
@@ -197,6 +206,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                         iou_thresholds=iou_thresholds,
                         pred_boxes=pboxes[pred_mask],
                         pred_scores=pscores[pred_mask],
+                        pred_ignore=pignore[pred_mask],
                         gt_boxes=gboxes[gt_mask],
                         gt_ignore=gignore[gt_mask],
                         case_id=cid,
@@ -209,6 +219,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         self,
         iou_thresholds: Sequence[float],
         pred_scores: np.ndarray,
+        pred_ignore: np.ndarray,
         case_id: Optional[str] = None,
     ):
         """
@@ -216,15 +227,13 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         Args:
             iou_thresholds: defined which IoU thresholds should be evaluated
-            dt_scores: predicted scores
-            max_detections: maximum number of allowed detections per image.
-                This functions uses this parameter to stay consistent with
-                the actual matching function which needs this limit.
+            pred_scores: predicted scores
+            pred_ignore: detections that should be ignored if they are not matched
             case_id: optionally provide a case id which will be return to
                 identify the matching result
 
         Returns:
-            dict: computed matching
+            dict: computed matching # TODO: fix doc formatting
                 `dtMatches`: matched detections [T, D], where T = number of
                     thresholds, D = number of detections
                 `gtMatches`: matched ground truth boxes [T, G], where T = number
@@ -240,12 +249,13 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         dt_ind = np.argsort(-pred_scores, kind="mergesort")
         dt_ind = dt_ind[: self.max_detections]
         dt_scores = pred_scores[dt_ind]
+        dt_outside = pred_ignore[dt_ind]
 
         num_preds = len(dt_scores)
 
         gt_match = np.array([[]] * len(iou_thresholds))
         dt_match = np.zeros((len(iou_thresholds), num_preds))
-        dt_ignore = np.zeros((len(iou_thresholds), num_preds))
+        dt_ignore = np.repeat(dt_outside.reshape(1, -1), len(iou_thresholds), axis=0)
 
         return {
             "dtMatches": dt_match,  # [T, D], where T = number of thresholds, D = number of detections
@@ -313,6 +323,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         iou_thresholds: Sequence[float],
         pred_boxes: np.ndarray,
         pred_scores: np.ndarray,
+        pred_ignore: np.ndarray,
         gt_boxes: np.ndarray,
         gt_ignore: np.ndarray,
         case_id: Optional[str] = None,
@@ -326,6 +337,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                 number of predictions
             pred_scores: predicted score for each bounding box; [D], D number of
                 predictions
+            pred_ignore: detections that should be ignored if they are not matched
             gt_boxes: ground truth boxes; [G, dim * 2], G number of ground truth
             gt_ignore: specified if which ground truth boxes are not counted as
                 true positives (detections which match theses boxes are not
@@ -357,6 +369,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
         pred_boxes = pred_boxes[dt_ind]
         pred_scores = pred_scores[dt_ind]
+        dt_outside = pred_ignore[dt_ind]
 
         # sort ignored ground truth to last positions
         gt_ind = np.argsort(gt_ignore, kind="mergesort")
@@ -408,6 +421,10 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
                     dt_ignore[tind, dind] = int(gt_ignore[m])
                     dt_match[tind, dind] = 1
                     gt_match[tind, m] = 1
+
+        dt_ignore = np.logical_or(
+            dt_ignore, np.logical_and(dt_match == 0, np.repeat(dt_outside.reshape(1, -1), len(iou_thresholds), axis=0))
+        )
 
         # store results for given image and category
         return {

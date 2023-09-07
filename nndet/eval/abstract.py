@@ -3,7 +3,7 @@
 
 import os
 from abc import ABC, abstractclassmethod, abstractmethod
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Any
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
