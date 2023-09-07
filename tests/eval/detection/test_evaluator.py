@@ -63,7 +63,7 @@ class TestBoxEvaluator:
             1: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
             4: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
         }
-        evaluator.matching.match = mocker.MagicMock(return_value=[mock_matches])
+        evaluator.matching.match = mocker.MagicMock(return_value=mock_matches)
         evaluator.box_criterion = mocker.MagicMock(return_value=np.array([0]))
 
         _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
@@ -90,7 +90,7 @@ class TestBoxEvaluator:
         metric1 = mocker.Mock(return_value=({"score1": 2}, {"curve1": 3}))
 
         evaluator.metrics = [metric0, metric1]
-        evaluator.results_dict = {"": [None, None]}
+        evaluator.results_dict = {"": {0: None, 1: None}}
         evaluator.iou_mapping = [[0], [1]]
         metric_scores, metric_curves = evaluator.finish_online_evaluation()
 

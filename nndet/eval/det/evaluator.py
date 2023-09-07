@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import os
 from abc import abstractclassmethod
+from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -16,7 +17,6 @@ from nndet.eval.det.ap import CocoAPMetric
 from nndet.eval.det.froc import FROCMetric, FROCwpMetric
 from nndet.eval.det.hist import PredictionHistogram
 from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
-from nndet.utils.info import experimental
 
 __all__ = ["DetectionEvaluator"]
 
@@ -61,7 +61,9 @@ class DetectionEvaluator(AbstractEvaluator):
         self.metrics = metrics
         self.matching = matching
 
-        self.results_dict = {key: [] for key in self.criterion_ranges.keys()}  # store results of each image
+        self.results_dict: Dict[str, Dict[Union[str, int], Dict]] = {
+            key: OrderedDict() for key in self.criterion_ranges.keys()
+        }  # store results of each image
         self.filter_keys = self.matching.get_filter_keys()
         self.iou_thresholds = self.get_unique_iou_thresholds()
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
@@ -111,72 +113,88 @@ class DetectionEvaluator(AbstractEvaluator):
                 not counted as false positives either);
                 List[[G]], G number of ground truth
             case_ids: optionally provide a case ids which will be return to
-                identify the matching result
+                identify the matching result. Integers are reserved for
+                automatic counting.
 
         Returns
             dict: empty dict... detection metrics can only be evaluated
                 at the end
         """
-        if gt_ignore is None:
-            n = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
-            gt_ignore = [np.zeros(_n).reshape(-1) for _n in n]
+        # all criterion ranges should have the same number of images
+        all_length = [len(v) for v in self.results_dict.values()]
+        assert all([al == all_length[0] for al in all_length])
 
-        # Compute ground truth volumes
+        if gt_ignore is None:
+            n_gt = [0 if gt_boxes_img.size == 0 else gt_boxes_img.shape[0] for gt_boxes_img in gt_boxes]
+            gt_ignore = [np.zeros(_n).reshape(-1) for _n in n_gt]
+
+        # Compute criterion
         gt_boxes_criterion = [
             np.array([]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
         ]
-        # Compute detection volumes
         dt_boxes_criterion = [
             np.array([]) if dt_boxes_img.size == 0 else self.box_criterion(dt_boxes_img) for dt_boxes_img in pred_boxes
         ]
         # Loop over all evaluated criterion ranges
         for results_key, criterion_range in self.criterion_ranges.items():
-            # Define new gt_ignores based on the criterion
-            gt_ignore_final = []
-            for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
-                gt_ignore_criterion = np.zeros(len(gt_ignore[i]), dtype=int)
-                # If there is no ground truth in this image, we don't need to change the ignored values
-                if not len(gt_ignore[i]) == 0:
-                    for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
-                        if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
-                            gt_ignore_criterion[j] = 1
-                gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
-            assert len(gt_ignore_final) == len(gt_ignore)
-
-            # Find detections that are outside the criterion
-            pred_outside = [
-                np.logical_or(
-                    dt_box_criterion < criterion_range[0],
-                    dt_box_criterion >= criterion_range[1],
-                )
-                for dt_box_criterion in dt_boxes_criterion
-            ]
-
-            # Get all matches
-            self.results_dict[results_key].extend(
-                self.matching.match(
-                    iou_thresholds=self.iou_thresholds,
-                    pred_boxes=pred_boxes,
-                    pred_classes=pred_classes,
-                    pred_scores=pred_scores,
-                    pred_ignore=pred_outside,
-                    gt_boxes=gt_boxes,
-                    gt_classes=gt_classes,
-                    gt_ignore=gt_ignore_final,
-                    case_ids=case_ids,
-                )
+            pred_ignore, gt_ignore = self.get_criterion_ignores(
+                criterion_range=criterion_range,
+                gt_ignore=gt_ignore,
+                gt_boxes_criterion=gt_boxes_criterion,
+                dt_boxes_criterion=dt_boxes_criterion,
+            )
+            self.add_batch(
+                results_key=results_key,
+                pred_boxes=pred_boxes,
+                pred_classes=pred_classes,
+                pred_scores=pred_scores,
+                pred_ignore=pred_ignore,
+                gt_boxes=gt_boxes,
+                gt_classes=gt_classes,
+                gt_ignore=gt_ignore,
+                case_ids=case_ids,
             )
         return {}
 
-    def match_batch(
+    @staticmethod
+    def get_criterion_ignores(
+        criterion_range: Tuple[int, int],
+        gt_ignore: List[np.ndarray],
+        gt_boxes_criterion: List[np.ndarray],
+        dt_boxes_criterion: List[np.ndarray],
+    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        # Define new gt_ignores based on the criterion
+        gt_ignore_final = []
+        for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
+            gt_ignore_criterion = np.zeros(len(gt_ignore[i]), dtype=int)
+            # If there is no ground truth in this image, we don't need to change the ignored values
+            if not len(gt_ignore[i]) == 0:
+                for j, gt_box_criterion in enumerate(gt_boxes_img_criterion):
+                    if gt_box_criterion < criterion_range[0] or gt_box_criterion >= criterion_range[1]:
+                        gt_ignore_criterion[j] = 1
+            gt_ignore_final.append(np.logical_or(gt_ignore[i], gt_ignore_criterion))
+        assert len(gt_ignore_final) == len(gt_ignore)
+
+        # Find detections that are outside the criterion
+        pred_outside = [
+            np.logical_or(
+                dt_box_criterion < criterion_range[0],
+                dt_box_criterion >= criterion_range[1],
+            )
+            for dt_box_criterion in dt_boxes_criterion
+        ]
+        return pred_outside, gt_ignore_final
+
+    def add_batch(
         self,
+        results_key: str,
         pred_boxes: Sequence[np.ndarray],
         pred_classes: Sequence[np.ndarray],
         pred_scores: Sequence[np.ndarray],
+        pred_ignore: Sequence[np.ndarray],
         gt_boxes: Sequence[np.ndarray],
         gt_classes: Sequence[np.ndarray],
-        gt_ignore: Sequence[Sequence[bool]],
-        pred_ignore: Optional[Sequence[np.ndarray]] = None,
+        gt_ignore: Sequence[np.ndarray],
         case_ids: Optional[Sequence[str]] = None,
     ):
         """
@@ -184,13 +202,15 @@ class DetectionEvaluator(AbstractEvaluator):
         independently
 
         Args:
-            iou_thresholds: defined which IoU thresholds should be evaluated
+            results_key: define key where batch should be added
             pred_boxes: predicted boxes from single batch; List[[D, dim * 2]],
                 D number of predictions
             pred_classes: predicted classes from a single batch; List[[D]],
                 D number of predictions
             pred_scores: predicted score for each bounding box; List[[D]],
                 D number of predictions
+            pred_ignore: boolean whether the predicted box should be ignored if
+                it is not matched List[[D]]
             gt_boxes: ground truth boxes; List[[G, dim * 2]], G number of ground
                 truth
             gt_classes: ground truth classes; List[[G]], G number of ground
@@ -199,22 +219,16 @@ class DetectionEvaluator(AbstractEvaluator):
                 true positives
                 (detections which match theses boxes are not counted as false
                 positives either); List[[G]], G number of ground truth
-            pred_ignore: boolean whether the predicted box should be ignored if
-                it is not matched List[[D]]
             case_ids: optionally provide case ids which will be returned to
                 identify the matching result
-
-        Returns:
-            List[Dict[int, Dict[str, np.ndarray]]]
-                matched detections [dtMatches] and ground truth [gtMatches]
-                boxes [str, np.ndarray] for each category (stored in dict keys)
-                for each image (list)
         """
-        results = []
-        if pred_ignore is None:
-            pred_ignore = [np.zeros(pclasses.shape, dtype=int) for pclasses in pred_classes]
-
         batch_size = len(pred_boxes)
+        if case_ids is None:
+            # if no case ids are provided, we just count up
+            n = len(self.results_dict[results_key])
+            case_ids = list(range(n, n + batch_size))
+
+        # check batch sizes
         if len(pred_classes) != batch_size:
             raise ValueError("Unequal batch size encountered for pred_classes.")
         if len(pred_scores) != batch_size:
@@ -227,14 +241,11 @@ class DetectionEvaluator(AbstractEvaluator):
             raise ValueError("Unequal batch size encountered for gt_ignore.")
         if len(pred_ignore) != batch_size:
             raise ValueError("Unequal batch size encountered for pred_ignore.")
-        if case_ids is None:
-            case_ids = [None] * batch_size
-        else:
-            if len(case_ids) != batch_size:
-                raise ValueError("Unequal batch size encountered for case ids.")
+        if len(case_ids) != batch_size:
+            raise ValueError("Unequal batch size encountered for case ids.")
 
         # iterate over images/batches
-        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, cid) in enumerate(
+        for batch_idx, (pboxes, pclasses, pscores, pignore, gboxes, gclasses, gignore, case_id,) in enumerate(
             zip(
                 pred_boxes,
                 pred_classes,
@@ -246,19 +257,15 @@ class DetectionEvaluator(AbstractEvaluator):
                 case_ids,
             )
         ):
-            # Get all matches
-            self.results_dict[results_key].extend(
-                self.matching.match(
-                    iou_thresholds=self.iou_thresholds,
-                    pred_boxes=pred_boxes,
-                    pred_classes=pred_classes,
-                    pred_scores=pred_scores,
-                    pred_ignore=pred_outside,
-                    gt_boxes=gt_boxes,
-                    gt_classes=gt_classes,
-                    gt_ignore=gt_ignore_final,
-                    case_ids=case_ids,
-                )
+            self.results_dict[results_key][case_id] = self.matching.match(
+                iou_thresholds=self.iou_thresholds,
+                pred_boxes=pboxes,
+                pred_classes=pclasses,
+                pred_scores=pscores,
+                pred_ignore=pignore,
+                gt_boxes=gboxes,
+                gt_classes=gclasses,
+                gt_ignore=gignore,
             )
 
     def finish_online_evaluation(
@@ -281,7 +288,7 @@ class DetectionEvaluator(AbstractEvaluator):
                         iou_idx=self.iou_mapping[metric_idx],
                         filter_keys=self.filter_keys,
                     )
-                    for r in results
+                    for r in results.values()
                 ]
 
                 _criterion_key = criterion_key if criterion_key else None
@@ -332,7 +339,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         Reset internal state of evaluator
         """
-        self.results_dict = {key: [] for key in self.criterion_ranges.keys()}
+        self.results_dict = {key: OrderedDict() for key in self.criterion_ranges.keys()}
 
     @abstractclassmethod
     def create(
@@ -447,84 +454,3 @@ class BoxEvaluator(DetectionEvaluator):
             criterion_ranges=criterion_ranges_final,
             save_dir=save_dir,
         )
-
-
-"""
-############ Experimental Evaluators ############
-"""
-
-
-class CountDifferenceEvaluator(AbstractEvaluator):
-    @experimental
-    def __init__(self, min_prob: float = 0.5):
-        super().__init__()
-        self.min_prob = min_prob
-
-        self.num_gt = []
-        self.num_pred = []
-
-    def run_online_evaluation(
-        self,
-        pred_scores: Sequence[np.ndarray],
-        gt_classes: Sequence[np.ndarray],
-    ) -> Dict:
-        """
-        Preprocess batch results for final evaluation
-
-        Args:
-            pred_scores: predicted score for each bounding box; List[[D]],
-                D number of predictions
-            gt_classes: ground truth classes; List[[G]], G number of ground
-                truth
-
-        Returns
-            dict: empty dict
-        """
-        assert len(pred_scores) == len(gt_classes)
-        for p, g in zip(pred_scores, gt_classes):
-            if p.size > 0:
-                self.num_pred.append((p > self.min_prob).sum())
-            else:
-                self.num_pred.append(0)
-            self.num_gt.append(len(g))
-        return {}
-
-    def finish_online_evaluation(
-        self,
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
-        """
-        Accumulate results of individual batches and compute final metrics
-
-        Returns:
-            Dict[str, float]: dictionary with scalar values for evaluation
-                `mean`: mean number of count differences
-                `median`: median number of count differences
-                `max`: max number of count differences
-                `min`: min number of count differences
-            Dict[str, np.ndarray]: absolute difference per case
-                `diff_per_case`: count difference per case
-                `diff_per_case_sign`: count difference per case signed
-                    computed as: #gt - #pred
-        """
-        gts = np.asarray(self.num_gt)
-        preds = np.asarray(self.num_pred)
-
-        diff_per_case = gts - preds
-        metric_scores = {
-            "mean": np.mean(np.absolute(diff_per_case)),
-            "median": np.median(np.absolute(diff_per_case)),
-            "max": np.max(np.absolute(diff_per_case)),
-            "min": np.min(np.absolute(diff_per_case)),
-        }
-        metric_curves = {
-            "diff_per_case": np.absolute(diff_per_case),
-            "diff_per_case_sign": diff_per_case,
-        }
-        return metric_scores, metric_curves
-
-    def reset(self):
-        """
-        Reset internal state of evaluator
-        """
-        self.num_gt = []
-        self.num_pred = []
