@@ -319,12 +319,16 @@ class DetectionEvaluator(AbstractEvaluator):
                 if curve is not None:
                     metric_curves.update(curve)
         # Add entries containing the criterion ranges
-        metric_curves.update(
-            {
-                f"criterion_{tag}" if tag != "" else "criterion": criterion_range
-                for tag, criterion_range in self.criterion_ranges.items()
-            }
-        )
+        ranges = {
+            f"criterion_{tag}" if tag != "" else "criterion_range": criterion_range
+            for tag, criterion_range in self.criterion_ranges.items()
+        }
+        metric_curves["__eval"] = {
+            "metrics": [str(c) for c in self.metrics],
+            "matching": str(self.matching),
+            "criterion": self.criterion.__name__,
+            "criterion_ranges": ranges,
+        }
         return metric_scores, metric_curves
 
     @staticmethod
@@ -413,7 +417,7 @@ class BoxEvaluator(DetectionEvaluator):
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        max_detections = os.getenv("nndet_eval_max_detections_image", 100)
+        max_detections = os.getenv("nndet_eval_max_detections_image_based", 400)
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
         criterion_ranges_final = {
@@ -458,16 +462,12 @@ class BoxEvaluator(DetectionEvaluator):
                     iou_thresholds=(0.1, 0.5),
                 )
             )
-
         matching = EvalMatchingPerElementGreedyScoreNP(
             iou_fn=cls.similarity_fn,
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        logger.info(
-            f"Created {cls.__name__} (box vol/area criterion) with "
-            f"{matching.__class__.__name__} and {max_detections} max detections."
-        )
+        logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,

@@ -156,7 +156,7 @@ class AbstractEvalMatching(ABC):
     def __init__(
         self,
         iou_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
-        max_detections: int = 100,
+        max_detections: int,
         warning_ratio: float = 0.25,
     ) -> None:
         """
@@ -174,6 +174,12 @@ class AbstractEvalMatching(ABC):
         self.iou_fn = iou_fn
         self.max_detections = max_detections
         self.warning_ratio = warning_ratio
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(iou_fn: {self.iou_fn.__name__}, max_detections: {self.max_detections}, "
+            f"warning_ratio: {self.warning_ratio})"
+        )
 
     @abstractclassmethod
     def get_filter_keys(cls) -> List[str]:

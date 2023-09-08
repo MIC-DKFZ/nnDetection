@@ -94,7 +94,8 @@ class TestBoxEvaluator:
         evaluator.iou_mapping = [[0], [1]]
         metric_scores, metric_curves = evaluator.finish_online_evaluation()
 
-        assert metric_curves == {"curve0": 1, "curve1": 3, "criterion": (np.NINF, np.inf)}
+        metric_curves.pop("__eval")
+        assert metric_curves == {"curve0": 1, "curve1": 3}
         assert metric_scores == {"score0": 0, "score1": 2}
         metric0.assert_called_with([0, 0], tag=None)
         metric1.assert_called_with([0, 0], tag=None)

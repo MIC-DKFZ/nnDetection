@@ -3733,42 +3733,6 @@
       'class2_pred_hist_xxxlVF_IoU_0.50_fn': 0.0,
       'class2_pred_hist_xxxlVF_IoU_0.50_fp': 0,
       'class2_pred_hist_xxxlVF_IoU_0.50_tp': 0,
-      'criterion': tuple(
-        -inf,
-        inf,
-      ),
-      'criterion_lVF': tuple(
-        13824,
-        inf,
-      ),
-      'criterion_mVF': tuple(
-        512,
-        13824,
-      ),
-      'criterion_sVF': tuple(
-        0,
-        512,
-      ),
-      'criterion_xlVF': tuple(
-        32768,
-        inf,
-      ),
-      'criterion_xsVF': tuple(
-        0,
-        216,
-      ),
-      'criterion_xxlVF': tuple(
-        110592,
-        inf,
-      ),
-      'criterion_xxsVF': tuple(
-        0,
-        64,
-      ),
-      'criterion_xxxlVF': tuple(
-        262144,
-        inf,
-      ),
       'pred_hist_IoU_0.10_counts_fp': array([1694, 1632, 1665, 1674, 1743, 1754, 1652, 1711, 1685, 1617, 1668,
          1717, 1671, 1626, 1671, 1680, 1673, 1654, 1659, 1681, 1680, 1706,
          1719, 1711, 1710, 1728, 1666, 1695, 1657, 1699, 1664, 1722, 1672,

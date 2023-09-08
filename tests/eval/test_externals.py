@@ -137,6 +137,7 @@ def test_evaluator(snapshot, example):
     assert res[1]["class1_FROC_num_images"] == res[1]["class2_FROC_num_images"]
     assert res[1]["class2_FROC_num_images"] == n_img
     assert res[1]["class0_FROC_num_gt"] + res[1]["class1_FROC_num_gt"] + res[1]["class2_FROC_num_gt"] == n_gt_all
+    res[1].pop("__eval")
     assert res == snapshot
 
 

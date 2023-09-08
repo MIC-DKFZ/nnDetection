@@ -62,6 +62,7 @@ class CocoAPMetric(DetectionMetric):
         )
         self.iou_thresholds = np.union1d(iou_list, _iou_range)
         self.iou_range = iou_range
+        self.iou_list = iou_list
 
         # get indices of iou values of ious range and ious list for later evaluation
         self.iou_list_idx = np.nonzero(iou_list[:, np.newaxis] == self.iou_thresholds[np.newaxis])[1]
@@ -71,6 +72,12 @@ class CocoAPMetric(DetectionMetric):
         assert (self.iou_thresholds[self.iou_range_idx] == _iou_range).all()
 
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(classes: {self.classes}, iou_list: {self.iou_list}, "
+            f"iou_range: {self.iou_range})"
+        )
 
     @staticmethod
     def get_name(tag: Optional[str] = None) -> str:

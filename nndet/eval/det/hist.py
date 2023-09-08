@@ -37,6 +37,12 @@ class PredictionHistogram(DetectionMetric):
         self.bins = bins
         self.value_range = (0, 1)
 
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(classes: {self.classes}, iou_thresholds: {self.iou_thresholds}, "
+            f"bins: {self.bins})"
+        )
+
     @staticmethod
     def get_name(tag: Optional[str] = None) -> str:
         """

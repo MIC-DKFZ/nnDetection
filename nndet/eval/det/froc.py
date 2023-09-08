@@ -54,6 +54,12 @@ class FROCMetric(DetectionMetric):
         self.fpi_thresholds = fpi_thresholds
         self.verbose = verbose
 
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(classes: {self.classes}, iou_thresholds: {self.iou_thresholds}, "
+            f"fpi_thresholds: {self.fpi_thresholds})"
+        )
+
     @staticmethod
     def get_name(tag: Optional[str] = None) -> str:
         """
