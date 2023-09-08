@@ -6,11 +6,14 @@
 # SPDX-FileCopyrightText: 2014, Piotr Dollar and Tsung-Yi Lin
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
+import os
 import time
-from typing import Dict, List, Sequence, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from loguru import logger
+from matplotlib import pyplot as plt
 
 from nndet.eval import DetectionMetric
 
@@ -59,6 +62,7 @@ class CocoAPMetric(DetectionMetric):
         )
         self.iou_thresholds = np.union1d(iou_list, _iou_range)
         self.iou_range = iou_range
+        self.iou_list = iou_list
 
         # get indices of iou values of ious range and ious list for later evaluation
         self.iou_list_idx = np.nonzero(iou_list[:, np.newaxis] == self.iou_thresholds[np.newaxis])[1]
@@ -68,6 +72,23 @@ class CocoAPMetric(DetectionMetric):
         assert (self.iou_thresholds[self.iou_range_idx] == _iou_range).all()
 
         self.recall_thresholds = np.linspace(0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(classes: {self.classes}, iou_list: {self.iou_list}, "
+            f"iou_range: {self.iou_range})"
+        )
+
+    @staticmethod
+    def get_name(tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+            str: Tag Prefix for meta information
+        """
+        return f"AP_{tag}" if tag is not None else "AP"
 
     def get_iou_thresholds(self) -> Sequence[float]:
         """
@@ -81,7 +102,8 @@ class CocoAPMetric(DetectionMetric):
     def compute(
         self,
         results_list: List[Dict[int, Dict[str, np.ndarray]]],
-    ) -> Tuple[Dict[str, float], Dict[str, np.ndarray]]:
+        tag: Optional[str] = None,
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute AP metric similar to COCO implementation (no limit on
         detections per image in this class)
@@ -110,28 +132,38 @@ class CocoAPMetric(DetectionMetric):
                     detections which should be ignored [T, D], indicate which
                     detections should be ignored
 
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
         Returns:
             Dict[str, float]: dictionary with AP metrics
-            Dict[str, np.ndarray]: None
+            Dict[str, Any]: dictionary with meta information such
+                as iou- and recall thresholds, precision-recall curve
+                information. Recall values are saved as `recall_tresholds`
+                and precision values are saved under respective
+                `{cls_str}_{metric_name}_IoU_{_iou:.2f}` key.
         """
         if self.verbose:
             logger.info("Start COCO metric computation...")
             tic = time.time()
 
-        dataset_statistics = self.compute_statistics(results_list=results_list)
+        dataset_statistics = self.compute_statistics(results_list=results_list, tag=tag)
         if self.verbose:
             toc = time.time()
             logger.info(f"Statistics for COCO metrics finished (t={(toc - tic):0.2f}s).")
 
-        results = {}
-        results.update(self.compute_ap(dataset_statistics))
+        result_scores, result_meta = self.compute_ap(dataset_statistics, tag=tag)
 
         if self.verbose:
             toc = time.time()
             logger.info(f"COCO metrics computed in t={(toc - tic):0.2f}s.")
-        return results, None
+        return result_scores, result_meta
 
-    def compute_ap(self, dataset_statistics: dict) -> dict:
+    def compute_ap(
+        self,
+        dataset_statistics: dict,
+        tag: Optional[str],
+    ) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Compute AP metrics
 
@@ -153,17 +185,33 @@ class CocoAPMetric(DetectionMetric):
                 ``scores``: np.ndarray
                     Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes]
+
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
+        Returns:
+            Dict[str, float]: dictionary with AP metrics
+            Dict[str, Any]: dictionary with meta information such
+                as iou- and recall thresholds, precision-recall curve
+                information. Recall values are saved as `recall_tresholds`
+                and precision values are saved under respective
+                `{cls_str}_{metric_name}_IoU_{_iou:.2f}` key.
         """
         results = {}
+        metric_name = self.get_name(tag=tag)
+
         if self.iou_range:  # mAP
-            key = f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
+            key = f"m{metric_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
             results[key] = self.select_ap(
                 dataset_statistics,
                 iou_idx=self.iou_range_idx,
             )
 
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = f"{cls_str}_" f"mAP_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
+                key = (
+                    f"{cls_str}_"
+                    f"m{metric_name}_IoU_{self.iou_range[0]:.2f}_{self.iou_range[1]:.2f}_{self.iou_range[2]:.2f}"
+                )
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=self.iou_range_idx,
@@ -171,17 +219,21 @@ class CocoAPMetric(DetectionMetric):
                 )
 
         for idx in self.iou_list_idx:  # AP@IoU
-            key = f"AP_IoU_{self.iou_thresholds[idx]:.2f}"
+            key = f"{metric_name}_IoU_{self.iou_thresholds[idx]:.2f}"
             results[key] = self.select_ap(dataset_statistics, iou_idx=[idx])
 
             for cls_idx, cls_str in enumerate(self.classes):  # per class results
-                key = f"{cls_str}_AP_IoU_{self.iou_thresholds[idx]:.2f}"
+                key = f"{cls_str}_{metric_name}_IoU_{self.iou_thresholds[idx]:.2f}"
                 results[key] = self.select_ap(
                     dataset_statistics,
                     iou_idx=[idx],
                     cls_idx=cls_idx,
                 )
-        return results
+        meta = self.get_pr_curves(
+            dataset_statistics=dataset_statistics,
+            tag=tag,
+        )
+        return results, meta
 
     @staticmethod
     def select_ap(
@@ -225,10 +277,49 @@ class CocoAPMetric(DetectionMetric):
             prec = prec[iou_idx]
         if cls_idx is not None:
             prec = prec[..., cls_idx]
-        return np.mean(prec)
+
+        if np.any(prec != -1):
+            return np.mean(prec[prec > -1])
+        return float(-1)
+
+    def get_pr_curves(
+        self,
+        dataset_statistics: dict,
+        tag: Optional[str],
+    ) -> Dict[str, Any]:
+        """
+        Retrieve precision recall curves and meta information of metric
+        """
+        metric_name = self.get_name(tag=tag)
+        meta = {
+            f"{metric_name}_num_thresholds": dataset_statistics["counts"][0],
+            f"{metric_name}_num_recall_threshods": dataset_statistics["counts"][1],
+            f"{metric_name}_num_classes": dataset_statistics["counts"][2],
+            f"{metric_name}_classes": self.classes,
+            f"{metric_name}_recall_thresholds": self.recall_thresholds,
+            f"{metric_name}_iou_thresholds": [],
+        }
+        # iter iou thresholds
+        for iou_idx in self.iou_list_idx:
+            _iou = self.iou_thresholds[iou_idx]
+            curves = dataset_statistics["precision"][iou_idx, :, :]  # num_recall_th, num_classes
+
+            # iter classes
+            for cls_idx, cls_str in enumerate(self.classes):
+                meta[f"{cls_str}_{metric_name}_IoU_{_iou:.2f}"] = {
+                    "iou": _iou,
+                    "iou_str": f"{_iou:.2f}",
+                    "class": cls_str,
+                    "_cls_idx": cls_idx,
+                    "curve": curves[..., cls_idx],
+                }
+            meta[f"{metric_name}_iou_thresholds"].append(_iou)
+        return meta
 
     def compute_statistics(
-        self, results_list: List[Dict[int, Dict[str, np.ndarray]]]
+        self,
+        results_list: List[Dict[int, Dict[str, np.ndarray]]],
+        tag: Optional[str],
     ) -> Dict[str, Union[np.ndarray, List]]:
         """
         Compute statistics needed for metric computation
@@ -259,6 +350,9 @@ class CocoAPMetric(DetectionMetric):
                     detections which should be ignored [T, D], indicate which
                     detections should be ignored
 
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
         Returns:
             dict: computed statistics over dataset
                 ``counts`` List[int]
@@ -277,6 +371,7 @@ class CocoAPMetric(DetectionMetric):
                     Scores corresponding to specified recall thresholds
                     [num_iou_th, num_recall_th, num_classes]
         """
+        metric_name = self.get_name(tag=tag)
         num_iou_th = len(self.iou_thresholds)
         num_recall_th = len(self.recall_thresholds)
         num_classes = len(self.classes)
@@ -290,7 +385,7 @@ class CocoAPMetric(DetectionMetric):
             results = [r[cls_idx] for r in results_list if cls_idx in r]
 
             if len(results) == 0:
-                logger.error(f"No results found for coco metric for class {cls_i} can not compute AP")
+                logger.warning(f"No results found for {metric_name} class {cls_i}")
                 continue
 
             dt_scores = np.concatenate([r["dtScores"] for r in results])
@@ -312,15 +407,15 @@ class CocoAPMetric(DetectionMetric):
             gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
             num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
             if num_gt == 0:
-                logger.error(f"No gt found for coco metric for class {cls_i} can not compute AP")
+                logger.debug(f"No gt found for {metric_name} class {cls_i}")
                 continue
 
             # ignore cases need to be handled differently for tp and fp
             tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
             fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
-            tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float32)
-            fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float32)
+            tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
+            fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
 
             for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
                 tp, fp = np.array(tp), np.array(fp)
@@ -340,6 +435,55 @@ class CocoAPMetric(DetectionMetric):
             "precision": precision,  # [num_iou_th, num_recall_th, num_classes]
             "scores": scores,  # [num_iou_th, num_recall_th, num_classes]
         }
+
+    @classmethod
+    def plot(
+        cls,
+        result_scores: Dict[str, float],
+        result_meta: Dict[str, Any],
+        save_dir: os.PathLike,
+        tag: Optional[str] = None,
+    ) -> None:
+        """
+        Plot precision recall curves of AP computation
+        (these are alrady interpolated!)
+
+        Args:
+            result_scores: single as obtained from `compute` function
+            result_meta: meta information as obtained from `compute` function
+            save_dir: path to directory where files should be saved
+            tag: tag of the current evaluation. Added to metric keys and
+                filenames. If None, no tag will be used
+
+        Returns:
+            Dict: figures of create plots
+        """
+        metric_name = cls.get_name(tag=tag)
+        recall = result_meta[f"{metric_name}_recall_thresholds"]
+        for iou in result_meta[f"{metric_name}_iou_thresholds"]:
+            # create plot
+            fig, ax = plt.subplots()
+            ax.set_xlim(-0.05, 1.05)
+            ax.set_ylim(-0.05, 1.05)
+            ax.set_xlabel("Interpolated Recall")
+            ax.set_ylabel("Interpolated Precision")
+            ax.grid(True)
+
+            for cls_str in result_meta[f"{metric_name}_classes"]:
+                key = f"{cls_str}_{metric_name}_IoU_{iou:.2f}"
+                prec = result_meta[key]["curve"]
+                ax.plot(recall, prec, "-", label=f"{cls_str} AP {result_scores[key]:.2f}")
+
+            title = f"{metric_name}_IoU_{iou:.2f}"
+            ax.set_title(title)
+            ax.legend(loc="lower right")
+
+            # save file
+            ap_save_dir = Path(save_dir) / "results_AP"
+            ap_save_dir.mkdir(exist_ok=True)
+            # fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.png")
+            fig.savefig(ap_save_dir / f"{title.replace('.', '_')}.pdf")
+            plt.close(fig)
 
 
 def compute_stats_single_threshold(

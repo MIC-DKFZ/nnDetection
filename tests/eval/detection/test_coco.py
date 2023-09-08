@@ -27,13 +27,26 @@ class TestCOCOMetric:
 
     def test_compute(self, mocker: MockerFixture, metric):
         mocker.patch("nndet.eval.det.ap.CocoAPMetric.select_ap", return_value=1)
+
+        num_iou_th = len(metric.iou_thresholds)
+        num_recall_th = len(metric.recall_thresholds)
+        num_classes = len(metric.classes)
+        precision = -np.ones((num_iou_th, num_recall_th, num_classes))
+        recall = -np.ones((num_iou_th, num_classes))
+        scores = -np.ones((num_iou_th, num_recall_th, num_classes))
+
         mocker.patch(
             "nndet.eval.det.ap.CocoAPMetric.compute_statistics",
-            return_value={"stats": 0},
+            return_value={
+                "stats": 0,
+                "counts": [1, 1, 1],
+                "precision": precision,
+                "recall": recall,
+                "scores": scores,
+            },
         )
 
         score, curve = metric([0, 1, 2])
-        assert curve is None
         assert score["mAP_IoU_0.10_0.20_0.10"] == 1
         assert score["AP_IoU_0.10"] == 1
         assert score["AP_IoU_0.30"] == 1
@@ -70,7 +83,7 @@ class TestCOCOMetric:
             return_value=(1, [2, 3], [4, 5]),
         )
 
-        stats = metric.compute_statistics(results_list)
+        stats = metric.compute_statistics(results_list, tag=None)
         assert stats["recall"].shape == (1, 2)
         assert stats["precision"].shape == (1, 2, 2)
         assert stats["scores"].shape == (1, 2, 2)

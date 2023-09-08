@@ -39,6 +39,9 @@ class TestBoxEvaluator:
         )
         assert all([a == b for a, b in zip(evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
         assert all([a == b for a, b in zip(evaluator.iou_mapping, [[0, 1], [2, 3]])])
+        assert "" in evaluator.criterion_ranges.keys()
+        assert evaluator.criterion_ranges[""][0] == np.NINF
+        assert evaluator.criterion_ranges[""][1] == np.inf
 
     def test_run_online_evaluation_smoke(self, evaluator):
         _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
@@ -56,7 +59,12 @@ class TestBoxEvaluator:
         assert not res
 
     def test_run_online_evaluation(self, mocker: MockerFixture, evaluator):
-        evaluator.matching.match = mocker.MagicMock(return_value=[0, 1])
+        mock_matches = {
+            1: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
+            4: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
+        }
+        evaluator.matching.match = mocker.MagicMock(return_value=mock_matches)
+        evaluator.criterion = mocker.MagicMock(return_value=np.array([0]))
 
         _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
         _pred_classes = np.array([1])
@@ -72,7 +80,9 @@ class TestBoxEvaluator:
         )
 
         assert not res
-        assert all([a == b for a, b in zip(evaluator.results_list, [0, 1])])
+        assert all(a == b for a, b in zip([""], evaluator.results_dict.keys()))
+        assert len(evaluator.results_dict[""]) == 1
+        assert all(mock_matches[key] == value for key, value in evaluator.results_dict[""][0].items())
 
     def test_finish_online_evaluation(self, mocker: MockerFixture, evaluator):
         evaluator.iou_filter = mocker.Mock(return_value=0)
@@ -80,14 +90,15 @@ class TestBoxEvaluator:
         metric1 = mocker.Mock(return_value=({"score1": 2}, {"curve1": 3}))
 
         evaluator.metrics = [metric0, metric1]
-        evaluator.results_list = [None, None]
+        evaluator.results_dict = {"": {0: None, 1: None}}
         evaluator.iou_mapping = [[0], [1]]
         metric_scores, metric_curves = evaluator.finish_online_evaluation()
 
+        metric_curves.pop("__eval")
         assert metric_curves == {"curve0": 1, "curve1": 3}
         assert metric_scores == {"score0": 0, "score1": 2}
-        metric0.assert_called_with([0, 0])
-        metric1.assert_called_with([0, 0])
+        metric0.assert_called_with([0, 0], tag=None)
+        metric1.assert_called_with([0, 0], tag=None)
 
     def test_iou_filter(self, evaluator):
         image_dict = {
