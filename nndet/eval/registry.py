@@ -47,7 +47,7 @@ def evaluate_box_dir(
     evaluator = BoxEvaluator.create(
         classes=classes,
         fast=False,
-        verbose=False,
+        verbose=True,
         save_dir=save_dir,
         **kwargs,
     )

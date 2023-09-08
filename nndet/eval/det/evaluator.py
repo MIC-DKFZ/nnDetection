@@ -274,6 +274,12 @@ class DetectionEvaluator(AbstractEvaluator):
                 case_ids,
             )
         ):
+            if gboxes.size == 0 and gboxes.shape[0] != 0:
+                # we use 1 here since it is not possible to determine the correct dimensionality
+                # with certainty. Shape only occurs with data which was prepared with old
+                # versions of nnDetection and does not influence the results
+                gboxes = gboxes.reshape(-1, 1)
+
             self.results_dict[results_key][case_id] = self.matching.match(
                 iou_thresholds=self.iou_thresholds,
                 pred_boxes=pboxes,
@@ -467,7 +473,8 @@ class BoxEvaluator(DetectionEvaluator):
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
+        if verbose:
+            logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,
