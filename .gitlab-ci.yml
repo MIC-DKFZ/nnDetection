@@ -37,9 +37,15 @@ pytest-job:
   script:
     - echo "Check Versions"
     - python --version
-    - python -c "import torch"
+    - python -c "import torch; print(torch.__version__)"
     - pip --version
     - pip uninstall torchtext -y
+    - echo "Print Dep Tree"
+    - pip install pipdeptree
+    - pipdeptree
+    - pipdeptree --reverse --packages torch
+    - pipdeptree --reverse --packages torchvision
+    - pipdeptree --reverse --packages numpy
     - echo "Install Package"
     - pip install .[dev]
     - echo "Run Tests"
