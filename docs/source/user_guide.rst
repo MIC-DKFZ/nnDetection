@@ -1,3 +1,5 @@
+.. _user_guide-label:
+
 User Guide
 ==========
 
@@ -293,7 +295,7 @@ Evaluation can be invoked by the following command (requires access to the model
 
 .. code-block:: bash
 
-    nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--seg] [--instances] [--analyze_boxes]
+    nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--analyze_boxes]
 
     # Example (evaluate and analyze box predictions of default model)
     nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
@@ -302,7 +304,6 @@ Evaluation can be invoked by the following command (requires access to the model
     # /scripts/train.py - evaluate()
 
     # Note: --test invokes evaluation of the test set
-    # Note: --seg, --instances are placeholders for future versions and not working yet
 
 Inference
 ---------
@@ -354,13 +355,15 @@ The final model directory will contain multiple subfolders with different inform
 * `val_results_preprocessed`: contains validation results inside the preprocessed image space are saved for debugging purposes
 * `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
 
+Evaluation
+----------
+
 The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
 
-* `AP_IoU_0.10`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
-* `mAP_IoU_0.10_0.50_0.05`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
-* `[num]_AP_IoU_0.10`: AP metric computed per class
-* `FROC_score_IoU_0.10` FROC score with default FPPI (1/8, 1/4, 1/2, 1, 2, 4, 8). Note (in contrast to the AP implementation): the multi-class case does not compute the metric per class but puts all predictions/gt into a single large pool (similar to AP_pool from https://arxiv.org/abs/2102.01066) and thus inter class calibration is important here. In most cases simply averaging the `[num]_FROC` scores manually to assign the same weight to each class should be prefered.
-* case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
+* `AP_IoU_0.10`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1`. Per default, the number of detections per image per class are limited to `400` but can be adjusted via `nndet_eval_max_detections_image_based`. 
+* `mAP_IoU_0.10_0.50_0.05`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*.
+* `[num]_AP_IoU_0.10`: AP metric computed per class.
+* 
 
 .. warning::
 
@@ -372,13 +375,8 @@ The following section contains some additional information regarding the metrics
 Advanced Use Cases
 ******************
 
-Custom Applications
--------------------
-
-# TODO: custom split
-# TODO: custom network -> refer to developer guide
-# TODO: Running unit tests
-
+An advanced use case might require some minor coding which is not covered by the default functionality of nnDetection.
+Nevertheless, some cases can occur frequently and are thus covered here. 
 
 Detection Zoo
 -------------
@@ -403,5 +401,16 @@ Detection Zoo
 
 Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
 
-
 # TODO: focal loss training
+
+Evaluation Framework
+--------------------
+
+# TODO: simple example to run evaluation with nnDetection
+
+Custom Applications
+-------------------
+
+# TODO: custom split
+# TODO: custom network -> refer to developer guide
+# TODO: Running unit tests
