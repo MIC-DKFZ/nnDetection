@@ -125,6 +125,9 @@ def download_data():
         with open(prediction_path, "r") as g:
             filtered_predictions = json.load(g)
 
+    # patch np.float
+    COCOeval.np.float = float
+
     # COCO Eval
     cocoGt = COCO(str(annotation_path))
     cocoDt = cocoGt.loadRes(str(prediction_path))
