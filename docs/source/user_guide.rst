@@ -356,9 +356,9 @@ The final model directory will contain multiple subfolders with different inform
 
 The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
 
-* `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
-* `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
-* `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
+* `AP_IoU_0.10`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
+* `mAP_IoU_0.10_0.50_0.05`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
+* `[num]_AP_IoU_0.10`: AP metric computed per class
 * `FROC_score_IoU_0.10` FROC score with default FPPI (1/8, 1/4, 1/2, 1, 2, 4, 8). Note (in contrast to the AP implementation): the multi-class case does not compute the metric per class but puts all predictions/gt into a single large pool (similar to AP_pool from https://arxiv.org/abs/2102.01066) and thus inter class calibration is important here. In most cases simply averaging the `[num]_FROC` scores manually to assign the same weight to each class should be prefered.
 * case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
 
