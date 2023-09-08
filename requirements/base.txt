@@ -8,7 +8,7 @@ scipy
 scikit-learn
 scikit-image>=0.14
 pandas>=0.8.1
-nevergrad
+nevergrad<0.12.0
 dicom2nifti
 medpy
 tqdm
