@@ -159,7 +159,7 @@ def download_data():
     evaluator = BoxEvaluator(
         metrics=[coco],
         matching=matching,
-        box_criterion=ops_np.box_area_np,
+        criterion=ops_np.box_area_np,
         criterion_ranges=ranges,
     )
     return cocoEval, detections_by_image, annotations_by_image, evaluator

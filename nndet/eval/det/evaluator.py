@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from loguru import logger
 
 import nndet.core.ops_np as ops_np
 from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
@@ -26,7 +27,7 @@ class DetectionEvaluator(AbstractEvaluator):
         self,
         metrics: Sequence[DetectionMetric],
         matching: AbstractEvalMatching,
-        box_criterion: Callable = ops_np.box_area_np,
+        criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
         save_dir: Optional[os.PathLike] = None,
     ):
@@ -37,14 +38,14 @@ class DetectionEvaluator(AbstractEvaluator):
             metrics: detection metrics to evaluate
             matching: object to perform matching for batches
             filter_keys: define keys which need to be filtered by the IoU value
-            box_criterion: function that takes array of boxes [N, 4/6] and
+            criterion: function that takes array of boxes [N, 4/6] and
                 computes scalar criterion value array [N]
             criterion_ranges: Dict containing names and ranges of
                 additional ranges of interest
             save_dir: if provided, this will call the plot function of the
                 metric with the defined save_dir to create additional plots
         """
-        self.box_criterion = box_criterion
+        self.criterion = criterion
         # set range to cover every object
         self.criterion_ranges = {"": (np.NINF, np.inf)}
         # expand by additional ranges
@@ -130,10 +131,10 @@ class DetectionEvaluator(AbstractEvaluator):
 
         # Compute criterion
         gt_boxes_criterion = [
-            np.array([]) if gt_boxes_img.size == 0 else self.box_criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
+            np.array([]) if gt_boxes_img.size == 0 else self.criterion(gt_boxes_img) for gt_boxes_img in gt_boxes
         ]
         dt_boxes_criterion = [
-            np.array([]) if dt_boxes_img.size == 0 else self.box_criterion(dt_boxes_img) for dt_boxes_img in pred_boxes
+            np.array([]) if dt_boxes_img.size == 0 else self.criterion(dt_boxes_img) for dt_boxes_img in pred_boxes
         ]
         # Loop over all evaluated criterion ranges
         for results_key, criterion_range in self.criterion_ranges.items():
@@ -163,6 +164,22 @@ class DetectionEvaluator(AbstractEvaluator):
         gt_boxes_criterion: List[np.ndarray],
         dt_boxes_criterion: List[np.ndarray],
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        """
+        Compute ignore arrays based on the provided criterion and criterion
+        ranges
+
+        Args:
+            criterion_range: upper and lower bound of criterion
+            gt_ignore: information on previously ignores ground truth objects
+            gt_boxes_criterion: computed criterion information for ground truth
+            dt_boxes_criterion: computed criterion information for predictions
+
+        Returns:
+            Tuple[List[np.ndarray], List[np.ndarray]]: tuple with two entries:
+                first entry contains an [array] indicating new ignore values
+                the predictions and second entry contain [array] for ground
+                truth
+        """
         # Define new gt_ignores based on the criterion
         gt_ignore_final = []
         for i, gt_boxes_img_criterion in enumerate(gt_boxes_criterion):
@@ -375,7 +392,7 @@ class BoxEvaluator(DetectionEvaluator):
         fast: bool = True,
         verbose: bool = False,
         save_dir: Optional[Path] = None,
-        box_criterion: Callable = ops_np.box_area_np,
+        criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
         froc_wp: bool = True,
     ):
@@ -389,14 +406,14 @@ class BoxEvaluator(DetectionEvaluator):
                 Does not calculate pre-class metrics
             verbose: Additional logging output
             save_dir: Path to save information
-            box_criterion: Criterion for separate evaluation
+            criterion: Criterion for separate evaluation
             criterion_ranges: Ranges of the value of the box criterion to
                 evaluate (the first entry should be "": full range
 
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        max_detections = 100
+        max_detections = os.getenv("nndet_eval_max_detections_image", 100)
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
         criterion_ranges_final = {
@@ -447,10 +464,14 @@ class BoxEvaluator(DetectionEvaluator):
             max_detections=max_detections,
             warning_ratio=0.25,
         )
+        logger.info(
+            f"Created {cls.__name__} (box vol/area criterion) with "
+            f"{matching.__class__.__name__} and {max_detections} max detections."
+        )
         return cls(
             metrics=tuple(metrics),
             matching=matching,
-            box_criterion=box_criterion,
+            criterion=criterion,
             criterion_ranges=criterion_ranges_final,
             save_dir=save_dir,
         )

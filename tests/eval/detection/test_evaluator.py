@@ -64,7 +64,7 @@ class TestBoxEvaluator:
             4: {"dtMatches": np.array([[1, 1]]), "dtIgnore": np.array([[0, 0]])},
         }
         evaluator.matching.match = mocker.MagicMock(return_value=mock_matches)
-        evaluator.box_criterion = mocker.MagicMock(return_value=np.array([0]))
+        evaluator.criterion = mocker.MagicMock(return_value=np.array([0]))
 
         _pred_boxes = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])[None]
         _pred_classes = np.array([1])
