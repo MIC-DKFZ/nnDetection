@@ -50,6 +50,12 @@ def train() -> None:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("train_config", type=str, help="specify model config to use for training")
+    parser.add_argument(
+        "fold",
+        type=int,
+        help="fold to train",
+    )
     parser.add_argument(
         "-o",
         "--overwrites",
@@ -75,7 +81,11 @@ def train() -> None:
     )
 
     args = parser.parse_args()
+
     task = args.task
+    train_config = args.train_config
+    fold = args.fold
+
     ov = args.overwrites
     do_sweep = args.sweep
     log_net = args.log_net
@@ -83,6 +93,8 @@ def train() -> None:
 
     _train(
         task=task,
+        train_config=train_config,
+        fold=fold,
         ov=ov,
         do_sweep=do_sweep,
         log_net=log_net,
@@ -241,7 +253,7 @@ def init_train_dir(cfg) -> Path:
     return output_dir
 
 
-def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
+def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
     """
     Instantiate a logger to monitor metrics/losses during training
 
@@ -274,7 +286,7 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
         run_name = cfg["exp"]["id"]
         tags = {
             "host": socket.gethostname(),
-            "fold": cfg["exp"]["fold"],
+            "fold": fold,
             "task": cfg["task"],
             "job_id": os.getenv("LSB_JOBID", "no_id"),
             "mlflow.runName": run_name,
@@ -305,6 +317,8 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
 
 def _train(
     task: str,
+    train_config: str,
+    fold: int,
     ov: List[str],
     do_sweep: bool,
     log_net: bool = False,
@@ -319,11 +333,16 @@ def _train(
         do_sweep: determine best emprical parameters for run
     """
     print(f"Overwrites: {ov}")
+    ov = [] if ov is None else ov
+    if any("train=" in o for o in ov):
+        raise ValueError("Can not overwrite train config via overwrites anymore, use train_config parameter instead.")
+    ov = ov.insert(0, f"train={train_config}")
+
     initialize_config_module(config_module="nndet.conf", version_base="1.1")
-    cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
+    cfg = compose(task, "config.yaml", overrides=ov)
 
     train_dir = init_train_dir(cfg)
-    pl_logger = get_pl_logger(cfg)
+    pl_logger = get_pl_logger(cfg, fold=fold)
     if pl_logger:
         params = {
             "module": cfg["module"],
@@ -369,7 +388,7 @@ def _train(
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
         plan=plan,
         data_dir=data_dir,
-        fold=cfg["exp"]["fold"],
+        fold=fold,
         log_aug=log_aug,
     )
     # copy IO config overwrites to plan
@@ -464,7 +483,7 @@ def _train(
     run_info["train_s"] = train_time
     run_info["train_h"] = train_time / 3600
     if do_sweep:
-        case_ids = splits[cfg["exp"]["fold"]]["val"]
+        case_ids = splits[fold]["val"]
         if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
             logger.warning("[!!!] Detected debug mode for sweep using reduced set of cases")
             case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
@@ -499,7 +518,7 @@ def _train(
         _evaluate_task(
             task=cfg["task"],
             model=cfg["exp"]["id"],
-            fold=cfg["exp"]["fold"],
+            fold=fold,
             test=False,
             preprocessed=True,
             do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
@@ -558,7 +577,7 @@ def _sweep(
     )
 
     splits = load_pickle(train_dir / "splits.pkl")
-    case_ids = splits[cfg["exp"]["fold"]]["val"]
+    case_ids = splits[fold]["val"]
 
     if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
         logger.warning("Detected debug mode for sweep using reduced set of cases!")
@@ -590,7 +609,7 @@ def _sweep(
     _evaluate_task(
         task=cfg["task"],
         model=cfg["exp"]["id"],
-        fold=cfg["exp"]["fold"],
+        fold=fold,
         test=False,
         preprocessed=True,
         do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),

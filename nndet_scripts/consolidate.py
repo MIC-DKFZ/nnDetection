@@ -191,7 +191,6 @@ def main():
     if ov is not None:
         cfg.merge_with_dotlist(ov)
 
-    cfg["exp"]["fold"] = -1  # update fold to consolidated
     OmegaConf.save(cfg, str(target_dir / "config.yaml"))
     OmegaConf.save(cfg, str(target_dir / "config_resolved.yaml"), resolve=True)
 

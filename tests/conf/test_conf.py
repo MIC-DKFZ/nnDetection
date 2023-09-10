@@ -8,7 +8,7 @@ def test_basic_compose():
         cfg = compose("config.yaml", overrides=["train=retinaunet_v001_mod"])
 
         # check for keys
-        assert cfg["exp"]["fold"] == 0
+        assert "fold" not in cfg["exp"]
         assert cfg["exec"]["mode"] == "overwrite"
 
         assert cfg["module"] is not None
