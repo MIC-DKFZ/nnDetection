@@ -7,14 +7,15 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
+import pycocotools
 import pytest
 import requests
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 from nndet.core import ops_np
-from nndet.evaluator.det import BoxEvaluator
-from nndet.evaluator.detection import COCOMetric
+from nndet.eval.det import BoxEvaluator, CocoAPMetric
+from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 
 
 def filter_dataset(predictions: Dict, annotations: Dict) -> Tuple[Dict, Dict]:
@@ -100,7 +101,10 @@ def download_data():
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download data and load into arrays
-        r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
+        r = requests.get(
+            "http://images.cocodataset.org/annotations/annotations_trainval2014.zip",
+            stream=True,
+        )
         z = zipfile.ZipFile(io.BytesIO(r.content))
         with z.open("annotations/instances_val2014.json") as annotation_zip:
             annotation_dict = json.load(annotation_zip)
@@ -121,6 +125,9 @@ def download_data():
             filtered_annotations = json.load(f)
         with open(prediction_path, "r") as g:
             filtered_predictions = json.load(g)
+
+    # patch np.float
+    pycocotools.cocoeval.np.float = float
 
     # COCO Eval
     cocoGt = COCO(str(annotation_path))
@@ -143,12 +150,21 @@ def download_data():
 
     # Create COCO Metric
     classes = [cat["name"] for cat in filtered_annotations["categories"]]
-    coco = COCOMetric(
-        classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), max_detection=(1, 10, 100), verbose=True
+    coco = CocoAPMetric(classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), verbose=True)
+    ranges = {
+        "small": (0**2, 32**2),
+        "medium": (32**2, 96**2),
+        "large": (96**2, 1e5**2),
+    }
+    matching = EvalMatchingPerElementGreedyScoreNP(
+        iou_fn=ops_np.box_iou_np,
+        max_detections=100,
     )
-    ranges = {"small": (0**2, 32**2), "medium": (32**2, 96**2), "large": (96**2, 1e5**2)}
     evaluator = BoxEvaluator(
-        [coco], iou_fn=ops_np.box_iou_np, box_criterion=ops_np.box_area_np, criterion_ranges=ranges
+        metrics=[coco],
+        matching=matching,
+        criterion=ops_np.box_area_np,
+        criterion_ranges=ranges,
     )
     return cocoEval, detections_by_image, annotations_by_image, evaluator
 
@@ -158,7 +174,12 @@ class TestEvaluatorwithCOCOMetric:
         self,
         download_data,
     ):
-        coco_eval, detections_by_image, annotations_by_image, evaluator_coco = download_data
+        (
+            coco_eval,
+            detections_by_image,
+            annotations_by_image,
+            evaluator_coco,
+        ) = download_data
 
         for id, detection in detections_by_image.items():
             annotation = annotations_by_image[id]
@@ -169,14 +190,14 @@ class TestEvaluatorwithCOCOMetric:
                 [np.array(annotation["box"])],
                 [np.array(annotation["class"])],
                 [np.array(annotation["gt_ignore"])],
-                case_id=id,
+                case_ids=[id],
             )
 
         score, _ = evaluator_coco.finish_online_evaluation()
         coco_scores = coco_eval.stats
-        assert math.isclose(coco_scores[0], score["mAP_IoU_0.50_0.95_0.05_MaxDet_100"])
-        assert math.isclose(coco_scores[1], score["AP_IoU_0.50_MaxDet_100"])
-        assert math.isclose(coco_scores[2], score["AP_IoU_0.75_MaxDet_100"])
-        assert math.isclose(coco_scores[3], score["mAP_small_IoU_0.50_0.95_0.05_MaxDet_100"])
-        assert math.isclose(coco_scores[4], score["mAP_medium_IoU_0.50_0.95_0.05_MaxDet_100"])
-        assert math.isclose(coco_scores[5], score["mAP_large_IoU_0.50_0.95_0.05_MaxDet_100"])
+        assert math.isclose(coco_scores[0], score["mAP_IoU_0.50_0.95_0.05"])
+        assert math.isclose(coco_scores[1], score["AP_IoU_0.50"])
+        assert math.isclose(coco_scores[2], score["AP_IoU_0.75"])
+        assert math.isclose(coco_scores[3], score["mAP_small_IoU_0.50_0.95_0.05"])
+        assert math.isclose(coco_scores[4], score["mAP_medium_IoU_0.50_0.95_0.05"])
+        assert math.isclose(coco_scores[5], score["mAP_large_IoU_0.50_0.95_0.05"])

@@ -5,8 +5,8 @@ from typing import Dict
 
 from loguru import logger
 
-from nndet.evaluator import AbstractEvaluator
-from nndet.evaluator.seg import SegmentationEvaluator
+from nndet.eval import AbstractEvaluator
+from nndet.eval.seg import SegmentationEvaluator
 from nndet.ptmodule.mixins.evaluation.base import EvalMixin
 from nndet.utils.tensor import to_numpy
 

@@ -8,7 +8,7 @@ try:
 except ImportError:
     monai = None
 
-from nndet.evaluator.registry import BoxEvaluator
+from nndet.eval.registry import BoxEvaluator
 
 
 @pytest.fixture
@@ -126,7 +126,7 @@ def test_evaluator(snapshot, example):
             gt_boxes=[t["target_boxes"]],
             gt_classes=[t["target_classes"]],
             gt_ignore=None,
-            case_id=[f"case{idx}"],
+            case_ids=[f"case{idx}"],
         )
 
     res = evaluator.finish_online_evaluation()
@@ -137,6 +137,7 @@ def test_evaluator(snapshot, example):
     assert res[1]["class1_FROC_num_images"] == res[1]["class2_FROC_num_images"]
     assert res[1]["class2_FROC_num_images"] == n_img
     assert res[1]["class0_FROC_num_gt"] + res[1]["class1_FROC_num_gt"] + res[1]["class2_FROC_num_gt"] == n_gt_all
+    res[1].pop("__eval")
     assert res == snapshot
 
 
@@ -162,7 +163,7 @@ def test_froc_against_monai(example):
             gt_boxes=[t["target_boxes"]],
             gt_classes=[t["target_classes"]],
             gt_ignore=None,
-            case_id=[f"case{idx}"],
+            case_ids=[f"case{idx}"],
         )
 
     res = evaluator.finish_online_evaluation()
@@ -170,7 +171,7 @@ def test_froc_against_monai(example):
 
     results_list = evaluator.results_dict[""]
 
-    results = [_r for r in results_list for _r in r.values()]
+    results = [_r for r in results_list.values() for _r in r.values()]
     tp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 1] for r in results])
     fp_props = np.concatenate([r["dtScores"][r["dtMatches"][0] == 0] for r in results])
 

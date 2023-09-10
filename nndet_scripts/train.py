@@ -24,7 +24,7 @@ from pytorch_lightning.loggers import (
 )
 
 import nndet
-from nndet.evaluator.registry import evaluate_box_dir, evaluate_case_dir
+from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
 from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle

@@ -2,7 +2,7 @@
 docs/source/api/*/*
 
 # Cached test data
-tests/evaluator/detection/coco_cache_tests
+tests/eval/detection/coco_cache_tests
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
