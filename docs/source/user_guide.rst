@@ -417,13 +417,18 @@ If the labels and predictions are present in the nnDetection format, evaluation 
 
     from nndet.eval.registry import evaluate_box_dir
 
+    classes = [YOUR CLASSES HERE]
     pred_dir = [YOUR PATH HERE]
     gt_dir = [YOUR PATH HERE]
 
     results = evaluate_box_dir(
+        classes=classes,
         pred_dir=pred_dir,
         gt_dir=gt_dir,
     )
+
+.. note::
+    `nndet_eval_with_folders` provides a direct entrypoint to the above functionality.
 
 The nnDetection format expects the ground truth labels to be saved in `npz` files with keys `boxes` and `classes`.
 Predictions should be located in pkl files with keys `pred_boxes`, `pred_labels` and `pred_scores`.

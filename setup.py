@@ -130,6 +130,9 @@ setup(
             "nndet_train = nndet_scripts.train:train",
             "nndet_sweep = nndet_scripts.train:sweep",
             "nndet_consolidate = nndet_scripts.consolidate:main",
+            # evaluation
+            "nndet_eval = nndet_scripts.train:evaluate",
+            "nndet_eval_with_folders = nndet_scripts.train:evaluate_with_folders",
             # prediction
             "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",
             "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
@@ -140,12 +143,11 @@ setup(
             "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
             "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
             # utils
+            "nndet_predict = nndet_scripts.predict:main",  # deprecated
             "nndet_example = nndet_scripts.generate_example:main",
             "nndet_cls2fg = nndet_scripts.convert_cls2fg:main",
             "nndet_seg2det = nndet_scripts.convert_seg2det:main",
             "nndet_pretrain = nndet_scripts.pretrain:pretrain",
-            "nndet_eval = nndet_scripts.train:evaluate",
-            "nndet_predict = nndet_scripts.predict:main",
             "nndet_boxes2nii = nndet_scripts.utils:boxes2nii",
             "nndet_boxes2nii2 = nndet_scripts.utils:boxes2nii2",
             "nndet_masks2nii = nndet_scripts.utils:masks2nii",
