@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 from pytest_mock import MockerFixture
 
-from nndet.evaluator.detection import FROCMetric
+from nndet.eval.det import FROCMetric
+from nndet.eval.det.froc import FROCwpMetric
 
 
 @pytest.fixture
@@ -41,6 +42,10 @@ class TestFROC:
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
         froc_score, froc_curve = metric(results_list)
+        for key in ["FROC_iou_thresholds", "FROC_fpi_thresholds", "FROC_classes"]:
+            assert key in froc_curve
+            froc_curve.pop(key)
+
         assert {"froc_score": 1, "froc_score_cls": 0} == froc_score
         assert {"froc_curve": 2, "froc_curve_cls": 1} == froc_curve
 
@@ -65,20 +70,21 @@ class TestFROC:
         froc_score, froc_curve = metric(results_list)
 
         for key, item in froc_score.items():
-            assert math.isclose(item, 0)
+            assert np.isnan(item).all()
+
+        for key in ["FROC_iou_thresholds", "FROC_fpi_thresholds", "FROC_classes"]:
+            assert key in froc_curve
+            froc_curve.pop(key)
 
         # no class
-        froc_curve.pop("FROC_fpi_thresholds")
         assert froc_curve.pop("FROC_num_images") == 3
         assert froc_curve.pop("FROC_num_gt") == 0
 
         # benign
-        froc_curve.pop("benign_FROC_fpi_thresholds")
         assert froc_curve.pop("benign_FROC_num_images") == 3
         assert froc_curve.pop("benign_FROC_num_gt") == 0
 
         # malignant
-        froc_curve.pop("malignant_FROC_fpi_thresholds")
         assert froc_curve.pop("malignant_FROC_num_images") == 3
         assert froc_curve.pop("malignant_FROC_num_gt") == 0
 
@@ -102,11 +108,11 @@ class TestFROC:
         ] * 3
 
         froc_score, froc_curve = metric(results_list)
-        assert math.isclose(3.875 / 6, froc_score["FROC_score_IoU_0.10"])
-        assert math.isclose(3.875 / 6, froc_score["benign_FROC_score_IoU_0.10"])
-        assert math.isclose(3.875 / 12, froc_score["mc_FROC_score_IoU_0.10"])
+        assert math.isclose(3.875 / 6, froc_score["FROC_IoU_0.10"])
+        assert math.isclose(3.875 / 6, froc_score["benign_FROC_IoU_0.10"])
+        assert np.isnan(froc_score["mc_FROC_IoU_0.10"]).all()
         assert np.isclose(
-            froc_curve["FROC_curve_IoU_0.10"],
+            froc_curve["FROC_IoU_0.10"],
             np.array([0.125, 0.25, 0.5, 1.0, 1.0, 1.0]),
         ).all()
 
@@ -114,7 +120,7 @@ class TestFROC:
         froc_mul_iou_mock = mocker.Mock(return_value=({"froc_score": 1}, {"froc_curve": 2}))
         metric.compute_froc_mul_iou = froc_mul_iou_mock
 
-        froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list)
+        froc_score, froc_curve = metric.compute_froc_mul_iou_per_class(results_list, tag=None)
 
         assert {
             "benign_froc_score": 1,
@@ -125,8 +131,8 @@ class TestFROC:
 
         froc_mul_iou_mock.assert_has_calls(
             [
-                call([{0: {"dtMatches": 0}}] * 3 + [{}] * 3),
-                call([{}] * 3 + [{0: {"dtMatches": 1}}] * 3),
+                call([{0: {"dtMatches": 0}}] * 3 + [{}] * 3, tag=None),
+                call([{}] * 3 + [{0: {"dtMatches": 1}}] * 3, tag=None),
             ]
         )
 
@@ -140,50 +146,48 @@ class TestFROC:
         assert np.isclose(sens, [0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 1.0 / 2, 3.0 / 4, 3.0 / 4, 1.0, 1.0]).all()
         assert np.isclose(th[1:], [0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55]).all()
 
-    def test_froc_plotting(self, metric):
-        with TemporaryDirectory(dir=os.getcwd()) as _dir:
-            vals = np.array([0.0, 1.0 / 4, 1.0 / 4, 1.0 / 2, 3.0 / 4, 1.0])
+    def test_froc_wp(self):
+        metric = FROCwpMetric(
+            ["benign", "malignant"],
+            iou_thresholds=[0.1],
+            fpi_thresholds=(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0),
+        )
+        fps = [0.14, 0.3, 0.45, 0.55, 1.0, 1.0, 2.0]
+        sens = [0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8]
+        sens_interpolated = metric.get_froc_points(fps, sens)
+        expected_sens_interpolated = np.array([0.3, 0.3, 0.5, 0.75, 0.8, 0.8, 0.8])
+        assert np.allclose(sens_interpolated, expected_sens_interpolated)
 
-            frocs = {f"FROC_curve_IoU_{iou:.2f}": vals + iou / 10 for iou in range(0, 10)}
-            frocs[f"mal_FROC_curve_IoU_{0.1:.2f}"] = [
-                0.0,
-                1.0 / 4,
-                1.0 / 4,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"ben_FROC_curve_IoU_{0.1:.2f}"] = [
-                0.1,
-                1.0 / 8,
-                1.0 / 2,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"mal_FROC_curve_IoU_{0.2:.2f}"] = [
-                0.0,
-                1.0 / 4,
-                1.0 / 4,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
-            frocs[f"ben_FROC_curve_IoU_{0.2:.2f}"] = [
-                0.1,
-                1.0 / 8,
-                1.0 / 2,
-                1.0 / 2,
-                3.0 / 4,
-                1.0,
-            ]
+    def test_froc_wp_call(self, mocker: MockerFixture):
+        metric = FROCwpMetric(
+            ["benign", "malignant"],
+            iou_thresholds=[0.1],
+            fpi_thresholds=(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0),
+        )
 
-            frocs["FROC_num_images"] = 10
-            frocs["mal_FROC_num_images"] = 10
-            frocs["ben_FROC_num_images"] = 10
+        fps = [0.14, 0.3, 0.45, 0.55, 1.0, 1.0, 2.0]
+        sens = [0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8]
 
-            frocs["FROC_num_gt"] = 10
-            frocs["mal_FROC_num_gt"] = 10
-            frocs["ben_FROC_num_gt"] = 10
-            metric.save_dir = Path(_dir)
-            metric.plot_froc_curves(frocs)
+        froc_mock = mocker.Mock(return_value=(fps, sens, None))
+        metric.compute_froc_curve_one_iou = froc_mock
+
+        # imitate results list with entries otherwise computation won't be called
+        results_list = []
+        results_list += [
+            {
+                0: {
+                    "dtMatches": np.array([[0]]),
+                    "dtIgnore": np.array([[0]]),
+                    "dtScores": np.array([0]),
+                    "gtIgnore": np.array([0]),
+                }
+            }
+        ] * 3
+        froc_score, froc_curve = metric(results_list)
+
+        expected_sens_interpolated = np.array([0.3, 0.3, 0.5, 0.75, 0.8, 0.8, 0.8])
+        assert np.allclose(froc_curve["FROCwp_fpi_thresholds"], np.array([(0.125, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0)]))
+        assert np.allclose(froc_curve["FROCwp_IoU_0.10"], expected_sens_interpolated)
+        assert math.isclose(
+            froc_score["FROCwp_IoU_0.10"], sum(expected_sens_interpolated) / len(expected_sens_interpolated)
+        )

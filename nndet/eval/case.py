@@ -17,7 +17,7 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-from nndet.evaluator import AbstractEvaluator
+from nndet.eval import AbstractEvaluator
 from nndet.utils.info import experimental
 
 __all__ = ["CaseEvaluator"]

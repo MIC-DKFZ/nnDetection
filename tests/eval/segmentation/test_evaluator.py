@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from nndet.evaluator.seg import SegmentationEvaluator
+from nndet.eval.seg import SegmentationEvaluator
 
 
 @pytest.fixture

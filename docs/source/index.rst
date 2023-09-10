@@ -15,22 +15,53 @@
 What is nnDetection?
 ====================
 Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
+For this task we have developed nnDetection which can be use in three different ways:
+
+
+A self-configuring method for medical object detection
+------------------------------------------------------
 For this task, the cumbersome and iterative process of method configuration constitutes a major research bottleneck. 
 Recently, nnU-Net has tackled this challenge for the task of image segmentation with great success.
 Following nnU-Net’s agenda, in this work we systematize and automate the configuration process for medical object detection.
 The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
 
-.. image:: ./_static/nnDetectionFunctional.svg
-   :width: 600
-   :align: center
-   :alt: nnDetection functional overview
+.. .. image:: ./_static/nnDetectionFunctional.svg
+..    :width: 600
+..    :align: center
+..    :alt: nnDetection functional overview
 
-|
+.. |
 
 .. note::
    **If you used nnDetection for your project please cite the following publication(s):**
    
    Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
+
+
+A medical object detection development framework
+------------------------------------------------
+nnDetection provides a rich ecosystem of detection models (e.g. Retina Net, Retina U-Net, Faster R-CNN+, Mask R-CNN), standardised access to a large number of datasets and a well tested training, inference and evaluation pipeline.
+We have created various projects which use this framework as the primary development framework and achieve state-of-the-art results in clinical applications and challenges.
+
+*Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke*
+.. note::
+   Brugnara, Gianluca and Baumgartner, Michael and Scholze, Edwin D. et al. "Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke." Nature Communications 14.1 (2023): 4938.
+
+*Accurate Detection of Mediastinal Lesions with nnDetection*
+Ranked third in the MELA2022 challenge where three out of five best performing solutions (inlcuding winning solution) were based on nnDetection.
+.. note::
+   Baumgartner, Michael, Peter M. Full, and Klaus H. Maier-Hein. "Accurate Detection of Mediastinal Lesions with nnDetection." MICCAI Challenge on Correction of Brainshift with Intra-Operative Ultrasound. Cham: Springer Nature Switzerland, 2022. 79-85.
+
+*Retina U-Net for Aneurysm Detection in MR Images*
+Ranked first in the detection track of the ADAM2020 challenge.
+.. note::
+   Baumgartner, Michael, et al. "Retina U-Net for aneurysm detection in MR images." Automatic Detection and SegMentation Challenge (ADAM) (2020).
+
+
+A medical object detection toolbox
+----------------------------------
+Our repository contains code to evaluate 2D and 3D object detection tasks with a large number of metrics such as mAP, AP and FROC which can be easily integrated into existing code or used for evaluation.
+Detailed guides to common and advanced use cases are provided in :ref:`_user_guide-label`.
 
 
 Features

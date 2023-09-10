@@ -1,7 +1,9 @@
+from typing import Optional
+
 import numpy as np
 import pytest
 
-from nndet.evaluator import AbstractEvaluator, AbstractMetric, DetectionMetric
+from nndet.eval import AbstractEvaluator, AbstractMetric, DetectionMetric
 
 
 class DummyEvaluator(AbstractEvaluator):
@@ -20,6 +22,17 @@ class DummyDetectionMetric(DetectionMetric):
         super().compute(None)
 
     def get_iou_thresholds(self):
+        super().get_iou_thresholds()
+
+    @staticmethod
+    def get_tags(tag: Optional[str] = None) -> str:
+        """
+        Return name of file to save
+
+        Returns:
+            str: Name of the Metric and the chosen setting
+            str: Tag Prefix for meta information
+        """
         super().get_iou_thresholds()
 
 

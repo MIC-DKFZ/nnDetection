@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.registry import BoxEvaluator
+from nndet.eval.registry import BoxEvaluator
 from nndet.inference.sweeper.base import Sweeper
 from nndet.io.load import save_json
 from nndet.utils import to_numpy

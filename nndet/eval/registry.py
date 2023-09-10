@@ -8,8 +8,8 @@ from typing import Dict, Optional, Sequence, Tuple
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.case import CaseEvaluator
-from nndet.evaluator.det import BoxEvaluator
+from nndet.eval.case import CaseEvaluator
+from nndet.eval.det import BoxEvaluator
 from nndet.io.load import load_pickle
 
 
@@ -18,6 +18,7 @@ def evaluate_box_dir(
     gt_dir: PathLike,
     classes: Sequence[str],
     save_dir: Optional[Path] = None,
+    **kwargs,
 ) -> Tuple[Dict, Dict]:
     """
     Run box evaluation inside a directory
@@ -27,13 +28,14 @@ def evaluate_box_dir(
         gt_dir: path to dir with groud truth data
         classes: classes present in dataset
         save_dir: optional path to save plots
+        kwargs: keyword arguments passed to box evaluator
 
     Returns:
         Dict[str, float]: dictionary with scalar values for evaluation
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graphs
 
     See Also:
-        :class:`nndet.evaluator.registry.BoxEvaluator`
+        :class:`nndet.eval.registry.BoxEvaluator`
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
@@ -45,8 +47,9 @@ def evaluate_box_dir(
     evaluator = BoxEvaluator.create(
         classes=classes,
         fast=False,
-        verbose=False,
+        verbose=True,
         save_dir=save_dir,
+        **kwargs,
     )
 
     for case_id in case_ids:
@@ -60,7 +63,7 @@ def evaluate_box_dir(
             gt_boxes=[gt["boxes"]],
             gt_classes=[gt["classes"]],
             gt_ignore=None,
-            case_id=case_id,
+            case_ids=[case_id],
         )
     return evaluator.finish_online_evaluation()
 
@@ -86,7 +89,7 @@ def evaluate_case_dir(
         Dict[str, np.ndarray]: dictionary with arrays, e.g. for visualization of graph)
 
     See Also:
-        :class:`nndet.evaluator.registry.CaseEvaluator`
+        :class:`nndet.eval.registry.CaseEvaluator`
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
