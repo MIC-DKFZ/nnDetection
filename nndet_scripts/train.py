@@ -235,12 +235,12 @@ def evaluate_with_folders() -> None:
     )
 
 
-def init_train_dir(cfg) -> Path:
+def init_train_dir(cfg: dict, fold: int) -> Path:
     """
     Initialize training directory and make it the current working directory
     """
     # determine folder for experiment
-    output_dir = Path(os.getenv("det_models")) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
+    output_dir = Path(os.getenv("det_models")) / str(cfg.task) / str(cfg.exp.id) / f"fold{fold}"
 
     if cfg["exec"]["mode"].lower() == "overwrite":
         if output_dir.is_dir():
@@ -309,7 +309,7 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
 
         pl_logger = TensorBoardLogger(
             save_dir=save_dir,
-            name=f"{cfg['exp']['id']}_fold{cfg['exp']['fold']}",
+            name=f"{cfg['exp']['id']}_fold{fold}",
             default_hp_metric=True,
         )
     return pl_logger
@@ -336,12 +336,12 @@ def _train(
     ov = [] if ov is None else ov
     if any("train=" in o for o in ov):
         raise ValueError("Can not overwrite train config via overwrites anymore, use train_config parameter instead.")
-    ov = ov.insert(0, f"train={train_config}")
+    ov.insert(0, f"train={train_config}")
 
     initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=ov)
 
-    train_dir = init_train_dir(cfg)
+    train_dir = init_train_dir(cfg, fold=fold)
     pl_logger = get_pl_logger(cfg, fold=fold)
     if pl_logger:
         params = {
