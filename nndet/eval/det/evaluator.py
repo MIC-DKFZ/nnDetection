@@ -474,8 +474,7 @@ class BoxEvaluator(DetectionEvaluator):
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        if verbose:
-            logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
+        logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,
