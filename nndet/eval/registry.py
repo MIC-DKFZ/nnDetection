@@ -47,7 +47,7 @@ def evaluate_box_dir(
     evaluator = BoxEvaluator.create(
         classes=classes,
         fast=False,
-        verbose=False,
+        verbose=True,
         save_dir=save_dir,
         **kwargs,
     )
@@ -63,7 +63,7 @@ def evaluate_box_dir(
             gt_boxes=[gt["boxes"]],
             gt_classes=[gt["classes"]],
             gt_ignore=None,
-            case_id=case_id,
+            case_ids=[case_id],
         )
     return evaluator.finish_online_evaluation()
 

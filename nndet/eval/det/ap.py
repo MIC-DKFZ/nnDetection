@@ -385,7 +385,8 @@ class CocoAPMetric(DetectionMetric):
             results = [r[cls_idx] for r in results_list if cls_idx in r]
 
             if len(results) == 0:
-                logger.warning(f"No results found for {metric_name} class {cls_i}")
+                if self.verbose:
+                    logger.warning(f"No results found for {metric_name} class {cls_i}")
                 continue
 
             dt_scores = np.concatenate([r["dtScores"] for r in results])
@@ -407,15 +408,16 @@ class CocoAPMetric(DetectionMetric):
             gt_ignore = np.concatenate([r["gtIgnore"] for r in results])
             num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
             if num_gt == 0:
-                logger.debug(f"No gt found for {metric_name} class {cls_i}")
+                if self.verbose:
+                    logger.debug(f"No gt found for {metric_name} class {cls_i}")
                 continue
 
             # ignore cases need to be handled differently for tp and fp
             tps = np.logical_and(dt_matches, np.logical_not(dt_ignores))
             fps = np.logical_and(np.logical_not(dt_matches), np.logical_not(dt_ignores))
 
-            tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
-            fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
+            tp_sum = np.cumsum(tps, axis=1).astype(dtype=float)
+            fp_sum = np.cumsum(fps, axis=1).astype(dtype=float)
 
             for th_ind, (tp, fp) in enumerate(zip(tp_sum, fp_sum)):  # for each threshold th_ind
                 tp, fp = np.array(tp), np.array(fp)

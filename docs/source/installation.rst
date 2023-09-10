@@ -14,13 +14,17 @@ TODOS
 
 Configuration
 -------------
-* `det_data`
-* `det_models`
-* `OMP_NUM_THREADS=1`
-* `det_num_threads`
-* `det_verbose`
-* `det_logging`
-* `det_logger`
+* `det_data`: Path to the source directory where all the data will be located
+* `det_models`: Path to directory where all models will be saved
+* `OMP_NUM_THREADS=1`: Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
+* `det_num_threads`: Number processes to use for augmentation (at least 6, default 12)
+
+Optional flags for nnDetection:
+* `det_verbose`: Can be used to deactivate progress bars (activated by default)
+* `det_logging`: Specify the logging directory. nnDetection supports [MLFlow]((https://www.mlflow.org/docs/latest/tracking.html)) or [Tensorboard](https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard). If not set, logs will be saved to current training directory.
+* `det_logger`: Define logger type. One of tensorboard | mlflow | none.
+* `nndet_eval_max_detections_image_based`: define number of predictions per image per class which is used for evaluation. Per default 400 is used.
+
 
 Pypi
 ----

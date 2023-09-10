@@ -274,6 +274,12 @@ class DetectionEvaluator(AbstractEvaluator):
                 case_ids,
             )
         ):
+            if gboxes.size == 0 and gboxes.shape[0] != 0:
+                # we use 1 here since it is not possible to determine the correct dimensionality
+                # with certainty. Shape only occurs with data which was prepared with old
+                # versions of nnDetection and does not influence the results
+                gboxes = gboxes.reshape(-1, 1)
+
             self.results_dict[results_key][case_id] = self.matching.match(
                 iou_thresholds=self.iou_thresholds,
                 pred_boxes=pboxes,
@@ -387,8 +393,6 @@ class DetectionEvaluator(AbstractEvaluator):
 
 
 class BoxEvaluator(DetectionEvaluator):
-    similarity_fn = ops_np.box_iou_np
-
     @classmethod
     def create(
         cls,
@@ -396,6 +400,7 @@ class BoxEvaluator(DetectionEvaluator):
         fast: bool = True,
         verbose: bool = False,
         save_dir: Optional[Path] = None,
+        similarity_fn: Callable = ops_np.box_iou_np,
         criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
         froc_wp: bool = True,
@@ -410,6 +415,8 @@ class BoxEvaluator(DetectionEvaluator):
                 Does not calculate pre-class metrics
             verbose: Additional logging output
             save_dir: Path to save information
+            similarity_fn: function to compute similarity between predictions
+                and ground truth objects, usually IoU
             criterion: Criterion for separate evaluation
             criterion_ranges: Ranges of the value of the box criterion to
                 evaluate (the first entry should be "": full range
@@ -463,11 +470,12 @@ class BoxEvaluator(DetectionEvaluator):
                 )
             )
         matching = EvalMatchingPerElementGreedyScoreNP(
-            iou_fn=cls.similarity_fn,
+            iou_fn=similarity_fn,
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
+        if verbose:
+            logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,

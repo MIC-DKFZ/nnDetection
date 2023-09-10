@@ -193,7 +193,8 @@ class FROCMetric(DetectionMetric):
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"No results found for {metric_name}")
+            if self.verbose:
+                logger.warning(f"No results found for {metric_name}")
             return self.zero_result(
                 num_images=num_images,
                 num_gt=0,
@@ -210,7 +211,8 @@ class FROCMetric(DetectionMetric):
 
         num_gt = np.count_nonzero(gt_ignore == 0)  # number of ground truth boxes (non ignored)
         if num_gt == 0:
-            logger.debug(f"No gt found for {metric_name}")
+            if self.verbose:
+                logger.debug(f"No gt found for {metric_name}")
             return self.zero_result(
                 num_images=num_images,
                 num_gt=num_gt,
@@ -228,7 +230,9 @@ class FROCMetric(DetectionMetric):
             _dt_matches = dt_matches[iou_idx][np.logical_not(dt_ignores[iou_idx])]
             assert len(_scores) == len(_dt_matches)
 
-            _fps, _sens, _th = self.compute_froc_curve_one_iou(_dt_matches, _scores, num_images, num_gt)
+            _fps, _sens, _th = self.compute_froc_curve_one_iou(
+                _dt_matches, _scores, num_images, num_gt, verbose=self.verbose
+            )
             # interpolate at defined fpr thresholds
             sens_interp = self.get_froc_points(_fps, _sens)
             scores[f"{metric_name}_IoU_{iou_val:.2f}"] = np.mean(sens_interp)
@@ -344,6 +348,7 @@ class FROCMetric(DetectionMetric):
         dt_scores: np.ndarray,
         num_images: int,
         num_gt: int,
+        verbose: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute FROC curve for a single IoU value
@@ -356,6 +361,8 @@ class FROCMetric(DetectionMetric):
                 [R] where R is the number of predictions
             num_images: number of images
             num_gt: number of ground truth bounding boxes
+            verbose: additional warning if no matches or no false positives
+                are found
 
         Returns:
             np.ndarray: false positives per image
@@ -367,13 +374,15 @@ class FROCMetric(DetectionMetric):
         num_unmatched = num_detections - num_matched
 
         if dt_matches.size == 0:
-            logger.warning("WARNING, no matches found.")
+            if verbose:
+                logger.warning("WARNING, no matches found.")
             return np.zeros((2,)), np.zeros((2,)), np.zeros((2,))
         else:
             fpr, tpr, thresholds = roc_curve(dt_matches, dt_scores)
 
         if num_unmatched == 0:
-            logger.warning("WARNING, no false positives found")
+            if verbose:
+                logger.warning("WARNING, no false positives found")
             fps = np.zeros(len(fpr))
         else:
             fps = (fpr * num_unmatched) / num_images

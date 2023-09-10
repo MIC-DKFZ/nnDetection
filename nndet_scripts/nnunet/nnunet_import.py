@@ -22,7 +22,7 @@ from nndet.utils.clustering import softmax_to_instances
 from nndet.utils.config import compose
 from nndet.utils.info import maybe_verbose_iterable
 
-TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05_MaxDet_100"
+TARGET_METRIC = "mAP_IoU_0.10_0.50_0.05"
 
 
 def import_nnunet_boxes(

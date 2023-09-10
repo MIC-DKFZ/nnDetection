@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
+import pycocotools
 import pytest
 import requests
 from pycocotools.coco import COCO
@@ -124,6 +125,9 @@ def download_data():
             filtered_annotations = json.load(f)
         with open(prediction_path, "r") as g:
             filtered_predictions = json.load(g)
+
+    # patch np.float
+    pycocotools.cocoeval.np.float = float
 
     # COCO Eval
     cocoGt = COCO(str(annotation_path))

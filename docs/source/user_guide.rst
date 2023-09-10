@@ -1,3 +1,5 @@
+.. _user_guide-label:
+
 User Guide
 ==========
 
@@ -293,7 +295,7 @@ Evaluation can be invoked by the following command (requires access to the model
 
 .. code-block:: bash
 
-    nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--seg] [--instances] [--analyze_boxes]
+    nndet_eval [task] [model] [fold] [--test] [--case] [--boxes] [--analyze_boxes]
 
     # Example (evaluate and analyze box predictions of default model)
     nndet_eval 000 RetinaUNetV001_D3V001_3d 0 --boxes --analyze_boxes
@@ -302,7 +304,6 @@ Evaluation can be invoked by the following command (requires access to the model
     # /scripts/train.py - evaluate()
 
     # Note: --test invokes evaluation of the test set
-    # Note: --seg, --instances are placeholders for future versions and not working yet
 
 Inference
 ---------
@@ -352,33 +353,35 @@ The final model directory will contain multiple subfolders with different inform
 * `val_predictions_preprocessed`: This contains prediction in the preprocessed image space, i.e. the predictions from the resampled and cropped data. they are saved for debugging purposes.
 * `[val/test]_results`: this folder contains the validation/test rsults computed by nnDetection. More information on the metrics can be found below.
 * `val_results_preprocessed`: contains validation results inside the preprocessed image space are saved for debugging purposes
-* `val_analysis[_preprocessed]` *experimental*: provide additional analysis information of the predictions. This feature is marked as expeirmental since it uses a simplified matching algorithm and should only be used to gain an intuition of potential improvements.
+
+Evaluation
+----------
 
 The following section contains some additional information regarding the metrics which are computed by nnDetection. They can be found in `[val/test]_results/results_boxes.json`:
 
-* `AP_IoU_0.10_MaxDet_100`: is the main metric used for the evaluation in our paper. It is evaluated at an IoU threshold of `0.1` and `100` predictions per image. Note that this is a hard limit and if images contain much more instances this leads to wrong results.
-* `mAP_IoU_0.10_0.50_0.05_MaxDet_100`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*
-* `[num]_AP_IoU_0.10_MaxDet_100`: AP metric computed per class
-* `FROC_score_IoU_0.10` FROC score with default FPPI (1/8, 1/4, 1/2, 1, 2, 4, 8). Note (in contrast to the AP implementation): the multi-class case does not compute the metric per class but puts all predictions/gt into a single large pool (similar to AP_pool from https://arxiv.org/abs/2102.01066) and thus inter class calibration is important here. In most cases simply averaging the `[num]_FROC` scores manually to assign the same weight to each class should be prefered.
-* case evaluation *experimental*: It is possible to run case evaluations with nnDetection but this is still experimental and undergoing additional testing and might be changed in the future.
+Most metric have an IoU attached to their evaluation, the value is usually part of the naming, e.g. `IoU_0.10` indicates an IoU threshold of `0.10`.
+Some metrics are computed per class and thus per class values are also included for completeness e.g. `YY_AP_IoU_0.10` represents class `YY`.
+Finally, some metrics are extended with additional analysis functions e.g. computed for a certain volume range which are indicated by additional letters (by default zVF where z various between categories, exact values can be found in the `results_curves` file)
+
+* `AP_IoU_0.XX`: is the main metric used for the evaluation in our paper. Per default, the number of detections per image per class are limited to `400` but can be adjusted via `nndet_eval_max_detections_image_based`. 
+* `mAP_IoU_0.XX_0.XX_0.XX`: Is the typically found COCO mAP metric evaluated at multiple IoU values. *The IoU thresholds are different from those of the COCO evaluation to account for the generally lower IoU in 3D data*.
+* `FROCwp_IoU_0.10`: FROC computed at default FPPI values of (1/8, 1/4, 1/2, 1, 2, 4, 8), sensitivty at FPPI value is determined by last working point (not interpolated). This implementation pools all of the predictions and is *not* computed per class.
+* `mc_FROCwp_IoU_0.10`: compute FROC per class and average across classes. This one should be used in most cases in multi class scenarios to stratify for the number of objects inside the classes.
 
 .. warning::
 
     nnDetection provides some additional analysis files (located in the analysis folders) which are purely for qualitative analysis purposes and should never be used for quantitative evaluation!
     Since they are not part of the official functionality we do not provide extensive documentation nor support for this.
 
-# TODO: update FROC describtions
+# TODO: visualisation of results
+# TODO: format of predictions
+
 
 Advanced Use Cases
 ******************
 
-Custom Applications
--------------------
-
-# TODO: custom split
-# TODO: custom network -> refer to developer guide
-# TODO: Running unit tests
-
+An advanced use case might require some minor coding which is not covered by the default functionality of nnDetection.
+Nevertheless, some cases can occur frequently and are thus covered here. 
 
 Detection Zoo
 -------------
@@ -403,5 +406,70 @@ Detection Zoo
 
 Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
 
-
 # TODO: focal loss training
+
+Evaluation Framework
+--------------------
+
+If the labels and predictions are present in the nnDetection format, evaluation of box predictions is as simple as:
+
+.. code-block:: python
+
+    from nndet.eval.registry import evaluate_box_dir
+
+    classes = [YOUR CLASSES HERE]
+    pred_dir = [YOUR PATH HERE]
+    gt_dir = [YOUR PATH HERE]
+
+    results = evaluate_box_dir(
+        classes=classes,
+        pred_dir=pred_dir,
+        gt_dir=gt_dir,
+    )
+
+.. note::
+    `nndet_eval_with_folders` provides a direct entrypoint to the above functionality.
+
+The nnDetection format expects the ground truth labels to be saved in `npz` files with keys `boxes` and `classes`.
+Predictions should be located in pkl files with keys `pred_boxes`, `pred_labels` and `pred_scores`.
+All boxes need to be in the same coordinate system and follow the `ax0_min, ax1_min, ax0_max, ax1_max, ax2_min, ax2_max` format (ax denotes arbitrary axes).
+
+Custom evaluation scripts can be esily created by passing the predictions and ground truth boxes to the evaluator.
+
+.. code-block:: python
+
+    from nndet.eval.det import BoxEvaluator
+
+    classes = [YOUR CLASSES HERE]
+    similarity_fn = [YOUR SIMILARITY FUNCTION e.g. box_iou_np]
+    case_ids = [YOUR CASES]
+
+    evaluator = BoxEvaluator.create(
+        classes=classes,
+        fast=False,
+        verbose=True,
+        similarity_fn=similarity_fn,
+    )
+
+    for case_id in case_ids:
+        gt = [LOAD GROUND TRUTH]
+        pred = [LOAD PREDICTION]
+
+        evaluator.run_online_evaluation(
+            pred_boxes=[pred["pred_boxes"]],
+            pred_classes=[pred["pred_labels"]],
+            pred_scores=[pred["pred_scores"]],
+            gt_boxes=[gt["boxes"]],
+            gt_classes=[gt["classes"]],
+            gt_ignore=None,
+            case_ids=[case_id],
+        )
+    return evaluator.finish_online_evaluation()
+
+
+Custom Applications
+-------------------
+
+# TODO: custom split
+# TODO: custom network -> refer to developer guide
+# TODO: Running unit tests
