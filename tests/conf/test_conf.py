@@ -9,7 +9,6 @@ def test_basic_compose():
 
         # check for keys
         assert "fold" not in cfg["exp"]
-        assert cfg["exec"]["mode"] == "overwrite"
 
         assert cfg["module"] is not None
         assert cfg["plan"] is not None

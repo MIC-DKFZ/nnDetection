@@ -8,7 +8,3 @@ defaults:
 exp:
   tag: ""
   id: ${module}_${plan}${exp.tag}
-
-exec:
-  logger: ${oc.env:det_logger,mlflow} # one of None | mlflow | tensorboard
-  mode: "overwrite" # can be either `overwrite` or `resume`
