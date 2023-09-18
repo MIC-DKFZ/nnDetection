@@ -155,10 +155,8 @@ class DefaultAug(NoAug):
             
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
             order_seg=self.params.get("order_seg"),
             border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
             random_crop=self.params.get("random_crop"),
 
             p_el_per_sample=self.params.get("p_eldef"),
@@ -228,10 +226,8 @@ class BaseMoreAug(NoAug):
             
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
             order_seg=self.params.get("order_seg"),
             border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
             random_crop=self.params.get("random_crop"),
 
             p_el_per_sample=self.params.get("p_eldef"),
@@ -323,10 +319,8 @@ class MoreAug(NoAug):
             
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
             order_seg=self.params.get("order_seg"),
             border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
             random_crop=self.params.get("random_crop"),
 
             p_el_per_sample=self.params.get("p_eldef"),
@@ -430,10 +424,8 @@ class InsaneAug(NoAug):
             
             order_data=self.params.get("order_data"),
             border_mode_data=self.params.get("border_mode_data"),
-            border_cval_data=self.params.get("border_cval_data"),
             order_seg=self.params.get("order_seg"),
             border_mode_seg=self.params.get("border_mode_seg"),
-            border_cval_seg=self.params.get("border_cval_seg"),
             random_crop=self.params.get("random_crop"),
 
             p_el_per_sample=self.params.get("p_eldef"),
