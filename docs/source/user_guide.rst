@@ -267,7 +267,7 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
 
 .. code-block:: bash
 
-    nndet_train [task] [config_name] [fold] [-o / --overwrites] [--sweep]
+    nndet_train [task] [config_name] [fold] [-o / --overwrites] [--sweep] [--continue_training] [--log_net] [--log_aug]
 
     # Example (train default plan D3V001_3d and search best inference parameters)
     nndet_train 000 toy 0 --sweep
@@ -276,6 +276,7 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
     # /scripts/train.py - train()
 
 `nndet_train` needs to be run for every fold separately, by default this means running it 5 times with `fold` varying between 0 and 4 (inclusive).
+`--continue_training` can be activated to continue training from the last saved checkpoint.
 The `--sweep` option tells nnDetection to look for the best hyparameters for inference by empirically evaluating them on the validation set.
 Sweeping can also be performed later by running the following command:
 
