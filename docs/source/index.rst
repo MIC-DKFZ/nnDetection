@@ -69,7 +69,8 @@ Ranked first in the detection track of the ADAM2020 challenge.
 A medical object detection toolbox
 ----------------------------------
 Our repository contains code to evaluate 2D and 3D object detection tasks with a large number of metrics such as mAP, AP and FROC which can be easily integrated into existing code or used for evaluation.
-Detailed guides to common and advanced use cases are provided in :ref:`_user_guide-label`.
+Detailed guides to common and advanced use cases are provided in :ref:`_user_guide`.
+#TODO #FIXME: label not working
 
 
 Features
@@ -81,7 +82,9 @@ nnDetection can be used in two different ways:
 In many applications, it can serve as a strong baseline without manual modifications.
 
 2. As a medical object detection framework: While many features didn't make it into the final self-configuring pipeline, nnDetection comprises many additional options such as Static Backbone networks, a Detection Zoo and much more.
-More information on the Detection Zoo can be found :ref:`here<Detection Zoo>` and the :ref:`developer guide<Developer Guide>` porivdes the best entrypoint for any further modifications.
+More information on the Detection Zoo can be found :ref:`here<Detection Zoo>` and the :ref:`developer guide<Developer Guide>` provides the best entrypoint for any further modifications.
+
+#TODO #FIXME: ref not working
 
 
 Contents:
