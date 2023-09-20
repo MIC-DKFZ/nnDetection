@@ -45,6 +45,9 @@ class ModelSummary(_ModelSummary):
         super().__init__(max_depth=max_depth)
         self.log_net = log_net
 
+    def on_pretrain_routine_start(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        pass
+
     def on_fit_start(
         self,
         trainer: "pl.Trainer",
@@ -143,20 +146,37 @@ def get_requirements():
         str: list with all requirements
     """
     command = ["pip", "list"]
-    result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
-    assert not result.stderr, "stderr not empty"
+    result = run(command, stdout=PIPE, universal_newlines=True)
+    # assert not result.stderr, "stderr not empty"
     return result.stdout
 
 
-def write_requirements_to_file(path: Union[str, Path]) -> None:
+def write_requirements(output_dir: Union[str, Path]) -> None:
     """
     Write all installed packages from currently active environment to file
 
     Args:
         path (str): path to file (including file name and extension)
     """
-    with open(path, "w+") as f:
-        f.write(get_requirements())
+    output_dir = Path(output_dir)
+    pip_output_file = output_dir / "requirements_pip.txt"
+    if pip_output_file.is_file():
+        os.remove(pip_output_file)
+    try:
+        result_pip = run(["pip", "freeze"], stdout=PIPE, universal_newlines=True)
+        save_txt(result_pip.stdout, pip_output_file)
+    except Exception as e:
+        logger.error(f"Failed to save environment with pip freeze with error {e}")
+
+    conda_output_file = output_dir / "requirements_conda.txt"
+    if conda_output_file.is_file():
+        os.remove(conda_output_file)
+    try:
+        result_conda = run(["conda", "list", "-e"], stdout=PIPE, universal_newlines=True)
+        save_txt(result_conda.stdout, conda_output_file)
+    except Exception as e:
+        logger.error(f"Failed to save environment with conda list with error {e}")
+    return result_pip, result_conda
 
 
 def get_repo_info(path: Union[str, Path]):

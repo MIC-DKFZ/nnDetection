@@ -267,10 +267,10 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
 
 .. code-block:: bash
 
-    nndet_train [task] [-o / --overwrites] [--sweep]
+    nndet_train [task] [config_name] [fold] [-o / --overwrites] [--sweep] [--continue_training] [--log_net] [--log_aug]
 
     # Example (train default plan D3V001_3d and search best inference parameters)
-    nndet_train 000 --sweep
+    nndet_train 000 toy 0 --sweep
 
     # Script
     # /scripts/train.py - train()
