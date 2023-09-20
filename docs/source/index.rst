@@ -32,7 +32,8 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 
 .. |
 
-.. note::
+.. notes::
+
    **If you used nnDetection for your project please cite the following publication(s):**
    
    Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
@@ -43,18 +44,25 @@ A medical object detection development framework
 nnDetection provides a rich ecosystem of detection models (e.g. Retina Net, Retina U-Net, Faster R-CNN+, Mask R-CNN), standardised access to a large number of datasets and a well tested training, inference and evaluation pipeline.
 We have created various projects which use this framework as the primary development framework and achieve state-of-the-art results in clinical applications and challenges.
 
+
 *Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke*
-.. note::
+
+.. notes::
+
    Brugnara, Gianluca and Baumgartner, Michael and Scholze, Edwin D. et al. "Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke." Nature Communications 14.1 (2023): 4938.
 
 *Accurate Detection of Mediastinal Lesions with nnDetection*
 Ranked third in the MELA2022 challenge where three out of five best performing solutions (inlcuding winning solution) were based on nnDetection.
-.. note::
+
+.. notes::
+
    Baumgartner, Michael, Peter M. Full, and Klaus H. Maier-Hein. "Accurate Detection of Mediastinal Lesions with nnDetection." MICCAI Challenge on Correction of Brainshift with Intra-Operative Ultrasound. Cham: Springer Nature Switzerland, 2022. 79-85.
 
 *Retina U-Net for Aneurysm Detection in MR Images*
 Ranked first in the detection track of the ADAM2020 challenge.
-.. note::
+
+.. notes::
+
    Baumgartner, Michael, et al. "Retina U-Net for aneurysm detection in MR images." Automatic Detection and SegMentation Challenge (ADAM) (2020).
 
 
