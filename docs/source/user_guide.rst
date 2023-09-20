@@ -1,5 +1,15 @@
 .. _user_guide-label:
 
+TODOs
+=====
+- application limited to 3D
+- Pointer to Projects and Plugins
+- Improvements
+   - select best model for evaluation
+   - run inference on CPU (inference_kwargs.device=cpu)
+   - run segmentation of RetinaU-Net
+
+
 User Guide
 ==========
 
