@@ -1,5 +1,8 @@
 .. _user_guide-label:
 
+User Guide
+==========
+
 TODOs
 =====
 - application limited to 3D
@@ -8,10 +11,6 @@ TODOs
    - select best model for evaluation
    - run inference on CPU (inference_kwargs.device=cpu)
    - run segmentation of RetinaU-Net
-
-
-User Guide
-==========
 
 - Training Time / Training Speed / Benchmark?
 
@@ -505,7 +504,7 @@ Please double check CUDA version of your PC, pytorch, torchvision and nnDetectio
 This can be done by running `nndet_env` if the installation succeeded  or by running `python scripts/utils.py`.
 An example output of the command is shown below:
 
-.. notes:: 
+.. note:: 
 
     ----- PyTorch Information -----
     PyTorch Version: 1.11.0+cu113
@@ -556,8 +555,8 @@ Error still persists
 Please open an Issue and provide your environment as obtained by `nndet_env`.
 
 
-<summary>Training doesn't start or is stuck
--------------------------------------------
+Training doesn't start or is stuck
+----------------------------------
 
 * Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
 * Try running the training without multiprocessing as a sanity check: `nndet_train XXX -o augment_cfg.multiprocessing=False`. Don't use this for the full training, this is just one step of the debugging process.

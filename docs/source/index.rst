@@ -30,7 +30,7 @@ The resulting self-configuring method, nnDetection, adapts itself without any ma
 
 .. |
 
-.. notes::
+.. note::
 
    **If you used nnDetection for your project please cite the following publication(s):**
    
@@ -45,21 +45,21 @@ We have created various projects which use this framework as the primary develop
 
 *Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke*
 
-.. notes::
+.. note::
 
    Brugnara, Gianluca and Baumgartner, Michael and Scholze, Edwin D. et al. "Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke." Nature Communications 14.1 (2023): 4938.
 
 *Accurate Detection of Mediastinal Lesions with nnDetection*
 Ranked third in the MELA2022 challenge where three out of five best performing solutions (inlcuding winning solution) were based on nnDetection.
 
-.. notes::
+.. note::
 
    Baumgartner, Michael, Peter M. Full, and Klaus H. Maier-Hein. "Accurate Detection of Mediastinal Lesions with nnDetection." MICCAI Challenge on Correction of Brainshift with Intra-Operative Ultrasound. Cham: Springer Nature Switzerland, 2022. 79-85.
 
 *Retina U-Net for Aneurysm Detection in MR Images*
 Ranked first in the detection track of the ADAM2020 challenge.
 
-.. notes::
+.. note::
 
    Baumgartner, Michael, et al. "Retina U-Net for aneurysm detection in MR images." Automatic Detection and SegMentation Challenge (ADAM) (2020).
 
