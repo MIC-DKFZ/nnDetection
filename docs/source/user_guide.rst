@@ -275,8 +275,9 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
     # Script
     # /scripts/train.py - train()
 
-
-Use `-o exp.fold=X` to overwrite the trained fold, this should be run for all folds `X = 0, 1, 2, 3, 4`!
+`nndet_train` needs to be run for every fold separately, by default this means running it 5 times with `fold` varying between 0 and 4 (inclusive).
+`--continue_training` can be activated to continue training from the last saved checkpoint.
+The training time can vary between ~1 day (A100) to ~2 days (RTX2080TI) *per fold* (with correct mixed precision acceleration of 3D convolutions and no other bottlenecks, see FAQ section for common bottlenecks and how to diagnose them).
 The `--sweep` option tells nnDetection to look for the best hyparameters for inference by empirically evaluating them on the validation set.
 Sweeping can also be performed later by running the following command:
 
@@ -386,27 +387,31 @@ Nevertheless, some cases can occur frequently and are thus covered here.
 Detection Zoo
 -------------
 
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-| **Models**               | **Inputs**             | **Outputs**               | **Config**              || **Command**                                                                  |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| Retina U-Net V001       | BB + SS                | BB                        | retinaunet_v001         || train=retinaunet_v001                                                        |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| RetinaNet V002          | BB                     | BB                        | retinaunet_v002         || train=retinaunet_v002                                                        |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| Faster RCNN V002        | BB                     | BB                        |                         ||                                                                              |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| Retina U-Net V002       | BB (+ SS)              | BB                        | retinaunet_v002         || train=retinaunet_v002 module=RetinaNetV002                                   |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| Box Mask RCNN V002      | BB + BI                | BB                        |                         ||                                                                              |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
-|| Box Mask U-RCNN V002    | BB + BI (+ SS)         | BB                        |                         ||                                                                              |
-+--------------------------+------------------------+---------------------------+-------------------------++------------------------------------------------------------------------------+
++--------------------------+------------------------++------------------------------------------------------------------------------+
+| **Models**               | **Internal Inputs**    || **Command**                                                                  |
++--------------------------+------------------------++------------------------------------------------------------------------------+
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Retina U-Net V001       | BB + SS                || nndet_train [task] retinaunet_v001 [fold]                                    |
++--------------------------+------------------------++------------------------------------------------------------------------------+
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| RetinaNet V002 HNM      | BB                     || nndet_train [task] retinaunet_hnm_v002 [fold] -o model=RetinaNetHNMV002      |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| RetinaNet V002 Focal    | BB                     || nndet_train [task] retinaunet_focal_v002 [fold] -o model=RetinaNetFocalV002  |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Faster RCNN V002        | BB                     ||                                                                              |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Retina U-Net V002 HNM   | BB (+ SS)              || nndet_train [task] retinaunet_hnm_v002 [fold]                                |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Retina U-Net V002 Focal | BB (+ SS)              || nndet_train [task] retinaunet_focal_v002 [fold]                              |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Box Mask RCNN V002      | BB + BI                ||                                                                              |
++--------------------------+------------------------++------------------------------------------------------------------------------+
+|| Box Mask U-RCNN V002    | BB + BI (+ SS)         ||                                                                              |
++--------------------------+------------------------++------------------------------------------------------------------------------+
++--------------------------+------------------------++------------------------------------------------------------------------------+
 
 Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
 
-# TODO: focal loss training
 
 Evaluation Framework
 --------------------
@@ -473,3 +478,101 @@ Custom Applications
 # TODO: custom split
 # TODO: custom network -> refer to developer guide
 # TODO: Running unit tests
+
+
+
+FAQ & Common Issues
+*******************
+
+Installation & Initial Setup Errors
+-----------------------------------
+
+Error: Undefined CUDA symbols when importing `nndet._C` or other import related Errors from `nndet._C` or CUDA related ARCH errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+nnDetection includes additional CUDA code which needs to compiled upon installation and thus requires correct configuration of the CUDA dependencies.
+Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build.
+This can be done by running `nndet_env` if the installation succeeded  or by running `python scripts/utils.py`.
+An example output of the command is shown below:
+
+.. notes:: 
+
+    ----- PyTorch Information -----
+    PyTorch Version: 1.11.0+cu113
+    PyTorch Debug: False
+    PyTorch CUDA: 11.3
+    PyTorch Backend cudnn: 8200
+    PyTorch CUDA Arch List: ['sm_37', 'sm_50', 'sm_60', 'sm_70', 'sm_75', 'sm_80', 'sm_86']
+    PyTorch Current Device Capability: (7, 5)
+    PyTorch CUDA available: True
+
+    ----- System Information -----
+    System NVCC: nvcc: NVIDIA (R) Cuda compiler driver
+    Copyright (c) 2005-2021 NVIDIA Corporation
+    Built on Sun_Aug_15_21:14:11_PDT_2021
+    Cuda compilation tools, release 11.4, V11.4.120
+    Build cuda_11.4.r11.4/compiler.30300941_0
+
+    System Arch List: None
+    System OMP_NUM_THREADS: 1
+    System CUDA_HOME is None: True
+    System CPU Count: 8
+    Python Version: 3.8.11 (default, Aug  3 2021, 15:09:35)
+    [GCC 7.5.0]
+
+    ----- nnDetection Information -----
+    det_num_threads 6
+    det_data is set True
+    det_models is set True
+
+Things to look out for:
+
+Make sure that the versions of PyTorch CUDA and NVCC CUDA match (minor version mismatch as in this case, will work without error but could potentially introduce bugs.)
+`OMP_NUM_THREADS` should always be set to 1 and `det_num_threads` should always be lower or equal `Systemm CPU Count`.
+Make sure to delete the `build` folder before rerunning the installation since it won't recompile the code otherwise.
+
+Error: No kernel image is available for execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
+
+Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
+approriately (e.g. check Dockefile for example).
+As before make sure to delete the `build` folder when rerunning the installation process.
+
+Error still persists
+~~~~~~~~~~~~~~~~~~~~
+
+Please open an Issue and provide your environment as obtained by `nndet_env`.
+
+
+<summary>Training doesn't start or is stuck
+-------------------------------------------
+
+* Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
+* Try running the training without multiprocessing as a sanity check: `nndet_train XXX -o augment_cfg.multiprocessing=False`. Don't use this for the full training, this is just one step of the debugging process.
+* Please open an Issue and provide your environment as obtained by `nndet_env` and report if the training without multiprocessing started correctly.
+
+GPU requirements
+----------------
+
+nnDetection v0.1 was developed for GPUs with at least 11GB of VRAM (e.g. RTX2080TI, TITAN RTX).
+All of our experiments were conducted with a RTX2080TI.
+While the memory can be adjusted by manipulating the correct setting we recommend using the default values for now.
+Future releases will refactor the planning stage to improve the VRAM estimation and add support for different memory budgets.
+
+Training with bounding boxes
+----------------------------
+
+The first release of nnDetection focuses on 3d medical images and Retina U-Net.
+As a consequence training (specifically planning and augmentation) requrie segmentation annotations.
+In many cases this limitation can be circumvented by converting the bounding boxes into segmentations.
+
+Support for 2D Data Sets
+------------------------
+2D data sets are not supported since they are already amaying external repositories for these detection tasks, e.g. https://github.com/MIC-DKFZ/generalized_yolov5.
+
+Multi GPU Training
+------------------
+Multi GPU training is not officially supported yet.
+Inference and the metric computation are not properly designed to support these usecases!

@@ -3,7 +3,7 @@
 
 defaults:
     - _self_
-    - train: retinaunet_focal_v002
+    - train: retinaunet_hnm_v002
 
 exp:
   tag: ""
