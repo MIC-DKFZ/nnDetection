@@ -24,13 +24,14 @@ class BoxesPrepareMixin(PrepareMixin):
             `Instances2Boxes`
         """
         transforms = super().get_pre_transforms(plan=plan)
-        transforms.append(
-            Instances2Boxes(
-                instance_key="target",
-                map_key="instance_mapping",
-                box_key="target_boxes",
-                class_key="target_classes",
-                present_instances="present_instances",
+        if not self.use_box_io():
+            transforms.append(
+                Instances2Boxes(
+                    instance_key="target",
+                    map_key="instance_mapping",
+                    box_key="target_boxes",
+                    class_key="target_classes",
+                    present_instances="present_instances",
+                )
             )
-        )
         return transforms

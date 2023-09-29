@@ -59,6 +59,8 @@ class BoxEvalMixin(EvalMixin):
         gt_classes = to_numpy(targets["target_classes"])
         gt_ignore = None
 
+        assert len(pred_boxes) == len(gt_boxes)
+
         self.evaluators["boxes"].run_online_evaluation(
             pred_boxes=pred_boxes,
             pred_classes=pred_classes,

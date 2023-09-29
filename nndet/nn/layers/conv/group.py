@@ -146,6 +146,7 @@ class ConvGroupLReLU(BaseConvNormAct):
             act_inplace: whether to perform activation inplce or not
                 If None, inplace will be determined dynamicaly: True
                 if a normalization follows otherwise False
+            act_negative_slope: negative slope for LRelu activation
             norm_eps: instance norm eps (see pytorch for more info)
             norm_affine: instance affine parameter (see pytorch for more info)
             norm_channels_per_group: channels per group for group norm

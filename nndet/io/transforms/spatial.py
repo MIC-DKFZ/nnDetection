@@ -62,9 +62,9 @@ class Mirror(AbstractTransform):
             dict: dict with transformed data
         """
         for key in self.keys:
-            data[key] = mirror(data[key], dims=self.dims, offset=2)
+            data[key] = mirror_array(data[key], dims=self.dims, offset=2)
         for key in self.mask_keys:
-            data[key] = [mirror(d, dims=self.dims, offset=1) for d in data[key]]
+            data[key] = [mirror_array(d, dims=self.dims, offset=1) for d in data[key]]
 
         if "_data_shapes" in data:
             data_shapes = data["_data_shapes"]
@@ -116,7 +116,7 @@ class Mirror(AbstractTransform):
         return self(**data)
 
 
-def mirror(
+def mirror_array(
     data: torch.Tensor,
     dims: Sequence[int],
     offset: int = 2,

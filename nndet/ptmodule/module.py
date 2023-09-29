@@ -116,6 +116,8 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
+        if "target" in batch:  # free memory from numbered instance seg
+            del batch["target"]
         targets = {key: item for key, item in batch.items() if "target_" in key}
         if "target_seg" in targets:
             # [optional] add semantic segmentation to targets if available
@@ -145,6 +147,8 @@ class LightningBaseModule(pl.LightningModule):
         with torch.no_grad():
             batch = self.pre_trafo(**batch)
 
+            if "target" in batch:  # free memory from numbered instance seg
+                del batch["target"]
             targets = {key: item for key, item in batch.items() if "target_" in key}
             if "target_seg" in targets:
                 # [optional] add semantic segmentation to targets if available

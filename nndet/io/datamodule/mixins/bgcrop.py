@@ -18,7 +18,6 @@ class BGCrop:
     def get_bg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         candidates: Union[Dict, None],
@@ -28,7 +27,6 @@ class BGCrop:
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             candidates: foreground candidates. Is not used in this
@@ -44,7 +42,6 @@ class RandomBGCrop3D(BGCrop):
     def get_bg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         candidates: Union[Dict, None],
@@ -54,7 +51,6 @@ class RandomBGCrop3D(BGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             candidates: foreground candidates. Is not used in this
@@ -79,7 +75,6 @@ class RandomBGCrop2D(BGCrop):
     def get_bg_crop(
         self,
         case_data: np.ndarray,
-        case_seg: np.ndarray,
         properties: dict,
         case_id: str,
         candidates: Union[Dict, None],
@@ -89,7 +84,6 @@ class RandomBGCrop2D(BGCrop):
 
         Args:
             case_data: case data (this should be a memmap!)
-            case_seg: case segmentation (this should be a memmap!)
             properties: properties of case
             case_id: identifier of case
             candidates: foreground candidates. Is not used in this

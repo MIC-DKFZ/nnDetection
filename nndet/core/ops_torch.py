@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+# ivnerse_sigmoid function from
+# https://github.com/fundamentalvision/Deformable-DETR/blob/11169a60c33333af00a4849f1808023eba96a931/util/misc.py  # noqa: E501
+# SPDX-FileCopyrightText: 2020 SenseTime
+# SPDX-License-Identifier: Apache-2.0
+
 from typing import List, Optional, Sequence, Tuple, Union
 
 import torch
@@ -10,6 +15,7 @@ from torch import Tensor
 from torch.cuda.amp import autocast
 
 from nndet.utils.tensor import ensure_min_float32
+from nndet.utils.typing import ND_TUPLE_INT
 
 
 @autocast(enabled=False)
@@ -639,8 +645,8 @@ def permute_boxes(
 
 
 def expand_to_boxes(
-    data: Union[Tensor, ndarray],
-) -> Union[Tensor, ndarray]:
+    data: Tensor,
+) -> Tensor:
     """
     Expand x,y,z data to box format
 
@@ -918,3 +924,140 @@ def bin_mask_iou(
     intersection = torch.mm(bin_masks1_flattened, bin_masks2_flattened.T)  # [N, M]
     union = masks1_vol[:, None] + masks2_vol[None] - intersection  # [N, M]
     return intersection / union
+
+
+def inverse_sigmoid(data: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
+    """
+    Inverse Sigmoid Function for pre-sigmoid additions
+
+    Args:
+        data: input tensor
+        eps: epsilon for numerical stability
+
+    Returns:
+        torch.Tensor: inverse sigmoid of values in original tensor
+    """
+    data = data.clamp(min=0, max=1)
+    x1 = data.clamp(min=eps)
+    x2 = (1 - data).clamp(min=eps)
+    return torch.log(x1 / x2)
+
+
+def box_point_norm_with_size(
+    boxes: torch.Tensor,
+    img_shape: ND_TUPLE_INT,
+) -> torch.Tensor:
+    """
+    Normalize boxes in point format with image size (range will be 0,1)
+
+    Args:
+        boxes: bounding boxes [x0, y0, x1, y1 (, z0, z1)] with shape
+            [N, dim * 2]
+        img_shape: shape of input (in training, this corresponds to the shape
+            of the reference frame of the box, usually the extracted patch)
+
+    Returns:
+        torch.Tensor: normalized boxes [x0, y0, x1, y1 (, z0, z1)]
+    """
+    if boxes.numel() == 0:  # handle empty boxes
+        return boxes
+
+    img_shape_tensor = torch.tensor(img_shape, dtype=boxes.dtype, device=boxes.device)
+    return boxes / expand_to_boxes(img_shape_tensor[None])
+
+
+def box_point_rescale_with_size(
+    boxes: torch.Tensor,
+    img_shape: ND_TUPLE_INT,
+    extra_batched: bool = False,
+) -> torch.Tensor:
+    """
+    Revert normalization from boxes in point format with image size.
+
+    Args:
+        boxes: bounding boxes [x0, y0, x1, y1 (, z0, z1)] with shape
+            [N, dim * 2]
+        img_shape: shape of input (in training, this corresponds to the shape
+            of the reference frame of the box, usually the extracted patch)
+        extra_batched: provided bounding boxes are in format [B, R, dims * 2]
+
+    Returns:
+        torch.Tensor: rescaled boxes [x0, y0, x1, y1 (, z0, z1)]
+    """
+    if boxes.numel() == 0:  # handle empty boxes
+        return boxes
+
+    img_shape_tensor = torch.tensor(img_shape, dtype=boxes.dtype, device=boxes.device)
+    if extra_batched:
+        return boxes * expand_to_boxes(img_shape_tensor[None])[None]
+    else:
+        return boxes * expand_to_boxes(img_shape_tensor[None])
+
+
+def box_point2center_format(boxes_point: torch.Tensor) -> torch.Tensor:
+    """
+    Convert bounding boxes from point [x0, y0, x1, y1 (, z0, z1)] into
+    center format [cx, cy, dx, dy (, cz, dz)]
+
+    Args:
+        boxes_point: input boxes in format [x0, y0, x1, y1 (, z0, z1)] with
+            shape [*, dim * 2]
+
+    Returns:
+        torch.Tensor: boxes in format [cx, cy, dx, dy (, cz, dz)] with shape
+            [*, dim * 2]
+    """
+    if boxes_point.numel() == 0:  # handle empty boxes
+        return boxes_point
+
+    if boxes_point.shape[-1] == 4:
+        x0, y0, x1, y1 = boxes_point.unbind(-1)
+        bc = [(x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0)]
+    else:
+        x0, y0, x1, y1, z0, z1 = boxes_point.unbind(-1)
+        bc = [
+            (x0 + x1) / 2,
+            (y0 + y1) / 2,
+            (x1 - x0),
+            (y1 - y0),
+            (z0 + z1) / 2,
+            (z1 - z0),
+        ]
+    return torch.stack(bc, dim=-1)
+
+
+def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
+    """
+    Convert bounding boxes from center [cx, cy, dx, dy (, cz, dz)] into
+    point format [x0, y0, x1, y1 (, z0, z1)]
+
+    Args:
+        boxes_point: input boxes in format [cx, cy, dx, dy (, cz, dz)] with
+            shape [*, dim * 2]
+
+    Returns:
+        torch.Tensor: boxes in format [x0, y0, x1, y1 (, z0, z1)] with shape
+            [*, dim * 2]
+    """
+    if boxes_center.numel() == 0:  # handle empty boxes
+        return boxes_center
+
+    if boxes_center.shape[-1] == 4:
+        cx, cy, dx, dy = boxes_center.unbind(-1)
+        bp = [
+            cx - 0.5 * dx,
+            cy - 0.5 * dy,
+            cx + 0.5 * dx,
+            cy + 0.5 * dy,
+        ]
+    else:
+        cx, cy, dx, dy, cz, dz = boxes_center.unbind(-1)
+        bp = [
+            cx - 0.5 * dx,
+            cy - 0.5 * dy,
+            cx + 0.5 * dx,
+            cy + 0.5 * dy,
+            cz - 0.5 * dz,
+            cz + 0.5 * dz,
+        ]
+    return torch.stack(bp, dim=-1)

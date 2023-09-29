@@ -40,6 +40,7 @@ class PoolingMode(Enum):
     MAX_STRIDE = "max_stride"
     AVG_KERNEL = "avg_kernel"
     AVG_STRIDE = "avg_stride"
+    BLOCK = "block"
 
 
 class InterpolationMode(Enum):
@@ -53,3 +54,19 @@ class LoadModels(Enum):
     ALL = "all"
     BEST = "best"
     LAST = "last"
+
+
+class AuxLossNorm(Enum):
+    NONE = "none"
+    MEAN = "mean"
+    REDUCED = "reduced"
+
+
+class BoxPointMode(Enum):
+    CORNERS = "corners"
+    CENTERS = "centers"
+
+
+class FFNRegWeightInit(Enum):
+    BASE = "base"
+    LAST_LAYER_ZERO = "last_layer_zero"

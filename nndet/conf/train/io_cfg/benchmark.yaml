@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
+num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
+
+dataloader: "NoiseLoader"
+oversample_foreground_percent: 0.5
+dataloader_kwargs: {}
+
+num_threads: ${oc.env:det_num_threads, "12"}
+# num_cached_per_thread: 2 # deprecated
+multiprocessing: True # only deactivate this if debugging
+patch_size: [128, 128, 128]
+
+# Additional overwrites
+# patch_size; Default: plan
+# batch_size; Default: plan
+# splits; Default: splits_final

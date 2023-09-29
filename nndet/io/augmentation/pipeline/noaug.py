@@ -23,8 +23,13 @@ from nndet.io.augmentation.base import AugmentationSetup, ComposePretty, get_pat
 
 @AUGMENTATION_REGISTRY.register
 class NoAug(AugmentationSetup):
-    def __init__(self, patch_size: Sequence[int], params: dict) -> None:
-        super().__init__(patch_size, params)
+    def __init__(
+        self,
+        patch_size: Sequence[int],
+        params: dict,
+        use_box_io: bool = False,
+    ) -> None:
+        super().__init__(patch_size, params, use_box_io=use_box_io)
         self.dummy_2d = self.params.get("dummy_2D", False)
         if self.dummy_2d:
             logger.info("Running dummy 2d augmentation transforms!")

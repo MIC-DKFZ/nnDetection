@@ -6,6 +6,7 @@ from hydra import compose, initialize_config_module
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf.omegaconf import OmegaConf
 
+from nndet.ptmodule.detr.dev.c002 import BoxDETRC002
 from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
 from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
 from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
@@ -122,6 +123,7 @@ CASES = [
     (RetinaNetFocalV002, "retinaunet_focal_v002"),
     (RetinaNetFocalResV002, "retinaunet_focal_v002"),
     # Dev Models
+    (BoxDETRC002, "detr_c002"),
     # (RetinaNetC001, "v001"),
     # (RetinaNetC001Focal, "c014_focal"),
     # (RetinaUNetCV001Focal, "c014_focal"),

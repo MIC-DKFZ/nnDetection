@@ -101,10 +101,7 @@ def download_data():
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download data and load into arrays
-        r = requests.get(
-            "http://images.cocodataset.org/annotations/annotations_trainval2014.zip",
-            stream=True,
-        )
+        r = requests.get("http://images.cocodataset.org/annotations/annotations_trainval2014.zip", stream=True)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         with z.open("annotations/instances_val2014.json") as annotation_zip:
             annotation_dict = json.load(annotation_zip)
@@ -151,11 +148,7 @@ def download_data():
     # Create COCO Metric
     classes = [cat["name"] for cat in filtered_annotations["categories"]]
     coco = CocoAPMetric(classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), verbose=True)
-    ranges = {
-        "small": (0**2, 32**2),
-        "medium": (32**2, 96**2),
-        "large": (96**2, 1e5**2),
-    }
+    ranges = {"small": (0**2, 32**2), "medium": (32**2, 96**2), "large": (96**2, 1e5**2)}
     matching = EvalMatchingPerElementGreedyScoreNP(
         iou_fn=ops_np.box_iou_np,
         max_detections=100,
@@ -166,6 +159,7 @@ def download_data():
         criterion=ops_np.box_area_np,
         criterion_ranges=ranges,
     )
+
     return cocoEval, detections_by_image, annotations_by_image, evaluator
 
 
@@ -174,12 +168,7 @@ class TestEvaluatorwithCOCOMetric:
         self,
         download_data,
     ):
-        (
-            coco_eval,
-            detections_by_image,
-            annotations_by_image,
-            evaluator_coco,
-        ) = download_data
+        coco_eval, detections_by_image, annotations_by_image, evaluator_coco = download_data
 
         for id, detection in detections_by_image.items():
             annotation = annotations_by_image[id]

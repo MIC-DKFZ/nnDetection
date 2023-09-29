@@ -115,6 +115,7 @@ class ConvBackbone(LevelBackbone):
                 ``"pooling_mode"`` str
                     [optional] define a different pooling type. Please refer
                     to the `init` documentation for mor information.
+                    Default `conv_kernel`
 
                 ``"backbone_kwargs"`` dict
                     [optional] keyword arguments passed to every level of the

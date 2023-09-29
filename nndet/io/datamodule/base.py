@@ -60,6 +60,7 @@ class BaseModule(pl.LightningDataModule):
         self.io_cfg = io_cfg
         self.augment_cfg = augment_cfg
         self.data_dir = Path(data_dir)
+        self.label_dir = self.get_label_dir(self.data_dir)
         self.fold = fold
         self.log_aug = log_aug
 
@@ -68,8 +69,22 @@ class BaseModule(pl.LightningDataModule):
 
         self.dataset_tr = {}
         self.dataset_val = {}
-        self.dataset = load_dataset_id(self.data_dir)
+        self.dataset = load_dataset_id(self.data_dir, self.label_dir)
         self.do_split()
+
+    @staticmethod
+    def get_label_dir(data_dir: os.PathLike) -> Path:
+        _data_dir = Path(data_dir)
+        data_name = _data_dir.name
+
+        if data_name == "imagesTr":
+            label_name = "labelsTr"
+            assert (_data_dir.parent / label_name).is_dir()
+        elif data_name == "imagesTs":
+            label_name = "labelsTs"
+        else:
+            raise RuntimeWarning(f"Wasn't able to retrieve label dir from {_data_dir}.")
+        return _data_dir.parent / label_name
 
     @property
     def splits_file(self) -> str:
