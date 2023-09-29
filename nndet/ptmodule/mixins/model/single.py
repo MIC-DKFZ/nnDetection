@@ -131,11 +131,11 @@ class SingleStageMixin(ModelMixin):
             f"fpn channels: {plan_arch['fpn_channels']}"
         )
 
-        _plan_anchors = copy.deepcopy(plan_anchors)
         coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
-        s_param = False if ("aspect_ratios" in _plan_anchors) and (_plan_anchors["aspect_ratios"] is not None) else True
-        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(**_plan_anchors)
-
+        anchor_generator = cls._build_anchor_generator(
+            dim=plan_arch["dim"],
+            plan_anchors=plan_anchors,
+        )
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -194,6 +194,27 @@ class SingleStageMixin(ModelMixin):
             box_post=box_post,
             **detector_kwargs,
         )
+
+    @classmethod
+    def _build_anchor_generator(
+        cls,
+        dim: int,
+        plan_anchors: dict,
+    ) -> AnchorGenerator:
+        """
+        Build anchor generator
+
+        Args:
+            dim: number of spatia dimensions
+            plan_anchors: plan for anchor generation
+
+        Returns:
+            AnchorGenerator: created anchor generator
+        """
+        _plan_anchors = copy.deepcopy(plan_anchors)
+        s_param = False if ("aspect_ratios" in _plan_anchors) and (_plan_anchors["aspect_ratios"] is not None) else True
+        anchor_generator = get_anchor_generator(dim, s_param=s_param)(**_plan_anchors)
+        return anchor_generator
 
     @classmethod
     def _build_backbone(
