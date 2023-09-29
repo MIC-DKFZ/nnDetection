@@ -184,6 +184,7 @@ def main():
     )
 
     shutil.copy2(training_dirs[0] / "plan.pkl", target_dir)
+    shutil.copy2(training_dirs[0] / "config.yaml", target_dir)
 
     # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
