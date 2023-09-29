@@ -139,7 +139,7 @@ def instances_to_boxes(
     if boxes:
         boxes = torch.stack(boxes)
     else:
-        boxes = torch.tensor([[]])
+        boxes = torch.tensor([[]]).view(-1, dim * 2)
     return boxes.to(dtype=torch.float, device=seg.device), instances
 
 
@@ -189,7 +189,7 @@ def instances_to_boxes_np(
     if boxes:
         boxes = np.stack(boxes)
     else:
-        boxes = np.array([[]])
+        boxes = np.array([[]]).reshape(-1, dim * 2)
     return boxes, instances
 
 

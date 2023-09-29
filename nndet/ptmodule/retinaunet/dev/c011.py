@@ -195,7 +195,7 @@ class RetinaUNetC011L1EMA(RetinaUNetC011):
                 device="cpu",
                 beta=self.trainer_cfg["ema_beta"],
                 ema_eval=False,
-                dirpath="./",  # FIXME
+                dirpath="./",  # don't do this...
             )
         )
         return callbacks

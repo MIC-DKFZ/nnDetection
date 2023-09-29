@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator import DetectionMetric
+from nndet.eval import DetectionMetric
 
 
 class PredictionHistogram(DetectionMetric):
@@ -19,6 +19,7 @@ class PredictionHistogram(DetectionMetric):
         save_dir: Path,
         iou_thresholds: Sequence[float] = (0.1, 0.5),
         bins: int = 50,
+        verbose: bool = True,
     ):
         """
         Class to compute prediction histograms. (Note: this class does not
@@ -29,6 +30,7 @@ class PredictionHistogram(DetectionMetric):
             save_dir: directory where histograms are saved to
             iou_thresholds: IoU thresholds for which FROC is evaluated
             bins: number of bins of histogram
+            verbose: en-/disable additional warnings and messages
         """
         self.classes = classes
         self.save_dir = save_dir
@@ -36,6 +38,13 @@ class PredictionHistogram(DetectionMetric):
         self.iou_thresholds = iou_thresholds
         self.bins = bins
         self.value_range = (0, 1)
+        self.verbose = verbose
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(classes: {self.classes}, iou_thresholds: {self.iou_thresholds}, "
+            f"bins: {self.bins})"
+        )
 
     @staticmethod
     def get_name(tag: Optional[str] = None) -> str:
@@ -170,7 +179,8 @@ class PredictionHistogram(DetectionMetric):
         results = [_r for r in results_list for _r in r.values()]
 
         if len(results) == 0:
-            logger.warning(f"No results found for {metric_name}")
+            if self.verbose:
+                logger.warning(f"No results found for {metric_name}")
             return {}, self.zero_result(metric_name=metric_name)
 
         # r['dtMatches'] [T, R], where R = sum(all detections)

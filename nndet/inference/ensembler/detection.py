@@ -116,6 +116,7 @@ class BoxEnsembler(BaseEnsembler):
             _parameters.update(parameters)
 
             _properties = {
+                "dim": len(case[data_key].shape[1:]),
                 "shape": case[data_key].shape[1:],  # remove channel dim
                 "transpose_backward": properties["transpose_backward"],
                 "original_spacing": properties["original_spacing"],
@@ -466,6 +467,12 @@ class BoxEnsembler(BaseEnsembler):
 
         if restore:
             boxes = self.restore_prediction(boxes)
+
+        if boxes.numel == 0:
+            boxes = boxes.view(-1, self.properties["dim"] * 2)
+        assert boxes.ndim == 2
+        assert probs.ndim == 1
+        assert labels.ndim == 1
 
         return {
             "pred_boxes": boxes,
@@ -1393,6 +1400,12 @@ class BoxEnsemblerSelective2D(BoxEnsemblerSelective):
 
         if restore:
             boxes = self.restore_prediction(boxes)
+
+        if boxes.numel == 0:
+            boxes = boxes.view(-1, self.properties["dim"] * 2)
+        assert boxes.ndim == 2
+        assert probs.ndim == 1
+        assert labels.ndim == 1
 
         return {
             "pred_boxes": boxes,

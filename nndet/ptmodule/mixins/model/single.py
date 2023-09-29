@@ -103,16 +103,16 @@ class SingleStageMixin(ModelMixin):
             plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
 
                 ``"stride"``
-                    stride # FIXME
+                    stride # FIXME docs
 
                 ``"aspect_ratios"``
-                    aspect ratios # FIXME
+                    aspect ratios # FIXME docs
 
                 ``"sizes"``
-                    sized for 2d acnhors # FIXME
+                    sized for 2d acnhors # FIXME docs
 
                 ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME
+                    (optional) additional z sizes for 3d # FIXME docs
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
@@ -415,7 +415,7 @@ class SingleStageMixin(ModelMixin):
         if "detections_per_img" in model_cfg:
             kwargs["detections_per_img"] = model_cfg["detections_per_img"]
         else:
-            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME
+            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME important
 
         kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
         kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)

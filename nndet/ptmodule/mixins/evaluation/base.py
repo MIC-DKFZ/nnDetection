@@ -4,7 +4,7 @@
 from abc import ABC
 from typing import Dict
 
-from nndet.evaluator import AbstractEvaluator
+from nndet.eval import AbstractEvaluator
 
 
 class EvalMixin(ABC):

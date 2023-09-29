@@ -24,7 +24,7 @@ from pytorch_lightning.loggers import (
 )
 
 import nndet
-from nndet.evaluator.registry import evaluate_box_dir, evaluate_case_dir
+from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
 from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
@@ -40,6 +40,7 @@ from nndet.utils.info import (
     flatten_mapping,
     host_and_env_info,
     log_git,
+    write_requirements,
 )
 
 
@@ -50,6 +51,12 @@ def train() -> None:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("train_config", type=str, help="specify model config to use for training")
+    parser.add_argument(
+        "fold",
+        type=int,
+        help="fold to train",
+    )
     parser.add_argument(
         "-o",
         "--overwrites",
@@ -57,6 +64,12 @@ def train() -> None:
         nargs="+",
         help="overwrites for config file",
         required=False,
+    )
+    parser.add_argument(
+        "-ct",
+        "--continue_training",
+        help="Continue training from last checkpoint",
+        action="store_true",
     )
     parser.add_argument(
         "--sweep",
@@ -73,17 +86,41 @@ def train() -> None:
         help="Log augmentation in console",
         action="store_true",
     )
+    parser.add_argument(
+        "-tl",
+        "--transfer_learning",
+        help=(
+            "If this option is acivated, the training script will look for a "
+            "`model_transfer` checkpoint in the training directory and use the "
+            "weights to initialise the model. It is not possible to use this "
+            "command in conjunction with continue training. Simply use continue "
+            "training option to continue transfer learning experiments. Make sure "
+            "to place other checkpoints like `model_last` or `model_best` in a "
+            "different directory."
+        ),
+        action="store_true",
+    )
 
     args = parser.parse_args()
+
     task = args.task
+    train_config = args.train_config
+    fold = args.fold
+
     ov = args.overwrites
+    continue_training = args.continue_training
+    transfer_learning = args.transfer_learning
     do_sweep = args.sweep
     log_net = args.log_net
     log_aug = args.log_aug
 
     _train(
         task=task,
+        train_config=train_config,
+        fold=fold,
         ov=ov,
+        continue_training=continue_training,
+        transfer_learning=transfer_learning,
         do_sweep=do_sweep,
         log_net=log_net,
         log_aug=log_aug,
@@ -176,7 +213,11 @@ def evaluate_with_folders() -> None:
     parser.add_argument("pred_dir", type=Path, help="path to directory with predictions")
     parser.add_argument("gt_dir", type=Path, help="path to directory with ground truth data")
     parser.add_argument("save_dir", type=Path, help="path to directory where results should be saved")
-    parser.add_argument("data_cfg_path", type=Path, help="path to dataset.yaml or dataset.json file of data")
+    parser.add_argument(
+        "data_cfg_path",
+        type=Path,
+        help="path to dataset.yaml or dataset.json file of data",
+    )
 
     parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
     parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
@@ -223,25 +264,21 @@ def evaluate_with_folders() -> None:
     )
 
 
-def init_train_dir(cfg) -> Path:
+def init_train_dir(cfg: dict, fold: int) -> Path:
     """
     Initialize training directory and make it the current working directory
     """
     # determine folder for experiment
-    output_dir = Path(os.getenv("det_models")) / str(cfg.task) / str(cfg.exp.id) / f"fold{cfg.exp.fold}"
+    output_dir = Path(os.getenv("det_models")) / str(cfg.task) / str(cfg.exp.id) / f"fold{fold}"
 
-    if cfg["exec"]["mode"].lower() == "overwrite":
-        if output_dir.is_dir():
-            print(f"Found existing folder {output_dir}, this run will overwrite " f"the results inside that folder")
-        output_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        if not output_dir.is_dir():
-            raise ValueError(f"{output_dir} is not a valid training dir and thus can not be resumed")
+    if output_dir.is_dir():
+        print(f"Found existing folder {output_dir}, this run will might overwrite the results inside that folder")
+    output_dir.mkdir(parents=True, exist_ok=True)
     os.chdir(str(output_dir))
     return output_dir
 
 
-def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
+def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
     """
     Instantiate a logger to monitor metrics/losses during training
 
@@ -252,18 +289,14 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
     Returns:
         LightningLoggerBase: Instantiated logger
     """
-    logger_name = cfg["exec"].get("logger", "mlflow")
-    if isinstance(logger_name, str):
-        logger_name = logger_name.lower()
-
-    pl_logger = False
+    logger_name = os.getenv("det_logger", "mlflow").lower()
     save_dir = os.getenv("det_logging", None)
+    pl_logger = False
 
     # logger not defined
-    if logger_name.lower() == "none":
+    if logger_name == "none":
         return pl_logger
-
-    if logger_name == "mlflow":
+    elif logger_name == "mlflow":
         if save_dir is not None:
             save_dir = Path(save_dir)
             if not save_dir.name == "mlruns":
@@ -274,7 +307,7 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
         run_name = cfg["exp"]["id"]
         tags = {
             "host": socket.gethostname(),
-            "fold": cfg["exp"]["fold"],
+            "fold": fold,
             "task": cfg["task"],
             "job_id": os.getenv("LSB_JOBID", "no_id"),
             "mlflow.runName": run_name,
@@ -297,16 +330,22 @@ def get_pl_logger(cfg: dict) -> Union[LightningLoggerBase, bool]:
 
         pl_logger = TensorBoardLogger(
             save_dir=save_dir,
-            name=f"{cfg['exp']['id']}_fold{cfg['exp']['fold']}",
+            name=f"{cfg['exp']['id']}_fold{fold}",
             default_hp_metric=True,
         )
+    else:
+        raise ValueError(f"Logger {logger_name} is not supported!")
     return pl_logger
 
 
 def _train(
     task: str,
+    train_config: str,
+    fold: int,
     ov: List[str],
     do_sweep: bool,
+    continue_training: bool,
+    transfer_learning: bool,
     log_net: bool = False,
     log_aug: bool = False,
 ):
@@ -315,15 +354,26 @@ def _train(
 
     Args:
         task: task to run training for
+        train_config: name of config to use for training
+        fold: number of fold to train
         ov: overwrites for config manager
         do_sweep: determine best emprical parameters for run
+        continue_training: continue training from last model checkpoint
+        transfer_learning: init model with weights from other training
+        log_net: print the network architecture
+        log_aug: print the augmentation pipeline
     """
     print(f"Overwrites: {ov}")
-    initialize_config_module(config_module="nndet.conf", version_base="1.1")
-    cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
+    ov = [] if ov is None else ov
+    if any("train=" in o for o in ov):
+        raise ValueError("Can not overwrite train config via overwrites anymore, use train_config parameter instead.")
+    ov.insert(0, f"train={train_config}")
 
-    train_dir = init_train_dir(cfg)
-    pl_logger = get_pl_logger(cfg)
+    initialize_config_module(config_module="nndet.conf", version_base="1.1")
+    cfg = compose(task, "config.yaml", overrides=ov)
+
+    train_dir = init_train_dir(cfg, fold=fold)
+    pl_logger = get_pl_logger(cfg, fold=fold)
     if pl_logger:
         params = {
             "module": cfg["module"],
@@ -348,6 +398,7 @@ def _train(
     current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
     logger.info(f"+++ Running train {current_time_str} +++")
     logger.info(f"Log file at {log_file}")
+    logger.info(f"Training with overwrites: {ov}")
 
     meta_data = {}
     meta_data["torch_version"] = str(torch.__version__)
@@ -355,10 +406,7 @@ def _train(
     meta_data["git"] = log_git(nndet.__path__[0], repo_name="nndet")
     meta_data["overwrites"] = str(ov)
     save_json(meta_data, "./meta.json")
-    # try:
-    #     write_requirements_to_file("requirements.txt")
-    # except Exception as e:
-    #     logger.error(f"Could not log req: {e}")
+    _ = write_requirements(train_dir)
 
     plan_path = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / f"{cfg['plan']}.pkl"
     plan = load_pickle(plan_path)
@@ -377,7 +425,7 @@ def _train(
         augment_cfg=OmegaConf.to_container(cfg["augment_cfg"], resolve=True),
         plan=plan,
         data_dir=data_dir,
-        fold=cfg["exp"]["fold"],
+        fold=fold,
         use_box_io=module.use_box_io(),
         log_aug=log_aug,
     )
@@ -406,12 +454,23 @@ def _train(
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
-    if cfg["exec"]["mode"].lower() == "resume":
-        logger.info("Found train mode: resume -> will load checkpoint")
-        trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
-    elif cfg["exec"]["mode"].lower() == "transfer":
-        logger.info("Found train mode: transfer -> loading model weights")
-        module.load_state_dict(torch.load(train_dir / "model_last.ckpt")["state_dict"], strict=True)
+    if continue_training:
+        _path = train_dir / "model_last.ckpt"
+        logger.info(f"Continue training -> loading checkpoint: {_path}")
+        trainer_kwargs["resume_from_checkpoint"] = _path
+    if transfer_learning:
+        _path = train_dir / "model_transfer.ckpt"
+        logger.info(f"Performing transfer learning -> loading model weights: {_path}")
+        if continue_training:
+            _s = "Found continue training and transfer learning, only one can be activated at the same time!"
+            logger.error(_s)
+            raise RuntimeError(_s)
+        else:
+            if not _path.is_file():
+                _s = f"Transfer learning active, expected {_path} to exist."
+                logger.error(_s)
+                raise RuntimeError(_s)
+            module.load_state_dict(torch.load(_path)["state_dict"], strict=True)
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
@@ -468,7 +527,7 @@ def _train(
     run_info["train_s"] = train_time
     run_info["train_h"] = train_time / 3600
     if do_sweep:
-        case_ids = splits[cfg["exp"]["fold"]]["val"]
+        case_ids = splits[fold]["val"]
         if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
             logger.warning("[!!!] Detected debug mode for sweep using reduced set of cases")
             case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
@@ -503,7 +562,7 @@ def _train(
         _evaluate_task(
             task=cfg["task"],
             model=cfg["exp"]["id"],
-            fold=cfg["exp"]["fold"],
+            fold=fold,
             test=False,
             preprocessed=True,
             do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
@@ -562,7 +621,7 @@ def _sweep(
     )
 
     splits = load_pickle(train_dir / "splits.pkl")
-    case_ids = splits[cfg["exp"]["fold"]]["val"]
+    case_ids = splits[fold]["val"]
 
     if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
         logger.warning("Detected debug mode for sweep using reduced set of cases!")
@@ -594,7 +653,7 @@ def _sweep(
     _evaluate_task(
         task=cfg["task"],
         model=cfg["exp"]["id"],
-        fold=cfg["exp"]["fold"],
+        fold=fold,
         test=False,
         preprocessed=True,
         do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
@@ -711,7 +770,10 @@ def _evaluate(
             classes=list(data_cfg["labels"].keys()),
             target_class=data_cfg["target_class"],
         )
-        save_json({str(key): str(item) for key, item in scores.items()}, save_dir / "results_case.json")
+        save_json(
+            {str(key): str(item) for key, item in scores.items()},
+            save_dir / "results_case.json",
+        )
         save_pickle({"scores": scores, "curves": curves}, save_dir / "results_case.pkl")
 
     # handle box level evaluation
@@ -723,7 +785,10 @@ def _evaluate(
             classes=list(data_cfg["labels"].keys()),
             save_dir=save_dir / "boxes",
         )
-        save_json({str(key): str(item) for key, item in scores.items()}, save_dir / "results_boxes.json")
+        save_json(
+            {str(key): str(item) for key, item in scores.items()},
+            save_dir / "results_boxes.json",
+        )
         save_pickle({"scores": scores, "curves": curves}, save_dir / "results_boxes.pkl")
     if do_analyze_boxes:
         logger.info("Analyse box predictions")

@@ -107,16 +107,16 @@ class RoIBuildMixin:
                 for more info)
 
                 ``"stride"``
-                    stride # FIXME
+                    stride # FIXME docs
 
                 ``"aspect_ratios"``
-                    aspect ratios # FIXME
+                    aspect ratios # FIXME docs
 
                 ``"sizes"``
-                    sized for 2d acnhors # FIXME
+                    sized for 2d acnhors # FIXME docs
 
                 ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME
+                    (optional) additional z sizes for 3d # FIXME docs
 
         Returns:
             AbstractOneStageDetector: one stage detector
@@ -318,7 +318,7 @@ class RoIBuildMixin:
         if cls.roi_mask_pooler_cls is not None:
             pooler_name = cls.roi_box_pooler_cls.__name__
             mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)
-            mask_gt_size = [m * 2 for m in mask_feature_size]  # TODO # FIXME
+            mask_gt_size = [m * 2 for m in mask_feature_size]  # FIXME important
 
             mask_feature_kwargs = model_cfg["roi_pooling"]["roi_mask_feature_kwargs"]
             mask_gt_kwargs = model_cfg["roi_pooling"]["roi_mask_gt_kwargs"]
@@ -573,16 +573,16 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
             plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
 
                 ``"stride"``
-                    stride # FIXME
+                    stride # FIXME docs
 
                 ``"aspect_ratios"``
-                    aspect ratios # FIXME
+                    aspect ratios # FIXME docs
 
                 ``"sizes"``
-                    sized for 2d acnhors # FIXME
+                    sized for 2d acnhors # FIXME docs
 
                 ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME
+                    (optional) additional z sizes for 3d # FIXME docs
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
@@ -779,16 +779,16 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
             plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
 
                 ``"stride"``
-                    stride # FIXME
+                    stride # FIXME docs
 
                 ``"aspect_ratios"``
-                    aspect ratios # FIXME
+                    aspect ratios # FIXME docs
 
                 ``"sizes"``
-                    sized for 2d acnhors # FIXME
+                    sized for 2d acnhors # FIXME docs
 
                 ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME
+                    (optional) additional z sizes for 3d # FIXME docs
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
