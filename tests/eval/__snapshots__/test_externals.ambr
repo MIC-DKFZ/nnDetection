@@ -1,42 +1,42 @@
 # name: test_evaluator
   tuple(
     dict({
-      'AP_IoU_0.10_MaxDet_100': 0.03300424186269313,
-      'AP_IoU_0.20_MaxDet_100': 0.03300424186269313,
-      'AP_IoU_0.30_MaxDet_100': 0.03300424186269313,
-      'AP_IoU_0.50_MaxDet_100': 0.03300424186269313,
-      'AP_lVF_IoU_0.10_MaxDet_100': -1.0,
-      'AP_lVF_IoU_0.20_MaxDet_100': -1.0,
-      'AP_lVF_IoU_0.30_MaxDet_100': -1.0,
-      'AP_lVF_IoU_0.50_MaxDet_100': -1.0,
-      'AP_mVF_IoU_0.10_MaxDet_100': -1.0,
-      'AP_mVF_IoU_0.20_MaxDet_100': -1.0,
-      'AP_mVF_IoU_0.30_MaxDet_100': -1.0,
-      'AP_mVF_IoU_0.50_MaxDet_100': -1.0,
-      'AP_sVF_IoU_0.10_MaxDet_100': 0.03300424186269313,
-      'AP_sVF_IoU_0.20_MaxDet_100': 0.03300424186269313,
-      'AP_sVF_IoU_0.30_MaxDet_100': 0.03300424186269313,
-      'AP_sVF_IoU_0.50_MaxDet_100': 0.03300424186269313,
-      'AP_xlVF_IoU_0.10_MaxDet_100': -1.0,
-      'AP_xlVF_IoU_0.20_MaxDet_100': -1.0,
-      'AP_xlVF_IoU_0.30_MaxDet_100': -1.0,
-      'AP_xlVF_IoU_0.50_MaxDet_100': -1.0,
-      'AP_xsVF_IoU_0.10_MaxDet_100': 0.03300424186269313,
-      'AP_xsVF_IoU_0.20_MaxDet_100': 0.03300424186269313,
-      'AP_xsVF_IoU_0.30_MaxDet_100': 0.03300424186269313,
-      'AP_xsVF_IoU_0.50_MaxDet_100': 0.03300424186269313,
-      'AP_xxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'AP_xxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'AP_xxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'AP_xxlVF_IoU_0.50_MaxDet_100': -1.0,
-      'AP_xxsVF_IoU_0.10_MaxDet_100': 0.03300424186269313,
-      'AP_xxsVF_IoU_0.20_MaxDet_100': 0.03300424186269313,
-      'AP_xxsVF_IoU_0.30_MaxDet_100': 0.03300424186269313,
-      'AP_xxsVF_IoU_0.50_MaxDet_100': 0.03300424186269313,
-      'AP_xxxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'AP_xxxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'AP_xxxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'AP_xxxlVF_IoU_0.50_MaxDet_100': -1.0,
+      'AP_IoU_0.10': 0.03300424186269313,
+      'AP_IoU_0.20': 0.03300424186269313,
+      'AP_IoU_0.30': 0.03300424186269313,
+      'AP_IoU_0.50': 0.03300424186269313,
+      'AP_lVF_IoU_0.10': -1.0,
+      'AP_lVF_IoU_0.20': -1.0,
+      'AP_lVF_IoU_0.30': -1.0,
+      'AP_lVF_IoU_0.50': -1.0,
+      'AP_mVF_IoU_0.10': -1.0,
+      'AP_mVF_IoU_0.20': -1.0,
+      'AP_mVF_IoU_0.30': -1.0,
+      'AP_mVF_IoU_0.50': -1.0,
+      'AP_sVF_IoU_0.10': 0.03300424186269313,
+      'AP_sVF_IoU_0.20': 0.03300424186269313,
+      'AP_sVF_IoU_0.30': 0.03300424186269313,
+      'AP_sVF_IoU_0.50': 0.03300424186269313,
+      'AP_xlVF_IoU_0.10': -1.0,
+      'AP_xlVF_IoU_0.20': -1.0,
+      'AP_xlVF_IoU_0.30': -1.0,
+      'AP_xlVF_IoU_0.50': -1.0,
+      'AP_xsVF_IoU_0.10': 0.03300424186269313,
+      'AP_xsVF_IoU_0.20': 0.03300424186269313,
+      'AP_xsVF_IoU_0.30': 0.03300424186269313,
+      'AP_xsVF_IoU_0.50': 0.03300424186269313,
+      'AP_xxlVF_IoU_0.10': -1.0,
+      'AP_xxlVF_IoU_0.20': -1.0,
+      'AP_xxlVF_IoU_0.30': -1.0,
+      'AP_xxlVF_IoU_0.50': -1.0,
+      'AP_xxsVF_IoU_0.10': 0.03300424186269313,
+      'AP_xxsVF_IoU_0.20': 0.03300424186269313,
+      'AP_xxsVF_IoU_0.30': 0.03300424186269313,
+      'AP_xxsVF_IoU_0.50': 0.03300424186269313,
+      'AP_xxxlVF_IoU_0.10': -1.0,
+      'AP_xxxlVF_IoU_0.20': -1.0,
+      'AP_xxxlVF_IoU_0.30': -1.0,
+      'AP_xxxlVF_IoU_0.50': -1.0,
       'FROC_IoU_0.10': 0.0780900844315066,
       'FROC_IoU_0.20': 0.0780900844315066,
       'FROC_IoU_0.30': 0.0780900844315066,
@@ -73,42 +73,42 @@
       'FROC_xxxlVF_IoU_0.20': nan,
       'FROC_xxxlVF_IoU_0.30': nan,
       'FROC_xxxlVF_IoU_0.50': nan,
-      'class0_AP_IoU_0.10_MaxDet_100': 0.0324998547047432,
-      'class0_AP_IoU_0.20_MaxDet_100': 0.0324998547047432,
-      'class0_AP_IoU_0.30_MaxDet_100': 0.0324998547047432,
-      'class0_AP_IoU_0.50_MaxDet_100': 0.0324998547047432,
-      'class0_AP_lVF_IoU_0.10_MaxDet_100': -1.0,
-      'class0_AP_lVF_IoU_0.20_MaxDet_100': -1.0,
-      'class0_AP_lVF_IoU_0.30_MaxDet_100': -1.0,
-      'class0_AP_lVF_IoU_0.50_MaxDet_100': -1.0,
-      'class0_AP_mVF_IoU_0.10_MaxDet_100': -1.0,
-      'class0_AP_mVF_IoU_0.20_MaxDet_100': -1.0,
-      'class0_AP_mVF_IoU_0.30_MaxDet_100': -1.0,
-      'class0_AP_mVF_IoU_0.50_MaxDet_100': -1.0,
-      'class0_AP_sVF_IoU_0.10_MaxDet_100': 0.0324998547047432,
-      'class0_AP_sVF_IoU_0.20_MaxDet_100': 0.0324998547047432,
-      'class0_AP_sVF_IoU_0.30_MaxDet_100': 0.0324998547047432,
-      'class0_AP_sVF_IoU_0.50_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class0_AP_xlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class0_AP_xlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class0_AP_xlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class0_AP_xsVF_IoU_0.10_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xsVF_IoU_0.20_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xsVF_IoU_0.30_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xsVF_IoU_0.50_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class0_AP_xxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class0_AP_xxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class0_AP_xxlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class0_AP_xxsVF_IoU_0.10_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xxsVF_IoU_0.20_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xxsVF_IoU_0.30_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xxsVF_IoU_0.50_MaxDet_100': 0.0324998547047432,
-      'class0_AP_xxxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class0_AP_xxxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class0_AP_xxxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class0_AP_xxxlVF_IoU_0.50_MaxDet_100': -1.0,
+      'class0_AP_IoU_0.10': 0.0324998547047432,
+      'class0_AP_IoU_0.20': 0.0324998547047432,
+      'class0_AP_IoU_0.30': 0.0324998547047432,
+      'class0_AP_IoU_0.50': 0.0324998547047432,
+      'class0_AP_lVF_IoU_0.10': -1.0,
+      'class0_AP_lVF_IoU_0.20': -1.0,
+      'class0_AP_lVF_IoU_0.30': -1.0,
+      'class0_AP_lVF_IoU_0.50': -1.0,
+      'class0_AP_mVF_IoU_0.10': -1.0,
+      'class0_AP_mVF_IoU_0.20': -1.0,
+      'class0_AP_mVF_IoU_0.30': -1.0,
+      'class0_AP_mVF_IoU_0.50': -1.0,
+      'class0_AP_sVF_IoU_0.10': 0.0324998547047432,
+      'class0_AP_sVF_IoU_0.20': 0.0324998547047432,
+      'class0_AP_sVF_IoU_0.30': 0.0324998547047432,
+      'class0_AP_sVF_IoU_0.50': 0.0324998547047432,
+      'class0_AP_xlVF_IoU_0.10': -1.0,
+      'class0_AP_xlVF_IoU_0.20': -1.0,
+      'class0_AP_xlVF_IoU_0.30': -1.0,
+      'class0_AP_xlVF_IoU_0.50': -1.0,
+      'class0_AP_xsVF_IoU_0.10': 0.0324998547047432,
+      'class0_AP_xsVF_IoU_0.20': 0.0324998547047432,
+      'class0_AP_xsVF_IoU_0.30': 0.0324998547047432,
+      'class0_AP_xsVF_IoU_0.50': 0.0324998547047432,
+      'class0_AP_xxlVF_IoU_0.10': -1.0,
+      'class0_AP_xxlVF_IoU_0.20': -1.0,
+      'class0_AP_xxlVF_IoU_0.30': -1.0,
+      'class0_AP_xxlVF_IoU_0.50': -1.0,
+      'class0_AP_xxsVF_IoU_0.10': 0.0324998547047432,
+      'class0_AP_xxsVF_IoU_0.20': 0.0324998547047432,
+      'class0_AP_xxsVF_IoU_0.30': 0.0324998547047432,
+      'class0_AP_xxsVF_IoU_0.50': 0.0324998547047432,
+      'class0_AP_xxxlVF_IoU_0.10': -1.0,
+      'class0_AP_xxxlVF_IoU_0.20': -1.0,
+      'class0_AP_xxxlVF_IoU_0.30': -1.0,
+      'class0_AP_xxxlVF_IoU_0.50': -1.0,
       'class0_FROC_IoU_0.10': 0.138043766738244,
       'class0_FROC_IoU_0.20': 0.138043766738244,
       'class0_FROC_IoU_0.30': 0.138043766738244,
@@ -145,51 +145,51 @@
       'class0_FROC_xxxlVF_IoU_0.20': nan,
       'class0_FROC_xxxlVF_IoU_0.30': nan,
       'class0_FROC_xxxlVF_IoU_0.50': nan,
-      'class0_mAP_IoU_0.10_0.50_0.05_MaxDet_100': 0.0324998547047432,
-      'class0_mAP_lVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class0_mAP_mVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class0_mAP_sVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0324998547047432,
-      'class0_mAP_xlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class0_mAP_xsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0324998547047432,
-      'class0_mAP_xxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class0_mAP_xxsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0324998547047432,
-      'class0_mAP_xxxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class1_AP_IoU_0.10_MaxDet_100': 0.0339499989839692,
-      'class1_AP_IoU_0.20_MaxDet_100': 0.0339499989839692,
-      'class1_AP_IoU_0.30_MaxDet_100': 0.0339499989839692,
-      'class1_AP_IoU_0.50_MaxDet_100': 0.0339499989839692,
-      'class1_AP_lVF_IoU_0.10_MaxDet_100': -1.0,
-      'class1_AP_lVF_IoU_0.20_MaxDet_100': -1.0,
-      'class1_AP_lVF_IoU_0.30_MaxDet_100': -1.0,
-      'class1_AP_lVF_IoU_0.50_MaxDet_100': -1.0,
-      'class1_AP_mVF_IoU_0.10_MaxDet_100': -1.0,
-      'class1_AP_mVF_IoU_0.20_MaxDet_100': -1.0,
-      'class1_AP_mVF_IoU_0.30_MaxDet_100': -1.0,
-      'class1_AP_mVF_IoU_0.50_MaxDet_100': -1.0,
-      'class1_AP_sVF_IoU_0.10_MaxDet_100': 0.0339499989839692,
-      'class1_AP_sVF_IoU_0.20_MaxDet_100': 0.0339499989839692,
-      'class1_AP_sVF_IoU_0.30_MaxDet_100': 0.0339499989839692,
-      'class1_AP_sVF_IoU_0.50_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class1_AP_xlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class1_AP_xlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class1_AP_xlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class1_AP_xsVF_IoU_0.10_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xsVF_IoU_0.20_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xsVF_IoU_0.30_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xsVF_IoU_0.50_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class1_AP_xxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class1_AP_xxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class1_AP_xxlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class1_AP_xxsVF_IoU_0.10_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xxsVF_IoU_0.20_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xxsVF_IoU_0.30_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xxsVF_IoU_0.50_MaxDet_100': 0.0339499989839692,
-      'class1_AP_xxxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class1_AP_xxxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class1_AP_xxxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class1_AP_xxxlVF_IoU_0.50_MaxDet_100': -1.0,
+      'class0_mAP_IoU_0.10_0.50_0.05': 0.0324998547047432,
+      'class0_mAP_lVF_IoU_0.10_0.50_0.05': -1.0,
+      'class0_mAP_mVF_IoU_0.10_0.50_0.05': -1.0,
+      'class0_mAP_sVF_IoU_0.10_0.50_0.05': 0.0324998547047432,
+      'class0_mAP_xlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class0_mAP_xsVF_IoU_0.10_0.50_0.05': 0.0324998547047432,
+      'class0_mAP_xxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class0_mAP_xxsVF_IoU_0.10_0.50_0.05': 0.0324998547047432,
+      'class0_mAP_xxxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class1_AP_IoU_0.10': 0.0339499989839692,
+      'class1_AP_IoU_0.20': 0.0339499989839692,
+      'class1_AP_IoU_0.30': 0.0339499989839692,
+      'class1_AP_IoU_0.50': 0.0339499989839692,
+      'class1_AP_lVF_IoU_0.10': -1.0,
+      'class1_AP_lVF_IoU_0.20': -1.0,
+      'class1_AP_lVF_IoU_0.30': -1.0,
+      'class1_AP_lVF_IoU_0.50': -1.0,
+      'class1_AP_mVF_IoU_0.10': -1.0,
+      'class1_AP_mVF_IoU_0.20': -1.0,
+      'class1_AP_mVF_IoU_0.30': -1.0,
+      'class1_AP_mVF_IoU_0.50': -1.0,
+      'class1_AP_sVF_IoU_0.10': 0.0339499989839692,
+      'class1_AP_sVF_IoU_0.20': 0.0339499989839692,
+      'class1_AP_sVF_IoU_0.30': 0.0339499989839692,
+      'class1_AP_sVF_IoU_0.50': 0.0339499989839692,
+      'class1_AP_xlVF_IoU_0.10': -1.0,
+      'class1_AP_xlVF_IoU_0.20': -1.0,
+      'class1_AP_xlVF_IoU_0.30': -1.0,
+      'class1_AP_xlVF_IoU_0.50': -1.0,
+      'class1_AP_xsVF_IoU_0.10': 0.0339499989839692,
+      'class1_AP_xsVF_IoU_0.20': 0.0339499989839692,
+      'class1_AP_xsVF_IoU_0.30': 0.0339499989839692,
+      'class1_AP_xsVF_IoU_0.50': 0.0339499989839692,
+      'class1_AP_xxlVF_IoU_0.10': -1.0,
+      'class1_AP_xxlVF_IoU_0.20': -1.0,
+      'class1_AP_xxlVF_IoU_0.30': -1.0,
+      'class1_AP_xxlVF_IoU_0.50': -1.0,
+      'class1_AP_xxsVF_IoU_0.10': 0.0339499989839692,
+      'class1_AP_xxsVF_IoU_0.20': 0.0339499989839692,
+      'class1_AP_xxsVF_IoU_0.30': 0.0339499989839692,
+      'class1_AP_xxsVF_IoU_0.50': 0.0339499989839692,
+      'class1_AP_xxxlVF_IoU_0.10': -1.0,
+      'class1_AP_xxxlVF_IoU_0.20': -1.0,
+      'class1_AP_xxxlVF_IoU_0.30': -1.0,
+      'class1_AP_xxxlVF_IoU_0.50': -1.0,
       'class1_FROC_IoU_0.10': 0.1429650591141274,
       'class1_FROC_IoU_0.20': 0.1429650591141274,
       'class1_FROC_IoU_0.30': 0.1429650591141274,
@@ -226,51 +226,51 @@
       'class1_FROC_xxxlVF_IoU_0.20': nan,
       'class1_FROC_xxxlVF_IoU_0.30': nan,
       'class1_FROC_xxxlVF_IoU_0.50': nan,
-      'class1_mAP_IoU_0.10_0.50_0.05_MaxDet_100': 0.0339499989839692,
-      'class1_mAP_lVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class1_mAP_mVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class1_mAP_sVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0339499989839692,
-      'class1_mAP_xlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class1_mAP_xsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0339499989839692,
-      'class1_mAP_xxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class1_mAP_xxsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.0339499989839692,
-      'class1_mAP_xxxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class2_AP_IoU_0.10_MaxDet_100': 0.032562871899366956,
-      'class2_AP_IoU_0.20_MaxDet_100': 0.032562871899366956,
-      'class2_AP_IoU_0.30_MaxDet_100': 0.032562871899366956,
-      'class2_AP_IoU_0.50_MaxDet_100': 0.032562871899366956,
-      'class2_AP_lVF_IoU_0.10_MaxDet_100': -1.0,
-      'class2_AP_lVF_IoU_0.20_MaxDet_100': -1.0,
-      'class2_AP_lVF_IoU_0.30_MaxDet_100': -1.0,
-      'class2_AP_lVF_IoU_0.50_MaxDet_100': -1.0,
-      'class2_AP_mVF_IoU_0.10_MaxDet_100': -1.0,
-      'class2_AP_mVF_IoU_0.20_MaxDet_100': -1.0,
-      'class2_AP_mVF_IoU_0.30_MaxDet_100': -1.0,
-      'class2_AP_mVF_IoU_0.50_MaxDet_100': -1.0,
-      'class2_AP_sVF_IoU_0.10_MaxDet_100': 0.032562871899366956,
-      'class2_AP_sVF_IoU_0.20_MaxDet_100': 0.032562871899366956,
-      'class2_AP_sVF_IoU_0.30_MaxDet_100': 0.032562871899366956,
-      'class2_AP_sVF_IoU_0.50_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class2_AP_xlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class2_AP_xlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class2_AP_xlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class2_AP_xsVF_IoU_0.10_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xsVF_IoU_0.20_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xsVF_IoU_0.30_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xsVF_IoU_0.50_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class2_AP_xxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class2_AP_xxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class2_AP_xxlVF_IoU_0.50_MaxDet_100': -1.0,
-      'class2_AP_xxsVF_IoU_0.10_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xxsVF_IoU_0.20_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xxsVF_IoU_0.30_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xxsVF_IoU_0.50_MaxDet_100': 0.032562871899366956,
-      'class2_AP_xxxlVF_IoU_0.10_MaxDet_100': -1.0,
-      'class2_AP_xxxlVF_IoU_0.20_MaxDet_100': -1.0,
-      'class2_AP_xxxlVF_IoU_0.30_MaxDet_100': -1.0,
-      'class2_AP_xxxlVF_IoU_0.50_MaxDet_100': -1.0,
+      'class1_mAP_IoU_0.10_0.50_0.05': 0.0339499989839692,
+      'class1_mAP_lVF_IoU_0.10_0.50_0.05': -1.0,
+      'class1_mAP_mVF_IoU_0.10_0.50_0.05': -1.0,
+      'class1_mAP_sVF_IoU_0.10_0.50_0.05': 0.0339499989839692,
+      'class1_mAP_xlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class1_mAP_xsVF_IoU_0.10_0.50_0.05': 0.0339499989839692,
+      'class1_mAP_xxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class1_mAP_xxsVF_IoU_0.10_0.50_0.05': 0.0339499989839692,
+      'class1_mAP_xxxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class2_AP_IoU_0.10': 0.032562871899366956,
+      'class2_AP_IoU_0.20': 0.032562871899366956,
+      'class2_AP_IoU_0.30': 0.032562871899366956,
+      'class2_AP_IoU_0.50': 0.032562871899366956,
+      'class2_AP_lVF_IoU_0.10': -1.0,
+      'class2_AP_lVF_IoU_0.20': -1.0,
+      'class2_AP_lVF_IoU_0.30': -1.0,
+      'class2_AP_lVF_IoU_0.50': -1.0,
+      'class2_AP_mVF_IoU_0.10': -1.0,
+      'class2_AP_mVF_IoU_0.20': -1.0,
+      'class2_AP_mVF_IoU_0.30': -1.0,
+      'class2_AP_mVF_IoU_0.50': -1.0,
+      'class2_AP_sVF_IoU_0.10': 0.032562871899366956,
+      'class2_AP_sVF_IoU_0.20': 0.032562871899366956,
+      'class2_AP_sVF_IoU_0.30': 0.032562871899366956,
+      'class2_AP_sVF_IoU_0.50': 0.032562871899366956,
+      'class2_AP_xlVF_IoU_0.10': -1.0,
+      'class2_AP_xlVF_IoU_0.20': -1.0,
+      'class2_AP_xlVF_IoU_0.30': -1.0,
+      'class2_AP_xlVF_IoU_0.50': -1.0,
+      'class2_AP_xsVF_IoU_0.10': 0.032562871899366956,
+      'class2_AP_xsVF_IoU_0.20': 0.032562871899366956,
+      'class2_AP_xsVF_IoU_0.30': 0.032562871899366956,
+      'class2_AP_xsVF_IoU_0.50': 0.032562871899366956,
+      'class2_AP_xxlVF_IoU_0.10': -1.0,
+      'class2_AP_xxlVF_IoU_0.20': -1.0,
+      'class2_AP_xxlVF_IoU_0.30': -1.0,
+      'class2_AP_xxlVF_IoU_0.50': -1.0,
+      'class2_AP_xxsVF_IoU_0.10': 0.032562871899366956,
+      'class2_AP_xxsVF_IoU_0.20': 0.032562871899366956,
+      'class2_AP_xxsVF_IoU_0.30': 0.032562871899366956,
+      'class2_AP_xxsVF_IoU_0.50': 0.032562871899366956,
+      'class2_AP_xxxlVF_IoU_0.10': -1.0,
+      'class2_AP_xxxlVF_IoU_0.20': -1.0,
+      'class2_AP_xxxlVF_IoU_0.30': -1.0,
+      'class2_AP_xxxlVF_IoU_0.50': -1.0,
       'class2_FROC_IoU_0.10': 0.13865367042339322,
       'class2_FROC_IoU_0.20': 0.13865367042339322,
       'class2_FROC_IoU_0.30': 0.13865367042339322,
@@ -307,24 +307,24 @@
       'class2_FROC_xxxlVF_IoU_0.20': nan,
       'class2_FROC_xxxlVF_IoU_0.30': nan,
       'class2_FROC_xxxlVF_IoU_0.50': nan,
-      'class2_mAP_IoU_0.10_0.50_0.05_MaxDet_100': 0.032562871899366956,
-      'class2_mAP_lVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class2_mAP_mVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class2_mAP_sVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.032562871899366956,
-      'class2_mAP_xlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class2_mAP_xsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.032562871899366956,
-      'class2_mAP_xxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'class2_mAP_xxsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.032562871899366956,
-      'class2_mAP_xxxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'mAP_IoU_0.10_0.50_0.05_MaxDet_100': 0.033004241862693115,
-      'mAP_lVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'mAP_mVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'mAP_sVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.033004241862693115,
-      'mAP_xlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'mAP_xsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.033004241862693115,
-      'mAP_xxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
-      'mAP_xxsVF_IoU_0.10_0.50_0.05_MaxDet_100': 0.033004241862693115,
-      'mAP_xxxlVF_IoU_0.10_0.50_0.05_MaxDet_100': -1.0,
+      'class2_mAP_IoU_0.10_0.50_0.05': 0.032562871899366956,
+      'class2_mAP_lVF_IoU_0.10_0.50_0.05': -1.0,
+      'class2_mAP_mVF_IoU_0.10_0.50_0.05': -1.0,
+      'class2_mAP_sVF_IoU_0.10_0.50_0.05': 0.032562871899366956,
+      'class2_mAP_xlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class2_mAP_xsVF_IoU_0.10_0.50_0.05': 0.032562871899366956,
+      'class2_mAP_xxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'class2_mAP_xxsVF_IoU_0.10_0.50_0.05': 0.032562871899366956,
+      'class2_mAP_xxxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'mAP_IoU_0.10_0.50_0.05': 0.033004241862693115,
+      'mAP_lVF_IoU_0.10_0.50_0.05': -1.0,
+      'mAP_mVF_IoU_0.10_0.50_0.05': -1.0,
+      'mAP_sVF_IoU_0.10_0.50_0.05': 0.033004241862693115,
+      'mAP_xlVF_IoU_0.10_0.50_0.05': -1.0,
+      'mAP_xsVF_IoU_0.10_0.50_0.05': 0.033004241862693115,
+      'mAP_xxlVF_IoU_0.10_0.50_0.05': -1.0,
+      'mAP_xxsVF_IoU_0.10_0.50_0.05': 0.033004241862693115,
+      'mAP_xxxlVF_IoU_0.10_0.50_0.05': -1.0,
       'mc_FROC_IoU_0.10': 0.13988749875858822,
       'mc_FROC_IoU_0.20': 0.13988749875858822,
       'mc_FROC_IoU_0.30': 0.13988749875858822,
@@ -385,11 +385,7 @@
         0.3,
         0.5,
       ]),
-      'AP_lVF_max_detections': tuple(
-        100,
-      ),
       'AP_lVF_num_classes': 3,
-      'AP_lVF_num_max_detection_thresholds': 1,
       'AP_lVF_num_recall_threshods': 101,
       'AP_lVF_num_thresholds': 10,
       'AP_lVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -413,11 +409,7 @@
         0.3,
         0.5,
       ]),
-      'AP_mVF_max_detections': tuple(
-        100,
-      ),
       'AP_mVF_num_classes': 3,
-      'AP_mVF_num_max_detection_thresholds': 1,
       'AP_mVF_num_recall_threshods': 101,
       'AP_mVF_num_thresholds': 10,
       'AP_mVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -430,11 +422,7 @@
          0.77, 0.78, 0.79, 0.8 , 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.87,
          0.88, 0.89, 0.9 , 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98,
          0.99, 1.  ]),
-      'AP_max_detections': tuple(
-        100,
-      ),
       'AP_num_classes': 3,
-      'AP_num_max_detection_thresholds': 1,
       'AP_num_recall_threshods': 101,
       'AP_num_thresholds': 10,
       'AP_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -458,11 +446,7 @@
         0.3,
         0.5,
       ]),
-      'AP_sVF_max_detections': tuple(
-        100,
-      ),
       'AP_sVF_num_classes': 3,
-      'AP_sVF_num_max_detection_thresholds': 1,
       'AP_sVF_num_recall_threshods': 101,
       'AP_sVF_num_thresholds': 10,
       'AP_sVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -486,11 +470,7 @@
         0.3,
         0.5,
       ]),
-      'AP_xlVF_max_detections': tuple(
-        100,
-      ),
       'AP_xlVF_num_classes': 3,
-      'AP_xlVF_num_max_detection_thresholds': 1,
       'AP_xlVF_num_recall_threshods': 101,
       'AP_xlVF_num_thresholds': 10,
       'AP_xlVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -514,11 +494,7 @@
         0.3,
         0.5,
       ]),
-      'AP_xsVF_max_detections': tuple(
-        100,
-      ),
       'AP_xsVF_num_classes': 3,
-      'AP_xsVF_num_max_detection_thresholds': 1,
       'AP_xsVF_num_recall_threshods': 101,
       'AP_xsVF_num_thresholds': 10,
       'AP_xsVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -542,11 +518,7 @@
         0.3,
         0.5,
       ]),
-      'AP_xxlVF_max_detections': tuple(
-        100,
-      ),
       'AP_xxlVF_num_classes': 3,
-      'AP_xxlVF_num_max_detection_thresholds': 1,
       'AP_xxlVF_num_recall_threshods': 101,
       'AP_xxlVF_num_thresholds': 10,
       'AP_xxlVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -570,11 +542,7 @@
         0.3,
         0.5,
       ]),
-      'AP_xxsVF_max_detections': tuple(
-        100,
-      ),
       'AP_xxsVF_num_classes': 3,
-      'AP_xxsVF_num_max_detection_thresholds': 1,
       'AP_xxsVF_num_recall_threshods': 101,
       'AP_xxsVF_num_thresholds': 10,
       'AP_xxsVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -598,11 +566,7 @@
         0.3,
         0.5,
       ]),
-      'AP_xxxlVF_max_detections': tuple(
-        100,
-      ),
       'AP_xxxlVF_num_classes': 3,
-      'AP_xxxlVF_num_max_detection_thresholds': 1,
       'AP_xxxlVF_num_recall_threshods': 101,
       'AP_xxxlVF_num_thresholds': 10,
       'AP_xxxlVF_recall_thresholds': array([0.  , 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ,
@@ -865,7 +829,7 @@
       ]),
       'FROC_xxxlVF_num_gt': 0,
       'FROC_xxxlVF_num_images': 10000,
-      'class0_AP_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -891,9 +855,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -919,9 +882,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -947,9 +909,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -975,9 +936,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_lVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_lVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -990,9 +950,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_lVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_lVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1005,9 +964,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_lVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_lVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1020,9 +978,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_lVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_lVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1035,9 +992,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_mVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_mVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1050,9 +1006,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_mVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_mVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1065,9 +1020,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_mVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_mVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1080,9 +1034,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_mVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_mVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1095,9 +1048,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_sVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_sVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1123,9 +1075,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_sVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_sVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1151,9 +1102,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_sVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_sVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1179,9 +1129,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_sVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_sVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1207,9 +1156,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_xlVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_xlVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1222,9 +1170,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_xlVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_xlVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1237,9 +1184,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_xlVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_xlVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1252,9 +1198,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_xlVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_xlVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1267,9 +1212,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_xsVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_xsVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1295,9 +1239,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_xsVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_xsVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1323,9 +1266,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_xsVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_xsVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1351,9 +1293,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_xsVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_xsVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1379,9 +1320,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_xxlVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_xxlVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1394,9 +1334,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_xxlVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_xxlVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1409,9 +1348,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_xxlVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_xxlVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1424,9 +1362,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_xxlVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_xxlVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1439,9 +1376,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_xxsVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_xxsVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1467,9 +1403,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_xxsVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_xxsVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1495,9 +1430,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_xxsVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_xxsVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1523,9 +1457,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_xxsVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_xxsVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([0.2       , 0.11567369, 0.11567369, 0.11567369, 0.11567369,
@@ -1551,9 +1484,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class0_AP_xxxlVF_IoU_0.10_MaxDet_100': dict({
+      'class0_AP_xxxlVF_IoU_0.10': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1566,9 +1498,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class0_AP_xxxlVF_IoU_0.20_MaxDet_100': dict({
+      'class0_AP_xxxlVF_IoU_0.20': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1581,9 +1512,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class0_AP_xxxlVF_IoU_0.30_MaxDet_100': dict({
+      'class0_AP_xxxlVF_IoU_0.30': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1596,9 +1526,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class0_AP_xxxlVF_IoU_0.50_MaxDet_100': dict({
+      'class0_AP_xxxlVF_IoU_0.50': dict({
         '_cls_idx': 0,
         'class': 'class0',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1611,7 +1540,6 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
       'class0_FROC_IoU_0.10': array([0.01182233, 0.02474244, 0.05438271, 0.10184091, 0.20131735,
          0.28610032, 0.28610032]),
@@ -1869,7 +1797,7 @@
       'class0_pred_hist_xxxlVF_IoU_0.50_fn': 0.0,
       'class0_pred_hist_xxxlVF_IoU_0.50_fp': 0,
       'class0_pred_hist_xxxlVF_IoU_0.50_tp': 0,
-      'class1_AP_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -1895,9 +1823,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -1923,9 +1850,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -1951,9 +1877,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -1979,9 +1904,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_lVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_lVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -1994,9 +1918,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_lVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_lVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2009,9 +1932,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_lVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_lVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2024,9 +1946,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_lVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_lVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2039,9 +1960,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_mVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_mVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2054,9 +1974,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_mVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_mVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2069,9 +1988,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_mVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_mVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2084,9 +2002,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_mVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_mVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2099,9 +2016,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_sVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_sVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2127,9 +2043,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_sVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_sVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2155,9 +2070,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_sVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_sVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2183,9 +2097,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_sVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_sVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2211,9 +2124,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_xlVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_xlVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2226,9 +2138,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_xlVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_xlVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2241,9 +2152,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_xlVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_xlVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2256,9 +2166,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_xlVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_xlVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2271,9 +2180,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_xsVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_xsVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2299,9 +2207,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_xsVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_xsVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2327,9 +2234,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_xsVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_xsVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2355,9 +2261,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_xsVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_xsVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2383,9 +2288,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_xxlVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_xxlVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2398,9 +2302,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_xxlVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_xxlVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2413,9 +2316,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_xxlVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_xxlVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2428,9 +2330,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_xxlVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_xxlVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2443,9 +2344,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_xxsVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_xxsVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2471,9 +2371,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_xxsVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_xxsVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2499,9 +2398,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_xxsVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_xxsVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2527,9 +2425,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_xxsVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_xxsVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([0.13352273, 0.12093023, 0.11513285, 0.11513285, 0.11513285,
@@ -2555,9 +2452,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class1_AP_xxxlVF_IoU_0.10_MaxDet_100': dict({
+      'class1_AP_xxxlVF_IoU_0.10': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2570,9 +2466,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class1_AP_xxxlVF_IoU_0.20_MaxDet_100': dict({
+      'class1_AP_xxxlVF_IoU_0.20': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2585,9 +2480,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class1_AP_xxxlVF_IoU_0.30_MaxDet_100': dict({
+      'class1_AP_xxxlVF_IoU_0.30': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2600,9 +2494,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class1_AP_xxxlVF_IoU_0.50_MaxDet_100': dict({
+      'class1_AP_xxxlVF_IoU_0.50': dict({
         '_cls_idx': 1,
         'class': 'class1',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2615,7 +2508,6 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
       'class1_FROC_IoU_0.10': array([0.01368138, 0.02467685, 0.05329864, 0.10659728, 0.21143193,
          0.29553467, 0.29553467]),
@@ -2873,7 +2765,7 @@
       'class1_pred_hist_xxxlVF_IoU_0.50_fn': 0.0,
       'class1_pred_hist_xxxlVF_IoU_0.50_fp': 0,
       'class1_pred_hist_xxxlVF_IoU_0.50_tp': 0,
-      'class2_AP_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -2899,9 +2791,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -2927,9 +2818,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -2955,9 +2845,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -2983,9 +2872,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_lVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_lVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -2998,9 +2886,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_lVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_lVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3013,9 +2900,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_lVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_lVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3028,9 +2914,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_lVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_lVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3043,9 +2928,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_mVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_mVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3058,9 +2942,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_mVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_mVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3073,9 +2956,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_mVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_mVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3088,9 +2970,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_mVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_mVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3103,9 +2984,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_sVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_sVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3131,9 +3011,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_sVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_sVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3159,9 +3038,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_sVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_sVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3187,9 +3065,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_sVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_sVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3215,9 +3092,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_xlVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_xlVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3230,9 +3106,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_xlVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_xlVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3245,9 +3120,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_xlVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_xlVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3260,9 +3134,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_xlVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_xlVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3275,9 +3148,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_xsVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_xsVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3303,9 +3175,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_xsVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_xsVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3331,9 +3202,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_xsVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_xsVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3359,9 +3229,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_xsVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_xsVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3387,9 +3256,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_xxlVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_xxlVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3402,9 +3270,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_xxlVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_xxlVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3417,9 +3284,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_xxlVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_xxlVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3432,9 +3298,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_xxlVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_xxlVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3447,9 +3312,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_xxsVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_xxsVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3475,9 +3339,8 @@
          0.        ]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_xxsVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_xxsVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3503,9 +3366,8 @@
          0.        ]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_xxsVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_xxsVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3531,9 +3393,8 @@
          0.        ]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_xxsVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_xxsVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([0.14      , 0.10859854, 0.10859854, 0.10859854, 0.10859854,
@@ -3559,9 +3420,8 @@
          0.        ]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
-      'class2_AP_xxxlVF_IoU_0.10_MaxDet_100': dict({
+      'class2_AP_xxxlVF_IoU_0.10': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3574,9 +3434,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.1,
         'iou_str': '0.10',
-        'maxdet': 100,
       }),
-      'class2_AP_xxxlVF_IoU_0.20_MaxDet_100': dict({
+      'class2_AP_xxxlVF_IoU_0.20': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3589,9 +3448,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.2,
         'iou_str': '0.20',
-        'maxdet': 100,
       }),
-      'class2_AP_xxxlVF_IoU_0.30_MaxDet_100': dict({
+      'class2_AP_xxxlVF_IoU_0.30': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3604,9 +3462,8 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.3,
         'iou_str': '0.30',
-        'maxdet': 100,
       }),
-      'class2_AP_xxxlVF_IoU_0.50_MaxDet_100': dict({
+      'class2_AP_xxxlVF_IoU_0.50': dict({
         '_cls_idx': 2,
         'class': 'class2',
         'curve': array([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
@@ -3619,7 +3476,6 @@
          -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.]),
         'iou': 0.5,
         'iou_str': '0.50',
-        'maxdet': 100,
       }),
       'class2_FROC_IoU_0.10': array([0.01185501, 0.02405117, 0.04861407, 0.09927505, 0.20579957,
          0.29049041, 0.29049041]),
@@ -3877,42 +3733,6 @@
       'class2_pred_hist_xxxlVF_IoU_0.50_fn': 0.0,
       'class2_pred_hist_xxxlVF_IoU_0.50_fp': 0,
       'class2_pred_hist_xxxlVF_IoU_0.50_tp': 0,
-      'criterion': tuple(
-        -inf,
-        inf,
-      ),
-      'criterion_lVF': tuple(
-        13824,
-        inf,
-      ),
-      'criterion_mVF': tuple(
-        512,
-        13824,
-      ),
-      'criterion_sVF': tuple(
-        0,
-        512,
-      ),
-      'criterion_xlVF': tuple(
-        32768,
-        inf,
-      ),
-      'criterion_xsVF': tuple(
-        0,
-        216,
-      ),
-      'criterion_xxlVF': tuple(
-        110592,
-        inf,
-      ),
-      'criterion_xxsVF': tuple(
-        0,
-        64,
-      ),
-      'criterion_xxxlVF': tuple(
-        262144,
-        inf,
-      ),
       'pred_hist_IoU_0.10_counts_fp': array([1694, 1632, 1665, 1674, 1743, 1754, 1652, 1711, 1685, 1617, 1668,
          1717, 1671, 1626, 1671, 1680, 1673, 1654, 1659, 1681, 1680, 1706,
          1719, 1711, 1710, 1728, 1666, 1695, 1657, 1699, 1664, 1722, 1672,
