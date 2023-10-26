@@ -696,6 +696,19 @@ def _evaluate_task(
     training_dir = get_training_dir(model_dir, fold)
     prefix = "test" if test else "val"
 
+    # logging
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format="<level>{level} {message}</level>",
+        level="INFO",
+        colorize=True,
+    )
+    logger.add(training_dir / "evaluation.log", level="INFO")
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running evaluation {current_time_str} +++")
+
     # prepare paths
     modes = [True]
     if not test and preprocessed:
@@ -716,28 +729,15 @@ def _evaluate_task(
         pred_dir = training_dir / pred_dir_name
         save_dir = training_dir / f"{prefix}_results" if restore else training_dir / f"{prefix}_results_preprocessed"
 
-    # logging
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        format="<level>{level} {message}</level>",
-        level="INFO",
-        colorize=True,
-    )
-    logger.add(save_dir / "evaluation.log", level="INFO")
-    current_time = datetime.now()
-    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
-    logger.info(f"+++ Running prepare {current_time_str} +++")
-
-    _evaluate(
-        data_cfg=data_cfg,
-        pred_dir=pred_dir,
-        gt_dir=gt_dir,
-        save_dir=save_dir,
-        do_case_eval=do_case_eval,
-        do_boxes_eval=do_boxes_eval,
-        do_analyze_boxes=do_analyze_boxes,
-    )
+        _evaluate(
+            data_cfg=data_cfg,
+            pred_dir=pred_dir,
+            gt_dir=gt_dir,
+            save_dir=save_dir,
+            do_case_eval=do_case_eval,
+            do_boxes_eval=do_boxes_eval,
+            do_analyze_boxes=do_analyze_boxes,
+        )
 
 
 @env_guard
