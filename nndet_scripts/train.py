@@ -16,12 +16,12 @@ import torch
 from hydra import initialize_config_module
 from loguru import logger
 from omegaconf.omegaconf import OmegaConf
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-from pytorch_lightning.loggers import (
-    LightningLoggerBase,
-    MLFlowLogger,
-    TensorBoardLogger,
+from pytorch_lightning.callbacks import (
+    LearningRateMonitor,
+    ModelCheckpoint,
+    TQDMProgressBar,
 )
+from pytorch_lightning.loggers import Logger, MLFlowLogger, TensorBoardLogger
 
 import nndet
 from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
@@ -278,7 +278,7 @@ def init_train_dir(cfg: dict, fold: int) -> Path:
     return output_dir
 
 
-def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
+def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
     """
     Instantiate a logger to monitor metrics/losses during training
 
@@ -481,6 +481,8 @@ def _train(
     logger.info(f"Using {plugins} plugins for training")
 
     callbacks.append(ModelSummary(max_depth=10, log_net=log_net))
+    if bool(int(os.getenv("det_verbose", 1))):
+        callbacks.append(TQDMProgressBar())
 
     if "terminate_on_nan" in cfg["trainer_cfg"]:
         detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
@@ -489,31 +491,30 @@ def _train(
     else:
         detect_anomaly = False
 
-    if cfg["trainer_cfg"]["precision"] == 16 and cfg["trainer_cfg"]["amp_backend"] == "native":
+    if cfg["trainer_cfg"]["precision"] == 16:
         device = "cuda" if num_gpus > 0 else "cpu"
         precision_plugin = ExposedNativeMixedPrecisionPlugin(
-            precision=16,
+            precision=cfg["trainer_cfg"]["precision_type"],
             device=device,
             init_scale=8192.0,
         )
         plugins.append(precision_plugin)
+        precision = None
+    else:
+        precision = cfg["trainer_cfg"]["precision"]
 
     trainer = pl.Trainer(
-        gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
         accelerator=cfg["trainer_cfg"]["accelerator"],
-        precision=cfg["trainer_cfg"]["precision"],
-        amp_backend=cfg["trainer_cfg"]["amp_backend"],
-        amp_level=cfg["trainer_cfg"]["amp_level"],
+        devices=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
+        precision=precision,
         benchmark=cfg["trainer_cfg"]["benchmark"],
         deterministic=cfg["trainer_cfg"]["deterministic"],
         callbacks=callbacks,
         logger=pl_logger,
         max_epochs=module.max_epochs,
-        progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         num_sanity_val_steps=10,
         plugins=plugins,
         detect_anomaly=detect_anomaly,
-        move_metrics_to_cpu=False,
         enable_model_summary=False,
         **trainer_kwargs,
     )

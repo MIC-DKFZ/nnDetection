@@ -11,8 +11,3 @@ def test_batchgenerators_import():
 
 def test_pytorch_lightning_import():
     import pytorch_lightning as pl
-
-
-def test_nnunet_import():
-    with SuppressPrint():
-        import nnunet.preprocessing.preprocessing as nn_preprocessing

@@ -98,6 +98,9 @@ class LightningBaseModule(pl.LightningModule):
         logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
         self.mean_val_loss = None
 
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Used to generate summary
@@ -136,7 +139,9 @@ class LightningBaseModule(pl.LightningModule):
 
         # self.log_dict(losses, prog_bar=True)
 
-        return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
+        out = {"loss": loss.detach().item(), **{key: l.detach().item() for key, l in losses.items()}}
+        self.training_step_outputs.append(out)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         """
@@ -169,23 +174,22 @@ class LightningBaseModule(pl.LightningModule):
 
         super().evaluation_step(predictions=predictions, targets=targets)
 
-        return {
+        out = {
             "loss": loss.detach().item(),
             **{key: l.detach().item() for key, l in losses.items()},
         }
+        self.validation_step_outputs.append(out)
+        return loss
 
-    def training_epoch_end(self, training_step_outputs):
+    def on_train_epoch_end(self):
         """
         Log train loss to loguru logger
         """
         # process and log losses
         vals = defaultdict(list)
-        for _val in training_step_outputs:
+        for _val in self.training_step_outputs:
             for _k, _v in _val.items():
-                if _k == "loss":
-                    vals[_k].append(_v.detach().item())
-                else:
-                    vals[_k].append(_v)
+                vals[_k].append(_v)
 
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
@@ -196,15 +200,16 @@ class LightningBaseModule(pl.LightningModule):
         # print validation loss here for nicer log
         if self.mean_val_loss is not None:
             logger.info(f"Val loss reached: {self.mean_val_loss:0.5f}")
-        return super().training_epoch_end(training_step_outputs)
+        self.training_step_outputs.clear()  # free memory
+        return super().on_train_epoch_end()
 
-    def validation_epoch_end(self, validation_step_outputs):
+    def on_validation_epoch_end(self):
         """
         Log val loss to loguru logger
         """
         # process and log losses
         vals = defaultdict(list)
-        for _val in validation_step_outputs:
+        for _val in self.validation_step_outputs:
             for _k, _v in _val.items():
                 vals[_k].append(_v)
 
@@ -217,11 +222,8 @@ class LightningBaseModule(pl.LightningModule):
         # process and log metrics
         super().evaluation_end()
 
-        # metrics are logged by respective evaluator
-        # for key, item in metric_scores.items():
-        #     self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
-
-        return super().validation_epoch_end(validation_step_outputs)
+        self.validation_step_outputs.clear()  # free memory
+        return super().on_validation_epoch_end()
 
     @property
     def train_epochs(self):

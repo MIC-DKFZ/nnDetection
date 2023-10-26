@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 gpus: 1 # number of gpus
-accelerator: # distributed backend
-precision: 16 # mixed precision
-amp_backend: native # mixed precision backend
-amp_level: # when mixed precision backend is APEX use O1
+accelerator: "gpu" # distributed backend
+precision: 16 # enable/disable mixed precision
+precision_type: "16-mixed" # define precision type to use
 # Per default training is deterministic, non-deterministic allows
 # cudnn.benchmark which can give up to 20% performance. Set this to false
 # to perform non-deterministic training

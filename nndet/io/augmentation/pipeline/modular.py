@@ -39,19 +39,15 @@ from batchgenerators.transforms.utility_transforms import (
     RenameTransform,
 )
 
-from nndet.io.augmentation.base import ComposePretty
-from nndet.io.augmentation.pipeline.noaug import NoAug
-from nndet.utils.info import SuppressPrint
-
-with SuppressPrint():
-    from nnunet.training.data_augmentation.custom_transforms import (
-        Convert3DTo2DTransform,
-        Convert2DTo3DTransform,
-        MaskTransform,
-    )
-
 import nndet.io.transforms.detection as nndet_transforms
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
+from nndet.io.augmentation.base import ComposePretty
+from nndet.io.augmentation.nnunet import (
+    Convert2DTo3DTransform,
+    Convert3DTo2DTransform,
+    MaskTransform,
+)
+from nndet.io.augmentation.pipeline.noaug import NoAug
 from nndet.io.transforms.format import (
     Boxes2ObjectPointsTransform,
     ObjectPoints2BoxesTransform,

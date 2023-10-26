@@ -20,7 +20,10 @@ import torch
 from git import InvalidGitRepositoryError, Repo
 from loguru import logger
 from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
-from pytorch_lightning.utilities.model_summary import _format_summary_table, summarize
+from pytorch_lightning.utilities.model_summary.model_summary import (
+    _format_summary_table,
+    summarize,
+)
 from tqdm import tqdm
 
 from nndet.io.load import save_txt
