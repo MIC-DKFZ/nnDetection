@@ -172,8 +172,9 @@ def _predict(
         importlib.import_module(imp)
 
     # pop some unnecessary information as a safety measure
-    cfg.pop("task")
-    cfg.pop("exp")
+    cfg.pop("task", None)
+    cfg.pop("exp", None)
+    cfg.pop("host", None)
 
     # load plan
     plan_inference_path = training_dir / "plan_inference.pkl"
