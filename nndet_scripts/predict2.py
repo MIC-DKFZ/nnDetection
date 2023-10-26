@@ -174,7 +174,6 @@ def _predict(
     # pop some unnecessary information as a safety measure
     cfg.pop("task")
     cfg.pop("exp")
-    cfg.pop("host")
 
     # load plan
     plan_inference_path = training_dir / "plan_inference.pkl"
