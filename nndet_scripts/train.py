@@ -761,6 +761,11 @@ def _evaluate(
         do_boxes_eval: perform box evaluation
         do_analyze_boxes: run analysis of box results
     """
+    pred_dir = Path(pred_dir)
+    gt_dir = Path(gt_dir)
+    save_dir = Path(save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     # handle case level evaluation
     if do_case_eval:
         logger.info("Computing case metrics")
