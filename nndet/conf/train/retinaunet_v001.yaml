@@ -54,8 +54,7 @@ trainer_cfg:
 accelerator_cfg:
   gpus: 1 # number of gpus
   accelerator: "gpu" # distributed backend
-  precision: 16 # enable/disable mixed precision
-  precision_type: "16-mixed" # define precision type to use
+  precision: "16-mixed" # mixed precision training; typically: '16-mixed', 'bf16-mixed', '32'
 
   # pytorch 2.0 features
   do_compile: False
