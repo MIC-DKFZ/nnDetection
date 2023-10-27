@@ -388,7 +388,7 @@ def _train(
     logger.remove()
     logger.add(
         sys.stdout,
-        format="<level>{level} {message}</level>",
+        format="<level>{level}</level>: {message}",
         level="INFO",
         colorize=True,
     )
@@ -604,7 +604,12 @@ def _sweep(
         importlib.import_module(imp)
 
     logger.remove()
-    logger.add(sys.stdout, format="{level} {message}", level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
     log_file = Path(os.getcwd()) / "sweep.log"
     logger.add(log_file, level="INFO")
     current_time = datetime.now()

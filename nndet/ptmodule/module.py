@@ -96,7 +96,6 @@ class LightningBaseModule(pl.LightningModule):
         self.sweep_key = self.trainer_cfg["sweep_key"]
         self.monitor_key = self.trainer_cfg["monitor_key"]
         logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
-        self.mean_val_loss = None
 
         self.training_step_outputs = []
         self.validation_step_outputs = []
@@ -139,7 +138,8 @@ class LightningBaseModule(pl.LightningModule):
 
         # self.log_dict(losses, prog_bar=True)
 
-        out = {"loss": loss.detach().item(), **{key: l.detach().item() for key, l in losses.items()}}
+        out = {"loss": loss.detach().item(), **{f"loss_{key}": l.detach().item() for key, l in losses.items()}}
+        self.log("train_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
         self.training_step_outputs.append(out)
         return loss
 
@@ -170,14 +170,13 @@ class LightningBaseModule(pl.LightningModule):
             )
             loss = sum(losses.values())
 
-        # self.log_dict(losses, prog_bar=True)
-
         super().evaluation_step(predictions=predictions, targets=targets)
 
         out = {
             "loss": loss.detach().item(),
-            **{key: l.detach().item() for key, l in losses.items()},
+            **{f"loss_{key}": l.detach().item() for key, l in losses.items()},
         }
+        self.log("val_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
         self.validation_step_outputs.append(out)
         return loss
 
@@ -191,15 +190,14 @@ class LightningBaseModule(pl.LightningModule):
             for _k, _v in _val.items():
                 vals[_k].append(_v)
 
+        _log_loss_str = "Train:"
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
-            if _key == "loss":
-                logger.info(f"Train loss reached: {mean_val:0.5f}")
-            self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
+            if _key.startswith("loss"):
+                _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
+            self.log(f"train_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
+        logger.info(_log_loss_str)
 
-        # print validation loss here for nicer log
-        if self.mean_val_loss is not None:
-            logger.info(f"Val loss reached: {self.mean_val_loss:0.5f}")
         self.training_step_outputs.clear()  # free memory
         return super().on_train_epoch_end()
 
@@ -213,11 +211,13 @@ class LightningBaseModule(pl.LightningModule):
             for _k, _v in _val.items():
                 vals[_k].append(_v)
 
+        _log_loss_str = "Val:"
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
-            if _key == "loss":
-                self.mean_val_loss = mean_val
-            self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
+            if _key.startswith("loss"):
+                _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
+            self.log(f"val_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
+        logger.info(_log_loss_str)
 
         # process and log metrics
         super().evaluation_end()

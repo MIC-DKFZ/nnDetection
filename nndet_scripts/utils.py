@@ -587,7 +587,12 @@ def create_cv_split():
 
     # setup logging
     logger.remove()
-    logger.add(sys.stdout, level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
     logger.add(task_dir / "split.log", level="DEBUG")
 
     current_time = datetime.now()
