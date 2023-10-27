@@ -296,6 +296,7 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
         CSVLogger(
             save_dir="./logging",
             name="csv",
+            version=None,
         ),
     ]
 
@@ -340,6 +341,7 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
         tb_logger = TensorBoardLogger(
             save_dir=save_dir,
             name=name,
+            version=None,
             default_hp_metric=True,
         )
         pl_logger.append(tb_logger)
@@ -451,6 +453,7 @@ def _train(
         save_top_k=cfg["trainer_cfg"].get("save_top_k", 1),
         monitor=cfg["trainer_cfg"]["monitor_key"],
         mode=cfg["trainer_cfg"]["monitor_mode"],
+        enable_version_counter=False,
     )
     checkpoint_cb.CHECKPOINT_NAME_LAST = "model_last"
     callbacks.append(checkpoint_cb)
