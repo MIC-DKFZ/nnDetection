@@ -134,7 +134,6 @@ setup(
             "nndet_eval = nndet_scripts.train:evaluate",
             "nndet_eval_with_folders = nndet_scripts.train:evaluate_with_folders",
             # prediction
-            "nndet_predict_with_imagesTs = nndet_scripts.predict2:entrypoint_predict_with_imagesTs",
             "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",
             "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
             "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split",
@@ -143,9 +142,6 @@ setup(
             "nndet_ensemble_with_task = nndet_scripts.ensemble:entrypoint_ensemble_with_task",
             "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
             "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
-            # unpack
-            "nndet_unpack = nndet_scripts.utils:unpack",
-            "nndet_unpack_task = nndet_scripts.utils:unpack_task",
             # utils
             "nndet_predict = nndet_scripts.predict:main",  # deprecated
             "nndet_example = nndet_scripts.generate_example:main",
@@ -156,6 +152,8 @@ setup(
             "nndet_boxes2nii2 = nndet_scripts.utils:boxes2nii2",
             "nndet_masks2nii = nndet_scripts.utils:masks2nii",
             "nndet_seg2nii = nndet_scripts.utils:seg2nii",
+            "nndet_unpack = nndet_scripts.utils:unpack",
+            "nndet_unpack_task = nndet_scripts.utils:unpack_task",
             "nndet_env = nndet_scripts.utils:env",
             "nndet_print_reg = nndet_scripts.utils:print_reg",
             "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
