@@ -108,7 +108,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
 
     def match(
         self,
-        iou_thresholds: float,
+        iou_thresholds: Sequence[float],
         pred_boxes: np.ndarray,
         pred_classes: np.ndarray,
         pred_scores: np.ndarray,
@@ -116,7 +116,7 @@ class EvalMatchingPerElementGreedyScoreNP(EvalMatchingNP):
         gt_classes: np.ndarray,
         pred_ignore: Optional[np.ndarray] = None,
         gt_ignore: Optional[np.ndarray] = None,
-    ) -> List[Dict[int, Dict[str, np.ndarray]]]:
+    ) -> Dict[int, Dict[str, np.ndarray]]:
         """
         Match boxes of a batch to corresponding ground truth for each category
         independently
