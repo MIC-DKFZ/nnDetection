@@ -21,7 +21,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
     TQDMProgressBar,
 )
-from pytorch_lightning.loggers import Logger, MLFlowLogger, TensorBoardLogger
+from pytorch_lightning.loggers import CSVLogger, Logger, MLFlowLogger, TensorBoardLogger
 from pytorch_lightning.plugins.precision import MixedPrecisionPlugin
 
 import nndet
@@ -291,11 +291,17 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
     """
     logger_name = os.getenv("det_logger", "mlflow").lower()
     save_dir = os.getenv("det_logging", None)
-    pl_logger = False
+
+    pl_logger = [
+        CSVLogger(
+            save_dir="./logging",
+            name="csv",
+        ),
+    ]
 
     # logger not defined
     if logger_name == "none":
-        return pl_logger
+        pass
     elif logger_name == "mlflow":
         if save_dir is not None:
             save_dir = Path(save_dir)
@@ -312,27 +318,31 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
             "job_id": os.getenv("LSB_JOBID", "no_id"),
             "mlflow.runName": run_name,
         }
-        pl_logger = MLFlowLogger(
+        mlflow_logger = MLFlowLogger(
             experiment_name=cfg["task"],
             tags=tags,
             save_dir=save_dir,
         )
-        if (ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
+        if (ml_exp := mlflow_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
             exp_id = ml_exp.experiment_id
-            runs = pl_logger._mlflow_client.search_runs([exp_id], filter_string=f'tag.mlflow.runName="{run_name}"')
+            runs = mlflow_logger._mlflow_client.search_runs([exp_id], filter_string=f'tag.mlflow.runName="{run_name}"')
             if len(runs) > 0:
-                pl_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
+                mlflow_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
+        pl_logger.append(mlflow_logger)
     elif logger_name == "tensorboard":
         if save_dir is not None:
             save_dir = Path(save_dir) / "tbruns" / cfg["task"]
+            name = f"{cfg['exp']['id']}_fold{fold}"
         else:
             save_dir = "./logging"
+            name = "tboard"
 
-        pl_logger = TensorBoardLogger(
+        tb_logger = TensorBoardLogger(
             save_dir=save_dir,
-            name=f"{cfg['exp']['id']}_fold{fold}",
+            name=name,
             default_hp_metric=True,
         )
+        pl_logger.append(tb_logger)
     else:
         raise ValueError(f"Logger {logger_name} is not supported!")
     return pl_logger
@@ -374,16 +384,16 @@ def _train(
 
     train_dir = init_train_dir(cfg, fold=fold)
     pl_logger = get_pl_logger(cfg, fold=fold)
-    if pl_logger:
-        params = {
-            "module": cfg["module"],
-            "plan": cfg["plan"],
-            "aug_name": cfg["augment_cfg"]["name"],
-            "aug_transforms": cfg["augment_cfg"]["transforms"],
-            **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
-            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
-        }
-        pl_logger.log_hyperparams(params)
+    params = {
+        "module": cfg["module"],
+        "plan": cfg["plan"],
+        "aug_name": cfg["augment_cfg"]["name"],
+        "aug_transforms": cfg["augment_cfg"]["transforms"],
+        **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
+        **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
+    }
+    for _pl_logger in pl_logger:
+        _pl_logger.log_hyperparams(params)
 
     logger.remove()
     logger.add(
