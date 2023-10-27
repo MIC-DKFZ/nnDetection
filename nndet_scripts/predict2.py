@@ -45,23 +45,23 @@ def _setup_logger(log_dir: os.PathLike):
 
 
 def _preprocess(
-    training_dir: os.PathLike,
     data_dir: os.PathLike,
     preprocessed_dir: os.PathLike,
+    training_dir: os.PathLike,
     num_processes: int,
 ) -> str:
     """
     Function to run preprocessing on test data
 
     Args:
-        training_dir: cirectory containing the model which should be predicted
-            afterwards. Specifically, the plan file is used here.
         data_dir: directory containing the data to predict in nndet
             format (i.e. with _0000.nii.gz) ending. Data needs to have the same
             format as training data!
         preprocessed_dir: directory where preprocessed data is placed.
             Specifically, data is saved in
             `preprocessed_dir/data_identifier`
+        training_dir: cirectory containing the model which should be predicted
+            afterwards. Specifically, the plan file is used here.
         num_processes: number of processes to use for preprocessing
 
     Returns:
@@ -265,6 +265,123 @@ def entrypoint_preprocess_for_inference():
         preprocessed_dir=preprocessed_dir,
         training_dir=training_dir,
         num_processes=num_processes_preprocessing,
+    )
+
+
+@env_guard
+def entrypoint_predict_with_imagesTs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument(
+        "fold",
+        type=int,
+        help="fold to use for prediction. -1 for consolidated",
+    )
+    parser.add_argument(
+        "--skip_preprocessing",
+        action="store_true",
+        help="Skip preprocessing of data, data needs to be in preprocessed format already!",
+    )
+    parser.add_argument(
+        "--load_models",
+        type=str,
+        help="Define model weights, one of all | last | best",
+        default="all",
+        required=False,
+    )
+    parser.add_argument(
+        "-npp",
+        "--num_processes_preprocessing",
+        type=int,
+        default=2,
+        required=False,
+        help="Number of processes to use for preprocessing.",
+    )
+    parser.add_argument(
+        "-ntta",
+        "--num_tta_transforms",
+        type=int,
+        default=None,
+        help="number of tta transforms (per default most tta are chosen)",
+        required=False,
+    )
+    parser.add_argument(
+        "-bs",
+        "--batch_size",
+        type=int,
+        default=0,
+        help="Batch size to use for inference. If 0, batch size from plan is used.",
+        required=False,
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrites",
+        type=str,
+        nargs="+",
+        default=None,
+        required=False,
+        help=(
+            "overwrites for config file. "
+            "inference_kwargs can be used to add additional "
+            "keyword arguments to inference."
+        ),
+    )
+    args = parser.parse_args()
+    task = args.task
+    model = args.model
+    fold = args.fold
+
+    num_tta_transforms = args.num_tta_transforms
+    batch_size = args.batch_size
+    if batch_size == 0:
+        batch_size = None
+    load_models = LoadModels(args.load_models)
+    num_processes_preprocessing = args.num_processes_preprocessing
+    overwrites = args.overwrites
+
+    skip_preprocessing = args.skip_preprocessing
+
+    # setup folders
+    task_name = get_task(task, name=True)
+    nndet_model_dir = Path(os.getenv("det_models"))
+    training_dir = get_training_dir(nndet_model_dir / task_name / model, fold)
+    prediction_dir = training_dir / "test_predictions"
+
+    nndet_data_dir = Path(os.getenv("det_data"))
+    task_data_dir = nndet_data_dir / task_name
+    data_dir = task_data_dir / "raw_splitted" / "imagesTs"
+
+    if skip_preprocessing:
+        plan_inference_path = training_dir / "plan_inference.pkl"
+        if not plan_inference_path.is_file():
+            raise RuntimeError(
+                f"Expected {plan_inference_path} to contain the plan for "
+                "running inference. Either run nndet_consolidate to predict "
+                "ensembles or nndet_sweep for single fold models."
+            )
+        plan = load_pickle(plan_inference_path)
+        preprocessed_data_dir = task_data_dir / "preprocessed" / plan["data_identifier"]
+    else:
+        preprocessed_dir: Path = task_data_dir / "preprocessed"
+        preprocessed_dir.mkdir(exist_ok=True)
+        data_identifier = _preprocess(
+            data_dir=data_dir,
+            preprocessed_dir=preprocessed_dir,
+            training_dir=training_dir,
+            num_processes=num_processes_preprocessing,
+        )
+        preprocessed_data_dir = preprocessed_dir / data_identifier
+
+    _predict(
+        training_dir=training_dir,
+        preprocessed_data_dir=preprocessed_data_dir,
+        prediction_dir=prediction_dir,
+        num_tta_transforms=num_tta_transforms,
+        overwrites=overwrites,
+        load_models=load_models,
+        batch_size=batch_size,
+        case_ids=None,
     )
 
 
