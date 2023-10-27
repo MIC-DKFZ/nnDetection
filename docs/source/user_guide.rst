@@ -251,6 +251,7 @@ Befor starting a training copy the data (Task Folder, data set info and preproce
     # Script
     # /scripts/utils.py - unpack()
 
+It is now also possible to use `nndet_unpack_task [task] [plans]` for unpacking.
 Finally, it is necessary to create a data set split for the underlying data by running the following command:
 
 .. code-block:: bash
@@ -315,6 +316,8 @@ Evaluation can be invoked by the following command (requires access to the model
 
     # Note: --test invokes evaluation of the test set
 
+It is now also possible to invoke the evaluation on individual folders with `nndet_eval_with_folders`.
+
 Inference
 ---------
 
@@ -337,15 +340,16 @@ Data which is located in `raw_splitted/imagesTs` will be automatically preproces
 
 .. code-block:: bash
 
-    nndet_predict [task] [model] [--fold] [--num_tta] [--no_preprocess] [--check] [-npp / --num_processes_preprocessing] [--force_args]
+    nndet_predict_with_imagesTs [task] [model] [--fold] [--num_tta] [--no_preprocess] [--check] [-npp / --num_processes_preprocessing] [--force_args]
 
     # Example
-    nndet_predict 000 RetinaUNetV001_D3V001_3d -1
+    nndet_predict_with_imagesTs 000 RetinaUNetV001_D3V001_3d -1
 
     # Script
     # /scripts/predict.py - main()
 
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
+Other predict commands which allow for the prediction of individual folders with pre-trained models are now also available.
 
 # TODO: udpate predict command to predict2
 # TODO: pretrained models
@@ -490,92 +494,8 @@ Custom Applications
 
 
 
-FAQ & Common Issues
-*******************
-
-Installation & Initial Setup Errors
------------------------------------
-
-Error: Undefined CUDA symbols when importing `nndet._C` or other import related Errors from `nndet._C` or CUDA related ARCH errors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-nnDetection includes additional CUDA code which needs to compiled upon installation and thus requires correct configuration of the CUDA dependencies.
-Please double check CUDA version of your PC, pytorch, torchvision and nnDetection build.
-This can be done by running `nndet_env` if the installation succeeded  or by running `python scripts/utils.py`.
-An example output of the command is shown below:
-
-.. note:: 
-
-    ----- PyTorch Information -----
-    PyTorch Version: 1.11.0+cu113
-    PyTorch Debug: False
-    PyTorch CUDA: 11.3
-    PyTorch Backend cudnn: 8200
-    PyTorch CUDA Arch List: ['sm_37', 'sm_50', 'sm_60', 'sm_70', 'sm_75', 'sm_80', 'sm_86']
-    PyTorch Current Device Capability: (7, 5)
-    PyTorch CUDA available: True
-
-    ----- System Information -----
-    System NVCC: nvcc: NVIDIA (R) Cuda compiler driver
-    Copyright (c) 2005-2021 NVIDIA Corporation
-    Built on Sun_Aug_15_21:14:11_PDT_2021
-    Cuda compilation tools, release 11.4, V11.4.120
-    Build cuda_11.4.r11.4/compiler.30300941_0
-
-    System Arch List: None
-    System OMP_NUM_THREADS: 1
-    System CUDA_HOME is None: True
-    System CPU Count: 8
-    Python Version: 3.8.11 (default, Aug  3 2021, 15:09:35)
-    [GCC 7.5.0]
-
-    ----- nnDetection Information -----
-    det_num_threads 6
-    det_data is set True
-    det_models is set True
-
-Things to look out for:
-
-Make sure that the versions of PyTorch CUDA and NVCC CUDA match (minor version mismatch as in this case, will work without error but could potentially introduce bugs.)
-`OMP_NUM_THREADS` should always be set to 1 and `det_num_threads` should always be lower or equal `Systemm CPU Count`.
-Make sure to delete the `build` folder before rerunning the installation since it won't recompile the code otherwise.
-
-Error: No kernel image is available for execution
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You are probably executing the build on a machine with a GPU architecture which was not present/set during the build.
-
-Please check [link](https://developer.nvidia.com/cuda-gpus) to find the correct SM architecture and set `TORCH_CUDA_ARCH_LIST`
-approriately (e.g. check Dockefile for example).
-As before make sure to delete the `build` folder when rerunning the installation process.
-
-Error still persists
-~~~~~~~~~~~~~~~~~~~~
-
-Please open an Issue and provide your environment as obtained by `nndet_env`.
-
-
-Training doesn't start or is stuck
-----------------------------------
-
-* Please run `nndet_env` and make sure `OMP_NUM_THREADS` is set to 1. No other values are supported here. To increase the number of workers used for IO and augmentation adjust `nndet_num_threads`.
-* Try running the training without multiprocessing as a sanity check: `nndet_train XXX -o augment_cfg.multiprocessing=False`. Don't use this for the full training, this is just one step of the debugging process.
-* Please open an Issue and provide your environment as obtained by `nndet_env` and report if the training without multiprocessing started correctly.
-
-GPU requirements
-----------------
-
-nnDetection v0.1 was developed for GPUs with at least 11GB of VRAM (e.g. RTX2080TI, TITAN RTX).
-All of our experiments were conducted with a RTX2080TI.
-While the memory can be adjusted by manipulating the correct setting we recommend using the default values for now.
-Future releases will refactor the planning stage to improve the VRAM estimation and add support for different memory budgets.
-
-Training with bounding boxes
-----------------------------
-
-The first release of nnDetection focuses on 3d medical images and Retina U-Net.
-As a consequence training (specifically planning and augmentation) requrie segmentation annotations.
-In many cases this limitation can be circumvented by converting the bounding boxes into segmentations.
+FAQ
+***
 
 Support for 2D Data Sets
 ------------------------
