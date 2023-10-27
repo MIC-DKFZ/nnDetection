@@ -22,6 +22,7 @@ from pytorch_lightning.callbacks import (
     TQDMProgressBar,
 )
 from pytorch_lightning.loggers import Logger, MLFlowLogger, TensorBoardLogger
+from pytorch_lightning.plugins.precision import MixedPrecisionPlugin
 
 import nndet
 from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
@@ -30,7 +31,6 @@ from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
@@ -491,12 +491,13 @@ def _train(
     else:
         detect_anomaly = False
 
-    if cfg["accelerator_cfg"]["precision"] == 16:
+    if cfg["accelerator_cfg"]["precision"] == "16-mixed":
         device = "cuda" if num_gpus > 0 else "cpu"
-        precision_plugin = ExposedNativeMixedPrecisionPlugin(
-            precision=cfg["accelerator_cfg"]["precision_type"],
+        scaler = torch.cuda.amp.GradScaler(init_scale=8192.0)
+        precision_plugin = MixedPrecisionPlugin(
+            precision=cfg["accelerator_cfg"]["precision"],
             device=device,
-            init_scale=8192.0,
+            scaler=scaler,
         )
         plugins.append(precision_plugin)
         precision = None

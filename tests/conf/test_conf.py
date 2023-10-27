@@ -16,7 +16,7 @@ def test_basic_compose():
 
         assert cfg["augment_cfg"]["name"] is not None
         assert cfg["io_cfg"]["multiprocessing"] is not None
-        assert cfg["trainer_cfg"]["gpus"] is not None
+        assert cfg["accelerator_cfg"]["gpus"] is not None
         assert cfg["model_cfg"]["backbone_kwargs"] is not None
 
 
