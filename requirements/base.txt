@@ -1,4 +1,4 @@
-pytorch_lightning>=2.0.0
+pytorch_lightning>=1.5.0, <1.6.0
 batchgenerators>=0.24
 PyYAML>=5.1, !=5.4.*
 nevergrad<0.12.0
