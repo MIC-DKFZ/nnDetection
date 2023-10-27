@@ -12,6 +12,5 @@ tqdm
 loguru
 matplotlib
 seaborn
-
-mlflow
+tensorboard
 GitPython
