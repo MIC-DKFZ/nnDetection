@@ -472,7 +472,7 @@ def _train(
                 raise RuntimeError(_s)
             module.load_state_dict(torch.load(_path)["state_dict"], strict=True)
 
-    num_gpus = cfg["trainer_cfg"]["gpus"]
+    num_gpus = cfg["accelerator_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
 
     plugins = []
@@ -484,31 +484,31 @@ def _train(
     if bool(int(os.getenv("det_verbose", 1))):
         callbacks.append(TQDMProgressBar())
 
-    if "terminate_on_nan" in cfg["trainer_cfg"]:
-        detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
-    elif "detect_anomaly" in cfg["trainer_cfg"]:
-        detect_anomaly = cfg["trainer_cfg"]["detect_anomaly"]
+    if "terminate_on_nan" in cfg["accelerator_cfg"]:
+        detect_anomaly = cfg["accelerator_cfg"]["terminate_on_nan"]
+    elif "detect_anomaly" in cfg["accelerator_cfg"]:
+        detect_anomaly = cfg["accelerator_cfg"]["detect_anomaly"]
     else:
         detect_anomaly = False
 
-    if cfg["trainer_cfg"]["precision"] == 16:
+    if cfg["accelerator_cfg"]["precision"] == 16:
         device = "cuda" if num_gpus > 0 else "cpu"
         precision_plugin = ExposedNativeMixedPrecisionPlugin(
-            precision=cfg["trainer_cfg"]["precision_type"],
+            precision=cfg["accelerator_cfg"]["precision_type"],
             device=device,
             init_scale=8192.0,
         )
         plugins.append(precision_plugin)
         precision = None
     else:
-        precision = cfg["trainer_cfg"]["precision"]
+        precision = cfg["accelerator_cfg"]["precision"]
 
     trainer = pl.Trainer(
-        accelerator=cfg["trainer_cfg"]["accelerator"],
+        accelerator=cfg["accelerator_cfg"]["accelerator"],
         devices=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
         precision=precision,
-        benchmark=cfg["trainer_cfg"]["benchmark"],
-        deterministic=cfg["trainer_cfg"]["deterministic"],
+        benchmark=cfg["accelerator_cfg"]["benchmark"],
+        deterministic=cfg["accelerator_cfg"]["deterministic"],
         callbacks=callbacks,
         logger=pl_logger,
         max_epochs=module.max_epochs,

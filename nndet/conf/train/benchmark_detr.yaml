@@ -7,6 +7,7 @@ defaults:
   - augment_cfg: more_modular  # noaug for pure model benchmark
   - io_cfg: benchmark
   - trainer_cfg: smoke_detr
+  - accelerator_cfg: gpu1_mixed16
   - model_cfg: detr_focal
 
 module: BoxCDETRC002

@@ -28,25 +28,6 @@ io_cfg:
   # splits; Default: splits_final
 
 trainer_cfg:
-  gpus: 1 # number of gpus
-  accelerator: # distributed backend
-  precision: 16 # mixed precision
-  amp_backend: native # mixed precision backend
-  amp_level: # when mixed precision backend is APEX use O1
-  # Per default training is deterministic, non-deterministic allows
-  # cudnn.benchmark which can give up to 20% performance. Set this to false
-  # to perform non-deterministic training
-  deterministic: False
-  benchmark: False
-  terminate_on_nan: False # [optional; Default True]
-
-  # pytorch 2.0 features
-  do_compile: False
-  compile_kwargs:
-    mode: "default"
-    backend: "inductor"
-    fullgraph: false
-
   save_top_k: 1 # topk model selection [optonal; Default 1]
   sweep_key: mAP_IoU_0.10_0.50_0.05
   monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model
@@ -69,6 +50,26 @@ trainer_cfg:
 
   swa_epochs: 10 # number of epochs to run swa with cyclic learning rate
   # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
+
+accelerator_cfg:
+  gpus: 1 # number of gpus
+  accelerator: "gpu" # distributed backend
+  precision: 16 # enable/disable mixed precision
+  precision_type: "16-mixed" # define precision type to use
+
+  # pytorch 2.0 features
+  do_compile: False
+  compile_kwargs:
+    mode: "default"
+    backend: "inductor"
+    fullgraph: false
+
+  # Per default training is deterministic, non-deterministic allows
+  # cudnn.benchmark which can give up to 20% performance. Set this to false
+  # to perform non-deterministic training
+  deterministic: False
+  benchmark: False
+  terminate_on_nan: False # [optional; Default True]
 
 model_cfg:
   backbone_kwargs: {} # keyword arguments passed to encoder
