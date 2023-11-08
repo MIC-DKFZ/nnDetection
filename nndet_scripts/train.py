@@ -505,6 +505,7 @@ def _train(
         detect_anomaly = False
 
     if cfg["accelerator_cfg"]["precision"] == "16-mixed":
+        logger.info("Using mixed precision training: '16-mixed'")
         device = "cuda" if num_gpus > 0 else "cpu"
         scaler = torch.cuda.amp.GradScaler(init_scale=8192.0)
         precision_plugin = MixedPrecisionPlugin(
