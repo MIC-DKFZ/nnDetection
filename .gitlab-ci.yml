@@ -1,5 +1,5 @@
 default:
-  image: nvcr.io/nvidia/pytorch:22.01-py3
+  image: nvcr.io/nvidia/pytorch:23.05-py3
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.

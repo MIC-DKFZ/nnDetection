@@ -315,7 +315,12 @@ def run(
     task_data_dir = Path(os.getenv("det_data")) / cfg["task"]
 
     logger.remove()
-    logger.add(sys.stdout, level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
     logger.add(task_data_dir / "preprocessing.log", level="DEBUG")
     data_info = cfg["data"]
 

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+gpus: 1 # number of gpus
+accelerator: "gpu" # distributed backend
+precision: "16-mixed" # mixed precision training; typically: '16-mixed', 'bf16-mixed', '32'
+
+# pytorch 2.0 features
+do_compile: False
+compile_kwargs:
+  mode: "default"
+  backend: "inductor"
+  fullgraph: false
+
+# Per default training is deterministic, non-deterministic allows
+# cudnn.benchmark which can give up to 20% performance. Set this to false
+# to perform non-deterministic training
+deterministic: False
+benchmark: False
+terminate_on_nan: False # [optional; Default True]

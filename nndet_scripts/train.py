@@ -16,12 +16,13 @@ import torch
 from hydra import initialize_config_module
 from loguru import logger
 from omegaconf.omegaconf import OmegaConf
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-from pytorch_lightning.loggers import (
-    LightningLoggerBase,
-    MLFlowLogger,
-    TensorBoardLogger,
+from pytorch_lightning.callbacks import (
+    LearningRateMonitor,
+    ModelCheckpoint,
+    TQDMProgressBar,
 )
+from pytorch_lightning.loggers import CSVLogger, Logger, MLFlowLogger, TensorBoardLogger
+from pytorch_lightning.plugins.precision import MixedPrecisionPlugin
 
 import nndet
 from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
@@ -30,7 +31,6 @@ from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.optimizer.amp import ExposedNativeMixedPrecisionPlugin
 from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
@@ -278,7 +278,7 @@ def init_train_dir(cfg: dict, fold: int) -> Path:
     return output_dir
 
 
-def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
+def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
     """
     Instantiate a logger to monitor metrics/losses during training
 
@@ -291,11 +291,18 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
     """
     logger_name = os.getenv("det_logger", "mlflow").lower()
     save_dir = os.getenv("det_logging", None)
-    pl_logger = False
+
+    pl_logger = [
+        CSVLogger(
+            save_dir="./logging",
+            name="csv",
+            version=None,
+        ),
+    ]
 
     # logger not defined
     if logger_name == "none":
-        return pl_logger
+        pass
     elif logger_name == "mlflow":
         if save_dir is not None:
             save_dir = Path(save_dir)
@@ -312,27 +319,32 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[LightningLoggerBase, bool]:
             "job_id": os.getenv("LSB_JOBID", "no_id"),
             "mlflow.runName": run_name,
         }
-        pl_logger = MLFlowLogger(
+        mlflow_logger = MLFlowLogger(
             experiment_name=cfg["task"],
             tags=tags,
             save_dir=save_dir,
         )
-        if (ml_exp := pl_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
+        if (ml_exp := mlflow_logger._mlflow_client.get_experiment_by_name(cfg["task"])) is not None:
             exp_id = ml_exp.experiment_id
-            runs = pl_logger._mlflow_client.search_runs([exp_id], filter_string=f'tag.mlflow.runName="{run_name}"')
+            runs = mlflow_logger._mlflow_client.search_runs([exp_id], filter_string=f'tag.mlflow.runName="{run_name}"')
             if len(runs) > 0:
-                pl_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
+                mlflow_logger.tags["mlflow.parentRunId"] = runs[-1].info.run_id
+        pl_logger.append(mlflow_logger)
     elif logger_name == "tensorboard":
         if save_dir is not None:
             save_dir = Path(save_dir) / "tbruns" / cfg["task"]
+            name = f"{cfg['exp']['id']}_fold{fold}"
         else:
             save_dir = "./logging"
+            name = "tboard"
 
-        pl_logger = TensorBoardLogger(
+        tb_logger = TensorBoardLogger(
             save_dir=save_dir,
-            name=f"{cfg['exp']['id']}_fold{fold}",
+            name=name,
+            version=None,
             default_hp_metric=True,
         )
+        pl_logger.append(tb_logger)
     else:
         raise ValueError(f"Logger {logger_name} is not supported!")
     return pl_logger
@@ -374,21 +386,21 @@ def _train(
 
     train_dir = init_train_dir(cfg, fold=fold)
     pl_logger = get_pl_logger(cfg, fold=fold)
-    if pl_logger:
-        params = {
-            "module": cfg["module"],
-            "plan": cfg["plan"],
-            "aug_name": cfg["augment_cfg"]["name"],
-            "aug_transforms": cfg["augment_cfg"]["transforms"],
-            **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
-            **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
-        }
-        pl_logger.log_hyperparams(params)
+    params = {
+        "module": cfg["module"],
+        "plan": cfg["plan"],
+        "aug_name": cfg["augment_cfg"]["name"],
+        "aug_transforms": cfg["augment_cfg"]["transforms"],
+        **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
+        **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
+    }
+    for _pl_logger in pl_logger:
+        _pl_logger.log_hyperparams(params)
 
     logger.remove()
     logger.add(
         sys.stdout,
-        format="<level>{level} {message}</level>",
+        format="<level>{level}</level>: {message}",
         level="INFO",
         colorize=True,
     )
@@ -441,6 +453,7 @@ def _train(
         save_top_k=cfg["trainer_cfg"].get("save_top_k", 1),
         monitor=cfg["trainer_cfg"]["monitor_key"],
         mode=cfg["trainer_cfg"]["monitor_mode"],
+        enable_version_counter=False,
     )
     checkpoint_cb.CHECKPOINT_NAME_LAST = "model_last"
     callbacks.append(checkpoint_cb)
@@ -472,7 +485,7 @@ def _train(
                 raise RuntimeError(_s)
             module.load_state_dict(torch.load(_path)["state_dict"], strict=True)
 
-    num_gpus = cfg["trainer_cfg"]["gpus"]
+    num_gpus = cfg["accelerator_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
 
     plugins = []
@@ -481,39 +494,41 @@ def _train(
     logger.info(f"Using {plugins} plugins for training")
 
     callbacks.append(ModelSummary(max_depth=10, log_net=log_net))
+    if bool(int(os.getenv("det_verbose", 1))):
+        callbacks.append(TQDMProgressBar())
 
-    if "terminate_on_nan" in cfg["trainer_cfg"]:
-        detect_anomaly = cfg["trainer_cfg"]["terminate_on_nan"]
-    elif "detect_anomaly" in cfg["trainer_cfg"]:
-        detect_anomaly = cfg["trainer_cfg"]["detect_anomaly"]
+    if "terminate_on_nan" in cfg["accelerator_cfg"]:
+        detect_anomaly = cfg["accelerator_cfg"]["terminate_on_nan"]
+    elif "detect_anomaly" in cfg["accelerator_cfg"]:
+        detect_anomaly = cfg["accelerator_cfg"]["detect_anomaly"]
     else:
         detect_anomaly = False
 
-    if cfg["trainer_cfg"]["precision"] == 16 and cfg["trainer_cfg"]["amp_backend"] == "native":
+    if cfg["accelerator_cfg"]["precision"] == "16-mixed":
         device = "cuda" if num_gpus > 0 else "cpu"
-        precision_plugin = ExposedNativeMixedPrecisionPlugin(
-            precision=16,
+        scaler = torch.cuda.amp.GradScaler(init_scale=8192.0)
+        precision_plugin = MixedPrecisionPlugin(
+            precision=cfg["accelerator_cfg"]["precision"],
             device=device,
-            init_scale=8192.0,
+            scaler=scaler,
         )
         plugins.append(precision_plugin)
+        precision = None
+    else:
+        precision = cfg["accelerator_cfg"]["precision"]
 
     trainer = pl.Trainer(
-        gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
-        accelerator=cfg["trainer_cfg"]["accelerator"],
-        precision=cfg["trainer_cfg"]["precision"],
-        amp_backend=cfg["trainer_cfg"]["amp_backend"],
-        amp_level=cfg["trainer_cfg"]["amp_level"],
-        benchmark=cfg["trainer_cfg"]["benchmark"],
-        deterministic=cfg["trainer_cfg"]["deterministic"],
+        accelerator=cfg["accelerator_cfg"]["accelerator"],
+        devices=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
+        precision=precision,
+        benchmark=cfg["accelerator_cfg"]["benchmark"],
+        deterministic=cfg["accelerator_cfg"]["deterministic"],
         callbacks=callbacks,
         logger=pl_logger,
         max_epochs=module.max_epochs,
-        progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
         num_sanity_val_steps=10,
         plugins=plugins,
         detect_anomaly=detect_anomaly,
-        move_metrics_to_cpu=False,
         enable_model_summary=False,
         **trainer_kwargs,
     )
@@ -603,7 +618,12 @@ def _sweep(
         importlib.import_module(imp)
 
     logger.remove()
-    logger.add(sys.stdout, format="{level} {message}", level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
     log_file = Path(os.getcwd()) / "sweep.log"
     logger.add(log_file, level="INFO")
     current_time = datetime.now()

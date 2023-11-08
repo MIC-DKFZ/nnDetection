@@ -12,11 +12,6 @@ from loguru import logger
 from torchvision.models.detection.rpn import AnchorGenerator
 from tqdm import tqdm
 
-from nndet.utils.info import SuppressPrint
-
-with SuppressPrint():
-    from nnunet.experiment_planning.common_utils import get_pool_and_conv_props
-
 import nndet.core.ops_np as ops_np
 import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractDetector
@@ -28,6 +23,7 @@ from nndet.planning.architecture.boxes.utils import (
     scale_with_abs_strides,
 )
 from nndet.planning.estimator import MemoryEstimator, MemoryEstimatorDetection
+from nndet.planning.utils import get_pool_and_conv_props
 
 
 class BaseBoxesPlanner(ArchitecturePlanner):
