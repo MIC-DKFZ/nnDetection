@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 
 
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 from loguru import logger
