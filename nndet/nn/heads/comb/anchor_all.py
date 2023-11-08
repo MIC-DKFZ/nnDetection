@@ -119,4 +119,6 @@ class BoxHeadAll(AnchorHead):
             box_logits[sampled_inds],
             target_labels[sampled_inds],
         ) / max(1, _numel_pos)
+        if losses["cls"] > 12:
+            logger.warning(f"Loss cls is {losses['cls']} with _numel_pos {_numel_pos}")
         return losses, sampled_pos_inds, None
