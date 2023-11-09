@@ -417,7 +417,7 @@ def _train(
     meta_data["date"] = str(datetime.now())
     meta_data["git"] = log_git(nndet.__path__[0], repo_name="nndet")
     meta_data["host"] = socket.gethostname()
-    meta_data["job_id"] = (os.getenv("LSB_JOBID", "no_id"),)
+    meta_data["job_id"] = os.getenv("LSB_JOBID", "no_id")
     meta_data["overwrites"] = str(ov)
     save_json(meta_data, "./meta.json")
     _ = write_requirements(train_dir)
