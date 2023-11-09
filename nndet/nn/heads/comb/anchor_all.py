@@ -11,7 +11,7 @@ from nndet.core.boxes.coder import BoxCoderND
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
-from nndet.training.ema import EMA
+from nndet.training.ema import EMABiasSteps
 
 
 class BoxHeadAll(AnchorHead):
@@ -21,7 +21,7 @@ class BoxHeadAll(AnchorHead):
         regressor: DenseRegressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        ema_loss_norm: bool = False,
+        ema_loss_kwargs: Optional[Dict] = None,
     ):
         """
         Box head with classifier and regression module. Uses all
@@ -32,7 +32,8 @@ class BoxHeadAll(AnchorHead):
             regressor: regression module
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            ema_loss_norm: use ema to normalize denominator of losses
+            ema_loss_kwargs: provide keyword arguments for EMA loss. If `None`,
+                no EMA loss is used.
         """
         super().__init__(
             classifier=classifier,
@@ -40,10 +41,12 @@ class BoxHeadAll(AnchorHead):
             coder=coder,
             shared=shared,
         )
-        self.ema_loss_norm = ema_loss_norm
-        if self.ema_loss_norm:
+        if ema_loss_kwargs is not None:
+            # TODO: think about continution of training here
             logger.info("Using EMA norm loss in RPN Head")
-            self.pos_ema = EMA(beta=0.95, bias_correction=True)
+            self.pos_ema = EMABiasSteps(**ema_loss_kwargs)
+        else:
+            self.pos_ema = None
         self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
 
     def compute_loss(
@@ -103,7 +106,7 @@ class BoxHeadAll(AnchorHead):
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
         _numel_pos = sampled_pos_inds.numel()
-        if self.ema_loss_norm:
+        if self.pos_ema is not None:
             self.pos_ema.add(_numel_pos)
             _numel_pos = self.pos_ema.get()
 
@@ -119,6 +122,8 @@ class BoxHeadAll(AnchorHead):
             box_logits[sampled_inds],
             target_labels[sampled_inds],
         ) / max(1, _numel_pos)
+
         if losses["cls"] > 12:
+            logger.warning("Remove me :)")  # FIXME
             logger.warning(f"Loss cls is {losses['cls']} with _numel_pos {_numel_pos}")
         return losses, sampled_pos_inds, None

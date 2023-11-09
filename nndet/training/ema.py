@@ -168,3 +168,46 @@ class EMA:
             return self.cache / (1 - pow(self.beta, self.t))
         else:
             return self.cache
+
+
+class EMABiasSteps:
+    def __init__(self, beta: float = 0.9, bias_correction_steps: int = 0):
+        """
+        Exponentially weighted moving average
+        new_cache = beta * cache + (1 - beta) * new_val
+        Approximately averages (1 - beta)^(-1) values
+
+        Args:
+            beta: weights for averaging
+            bias_correction_steps: number of steps to apply bias correction
+                (afterwards no bias correection is applied).
+                `bias_correction_steps=0` indicates no bias correction.
+        """
+        self.beta = beta
+        self.cache: float = 0.0
+
+        self.bias_correction_steps = bias_correction_steps
+        self.t = 0
+
+    def add(self, val):
+        """
+        Add new value
+
+        Args:
+            val: new value to add
+        """
+        self.cache = self.beta * self.cache + (1 - self.beta) * float(val)
+        # once t > self.bias_correction_steps no correction will be applied and it is not necessary to count further
+        self.t = min(self.t + 1, self.bias_correction_steps + 1)  # prevent overflow
+
+    def get(self) -> float:
+        """
+        Retrive vurrent value
+
+        Returns:
+            float: current EMA
+        """
+        if self.t <= self.bias_correction_steps:
+            return self.cache / (1 - pow(self.beta, self.t))
+        else:
+            return self.cache

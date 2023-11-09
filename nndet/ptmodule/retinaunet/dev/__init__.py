@@ -37,3 +37,4 @@ from nndet.ptmodule.retinaunet.dev.c014 import RetinaUNetC014, RetinaUNetC014Foc
 from nndet.ptmodule.retinaunet.dev.c015 import RetinaUNetC015, RetinaUNetC015Focal
 from nndet.ptmodule.retinaunet.dev.c016 import RetinaUNetC016, RetinaUNetC016Focal
 from nndet.ptmodule.retinaunet.dev.c017 import RetinaUNetFocalC017, RetinaUNetHNMC017
+from nndet.ptmodule.retinaunet.dev.c018 import RetinaUNetFocalC018, RetinaUNetHNMC018
