@@ -495,7 +495,10 @@ def _train(
 
     callbacks.append(ModelSummary(max_depth=10, log_net=log_net))
     if bool(int(os.getenv("det_verbose", 1))):
+        enable_progress_bar = True
         callbacks.append(TQDMProgressBar())
+    else:
+        enable_progress_bar = False
 
     if "terminate_on_nan" in cfg["accelerator_cfg"]:
         detect_anomaly = cfg["accelerator_cfg"]["terminate_on_nan"]
@@ -531,6 +534,7 @@ def _train(
         plugins=plugins,
         detect_anomaly=detect_anomaly,
         enable_model_summary=False,
+        enable_progress_bar=enable_progress_bar,
         **trainer_kwargs,
     )
 
