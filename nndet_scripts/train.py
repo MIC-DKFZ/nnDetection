@@ -7,6 +7,7 @@ import os
 import socket
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union
@@ -25,7 +26,11 @@ from pytorch_lightning.loggers import CSVLogger, Logger, MLFlowLogger, TensorBoa
 from pytorch_lightning.plugins.precision import MixedPrecisionPlugin
 
 import nndet
-from nndet.eval.registry import evaluate_box_dir, evaluate_case_dir
+from nndet.eval.registry import (
+    evaluate_box_dir,
+    evaluate_box_dir_bootstrap,
+    evaluate_case_dir,
+)
 from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
@@ -183,17 +188,23 @@ def evaluate() -> None:
         help="Additionally run evaluation on preprocessed data",
         action="store_true",
     )
+    parser.add_argument(
+        "--bootstrapping",
+        help="Additionally run evaluation with bootstrapping",
+        action="store_true",
+    )
 
     args = parser.parse_args()
-    model = args.model
-    fold = args.fold
-    task = args.task
-    test = args.test
-    eval_preprocessed = args.eval_preprocessed
+    model: str = args.model
+    fold: int = args.fold
+    task: str = args.task
+    test: bool = args.test
+    eval_preprocessed: bool = args.eval_preprocessed
 
-    do_boxes_eval = args.boxes
-    do_case_eval = args.case
-    do_analyze_boxes = args.analyze_boxes
+    do_boxes_eval: bool = args.boxes
+    do_case_eval: bool = args.case
+    do_analyze_boxes: bool = args.analyze_boxes
+    do_bootstrapping: bool = args.bootstrapping
 
     _evaluate_task(
         task=task,
@@ -204,6 +215,7 @@ def evaluate() -> None:
         do_boxes_eval=do_boxes_eval,
         do_case_eval=do_case_eval,
         do_analyze_boxes=do_analyze_boxes,
+        do_bootstrapping=do_bootstrapping,
     )
 
 
@@ -222,6 +234,11 @@ def evaluate_with_folders() -> None:
     parser.add_argument("--case", help="Run Case Evaluation", action="store_true")
     parser.add_argument("--boxes", help="Run Box Evaluation", action="store_true")
     parser.add_argument("--analyze_boxes", help="Analyze Box Results", action="store_true")
+    parser.add_argument(
+        "--bootstrapping",
+        help="Additionally run evaluation with bootstrapping",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     pred_dir: Path = args.pred_dir
@@ -236,9 +253,10 @@ def evaluate_with_folders() -> None:
     else:
         data_cfg = load_yaml(data_cfg_path)
 
-    do_case_eval = args.case
-    do_boxes_eval = args.boxes
-    do_analyze_boxes = args.analyze_boxes
+    do_case_eval: bool = args.case
+    do_boxes_eval: bool = args.boxes
+    do_analyze_boxes: bool = args.analyze_boxes
+    do_bootstrapping: bool = args.bootstrapping
 
     # logging
     logger.remove()
@@ -261,6 +279,7 @@ def evaluate_with_folders() -> None:
         do_case_eval=do_case_eval,
         do_boxes_eval=do_boxes_eval,
         do_analyze_boxes=do_analyze_boxes,
+        do_bootstrapping=do_bootstrapping,
     )
 
 
@@ -698,6 +717,7 @@ def _evaluate_task(
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
     do_analyze_boxes: bool = False,
+    do_bootstrapping: bool = False,
 ) -> None:
     """
     Run evaluation on task (old behavior of _evaluate function in V0.1)
@@ -712,6 +732,7 @@ def _evaluate_task(
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
         do_analyze_boxes: run analysis of box results
+        do_bootstrapping: run bootstrapping for evaluation
     """
     # prepare paths
     task = get_task(task, name=True)
@@ -764,6 +785,7 @@ def _evaluate_task(
             do_case_eval=do_case_eval,
             do_boxes_eval=do_boxes_eval,
             do_analyze_boxes=do_analyze_boxes,
+            do_bootstrapping=do_bootstrapping,
         )
 
 
@@ -776,6 +798,7 @@ def _evaluate(
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
     do_analyze_boxes: bool = False,
+    do_bootstrapping: bool = False,
 ) -> None:
     """
     Run evaluation
@@ -787,6 +810,7 @@ def _evaluate(
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
         do_analyze_boxes: run analysis of box results
+        do_bootstrapping: run bootstrapping for box evaluation
     """
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
@@ -821,7 +845,40 @@ def _evaluate(
             {str(key): str(item) for key, item in scores.items()},
             save_dir / "results_boxes.json",
         )
-        save_pickle({"scores": scores, "curves": curves}, save_dir / "results_boxes.pkl")
+        save_pickle(
+            {
+                "scores": scores,
+                "curves": curves,
+            },
+            save_dir / "results_boxes.pkl",
+        )
+
+        # optionally run results with bootstrapping
+        if do_bootstrapping:
+            logger.info("Computing box metrics with bootstrapping")
+            iqr_scores, scores_boot, curves_boot = evaluate_box_dir_bootstrap(
+                pred_dir=pred_dir,
+                gt_dir=gt_dir,
+                classes=list(data_cfg["labels"].keys()),
+                iterations=1000,
+                iqr=0.95,
+                seed=0,
+            )
+            save_json(iqr_scores, save_dir / "results_boxes_iqr_boot.json")
+            scores_boot_dict_list = defaultdict(list)
+            for _scores_boot in scores_boot:
+                for _key, _value in _scores_boot.items():
+                    scores_boot_dict_list[_key].append(_value)
+            save_json(scores_boot_dict_list, save_dir / "results_boxes_boot.json")
+            save_pickle(
+                {
+                    "iqr_scores": iqr_scores,
+                    "scores": scores_boot,
+                    "curves": curves_boot,
+                },
+                save_dir / "results_boxes_boot.pkl",
+            )
+
     if do_analyze_boxes:
         logger.info("Analyse box predictions")
         run_analysis_suite(

@@ -549,3 +549,58 @@ def compute_stats_single_threshold(
         pass
 
     return recall, np.array(precision), np.array(th_scores)
+
+
+class APNaNMetric(CocoAPMetric):
+    """
+    Same AP metric as 'CocoAPMetric' but returns NaN values in case
+    a class is not present / evaluation is not applicable instead of -1
+    """
+
+    @staticmethod
+    def select_ap(
+        dataset_statistics: dict,
+        iou_idx: Union[int, List[int]] = None,
+        cls_idx: Union[int, Sequence[int]] = None,
+    ) -> np.ndarray:
+        """
+        Compute average precision
+
+        Args:
+            dataset_statistics: computed statistics over dataset
+
+                ``counts``: (int, int, int)
+                    Number of thresholds, Number recall thresholds,
+                    Number of classes, Number of max detection thresholds
+
+                ``recall``: np.ndarray
+                    Computed recall values
+                    [num_iou_th, num_classes]
+
+                ``precision``: np.ndarray
+                    Precision values at specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+                ``scores``: np.ndarray
+                    Scores corresponding to specified recall thresholds
+                    [num_iou_th, num_recall_th, num_classes]
+
+            iou_idx: index of IoU values to select for evaluation
+                (if None, all values are used)
+            cls_idx: class indices to select, if None all classes
+                will be selected
+
+        Returns:
+            np.ndarray: AP value
+        """
+
+        prec = dataset_statistics["precision"]
+        if iou_idx is not None:
+            prec = prec[iou_idx]
+        if cls_idx is not None:
+            prec = prec[..., cls_idx]
+
+        if np.any(prec == -1):
+            return np.nan
+        else:
+            return np.mean(prec)
