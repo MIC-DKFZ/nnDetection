@@ -15,6 +15,7 @@ from pycocotools.cocoeval import COCOeval
 
 from nndet.core import ops_np
 from nndet.eval.det import BoxEvaluator, CocoAPMetric
+from nndet.eval.det.ap import APNaNMetric
 from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
 
 
@@ -159,8 +160,15 @@ def download_data():
         criterion=ops_np.box_area_np,
         criterion_ranges=ranges,
     )
+    ap_nan = APNaNMetric(classes, iou_list=(0.5, 0.75), iou_range=(0.5, 0.95, 0.05), verbose=True)
+    evaluator_nan = BoxEvaluator(
+        metrics=[ap_nan],
+        matching=matching,
+        criterion=ops_np.box_area_np,
+        criterion_ranges=ranges,
+    )
 
-    return cocoEval, detections_by_image, annotations_by_image, evaluator
+    return classes, cocoEval, detections_by_image, annotations_by_image, evaluator, evaluator_nan
 
 
 class TestEvaluatorwithCOCOMetric:
@@ -168,7 +176,7 @@ class TestEvaluatorwithCOCOMetric:
         self,
         download_data,
     ):
-        coco_eval, detections_by_image, annotations_by_image, evaluator_coco = download_data
+        classes, coco_eval, detections_by_image, annotations_by_image, evaluator_coco, evaluator_nan = download_data
 
         for id, detection in detections_by_image.items():
             annotation = annotations_by_image[id]
@@ -181,8 +189,18 @@ class TestEvaluatorwithCOCOMetric:
                 [np.array(annotation["gt_ignore"])],
                 case_ids=[id],
             )
+            evaluator_nan.run_online_evaluation(
+                [np.array(detection["box"])],
+                [np.array(detection["class"])],
+                [np.array(detection["score"])],
+                [np.array(annotation["box"])],
+                [np.array(annotation["class"])],
+                [np.array(annotation["gt_ignore"])],
+                case_ids=[id],
+            )
 
         score, _ = evaluator_coco.finish_online_evaluation()
+        score_nan, _ = evaluator_nan.finish_online_evaluation()
         coco_scores = coco_eval.stats
         assert math.isclose(coco_scores[0], score["mAP_IoU_0.50_0.95_0.05"])
         assert math.isclose(coco_scores[1], score["AP_IoU_0.50"])
@@ -190,3 +208,24 @@ class TestEvaluatorwithCOCOMetric:
         assert math.isclose(coco_scores[3], score["mAP_small_IoU_0.50_0.95_0.05"])
         assert math.isclose(coco_scores[4], score["mAP_medium_IoU_0.50_0.95_0.05"])
         assert math.isclose(coco_scores[5], score["mAP_large_IoU_0.50_0.95_0.05"])
+
+        nan_map = np.nanmean([score_nan[f"{c}_mAP_IoU_0.50_0.95_0.05"] for c in classes])
+        nan_ap_50 = np.nanmean([score_nan[f"{c}_AP_IoU_0.50"] for c in classes])
+        nan_ap_75 = np.nanmean([score_nan[f"{c}_AP_IoU_0.75"] for c in classes])
+        nan_map_small = np.nanmean([score_nan[f"{c}_mAP_small_IoU_0.50_0.95_0.05"] for c in classes])
+        nan_map_medium = np.nanmean([score_nan[f"{c}_mAP_medium_IoU_0.50_0.95_0.05"] for c in classes])
+        nan_map_large = np.nanmean([score_nan[f"{c}_mAP_large_IoU_0.50_0.95_0.05"] for c in classes])
+
+        assert math.isnan(score_nan["mAP_IoU_0.50_0.95_0.05"])
+        assert math.isnan(score_nan["AP_IoU_0.50"])
+        assert math.isnan(score_nan["AP_IoU_0.75"])
+        assert math.isnan(score_nan["mAP_small_IoU_0.50_0.95_0.05"])
+        assert math.isnan(score_nan["mAP_medium_IoU_0.50_0.95_0.05"])
+        assert math.isnan(score_nan["mAP_large_IoU_0.50_0.95_0.05"])
+
+        assert math.isclose(coco_scores[0], nan_map)
+        assert math.isclose(coco_scores[1], nan_ap_50)
+        assert math.isclose(coco_scores[2], nan_ap_75)
+        assert math.isclose(coco_scores[3], nan_map_small)
+        assert math.isclose(coco_scores[4], nan_map_medium)
+        assert math.isclose(coco_scores[5], nan_map_large)
