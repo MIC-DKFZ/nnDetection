@@ -30,6 +30,7 @@ class BoxEvalMixin(EvalMixin):
             fast=True,
             save_dir=None,
         )
+        logger.info(f"Created box evaluator: {evaluators['boxes']}")
         return evaluators
 
     def evaluation_step(
@@ -139,6 +140,7 @@ class BoxWithRPNEvalMixin(BoxEvalMixin):
             fast=True,
             save_dir=None,
         )
+        logger.info(f"Created rpn box evaluator: {evaluators['rpn_boxes']}")
         return evaluators
 
     def evaluation_step(

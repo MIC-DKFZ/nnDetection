@@ -70,6 +70,14 @@ class DetectionEvaluator(AbstractEvaluator):
         self.iou_mapping = self.get_indices_of_iou_for_each_metric()
         self.save_dir = Path(save_dir) if save_dir is not None else None
 
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(metrics: {[m.__class__.__name__ for m in self.metrics]}, "
+            f"matching: {self.matching}, iou_threshold: {self.iou_thresholds}, "
+            f"criterion: {self.criterion.__name__}, criterion ranges: {self.criterion_ranges})"
+            # f"save_dir: {self.save_dir})"
+        )
+
     def get_unique_iou_thresholds(self):
         """
         Compute unique set of iou thresholds
@@ -396,26 +404,32 @@ class BoxEvaluator(DetectionEvaluator):
     @classmethod
     def create(
         cls,
+        # generic parameters
         classes: Sequence[str],
-        fast: bool = True,
         verbose: bool = False,
+        fast: bool = True,
         save_dir: Optional[Path] = None,
+        # box specific parameters
+        froc_wp: bool = True,
         similarity_fn: Callable = ops_np.box_iou_np,
+        do_criterion_eval: bool = True,
         criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
-        froc_wp: bool = True,
-        suppress_create_msg: bool = False,
     ):
         """
         Create a box evaluator object
 
         Args:
             classes: classes present in the dataset
+            verbose: enable verbose logging
             fast: Reduces the evaluation suite to save time.
                 Only evaluated IoUs in the range of 0.1-0.5
                 Does not calculate pre-class metrics
-            verbose: Additional logging output
             save_dir: Path to save information
+            froc_wp: use FROC implementation which uses the last working point
+                instead of interpolation
+            do_criterion_eval: perform evaluation with the criterion ranges
+                and criterion
             similarity_fn: function to compute similarity between predictions
                 and ground truth objects, usually IoU
             criterion: Criterion for separate evaluation
@@ -425,23 +439,33 @@ class BoxEvaluator(DetectionEvaluator):
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
+        # TODO: handle -1 metrics with warning or something
         max_detections = os.getenv("nndet_eval_max_detections_image_based", 400)
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
-        criterion_ranges_final = {
-            # non overlapping default set
-            "sVF": (0, 8**3),
-            "mVF": (8**3, 24**3),
-            "lVF": (24**3, np.inf),
-            # extended analysis
-            "xxsVF": (0, 4**3),
-            "xsVF": (0, 6**3),
-            "xlVF": (32**3, np.inf),
-            "xxlVF": (48**3, np.inf),
-            "xxxlVF": (64**3, np.inf),
-        }
-        if criterion_ranges is not None and not fast:
-            criterion_ranges_final.update(criterion_ranges)
+
+        if do_criterion_eval:
+            criterion_ranges_final = {
+                # non overlapping default set
+                "sVF": (0, 8**3),
+                "mVF": (8**3, 24**3),
+                "lVF": (24**3, np.inf),
+                # extended analysis
+                "xxsVF": (0, 4**3),
+                "xsVF": (0, 6**3),
+                "xlVF": (32**3, np.inf),
+                "xxlVF": (48**3, np.inf),
+                "xxxlVF": (64**3, np.inf),
+            }
+            if criterion_ranges is not None and not fast:
+                criterion_ranges_final.update(criterion_ranges)
+        else:
+            criterion_ranges_final = None
+            if criterion_ranges is not None:
+                logger.warning(
+                    "Criterion ranges are provided but criterion evaluation is disabled."
+                    "Criterion ranges will be ignored."
+                )
 
         metrics = []
         froc_cls = FROCwpMetric if froc_wp else FROCMetric
@@ -475,8 +499,6 @@ class BoxEvaluator(DetectionEvaluator):
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        if not suppress_create_msg:
-            logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,

@@ -148,6 +148,7 @@ class BoxSweeper(Sweeper):
             verbose=False,
             save_dir=None,
         )
+        logger.info(f"Created box evaluator: {evaluator}")
 
         for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
             ensembler = self.ensembler_cls.from_checkpoint(

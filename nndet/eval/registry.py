@@ -53,6 +53,7 @@ def evaluate_box_dir(
         save_dir=save_dir,
         **kwargs,
     )
+    logger.info(f"Created box evaluator: {evaluator}")
 
     for case_id in case_ids:
         gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
@@ -118,6 +119,7 @@ def evaluate_box_dir_bootstrap(
 
     res_scores = []
     res_curves = []
+    logger.info(f"Running bootstrapping: iterations {iterations}, iqr {iqr}, seed {seed}")
     for bootstrap_idx in maybe_verbose_iterable(range(iterations)):
         case_id_idx = rng.integers(low=0, high=len(case_ids), size=len(case_ids))
         case_ids_bootstrap = [case_ids[i] for i in case_id_idx]
@@ -129,9 +131,11 @@ def evaluate_box_dir_bootstrap(
             fast=False,
             verbose=False,
             save_dir=None,
-            suppress_create_msg=False if bootstrap_idx == 0 else True,
+            do_criterion_eval=False,
             **kwargs,
         )
+        if bootstrap_idx == 0:
+            logger.info(f"Created box evaluator: {evaluator}")
 
         assert len(_bootstrap_preds) == len(_bootstrap_gts)
         for pred, gt in zip(_bootstrap_preds, _bootstrap_gts):
@@ -160,6 +164,9 @@ def evaluate_box_dir_bootstrap(
             "iqr_low": np.quantile(scores_array, q=0.5 - iqr / 2),
             "iqr_high": np.quantile(scores_array, q=0.5 + iqr / 2),
             "std": np.std(scores_array),
+            "__iqr": iqr,
+            "__iterations": iterations,
+            "__seed": seed,
         }
     return res_scores_iqr, res_scores, res_curves
 
