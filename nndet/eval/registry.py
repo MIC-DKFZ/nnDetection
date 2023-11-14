@@ -113,26 +113,28 @@ def evaluate_box_dir_bootstrap(
     gt_cache = {}
     for case_id in case_ids:
         pred_cache[case_id] = load_pickle(pred_dir / f"{case_id}_boxes.pkl")
-        gt_cache[case_id] = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), allow_pickle=True)
+        _gt = np.load(str(gt_dir / f"{case_id}_boxes_gt.npz"), mmap_mode="r", allow_pickle=True)
+        gt_cache[case_id] = {key: _gt[key] for key in _gt.keys()}
 
     res_scores = []
     res_curves = []
-    for _ in maybe_verbose_iterable(range(iterations), position=0):
+    for bootstrap_idx in maybe_verbose_iterable(range(iterations)):
         case_id_idx = rng.integers(low=0, high=len(case_ids), size=len(case_ids))
         case_ids_bootstrap = [case_ids[i] for i in case_id_idx]
-        _bootstrap_preds = [copy.deepcopy(pred_cache[case_ids[cids]]) for cids in case_ids_bootstrap]
-        _bootstrap_gts = [copy.deepcopy(gt_cache[case_ids[cids]]) for cids in case_ids_bootstrap]
+        _bootstrap_preds = [copy.deepcopy(pred_cache[cids]) for cids in case_ids_bootstrap]
+        _bootstrap_gts = [copy.deepcopy(gt_cache[cids]) for cids in case_ids_bootstrap]
 
         evaluator = BoxEvaluator.create(
             classes=classes,
             fast=False,
-            verbose=True,
+            verbose=False,
             save_dir=None,
+            suppress_create_msg=False if bootstrap_idx == 0 else True,
             **kwargs,
         )
 
         assert len(_bootstrap_preds) == len(_bootstrap_gts)
-        for pred, gt in maybe_verbose_iterable(zip(_bootstrap_preds, _bootstrap_gts), position=1):
+        for pred, gt in zip(_bootstrap_preds, _bootstrap_gts):
             evaluator.run_online_evaluation(
                 pred_boxes=[pred["pred_boxes"]],
                 pred_classes=[pred["pred_labels"]],

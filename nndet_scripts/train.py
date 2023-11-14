@@ -7,6 +7,7 @@ import os
 import socket
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union
@@ -864,7 +865,11 @@ def _evaluate(
                 seed=0,
             )
             save_json(iqr_scores, save_dir / "results_boxes_iqr_boot.json")
-            save_json(scores_boot, save_dir / "results_boxes_boot.json")
+            scores_boot_dict_list = defaultdict(list)
+            for _scores_boot in scores_boot:
+                for _key, _value in _scores_boot.items():
+                    scores_boot_dict_list[_key].append(_value)
+            save_json(scores_boot_dict_list, save_dir / "results_boxes_boot.json")
             save_pickle(
                 {
                     "iqr_scores": iqr_scores,

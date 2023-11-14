@@ -404,6 +404,7 @@ class BoxEvaluator(DetectionEvaluator):
         criterion: Callable = ops_np.box_area_np,
         criterion_ranges: Optional[Dict[str, Tuple]] = None,
         froc_wp: bool = True,
+        suppress_create_msg: bool = False,
     ):
         """
         Create a box evaluator object
@@ -474,7 +475,8 @@ class BoxEvaluator(DetectionEvaluator):
             max_detections=max_detections,
             warning_ratio=0.25,
         )
-        logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
+        if not suppress_create_msg:
+            logger.info(f"Created {cls.__name__} with {str(matching)} matching. ")
         return cls(
             metrics=tuple(metrics),
             matching=matching,
