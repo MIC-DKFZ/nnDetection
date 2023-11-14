@@ -14,7 +14,7 @@ from loguru import logger
 
 import nndet.core.ops_np as ops_np
 from nndet.eval.abstract import AbstractEvalMatching, AbstractEvaluator, DetectionMetric
-from nndet.eval.det.ap import CocoAPMetric
+from nndet.eval.det.ap import APNaNMetric
 from nndet.eval.det.froc import FROCMetric, FROCwpMetric
 from nndet.eval.det.hist import PredictionHistogram
 from nndet.eval.matching import EvalMatchingPerElementGreedyScoreNP
@@ -434,12 +434,11 @@ class BoxEvaluator(DetectionEvaluator):
                 and ground truth objects, usually IoU
             criterion: Criterion for separate evaluation
             criterion_ranges: Ranges of the value of the box criterion to
-                evaluate (the first entry should be "": full range
+                evaluate
 
         Returns:
             BoxEvaluator: evaluator to efficiently compute metrics
         """
-        # TODO: handle -1 metrics with warning or something
         max_detections = os.getenv("nndet_eval_max_detections_image_based", 400)
         iou_range = (0.1, 0.5, 0.05)
         iou_thresholds = (0.1, 0.5) if fast else (0.1, 0.2, 0.3, 0.5)
@@ -478,7 +477,7 @@ class BoxEvaluator(DetectionEvaluator):
             )
         )
         metrics.append(
-            CocoAPMetric(
+            APNaNMetric(
                 classes,
                 iou_list=iou_thresholds,
                 iou_range=iou_range,

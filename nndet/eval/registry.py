@@ -138,7 +138,10 @@ def evaluate_box_dir_bootstrap(
             logger.info(f"Created box evaluator: {evaluator}")
 
         assert len(_bootstrap_preds) == len(_bootstrap_gts)
+        _bootstrap_num_classes = [0] * len(classes)
         for pred, gt in zip(_bootstrap_preds, _bootstrap_gts):
+            for gt_cls in gt["classes"]:  # count class occurences
+                _bootstrap_num_classes[gt_cls] += 1
             evaluator.run_online_evaluation(
                 pred_boxes=[pred["pred_boxes"]],
                 pred_classes=[pred["pred_labels"]],
@@ -149,14 +152,28 @@ def evaluate_box_dir_bootstrap(
                 case_ids=None,
             )
         _scores, _curves = evaluator.finish_online_evaluation()
+
+        _scores["__classes_all_present"] = all([x > 0 for x in _bootstrap_num_classes])
+        _curves["___bootstrap_num_classes"] = _bootstrap_num_classes
         _curves["__case_ids"] = case_ids_bootstrap
         _curves["__seed"] = seed
         res_scores.append(_scores)
         res_curves.append(_curves)
 
-    res_scores_iqr = {}
+    _iterations_with_missing_classes = sum([not x["__classes_all_present"] for x in res_scores])
+    if _iterations_with_missing_classes > 0:
+        logger.error(
+            f"Found {_iterations_with_missing_classes} bootstrap iteration with missing classes, this should not happen"
+        )
+
+    res_scores_iqr = {
+        "__classes_all_present_agg": not (_iterations_with_missing_classes > 0),
+        "__iterations_with_missing_classes": _iterations_with_missing_classes,
+    }
     score_keys = list(res_scores[0].keys())
     for sk in score_keys:
+        if sk.startswith("__"):
+            continue
         scores_array = np.array([x[sk] for x in res_scores])
         res_scores_iqr[sk] = {
             "mean": np.mean(scores_array),
