@@ -119,8 +119,9 @@ def evaluate_box_dir_bootstrap(
     res_curves = []
     for _ in maybe_verbose_iterable(range(iterations), position=0):
         case_id_idx = rng.integers(low=0, high=len(case_ids), size=len(case_ids))
-        _bootstrap_preds = [copy.deepcopy(pred_cache[case_ids[x]]) for x in case_id_idx]
-        _bootstrap_gts = [copy.deepcopy(gt_cache[case_ids[x]]) for x in case_id_idx]
+        case_ids_bootstrap = [case_ids[i] for i in case_id_idx]
+        _bootstrap_preds = [copy.deepcopy(pred_cache[case_ids[cids]]) for cids in case_ids_bootstrap]
+        _bootstrap_gts = [copy.deepcopy(gt_cache[case_ids[cids]]) for cids in case_ids_bootstrap]
 
         evaluator = BoxEvaluator.create(
             classes=classes,
@@ -142,6 +143,8 @@ def evaluate_box_dir_bootstrap(
                 case_ids=None,
             )
         _scores, _curves = evaluator.finish_online_evaluation()
+        _curves["__case_ids"] = case_ids_bootstrap
+        _curves["__seed"] = seed
         res_scores.append(_scores)
         res_curves.append(_curves)
 
