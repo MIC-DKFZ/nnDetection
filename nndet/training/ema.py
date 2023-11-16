@@ -196,7 +196,7 @@ class EMABiasStepsModule(torch.nn.Module):
             f"cache: {self.cache}, t: {self.t})"
         )
 
-    @torch.no_grad
+    @torch.no_grad()
     def add(self, val: torch.Tensor) -> torch.Tensor:
         """
         Add new value
@@ -208,7 +208,7 @@ class EMABiasStepsModule(torch.nn.Module):
         # once t > self.bias_correction_steps no correction will be applied and it is not necessary to count further
         self.t = min(self.t + 1, self.bias_correction_steps + 1)  # prevent overflow
 
-    @torch.no_grad
+    @torch.no_grad()
     def get(self) -> torch.Tensor:
         """
         Retrive vurrent value
