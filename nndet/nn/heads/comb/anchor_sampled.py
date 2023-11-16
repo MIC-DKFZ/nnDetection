@@ -12,7 +12,7 @@ from nndet.core.boxes.sampler import AbstractSampler
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
-from nndet.training.ema import EMA
+from nndet.training.ema import EMABiasStepsModule
 from nndet.utils.enums import BoxRegressionMode
 from nndet.utils.tensor import cat
 
@@ -169,7 +169,7 @@ class BoxHeadHNMV2(AnchorHead):
         coder: BoxCoderND,
         sampler: AbstractSampler,
         shared: Optional[torch.nn.Module] = None,
-        ema_loss_norm: bool = False,
+        ema_loss_kwargs: Optional[Dict] = None,
     ):
         """
         Box detection head with classifier and regression module.
@@ -183,7 +183,8 @@ class BoxHeadHNMV2(AnchorHead):
             sampler: sampler for select positive and negative examples
             shared: optional shared module which is applied to before the
                 classifier and regression head
-            ema_loss_norm: use ema to normalize denominator of losses
+            ema_loss_kwargs: provide keyword arguments for EMA loss. If `None`,
+                no EMA loss is used.
 
         Notes:
             Classification and Regression loss will be normalized by head
@@ -195,11 +196,13 @@ class BoxHeadHNMV2(AnchorHead):
             coder=coder,
             shared=shared,
         )
-        self.ema_loss_norm = ema_loss_norm
-        if self.ema_loss_norm:
-            logger.info("Using EMA norm loss in Dense Anchor Head")
-            self.all_ema = EMA(beta=0.95, bias_correction=True)
-            self.pos_ema = EMA(beta=0.95, bias_correction=True)
+        if ema_loss_kwargs is not None:
+            self.pos_ema = EMABiasStepsModule(**ema_loss_kwargs)
+            self.all_ema = EMABiasStepsModule(**ema_loss_kwargs)
+            logger.info(f"Using EMA norm loss in RPN Head: pos {self.pos_ema} all {self.all_ema}")
+        else:
+            self.pos_ema = None
+            self.all_ema = None
 
         self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
         self.fg_bg_sampler = sampler
@@ -273,7 +276,7 @@ class BoxHeadHNMV2(AnchorHead):
 
         _numel_all = sampled_inds.numel()
         _numel_pos = sampled_pos_inds.numel()
-        if self.ema_loss_norm:
+        if self.all_ema is not None:
             self.all_ema.add(_numel_all)
             self.pos_ema.add(_numel_pos)
             _numel_all = self.all_ema.get()
