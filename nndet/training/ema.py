@@ -184,8 +184,8 @@ class EMABiasStepsModule(torch.nn.Module):
                 `bias_correction_steps=0` indicates no bias correction.
         """
         super().__init__()
-        self.beta = beta
-        self.bias_correction_steps = bias_correction_steps
+        self.beta = torch.tensor(beta, dtype=torch.float, requires_grad=False)
+        self.bias_correction_steps = torch.tensor(bias_correction_steps, dtype=torch.int, requires_grad=False)
 
         self.register_buffer("cache", torch.tensor(0, dtype=torch.float, requires_grad=False))
         self.register_buffer("t", torch.tensor(0, dtype=torch.int, requires_grad=False))
@@ -217,6 +217,6 @@ class EMABiasStepsModule(torch.nn.Module):
             torch.Tensor: current EMA
         """
         if self.t <= self.bias_correction_steps:
-            return self.cache / (1 - pow(self.beta, self.t))
+            return self.cache / (1.0 - torch.pow(self.beta, self.t))
         else:
             return self.cache
