@@ -94,8 +94,7 @@ roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   reduction: sum
   loss_fp32: True
 
-roi_head_kwargs:
-  ema_loss_norm: False
+roi_head_kwargs: {}
 
 roi_masker_kwargs:
   num_convs: 3

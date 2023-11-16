@@ -32,7 +32,7 @@ head_classifier_kwargs: # keyword arguments passed to classifier in head
   norm_affine: True
   reduction: "mean"
   loss_weight: 1.
-  prior_prob: 0.01
+  # prior_prob: 0.01
 
 head_regressor_kwargs: # keyword arguments passed to regressor in head
   num_convs: 1
@@ -79,35 +79,35 @@ roi_pooling:
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
   reduction: sum
+  # prior_prob: 0.01
+  loss_fp32: True
 
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
   reduction: sum
+  loss_fp32: True
 
-roi_head_kwargs: {}
+roi_head_kwargs:
+  ema_loss_kwargs:
+    beta: 0.7
+    bias_correction_steps: 5000
 
 roi_masker_kwargs:
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
+  # prior_prob: 0.01
 
-# matcher for each stage
-roi_cascade_stages: 3
-
-roi_matcher_kwargs_s0:
+roi_matcher_kwargs:
   low_threshold: 0.2
-  high_threshold: 0.2
-  allow_low_quality_matches: False
-
-roi_matcher_kwargs_s1:
-  low_threshold: 0.25
-  high_threshold: 0.25
-  allow_low_quality_matches: False
-
-roi_matcher_kwargs_s2:
-  low_threshold: 0.3
   high_threshold: 0.3
   allow_low_quality_matches: False
 
@@ -117,7 +117,6 @@ roi_sampler_kwargs:
 
 roi_module_kwargs:
   gt_to_proposals: True
-  loss_weight_stage: [1., 0.5, 0.25]
 
 # this parameters are used for online val and a pre-reduction during inference.
 # the predictor will apply a different set of parameters during pat val / inference.
