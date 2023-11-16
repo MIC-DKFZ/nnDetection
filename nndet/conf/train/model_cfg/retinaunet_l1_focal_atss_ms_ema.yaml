@@ -16,7 +16,7 @@ neck_kwargs: # keyword arguments passed to decoder
 
 head_kwargs: # keyword arguments to passed to head
   ema_loss_kwargs:
-    beta: 0.5
+    beta: 0.7
     bias_correction_steps: 5000
 
 head_classifier_kwargs: # keyword arguments passed to classifier in head
