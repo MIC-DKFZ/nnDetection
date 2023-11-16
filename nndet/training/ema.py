@@ -170,7 +170,7 @@ class EMA:
             return self.cache
 
 
-class EMABiasSteps:
+class EMABiasStepsModule(torch.nn.Module):
     def __init__(self, beta: float = 0.9, bias_correction_steps: int = 0):
         """
         Exponentially weighted moving average
@@ -183,29 +183,38 @@ class EMABiasSteps:
                 (afterwards no bias correection is applied).
                 `bias_correction_steps=0` indicates no bias correction.
         """
+        super().__init__()
         self.beta = beta
-        self.cache: float = 0.0
-
         self.bias_correction_steps = bias_correction_steps
-        self.t = 0
 
-    def add(self, val):
+        self.register_buffer("cache", torch.tensor(0, dtype=torch.float, requires_grad=False))
+        self.register_buffer("t", torch.tensor(0, dtype=torch.int, requires_grad=False))
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(beta: {self.beta}, bias_correction_steps: {self.bias_correction_steps}, "
+            f"cache: {self.cache}, t: {self.t})"
+        )
+
+    @torch.no_grad
+    def add(self, val: torch.Tensor) -> torch.Tensor:
         """
         Add new value
 
         Args:
-            val: new value to add
+            torch.Tensor: new value to add
         """
-        self.cache = self.beta * self.cache + (1 - self.beta) * float(val)
+        self.cache = self.beta * self.cache + (1 - self.beta) * val
         # once t > self.bias_correction_steps no correction will be applied and it is not necessary to count further
         self.t = min(self.t + 1, self.bias_correction_steps + 1)  # prevent overflow
 
-    def get(self) -> float:
+    @torch.no_grad
+    def get(self) -> torch.Tensor:
         """
         Retrive vurrent value
 
         Returns:
-            float: current EMA
+            torch.Tensor: current EMA
         """
         if self.t <= self.bias_correction_steps:
             return self.cache / (1 - pow(self.beta, self.t))

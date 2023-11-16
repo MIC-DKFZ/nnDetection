@@ -11,7 +11,7 @@ from nndet.core.boxes.coder import BoxCoderND
 from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
-from nndet.training.ema import EMABiasSteps
+from nndet.training.ema import EMABiasStepsModule
 
 
 class BoxHeadAll(AnchorHead):
@@ -42,9 +42,8 @@ class BoxHeadAll(AnchorHead):
             shared=shared,
         )
         if ema_loss_kwargs is not None:
-            # TODO: think about continution of training here
-            logger.info("Using EMA norm loss in RPN Head")
-            self.pos_ema = EMABiasSteps(**ema_loss_kwargs)
+            self.pos_ema = EMABiasStepsModule(**ema_loss_kwargs)
+            logger.info(f"Using EMA norm loss in RPN Head: {self.pos_ema}")
         else:
             self.pos_ema = None
         self.logger = None  # get_logger(log_num_anchors) if log_num_anchors is not None else None
@@ -123,7 +122,4 @@ class BoxHeadAll(AnchorHead):
             target_labels[sampled_inds],
         ) / max(1, _numel_pos)
 
-        if losses["cls"] > 12:
-            logger.warning("Remove me :)")  # FIXME
-            logger.warning(f"Loss cls is {losses['cls']} with _numel_pos {_numel_pos}")
         return losses, sampled_pos_inds, None
