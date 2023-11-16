@@ -8,7 +8,7 @@ defaults:
   - io_cfg: offsetV2_obj_bal
   - trainer_cfg: sgd_base
   - accelerator_cfg: gpu1_mixed16
-  - model_cfg: retinaunet_l1_focal_atss_ms
+  - model_cfg: retinaunet_l1_focal_atss_ms_ema
 
 module: RetinaUNetFocalV002 # RetinaUNetFocalC017
 plan: D3V001_3d # plan used for training

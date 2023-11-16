@@ -96,6 +96,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.candidates_key = "boxes_file"
         self.load_seg = load_seg
         self.load_box = load_box
+        self.save_get_mode = "constant"
 
     def __len__(self):
         return self.num_batches_per_epoch
@@ -190,11 +191,10 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 )
 
             # loading
-            mode = "constant"
             data_batch[batch_idx] = save_get_crop(
                 case_data,
                 crop=crop,
-                mode=mode,
+                mode=self.save_get_mode,
                 constant_values=0,
             )[0]
             if self.load_seg:
@@ -206,7 +206,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 seg_batch[batch_idx] = save_get_crop(
                     case_seg,
                     crop=crop,
-                    mode=mode,
+                    mode=self.save_get_mode,
                     constant_values=-1,
                 )[0]
             if self.load_box:
@@ -214,7 +214,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                     case_id=case_id,
                     case_data=case_data,
                     crop=crop,
-                    mode=mode,
+                    mode=self.save_get_mode,
                 )
                 box_coord_batch.append(res[0])
                 box_label_batch.append(res[1])
