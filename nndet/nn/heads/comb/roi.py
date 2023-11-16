@@ -9,7 +9,7 @@ from torch import Tensor
 
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.nn.heads.comb.base import RoIHead
-from nndet.training.ema import EMA
+from nndet.training.ema import EMABiasStepsModule
 
 
 class RoIBoxHead(RoIHead):
@@ -19,7 +19,7 @@ class RoIBoxHead(RoIHead):
         regressor,
         coder: BoxCoderND,
         shared: Optional[torch.nn.Module] = None,
-        ema_loss_norm: bool = False,
+        ema_loss_kwargs: Optional[Dict] = None,
     ):
         """
         Specific implementation of a box head with classifier and regression
@@ -32,6 +32,8 @@ class RoIBoxHead(RoIHead):
             coder: Module to encoder/decoder box delta wrt to anchors/proposals
             shared: optional shared module which is applied to before the
                 classifier and regression head
+            ema_loss_kwargs: provide keyword arguments for EMA loss. If `None`,
+                no EMA loss is used.
         """
         super().__init__(
             classifier=classifier,
@@ -39,11 +41,13 @@ class RoIBoxHead(RoIHead):
             coder=coder,
             shared=shared,
         )
-        self.ema_loss_norm = ema_loss_norm
-        if self.ema_loss_norm:
-            logger.info("Using EMA norm loss in RoI Head")
-            self.all_ema = EMA(beta=0.95, bias_correction=True)
-            self.pos_ema = EMA(beta=0.95, bias_correction=True)
+        if ema_loss_kwargs is not None:
+            self.pos_ema = EMABiasStepsModule(**ema_loss_kwargs)
+            self.all_ema = EMABiasStepsModule(**ema_loss_kwargs)
+            logger.info(f"Using EMA norm loss in RoI Head: pos {self.pos_ema} all {self.all_ema}")
+        else:
+            self.pos_ema = None
+            self.all_ema = None
 
     def compute_loss(
         self,
@@ -99,7 +103,7 @@ class RoIBoxHead(RoIHead):
 
         _numel_all = sampled_inds.numel()
         _numel_pos = sampled_pos_inds.numel()
-        if self.ema_loss_norm:
+        if self.all_ema is not None:
             self.all_ema.add(_numel_all)
             self.pos_ema.add(_numel_pos)
             _numel_all = self.all_ema.get()
