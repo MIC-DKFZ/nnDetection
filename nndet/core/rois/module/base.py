@@ -747,6 +747,7 @@ class BaseRoIModule(torch.nn.Module):
             pred_detection["pred_boxes"],
             pred_detection["pred_probs"],
         )
+        assert sum(boxes_per_image) == pred_boxes.shape[0]
 
         if apply_inference_prob_rpn:
             assert proposal_scores is not None

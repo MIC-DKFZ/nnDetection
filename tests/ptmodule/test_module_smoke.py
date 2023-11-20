@@ -7,12 +7,8 @@ from hydra.core.global_hydra import GlobalHydra
 from omegaconf.omegaconf import OmegaConf
 
 from nndet.ptmodule.detr.dev.c002 import BoxDETRC002
-from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
-from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
-from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 
 # specific modules
-from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
 from nndet.ptmodule.retinanet.rnv002 import (
     RetinaNetFocalResV002,
     RetinaNetFocalV002,
@@ -20,12 +16,16 @@ from nndet.ptmodule.retinanet.rnv002 import (
 )
 
 # base modules
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
 from nndet.ptmodule.retinaunet.runv002 import (
     RetinaUNetFocalResV002,
     RetinaUNetFocalV002,
     RetinaUNetHNMV002,
 )
+
+# from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
+# from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
+# from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
 
 
 @pytest.fixture
