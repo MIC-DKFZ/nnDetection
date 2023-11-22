@@ -108,6 +108,7 @@ def evaluate_box_dir_bootstrap(
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
     case_ids = [p.stem.rsplit("_boxes", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_boxes")]
+    case_ids.sort()
     logger.info(f"Found {len(case_ids)} for box evaluation in {pred_dir}")
 
     pred_cache = {}
