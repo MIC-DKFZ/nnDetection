@@ -83,7 +83,22 @@ class RoIAlignBase(RoIPooler):
         spatial_scale: ND_FLOAT,
     ) -> torch.Tensor:
         """
-        Pooling feature for proposals from given feature map
+        Pool features via RoI Align
+
+        Args:
+            fmap: feature map to pool form [N, C, dims] where N is the
+                batch size, C is the number of channels and dims are
+                spatial dimensions
+            proposal_boxes_batch_idx: proposal boxes with batch index inserted
+                in the first channel
+                (batch_idx, x1, y1, x2, y2, (z1, z2))[R, dim * 2 + 1]
+            spatial_scale: the ratio of the size of the feature map and the
+                original image (always <= 1)
+
+        Returns:
+            Tensor: pooled features from feature map [R, C, output_size]
+                where R is the number of proposal boxes, C is the number
+                channels and output_size are spatial dimensions
         """
         return roi_align(
             input=fmap,
@@ -105,40 +120,43 @@ class RoIAlignBase(RoIPooler):
 
         Args:
             binary_masks: binary segmentation masks [C, sdims]
-                C=number of instances
+                C is the number of instances, sdims are spatial dimensions
             proposal_boxes: proposal boxes to pool
-                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+                (x1, y1, x2, y2, (z1, z2))[R, dim * 2]
             matched_gt_idx: index of matched ground truth box. The n-th
                 box needs to correspond to the n-th channel inside the
                 binary segmentation mask
 
         Returns:
-            Tensor: pooled masks [N, output_size]
+            List[Tensor]: pooled masks [R, output_size], where R
+                is the number of proposal boxes and output_size are
+                spatial dimensions
         """
         output_size = self.feature_output_size if self.mask_output_size is None else self.mask_output_size
 
         pooled_masks = []
+        assert len(binary_masks) == len(proposal_boxes)
+        assert len(binary_masks) == len(matched_gt_idx)
         for m, p_boxes, m_idx in zip(binary_masks, proposal_boxes, matched_gt_idx):
-            p_boxes_batch_idx = torch.cat([m_idx[:, None], p_boxes], dim=1)
-            if m.numel() == 0:
-                # no ground truth
-                pooled_masks.append(
-                    torch.tensor(
-                        [],
-                        dtype=p_boxes.dtype,
-                        device=p_boxes.device,
-                    ).view(0, *output_size)
-                )  # empty mask with correct shape for concatenation
+            if m.numel() == 0 or p_boxes.numel() == 0:
+                # no ground truth in batch => can not compute mask loss on roi with FG
+                _pooled_masks_image = torch.tensor(
+                    [],
+                    dtype=p_boxes.dtype,
+                    device=p_boxes.device,
+                ).view(0, *output_size)
             else:
-                pooled_masks.append(
-                    roi_align(
-                        input=m[:, None],
-                        boxes=p_boxes_batch_idx,
-                        output_size=output_size,
-                        spatial_scale=1.0,
-                        **self.mask_pool_kwargs,
-                    )[:, 0]
-                )
+                p_boxes_batch_idx = torch.cat([m_idx[:, None], p_boxes], dim=1)
+                _pooled_masks_image = roi_align(
+                    input=m[:, None],
+                    boxes=p_boxes_batch_idx,
+                    output_size=output_size,
+                    spatial_scale=1.0,
+                    **self.mask_pool_kwargs,
+                )[
+                    :, 0
+                ]  # truncate artifically added channel dimension
+            pooled_masks.append(_pooled_masks_image)
         return pooled_masks
 
 
@@ -159,6 +177,8 @@ class RoIAlignOrigAssign(RoIAlignBase):
 
         => this ignores the z axes completely
         """
+
+        # TODO: docs
         image_size_tensor = torch.tensor(
             image_size,
             dtype=proposal_boxes.dtype,
@@ -190,6 +210,8 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         """
         Assign proposals to pyramid levels for pooling
         """
+
+        # TODO: docs
         num_levels = len(features)
         image_size_tensor = torch.tensor(
             image_size,

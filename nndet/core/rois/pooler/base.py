@@ -138,15 +138,19 @@ class RoIPooler(torch.nn.Module):
         Pooling feature for proposals from given feature map
 
         Args:
-            fmap: feature map to pool form
+            fmap: feature map to pool form [N, C, dims] where N is the
+                batch size, C is the number of channels and dims are
+                spatial dimensions
             proposal_boxes_batch_idx: proposal boxes with batch index inserted
-                at the first channel
+                in the first channel
                 (batch_idx, x1, y1, x2, y2, (z1, z2))[R, dim * 2 + 1]
             spatial_scale: the ratio of the size of the feature map and the
                 original image (always <= 1)
 
         Returns:
             Tensor: pooled features from feature map [R, C, output_size]
+                where R is the number of proposal boxes, C is the number
+                channels and output_size are spatial dimensions
         """
         raise NotImplementedError
 
@@ -162,14 +166,17 @@ class RoIPooler(torch.nn.Module):
         Pooling masks for given matched gt boxes
 
         Args:
-            binary_masks: binary segmentation masks [C, sdims]; C=number of instances
-            proposal_boxes: proposal boxes
-                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            binary_masks: binary segmentation masks [C, sdims]
+                C is the number of instances, sdims are spatial dimensions
+            proposal_boxes: proposal boxes to pool
+                (x1, y1, x2, y2, (z1, z2))[R, dim * 2]
             matched_gt_idx: index of matched ground truth box. The n-th
                 box needs to correspond to the n-th channel inside the
                 binary segmentation mask
 
         Returns:
-            Tensor: pooled masks [N, output_size]
+            List[Tensor]: pooled masks [R, output_size], where R
+                is the number of proposal boxes and output_size are
+                spatial dimensions
         """
         raise NotImplementedError
