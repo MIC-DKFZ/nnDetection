@@ -23,11 +23,36 @@ except ImportError:
 def roi_align(
     input: Tensor,
     boxes: Tensor,
-    output_size: Tuple[int],
+    output_size: Tuple[int, int, int],
     spatial_scale: ND_FLOAT = 1.0,
     sampling_ratio: int = -1,
     aligned: bool = False,
 ) -> Tensor:
+    """
+    Perfrom RoI Align accoridng to MaskRCNN paper
+
+    Args:
+        input: input feature map to extact RoI features from
+            [N, C, dims], where N is the batch size, C is the number
+            of channels and dims are spatial dimensions
+        boxes: boxes/rois to extract features
+            (batch_idx, x1, y1, x2, y2, (z1, z2))[R, dim * 2 + 1]
+        output_size: output size after pooling
+        spatial_scale: Define scale factor between boxes and feature
+            map. Defaults to 1.0.
+        sampling_ratio: Define how many points are interpolated
+            in a single bin. `<=0` uses a dynamic number
+            of values. Defaults to -1.
+        aligned: additionally align the coordinates. Defaults to False.
+
+    Raises:
+        NotImplementedError: Currently only implemented for 3D and GPU usage
+
+    Returns:
+        Tensor: pooled features [R, C, output_size], where R is the
+            number of proposal boxes, C is the number of channels and
+            output_size are spatial dimensions
+    """
     assert input.device == boxes.device
     if input.is_cuda:
         if boxes.shape[1] == 4:
@@ -49,7 +74,11 @@ def roi_align(
     if aligned:
         boxes_pool[:, 1:] = boxes_pool[:, 1:] - 0.5
 
-    print(boxes_pool)
+    if input.is_cuda and input.dtype != boxes.dtype:
+        # use float32 for pooling
+        input = input.float()
+        boxes_pool = boxes_pool.float()
+
     res = pool_fn(
         input.contiguous(),
         boxes_pool.contiguous(),
@@ -167,9 +196,19 @@ class RoIAlignOrigAssign(RoIAlignBase):
         https://arxiv.org/pdf/1612.03144.pdf and MDT
 
         => this ignores the z axes completely
-        """
 
-        # TODO: docs
+        Args:
+            proposal_boxes: proposal boxes
+                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            features: feature maps which should be used for pooling
+                from backbone/fpn each with [N, C, dims]
+                Ordered from highest resolution feature map (0)
+                to the lowed resolution one (-1).
+            image_size: spatial size of image
+
+        Returns:
+            Tensor: level for each proposal [N]
+        """
         image_size_tensor = torch.tensor(
             image_size,
             dtype=proposal_boxes.dtype,
@@ -199,10 +238,21 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         image_size: ND_TUPLE_INT,
     ) -> torch.Tensor:
         """
-        Assign proposals to pyramid levels for pooling
-        """
+        Assign proposals to pyramid levels for pooling. Similar to
+        `RoIAlignOrigAssign` but includes the depth dimension
 
-        # TODO: docs
+        Args:
+            proposal_boxes: proposal boxes
+                (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+            features: feature maps which should be used for pooling
+                from backbone/fpn each with [N, C, dims]
+                Ordered from highest resolution feature map (0)
+                to the lowed resolution one (-1).
+            image_size: spatial size of image
+
+        Returns:
+            Tensor: level for each proposal [N]
+        """
         num_levels = len(features)
         image_size_tensor = torch.tensor(
             image_size,
@@ -223,5 +273,5 @@ class RoIAlignNaiveAssign(RoIAlignBase):
         else:
             raise ValueError(f"Image size needs to be 2D or 3d, received {image_size}.")
 
-        level = (v + num_levels).clamp_(min=0, max=len(features)).to(dtype=torch.long)
+        level = (v + num_levels).clamp_(min=0, max=num_levels).to(dtype=torch.long)
         return level

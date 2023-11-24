@@ -75,7 +75,7 @@ roi_pooling:
     sampling_ratio: 0
   roi_mask_gt_kwargs:  # keyword arguments passed to mask pooler
     aligned: False
-    sampling_ratio: -1
+    sampling_ratio: 0
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 3

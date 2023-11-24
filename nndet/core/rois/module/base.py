@@ -419,7 +419,10 @@ class BaseRoIModule(torch.nn.Module):
             Dict[str, Union[torch.Tensor, List[torch.Tensor]]]: detached
                 proposals
         """
-        return detach_all(proposals)
+        proposals = detach_all(proposals)
+        if "pred_boxes" in proposals:
+            assert proposals["pred_boxes"][0].requires_grad is False
+        return proposals
 
     @torch.no_grad()
     def assign_and_sample(

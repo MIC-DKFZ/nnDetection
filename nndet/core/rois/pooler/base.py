@@ -78,8 +78,8 @@ class RoIPooler(torch.nn.Module):
         else:
             # determine level dynamically
             proposal_levels = self._find_pyramid_level(
-                features=features,
                 proposal_boxes=proposal_boxes,
+                features=features,
                 image_size=image_size,
             )
 
