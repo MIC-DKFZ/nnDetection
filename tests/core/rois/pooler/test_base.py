@@ -17,6 +17,9 @@ def pooler():
     return _pooler
 
 
+# TODO: test gradient propagation to feature maps when running through roi layers and roi head
+
+
 class TestRoIPooler:
     def test_forward_assert_dims(self, pooler):
         with pytest.raises(AssertionError):

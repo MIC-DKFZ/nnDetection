@@ -6,6 +6,7 @@ from typing import List, Sequence, Tuple
 import torch
 from loguru import logger
 from torch import Tensor
+from torch.cuda.amp import autocast
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.rois.pooler.base import RoIPooler
@@ -18,6 +19,7 @@ except ImportError:
     roi_align_3d = None
 
 
+@autocast(enabled=False)
 def roi_align(
     input: Tensor,
     boxes: Tensor,
@@ -27,15 +29,6 @@ def roi_align(
     aligned: bool = False,
 ) -> Tensor:
     assert input.device == boxes.device
-
-    # apply scaling here, will be moved to cuda function down the road
-    if isinstance(spatial_scale, Sequence):
-        _scale = torch.tensor(spatial_scale, dtype=boxes.dtype, device=boxes.device)
-        boxes[:, 1:] = boxes[:, 1:] * ops_torch.expand_to_boxes(_scale)
-    else:
-        boxes[:, 1:] = boxes[:, 1:] * spatial_scale
-    spatial_scale = 1.0
-
     if input.is_cuda:
         if boxes.shape[1] == 4:
             raise NotImplementedError
@@ -43,31 +36,29 @@ def roi_align(
             pool_fn = roi_align_3d
     else:
         raise NotImplementedError
+    boxes_pool = boxes.clone()
 
-    boxes = boxes.to(dtype=input.dtype)
-
-    # bfloat handling
-    if boxes.dtype == torch.bfloat16 or input.dtype == torch.bfloat16:
-        # FIXME: handle correctly
-        recast_bfloat = True
-        boxes = boxes.float()
-        input = input.float()
+    # apply scaling
+    if isinstance(spatial_scale, Sequence):
+        _scale = torch.tensor(spatial_scale, dtype=boxes.dtype, device=boxes.device)
+        boxes_pool[:, 1:] = boxes_pool[:, 1:] * ops_torch.expand_to_boxes(_scale)
     else:
-        recast_bfloat = False
+        boxes_pool[:, 1:] = boxes_pool[:, 1:] * spatial_scale
+    spatial_scale = 1.0
 
-    # print(boxes)
+    if aligned:
+        boxes_pool[:, 1:] = boxes_pool[:, 1:] - 0.5
+
+    print(boxes_pool)
     res = pool_fn(
         input.contiguous(),
-        boxes.contiguous(),
+        boxes_pool.contiguous(),
         spatial_scale,
         output_size[0],
         output_size[1],
         output_size[2],
         sampling_ratio,
     )
-
-    if recast_bfloat:
-        res = res.to(dtype=torch.bfloat16)
     return res
 
 
