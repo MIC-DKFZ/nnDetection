@@ -66,6 +66,9 @@ def trilinear_interpolation(data, x, y, z):
     # data is in x,y,z format
     size_x, size_y, size_z = data.shape
 
+    if x < -1.0 or x > size_x or y < -1.0 or y > size_y or z < -1.0 or z > size_z:
+        return 0
+
     if x <= 0:
         x = 0
     if y <= 0:
@@ -190,6 +193,14 @@ def roi_align_3d_pytorch_slow(
                                     point_y = start_y + (grid_y_idx + 0.5) * bin_y / grid_y
                                     point_z = start_z + (grid_z_idx + 0.5) * bin_z / grid_z
 
+                                    # if (
+                                    #     point_x >= -1
+                                    #     and point_x <= n_x
+                                    #     and point_y >= -1
+                                    #     and point_y <= n_y
+                                    #     and point_z >= -1
+                                    #     and point_z <= n_z
+                                    # ):
                                     val += trilinear_interpolation(
                                         data[batch_idx, channel],
                                         point_x,
@@ -210,35 +221,33 @@ BOXES = [
     [1.0, 2.0, 2.0, 5.0, 5.0, 5.0, 14.0],
     [1.0, 2.0, 2.0, 5.0, 5.0, 2.0, 4.0],
 ]
+SCALES = [
+    1.0,
+    0.5,
+    (0.5, 1.0, 1.0),
+    (1.0, 0.5, 1.0),
+    (1.0, 1.0, 0.5),
+]
 BOXES_BORDERS = [
-    # [0.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0],
+    [0.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0],
     [0.0, -1.0, -1.0, 0.0, 0.0, -1.0, 0.0],
     [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0],
     [0.0, 14.0, 14.0, 16.0, 16.0, 14.0, 16.0],
     [0.0, 14.0, 14.0, 15.0, 15.0, 14.0, 15.0],
     [0.0, 15.0, 15.0, 16.0, 16.0, 15.0, 16.0],
+    [0.0, 16.0, 16.0, 17.0, 17.0, 16.0, 17.0],
 ]
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
 @pytest.mark.skipif(roi_align_3d is None, reason="nnDetection was not build with GPU support")
-@pytest.mark.parametrize("rois", [BOXES])
-@pytest.mark.parametrize("aligned", [False])  # True, False])
-@pytest.mark.parametrize(
-    "spatial_scale",
-    [
-        1.0,
-        # 0.5,
-        # (0.5, 1.0, 1.0),
-        # (1.0, 0.5, 1.0),
-        # (1.0, 1.0, 0.5),
-    ],
-)
+@pytest.mark.parametrize("rois,spatial_scale", [(BOXES, s) for s in SCALES] + [(BOXES_BORDERS, 1.0)])
+@pytest.mark.parametrize("aligned", [True, False])
 @pytest.mark.parametrize("dtype", [torch.float32])
 @pytest.mark.parametrize("device", ["cuda"])
-@pytest.mark.parametrize("output_size", [(3, 3, 3)])  # , (7, 7, 7)])
-@pytest.mark.parametrize("sampling_ratio", [1])  # 0, 1, 2])
-@pytest.mark.parametrize("seed", [0])  # , 1])
+@pytest.mark.parametrize("output_size", [(3, 3, 3), (5, 5, 5)])
+@pytest.mark.parametrize("sampling_ratio", [0, 1, 2])
+@pytest.mark.parametrize("seed", [0, 1])
 def test_roi_align_3d_vs_slow_pytorch_forward(
     seed: int,
     sampling_ratio: int,
@@ -293,23 +302,13 @@ def test_roi_align_3d_vs_slow_pytorch_forward(
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
 @pytest.mark.skipif(roi_align_3d is None, reason="nnDetection was not build with GPU support")
-@pytest.mark.parametrize("rois", [BOXES])
-@pytest.mark.parametrize("aligned", [True])  # , False])
-@pytest.mark.parametrize(
-    "spatial_scale",
-    [
-        1.0,
-        # 0.5,
-        # (0.5, 1.0, 1.0),
-        # (1.0, 0.5, 1.0),
-        # (1.0, 1.0, 0.5),
-    ],
-)
+@pytest.mark.parametrize("rois,spatial_scale", [(BOXES, s) for s in SCALES] + [(BOXES_BORDERS, 1.0)])
+@pytest.mark.parametrize("aligned", [True, False])
 @pytest.mark.parametrize("dtype", [torch.float32])
 @pytest.mark.parametrize("device", ["cuda"])
-@pytest.mark.parametrize("output_size", [(3, 3, 3)])  # , (7, 7, 7)])
-@pytest.mark.parametrize("sampling_ratio", [1])  # 0, 1, 2])
-@pytest.mark.parametrize("seed", [0])  # , 1])
+@pytest.mark.parametrize("output_size", [(3, 3, 3), (5, 5, 5)])
+@pytest.mark.parametrize("sampling_ratio", [0, 1, 2])
+@pytest.mark.parametrize("seed", [0, 1])
 def test_roi_align_3d_vs_slow_pytorch_backward(
     seed: int,
     sampling_ratio: int,
@@ -353,6 +352,8 @@ def test_roi_align_3d_vs_slow_pytorch_backward(
         },
         boxes=boxes,
     )
+    if expected_m1_grad is None:
+        expected_m1_grad = torch.zeros_like(m1_grad)
     print(m1_grad)
     print(expected_m1_grad)
 
