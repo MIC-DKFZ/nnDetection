@@ -44,7 +44,7 @@ pytest-job:
     - pip --version
     - pip uninstall torchtext -y
     - echo "Install Package"
-    - pip install .[dev] -vv
+    - pip install .[dev] -v
     - echo "Print Dep Tree"
     - pip install pipdeptree
     - pipdeptree
