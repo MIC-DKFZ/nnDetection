@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytorch_lightning as pl
 import torch
@@ -24,6 +24,7 @@ class LightningBaseModule(pl.LightningModule):
         model_cfg: dict,
         trainer_cfg: dict,
         plan: dict,
+        accelerator_cfg: Optional[dict] = None,
         **kwargs,
     ):
         """
@@ -36,10 +37,14 @@ class LightningBaseModule(pl.LightningModule):
             trainer_cfg: trainer information
             plan: contains parameters which were derived from the planning
                 stage
+            accelerator_cfg: optionally provide additional information
+                on accelerator configuration, e.g. if module should be
+                compiled
         """
         super().__init__(**kwargs)
         self.model_cfg = model_cfg
         self.trainer_cfg = trainer_cfg
+        self.accelerator_cfg = accelerator_cfg
         self.plan = plan
 
         # determine shape for network visualisation
@@ -56,15 +61,18 @@ class LightningBaseModule(pl.LightningModule):
             plan_anchors=self.plan["anchors"],
             patch_size=plan["patch_size"],
         )
-        if self.trainer_cfg.get("do_compile", False):
-            if check_torch_version(major_version=2):
-                logger.info("Using torch.compile to speed up model.")
-                self.model = torch.compile(self.model, **self.trainer_cfg.get("compile", {}))
-            else:
-                logger.error(
-                    "Torch compile was enabled in config but minimal "
-                    "PyTorch Version of 2.0.0 was not met! Skipping compile."
-                )
+
+        if self.accelerator_cfg is not None:
+            if self.accelerator_cfg.get("do_compile", False):
+                if check_torch_version(major_version=2):
+                    _kwargs = self.accelerator_cfg.get("compile", {})
+                    logger.info(f"Using torch.compile to speed up model with arguments: {_kwargs}")
+                    self.model = torch.compile(self.model, **_kwargs)
+                else:
+                    logger.error(
+                        "Torch compile was enabled in config but minimal "
+                        "PyTorch Version of 2.0.0 was not met! Skipping compile."
+                    )
 
         # initialize pre transforms from ModeMixin
         trafos = self.get_pre_transforms(plan=plan)

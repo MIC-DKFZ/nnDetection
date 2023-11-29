@@ -449,6 +449,7 @@ def _train(
     module = MODULE_REGISTRY[cfg["module"]](
         model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
+        accelerator_cfg=OmegaConf.to_container(cfg["accelerator_cfg"], resolve=True),
         plan=plan,
     )
 
@@ -541,6 +542,12 @@ def _train(
         precision = None
     else:
         precision = cfg["accelerator_cfg"]["precision"]
+
+    logger.info(
+        "Running experiment with accelerator benchmark: "
+        f"{cfg['accelerator_cfg']['benchmark']} and "
+        f"deterministic: {cfg['accelerator_cfg']['deterministic']}"
+    )
 
     trainer = pl.Trainer(
         accelerator=cfg["accelerator_cfg"]["accelerator"],
