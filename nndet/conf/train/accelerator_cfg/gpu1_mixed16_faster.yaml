@@ -4,13 +4,14 @@
 # Note: this is not used by default since benchmark might influence the memory
 # and did not work perfectly with all input shapes in the past
 # Usage of toch.compile is experimental
+# Use channels_last
 
 gpus: 1 # number of gpus
 accelerator: "gpu" # distributed backend
 precision: "16-mixed" # mixed precision training; typically: '16-mixed', 'bf16-mixed', '32'
 
 # Pytorch 1.6 features
-do_channels_last: False
+do_channels_last: True
 
 # pytorch 2.0 features
 do_compile: True

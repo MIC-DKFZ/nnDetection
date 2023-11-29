@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pytorch_lightning as pl
 import torch
@@ -46,13 +46,9 @@ class LightningBaseModule(pl.LightningModule):
         self.trainer_cfg = trainer_cfg
         self.accelerator_cfg = accelerator_cfg
         self.plan = plan
-
-        # determine shape for network visualisation
-        self.example_input_array_shape = (
-            1,
-            plan["architecture"]["in_channels"],
-            *plan["patch_size"],
-        )
+        self.dim = len(plan["patch_size"])
+        assert self.dim in [2, 3]
+        self.do_channels_last = False
 
         # initialize model
         self.model: AbstractDetector = self.from_config_plan(
@@ -61,21 +57,67 @@ class LightningBaseModule(pl.LightningModule):
             plan_anchors=self.plan["anchors"],
             patch_size=plan["patch_size"],
         )
+        self._init_accelerator_cfg()
 
-        if self.accelerator_cfg is not None:
-            if self.accelerator_cfg.get("do_compile", False):
-                if check_torch_version(major_version=2):
-                    _kwargs = self.accelerator_cfg.get("compile", {})
-                    logger.info(f"Using torch.compile to speed up model with arguments: {_kwargs}")
-                    self.model = torch.compile(self.model, **_kwargs)
+        # prepare tansformations for input
+        self.pre_trafo = self._init_trafo()
+        logger.info(f"Lightningmodule running pre transforms \n: {self.pre_trafo}")
+
+        # initialize evaluation
+        self.evaluators = self.evaluation_init(plan=plan)
+        _tmp = {key: item.__class__.__name__ for key, item in self.evaluators.items()}
+        logger.info(f"Lightningmodule running evaluators: {_tmp}")
+
+        # define key for sweeping
+        self.sweep_key = self.trainer_cfg["sweep_key"]
+        self.monitor_key = self.trainer_cfg["monitor_key"]
+        logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
+
+        # setup other variables
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+        self.example_input_array_shape = (
+            1,
+            plan["architecture"]["in_channels"],
+            *plan["patch_size"],
+        )
+
+    def _init_accelerator_cfg(self) -> None:
+        """
+        Apply additional actions to configure module for additional speedups
+        e.g. channels_last(_3d) memory format or torch.compile
+        """
+        if self.accelerator_cfg is None:
+            self.do_channels_last = False
+            return
+
+        # channels last memory format
+        if self.accelerator_cfg.get("do_channels_last", False):
+            self.do_channels_last = self.accelerator_cfg["do_channels_last"]
+            if self.do_channels_last:
+                logger.info("PtModule uses channels_last memory format")
+                if self.dim == 3:
+                    self.model = self.model.to(memory_format=torch.channels_last_3d)
                 else:
-                    logger.error(
-                        "Torch compile was enabled in config but minimal "
-                        "PyTorch Version of 2.0.0 was not met! Skipping compile."
-                    )
+                    self.model = self.model.to(memory_format=torch.channels_last)
 
-        # initialize pre transforms from ModeMixin
-        trafos = self.get_pre_transforms(plan=plan)
+        # compile model
+        if self.accelerator_cfg.get("do_compile", False):
+            if check_torch_version(major_version=2):
+                _kwargs = self.accelerator_cfg.get("compile", {})
+                logger.info(f"PtModule uses torch.compile with arguments: {_kwargs}")
+                self.model = torch.compile(self.model, **_kwargs)
+            else:
+                logger.error(
+                    "Torch compile was enabled in config but minimal "
+                    "PyTorch Version of 2.0.0 was not met! Skipping compile."
+                )
+
+    def _init_trafo(self) -> Callable:
+        """
+        Initialize pre transforms from Mixin
+        """
+        trafos = self.get_pre_transforms(plan=self.plan)
 
         # handle transfer learning
         data_channels = self.plan["num_modalities"]  # number of channels of source data
@@ -91,22 +133,7 @@ class LightningBaseModule(pl.LightningModule):
                     data_key="data",
                 )
             )
-
-        self.pre_trafo = Compose(trafos)
-        logger.info(f"Lightningmodule running pre transforms \n: {self.pre_trafo}")
-
-        # initialize evaluation
-        self.evaluators = self.evaluation_init(plan=plan)
-        _tmp = {key: item.__class__.__name__ for key, item in self.evaluators.items()}
-        logger.info(f"Lightningmodule running evaluators: {_tmp}")
-
-        # define key for sweeping
-        self.sweep_key = self.trainer_cfg["sweep_key"]
-        self.monitor_key = self.trainer_cfg["monitor_key"]
-        logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
-
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
+        return Compose(trafos)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -137,8 +164,16 @@ class LightningBaseModule(pl.LightningModule):
             # [optional] add bianry masks to targets if available
             targets["target_binary_masks"] = targets["target_binary_masks"]
 
+        if self.do_channels_last:
+            if self.dim == 3:
+                _data = batch["data"].to(memory_format=torch.channels_last_3d)
+            else:
+                _data = batch["data"].to(memory_format=torch.channels_last)
+        else:
+            _data = batch["data"]
+
         losses = self.model.train_step(
-            images=batch["data"],
+            images=_data,
             targets=targets,
             batch_num=batch_idx,
         )
@@ -171,8 +206,16 @@ class LightningBaseModule(pl.LightningModule):
                 # [optional] add bianry masks to targets if available
                 targets["target_binary_masks"] = targets["target_binary_masks"]
 
+            if self.do_channels_last:
+                if self.dim == 3:
+                    _data = batch["data"].to(memory_format=torch.channels_last_3d)
+                else:
+                    _data = batch["data"].to(memory_format=torch.channels_last)
+            else:
+                _data = batch["data"]
+
             losses, predictions = self.model.validation_step(
-                images=batch["data"],
+                images=_data,
                 targets=targets,
                 batch_num=batch_idx,
             )
