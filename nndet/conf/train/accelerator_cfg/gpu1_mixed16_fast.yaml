@@ -11,7 +11,7 @@ precision: "16-mixed" # mixed precision training; typically: '16-mixed', 'bf16-m
 
 # pytorch 2.0 features
 do_compile: True
-compile_kwargs:
+compile:
   mode: "reduce-overhead"
   backend: "inductor"
   fullgraph: false
