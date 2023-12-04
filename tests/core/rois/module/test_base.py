@@ -9,8 +9,13 @@ from nndet.core.post.box import CrossLevelBoxPostprocessing
 from nndet.core.post.mask import NoMaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.module.single import RoIModule
-from nndet.core.rois.pooler.roi_align import RoIAlignNaiveAssign, roi_align_3d
+from nndet.core.rois.pooler.roi_align import (
+    RoIAlignNaiveAssign,
+    roi_align,
+    roi_align_3d,
+)
 from nndet.losses.classification.ce import BCELoss
+from nndet.losses.mask.ce import BCEMaskLoss
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.roi import BCEAgnosticMasker
@@ -308,11 +313,13 @@ def test_train_step_masks(roi_module_mask: BaseRoIModule, device: torch.device):
         stage=0,
         predict=True,
     )
+    loss = losses["mask_bce"]
 
-    # TODO: finalise test once roi_align design is finalised
-
-    # predictions
     assert preds is None
+    pool_boxes = torch.cat([torch.tensor([[0], [1]], device=device), boxes], dim=1)
+    expected_mask_gt = roi_align(mask[:, None], pool_boxes, output_size=(6, 6, 6), spatial_scale=1.0).squeeze(dim=1)
+    expected_loss = BCEMaskLoss(reduction="mean")(torch.ones_like(expected_mask_gt), expected_mask_gt)
+    assert torch.allclose(expected_loss, loss)
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
