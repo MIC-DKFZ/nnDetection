@@ -123,7 +123,7 @@ roi_module_kwargs:
 # this parameters are used for online val and a pre-reduction during inference.
 # the predictor will apply a different set of parameters during pat val / inference.
 roi_box_post_kwargs: # keyword arguments passed to roi box postprocessing
-  detections_per_img: 50
+  detections_per_img: 100
   nms_thresh: 0.6 # choose conservative threshold here
   remove_small_boxes: 1 # only keep non empty boxes
 
