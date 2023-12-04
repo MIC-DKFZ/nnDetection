@@ -433,7 +433,9 @@ class SingleStageMixin(ModelMixin):
         kwargs = {}
 
         # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
-        if "detections_per_img" in model_cfg:
+        if "rpn_detections_per_img" in model_cfg:
+            kwargs["detections_per_img"] = model_cfg["rpn_detections_per_img"]
+        elif "detections_per_img" in model_cfg:
             kwargs["detections_per_img"] = model_cfg["detections_per_img"]
         else:
             kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME important
