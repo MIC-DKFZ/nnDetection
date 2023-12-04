@@ -104,8 +104,7 @@ class Predictor:
         self.post_transform = post_transform
         self.pre_transform = pre_transform
 
-        self.grid_mode = "symmetric"  # FIXME
-        self.save_get_mode = "shift"  # FIXME
+        self.grid_mode = "symmetric"
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
             f"batch size {self.batch_size} overlap {self.overlap}"

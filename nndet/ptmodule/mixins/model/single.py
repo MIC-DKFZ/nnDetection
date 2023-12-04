@@ -100,19 +100,11 @@ class SingleStageMixin(ModelMixin):
                     Downsampling is alwyas performed at the beginning of the blocks.
                     First stage/level is always full resolution.
 
-            plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
-
-                ``"stride"``
-                    stride # FIXME docs
-
-                ``"aspect_ratios"``
-                    aspect ratios # FIXME docs
-
-                ``"sizes"``
-                    sized for 2d acnhors # FIXME docs
-
-                ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME docs
+            plan_anchors: parameters for anchors (see `AnchorGenerator`
+                for more info). If key 'aspect_ratios' is present,
+                an Anchor Generator is chosen which supports anchor definition
+                via aspect ratio, otherwise the dimensions can be specified
+                directly.
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
