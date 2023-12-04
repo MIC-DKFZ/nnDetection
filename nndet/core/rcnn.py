@@ -19,8 +19,9 @@ class RCNN(AbstractDetector):
         Two stage detection module
 
         Args:
-            rpn:
-            roi_module:
+            rpn: one stage detector which generates an initial set of proposals
+            roi_module: module which takes the proposals and generates final
+                predictions
         """
         super().__init__()
         self.rpn = rpn
