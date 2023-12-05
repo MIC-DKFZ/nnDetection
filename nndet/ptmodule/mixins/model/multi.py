@@ -292,6 +292,7 @@ class RoIBuildMixin:
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        masker: Masker,
     ) -> RoIPooler:
         """
         Build RoI Mask Pooler
@@ -306,7 +307,9 @@ class RoIBuildMixin:
         if cls.roi_mask_pooler_cls is not None:
             pooler_name = cls.roi_box_pooler_cls.__name__
             mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)
-            mask_gt_size = [m * 2 for m in mask_feature_size]  # FIXME important
+            upscale_factor = masker.get_upscale_factor()
+            assert len(mask_feature_size) == len(upscale_factor)
+            mask_gt_size = [m * f for m, f in zip(mask_feature_size, upscale_factor)]
 
             mask_feature_kwargs = model_cfg["roi_pooling"]["roi_mask_feature_kwargs"]
             mask_gt_kwargs = model_cfg["roi_pooling"]["roi_mask_gt_kwargs"]
@@ -617,6 +620,7 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         mask_pooler = cls._build_mask_pooler(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
+            masker=masker,
         )
 
         # RoI Module
