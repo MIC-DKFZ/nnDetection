@@ -61,10 +61,12 @@ class BoxC002(BoxC001):
         Returns:
             Sequence[Sequence[int]]: anchor initialization
         """
-        box_dim = int(boxes.shape[1]) // 2
-        return [
-            (4, 8, 16),
-        ] * box_dim
+        if boxes.shape[1] == 4:
+            return {"width": (4, 8, 16), "height": (4, 8, 16)}
+        elif boxes.shape[1] == 6:
+            return {"width": (4, 8, 16), "height": (4, 8, 16), "depth": (4, 8, 16)}
+        else:
+            raise RuntimeError(f"Unsupported number of dimensions: {boxes.shape[1]}")
 
     def process_properties(self, **kwargs):
         """

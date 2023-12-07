@@ -128,10 +128,6 @@ class SingleStageMixin(ModelMixin):
         )
 
         coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
-        anchor_generator = cls._build_anchor_generator(
-            dim=plan_arch["dim"],
-            plan_anchors=plan_anchors,
-        )
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -142,7 +138,10 @@ class SingleStageMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
-
+        anchor_generator = cls._build_anchor_generator(
+            dim=plan_arch["dim"],
+            plan_anchors=plan_anchors,
+        )
         classifier = cls._build_head_classifier(
             plan_arch=plan_arch,
             model_cfg=model_cfg,

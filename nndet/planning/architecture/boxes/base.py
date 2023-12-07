@@ -458,35 +458,38 @@ class BoxC001(BaseBoxesPlanner):
         # TBPSA, PSO
         for algo in ["TwoPointsDE", "TwoPointsDE", "TwoPointsDE"]:
             _best_iou = 0
-            params = []
-            for axis in range(dim):
-                # TODO: find better initialization
-                anchor_init = self.get_anchor_init(boxes_torch)
-                p = ng.p.Array(init=np.asarray(anchor_init[axis]))
+            params = {}
+            axis_named = ["width", "height", "depth"][:dim]
+            anchor_init = self.get_anchor_init(boxes_torch)
+            for n in axis_named:
+                p = ng.p.Array(init=np.asarray(anchor_init[n]))
                 p.set_integer_casting()
                 # p.set_bounds(1, maxs[axis].item())
                 p.set_bounds(lower=1)
-                params.append(p)
-            instrum = ng.p.Instrumentation(*params)
+                params[n] = p
+            instrum = ng.p.Instrumentation(**params)
             optimizer = ng.optimizers.registry[algo](parametrization=instrum, budget=5000, num_workers=1)
 
             with torch.no_grad():
                 pbar = tqdm(range(optimizer.budget), f"Anchor Opt {algo}")
                 for _ in pbar:
                     x = optimizer.ask()
-                    anchors = anchor_generator.generate_anchors(*x.args)
+                    anchors = anchor_generator.generate_anchors(**x.kwargs)
                     anchors = compute_anchors_for_strides(anchors, strides=strides, cat=True)
                     anchors = anchors
-                    # TODO: add checks if GPU is availabe and has enough VRAM
-                    iou = ops_torch.box_iou(boxes_torch.cuda(), anchors.cuda())  # boxes x anchors
-                    mean_iou = iou.max(dim=1)[0].mean().cpu()
+                    if torch.cuda.is_available():
+                        iou = ops_torch.box_iou(boxes_torch.cuda(), anchors.cuda())  # boxes x anchors
+                        mean_iou = iou.max(dim=1)[0].mean().cpu()
+                    else:
+                        iou = ops_torch.box_iou(boxes_torch, anchors)  # boxes x anchors
+                        mean_iou = iou.max(dim=1)[0].mean()
                     optimizer.tell(x, -mean_iou.item())
                     pbar.set_postfix(mean_iou=mean_iou)
                     _best_iou = mean_iou
             if _best_iou > best_iou:
                 best_iou = _best_iou
-                recommendation = optimizer.provide_recommendation().value[0]
-        return {key: list(val) for key, val in zip(["width", "height", "depth"], recommendation)}
+                recommendation = optimizer.provide_recommendation().value[1]
+        return {key: list(val) for key, val in recommendation.items()}
 
     def get_anchor_init(self, boxes: torch.Tensor) -> Sequence[Sequence[int]]:
         """
@@ -498,8 +501,12 @@ class BoxC001(BaseBoxesPlanner):
         Returns:
             Sequence[Sequence[int]]: anchor initialization
         """
-        # TODO: refactor find anchors to keyword arguments
-        return [(2, 4, 8)] * 3
+        if boxes.shape[1] == 4:
+            return {"width": [16, 32, 64], "height": [16, 32, 64]}
+        elif boxes.shape[1] == 6:
+            return {"width": [16, 32, 64], "height": [16, 32, 64], "depth": [16, 32, 64]}
+        else:
+            raise RuntimeError(f"Unsupported number of dimensions: {boxes.shape[1]}")
 
     def _plan_architecture(
         self,
