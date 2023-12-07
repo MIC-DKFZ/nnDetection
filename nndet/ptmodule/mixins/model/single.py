@@ -8,7 +8,11 @@ from loguru import logger
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractOneStageDetector
-from nndet.core.boxes.anchors import AnchorGenerator, get_anchor_generator
+from nndet.core.boxes.anchors import (
+    AnchorGenerator,
+    AnchorGenerator2D,
+    AnchorGenerator3D,
+)
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import AbstractSampler
@@ -204,8 +208,13 @@ class SingleStageMixin(ModelMixin):
             AnchorGenerator: created anchor generator
         """
         _plan_anchors = copy.deepcopy(plan_anchors)
-        s_param = False if ("aspect_ratios" in _plan_anchors) and (_plan_anchors["aspect_ratios"] is not None) else True
-        anchor_generator = get_anchor_generator(dim, s_param=s_param)(**_plan_anchors)
+        assert "aspect_ratios" not in _plan_anchors
+        if dim == 2:
+            anchor_generator = AnchorGenerator2D(**_plan_anchors)
+        elif dim == 3:
+            anchor_generator = AnchorGenerator3D(**_plan_anchors)
+        else:
+            raise ValueError(f"Unsupported dimension {dim}")
         return anchor_generator
 
     @classmethod

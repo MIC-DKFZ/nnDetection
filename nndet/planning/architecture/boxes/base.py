@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 import os
 from abc import abstractmethod
 from pathlib import Path
@@ -15,7 +16,11 @@ from tqdm import tqdm
 import nndet.core.ops_np as ops_np
 import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractDetector
-from nndet.core.boxes import compute_anchors_for_strides, get_anchor_generator
+from nndet.core.boxes import (
+    AnchorGenerator2D,
+    AnchorGenerator3D,
+    compute_anchors_for_strides,
+)
 from nndet.io.load import load_pickle
 from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.architecture.boxes.utils import (
@@ -369,7 +374,12 @@ class BoxC001(BaseBoxesPlanner):
         )
         boxes_torch = torch.from_numpy(boxes_np).float()
         boxes_torch = boxes_torch - ops_torch.expand_to_boxes(ops_torch.box_center(boxes_torch))
-        anchor_generator = get_anchor_generator(self.dim, s_param=True)
+        if self.dim == 2:
+            anchor_generator = AnchorGenerator2D
+        elif self.dim == 3:
+            anchor_generator = AnchorGenerator3D
+        else:
+            raise RuntimeError(f"Unsupported dimension: {self.dim}")
 
         rel_strides = self.architecture_kwargs["strides"]
         filt_rel_strides = [[1] * self.dim, *rel_strides]
@@ -488,6 +498,7 @@ class BoxC001(BaseBoxesPlanner):
         Returns:
             Sequence[Sequence[int]]: anchor initialization
         """
+        # TODO: refactor find anchors to keyword arguments
         return [(2, 4, 8)] * 3
 
     def _plan_architecture(
@@ -672,12 +683,10 @@ class BoxC001(BaseBoxesPlanner):
             dict: adjusted anchor plan
         """
         num_levels = len(self.architecture_kwargs["decoder_levels"])
-        anchor_plan = {"stride": 1, "aspect_ratios": (0.5, 1, 2)}
-        if self.dim == 2:
-            _sizes = [(16, 32, 64)] * num_levels
-            anchor_plan["sizes"] = tuple(_sizes)
-        else:
-            _sizes = [(16, 32, 64)] * num_levels
-            anchor_plan["sizes"] = tuple(_sizes)
-            anchor_plan["zsizes"] = tuple(_sizes)
+        anchor_plan = {}
+        _sizes = [(16, 32, 64)] * num_levels
+        anchor_plan["width"] = copy.deepcopy(tuple(_sizes))
+        anchor_plan["height"] = copy.deepcopy(tuple(_sizes))
+        if self.dim == 3:
+            anchor_plan["depth"] = copy.deepcopy(tuple(_sizes))
         return anchor_plan

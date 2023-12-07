@@ -17,9 +17,13 @@ from loguru import logger
 
 class AnchorGenerator(torch.nn.Module):
     def __init__(self, *args, **kwargs) -> None:
+        """
+        Baseclass to generate anchors for different feature maps
+        """
         super().__init__(*args, **kwargs)
         self.num_anchors_per_level: List[int] = None
 
+    @torch.no_grad()
     def forward(
         self,
         images: torch.Tensor,
@@ -40,8 +44,6 @@ class AnchorGenerator(torch.nn.Module):
                 List([R, sdims * 2]) where R is the number of anchors per
                 image and sdims is the number of spatial dimensions
         """
-        # TODO: rework device and dtype handling here
-        # TODO: check speed when anchor are generated for each run
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         image_size = images.shape[2:]
         grid_sizes = [feature_map.shape[2:] for feature_map in feature_maps]
@@ -59,8 +61,7 @@ class AnchorGenerator(torch.nn.Module):
         for _ in range(images.shape[0]):
             anchors_in_image = [anchors_per_feature_map for anchors_per_feature_map in anchors_over_all_feature_maps]
             anchors.append(anchors_in_image)
-        # TODO: optionally remove to device statement
-        anchors = [torch.cat(anchors_per_image).to(device) for anchors_per_image in anchors]
+        anchors = [torch.cat(anchors_per_image) for anchors_per_image in anchors]
         return anchors
 
     @abstractmethod
@@ -77,7 +78,8 @@ class AnchorGenerator(torch.nn.Module):
         Args:
             grid_sizes: spatial sizes of feature maps
             strides: stride of each feature map
-            #TODO: docs
+            dtype: dtype of anchors
+            device: device of anchors
 
         Returns:
             List[torch.Tensor]: Anchors for each feature maps
@@ -93,13 +95,11 @@ class AnchorGenerator(torch.nn.Module):
         Generate anchors for given sizes
 
         Args:
-            #TODO: docs
-            width: sizes along width dimension
-            height: sizes along height dimension
-            depth: sizes along depth dimension
+            kwargs: arguments depend on the subclass
 
         Returns:
-            Tensor: anchors of shape [n(width) * n(height) * n(depth) , dim * 2]
+            Tensor: anchors of shape [R , dim * 2] where R is the number of
+                anchors
         """
         raise NotImplementedError
 
@@ -133,16 +133,14 @@ class AnchorGenerator2D(AnchorGenerator):
         **kwargs,
     ):
         """
-        Helper to generate anchors for different input sizes
-        Uses a different parametrization of anchors
+        Class to generate anchors for different feature maps
         (if Sequence[int] is provided it is interpreted as one
         value per feature map size)
 
         Args:
-            width: sizes along width dimension
-            height: sizes along height dimension
+            width: sizes along width dimension ([W, H] image)
+            height: sizes along height dimension ([W, H] image)
         """
-        # TODO: check width and height statements
         super().__init__()
         if not isinstance(width[0], Sequence):
             width = [(w,) for w in width]
@@ -171,7 +169,8 @@ class AnchorGenerator2D(AnchorGenerator):
         Args:
             grid_sizes: spatial sizes of feature maps
             strides: stride of each feature map
-            # TODO: docs
+            dtype: dtype of anchors
+            device: device of anchors
 
         Returns:
             List[torch.Tensor]: Anchors for each feature maps
@@ -189,10 +188,9 @@ class AnchorGenerator2D(AnchorGenerator):
         for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             size0, size1 = size
             stride0, stride1 = stride
-            device = base_anchors.device
 
-            shifts_x = torch.arange(0, size0, dtype=torch.float, device=device) * stride0
-            shifts_y = torch.arange(0, size1, dtype=torch.float, device=device) * stride1
+            shifts_x = torch.arange(0, size0, dtype=dtype, device=device) * stride0
+            shifts_y = torch.arange(0, size1, dtype=dtype, device=device) * stride1
 
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
@@ -219,8 +217,8 @@ class AnchorGenerator2D(AnchorGenerator):
         Generate anchors for given width, height and depth sizes
 
         Args:
-            width: sizes along width dimension
-            height: sizes along height dimension
+            width: sizes along width dimension ([W, H] image)
+            height: sizes along height dimension ([W, H] image)
 
         Returns:
             Tensor: anchors of shape [n(width) * n(height), dim * 2]
@@ -251,17 +249,15 @@ class AnchorGenerator3D(AnchorGenerator):
         **kwargs,
     ):
         """
-        Helper to generate anchors for different input sizes
-        Uses a different parametrization of anchors
+        Class to generate anchors for different feature maps
         (if Sequence[int] is provided it is interpreted as one
         value per feature map size)
 
         Args:
-            width: sizes along width dimension
-            height: sizes along height dimension
-            depth: sizes along depth dimension
+            width: sizes along width dimension ([W, H, D] image)
+            height: sizes along height dimension ([W, H, D] image)
+            depth: sizes along depth dimension ([W, H, D] image)
         """
-        # TODO: check width and height statements
         super().__init__()
         if not isinstance(width[0], Sequence):
             width = [(w,) for w in width]
@@ -291,7 +287,8 @@ class AnchorGenerator3D(AnchorGenerator):
         Args:
             grid_sizes: spatial sizes of feature maps
             strides: stride of each feature map
-            #TODO: docs
+            dtype: dtype of anchors
+            device: device of anchors
 
         Returns:
             List[torch.Tensor]: Anchors for each feature maps
@@ -300,12 +297,14 @@ class AnchorGenerator3D(AnchorGenerator):
         assert len(grid_sizes) == len(strides)
         assert len(grid_sizes) == len(self.cell_anchors)
         anchors = []
+        cell_anchors = [ca.to(device=device, dtype=dtype) for ca in self.cell_anchors]
+        assert cell_anchors is not None
+
         _i = 0
         anchor_per_level = []
-        for size, stride, base_anchors in zip(grid_sizes, strides, self.cell_anchors):
+        for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             size0, size1, size2 = size
             stride0, stride1, stride2 = stride
-            dtype, device = base_anchors.dtype, base_anchors.device
 
             shifts_x = torch.arange(0, size0, dtype=dtype, device=device) * stride0
             shifts_y = torch.arange(0, size1, dtype=dtype, device=device) * stride1
@@ -340,9 +339,9 @@ class AnchorGenerator3D(AnchorGenerator):
         Generate anchors for given width, height and depth sizes
 
         Args:
-            width: sizes along width dimension
-            height: sizes along height dimension
-            depth: sizes along depth dimension
+            width: sizes along width dimension ([W, H, D] image)
+            height: sizes along height dimension ([W, H, D] image)
+            depth: sizes along depth dimension ([W, H, D] image)
 
         Returns:
             Tensor: anchors of shape [n(width) * n(height) * n(depth) , dim * 2]
@@ -369,3 +368,35 @@ class AnchorGenerator3D(AnchorGenerator):
             List[int]: number of anchors per positions for each resolution
         """
         return [len(w) * len(h) * len(d) for w, h, d in zip(self.width, self.height, self.depth)]
+
+
+def compute_anchors_for_strides(
+    anchors: torch.Tensor,
+    strides: Sequence[Union[Sequence[Union[int, float]], Union[int, float]]],
+    cat: bool,
+) -> Union[List[torch.Tensor], torch.Tensor]:
+    """
+    Compute anchors sizes which follow a given sequence of strides
+
+    Args:
+        anchors: anchors for stride 0
+        strides: sequence of strides to adjust anchors for
+        cat: concatenate resulting anchors, if false a Sequence of Anchors
+            is returned
+
+    Returns:
+        Union[List[torch.Tensor], torch.Tensor]: new anchors
+    """
+    anchors_with_stride = [anchors]
+    dim = anchors.shape[1] // 2
+    for stride in strides:
+        if isinstance(stride, (int, float)):
+            stride = [stride] * dim
+
+        stride_formatted = [stride[0], stride[1], stride[0], stride[1]]
+        if dim == 3:
+            stride_formatted.extend([stride[2], stride[2]])
+        anchors_with_stride.append(anchors * torch.tensor(stride_formatted)[None].float())
+    if cat:
+        anchors_with_stride = torch.cat(anchors_with_stride, dim=0)
+    return anchors_with_stride
