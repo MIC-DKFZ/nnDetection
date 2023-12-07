@@ -776,5 +776,4 @@ def create_cv_split():
 
 
 if __name__ == "__main__":
-    # env()
-    masks2nii()
+    env()
