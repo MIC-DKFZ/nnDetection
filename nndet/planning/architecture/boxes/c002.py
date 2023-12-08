@@ -11,7 +11,7 @@ from loguru import logger
 
 import nndet.core.ops_np as ops_np
 import nndet.core.ops_torch as ops_torch
-from nndet.core.boxes import get_anchor_generator
+from nndet.core.boxes import AnchorGenerator2D, AnchorGenerator3D
 from nndet.planning.architecture.boxes.base import BoxC001
 from nndet.planning.architecture.boxes.utils import (
     proxy_num_boxes_in_patch,
@@ -61,10 +61,12 @@ class BoxC002(BoxC001):
         Returns:
             Sequence[Sequence[int]]: anchor initialization
         """
-        box_dim = int(boxes.shape[1]) // 2
-        return [
-            (4, 8, 16),
-        ] * box_dim
+        if boxes.shape[1] == 4:
+            return {"width": (4, 8, 16), "height": (4, 8, 16)}
+        elif boxes.shape[1] == 6:
+            return {"width": (4, 8, 16), "height": (4, 8, 16), "depth": (4, 8, 16)}
+        else:
+            raise RuntimeError(f"Unsupported number of dimensions: {boxes.shape[1]}")
 
     def process_properties(self, **kwargs):
         """
@@ -279,7 +281,12 @@ class BoxC002(BoxC001):
         )
         boxes_torch = torch.from_numpy(boxes_np).float()
         boxes_torch = boxes_torch - ops_torch.expand_to_boxes(ops_torch.box_center(boxes_torch))
-        anchor_generator = get_anchor_generator(self.dim, s_param=True)
+        if self.dim == 2:
+            anchor_generator = AnchorGenerator2D
+        elif self.dim == 3:
+            anchor_generator = AnchorGenerator3D
+        else:
+            raise RuntimeError(f"Unsupported dim {self.dim}")
 
         rel_strides = self.architecture_kwargs["strides"]
         filt_rel_strides = [[1] * self.dim, *rel_strides]

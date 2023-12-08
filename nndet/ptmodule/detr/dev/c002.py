@@ -33,23 +33,33 @@ from nndet.nn.transformer.layers.detr import (
 )
 from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.detr.box_detr import BoxDETRModule
+from nndet.ptmodule.mixins.evaluation.boxes import BoxEvalMixin
+from nndet.ptmodule.mixins.model.detr import SetModelMixin
+from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixin
+from nndet.ptmodule.mixins.prepare.boxes import BoxesPrepareMixin
+from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
 
 @MODULE_REGISTRY.register
-class BoxDETRC002(BoxDETRModule):
+class BoxDETRC002(
+    LightningBaseModule,  # Main module
+    BoxesPrepareMixin,  # prepare batch for box training
+    BoxEvalMixin,  # Bounding Box Evaluation
+    SetModelMixin,  # DETR Mixin to build the model
+    BoxPredictionMixin,  # Bounding Box Sweep
+):
     # Stride 16 + Focal Loss
     backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
-    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
-    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper  #: map channels from backbone to transformer
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly  #: conv class used for channel mapper
 
-    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine
     # transformer
-    transformer_encoder_cls = DETRTransformerEncoder
-    transformer_decoder_cls = DETRTransformerDecoder
-    transformer_cls = DETRTransformer
+    transformer_cls = DETRTransformer  #: define detector transformer architecture
+    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine  #: define positional embedding for feature maps
+    transformer_encoder_cls = DETRTransformerEncoder  #: define encoder class of transformer
+    transformer_decoder_cls = DETRTransformerDecoder  #: define decoder class of transformer
 
     # head blocks
     head_cls: DETRHead = DETRHead  #: main DETR head
@@ -58,6 +68,7 @@ class BoxDETRC002(BoxDETRModule):
     head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
 
+    # matcher
     matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
     # either reg or box criterion need to be set
@@ -68,7 +79,6 @@ class BoxDETRC002(BoxDETRModule):
         BoxCriterion
     ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
 
-    # Stride 16
     @classmethod
     def _build_backbone(
         cls,
@@ -76,6 +86,7 @@ class BoxDETRC002(BoxDETRModule):
         model_cfg: dict,
         patch_size: Optional[Sequence[int]] = None,
     ) -> AbstractBackbone:
+        # stride ~16
         _plan_arch = copy.deepcopy(plan_arch)
         _plan_arch["conv_kernels"] = _plan_arch["conv_kernels"][:-1]
         _plan_arch["strides"] = _plan_arch["strides"][:-1]
@@ -87,18 +98,18 @@ class BoxDETRC002(BoxDETRModule):
 
 
 @MODULE_REGISTRY.register
-class BoxIODETRC002(BoxDETRC002):
-    @classmethod
-    def use_box_io(cls):
-        return True
-
-
-@MODULE_REGISTRY.register
 class BoxCDETRC002(BoxDETRC002):
     transformer_encoder_cls = DETRTransformerEncoder
     transformer_decoder_cls = ConditionalDETRTransformerDecoder
     transformer_cls = DETRTransformer
     head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
+
+
+@MODULE_REGISTRY.register
+class BoxIODETRC002(BoxDETRC002):
+    @classmethod
+    def use_box_io(cls):
+        return True
 
 
 @MODULE_REGISTRY.register

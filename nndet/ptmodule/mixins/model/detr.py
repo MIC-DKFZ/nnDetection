@@ -1,11 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-from pathlib import Path
 from typing import List, Optional, Sequence, Type
 
-import torch
 from loguru import logger
 
 from nndet.core.abstract import AbstractOneStageDetector
@@ -36,14 +33,14 @@ class SetModelMixin(ModelMixin):
     backbone_cls: Type[AbstractBackbone] = ...  #: define class for backbone
     backbone_conv_cls: Type[CONVSEQ] = ...  #: conv class used for backbone
 
-    channel_mapper_cls: Type[ChannelMapper] = ...  #: define channel mapper
-    channel_mapper_conv_cls: Type[CONVSEQ] = ...
+    channel_mapper_cls: Type[ChannelMapper] = ...  #: map channels from backbone to transformer
+    channel_mapper_conv_cls: Type[CONVSEQ] = ...  #: conv class used for channel mapper
 
     # transformer
-    pos_embed_cls: BasePositionEmbedding = ...
-    transformer_encoder_cls: TransformerLayerSequence = ...
-    transformer_decoder_cls: TransformerLayerSequence = ...
-    transformer_cls: Type[AbstractTransformer] = ...
+    transformer_cls: Type[AbstractTransformer] = ...  #: define detector transformer architecture
+    pos_embed_cls: BasePositionEmbedding = ...  #: define positional embedding for feature maps
+    transformer_encoder_cls: TransformerLayerSequence = ...  #: define encoder class of transformer
+    transformer_decoder_cls: TransformerLayerSequence = ...  #: define decoder class of transformer
 
     # head blocks
     head_cls: DETRHead = ...  #: main DETR head
@@ -76,18 +73,56 @@ class SetModelMixin(ModelMixin):
         patch_size: Optional[Sequence[int]] = None,
         **kwargs,
     ):
+        """
+        Build set prediction model e.g. DETR
+
+        Args:
+            model_cfg: model configuration
+            plan_arch: architecture configuration
+
+                ``"dim"`` int
+                    number of spatial dimensions
+
+                ``"in_channels"`` int
+                    number of input channels
+
+                ``"classifier_classes"`` int
+                    number of classes
+
+                ``"start_channels"`` int
+                    number of start channels in backbone
+
+                ``"conv_kernels"`` Sequence[Union[Tuple[int], int]]
+                    kernel sizes of convolutions for each stage/level
+
+                ``"strides"`` Sequence[Union[Tuple[int], int]]
+                    stride of downsampling block for each stage/level
+                    Downsampling is alwyas performed at the beginning of the blocks.
+                    First stage/level is always full resolution.
+
+                ``"seg_classes"`` int
+                    (optional) number of classes
+
+                ``"fpn_channels"`` int
+                    (optional) number of channels to use for FPN
+
+                ``"decoder_levels"`` int
+                    (optional) decoder levels to user for detection
+
+            plan_anchors: anchor configuration (not used)
+            patch_size: patch size for training. Defaults to None.
+        """
         if "plan_arch_overwrites" in model_cfg:
             logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} ")
             plan_arch.update(model_cfg["plan_arch_overwrites"])
-        logger.info(
-            f"Start channels: {plan_arch['start_channels']}; "
-            f"head channels: {plan_arch['head_channels']}; "
-            f"fpn channels: {plan_arch['fpn_channels']}"
+        backbone = cls._build_backbone(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            patch_size=patch_size,
         )
-        backbone = cls._build_backbone(plan_arch, model_cfg)
 
         # transformer
-        hidden_dim = model_cfg["hidden_dim"]
+        hidden_dim = model_cfg["transformer"]["hidden_dim"]
         pos_embed_kwargs = model_cfg.get("pos_embed", {})
         logger.info(f"Building:: Pos Embed {cls.pos_embed_cls.__name__} with {pos_embed_kwargs}")
         pos_embed = cls.pos_embed_cls(
@@ -110,7 +145,6 @@ class SetModelMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
-
         transformer = cls._build_transformer(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -170,77 +204,11 @@ class SetModelMixin(ModelMixin):
             head=head,
             pos_embed=pos_embed,
             hidden_dim=hidden_dim,
-            detection_per_img=model_cfg["detection_per_img"],
-            query_dim=model_cfg["hidden_dim"],
+            query_dim=hidden_dim,
             segmenter=segmenter,
-            two_stage=model_cfg["two_stage"],
+            two_stage=model_cfg["detector"]["two_stage"],
+            detection_per_img=model_cfg["detector"]["detection_per_img"],
             **model_kwargs,
-        )
-
-    @classmethod
-    def _build_transformer(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        classifier: Optional[FFNClassifier] = None,
-        regressor: Optional[FFNRegressor] = None,
-    ):
-        if model_cfg["two_stage"]:
-            encoder_classifier = classifier
-            encoder_regressor = regressor
-        else:
-            encoder_classifier, encoder_regressor = None, None
-
-        encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
-        encoder = cls.transformer_encoder_cls(
-            embed_dim=encoder_kwargs["hidden_dim"],
-            num_heads=encoder_kwargs["attention_heads"],
-            num_layers=encoder_kwargs["num_layers"],
-            attn_dropout=encoder_kwargs["attn_dropout"],
-            proj_dropout=encoder_kwargs["proj_dropout"],
-            feedforward_dim=encoder_kwargs["dim_feedforward"],
-            ffn_dropout=encoder_kwargs["ffn_dropout"],
-            post_norm=encoder_kwargs["post_norm"],
-            dim=plan_arch["dim"],
-        )
-        decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
-        decoder = cls.transformer_decoder_cls(
-            embed_dim=decoder_kwargs["hidden_dim"],
-            num_heads=decoder_kwargs["attention_heads"],
-            num_layers=decoder_kwargs["num_layers"],
-            attn_dropout=decoder_kwargs["attn_dropout"],
-            proj_dropout=decoder_kwargs["proj_dropout"],
-            feedforward_dim=decoder_kwargs["dim_feedforward"],
-            ffn_dropout=decoder_kwargs["ffn_dropout"],
-            post_norm=decoder_kwargs["post_norm"],
-            dim=plan_arch["dim"],
-        )
-        return cls.transformer_cls(
-            encoder=encoder,
-            decoder=decoder,
-            classifier=encoder_classifier,
-            regressor=encoder_regressor,
-        )
-
-    @classmethod
-    def _build_channel_mapper(
-        cls,
-        plan_arch: dict,
-        model_cfg: dict,
-        channels: List[int],
-    ):
-        conv = Generator(cls.channel_mapper_conv_cls, plan_arch["dim"])
-        channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
-        num_in_features = channel_mapper_kwargs["num_feature_levels"]
-        num_total_levels = num_in_features + channel_mapper_kwargs["extra_levels"]
-        return cls.channel_mapper_cls(
-            conv=conv,
-            in_channels=channels,
-            num_in_features=num_in_features,
-            kernel_size=channel_mapper_kwargs["kernel_size"],
-            out_channels=model_cfg["hidden_dim"],
-            num_outs=num_total_levels,
-            **channel_mapper_kwargs["conv_kwargs"],
         )
 
     @classmethod
@@ -281,22 +249,94 @@ class SetModelMixin(ModelMixin):
                 )
             else:
                 logger.info("Patch size check complete, backbone is compatible.")
-
-        # If configured, load weights from a nnDetection pretrained encoder
-        # FIXME this gives error when continuing training
-        if "pretrained_encoder" in model_cfg:
-            if model_cfg["pretrained_encoder"]:
-                path = Path(model_cfg["pretrain_dir"]) / "model_best.ckpt"
-                assert os.path.exists(path), f"No state dict found at {path}"
-                pretrain_dict = torch.load(path)["state_dict"]
-                weight_dict = {
-                    k[15:]: v  # Copy all keys and values from the pretrained state dict
-                    for k, v in pretrain_dict.items()  # backbone. k[15:] filters out the "model.backbone." which is not
-                    if k[:15] == "model.backbone."  # needed to load the weights into the encoder
-                }
-                backbone.load_state_dict(weight_dict)
-                logger.info(f"Using Pretrained Model Weights for {cls.backbone_cls.__name__} from {path}.")
         return backbone
+
+    @classmethod
+    def _build_channel_mapper(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        channels: List[int],
+    ) -> ChannelMapper:
+        """
+        Build class to process backbone feature maps for transformer
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            channels: number of output channels of backbone
+
+        Returns:
+            ChannelMapper: module to perform channel mapping
+        """
+        conv = Generator(cls.channel_mapper_conv_cls, plan_arch["dim"])
+        channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
+        num_in_features = channel_mapper_kwargs["num_feature_levels"]
+        num_total_levels = num_in_features + channel_mapper_kwargs["extra_levels"]
+        return cls.channel_mapper_cls(
+            conv=conv,
+            in_channels=channels,
+            num_in_features=num_in_features,
+            kernel_size=channel_mapper_kwargs["kernel_size"],
+            out_channels=model_cfg["transformer"]["hidden_dim"],
+            num_outs=num_total_levels,
+            **channel_mapper_kwargs["conv_kwargs"],
+        )
+
+    @classmethod
+    def _build_transformer(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        classifier: Optional[FFNClassifier] = None,
+        regressor: Optional[FFNRegressor] = None,
+    ) -> AbstractTransformer:
+        """
+        Build transformer (encoder & decoder)
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            AbstractTransformer: transformer module
+        """
+        if model_cfg["detector"]["two_stage"]:
+            encoder_classifier = classifier
+            encoder_regressor = regressor
+        else:
+            encoder_classifier, encoder_regressor = None, None
+
+        encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
+        encoder = cls.transformer_encoder_cls(
+            embed_dim=model_cfg["transformer"]["hidden_dim"],
+            num_heads=encoder_kwargs["attention_heads"],
+            num_layers=encoder_kwargs["num_layers"],
+            attn_dropout=encoder_kwargs["attn_dropout"],
+            proj_dropout=encoder_kwargs["proj_dropout"],
+            feedforward_dim=encoder_kwargs["dim_feedforward"],
+            ffn_dropout=encoder_kwargs["ffn_dropout"],
+            post_norm=encoder_kwargs["post_norm"],
+            dim=plan_arch["dim"],
+        )
+        decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
+        decoder = cls.transformer_decoder_cls(
+            embed_dim=model_cfg["transformer"]["hidden_dim"],
+            num_heads=decoder_kwargs["attention_heads"],
+            num_layers=decoder_kwargs["num_layers"],
+            attn_dropout=decoder_kwargs["attn_dropout"],
+            proj_dropout=decoder_kwargs["proj_dropout"],
+            feedforward_dim=decoder_kwargs["dim_feedforward"],
+            ffn_dropout=decoder_kwargs["ffn_dropout"],
+            post_norm=decoder_kwargs["post_norm"],
+            dim=plan_arch["dim"],
+        )
+        return cls.transformer_cls(
+            encoder=encoder,
+            decoder=decoder,
+            classifier=encoder_classifier,
+            regressor=encoder_regressor,
+        )
 
     @classmethod
     def _build_classifier(
@@ -304,15 +344,24 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ) -> FFNClassifier:
+        """
+        Build classifier module for predictions
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            FFNClassifier: classification module
+        """
         num_classes = plan_arch["classifier_classes"]
-        hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
         name = cls.head_classifier_cls.__name__
         kwargs = model_cfg["head_classifier_kwargs"]
 
         logger.info(f"Building:: classifier {name} with {kwargs}")
         return cls.head_classifier_cls(
             linear=cls.head_linear_cls,
-            in_channels=hidden_dim,
+            in_channels=model_cfg["transformer"]["hidden_dim"],
             num_classes=num_classes,
             **kwargs,
         )
@@ -323,15 +372,24 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ) -> FFNRegressor:
+        """
+        Build regressor module for predictions
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            FFNRegressor: regression module
+        """
         dim = plan_arch["dim"]
-        hidden_dim = model_cfg["hidden_dim"]  # TODO: fixme
         name = cls.head_regressor_cls.__name__
         kwargs = model_cfg["head_regressor_kwargs"]
 
         logger.info(f"Building:: regressor {name} with {kwargs}")
         return cls.head_regressor_cls(
             linear=cls.head_linear_cls,
-            in_channels=hidden_dim,
+            in_channels=model_cfg["transformer"]["hidden_dim"],
             dim=dim,
             **kwargs,
         )
@@ -342,6 +400,20 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ) -> BaseMatcher:
+        """
+        Build matching module to assign ground truth objects to predictions
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Raises:
+            RuntimeError: raised if neither a box nor a regression criterion
+                is provided
+
+        Returns:
+            BaseMatcher: object to perform matching
+        """
         if cls.matcher_box_criterion_cls is None and cls.matcher_reg_criterion_cls is None:
             raise RuntimeError("Need at least one regression or box criterion!")
 
@@ -381,6 +453,16 @@ class SetModelMixin(ModelMixin):
         plan_arch: dict,
         model_cfg: dict,
     ) -> DETRBoxPost:
+        """
+        Postprocessing module for predictions
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+
+        Returns:
+            DETRBoxPost: module to perform postprocessing
+        """
         name = cls.head_box_post_cls.__name__
         kwargs = model_cfg["head_box_post_kwargs"]
 
@@ -412,7 +494,7 @@ class SetModelMixin(ModelMixin):
     @classmethod
     def has_neck(cls):
         """
-        Check if configuration should have a neck
+        Optional: Check if configuration should have a neck
 
         Returns:
             bool: True if detector needs neck, False othterwise
@@ -430,7 +512,7 @@ class SetModelMixin(ModelMixin):
         backbone: AbstractBackbone,
     ) -> AbstractNeck:
         """
-        Build neck network
+        Optional: Build neck network
 
         Args:
             plan_arch: architecture settings
@@ -458,7 +540,7 @@ class SetModelMixin(ModelMixin):
     @classmethod
     def has_segmenter(cls):
         """
-        Check if configuration should have a segmenter
+        Optional: Check if configuration should have a segmenter
 
         Returns:
             bool: True if detector needs segemetner, False othterwise
@@ -473,7 +555,7 @@ class SetModelMixin(ModelMixin):
         backbone: AbstractBackbone,
     ) -> Segmenter:
         """
-        Build segmenter head
+        Optional: Build segmenter head
 
         Args:
             plan_arch: architecture settings

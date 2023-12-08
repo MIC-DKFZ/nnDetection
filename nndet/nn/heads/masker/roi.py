@@ -13,7 +13,7 @@ from nndet.losses.mask.ce import BCEMaskLoss
 from nndet.losses.mask.dice import BDiceMaskLoss
 from nndet.nn.heads.abstract import Classifier
 from nndet.utils.collections import CONV_TYPES
-from nndet.utils.typing import CONVGEN
+from nndet.utils.typing import CONVGEN, ND_TUPLE_INT
 
 
 class Masker(Classifier):
@@ -77,6 +77,15 @@ class Masker(Classifier):
             int: number of output channels
         """
         return 1 if self.is_class_agnostic() else self.num_classes
+
+    def get_upscale_factor(self) -> ND_TUPLE_INT:
+        """
+        Retrieve upscale factor of mask head
+
+        Returns:
+            ND_TUPLE_INT: upscale factor
+        """
+        return (2, 2) if self.dim == 2 else (2, 2, 2)
 
     def build_conv_internal(self, conv: CONVGEN, **kwargs) -> torch.nn.Module:
         """

@@ -145,19 +145,19 @@ __device__ void trilinear_interpolate_gradient(const int height, const int width
   }
 
   // forward calculations are added as hints
-  T dis_x = x - x0;
+  T dis_x0 = x - x0;
   //T x00 = linear_interpolate(dis, input[(y0*width+ x0)*depth+z0], input[(y0*width+ x1)*depth+z0]); // v000, v100
   //T x10 = linear_interpolate(dis, input[(y1*width+ x0)*depth+z0], input[(y1*width+ x1)*depth+z0]); // v010, v110
   //T x01 = linear_interpolate(dis, input[(y0*width+ x0)*depth+z1], input[(y0*width+ x1)*depth+z1]); // v001, v101
   //T x11 = linear_interpolate(dis, input[(y1*width+ x0)*depth+z1], input[(y1*width+ x1)*depth+z1]); // v011, v111
 
   // linear interpol of y values = bilinear interpol of f(x,y)
-  T dis_y = y - y0;
+  T dis_y0 = y - y0;
   //T xy0 = linear_interpolate(dis, x00, x10);
   //T xy1 = linear_interpolate(dis, x01, x11);
 
   // linear interpol of z value = trilinear interpol of f(x,y,z)
-  T dis_z = z - z0;
+  T dis_z0 = z - z0;
   //T xyz = linear_interpolate(dis, xy0, xy1);
 
   /* need: grad_i := d(xyz)/d(v_i) with v_i = input_value_i  for all i = 0,..,7 (eight input values --> eight-entry gradient)
@@ -165,16 +165,16 @@ __device__ void trilinear_interpolate_gradient(const int height, const int width
      notation: gxyz = gradient for d(trilin_interp)/d(input_value_at_xyz)
      below grads were calculated by hand
      save time by reusing (1-dis_x) = 1-x+x0 = x1-x =: dis_x1 */
-  T dis_x1 = (1-dis_x), dis_y1 = (1-dis_y), dis_z1 = (1-dis_z);
+  T dis_x1 = (1 - dis_x0), dis_y1 = (1 - dis_y0), dis_z1 = (1 - dis_z0);
 
-  g000 = dis_z1 * dis_y1  * dis_x1;
-  g001 = dis_z  * dis_y1  * dis_x1;
-  g010 = dis_z1 * dis_y   * dis_x1;
-  g100 = dis_z1 * dis_y1  * dis_x;
-  g011 = dis_z  * dis_y   * dis_x1;
-  g101 = dis_z  * dis_y1  * dis_x;
-  g110 = dis_z1 * dis_y   * dis_x;
-  g111 = dis_z  * dis_y   * dis_x;
+  g000 = dis_z1 * dis_y1 * dis_x1;
+  g001 = dis_z0 * dis_y1 * dis_x1;
+  g010 = dis_z1 * dis_y0 * dis_x1;
+  g100 = dis_z1 * dis_y1 * dis_x0;
+  g011 = dis_z0 * dis_y0 * dis_x1;
+  g101 = dis_z0 * dis_y1 * dis_x0;
+  g110 = dis_z1 * dis_y0 * dis_x0;
+  g111 = dis_z0 * dis_y0 * dis_x0;
 
   return;
 }
@@ -244,7 +244,6 @@ __global__ void RoIAlignForward(const int nthreads, const T* input, const T spat
         {
           const T z = roi_start_d + pd * bin_size_d +
               static_cast<T>(iz + .5f) * bin_size_d / static_cast<T>(roi_bin_grid_d);
-          // TODO verify trilinear interpolation
           T val = trilinear_interpolate(offset_input, height, width, depth, y, x, z, index);
           output_val += val;
         } // z iterator and calc+add value

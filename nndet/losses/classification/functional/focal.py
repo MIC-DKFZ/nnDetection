@@ -7,6 +7,7 @@ from torch.nn import functional as F
 from nndet.losses.ops import reduction_helper
 
 
+@torch.compile
 def focal_loss_with_logits(
     logits: torch.Tensor,
     target: torch.Tensor,

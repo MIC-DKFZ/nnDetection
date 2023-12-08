@@ -4,11 +4,8 @@
 from nndet.core.boxes.anchors import (
     AnchorGenerator,
     AnchorGenerator2D,
-    AnchorGenerator2DS,
     AnchorGenerator3D,
-    AnchorGenerator3DS,
     compute_anchors_for_strides,
-    get_anchor_generator,
 )
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import ATSSMatcher, IoUMatcher, Matcher

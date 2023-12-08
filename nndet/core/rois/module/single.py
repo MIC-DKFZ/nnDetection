@@ -4,7 +4,6 @@
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
-from loguru import logger
 
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import AbstractSampler
@@ -142,13 +141,6 @@ class RoIModule(BaseRoIModule):
             matched_gt_idx,
         ) = self.assign_and_sample(proposals=proposals, targets=targets)
 
-        if sum(pb.numel() for pb in proposal_boxes) == 0:
-            logger.info(
-                "No proposals found return zero loss for RoI head "
-                f"with initial proposals {proposals} and targets {targets}"
-            )
-            return {}
-
         # box loss
         losses, _ = self._train_step_boxes(
             features=_features,
@@ -231,7 +223,6 @@ class RoIModule(BaseRoIModule):
                 ``"pred_image_spatial_size"`` ND_TUPLE_INT
                     image size which was used for prediction. Needed to restore
                     correct size of image when pasting binary masks.
-
         """
         _features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])

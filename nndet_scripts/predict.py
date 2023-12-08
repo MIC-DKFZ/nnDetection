@@ -51,7 +51,9 @@ def run(
         batch_size: batch size to use for inference. If 0, batch size
             from plan is used.
     """
-    preprocessed_output_dir = Path(cfg["host"]["preprocessed_output_dir"])
+    task_data_dir = Path(os.getenv("det_data")) / cfg["task"]
+    splitted_4d_output_dir = task_data_dir / "raw_splitted"
+    preprocessed_output_dir = task_data_dir / "preprocessed"
     prediction_dir = training_dir / "test_predictions"
 
     logger.remove()
@@ -72,7 +74,7 @@ def run(
         planner_cls = PLANNER_REGISTRY.get(plan["planner_id"])
         planner_cls.run_preprocessing_test(
             preprocessed_output_dir=preprocessed_output_dir,
-            splitted_4d_output_dir=cfg["host"]["splitted_4d_output_dir"],
+            splitted_4d_output_dir=splitted_4d_output_dir,
             plan=plan,
             num_processes=num_processes,
         )
@@ -281,12 +283,9 @@ def main():
     # print(cfg)
 
     cfg = set_arg(cfg, "task", task_name, force_args=force_args)
-    cfg["exp"] = set_arg(cfg["exp"], "fold", fold, force_args=True if fold == -1 else force_args)
     cfg["exp"] = set_arg(cfg["exp"], "id", model, force_args=force_args)
 
     overwrites = ov if ov is not None else []
-    overwrites.append("host.parent_data=${oc.env:det_data}")
-    overwrites.append("host.parent_results=${oc.env:det_models}")
     cfg.merge_with_dotlist(overwrites)
 
     for imp in cfg.get("additional_imports", []):

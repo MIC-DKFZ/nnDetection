@@ -6,26 +6,12 @@ from hydra import compose, initialize_config_module
 from hydra.core.global_hydra import GlobalHydra
 from omegaconf.omegaconf import OmegaConf
 
+from nndet.core.rois.pooler.roi_align import roi_align_3d
 from nndet.ptmodule.detr.dev.c002 import BoxDETRC002
-from nndet.ptmodule.frcnn.dev.fc001 import FasterRCNNC001
-from nndet.ptmodule.mrcnn.dev.cmc001 import CascadeMaskURCNNC001
-from nndet.ptmodule.mrcnn.dev.mc001 import MaskRCNNC001, MaskURCNNC001
-
-# specific modules
-from nndet.ptmodule.retinanet.dev import RetinaNetC001, RetinaNetC001Focal
-from nndet.ptmodule.retinanet.rnv002 import (
-    RetinaNetFocalResV002,
-    RetinaNetFocalV002,
-    RetinaNetHNMV002,
-)
-
-# base modules
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import (
-    RetinaUNetFocalResV002,
-    RetinaUNetFocalV002,
-    RetinaUNetHNMV002,
-)
+from nndet.ptmodule.mrcnn.mv002 import BoxMaskRCNNV002, BoxMaskURCNNV002
+from nndet.ptmodule.retinanet.rnv002 import RetinaNetFocalV002, RetinaNetHNMV002
+from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.runv002 import RetinaUNetFocalV002, RetinaUNetHNMV002
 
 
 @pytest.fixture
@@ -113,34 +99,24 @@ def example_empty_batch(in_channels, patch_size, device):
 
 
 CASES = [
-    # Base Models
+    # Single Stage
     (RetinaUNetV001, "retinaunet_v001"),
     (RetinaUNetV001, "retinaunet_v001_mod"),
     (RetinaUNetHNMV002, "retinaunet_hnm_v002"),
     (RetinaUNetFocalV002, "retinaunet_focal_v002"),
-    (RetinaUNetFocalResV002, "retinaunet_focal_v002"),
     (RetinaNetHNMV002, "retinaunet_hnm_v002"),
     (RetinaNetFocalV002, "retinaunet_focal_v002"),
-    (RetinaNetFocalResV002, "retinaunet_focal_v002"),
-    # Dev Models
+    # Set Prediction
     (BoxDETRC002, "detr_c002"),
-    # (RetinaNetC001, "v001"),
-    # (RetinaNetC001Focal, "c014_focal"),
-    # (RetinaUNetCV001Focal, "c014_focal"),
-    # (FasterRCNNC001, "frcnn_c001"),
-    # (MaskRCNNC001, "mrcnn_c001"),
-    # (CascadeMaskURCNNC001, "cascmrcnn_c001"),
 ]
+
+if roi_align_3d is not None and torch.cuda.is_available():
+    # Two Stage
+    CASES.append((BoxMaskRCNNV002, "mrcnn_v002"))
+    CASES.append((BoxMaskURCNNV002, "mrcnn_v002"))
 
 
 DEVICES = ["cpu"]
-# TODO: gpu tests
-# pytest.param(
-#     "cuda",
-#     marks=pytest.mark.skipif(
-#         not torch.cuda.is_available(), reason="No cuda gpu available"
-#     ),
-# ),
 
 
 @pytest.mark.parametrize("case", CASES)

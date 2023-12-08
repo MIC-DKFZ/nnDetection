@@ -6,12 +6,10 @@
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
-from loguru import logger
 from scipy.optimize import linear_sum_assignment
-from torch import Tensor
 
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 
@@ -24,7 +22,7 @@ class HungarianMatcher(BaseMatcher):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-    ) -> List[Tuple[Tensor, Tensor]]:
+    ) -> Tuple[List[Tuple[torch.Tensor, torch.Tensor]], Optional[Dict[str, torch.Tensor]]]:
         """
         Perform matching over batch elements with at least one ground truth
         element in them
@@ -50,6 +48,7 @@ class HungarianMatcher(BaseMatcher):
                 (in order) and the second tensor contains the selected ground
                 truth objects (in order). It holds for each elements:
                 len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
+            Optional[Dict]: Dict containing the matching cost
         """
         bs, num_queries = pred_logits.shape[:2]
 
@@ -58,36 +57,94 @@ class HungarianMatcher(BaseMatcher):
         out_bbox = pred_coords.flatten(0, 1)  # [batch_size * num_queries, dims * 2]
 
         tgt_labels = torch.cat(target_labels, dim=0)
+        num_boxes = tgt_labels.shape[0]
         tgt_bbox = torch.cat(target_boxes, dim=0)
-
-        cost_class = sum(
-            self.class_criterion[idx](out_logits, tgt_labels) for idx in range(len(self.class_criterion))
-        )  # [batch_size * num_queries, num_gt_elements]
-        cost_box = sum(
-            self.box_criterion[idx](out_bbox, tgt_bbox) for idx in range(len(self.box_criterion))
-        )  # [batch_size * num_queries, num_gt_elements]
+        num_class_criterion = len(self.class_criterion)
+        num_box_criterion = len(self.box_criterion)
+        cost_classes = [self.class_criterion[idx](out_logits, tgt_labels) for idx in range(num_class_criterion)]
+        cost_boxes = [self.box_criterion[idx](out_bbox, tgt_bbox) for idx in range(num_box_criterion)]
+        cost_class = sum(cost_classes)  # [batch_size * num_queries, num_gt_elements]
+        cost_box = sum(cost_boxes)  # [batch_size * num_queries, num_gt_elements]
 
         C = cost_class + cost_box
         C = C.view(bs, num_queries, -1).cpu()
         sizes = [len(v) for v in target_boxes]
-        try:
-            indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
-        except Exception:
-            logger.info(f"Out logits: {out_logits}")
-            logger.info(f"Out boxes: {out_bbox}")
-            logger.info(f"Gt labels: {tgt_labels}")
-            logger.info(f"Gt boxes: {tgt_bbox}")
-            logger.info(f"cost_class: {cost_class}")
-            logger.info(f"cost_box: {cost_box}")
-            logger.info(f"sizes: {sizes}")
-            logger.info(f"C: {C}")
-            logger.info(f"BS {bs} NQ: {num_queries}")
-            raise RuntimeError
+        indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
 
-        return [
+        out_indices = [
             (
                 torch.as_tensor(i, dtype=torch.int64),
                 torch.as_tensor(j, dtype=torch.int64),
             )
             for i, j in indices
         ]
+        crit_log_dict = None
+        if self.extended_logging:
+            crit_log_dict = self._get_log_dict(
+                bs=bs,
+                num_queries=num_queries,
+                sizes=sizes,
+                out_indices=out_indices,
+                cost_classes=cost_classes,
+                cost_boxes=cost_boxes,
+                num_boxes=num_boxes,
+            )
+        return out_indices, crit_log_dict
+
+    def _get_log_dict(
+        self,
+        bs: int,
+        num_queries: int,
+        sizes: List[int],
+        out_indices: List[Tuple[torch.Tensor, torch.Tensor]],
+        cost_classes: List[torch.Tensor],
+        cost_boxes: List[torch.Tensor],
+        num_boxes: int,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Provide additional information for logging from criterion values
+
+        Args:
+            bs: batch size
+            num_queries: number of queries (aka number of predictions)
+            sizes: number of ground truth boxes per image
+            out_indices: indices as determined by the matching algorithm
+            cost_classes: costs of class criterions
+            cost_boxes: costs of box criterions
+            num_boxes: number of ground truth boxes
+
+        Returns:
+            Dict[str, torch.Tensor]: additional information for logging
+        """
+        num_class_criterion = len(self.class_criterion)
+        num_box_criterion = len(self.box_criterion)
+
+        crit_log_dict = {}
+        # Initialize average keys (normalized by number of boxes)
+        for j in range(num_class_criterion):
+            crit_log_dict[f"__class_crit_{j}_avg"] = 0
+        for j in range(num_box_criterion):
+            crit_log_dict[f"__box_crit_{j}_avg"] = 0
+
+        for i, (pred_indices, gt_indices) in enumerate(out_indices):
+            # class costs
+            for j in range(num_class_criterion):
+                cost_classes_tmp = (
+                    cost_classes[j].view(bs, num_queries, -1).split(sizes, -1)[i][i][pred_indices, gt_indices]
+                )
+                crit_log_dict[f"__class_crit_{j}_avg"] += cost_classes_tmp.sum() / num_boxes
+                for k, cost_class_tmp in enumerate(cost_classes_tmp):
+                    crit_log_dict[f"__class_crit_{j}_img_{i}_box_{k}"] = cost_class_tmp
+
+            # reg costs
+            for j in range(num_box_criterion):
+                cost_boxes_tmp = (
+                    cost_boxes[j].view(bs, num_queries, -1).split(sizes, -1)[i][i][pred_indices, gt_indices]
+                )
+                crit_log_dict[f"__box_crit_{j}_avg"] += cost_boxes_tmp.sum() / num_boxes
+                for k, cost_box_tmp in enumerate(cost_boxes_tmp):
+                    crit_log_dict[f"__box_crit_{j}_img_{i}_box_{k}"] = cost_box_tmp
+
+        # Get total average
+        crit_log_dict["__crit_avg"] = sum([value if "avg" in key else 0 for key, value in crit_log_dict.items()])
+        return crit_log_dict

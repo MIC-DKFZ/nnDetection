@@ -57,7 +57,6 @@ class BaseNormLinearActDrop(torch.nn.Sequential):
         # process dynamic values
         bias = True if bias is None else bias
 
-        # TODO: handle layer norm
         if norm is not None:
             if isinstance(norm, str):
                 _norm = nd_norm(norm, 1, out_channels, **norm_kwargs)

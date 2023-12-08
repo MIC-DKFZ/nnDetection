@@ -40,8 +40,6 @@ from nndet.ptmodule.mixins.prepare import (
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
 
-# TODO: integrate final updates, updates ResV2 backbone, PerLevelPost
-
 
 @MODULE_REGISTRY.register
 class BoxMaskRCNNV002(

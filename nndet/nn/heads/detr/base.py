@@ -5,8 +5,7 @@
 # Original code from DETR https://github.com/facebookresearch/detr
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
-
-
+import os
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
@@ -58,6 +57,7 @@ class DETRHead(torch.nn.Module):
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
         self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
+        self.extended_logging = os.getenv("det_extended_logging", 0)
 
     def forward(
         self,
@@ -74,7 +74,6 @@ class DETRHead(torch.nn.Module):
                 R=number of predictions, C=number of channels
             reference: reference output of the transformer
                 (not used in original DETR head)
-                #TODO
 
         Returns:
             Dict[str, torch.Tensor]: predictions and auxiliary information
@@ -161,7 +160,7 @@ class DETRHead(torch.nn.Module):
         )
 
         # compute losses
-        losses = self._match_and_compute_loss(
+        losses, criterion_log = self._match_and_compute_loss(
             pred_logits=pred_detection["pred_cls_logits"],
             pred_coords=pred_detection["pred_box_coords"],
             target_boxes=target_boxes,
@@ -171,7 +170,7 @@ class DETRHead(torch.nn.Module):
         if "aux_outputs" in pred_detection:
             num_aux_outputs = len(pred_detection["aux_outputs"])
             for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
-                l_dict = self._match_and_compute_loss(
+                l_dict, m_dict = self._match_and_compute_loss(
                     pred_logits=aux_outputs["pred_cls_logits"],
                     pred_coords=aux_outputs["pred_box_coords"],
                     target_boxes=target_boxes,
@@ -181,6 +180,7 @@ class DETRHead(torch.nn.Module):
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
 
         if "enc_outputs" in pred_detection:
+            # TODO:check in details here
             enc_outputs = pred_detection["enc_outputs"]
             l_dict = self._match_and_compute_loss(
                 pred_logits=enc_outputs["pred_cls_logits"],
@@ -191,6 +191,12 @@ class DETRHead(torch.nn.Module):
             )
             # TODO might want to scale this
             losses.update(self.format_scale_aux_losses(l_dict, 1, "enc"))
+            # Don't log auxiliary criteria
+            # criterion_log.update(m_dict)
+
+        if self.extended_logging:
+            losses.update(criterion_log)
+
         return losses
 
     def format_scale_aux_losses(
@@ -211,12 +217,12 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: formatted and scaled auxiliary output
         """
         if self.scale_aux_loss == AuxLossNorm.NONE:
-            loss_dict = {k + f"_{aux_idx}": v for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.MEAN:
-            loss_dict = {k + f"_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.REDUCED:
             w = 1 / (num_aux_outputs - aux_idx + 1)
-            loss_dict = {k + f"_{aux_idx}": v * w for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v * w for k, v in loss_dict.items()}
         return loss_dict
 
     def prepare_targets(
@@ -255,7 +261,7 @@ class DETRHead(torch.nn.Module):
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
         num_boxes_all: int,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
         """
         Perform matching of predictions and ground truth objects and
         compute losses
@@ -276,7 +282,7 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed losses. Exact entries depend on
                 FFNClassifier and FFNRegressor
         """
-        indices = self.matcher(
+        indices, criterion_log = self.matcher(
             pred_logits=pred_logits,
             pred_coords=pred_coords,
             target_boxes=target_boxes,
@@ -300,7 +306,7 @@ class DETRHead(torch.nn.Module):
                 num_boxes_all=num_boxes_all,
             )
         )
-        return losses
+        return losses, criterion_log
 
     def compute_class_loss(
         self,

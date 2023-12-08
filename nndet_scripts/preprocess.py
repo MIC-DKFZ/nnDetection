@@ -7,10 +7,11 @@ import os
 import shutil
 import sys
 import traceback
+from datetime import datetime
 from itertools import repeat
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 from hydra import initialize_config_module
@@ -120,82 +121,85 @@ def run_dataset_analysis(
     _ = analyzer.analyze_dataset(properties)
 
 
-def run_planning_and_process(
-    splitted_4d_output_dir: Path,
-    cropped_output_dir: Path,
-    preprocessed_output_dir: Path,
-    planner_name: str,
-    dim: int,
+def run_planning(
     model_name: str,
-    model_cfg: Dict,
-    num_processes: int,
-    run_preprocessing: bool = True,
-):
-    """
-    Run planning and preprocessing
-
-    Args:
-        splitted_4d_output_dir: base dir of splitted data
-        cropped_output_dir: base dir of cropped data
-        preprocessed_output_dir: base dir of preprocessed data
-        planner_name: planner name
-        dim: number of spatial dimensions
-        model_name: name of model to run planning for
-        model_cfg: hyperparameters of model (used during planning to
-            instantiate model)
-        num_processes: number of processes to use for preprocessing
-        run_preprocessing: Preprocess and check data. Defaults to True.
-    """
+    model_cfg: dict,
+    planner_name: str,
+    preprocessed_output_dir: Path,
+) -> None:
     planner_cls = PLANNER_REGISTRY.get(planner_name)
     planner = planner_cls(preprocessed_output_dir=preprocessed_output_dir)
-    plan_identifiers = planner.plan_experiment(
+    _ = planner.plan_experiment(
         model_name=model_name,
         model_cfg=model_cfg,
     )
-    if run_preprocessing:
-        for plan_id in plan_identifiers:
-            plan = load_pickle(preprocessed_output_dir / plan_id)
+
+
+def run_preprocess(
+    dim: int,
+    planner_name: str,
+    splitted_4d_output_dir: Path,
+    cropped_output_dir: Path,
+    preprocessed_output_dir: Path,
+    num_processes: int,
+) -> None:
+    planner_cls = PLANNER_REGISTRY.get(planner_name)
+    planner = planner_cls(preprocessed_output_dir=preprocessed_output_dir)
+    plan_identifiers = planner.get_plan_identifiers()
+    logger.info(f"Found plan identifiers {plan_identifiers} from " f"planner {planner_cls.__name__}")
+
+    processed_at_least_one_plan = False
+    for plan_id in plan_identifiers:
+        plan_path = preprocessed_output_dir / f"{plan_id}.pkl"
+        if not plan_path.is_file():
+            logger.info(f"Skipping plan identifier {plan_id} since it does not exist.")
+            continue
+
+        plan = load_pickle(plan_path)
+        processed_at_least_one_plan = True
+        planner.run_preprocessing(
+            cropped_data_dir=cropped_output_dir / "imagesTr",
+            plan=plan,
+            num_processes=num_processes,
+        )
+        case_ids_failed, result_check = run_check(
+            data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
+            remove=True,
+            processes=num_processes,
+        )
+
+        # delete and rerun corrupted cases
+        if not result_check:
+            logger.warning(
+                f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
+                f"Running preprocessing of those cases without multiprocessing."
+            )
             planner.run_preprocessing(
                 cropped_data_dir=cropped_output_dir / "imagesTr",
                 plan=plan,
-                num_processes=num_processes,
+                num_processes=0,
             )
             case_ids_failed, result_check = run_check(
                 data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
-                remove=True,
-                processes=num_processes,
+                remove=False,
+                processes=0,
             )
-
-            # delete and rerun corrupted cases
             if not result_check:
-                logger.warning(
-                    f"{plan_id} check failed: There are corrupted files {case_ids_failed}!!!!"
-                    f"Running preprocessing of those cases without multiprocessing."
-                )
-                planner.run_preprocessing(
-                    cropped_data_dir=cropped_output_dir / "imagesTr",
-                    plan=plan,
-                    num_processes=0,
-                )
-                case_ids_failed, result_check = run_check(
-                    data_dir=preprocessed_output_dir / plan["data_identifier"] / "imagesTr",
-                    remove=False,
-                    processes=0,
-                )
-                if not result_check:
-                    logger.error(f"Could not fix corrupted files {case_ids_failed}!")
-                    raise RuntimeError("Found corrupted files, check logs!")
-                else:
-                    logger.info("Fixed corrupted files.")
+                logger.error(f"Could not fix corrupted files {case_ids_failed}!")
+                raise RuntimeError("Found corrupted files, check logs!")
             else:
-                logger.info(f"{plan_id} check successful: Loading check completed")
+                logger.info("Fixed corrupted files.")
+        else:
+            logger.info(f"{plan_id} check successful: Loading check completed")
 
-    if run_preprocessing:
-        create_labels(
-            preprocessed_output_dir=preprocessed_output_dir,
-            source_dir=splitted_4d_output_dir,
-            num_processes=num_processes,
-        )
+    if not processed_at_least_one_plan:
+        raise RuntimeError("Did not find any processable plans, something went wrong")
+
+    create_labels(
+        preprocessed_output_dir=preprocessed_output_dir,
+        source_dir=splitted_4d_output_dir,
+        num_processes=num_processes,
+    )
 
 
 def run_check(
@@ -293,6 +297,11 @@ def check_case(
 
 def run(
     cfg,
+    skip_crop: bool,
+    skip_analyze: bool,
+    skip_plan: bool,
+    skip_process: bool,
+    overwrite_existing: bool,
     num_processes: int,
     num_processes_preprocessing: int,
 ):
@@ -303,44 +312,58 @@ def run(
         cfg: dict with config
         instances_from_seg: convert semantic segmentation to instance segmentation
     """
+    task_data_dir = Path(os.getenv("det_data")) / cfg["task"]
+
     logger.remove()
-    logger.add(sys.stdout, level="INFO")
-    logger.add(Path(cfg["host"]["data_dir"]) / "logging.log", level="DEBUG")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
+    logger.add(task_data_dir / "preprocessing.log", level="DEBUG")
     data_info = cfg["data"]
 
-    if cfg["prep"]["crop"]:
-        # crop data to nonzero area
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_prep {current_time_str} +++")
+
+    splitted_4d_output_dir = task_data_dir / "raw_splitted"
+    cropped_output_dir = task_data_dir / "raw_cropped"
+    preprocessed_output_dir = task_data_dir / "preprocessed"
+
+    if not skip_crop:
         run_cropping_and_convert(
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
+            splitted_4d_output_dir=splitted_4d_output_dir,
+            cropped_output_dir=cropped_output_dir,
             data_info=data_info,
-            overwrite=cfg["prep"]["overwrite"],
+            overwrite=overwrite_existing,
             num_processes=num_processes,
         )
-
-    if cfg["prep"]["analyze"]:
-        # compute statistics over data and segmentation(e.g. physical volume of individual classes)
+    if not skip_analyze:
         run_dataset_analysis(
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
+            cropped_output_dir=cropped_output_dir,
+            preprocessed_output_dir=preprocessed_output_dir,
             data_info=data_info,
             num_processes=num_processes,
             intensity_properties=True,
-            overwrite=cfg["prep"]["overwrite"],
+            overwrite=overwrite_existing,
         )
-
-    if cfg["prep"]["plan"] or cfg["prep"]["process"]:
-        # plan future training
-        run_planning_and_process(
-            splitted_4d_output_dir=Path(cfg["host"]["splitted_4d_output_dir"]),
-            cropped_output_dir=Path(cfg["host"]["cropped_output_dir"]),
-            preprocessed_output_dir=Path(cfg["host"]["preprocessed_output_dir"]),
-            planner_name=cfg["planner"],
-            dim=data_info["dim"],
+    if not skip_plan:
+        run_planning(
             model_name=cfg["module"],
             model_cfg=cfg["model_cfg"],
+            planner_name=cfg["planner"],
+            preprocessed_output_dir=preprocessed_output_dir,
+        )
+    if not skip_process:
+        run_preprocess(
+            dim=data_info["dim"],
+            planner_name=cfg["planner"],
+            splitted_4d_output_dir=splitted_4d_output_dir,
+            cropped_output_dir=cropped_output_dir,
+            preprocessed_output_dir=preprocessed_output_dir,
             num_processes=num_processes_preprocessing,
-            run_preprocessing=cfg["prep"]["process"],
         )
 
 
@@ -363,13 +386,38 @@ def main():
         required=False,
     )
     parser.add_argument(
+        "--skip_check",
+        help="Skip basic check.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--skip_crop",
+        action="store_true",
+        help="Skip cropping",
+    )
+    parser.add_argument(
+        "--skip_analyze",
+        action="store_true",
+        help="Skip analyze",
+    )
+    parser.add_argument(
+        "--skip_plan",
+        action="store_true",
+        help="Skip planning",
+    )
+    parser.add_argument(
+        "--skip_process",
+        action="store_true",
+        help="Skip preprocessing",
+    )
+    parser.add_argument(
         "--full_check",
         help="Run a full check of the data.",
         action="store_true",
     )
     parser.add_argument(
-        "--no_check",
-        help="Skip basic check.",
+        "--overwrite_existing",
+        help="Overwrite existing cropped data and properties",
         action="store_true",
     )
     parser.add_argument(
@@ -392,13 +440,21 @@ def main():
     tasks = args.tasks
     ov = args.overwrites
     full_check = args.full_check
-    no_check = args.no_check
+
+    skip_check = args.skip_check
+    skip_crop = args.skip_crop
+    skip_analyze = args.skip_analyze
+    skip_plan = args.skip_plan
+    skip_process = args.skip_process
+
+    overwrite_existing = args.overwrite_existing
+
     num_processes = args.num_processes
     num_processes_preprocessing = args.num_processes_preprocessing
 
     initialize_config_module(config_module="nndet.conf", version_base="1.1")
     # perform preprocessing checks first
-    if not no_check:
+    if not skip_check:
         for task in tasks:
             _ov = copy.deepcopy(ov) if ov is not None else []
             cfg = compose(task, "config.yaml", overrides=_ov)
@@ -423,6 +479,11 @@ def main():
         cfg = compose(task, "config.yaml", overrides=_ov)
         run(
             OmegaConf.to_container(cfg, resolve=True),
+            skip_crop=skip_crop,
+            skip_analyze=skip_analyze,
+            skip_plan=skip_plan,
+            skip_process=skip_process,
+            overwrite_existing=overwrite_existing,
             num_processes=num_processes,
             num_processes_preprocessing=num_processes_preprocessing,
         )

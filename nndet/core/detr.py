@@ -202,7 +202,7 @@ class BaseDETR(AbstractDetector):
         Perform inference for a batch of images
 
         Args:
-            images: batch of input images [N, C, W, H, (D)]
+            images: batch of input images [N, C, dims]
 
         Returns:
             Dict: predictions

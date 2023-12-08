@@ -8,8 +8,7 @@ def test_basic_compose():
         cfg = compose("config.yaml", overrides=["train=retinaunet_v001_mod"])
 
         # check for keys
-        assert cfg["exp"]["fold"] == 0
-        assert cfg["exec"]["mode"] == "overwrite"
+        assert "fold" not in cfg["exp"]
 
         assert cfg["module"] is not None
         assert cfg["plan"] is not None
@@ -17,7 +16,7 @@ def test_basic_compose():
 
         assert cfg["augment_cfg"]["name"] is not None
         assert cfg["io_cfg"]["multiprocessing"] is not None
-        assert cfg["trainer_cfg"]["gpus"] is not None
+        assert cfg["accelerator_cfg"]["gpus"] is not None
         assert cfg["model_cfg"]["backbone_kwargs"] is not None
 
 

@@ -8,7 +8,11 @@ from loguru import logger
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.abstract import AbstractOneStageDetector
-from nndet.core.boxes.anchors import AnchorGenerator, get_anchor_generator
+from nndet.core.boxes.anchors import (
+    AnchorGenerator,
+    AnchorGenerator2D,
+    AnchorGenerator3D,
+)
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import AbstractSampler
@@ -100,19 +104,11 @@ class SingleStageMixin(ModelMixin):
                     Downsampling is alwyas performed at the beginning of the blocks.
                     First stage/level is always full resolution.
 
-            plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
-
-                ``"stride"``
-                    stride # FIXME
-
-                ``"aspect_ratios"``
-                    aspect ratios # FIXME
-
-                ``"sizes"``
-                    sized for 2d acnhors # FIXME
-
-                ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME
+            plan_anchors: parameters for anchors (see `AnchorGenerator`
+                for more info). If key 'aspect_ratios' is present,
+                an Anchor Generator is chosen which supports anchor definition
+                via aspect ratio, otherwise the dimensions can be specified
+                directly.
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
@@ -131,11 +127,7 @@ class SingleStageMixin(ModelMixin):
             f"fpn channels: {plan_arch['fpn_channels']}"
         )
 
-        _plan_anchors = copy.deepcopy(plan_anchors)
         coder = BoxCoderND(weights=(1.0,) * (plan_arch["dim"] * 2))
-        s_param = False if ("aspect_ratios" in _plan_anchors) and (_plan_anchors["aspect_ratios"] is not None) else True
-        anchor_generator = get_anchor_generator(plan_arch["dim"], s_param=s_param)(**_plan_anchors)
-
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -146,7 +138,10 @@ class SingleStageMixin(ModelMixin):
             plan_arch=plan_arch,
             model_cfg=model_cfg,
         )
-
+        anchor_generator = cls._build_anchor_generator(
+            dim=plan_arch["dim"],
+            plan_anchors=plan_anchors,
+        )
         classifier = cls._build_head_classifier(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -194,6 +189,32 @@ class SingleStageMixin(ModelMixin):
             box_post=box_post,
             **detector_kwargs,
         )
+
+    @classmethod
+    def _build_anchor_generator(
+        cls,
+        dim: int,
+        plan_anchors: dict,
+    ) -> AnchorGenerator:
+        """
+        Build anchor generator
+
+        Args:
+            dim: number of spatia dimensions
+            plan_anchors: plan for anchor generation
+
+        Returns:
+            AnchorGenerator: created anchor generator
+        """
+        _plan_anchors = copy.deepcopy(plan_anchors)
+        assert "aspect_ratios" not in _plan_anchors
+        if dim == 2:
+            anchor_generator = AnchorGenerator2D(**_plan_anchors)
+        elif dim == 3:
+            anchor_generator = AnchorGenerator3D(**_plan_anchors)
+        else:
+            raise ValueError(f"Unsupported dimension {dim}")
+        return anchor_generator
 
     @classmethod
     def _build_backbone(
@@ -412,10 +433,12 @@ class SingleStageMixin(ModelMixin):
         kwargs = {}
 
         # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
-        if "detections_per_img" in model_cfg:
+        if "rpn_detections_per_img" in model_cfg:
+            kwargs["detections_per_img"] = model_cfg["rpn_detections_per_img"]
+        elif "detections_per_img" in model_cfg:
             kwargs["detections_per_img"] = model_cfg["detections_per_img"]
         else:
-            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME
+            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME important
 
         kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
         kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)

@@ -1,8 +1,108 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import List
+
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
+
+
+@env_guard
+def boxes2mitk():
+    """
+    Only for visualisation purposes.
+    """
+    import argparse
+    import os
+    from pathlib import Path
+
+    import numpy as np
+    from loguru import logger
+
+    from nndet.io import load_pickle, save_json
+    from nndet.io.paths import get_task, get_training_dir
+    from nndet.utils.info import maybe_verbose_iterable
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument("fold", type=int, help="experiment fold")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Minimum probability of predictions",
+        required=False,
+        default=0.5,
+    )
+    parser.add_argument("--test", action="store_true")
+
+    args = parser.parse_args()
+    model = args.model
+    fold = args.fold
+    task = args.task
+    test = args.test
+    threshold = args.threshold
+
+    task_name = get_task(task, name=True, models=True)
+    task_dir = Path(os.getenv("det_models")) / task_name
+
+    training_dir = get_training_dir(task_dir / model, fold)
+
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
+    save_dir.mkdir(exist_ok=True)
+
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
+    case_ids.sort()
+    for cid in maybe_verbose_iterable(case_ids):
+        res = load_pickle(prediction_dir / f"{cid}_boxes.pkl")
+        boxes = res["pred_boxes"]
+        scores = res["pred_scores"]
+        labels = res["pred_labels"]
+
+        # res["itk_direction"]
+        mitk_json = {
+            "FileFormat": "MITK ROI",
+            "Version": 1,
+            "Caption": "{label}: {score}",
+            "Geometry": {
+                "Origin": res["itk_origin"],
+                "Spacing": res["itk_spacing"],
+                "Size": res["original_size_of_raw_data"].tolist()[::-1],
+            },
+            "ROIs": [],
+        }
+
+        # filter predictions
+        _mask = scores >= threshold
+        boxes = boxes[_mask]
+        labels = labels[_mask]
+        scores = scores[_mask]
+
+        idx = np.argsort(scores)
+        scores = scores[idx]
+        boxes = boxes[idx]
+        labels = labels[idx]
+
+        _dtype = float
+        for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
+            mitk_json["ROIs"].append(
+                {
+                    "ID": instance_id,
+                    "Min": [_dtype(pbox[0]), _dtype(pbox[1]), _dtype(pbox[4])][::-1],
+                    "Max": [_dtype(pbox[2]), _dtype(pbox[3]), _dtype(pbox[5])][::-1],
+                    "Properties": {
+                        "ColorProperty": {"color": [1, 0, 0]},  # color of bounding box
+                        "FloatProperty": {
+                            "score": round(float(pscore), 2),
+                            "label": float(plabel),
+                            "lineWidth": 2,  # line width of bounding box
+                        },
+                    },
+                }
+            )
+        logger.info(f"Created prediction {cid} with {len(mitk_json['ROIs'])} instances.")
+        save_json(mitk_json, save_dir / f"{cid}_boxes_mitk.json")
 
 
 @env_guard
@@ -27,14 +127,6 @@ def boxes2nii():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -47,7 +139,6 @@ def boxes2nii():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -55,10 +146,6 @@ def boxes2nii():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
@@ -135,14 +222,6 @@ def boxes2nii2():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -155,7 +234,6 @@ def boxes2nii2():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -163,10 +241,6 @@ def boxes2nii2():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii2" if test else training_dir / "val_predictions_nii2"
@@ -246,14 +320,6 @@ def masks2nii():
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="fold to sweep.")
     parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
-    parser.add_argument(
         "--threshold",
         type=float,
         help="Minimum probability of predictions",
@@ -266,7 +332,6 @@ def masks2nii():
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
     threshold = args.threshold
 
@@ -274,10 +339,6 @@ def masks2nii():
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
@@ -343,31 +404,18 @@ def seg2nii():
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument("fold", type=int, help="experiment fold")
-    parser.add_argument(
-        "-o",
-        "--overwrites",
-        type=str,
-        nargs="+",
-        help="overwrites for config file",
-        required=False,
-    )
     parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
     model = args.model
     fold = args.fold
     task = args.task
-    overwrites = args.overwrites
     test = args.test
 
     task_name = get_task(task, name=True, models=True)
     task_dir = Path(os.getenv("det_models")) / task_name
 
     training_dir = get_training_dir(task_dir / model, fold)
-
-    overwrites = overwrites if overwrites is not None else []
-    overwrites.append("host.parent_data=${env:det_data}")
-    overwrites.append("host.parent_results=${env:det_models}")
 
     prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
     save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
@@ -398,6 +446,45 @@ def unpack():
     p = args.path
     num_processes = args.num_processes
     unpack_dataset(p, num_processes, False)
+
+
+@env_guard
+def unpack_task():
+    import argparse
+
+    from nndet.io.load import unpack_dataset
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "data_identifiers",
+        type=str,
+        nargs="+",
+        help="Data identifiers to unpack, e.g. D3V001_3d and D3V001_3dlr1",
+    )
+    parser.add_argument(
+        "-p",
+        "--num_processes",
+        type=int,
+        help="Number of processes to use for unpacking",
+        default=6,
+        required=False,
+    )
+    args = parser.parse_args()
+
+    task: str = args.task
+    data_identifiers: List[str] = args.data_identifiers
+    num_processes: int = args.num_processes
+
+    task_path = get_task(task)
+    preprocessed_path = task_path / "preprocessed"
+    if not preprocessed_path.is_dir():
+        raise ValueError(f"Expected {preprocessed_path} to exist, please run preprocessing first.")
+    for di in data_identifiers:
+        _data_identifier_path = preprocessed_path / di
+        if not _data_identifier_path.is_dir():
+            raise ValueError(f"{di} is not a valid data identifier since {_data_identifier_path} does not exist")
+        unpack_dataset(_data_identifier_path / "imagesTr", num_processes, False)
 
 
 def env():
@@ -481,6 +568,7 @@ def create_test_data_split():
     import argparse
     import os
     import sys
+    from datetime import datetime
     from pathlib import Path
 
     from loguru import logger
@@ -503,6 +591,10 @@ def create_test_data_split():
     logger.remove()
     logger.add(sys.stdout, format="{level} {message}", level="DEBUG")
     logger.add(raw_splitted_dir.parent / "split.log", level="DEBUG")
+
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_test_split {current_time_str} +++")
 
     meta = load_dataset_info(task_dir)
 
@@ -552,6 +644,7 @@ def create_cv_split():
     import argparse
     import os
     import sys
+    from datetime import datetime
     from pathlib import Path
 
     import numpy as np
@@ -600,8 +693,17 @@ def create_cv_split():
 
     # setup logging
     logger.remove()
-    logger.add(sys.stdout, level="INFO")
+    logger.add(
+        sys.stdout,
+        format="<level>{level}</level>: {message}",
+        level="INFO",
+        colorize=True,
+    )
     logger.add(task_dir / "split.log", level="DEBUG")
+
+    current_time = datetime.now()
+    current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
+    logger.info(f"+++ Running nndet_cv_split {current_time_str} +++")
 
     # parse case ids
     case_ids = [p.stem for p in label_dir.glob("*") if p.suffix == ".json"]
@@ -653,11 +755,17 @@ def create_cv_split():
         val_cids = [case_ids[_i] for _i in val_idx]
         intersection_cids = set(train_cids).intersection(val_cids)
 
+        train_reduced_classes = [reduced_classes[_i] for _i in train_idx]
+        val_reduced_classes = [reduced_classes[_i] for _i in val_idx]
+        train_reduced_classes = {k: i for k, i in zip(*np.unique(train_reduced_classes, return_counts=True))}
+        val_reduced_classes = {k: i for k, i in zip(*np.unique(val_reduced_classes, return_counts=True))}
+
         assert not intersection_cids
         logger.info(
             f"Generated fold {fold_idx} with {len(train_cids)} "
             f"train {len(val_cids)} val cases. "
-            f"Intersection {intersection_cids} (should be empty)"
+            f"Intersection {intersection_cids} (should be empty)."
+            f"Reduced classes: train {train_reduced_classes} val {val_reduced_classes}"
         )
 
         splits.append({"train": train_cids, "val": val_cids})
@@ -668,5 +776,4 @@ def create_cv_split():
 
 
 if __name__ == "__main__":
-    # env()
-    masks2nii()
+    env()

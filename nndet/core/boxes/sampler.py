@@ -68,7 +68,7 @@ class HardNegativeSamplerMixin(ABC):
         num_neg: int,
         img_labels: Tensor,
         img_fg_probs: Tensor,
-    ):
+    ) -> torch.Tensor:
         """
         Select negative anchors
 
@@ -208,7 +208,7 @@ class HardNegativeSampler(HardNegativeSamplerMixin):
         num_pos: int,
         img_labels: Tensor,
         img_fg_probs: Tensor,
-    ):
+    ) -> torch.Tensor:
         """
         Select positive anchors
 

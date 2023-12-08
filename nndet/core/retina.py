@@ -207,7 +207,7 @@ class BaseRetinaNet(AbstractDetector):
             anchors=anchors,
             target_boxes=target_boxes,
             target_classes=target_classes,
-            num_anchors_per_level=self.anchor_generator.get_num_acnhors_per_level(),
+            num_anchors_per_level=self.anchor_generator.get_num_anchors_per_level(),
             num_anchors_per_loc=self.anchor_generator.num_anchors_per_location()[0],
         )
 
@@ -325,7 +325,7 @@ class BaseRetinaNet(AbstractDetector):
             reps=pred_boxes,
             probs=pred_probs,
             image_shapes=image_shapes,
-            num_anchors_per_level=self.anchor_generator.get_num_acnhors_per_level(),
+            num_anchors_per_level=self.anchor_generator.get_num_anchors_per_level(),
         )
 
         prediction = {"pred_boxes": boxes, "pred_scores": probs, "pred_labels": labels}

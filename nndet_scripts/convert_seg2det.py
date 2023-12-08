@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 import sys
 from datetime import datetime
 from itertools import repeat
@@ -166,7 +167,7 @@ def main():
         cfg = compose(task, "config.yaml", overrides=ov if ov is not None else [])
         print(cfg)
 
-        splitted_dir = Path(cfg["host"]["splitted_4d_output_dir"])
+        splitted_dir = Path(os.getenv("det_data")) / cfg["task"] / "raw_splitted"
 
         logger.remove()
         logger.add(sys.stdout, level="INFO")

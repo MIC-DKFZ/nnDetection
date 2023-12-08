@@ -8,6 +8,8 @@
 
 </div>
 
+# DOCS: Please refer to the web documentation, the readme is not updated anymore.
+
 # What is nnDetection?
 Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
 For this task, the cumbersome and iterative process of method configuration constitutes a major research bottleneck. 
@@ -153,9 +155,6 @@ nndet_example --full [--num_processes]
 
 The `full` problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
-
-## Guides
-Work in progress
 
 ## Experiments
 Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
@@ -342,7 +341,6 @@ nndet_train 000 --sweep
 # /scripts/train.py - train()
 ```
 
-Use `-o exp.fold=X` to overwrite the trained fold, this should be run for all folds `X = 0, 1, 2, 3, 4`!
 The `--sweep` option tells nnDetection to look for the best hyparameters for inference by empirically evaluating them on the validation set.
 Sweeping can also be performed later by running the following command:
 

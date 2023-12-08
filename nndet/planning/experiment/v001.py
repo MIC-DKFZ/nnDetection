@@ -212,6 +212,13 @@ class D3V001(AbstractPlanner):
         else:
             return False
 
+    @classmethod
+    def get_plan_identifiers(cls):
+        ids = []
+        for mode in ["3d", "3dlr1"]:
+            ids.append(f"{cls.__name__}_{mode}")
+        return ids
+
 
 @PLANNER_REGISTRY.register
 class D3V001DynDtype(D3V001):
