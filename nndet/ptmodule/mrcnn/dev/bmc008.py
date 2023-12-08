@@ -179,13 +179,16 @@ class BoxMaskURCNNC008(
     roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy
 
 
+@MODULE_REGISTRY.register
 class BoxMaskURCNNC008Res(BoxMaskURCNNC008):
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
 
 
+@MODULE_REGISTRY.register
 class BoxMaskURCNNC008SpecificMask(BoxMaskURCNNC008):
     roi_masker_cls: Type[Masker] = BCESpecificMasker  # class of RoI mask head
 
 
+@MODULE_REGISTRY.register
 class BoxMaskURCNNC008SpecificReg(BoxMaskURCNNC008):
     roi_regressor_cls: Type[RoIRegressor] = L1ConvRoISpecificRegressor  # box head regressor class
