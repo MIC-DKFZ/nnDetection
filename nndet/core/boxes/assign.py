@@ -10,11 +10,11 @@ from typing import List, Tuple
 
 import torch
 
-from nndet.core.boxes.matcher import MatcherType
+from nndet.core.boxes.matcher import Matcher
 
 
 def assign_targets_to_anchors(
-    proposal_matcher: MatcherType,
+    proposal_matcher: Matcher,
     anchors: List[torch.Tensor],
     target_boxes: List[torch.Tensor],
     target_classes: List[torch.Tensor],
@@ -63,21 +63,21 @@ def assign_targets_to_anchors(
 
             # Positive (negative indices can be ignored because they are overwritten in the next step)
             # this influences how background class is handled in the input!!!! (here +1 for background)
-            labels_per_image = gt_classes[matched_idxs_clamp].to(dtype=anchors_per_image.dtype)
+            labels_per_image = gt_classes[matched_idxs_clamp]
             labels_per_image = labels_per_image + 1
         else:
-            num_anchors_per_image = anchors_per_image.shape[0]
-            # no ground truth => no matches, all background
+            num_anchors_per_image = anchors_per_image.shape[0] if anchors_per_image.numel() > 0 else 0
+            # no ground truth/predictions => no matches, all background
             matched_gt_boxes_per_image = torch.zeros_like(anchors_per_image)
-            labels_per_image = torch.zeros(num_anchors_per_image).to(anchors_per_image)
+            labels_per_image = torch.zeros(num_anchors_per_image, dtype=torch.long).to(device=anchors_per_image.device)
 
         # Background (negative examples)
         bg_indices = matched_idxs == proposal_matcher.BELOW_LOW_THRESHOLD
-        labels_per_image[bg_indices] = 0.0
+        labels_per_image[bg_indices] = 0
 
         # discard indices that are between thresholds
         inds_to_discard = matched_idxs == proposal_matcher.BETWEEN_THRESHOLDS
-        labels_per_image[inds_to_discard] = -1.0
+        labels_per_image[inds_to_discard] = -1
 
         labels.append(labels_per_image)
         matched_gt_boxes.append(matched_gt_boxes_per_image)

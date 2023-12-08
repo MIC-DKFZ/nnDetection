@@ -8,7 +8,7 @@
 
 from __future__ import division
 
-from typing import Sequence, TypeVar
+from typing import Sequence
 
 import torch
 from torch import Tensor
@@ -16,7 +16,7 @@ from torch.jit.annotations import List
 from torchvision.models.detection._utils import BoxCoder
 
 
-@torch.jit.script
+@torch.compile
 def encode_boxes(
     reference_boxes: torch.Tensor,
     proposals: torch.Tensor,
@@ -237,7 +237,6 @@ class BoxCoderND(BoxCoder):
         self,
         rel_codes: Tensor,
         boxes: List[Tensor],
-        per_class: bool = False,
     ) -> Tensor:
         """
         Decode boxes
@@ -260,21 +259,13 @@ class BoxCoderND(BoxCoder):
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
-        spatial_dims = concat_boxes.shape[1]
 
         box_sum = 0
         for val in boxes_per_image:
             box_sum += val
         pred_boxes = self.decode_single(rel_codes.reshape(box_sum, -1), concat_boxes)
-
-        if per_class:
-            return pred_boxes.reshape(box_sum, -1, spatial_dims)
-        else:
-            return pred_boxes.reshape(box_sum, spatial_dims)
+        return pred_boxes
 
     def decode_single(self, rel_codes: torch.Tensor, boxes: torch.Tensor):
         # dtype, device = rel_codes.dtype, rel_codes.device
         return decode_single(rel_codes, boxes, self.weights, self.bbox_xform_clip)
-
-
-CoderType = TypeVar("CoderType", bound=BoxCoderND)

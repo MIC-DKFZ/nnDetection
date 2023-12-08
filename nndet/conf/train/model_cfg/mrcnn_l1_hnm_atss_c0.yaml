@@ -16,8 +16,7 @@ neck_kwargs: # keyword arguments passed to decoder
   norm_out: False
   activation_out: False
 
-head_kwargs:  # keyword arguments to passed to head
-  reg_mode: "encode"
+head_kwargs: {} # keyword arguments to passed to head
 
 head_sampler_kwargs: # keyword arguments passed to sampler
   batch_size_per_image: 32 # number of anchors sampled per image
@@ -33,7 +32,7 @@ head_classifier_kwargs: # keyword arguments passed to classifier in head
   norm_affine: True
   reduction: "mean"
   loss_weight: 1.
-  prior_prob: 0.01
+  # prior_prob: 0.01
 
 head_regressor_kwargs: # keyword arguments passed to regressor in head
   num_convs: 1
@@ -57,7 +56,7 @@ plan_anchors_overwrites: {} # overwrite arguments of anchors
 
 # RoI (Cascading) Parameters
 ############################
-rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
+rpn_nms_thresh: 0.6 # choose conservative NMS threshold here
 
 roi_channel_multiplier: 3  # scale number of channels of RoI head (wrt to FPN channels)
 roi_mask_channel_multiplier : 2  # scale number of channels of RoI Mask head (wrt to FPN channels)
@@ -80,20 +79,29 @@ roi_pooling:
 
 roi_classifier_kwargs: # keyword arguments passed to RoI classifier
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
   reduction: sum
+  # prior_prob: 0.01
+  loss_fp32: True
 
 roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
   reduction: sum
+  loss_fp32: True
 
-roi_head_kwargs:
-  ema_loss_norm: False
+roi_head_kwargs: {}
 
 roi_masker_kwargs:
   num_convs: 3
+  norm_channels_per_group: 16
+  norm_affine: True
   add_norm: True
+  # prior_prob: 0.01
 
 roi_matcher_kwargs:
   low_threshold: 0.2

@@ -9,7 +9,7 @@ from typing import Optional, Type
 from nndet.core.abstract import AbstractOneStageDetector
 from nndet.core.boxes.matcher import ATSSMatcher
 from nndet.core.boxes.matcher.base import Matcher
-from nndet.core.boxes.sampler import HardNegativeSamplerBatched, SamplerType
+from nndet.core.boxes.sampler import AbstractSampler, HardNegativeSamplerBatched
 from nndet.core.post.box import BoxPostprocessing, CrossLevelBoxPostprocessing
 from nndet.core.retina import BaseRetinaNet
 from nndet.nn.backbone.abstract import AbstractBackbone
@@ -20,6 +20,7 @@ from nndet.nn.heads.comb import BoxHeadAll
 from nndet.nn.heads.comb.anchor_sampled import BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
+from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.layers.conv.group import ConvGroupLReLU
 from nndet.nn.layers.conv.instance import ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
@@ -35,13 +36,17 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class RetinaNetV002(
+class RetinaNetHNMV002(
     LightningBaseModule,  # Detection Base
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
+    """
+    Retina Net V002 with Hard Negative Mining
+    """
+
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseRetinaNet
 
@@ -61,38 +66,31 @@ class RetinaNetV002(
     head_regressor_cls: Type[DenseRegressor] = L1Regressor  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = HardNegativeSamplerBatched
+    head_sampler_cls: Optional[Type[AbstractSampler]] = HardNegativeSamplerBatched
 
     matcher_cls: Type[Matcher] = ATSSMatcher  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = CrossLevelBoxPostprocessing  # define box postprocessing strategy
 
-    # Not suported here; See `RetinaUNet`
-    segmenter_cls = None
+    # use Retina U-Net for segmentation supervision
+    segmenter_cls: Type[Segmenter] = None  # [optional] segmentation head as in RetinaUNet
 
 
 @MODULE_REGISTRY.register
-class RetinaNetV002Focal(RetinaNetV002):
+class RetinaNetFocalV002(RetinaNetHNMV002):
     """
-    Focal Loss based RetinaNet V002
+    Retina Net V002 with Focal Loss
     """
 
     head_cls: Type[AnchorHead] = BoxHeadAll  # define class for head
     head_classifier_cls: Type[DenseClassifier] = FocalClassifier  # define class for head classifier
     # [optional] sampler class for negative mining
-    head_sampler_cls: Optional[Type[SamplerType]] = None
+    head_sampler_cls: Optional[Type[AbstractSampler]] = None
 
 
 @MODULE_REGISTRY.register
-class BoxIORetinaNetV002Focal(RetinaNetV002Focal):
-    @classmethod
-    def use_box_io(self):
-        return True
-
-
-@MODULE_REGISTRY.register
-class RetinaNetV002Res(RetinaNetV002):
+class RetinaNetFocalResV002(RetinaNetFocalV002):
     """
-    Residual Conv Backbone
+    Retina Net V002 with Focal Loss and residual blocks
     """
 
     backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone

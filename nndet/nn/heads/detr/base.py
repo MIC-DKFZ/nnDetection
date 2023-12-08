@@ -74,7 +74,6 @@ class DETRHead(torch.nn.Module):
                 R=number of predictions, C=number of channels
             reference: reference output of the transformer
                 (not used in original DETR head)
-                #TODO
 
         Returns:
             Dict[str, torch.Tensor]: predictions and auxiliary information

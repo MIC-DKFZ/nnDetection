@@ -6,10 +6,10 @@ from typing import Optional
 import torch
 from torch.cuda.amp import autocast
 
-from nndet.losses.ops import Loss, one_hot_smooth_first, reduction_helper
+from nndet.losses.ops import TorchLoss, one_hot_smooth_first, reduction_helper
 
 
-class CESegLoss(Loss):
+class CESegLoss(TorchLoss):
     def __init__(
         self,
         weight: Optional[torch.Tensor] = None,
@@ -66,7 +66,7 @@ class CESegLoss(Loss):
                     targets.long(),
                     label_smoothing=self.smoothing,
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                 )
         else:
             loss = _fn(
@@ -74,9 +74,9 @@ class CESegLoss(Loss):
                 targets.long(),
                 label_smoothing=self.smoothing,
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
             )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (
@@ -88,38 +88,47 @@ class CESegLoss(Loss):
         )
 
 
-class BCESegLoss(Loss):
+class BCESegLoss(TorchLoss):
     def __init__(
         self,
-        weight: Optional[torch.Tensor] = None,
+        pos_weight: Optional[torch.Tensor] = None,
         do_bg: bool = False,
         smoothing: float = 0.0,
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
         reduction: str = "mean",
+        weight: Optional[torch.Tensor] = None,
     ) -> None:
         """
         Wrapper for PyTorch BCE Loss. Targets will always be casted to long
         before calling the loss function!
 
         Args:
-            weight: weiught for BCE loss, see PyTorch docs for more info.
+            pos_weight: equivalent to pos_weight parameter of BCE loss of
+                pytorch (weights positive class)
             do_bg: compute loss for background
             smoothing: Apply label smoothing to loss.
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
             reduction: reduction of loss. Refer to
                 `nndet.losses.ops.reduction_helper` for all available options.
+            weight: equivalent to weight parameter of BCE loss of pytorch
+                (weights batch elements)
         """
         super().__init__(
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,
             reduction=reduction,
         )
+        self.register_buffer("pos_weight", pos_weight)
+        self.pos_weight: Optional[torch.Tensor]
         self.register_buffer("weight", weight)
         self.weight: Optional[torch.Tensor]
         self.smoothing = smoothing
         self.do_bg = do_bg
+
+        if pos_weight is not None:
+            raise NotImplementedError("Not implemented. PyTorch interprets last channels as classes.")
 
     def forward(
         self,
@@ -131,8 +140,8 @@ class BCESegLoss(Loss):
 
         Args:
             preds: predictions (without act). [N, C, *], where N is the batch
-                size, C is the number of classes, * are arbitrary spatial
-                dimensions
+                size, C is the number of classes (incl background),
+                * are arbitrary spatial dimensions
             targets: numerical target values. [N, *], where N is the batch
                 size, * are arbitrary spatial dimensions
 
@@ -157,17 +166,19 @@ class BCESegLoss(Loss):
                 loss = _fn(
                     _preds.float(),
                     _targets_one_hot.float(),
+                    pos_weight=self.pos_weight,
                     weight=self.weight,
-                    reduction="none",
+                    reduction=self.torch_reduction,
                 )
         else:
             loss = _fn(
                 _preds,
                 _targets_one_hot.float(),
+                pos_weight=self.pos_weight,
                 weight=self.weight,
-                reduction="none",
+                reduction=self.torch_reduction,
             )
-        return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
+        return self.loss_weight * reduction_helper(loss, reduction=self.helper_reduction)
 
     def extra_repr(self) -> str:
         return (

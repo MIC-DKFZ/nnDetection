@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 import numpy as np
 from loguru import logger
 
-from nndet.evaluator.registry import BoxEvaluator
+from nndet.eval.registry import BoxEvaluator
 from nndet.inference.sweeper.base import Sweeper
 from nndet.io.load import save_json
 from nndet.utils import to_numpy
@@ -148,6 +148,7 @@ class BoxSweeper(Sweeper):
             verbose=False,
             save_dir=None,
         )
+        logger.info(f"Created box evaluator: {evaluator}")
 
         for case_id in maybe_verbose_iterable(self.ensembler_cls.get_case_ids(self.pred_dir)):
             ensembler = self.ensembler_cls.from_checkpoint(

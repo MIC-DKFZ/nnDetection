@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# Note: this is not used by default since benchmark might influence the memory
+# and did not work perfectly with all input shapes in the past
+# Usage of toch.compile is experimental
+# Use channels_last
+
+gpus: 1 # number of gpus
+accelerator: "gpu" # distributed backend
+precision: "16-mixed" # mixed precision training; typically: '16-mixed', 'bf16-mixed', '32'
+
+# Pytorch 1.6 features
+do_channels_last: True
+
+# pytorch 2.0 features
+do_compile: True
+compile:
+  mode: "reduce-overhead"
+  backend: "inductor"
+  fullgraph: false
+
+# Per default training is deterministic, non-deterministic allows
+# cudnn.benchmark which can give up to 20% performance. Set this to false
+# to perform non-deterministic training
+deterministic: False
+benchmark: True
+terminate_on_nan: False # [optional; Default True]

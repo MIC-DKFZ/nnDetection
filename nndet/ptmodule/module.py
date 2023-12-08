@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, TypeVar
+from typing import Any, Callable, Dict, Optional
 
 import pytorch_lightning as pl
 import torch
@@ -15,6 +15,7 @@ from nndet.io.transforms import Compose, TransferInputChannel
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
+from nndet.utils.check import check_torch_version
 
 
 class LightningBaseModule(pl.LightningModule):
@@ -23,6 +24,7 @@ class LightningBaseModule(pl.LightningModule):
         model_cfg: dict,
         trainer_cfg: dict,
         plan: dict,
+        accelerator_cfg: Optional[dict] = None,
         **kwargs,
     ):
         """
@@ -35,18 +37,18 @@ class LightningBaseModule(pl.LightningModule):
             trainer_cfg: trainer information
             plan: contains parameters which were derived from the planning
                 stage
+            accelerator_cfg: optionally provide additional information
+                on accelerator configuration, e.g. if module should be
+                compiled
         """
         super().__init__(**kwargs)
         self.model_cfg = model_cfg
         self.trainer_cfg = trainer_cfg
+        self.accelerator_cfg = accelerator_cfg
         self.plan = plan
-
-        # determine shape for network visualisation
-        self.example_input_array_shape = (
-            1,
-            plan["architecture"]["in_channels"],
-            *plan["patch_size"],
-        )
+        self.dim = len(plan["patch_size"])
+        assert self.dim in [2, 3]
+        self.do_channels_last = False
 
         # initialize model
         self.model: AbstractDetector = self.from_config_plan(
@@ -55,16 +57,67 @@ class LightningBaseModule(pl.LightningModule):
             plan_anchors=self.plan["anchors"],
             patch_size=plan["patch_size"],
         )
-        if self.trainer_cfg.get("do_compile", False):
-            _major, _minor, _ = torch.__version__.split(".", 2)
-            if int(_major) >= 2 or (int(_major) == 1 and int(_minor) >= 14):
-                logger.info(f"Compiling model with PyTorch (>2) feature:: {self.trainer_cfg['compile_kwargs']}")
-                self.model = torch.compile(self.model, **self.trainer_cfg["compile_kwargs"])
-            else:
-                logger.warning(f"Torch {torch.__version__} does not support model compiling.")
+        self._init_accelerator_cfg()
 
-        # initialize pre transforms from ModeMixin
-        trafos = self.get_pre_transforms(plan=plan)
+        # prepare tansformations for input
+        self.pre_trafo = self._init_trafo()
+        logger.info(f"Lightningmodule running pre transforms \n: {self.pre_trafo}")
+
+        # initialize evaluation
+        self.evaluators = self.evaluation_init(plan=plan)
+        _tmp = {key: item.__class__.__name__ for key, item in self.evaluators.items()}
+        logger.info(f"Lightningmodule running evaluators: {_tmp}")
+
+        # define key for sweeping
+        self.sweep_key = self.trainer_cfg["sweep_key"]
+        self.monitor_key = self.trainer_cfg["monitor_key"]
+        logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
+
+        # setup other variables
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+        self.example_input_array_shape = (
+            1,
+            plan["architecture"]["in_channels"],
+            *plan["patch_size"],
+        )
+
+    def _init_accelerator_cfg(self) -> None:
+        """
+        Apply additional actions to configure module for additional speedups
+        e.g. channels_last(_3d) memory format or torch.compile
+        """
+        if self.accelerator_cfg is None:
+            self.do_channels_last = False
+            return
+
+        # channels last memory format
+        if self.accelerator_cfg.get("do_channels_last", False):
+            self.do_channels_last = self.accelerator_cfg["do_channels_last"]
+            if self.do_channels_last:
+                logger.info("PtModule uses channels_last memory format")
+                if self.dim == 3:
+                    self.model = self.model.to(memory_format=torch.channels_last_3d)
+                else:
+                    self.model = self.model.to(memory_format=torch.channels_last)
+
+        # compile model
+        if self.accelerator_cfg.get("do_compile", False):
+            if check_torch_version(major_version=2):
+                _kwargs = self.accelerator_cfg.get("compile", {})
+                logger.info(f"PtModule uses torch.compile with arguments: {_kwargs}")
+                self.model = torch.compile(self.model, **_kwargs)
+            else:
+                logger.error(
+                    "Torch compile was enabled in config but minimal "
+                    "PyTorch Version of 2.0.0 was not met! Skipping compile."
+                )
+
+    def _init_trafo(self) -> Callable:
+        """
+        Initialize pre transforms from Mixin
+        """
+        trafos = self.get_pre_transforms(plan=self.plan)
 
         # handle transfer learning
         data_channels = self.plan["num_modalities"]  # number of channels of source data
@@ -80,20 +133,7 @@ class LightningBaseModule(pl.LightningModule):
                     data_key="data",
                 )
             )
-
-        self.pre_trafo = Compose(trafos)
-        logger.info(f"Lightningmodule running pre transforms \n: {self.pre_trafo}")
-
-        # initialize evaluation
-        self.evaluators = self.evaluation_init(plan=plan)
-        _tmp = {key: item.__class__.__name__ for key, item in self.evaluators.items()}
-        logger.info(f"Lightningmodule running evaluators: {_tmp}")
-
-        # define key for sweeping
-        self.sweep_key = self.trainer_cfg["sweep_key"]
-        self.monitor_key = self.trainer_cfg["monitor_key"]
-        logger.info(f"Using {self.sweep_key} for sweeping and {self.monitor_key} for monitoring.")
-        self.mean_val_loss = None
+        return Compose(trafos)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -102,7 +142,7 @@ class LightningBaseModule(pl.LightningModule):
         the input through the network which does not include
         detection spcific postprocessing!
         """
-        return self.model.inference_step(x)  # FIXME
+        return self.model.inference_step(x)
         # return self.model(x)
 
     def training_step(self, batch, batch_idx):
@@ -124,8 +164,16 @@ class LightningBaseModule(pl.LightningModule):
             # [optional] add bianry masks to targets if available
             targets["target_binary_masks"] = targets["target_binary_masks"]
 
+        if self.do_channels_last:
+            if self.dim == 3:
+                _data = batch["data"].to(memory_format=torch.channels_last_3d)
+            else:
+                _data = batch["data"].to(memory_format=torch.channels_last)
+        else:
+            _data = batch["data"]
+
         losses = self.model.train_step(
-            images=batch["data"],
+            images=_data,
             targets=targets,
             batch_num=batch_idx,
         )
@@ -133,9 +181,10 @@ class LightningBaseModule(pl.LightningModule):
         # Exclude criterion logging keys starting with __
         loss = sum([value for key, value in losses.items() if not key.startswith("__")])
 
-        # self.log_dict(losses, prog_bar=True)
-
-        return {"loss": loss, **{key: l.detach().item() for key, l in losses.items()}}
+        out = {"loss": loss.detach().item(), **{f"loss_{key}": l.detach().item() for key, l in losses.items()}}
+        self.log("train_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
+        self.training_step_outputs.append(out)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         """
@@ -157,77 +206,82 @@ class LightningBaseModule(pl.LightningModule):
                 # [optional] add bianry masks to targets if available
                 targets["target_binary_masks"] = targets["target_binary_masks"]
 
+            if self.do_channels_last:
+                if self.dim == 3:
+                    _data = batch["data"].to(memory_format=torch.channels_last_3d)
+                else:
+                    _data = batch["data"].to(memory_format=torch.channels_last)
+            else:
+                _data = batch["data"]
+
             losses, predictions = self.model.validation_step(
-                images=batch["data"],
+                images=_data,
                 targets=targets,
                 batch_num=batch_idx,
             )
             # Exclude criterion logging keys starting with __
             loss = sum([value for key, value in losses.items() if not key.startswith("__")])
 
-        # self.log_dict(losses, prog_bar=True)
-
         super().evaluation_step(predictions=predictions, targets=targets)
 
-        return {
+        out = {
             "loss": loss.detach().item(),
-            **{key: l.detach().item() for key, l in losses.items()},
+            **{f"loss_{key}": l.detach().item() for key, l in losses.items()},
         }
+        self.log("val_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
+        self.validation_step_outputs.append(out)
+        return loss
 
-    def training_epoch_end(self, training_step_outputs):
+    def on_train_epoch_end(self):
         """
         Log train loss to loguru logger
         """
         # process and log losses
         vals = defaultdict(list)
-        for _val in training_step_outputs:
+        for _val in self.training_step_outputs:
             for _k, _v in _val.items():
-                if _k == "loss":
-                    vals[_k].append(_v.detach().item())
-                else:
-                    vals[_k].append(_v)
+                vals[_k].append(_v)
 
+        _log_loss_str = "Train:"
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
-            if _key == "loss":
-                logger.info(f"Train loss reached: {mean_val:0.5f}")
+            if _key.startswith("loss"):
+                _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
             elif _key.startswith("__"):
-                self.log(f"train_info/{_key}", mean_val, sync_dist=True)
+                self.log(f"train_info/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
             else:
-                self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
+                self.log(f"train_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
+        logger.info(_log_loss_str)
 
-        # print validation loss here for nicer log
-        if self.mean_val_loss is not None:
-            logger.info(f"Val loss reached: {self.mean_val_loss:0.5f}")
-        return super().training_epoch_end(training_step_outputs)
+        self.training_step_outputs.clear()  # free memory
+        return super().on_train_epoch_end()
 
-    def validation_epoch_end(self, validation_step_outputs):
+    def on_validation_epoch_end(self):
         """
         Log val loss to loguru logger
         """
         # process and log losses
         vals = defaultdict(list)
-        for _val in validation_step_outputs:
+        for _val in self.validation_step_outputs:
             for _k, _v in _val.items():
                 vals[_k].append(_v)
 
+        _log_loss_str = "Val:"
         for _key, _vals in vals.items():
             mean_val = sum(_vals) / len(_vals)
-            if _key == "loss":
-                self.mean_val_loss = mean_val
+            if _key.startswith("loss"):
+                _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
             elif _key.startswith("__"):
-                self.log(f"val_info/{_key}", mean_val, sync_dist=True)
+                self.log(f"val_info/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
             else:
-                self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
+                self.log(f"val_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
+        logger.info(_log_loss_str)
 
         # process and log metrics
         super().evaluation_end()
 
-        # metrics are logged by respective evaluator
-        # for key, item in metric_scores.items():
-        #     self.log(f"val/{key}", item, prog_bar=False, logger=True, sync_dist=True)
-
-        return super().validation_epoch_end(validation_step_outputs)
+        self.validation_step_outputs.clear()  # free memory
+        return super().on_validation_epoch_end()
 
     @property
     def train_epochs(self):
@@ -301,6 +355,3 @@ class LightningBaseModule(pl.LightningModule):
                 )
             )
         return callbacks
-
-
-LightningBaseModuleType = TypeVar("LightningBaseModuleType", bound=LightningBaseModule)

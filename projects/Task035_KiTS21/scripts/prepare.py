@@ -1,11 +1,13 @@
 import os
-import shutil
 import sys
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import SimpleITK as sitk
 from loguru import logger
+from scipy.ndimage import center_of_mass as scipy_center_of_mass
+from scipy.spatial.distance import euclidean as scipy_euclidean
 
 from nndet.io import load_sitk, save_json
 from nndet.utils.check import env_guard
@@ -16,6 +18,49 @@ def check_itk(data_itk: sitk.Image, seg_itk: sitk.Image):
     assert np.allclose(data_itk.GetSpacing(), seg_itk.GetSpacing())
     assert np.allclose(data_itk.GetOrigin(), seg_itk.GetOrigin())
     assert np.allclose(data_itk.GetDirection(), seg_itk.GetDirection())
+
+
+def paste2mask(
+    mask_all: np.ndarray,
+    center_of_mass_all: Dict[int, int],
+    mask_object: np.ndarray,
+    index_object: int,
+):
+    """
+    Helper function to insert object into mask
+
+    Args:
+        mask_all: mask with object indices
+        center_of_mass_all: center of all objects in the mask!
+        mask_object: binary mask indicating the position of the new object
+        index_object: index of object to be inserted
+    """
+    assert index_object not in center_of_mass_all
+    center_object = scipy_center_of_mass(mask_object)
+
+    overlap_detected = False
+    if not (mask_all[mask_object].sum() > 0):
+        # no overlap with existing objects
+        mask_all[mask_object] = index_object
+    else:
+        overlap_detected = True
+        # overlap with existing objects
+        mask_object_coordinates = np.nonzero(mask_object)
+        for coord in zip(*mask_object_coordinates):  # iterate all positions
+            if mask_all[coord] == 0:
+                mask_all[coord] = index_object
+            else:
+                idx_other = int(mask_all[coord])
+                center_other = center_of_mass_all[idx_other]
+                if scipy_euclidean(center_other, coord) > scipy_euclidean(center_object, coord):
+                    # current coordinate is closer to new object center
+                    mask_all[coord] = index_object
+                else:
+                    # current coordinate is closer to other object center
+                    mask_all[coord] = idx_other
+
+    center_of_mass_all[index_object] = center_object
+    return mask_all, center_of_mass_all, overlap_detected
 
 
 def run_prep(
@@ -36,6 +81,7 @@ def run_prep(
 
     mask_np = np.zeros(data_np.shape).astype(np.uint16)
     instances = {}
+    center_of_mass_all = {}
     instance_id = 1
 
     # write instances into mask
@@ -57,11 +103,17 @@ def run_prep(
         tumor_stack = tumor_stack.sum(axis=0)
         tumor_mask = tumor_stack >= 2  # majority voting
 
-        if mask_np[tumor_mask].sum() > 0:
-            logger.warning(f"Overlapping instance {instance_id} in case {case_id}")
-        mask_np[tumor_mask] = instance_id
+        mask_np, center_of_mass_all, overlap_detected = paste2mask(
+            mask_all=mask_np,
+            center_of_mass_all=center_of_mass_all,
+            mask_object=tumor_mask,
+            index_object=int(instance_id),
+        )
+        if overlap_detected:
+            logger.info(
+                f"Found case id {case_id} instance {instance_id} with overlap, resolving via distance to center point"
+            )
         instances[instance_id] = 0
-
         instance_id = instance_id + 1
 
     cyst_files = [p for p in case_segmentation_dir.glob("cyst_*")]
@@ -82,11 +134,17 @@ def run_prep(
         cyst_stack = cyst_stack.sum(axis=0)
         cyst_mask = cyst_stack >= 2  # majority voting
 
-        if mask_np[cyst_mask].sum() > 0:
-            logger.warning(f"Overlapping instance {instance_id} in case {case_id}")
-        mask_np[cyst_mask] = instance_id
+        mask_np, center_of_mass_all, overlap_detected = paste2mask(
+            mask_all=mask_np,
+            center_of_mass_all=center_of_mass_all,
+            mask_object=cyst_mask,
+            index_object=int(instance_id),
+        )
+        if overlap_detected:
+            logger.info(
+                f"Found case id {case_id} instance {instance_id} with overlap, resolving via distance to center point"
+            )
         instances[instance_id] = 1
-
         instance_id = instance_id + 1
 
     mask_itk = sitk.GetImageFromArray(mask_np)
@@ -140,7 +198,7 @@ def main():
     # prepare data & label
     case_ids = [p.stem for p in source_data_dir.iterdir() if p.is_dir()]
     case_ids.sort()
-    print(f"Found {len(case_ids)} case ids")
+    logger.info(f"Found {len(case_ids)} case ids")
 
     assert len(case_ids) == 300, "Missing cases"
 

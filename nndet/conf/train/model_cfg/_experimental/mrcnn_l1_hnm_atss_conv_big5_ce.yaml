@@ -16,8 +16,7 @@ neck_kwargs: # keyword arguments passed to decoder
   norm_out: False
   activation_out: False
 
-head_kwargs:  # keyword arguments to passed to head
-  reg_mode: "encode"
+head_kwargs: {} # keyword arguments to passed to head
 
 head_sampler_kwargs: # keyword arguments passed to sampler
   batch_size_per_image: 32 # number of anchors sampled per image
@@ -55,12 +54,11 @@ matcher_kwargs: # keyword arguments passed to matcher
 plan_arch_overwrites: {} # overwrite arguments of architecture
 plan_anchors_overwrites: {} # overwrite arguments of anchors
 
-# TODO: change name
 detections_per_img: 256
 
 # RoI Cascading Parameters
 ##########################
-rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
+
 
 roi_channel_multiplier: 4  # cale number of channels of RoI head
 roi_mask_channel_multiplier : 2  # scale number of channels of RoI Mask head

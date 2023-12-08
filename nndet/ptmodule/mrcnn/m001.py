@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
-from nndet.core.boxes.sampler import SamplerType
+from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
 from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
@@ -16,18 +16,15 @@ from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.base import Masker
+from nndet.nn.heads.masker.roi import Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin, ScoreMasksEvalMixin
+from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import (
-    BoxPredictionMixin,
-    MaskViaBoxPredictionMixin,
-)
+from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -44,8 +41,6 @@ class MaskRCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     """
     MaskRCNNModule with Instance Segmentation Output
@@ -73,7 +68,7 @@ class MaskRCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = ...
+    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
@@ -92,7 +87,7 @@ class MaskRCNNModule(
     roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
-    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_sampler_cls: Type[AbstractSampler] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
@@ -109,8 +104,6 @@ class MaskURCNNModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    MaskViaBoxPredictionMixin,  # Mask Sweep
-    ScoreMasksEvalMixin,  # Mask Evaluations
 ):
     """
     MaskRCNNModule with Instance Segmentation Output
@@ -138,7 +131,7 @@ class MaskURCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = ...
+    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
@@ -155,7 +148,7 @@ class MaskURCNNModule(
     roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
-    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_sampler_cls: Type[AbstractSampler] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
@@ -197,7 +190,7 @@ class BoxMaskRCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = ...
+    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
@@ -216,7 +209,7 @@ class BoxMaskRCNNModule(
     roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
-    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_sampler_cls: Type[AbstractSampler] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
@@ -259,7 +252,7 @@ class BoxMaskURCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[SamplerType]] = ...
+    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
@@ -276,7 +269,7 @@ class BoxMaskURCNNModule(
     roi_regressor_cls: Type[RoIRegressor] = ...  # box head regressor class
 
     roi_matcher_cls: Type[Matcher] = ...  # class of RoI matcher
-    roi_sampler_cls: Type[SamplerType] = ...  # class of RoI sampler
+    roi_sampler_cls: Type[AbstractSampler] = ...  # class of RoI sampler
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 

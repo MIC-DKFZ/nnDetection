@@ -21,7 +21,7 @@ class MadgradLWPoly:
     @classmethod
     def configure_optimizers(
         cls,
-        module: "nndet.ptmodule.module.LightningBaseModuleType",
+        module: "nndet.ptmodule.module.LightningBaseModule",
     ):
         try:
             from madgrad import MADGRAD

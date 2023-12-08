@@ -12,12 +12,12 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-from nndet.nn.layers.fc import FCN, SimpleFCN
+from nndet.nn.layers.mlp import ReluDropIdentityMLP, ReluMLP
 from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
     ConditionalSelfAttention,
 )
-from nndet.nn.transformer.layers.abstract import AbstractTransformerDecoder
+from nndet.nn.transformer.layers.abstract import BaseTransformerDecoder
 from nndet.nn.transformer.layers.base_layer import (
     BaseTransformerLayer,
     TransformerLayerSequence,
@@ -32,10 +32,12 @@ def gen_sine_embed_for_position(
     """
     2D or 3D Positional Encoding to encode given positions (different to the
     normal position encoding which computes position based on pixels)
+
     Args:
         pos_tensor: tensor of shape (bs, num_pos, dim)
         num_pos_feats: number of out features (output dimension)
         temperature: temperature of the position encoding
+
     Returns:
         Tensor: tensor containing position embedding
     """
@@ -43,10 +45,7 @@ def gen_sine_embed_for_position(
     assert dim in [2, 3]
 
     scale = 2 * math.pi
-    if num_pos_feats % dim == 0:
-        feats = num_pos_feats // dim
-    else:
-        feats = num_pos_feats // dim + 1
+    feats = 2 * math.ceil(num_pos_feats / (2 * dim))
     dim_t = torch.arange(feats, dtype=torch.float32, device=pos_tensor.device)
     dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / feats)
     x_embed = pos_tensor[:, :, 0] * scale
@@ -61,20 +60,31 @@ def gen_sine_embed_for_position(
         z_embed = pos_tensor[:, :, 2] * scale
         pos_z = z_embed[:, :, None] / dim_t
         pos_z = torch.stack((pos_z[:, :, 0::2].sin(), pos_z[:, :, 1::2].cos()), dim=3).flatten(2)
-        # If num_pos_feats is not divisible by 3 we have to
-        if num_pos_feats % dim == 0:
-            return torch.cat((pos_x, pos_y, pos_z), dim=2)
-        elif num_pos_feats % dim == 1:
-            return torch.cat((pos_x, pos_y, pos_z[:, :, :-1]), dim=2)
+        # If num_pos_feats is not divisible by 3 we have to remove some values
+        dimension_delta = dim * feats - num_pos_feats
+        cut = feats
+        if dimension_delta >= 3:
+            cut = feats - 1
+        if dimension_delta % dim == 0:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, :cut]), dim=2)
+        elif dimension_delta % dim == 1:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, : cut - 1]), dim=2)
         else:
-            return torch.cat((pos_x, pos_y[:, :, :-1], pos_z[:, :, :-1]), dim=2)
-    # 2D Case
-    if num_pos_feats % dim == 0:
-        return torch.cat((pos_x, pos_y), dim=2)
-    return torch.cat((pos_x, pos_y[:, :, :-1]), dim=2)
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, : cut - 1], pos_z[:, :, : cut - 1]), dim=2)
+
+    else:  # 2D Case
+        dimension_delta = dim * feats - num_pos_feats
+        cut = feats
+        if dimension_delta >= 2:
+            cut = feats - 1
+        if num_pos_feats % dim == 0:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut]), dim=2)
+        else:
+            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, : cut - 1]), dim=2)
+    return pos_embed
 
 
-class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
+class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
     def __init__(
         self,
         embed_dim: int = 256,
@@ -84,7 +94,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
         proj_dropout: float = 0.1,
         feedforward_dim: int = 2048,
         ffn_dropout: float = 0.1,
-        activation: nn.Module = nn.ReLU(),
+        num_ffn_layers: int = 2,
         post_norm: bool = True,
         return_intermediate: bool = True,
         dim: int = 3,
@@ -103,13 +113,13 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             feedforward_dim: hidden dimension of the feed forward network in the
                 transformer layer
             ffn_dropout: dropout of the feed forward network
-            activation: activation of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
             return_intermediate: return the outputs of all
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
-        super().__init__()
+        super().__init__(embed_dim=embed_dim, dim=dim)
         self.layer_sequence = TransformerLayerSequence(
             transformer_layers=BaseTransformerLayer(
                 attn=[
@@ -128,11 +138,11 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
                         batch_first=batch_first,
                     ),
                 ],
-                ffn=FCN(
+                ffn=ReluDropIdentityMLP(
                     embed_dim=embed_dim,
                     feedforward_dim=feedforward_dim,
                     ffn_drop=ffn_dropout,
-                    activation=activation,
+                    num_layers=num_ffn_layers,
                 ),
                 norm=nn.LayerNorm(
                     normalized_shape=embed_dim,
@@ -142,11 +152,8 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             num_layers=num_layers,
         )
         self.return_intermediate = return_intermediate
-        self.embed_dim = embed_dim
-        self.query_scale = SimpleFCN(self.embed_dim, self.embed_dim, self.embed_dim, 2)
-        self.ref_point_head = SimpleFCN(self.embed_dim, self.embed_dim, dim, 2)
-        self.dim = dim
-        self.bbox_embed = None
+        self.query_scale = ReluMLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
+        self.ref_point_head = ReluMLP(self.embed_dim, self.embed_dim, dim, 2)
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -185,7 +192,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             query_key_padding_mask: (Optional) query key padding mask for
                 attention
             key_padding_mask: (Optional) key padding mask for attention
-            **kwargs:
+            **kwargs: kwargs for the transformer layers
 
         Returns:
             Tensor: Sequence of output embeddings, either of the last layer if
@@ -198,7 +205,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
         reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
 
         for idx, layer in enumerate(self.layer_sequence.layers):
-            obj_center = reference_points[..., : self.dim].transpose(0, 1)  # [num_queries, batch_size, dim]
+            obj_center = reference_points.transpose(0, 1)  # [num_queries, batch_size, dim]
 
             # do not apply transform in position in the first decoder layer
             if idx == 0:
@@ -209,7 +216,7 @@ class ConditionalDETRTransformerDecoder(AbstractTransformerDecoder):
             # get sine embedding for the query vector
             query_sine_embed = gen_sine_embed_for_position(obj_center, self.embed_dim)
             # apply position transform
-            query_sine_embed = query_sine_embed[..., : self.embed_dim] * position_transform
+            query_sine_embed = query_sine_embed * position_transform
 
             query = layer(
                 query,

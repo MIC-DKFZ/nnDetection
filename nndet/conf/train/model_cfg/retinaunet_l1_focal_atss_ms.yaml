@@ -14,8 +14,7 @@ neck_kwargs: # keyword arguments passed to decoder
   norm_out: False
   activation_out: False
 
-head_kwargs:  # keyword arguments to passed to head
-  reg_mode: "encode"
+head_kwargs: {} # keyword arguments to passed to head
 
 head_classifier_kwargs: # keyword arguments passed to classifier in head
   num_convs: 1
@@ -47,3 +46,11 @@ matcher_kwargs: # keyword arguments passed to matcher
 
 plan_arch_overwrites: {} # overwrite arguments of architecture
 plan_anchors_overwrites: {} # overwrite arguments of anchors
+
+# Scaling
+# backbone_kwargs: # keyword arguments passed to encoder
+#   max_channels: 384
+# plan_arch_overwrites: # overwrite arguments of architecture
+#   start_channels: 48
+#   fpn_channels: 192
+#   head_channels: 192

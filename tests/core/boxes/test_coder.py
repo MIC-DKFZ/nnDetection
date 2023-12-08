@@ -66,14 +66,14 @@ def test_box_coder_2d_decode(coder2d):
     assert math.isclose((box - expected).sum(), 0)
 
 
-def test_box_coder_2d_decode_per_class_offset(coder2d):
+def test_box_coder_2d_decode_class_specific(coder2d):
     """
     Bounding box delta per class per anchor
     """
     box_ref = [torch.tensor([[0, 0, 10, 10]])]
     box_delta = torch.tensor([1, 1, math.log(1), math.log(1), 2, 2, math.log(3), math.log(3)])
-    box = coder2d.decode(box_delta, box_ref, per_class=True)
-    expected = torch.tensor([[[10, 10, 20, 20], [10, 10, 40, 40]]])
+    box = coder2d.decode(box_delta, box_ref)
+    expected = torch.tensor([[[10, 10, 20, 20, 10, 10, 40, 40]]])
     assert math.isclose((box - expected).sum(), 0)
 
 
@@ -125,7 +125,7 @@ def test_box_coder_3d_encode_decode(coder3d, box_anchor_list, box_gt_list):
     assert torch.isclose(box, box_gt[0]).all()
 
 
-def test_box_coder_3d_decode_per_class_offset(coder3d):
+def test_box_coder_3d_decode_class_specific(coder3d):
     """
     Bounding box delta per class per anchor
     """
@@ -146,6 +146,6 @@ def test_box_coder_3d_decode_per_class_offset(coder3d):
             math.log(3),
         ]
     )
-    box = coder3d.decode(box_delta, box_ref, per_class=True)
-    expected = torch.tensor([[[10, 10, 20, 20, 10, 20], [10, 10, 40, 40, 10, 40]]])
+    box = coder3d.decode(box_delta, box_ref)
+    expected = torch.tensor([[[10, 10, 20, 20, 10, 20, 10, 10, 40, 40, 10, 40]]])
     assert math.isclose((box - expected).sum(), 0)

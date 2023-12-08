@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import abstractmethod
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, cast
 
 import torch
+from lightning_fabric.utilities.types import LRScheduler
 from loguru import logger
 from pytorch_lightning.callbacks import StochasticWeightAveraging
 from pytorch_lightning.utilities import rank_zero_warn
+from pytorch_lightning.utilities.types import LRSchedulerConfig
 from torch.optim.lr_scheduler import _LRScheduler
 
 from nndet.training.learning_rate import CycleLinear
@@ -38,14 +40,22 @@ class BaseSWA(StochasticWeightAveraging):
         """
         super().__init__(
             swa_epoch_start=swa_epoch_start,
-            swa_lrs=None,
+            swa_lrs=[0.1],
             annealing_epochs=10,
             annealing_strategy="cos",
             avg_fn=avg_fn,
             device=device,
         )
+        self._swa_lrs = None
         self.update_statistics = update_statistics
+        self._init_n_averaged = 0
         logger.info(f"Initialize SWA with swa epoch start {self.swa_start}")
+        logger.warning(
+            "SWA in nnDetection is somewhat experimental and result "
+            "in unexpected behavior in multi GPU scenrios or when the "
+            "state needs to be restored. Please prefer V2 or newer "
+            "model for your experiments"
+        )
 
     def pl_module_contains_batch_norm(self, pl_module: "pl.LightningModule"):  # noqa: F821
         if self.update_statistics:
@@ -68,28 +78,40 @@ class BaseSWA(StochasticWeightAveraging):
             self._average_model = self._average_model.to(self._device or pl_module.device)
 
             _scheduler = self.get_swa_scheduler(optimizer)
-            self._swa_scheduler = {
-                "scheduler": None,
+
+            # handle scheduler
+            if not isinstance(_scheduler, dict):
+                _scheduler = {"scheduler": _scheduler}
+            self._swa_scheduler = cast(
+                LRScheduler,
+                _scheduler.pop("scheduler"),
+            )  # retrieve scheduler from dict
+            if self._scheduler_state is not None:
+                # Restore scheduler state from checkpoint
+                self._swa_scheduler.load_state_dict(self._scheduler_state)
+
+            # handle config
+            _scheduler_config_defaults = {
                 "name": None,
                 "interval": "epoch",
                 "frequency": 1,
                 "reduce_on_plateau": False,
                 "monitor": None,
                 "strict": True,
-                "opt_idx": None,
             }
-            if not isinstance(_scheduler, dict):
-                _scheduler = {"scheduler": _scheduler}
-            self._swa_scheduler.update(_scheduler)
+            _scheduler_config_defaults.update(_scheduler)
+            self._scheduler_config = _scheduler_config_defaults
 
-            if trainer.lr_schedulers:
-                lr_scheduler = trainer.lr_schedulers[0]["scheduler"]
-                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}")
-                trainer.lr_schedulers[0] = self._swa_scheduler
+            swa_lr_scheduler_config = LRSchedulerConfig(scheduler=self._swa_scheduler, **self._scheduler_config)
+
+            if trainer.lr_scheduler_configs:
+                lr_scheduler_config = trainer.lr_scheduler_configs[0]
+                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler_config} for {swa_lr_scheduler_config}")
+                trainer.lr_scheduler_configs[0] = swa_lr_scheduler_config
             else:
-                trainer.lr_schedulers.append(self._swa_scheduler)
+                trainer.lr_scheduler_configs.append(swa_lr_scheduler_config)
 
-            self.n_averaged = torch.tensor(0, dtype=torch.long, device=pl_module.device)
+            self.n_averaged = torch.tensor(self._init_n_averaged, dtype=torch.long, device=pl_module.device)
 
         if self.swa_start <= trainer.current_epoch <= self.swa_end:
             self.update_parameters(self._average_model, pl_module, self.n_averaged, self.avg_fn)

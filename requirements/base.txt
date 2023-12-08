@@ -1,20 +1,16 @@
-pytorch_lightning>=1.5.0, <= 1.6.0
+pytorch_lightning>=2.0.0
 batchgenerators>=0.24
-nnunet==1.7.0
 PyYAML>=5.1, !=5.4.*
+nevergrad<0.12.0
 hydra-core>=1.1.0,<=1.2.0
 SimpleITK
 scipy
 scikit-learn
 scikit-image>=0.14
 pandas>=0.8.1
-nevergrad
-dicom2nifti
-medpy
 tqdm
 loguru
-mlflow
-GitPython
 matplotlib
 seaborn
-torchmetrics>=0.7.0,<=0.7.3
+tensorboard
+GitPython

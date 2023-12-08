@@ -3,7 +3,6 @@
 
 from nndet.ptmodule.mixins.evaluation.base import AbstractEvaluator
 from nndet.ptmodule.mixins.evaluation.boxes import BoxEvalMixin, BoxWithRPNEvalMixin
-from nndet.ptmodule.mixins.evaluation.mask import ScoreMasksEvalMixin
 from nndet.ptmodule.mixins.evaluation.semantic import (
     SemanticEvalMixin,
     SemanticFgEvalMixin,

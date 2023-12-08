@@ -14,6 +14,7 @@ class SelectionMode(Enum):
 class BoxRegressionMode(Enum):
     ENCODE = "encode"
     DECODE = "decode"
+    DUAL = "dual"
 
 
 # Postprocessing / Inference
@@ -64,3 +65,8 @@ class AuxLossNorm(Enum):
 class BoxPointMode(Enum):
     CORNERS = "corners"
     CENTERS = "centers"
+
+
+class FFNRegWeightInit(Enum):
+    BASE = "base"
+    LAST_LAYER_ZERO = "last_layer_zero"

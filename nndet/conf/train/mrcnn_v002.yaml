@@ -7,7 +7,8 @@ defaults:
   - augment_cfg: more_modular
   - io_cfg: offsetV2_obj_bal
   - trainer_cfg: sgd_base
-  - model_cfg: mrcnn_l1_hnm_atss_c0
+  - accelerator_cfg: gpu1_mixed16
+  - model_cfg: mrcnn_l1_hnm_atss_c0_ema
 
 module: BoxMaskURCNNV002
 plan: D3V001_3d # plan used for training

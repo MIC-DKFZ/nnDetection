@@ -1,12 +1,14 @@
 <div align="center">
 
-<img src=docs/source/_static/nnDetection.svg width="600px">
+<img src=docs/source/_static/logos_nndet.png width="600px">
 
 ![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-orange)
 ![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
 
 </div>
+
+# DOCS: Please refer to the web documentation, the readme is not updated anymore.
 
 # What is nnDetection?
 Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
@@ -50,7 +52,13 @@ When running a training inside the container it is necessary to [increase the sh
 
 ## Source
 
-*Please note that nndetection requires Python 3.8+.*
+### Tested Versions
+
+This table includes previously tested versions, if possible stick to this versions when installing from source:
+
+|nnDetection | CUDA  | Python | PyTorch | Vision |
+|------------|-------|--------|---------|--------|
+| 0.2        | 11.X  | 3.8    | 1.13.X  | 0.XX.X |
 
 1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
 2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
@@ -147,9 +155,6 @@ nndet_example --full [--num_processes]
 
 The `full` problem is very easy and the final results should be near perfect.
 After running the generation script follow the `Planning`, `Training` and `Inference` instructions below to construct the whole nnDetection pipeline.
-
-## Guides
-Work in progress
 
 ## Experiments
 Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
@@ -336,7 +341,6 @@ nndet_train 000 --sweep
 # /scripts/train.py - train()
 ```
 
-Use `-o exp.fold=X` to overwrite the trained fold, this should be run for all folds `X = 0, 1, 2, 3, 4`!
 The `--sweep` option tells nnDetection to look for the best hyparameters for inference by empirically evaluating them on the validation set.
 Sweeping can also be performed later by running the following command:
 

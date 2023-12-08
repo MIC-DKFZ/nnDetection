@@ -4,21 +4,21 @@
 from __future__ import annotations
 
 import os
-from abc import ABC, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List, TypeVar
+from typing import Dict, List
 
 import numpy as np
 from loguru import logger
 
 from nndet.io.load import load_pickle, save_pickle
-from nndet.io.paths import get_case_ids_from_dir, get_paths_from_splitted_dir
-from nndet.planning.architecture.abstract import ArchitecturePlannerType
+from nndet.io.paths import get_case_ids_from_dir
+from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.experiment.utils import run_create_label_preprocessed
-from nndet.preprocessing.preprocessor import PreprocessorType
+from nndet.preprocessing.preprocessor import GenericPreprocessor
 
 
 class AbstractPlanner(ABC):
@@ -69,7 +69,7 @@ class AbstractPlanner(ABC):
         model_name: str,
         model_cfg: dict,
         mode: str,
-    ) -> ArchitecturePlannerType:
+    ) -> ArchitecturePlanner:
         """
         Create Architecture planner
 
@@ -82,7 +82,7 @@ class AbstractPlanner(ABC):
 
     @staticmethod
     @abstractmethod
-    def create_preprocessor(plan: Dict) -> PreprocessorType:
+    def create_preprocessor(plan: Dict) -> GenericPreprocessor:
         """
         Create Preprocessor
         """
@@ -402,42 +402,47 @@ class AbstractPlanner(ABC):
                 run_create_label_preprocessed(source_dir, cid, dim, target_dir)
 
     @classmethod
-    def run_preprocessing_test(
+    def run_preprocessing_test2(
         cls,
-        preprocessed_output_dir: os.PathLike,
-        splitted_4d_output_dir: os.PathLike,
+        data_dir: os.PathLike,
+        preprocessed_dir: os.PathLike,
         plan: dict,
         num_processes: int = 0,
     ):
         """
-        Run preprocessing of test data
+        Run preprocessing of test data (udpated function with different
+        directory handling)
 
         Args:
-            splitted_4d_output_dir: base dir of splitted data
+            data_dir: directory containing data in nndet splitted format
+            preprocessed_dir: directory where a subdirectory for the
+                data identifier will be created and the preprocessed
+                data will be saved
             plan: plan to use for preprocessing
             num_processes: number of processes to use for preprocessing
         """
         logger.info("Running preprocessing of test cases")
-        splitted_4d_output_dir = Path(splitted_4d_output_dir)
-
-        target_dir = Path(preprocessed_output_dir) / plan["data_identifier"] / "imagesTs"
-        target_dir.mkdir(parents=True, exist_ok=True)
+        data_dir = Path(data_dir)
+        preprocessed_dir = Path(preprocessed_dir)
+        preprocessed_data_dir: Path = preprocessed_dir / plan["data_identifier"]
+        preprocessed_data_dir.mkdir(exist_ok=True, parents=True)
 
         cases_processed = get_case_ids_from_dir(
-            target_dir,
+            preprocessed_data_dir,
             remove_modality=False,
             pattern="*.npz",
         )
-        cases = get_paths_from_splitted_dir(
-            num_modalities=plan["num_modalities"],
-            splitted_4d_output_dir=splitted_4d_output_dir,
-            test=True,
-            labels=False,
-            remove_ids=cases_processed,
+        cases_available = get_case_ids_from_dir(
+            data_dir,
+            remove_modality=True,
+            pattern="*.nii.gz",
+            unique=True,
         )
+        cases = list(set(cases_available) - set(cases_processed))
+        cases_paths = [[data_dir / f"{cid}_{mod:04d}.nii.gz" for mod in range(plan["num_modalities"])] for cid in cases]
 
         logger.info(
-            f"Found {len(cases)} cases for preprocssing in {splitted_4d_output_dir} "
+            f"Found {len(cases)} cases for preprocssing in {data_dir} "
             f"and {len(cases_processed)} alrady processed cases."
         )
         preprocessor = cls.create_preprocessor(plan=plan)
@@ -447,14 +452,15 @@ class AbstractPlanner(ABC):
                 p.starmap(
                     preprocessor.run_test,
                     zip(
-                        cases,
+                        cases_paths,
                         repeat(plan["target_spacing"]),
-                        repeat(target_dir),
+                        repeat(preprocessed_data_dir),
                     ),
                 )
         else:
-            for c in cases:
-                preprocessor.run_test(c, plan["target_spacing"], target_dir)
+            for c in cases_paths:
+                preprocessor.run_test(c, plan["target_spacing"], preprocessed_data_dir)
 
-
-PlannerType = TypeVar("PlannerType", bound=AbstractPlanner)
+    @abstractclassmethod
+    def get_plan_identifiers(cls):
+        raise NotImplementedError
