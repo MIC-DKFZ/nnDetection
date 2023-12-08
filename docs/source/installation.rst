@@ -19,8 +19,7 @@ Configuration
 * `OMP_NUM_THREADS=1`
 * `det_num_threads`
 * `det_verbose`
-* `det_logging`
-* `det_logger`
+
 
 Pypi
 ----

@@ -191,7 +191,10 @@ class LightningBaseModule(pl.LightningModule):
             mean_val = sum(_vals) / len(_vals)
             if _key == "loss":
                 logger.info(f"Train loss reached: {mean_val:0.5f}")
-            self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
+            elif _key.startswith("__"):
+                self.log(f"train_info/{_key}", mean_val, sync_dist=True)
+            else:
+                self.log(f"train_loss/{_key}", mean_val, sync_dist=True)
 
         # print validation loss here for nicer log
         if self.mean_val_loss is not None:
@@ -212,7 +215,10 @@ class LightningBaseModule(pl.LightningModule):
             mean_val = sum(_vals) / len(_vals)
             if _key == "loss":
                 self.mean_val_loss = mean_val
-            self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
+            elif _key.startswith("__"):
+                self.log(f"val_info/{_key}", mean_val, sync_dist=True)
+            else:
+                self.log(f"val_loss/{_key}", mean_val, sync_dist=True)
 
         # process and log metrics
         super().evaluation_end()

@@ -6,6 +6,17 @@ TODO: interaction diagram of the different classes  (ptmodule = core)
 
 Intro ... # TODO
 
+Developer Flags
+===============
+
+nnDetection supports a broad range of configurations to provide extended information regarding models and training behavior.
+These need to be specifically enable by the user for e.g. debugging purposes:
+
+* `det_logging`: Specify the logging directory. If not set, logs will be saved to current training directory.
+* `det_logger`: Define logger type. One of `tensorboard` | `mlflow` | `none`.
+* `det_extended_logging`: Enable extended logging for some of the models (e.g. criterions for DETR).
+
+
 Registries
 ==========
 
