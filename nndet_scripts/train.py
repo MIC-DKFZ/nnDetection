@@ -36,7 +36,6 @@ from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.utils.analysis import run_analysis_suite
 from nndet.utils.check import env_guard
 from nndet.utils.config import compose, load_dataset_info
 from nndet.utils.info import (
@@ -203,7 +202,6 @@ def evaluate() -> None:
 
     do_boxes_eval: bool = args.boxes
     do_case_eval: bool = args.case
-    do_analyze_boxes: bool = args.analyze_boxes
     do_bootstrapping: bool = args.bootstrapping
 
     _evaluate_task(
@@ -214,7 +212,6 @@ def evaluate() -> None:
         preprocessed=eval_preprocessed,
         do_boxes_eval=do_boxes_eval,
         do_case_eval=do_case_eval,
-        do_analyze_boxes=do_analyze_boxes,
         do_bootstrapping=do_bootstrapping,
     )
 
@@ -255,7 +252,6 @@ def evaluate_with_folders() -> None:
 
     do_case_eval: bool = args.case
     do_boxes_eval: bool = args.boxes
-    do_analyze_boxes: bool = args.analyze_boxes
     do_bootstrapping: bool = args.bootstrapping
 
     # logging
@@ -278,7 +274,6 @@ def evaluate_with_folders() -> None:
         save_dir=save_dir,
         do_case_eval=do_case_eval,
         do_boxes_eval=do_boxes_eval,
-        do_analyze_boxes=do_analyze_boxes,
         do_bootstrapping=do_bootstrapping,
     )
 
@@ -615,7 +610,6 @@ def _train(
             preprocessed=True,
             do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
             do_boxes_eval=module.requires_box_eval(),
-            do_analyze_boxes=module.requires_box_eval(),
         )
         eval_end = time.time()
         eval_time = eval_end - eval_start
@@ -711,7 +705,6 @@ def _sweep(
         preprocessed=True,
         do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
         do_boxes_eval=module.requires_box_eval(),
-        do_analyze_boxes=module.requires_box_eval(),
     )
 
 
@@ -723,7 +716,6 @@ def _evaluate_task(
     preprocessed: bool = False,
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
-    do_analyze_boxes: bool = False,
     do_bootstrapping: bool = False,
 ) -> None:
     """
@@ -738,7 +730,6 @@ def _evaluate_task(
         preprocessed: indicate if predictions and labels are preprocessed
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
-        do_analyze_boxes: run analysis of box results
         do_bootstrapping: run bootstrapping for evaluation
     """
     # prepare paths
@@ -791,7 +782,6 @@ def _evaluate_task(
             save_dir=save_dir,
             do_case_eval=do_case_eval,
             do_boxes_eval=do_boxes_eval,
-            do_analyze_boxes=do_analyze_boxes,
             do_bootstrapping=do_bootstrapping,
         )
 
@@ -804,7 +794,6 @@ def _evaluate(
     save_dir: os.PathLike,
     do_case_eval: bool = False,
     do_boxes_eval: bool = False,
-    do_analyze_boxes: bool = False,
     do_bootstrapping: bool = False,
 ) -> None:
     """
@@ -816,7 +805,6 @@ def _evaluate(
         save_dir: path to directory where results should be saved
         do_case_eval: evaluate patient metrics
         do_boxes_eval: perform box evaluation
-        do_analyze_boxes: run analysis of box results
         do_bootstrapping: run bootstrapping for box evaluation
     """
     pred_dir = Path(pred_dir)
@@ -885,14 +873,6 @@ def _evaluate(
                 },
                 save_dir / "results_boxes_boot.pkl",
             )
-
-    if do_analyze_boxes:
-        logger.info("Analyse box predictions")
-        run_analysis_suite(
-            prediction_dir=pred_dir,
-            gt_dir=gt_dir,
-            save_dir=save_dir / "analysis" / "boxes",
-        )
 
 
 if __name__ == "__main__":
