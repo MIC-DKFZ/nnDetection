@@ -129,8 +129,6 @@ def main():
     for cd in maybe_verbose_iterable(case_dirs):
         prepare_case(cd, target_dir, df)
 
-    # TODO download custom split file
-
 
 if __name__ == "__main__":
     main()

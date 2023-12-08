@@ -523,15 +523,12 @@ class BaseInsaneAug(NoAug):
 
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
-
-        # TODO: do transform param
         tr_transforms.append(
             GaussianNoiseTransform(
                 p_per_sample=self.params.get("p_per_sample_gaussian_noise"),
-            ),  # TODO: make noise_variance a config key
+            ),
         )
 
-        # TODO: do transform param
         tr_transforms.append(
             GaussianBlurTransform(
                 blur_sigma=self.params.get("gaussian_blur_sigma"),
@@ -541,12 +538,11 @@ class BaseInsaneAug(NoAug):
             ),
         )
 
-        # TODO: do transform param
         tr_transforms.append(
             BrightnessMultiplicativeTransform(
                 p_per_sample=self.params.get("p_per_sample_brightness_mul"),
                 multiplier_range=self.params.get("brightness_mul_multiplier_range"),
-            ),  # TODO: make per_channel a config key
+            ),
         )
 
         if self.params.get("do_additive_brightness"):
@@ -560,12 +556,11 @@ class BaseInsaneAug(NoAug):
                 ),
             )
 
-        # TODO: do transform param
         tr_transforms.append(
             ContrastAugmentationTransform(
                 contrast_range=self.params.get("contrast_range"),
                 p_per_sample=self.params.get("p_per_sample_contrast"),
-            ),  # TODO: make per_channel a config key
+            ),
         )
 
         if self.params.get("do_sim_low_res"):
@@ -586,7 +581,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=True,
-                    per_channel=True,  # TODO: make per_channel a config key
+                    per_channel=True,
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma_inverted"],
                 ),
@@ -597,7 +592,7 @@ class BaseInsaneAug(NoAug):
                 GammaTransform(
                     gamma_range=self.params.get("gamma_range"),
                     invert_image=False,
-                    per_channel=True,  # TODO: make per_channel a config key
+                    per_channel=True,
                     retain_stats=self.params.get("gamma_retain_stats"),
                     p_per_sample=self.params["p_gamma"],
                 ),

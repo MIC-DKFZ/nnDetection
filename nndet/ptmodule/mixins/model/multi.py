@@ -104,29 +104,16 @@ class RoIBuildMixin:
             plan_arch: architecture settings
             model_cfg: additional architecture settings
             plan_anchors: parameters for anchors (see `AnchorGenerator`
-                for more info)
-
-                ``"stride"``
-                    stride # FIXME docs
-
-                ``"aspect_ratios"``
-                    aspect ratios # FIXME docs
-
-                ``"sizes"``
-                    sized for 2d acnhors # FIXME docs
-
-                ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME docs
+                for more info). If key 'aspect_ratios' is present,
+                an Anchor Generator is chosen which supports anchor definition
+                via aspect ratio, otherwise the dimensions can be specified
+                directly.
 
         Returns:
             AbstractOneStageDetector: one stage detector
         """
-        if model_cfg["rpn_class_agnostic"]:
-            _plan_arch = copy.deepcopy(plan_arch)
-            _plan_arch["classifier_classes"] = 1
-        else:
-            logger.info("Running class sensitive RPN module!")
-            _plan_arch = plan_arch
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["classifier_classes"] = 1
         rpn = super().from_config_plan(
             model_cfg=model_cfg,
             plan_arch=_plan_arch,
@@ -304,6 +291,7 @@ class RoIBuildMixin:
         cls,
         plan_arch: dict,
         model_cfg: dict,
+        masker: Masker,
     ) -> RoIPooler:
         """
         Build RoI Mask Pooler
@@ -318,7 +306,9 @@ class RoIBuildMixin:
         if cls.roi_mask_pooler_cls is not None:
             pooler_name = cls.roi_box_pooler_cls.__name__
             mask_feature_size = cls.get_roi_mask_size(plan_arch, model_cfg)
-            mask_gt_size = [m * 2 for m in mask_feature_size]  # FIXME important
+            upscale_factor = masker.get_upscale_factor()
+            assert len(mask_feature_size) == len(upscale_factor)
+            mask_gt_size = [m * f for m, f in zip(mask_feature_size, upscale_factor)]
 
             mask_feature_kwargs = model_cfg["roi_pooling"]["roi_mask_feature_kwargs"]
             mask_gt_kwargs = model_cfg["roi_pooling"]["roi_mask_gt_kwargs"]
@@ -570,19 +560,11 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
                     Downsampling is alwyas performed at the beginning of the blocks.
                     First stage/level is always full resolution.
 
-            plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
-
-                ``"stride"``
-                    stride # FIXME docs
-
-                ``"aspect_ratios"``
-                    aspect ratios # FIXME docs
-
-                ``"sizes"``
-                    sized for 2d acnhors # FIXME docs
-
-                ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME docs
+            plan_anchors: parameters for anchors (see `AnchorGenerator`
+                for more info). If key 'aspect_ratios' is present,
+                an Anchor Generator is chosen which supports anchor definition
+                via aspect ratio, otherwise the dimensions can be specified
+                directly.
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone
@@ -637,6 +619,7 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
         mask_pooler = cls._build_mask_pooler(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
+            masker=masker,
         )
 
         # RoI Module
@@ -776,19 +759,11 @@ class MultiStageMixin(RoIBuildMixin, SingleStageMixin):
                     Downsampling is alwyas performed at the beginning of the blocks.
                     First stage/level is always full resolution.
 
-            plan_anchors: parameters for anchors (see `AnchorGenerator` for more info)
-
-                ``"stride"``
-                    stride # FIXME docs
-
-                ``"aspect_ratios"``
-                    aspect ratios # FIXME docs
-
-                ``"sizes"``
-                    sized for 2d acnhors # FIXME docs
-
-                ``"zsizes"``
-                    (optional) additional z sizes for 3d # FIXME docs
+            plan_anchors: parameters for anchors (see `AnchorGenerator`
+                for more info). If key 'aspect_ratios' is present,
+                an Anchor Generator is chosen which supports anchor definition
+                via aspect ratio, otherwise the dimensions can be specified
+                directly.
 
             patch_size: optionally provide the patch size
                 to check compatibility with backbone

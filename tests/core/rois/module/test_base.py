@@ -1,14 +1,3 @@
-###
-# TODO: test. cat_and_index ops_torch
-# TODO: test detach all
-###
-
-# TODO: test assign and sample
-# TODO: add_gt_to_proposals
-# TODO assign_targets_to_anchors empty check
-
-# TODO: extend steps to batch size 2
-
 import pytest
 import torch
 from torch import Tensor
@@ -20,8 +9,13 @@ from nndet.core.post.box import CrossLevelBoxPostprocessing
 from nndet.core.post.mask import NoMaskPostprocessing
 from nndet.core.rois.module.base import BaseRoIModule
 from nndet.core.rois.module.single import RoIModule
-from nndet.core.rois.pooler.roi_align import RoIAlignNaiveAssign, roi_align_3d
+from nndet.core.rois.pooler.roi_align import (
+    RoIAlignNaiveAssign,
+    roi_align,
+    roi_align_3d,
+)
 from nndet.losses.classification.ce import BCELoss
+from nndet.losses.mask.ce import BCEMaskLoss
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier
 from nndet.nn.heads.comb.roi import RoIBoxHead
 from nndet.nn.heads.masker.roi import BCEAgnosticMasker
@@ -128,7 +122,7 @@ def example_modules():
     )
     roi_box_post = CrossLevelBoxPostprocessing(num_classes=num_classes, nms_thresh=0.2)
     roi_matcher = IoUMatcher(low_threshold=0.1, high_threshold=0.2, allow_low_quality_matches=False)
-    roi_sampler = HardNegativeSampler(batch_size_per_image=32, positive_fraction=0.5)
+    roi_sampler = HardNegativeSampler(batch_size_per_image=32, positive_fraction=0.2)
 
     return {
         "box_head": roi_box_head,
@@ -319,11 +313,13 @@ def test_train_step_masks(roi_module_mask: BaseRoIModule, device: torch.device):
         stage=0,
         predict=True,
     )
+    loss = losses["mask_bce"]
 
-    # TODO: finalise test once roi_align design is finalised
-
-    # predictions
     assert preds is None
+    pool_boxes = torch.cat([torch.tensor([[0], [1]], device=device), boxes], dim=1)
+    expected_mask_gt = roi_align(mask[:, None], pool_boxes, output_size=(6, 6, 6), spatial_scale=1.0).squeeze(dim=1)
+    expected_loss = BCEMaskLoss(reduction="mean")(torch.ones_like(expected_mask_gt), expected_mask_gt)
+    assert torch.allclose(expected_loss, loss)
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
@@ -473,5 +469,168 @@ def test_add_gt_to_proposal(base_roi_module: BaseRoIModule):
         assert exp == tuple(new.shape)
 
 
-def test_assign_and_sample():
-    pass
+def test_assign_and_sample(base_roi_module: BaseRoIModule):
+    # tests a batch with 3 scenarios: normal, no gt, no gt + no pred
+    # inputs
+    proposals = {
+        "pred_boxes": [
+            torch.tensor(
+                [
+                    [0, 0, 1, 1, 0, 1],
+                    [0, 0, 1, 1, 0, 1],
+                    [1, 1, 2, 2, 1, 2],
+                ],
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                [
+                    [0, 0, 1, 1, 0, 1],
+                    [1, 1, 2, 2, 1, 2],
+                ],
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                [[]],
+                dtype=torch.float,
+            ).view(-1, 6),
+        ],
+        "pred_scores": [
+            torch.tensor([1.0, 0.9, 1.0]),
+            torch.tensor([0.8, 0.9]),
+            torch.tensor([], dtype=torch.float),
+        ],
+        "pred_labels": [
+            torch.tensor([0, 1, 0]),
+            torch.tensor([0, 0]),
+            torch.tensor([]),
+        ],
+    }
+    targets = {
+        "target_boxes": [
+            torch.tensor(
+                [
+                    [0, 0, 1, 1, 0, 1],
+                    [3, 3, 4, 4, 3, 4],
+                ],
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                [[]],
+            ).view(-1, 6),
+            torch.tensor(
+                [[]],
+            ).view(-1, 6),
+        ],
+        "target_roi_classes": [
+            torch.tensor([0, 1]),
+            torch.tensor([]),
+            torch.tensor([]),
+        ],
+    }
+
+    expected_proposal_boxes_sampled = [
+        torch.tensor(
+            [
+                [0, 0, 1, 1, 0, 1],  # pos
+                [0, 0, 1, 1, 0, 1],  # pos
+                [0, 0, 1, 1, 0, 1],  # pos gt
+                [3, 3, 4, 4, 3, 4],  # pos gt
+                [1, 1, 2, 2, 1, 2],  # neg
+            ],
+            dtype=torch.float,
+        ),
+        torch.tensor(
+            [
+                [0, 0, 1, 1, 0, 1],  # neg
+                [1, 1, 2, 2, 1, 2],  # neg
+            ],
+            dtype=torch.float,
+        ),
+        torch.tensor(
+            [[]],
+            dtype=torch.float,
+        ).view(-1, 6),
+    ]
+    expected_matched_gt_labels_sampled = [
+        torch.tensor([1, 1, 1, 2, 0]),
+        torch.tensor([0, 0]),
+        torch.tensor([], dtype=torch.int64),
+    ]
+    expected_matched_gt_boxes_sampled = [
+        torch.tensor(
+            [
+                [0, 0, 1, 1, 0, 1],  # pos
+                [0, 0, 1, 1, 0, 1],  # pos
+                [0, 0, 1, 1, 0, 1],  # pos gt
+                [3, 3, 4, 4, 3, 4],  # pos gt
+                [0, 0, 1, 1, 0, 1],  # neg; first box is used as replacement
+            ],
+            dtype=torch.float,
+        ),
+        torch.tensor(
+            [
+                [0, 0, 0, 0, 0, 0],  # neg, no gt
+                [0, 0, 0, 0, 0, 0],  # neg, no gt
+            ],
+            dtype=torch.float,
+        ),
+        torch.tensor(
+            [[]],
+            dtype=torch.float,
+        ).view(-1, 6),
+    ]
+    expected_matched_gt_idx_sampled = [
+        torch.tensor([0, 0, 0, 1, -1]),
+        torch.tensor([-1, -1]),
+        torch.tensor([], dtype=torch.int64),
+    ]
+
+    # perform assign and sample operation
+    (
+        proposal_boxes_sampled,
+        matched_gt_labels_sampled,
+        matched_gt_boxes_sampled,
+        matched_gt_idx_sampled,
+    ) = base_roi_module.assign_and_sample(
+        proposals=proposals,
+        targets=targets,
+    )
+
+    # checks
+    assert len(proposal_boxes_sampled) == 3
+    assert proposal_boxes_sampled[0].shape == (5, 6)
+    assert proposal_boxes_sampled[1].shape == (2, 6)
+    assert proposal_boxes_sampled[2].shape == (0, 6)
+
+    assert len(matched_gt_labels_sampled) == 3
+    assert matched_gt_labels_sampled[0].shape == (5,)
+    assert matched_gt_labels_sampled[1].shape == (2,)
+    assert matched_gt_labels_sampled[2].shape == (0,)
+
+    assert len(matched_gt_boxes_sampled) == 3
+    assert matched_gt_boxes_sampled[0].shape == (5, 6)
+    assert matched_gt_boxes_sampled[1].shape == (2, 6)
+    assert matched_gt_boxes_sampled[2].shape == (0, 6)
+
+    assert len(matched_gt_idx_sampled) == 3
+    assert matched_gt_idx_sampled[0].shape == (5,)
+    assert matched_gt_idx_sampled[1].shape == (2,)
+    assert matched_gt_idx_sampled[2].shape == (0,)
+
+    for i in range(3):
+        assert torch.allclose(
+            proposal_boxes_sampled[i],
+            expected_proposal_boxes_sampled[i],
+        )
+        assert torch.allclose(
+            matched_gt_labels_sampled[i],
+            expected_matched_gt_labels_sampled[i],
+        )
+        assert torch.allclose(
+            matched_gt_boxes_sampled[i],
+            expected_matched_gt_boxes_sampled[i],
+        )
+        assert torch.allclose(
+            matched_gt_idx_sampled[i],
+            expected_matched_gt_idx_sampled[i],
+        )

@@ -56,7 +56,7 @@ plan_anchors_overwrites: {} # overwrite arguments of anchors
 
 # RoI (Cascading) Parameters
 ############################
-rpn_class_agnostic: True # RPN module only differentiates between FG vs BG
+
 
 roi_channel_multiplier: 3  # scale number of channels of RoI head (wrt to FPN channels)
 roi_mask_channel_multiplier : 2  # scale number of channels of RoI Mask head (wrt to FPN channels)
@@ -87,8 +87,7 @@ roi_regressor_kwargs: # keyword arguments passed to RoI regressor
   add_norm: True
   reduction: sum
 
-roi_head_kwargs:
-  ema_loss_norm: False
+roi_head_kwargs: {}
 
 roi_masker_kwargs:
   num_convs: 3

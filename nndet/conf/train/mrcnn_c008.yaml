@@ -8,8 +8,8 @@ defaults:
   - io_cfg: offsetV2_obj_bal
   - trainer_cfg: sgd_base
   - accelerator_cfg: gpu1_mixed16
-  - model_cfg: mrcnn_l1_hnm_atss_c0_ema
+  - model_cfg: mrcnn_l1_hnm_atss_c0
 
-module: BoxMaskURCNNV002
+module: BoxMaskURCNNC008
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing

@@ -66,8 +66,8 @@ def assign_targets_to_anchors(
             labels_per_image = gt_classes[matched_idxs_clamp]
             labels_per_image = labels_per_image + 1
         else:
-            num_anchors_per_image = anchors_per_image.shape[0]
-            # no ground truth => no matches, all background
+            num_anchors_per_image = anchors_per_image.shape[0] if anchors_per_image.numel() > 0 else 0
+            # no ground truth/predictions => no matches, all background
             matched_gt_boxes_per_image = torch.zeros_like(anchors_per_image)
             labels_per_image = torch.zeros(num_anchors_per_image, dtype=torch.long).to(device=anchors_per_image.device)
 

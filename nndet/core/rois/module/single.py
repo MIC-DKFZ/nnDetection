@@ -223,7 +223,6 @@ class RoIModule(BaseRoIModule):
                 ``"pred_image_spatial_size"`` ND_TUPLE_INT
                     image size which was used for prediction. Needed to restore
                     correct size of image when pasting binary masks.
-
         """
         _features = [features[i] for i in self.decoder_levels]
         image_size = tuple(images.shape[2:])
