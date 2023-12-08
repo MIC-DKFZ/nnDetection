@@ -202,7 +202,7 @@ class BaseDETR(AbstractDetector):
         Perform inference for a batch of images
 
         Args:
-            images: batch of input images [N, C, W, H, (D)]
+            images: batch of input images [N, C, dims]
 
         Returns:
             Dict: predictions
@@ -249,6 +249,7 @@ class BaseDETR(AbstractDetector):
             List[torch.Tensor]: feature maps from decoder
         """
 
+        breakpoint()
         # Compute feature list from backbone
         features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
