@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from functools import partial
-
 import torch
 from torch.cuda.amp import autocast
 
@@ -87,12 +85,6 @@ class DiceSegLoss(Loss):
             num_classes=num_classes,
             smoothing=self.smoothing,
         )
-        _fn = partial(
-            soft_dice,
-            smooth_nom=self.smooth_nom,
-            smooth_denom=self.smooth_denom,
-            batch_dice=self.batch_dice,
-        )
 
         if self.loss_fp32:
             with autocast(enabled=False):
@@ -100,18 +92,24 @@ class DiceSegLoss(Loss):
                 if not self.do_bg:
                     probs = probs[:, 1:]
                     targets_one_hot = targets_one_hot[:, 1:]
-                loss = _fn(
+                loss = soft_dice(
                     preds=probs,
                     targets_one_hot=targets_one_hot.float(),
+                    smooth_nom=self.smooth_nom,
+                    smooth_denom=self.smooth_denom,
+                    batch_dice=self.batch_dice,
                 )  # [N, C]
         else:
             probs = torch.nn.functional.softmax(preds, dim=1)
             if not self.do_bg:
                 probs = probs[:, 1:]
                 targets_one_hot = targets_one_hot[:, 1:]
-            loss = _fn(
+            loss = soft_dice(
                 preds=probs,
                 targets_one_hot=targets_one_hot,
+                smooth_nom=self.smooth_nom,
+                smooth_denom=self.smooth_denom,
+                batch_dice=self.batch_dice,
             )  # [N, C]
 
         return self.loss_weight * reduction_helper(loss, reduction=self.reduction)
