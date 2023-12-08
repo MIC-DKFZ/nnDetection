@@ -8,7 +8,6 @@ import nndet.core.ops_torch as ops_torch
 from nndet.losses.ops import reduction_helper
 
 
-@torch.compile
 @autocast(enabled=False)
 def generalized_box_iou_loss(
     pred_boxes: torch.Tensor,
