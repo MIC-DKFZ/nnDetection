@@ -15,14 +15,19 @@ from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIAlignNaiveAssign, RoIPooler
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
+from nndet.nn.backbone.blueprints.resconv import ResConvBackbone
 from nndet.nn.heads.classifier.dense import BCECLassifier, DenseClassifier
 from nndet.nn.heads.classifier.roi import BCEConvRoIClassifier, RoIClassifier
 from nndet.nn.heads.comb import BoxHeadHNM
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.roi import BCEAgnosticMasker, Masker
+from nndet.nn.heads.masker.roi import BCEAgnosticMasker, BCESpecificMasker, Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor, L1Regressor
-from nndet.nn.heads.regressor.roi import L1ConvRoIAgnosticRegressor, RoIRegressor
+from nndet.nn.heads.regressor.roi import (
+    L1ConvRoIAgnosticRegressor,
+    L1ConvRoISpecificRegressor,
+    RoIRegressor,
+)
 from nndet.nn.heads.segmenter import DiCESegmenterFgBg, Segmenter
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.layers.initializer import InitHeV2
@@ -172,3 +177,15 @@ class BoxMaskURCNNC008(
     roi_masker_cls: Type[Masker] = BCEAgnosticMasker  # class of RoI mask head
     roi_mask_pooler_cls: Type[RoIPooler] = RoIAlignNaiveAssign  # class of RoI mask pooler
     roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+
+
+class BoxMaskURCNNC008Res(BoxMaskURCNNC008):
+    backbone_cls: Type[AbstractBackbone] = ResConvBackbone  # define class for backbone
+
+
+class BoxMaskURCNNC008SpecificMask(BoxMaskURCNNC008):
+    roi_masker_cls: Type[Masker] = BCESpecificMasker  # class of RoI mask head
+
+
+class BoxMaskURCNNC008SpecificReg(BoxMaskURCNNC008):
+    roi_regressor_cls: Type[RoIRegressor] = L1ConvRoISpecificRegressor  # box head regressor class
