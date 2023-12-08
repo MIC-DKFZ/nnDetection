@@ -16,7 +16,6 @@ from torch.jit.annotations import List
 from torchvision.models.detection._utils import BoxCoder
 
 
-@torch.compile
 def encode_boxes(
     reference_boxes: torch.Tensor,
     proposals: torch.Tensor,
