@@ -178,10 +178,11 @@ class LightningBaseModule(pl.LightningModule):
             batch_num=batch_idx,
         )
 
-        # Exclude criterion logging keys starting with __
-        loss = sum([value for key, value in losses.items() if not key.startswith("__")])
+        # Exclude logging keys starting with __
+        info = {key: losses.pop(key) for key in list(losses.keys()) if key.startswith("__")}
+        loss = sum(losses.values())
 
-        out = {"loss": loss.detach().item(), **{f"loss_{key}": l.detach().item() for key, l in losses.items()}}
+        out = {"loss": loss.detach().item(), **{f"loss_{key}": l.detach().item() for key, l in losses.items()}, **info}
         self.log("train_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
         self.training_step_outputs.append(out)
         return loss
@@ -220,13 +221,15 @@ class LightningBaseModule(pl.LightningModule):
                 batch_num=batch_idx,
             )
             # Exclude criterion logging keys starting with __
-            loss = sum([value for key, value in losses.items() if not key.startswith("__")])
+            info = {key: losses.pop(key) for key in list(losses.keys()) if key.startswith("__")}
+            loss = sum(losses.values())
 
         super().evaluation_step(predictions=predictions, targets=targets)
 
         out = {
             "loss": loss.detach().item(),
             **{f"loss_{key}": l.detach().item() for key, l in losses.items()},
+            **info,
         }
         self.log("val_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
         self.validation_step_outputs.append(out)
@@ -247,7 +250,8 @@ class LightningBaseModule(pl.LightningModule):
             mean_val = sum(_vals) / len(_vals)
             if _key.startswith("loss"):
                 _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
-            elif _key.startswith("__"):
+
+            if _key.startswith("__"):
                 self.log(f"train_info/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
             else:
                 self.log(f"train_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
@@ -271,7 +275,8 @@ class LightningBaseModule(pl.LightningModule):
             mean_val = sum(_vals) / len(_vals)
             if _key.startswith("loss"):
                 _log_loss_str = _log_loss_str + f" {_key} {mean_val:0.5f}"
-            elif _key.startswith("__"):
+
+            if _key.startswith("__"):
                 self.log(f"val_info/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)
             else:
                 self.log(f"val_loss/{_key}", mean_val, sync_dist=True, prog_bar=False, logger=True, batch_size=1)

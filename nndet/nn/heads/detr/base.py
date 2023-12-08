@@ -57,7 +57,7 @@ class DETRHead(torch.nn.Module):
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
         self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
-        self.extended_logging = os.getenv("det_extended_logging")
+        self.extended_logging = os.getenv("det_extended_logging", 0)
 
     def forward(
         self,
@@ -204,12 +204,12 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: formatted and scaled auxiliary output
         """
         if self.scale_aux_loss == AuxLossNorm.NONE:
-            loss_dict = {k + f"_{aux_idx}": v for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.MEAN:
-            loss_dict = {k + f"_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.REDUCED:
             w = 1 / (num_aux_outputs - aux_idx + 1)
-            loss_dict = {k + f"_{aux_idx}": v * w for k, v in loss_dict.items()}
+            loss_dict = {f"aux_{k}_{aux_idx}": v * w for k, v in loss_dict.items()}
         return loss_dict
 
     def prepare_targets(

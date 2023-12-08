@@ -79,7 +79,7 @@ class HungarianMatcher(BaseMatcher):
             for i, j in indices
         ]
         crit_log_dict = None
-        if self.return_log_dict:
+        if self.extended_logging:
             crit_log_dict = self._get_log_dict(
                 bs=bs,
                 num_queries=num_queries,

@@ -38,7 +38,7 @@ class BaseMatcher(nn.Module):
         super().__init__()
         self.class_criterion = class_criterion
         self.box_criterion = box_criterion
-        self.return_log_dict = os.getenv("det_extended_logging")
+        self.extended_logging = os.getenv("det_extended_logging", 0)
 
     @torch.no_grad()
     def forward(

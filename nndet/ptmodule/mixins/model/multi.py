@@ -112,7 +112,6 @@ class RoIBuildMixin:
         Returns:
             AbstractOneStageDetector: one stage detector
         """
-        breakpoint()
         _plan_arch = copy.deepcopy(plan_arch)
         _plan_arch["classifier_classes"] = 1
         rpn = super().from_config_plan(

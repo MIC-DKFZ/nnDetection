@@ -248,8 +248,6 @@ class BaseDETR(AbstractDetector):
             Dict: semantic segmentation prediction, None if no segmenter was given
             List[torch.Tensor]: feature maps from decoder
         """
-
-        breakpoint()
         # Compute feature list from backbone
         features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
