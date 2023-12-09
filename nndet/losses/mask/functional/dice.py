@@ -5,7 +5,7 @@
 import torch
 
 
-@torch.compile
+# @torch.compile
 def soft_dice(
     preds: torch.Tensor,
     targets_one_hot: torch.Tensor,

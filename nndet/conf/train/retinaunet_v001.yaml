@@ -58,7 +58,7 @@ accelerator_cfg:
 
   # pytorch 2.0 features
   do_compile: False
-  compile_kwargs:
+  compile:
     mode: "default"
     backend: "inductor"
     fullgraph: false
