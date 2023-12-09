@@ -17,7 +17,7 @@ class DeformableSetModelMixin(SetModelMixin):
         classifier: Optional[FFNClassifier] = None,
         regressor: Optional[FFNRegressor] = None,
     ):
-        if model_cfg["two_stage"]:
+        if model_cfg["detector"]["two_stage"]:
             encoder_classifier = classifier
             encoder_regressor = regressor
             decoder_regressor = regressor
@@ -34,7 +34,7 @@ class DeformableSetModelMixin(SetModelMixin):
             feedforward_dim=encoder_kwargs["dim_feedforward"],
             ffn_dropout=encoder_kwargs["ffn_dropout"],
             post_norm=encoder_kwargs["post_norm"],
-            num_feature_levels=model_cfg["num_feature_levels"],
+            num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
             num_points=encoder_kwargs["num_points"],
             dim=plan_arch["dim"],
         )
@@ -47,17 +47,18 @@ class DeformableSetModelMixin(SetModelMixin):
             proj_dropout=decoder_kwargs["proj_dropout"],
             feedforward_dim=decoder_kwargs["dim_feedforward"],
             ffn_dropout=decoder_kwargs["ffn_dropout"],
-            num_feature_levels=model_cfg["num_feature_levels"],
+            num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
             num_points=encoder_kwargs["num_points"],
             dim=plan_arch["dim"],
             regressor=decoder_regressor,
         )
+
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
             classifier=encoder_classifier,
             regressor=encoder_regressor,
-            num_feature_levels=model_cfg["num_feature_levels"],
-            two_stage=model_cfg["two_stage"],
-            two_stage_num_proposals=model_cfg["detection_per_img"],
+            num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
+            two_stage=model_cfg["detector"]["two_stage"],
+            two_stage_num_proposals=model_cfg["detector"]["detection_per_img"],
         )

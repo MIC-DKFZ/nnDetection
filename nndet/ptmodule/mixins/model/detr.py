@@ -192,11 +192,6 @@ class SetModelMixin(ModelMixin):
         else:
             segmenter = None
 
-        # Parse model kwargs
-        model_kwargs = {}
-        if "kwargs" in model_cfg.keys():
-            model_kwargs.update(model_cfg["kwargs"])
-
         return cls.detector_cls(
             backbone=backbone,
             transformer=transformer,
@@ -206,9 +201,9 @@ class SetModelMixin(ModelMixin):
             hidden_dim=hidden_dim,
             query_dim=hidden_dim,
             segmenter=segmenter,
-            two_stage=model_cfg["detector"]["two_stage"],
             detection_per_img=model_cfg["detector"]["detection_per_img"],
-            **model_kwargs,
+            two_stage=model_cfg["detector"].get("two_stage", False),
+            use_pos_queries=model_cfg["detector"].get("use_pos_queries", False),
         )
 
     @classmethod

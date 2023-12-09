@@ -170,7 +170,7 @@ class DETRHead(torch.nn.Module):
         if "aux_outputs" in pred_detection:
             num_aux_outputs = len(pred_detection["aux_outputs"])
             for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
-                l_dict, m_dict = self._match_and_compute_loss(
+                l_dict, _ = self._match_and_compute_loss(
                     pred_logits=aux_outputs["pred_cls_logits"],
                     pred_coords=aux_outputs["pred_box_coords"],
                     target_boxes=target_boxes,
@@ -182,7 +182,7 @@ class DETRHead(torch.nn.Module):
         if "enc_outputs" in pred_detection:
             # TODO:check in details here
             enc_outputs = pred_detection["enc_outputs"]
-            l_dict = self._match_and_compute_loss(
+            l_dict, _ = self._match_and_compute_loss(
                 pred_logits=enc_outputs["pred_cls_logits"],
                 pred_coords=enc_outputs["pred_box_coords"],
                 target_boxes=target_boxes,
