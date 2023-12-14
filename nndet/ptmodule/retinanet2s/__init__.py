@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nndet.ptmodule.retinanet2s.dev import *
+from nndet.ptmodule.retinanet2s.rn2s_v002 import RetinaNet2SV002
 from nndet.ptmodule.retinanet2s.rn2sm import RetinaNet2SModule
