@@ -31,11 +31,11 @@ from nndet.nn.heads.regressor.roi import (
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.fpn import FPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.frcnn.f001 import FasterRCNNModule
+from nndet.ptmodule.retinanet2s.rn2sm import RetinaNet2SModule
 
 
 @MODULE_REGISTRY.register
-class FasterRCNNC001(FasterRCNNModule):
+class FasterRCNNC001(RetinaNet2SModule):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
     # define detector cls

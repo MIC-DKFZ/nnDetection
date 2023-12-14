@@ -15,7 +15,7 @@ from nndet.nn.layers.conv import (
     ConvInstanceMish,
 )
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 """
 Bump version due to other changes
