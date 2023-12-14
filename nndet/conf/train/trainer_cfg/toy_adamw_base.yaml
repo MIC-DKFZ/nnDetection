@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+save_top_k: 1 # topk model selection [optonal; Default 1]
+sweep_key: mAP_IoU_0.10_0.50_0.05
+monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model
+monitor_mode: "max" # metric operation mode "min" or "max"
+
+max_num_epochs: 50 # max number of epochs
+num_train_batches_per_epoch: 250 # number of train batches per epoch
+num_val_batches_per_epoch: 100 # number of val batches per epoch
+
+opt_class: "AdamWLWPoly"
+initial_lr: 3e-4 # initial learning rate to start with
+weight_decay: 3.e-5 # weight decay for optimizer
+
+# AdamW specific parameters
+beta1: 0.9
+beta2: 0.999
+eps: 1e-6
+amsgrad: True # PyTorch Default False
+
+warm_iterations: 4000 # number of iterations with warmup
+warm_lr: 1.e-6 # learning rate to start warmup from
+
+poly_gamma: 0.9 # poly learning rate gamma
+
+swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
+# sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".

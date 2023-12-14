@@ -42,7 +42,7 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class BoxMaskRCNNV002(
+class MaskRCNNV002(
     LightningBaseModule,  # Detection Base
     BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
@@ -109,7 +109,7 @@ class BoxMaskRCNNV002(
 
 
 @MODULE_REGISTRY.register
-class BoxMaskURCNNV002(
+class MaskURCNNV002(
     LightningBaseModule,  # Detection Base
     BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training

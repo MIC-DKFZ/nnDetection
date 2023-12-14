@@ -10,6 +10,6 @@ defaults:
   - accelerator_cfg: gpu1_mixed16
   - model_cfg: mrcnn_l1_hnm_atss_c0
 
-module: BoxMaskURCNNC008
+module: MaskURCNNC008
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
