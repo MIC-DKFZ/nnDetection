@@ -7,7 +7,6 @@ from nndet.core.abstract import AbstractDetector, AbstractOneStageDetector
 from nndet.core.boxes.matcher import Matcher
 from nndet.core.boxes.sampler import AbstractSampler
 from nndet.core.post.box import BoxPostprocessing
-from nndet.core.post.mask import MaskPostprocessing, NoMaskPostprocessing
 from nndet.core.rcnn import RCNN
 from nndet.core.rois.module import RoIModule
 from nndet.core.rois.pooler import RoIPooler
@@ -16,7 +15,6 @@ from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.classifier.roi import RoIClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.comb.roi import RoIBoxHead
-from nndet.nn.heads.masker.roi import Masker
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.nn.heads.regressor.roi import RoIRegressor
 from nndet.nn.heads.segmenter import Segmenter
@@ -25,28 +23,19 @@ from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
-from nndet.ptmodule.mixins.prepare import (
-    BinaryMasksPrepareMixin,
-    BoxesPrepareMixin,
-    SemanticFgPrepareMixin,
-)
+from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class MaskRCNNModule(
+class RetinaNet2SModule(
     LightningBaseModule,  # Detection Base
-    BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
-    """
-    MaskRCNNModule with Box Output
-    """
-
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
     # define RPN cls
@@ -67,19 +56,18 @@ class MaskRCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
+    head_sampler_cls: Type[AbstractSampler] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
     box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
-    # Use `MaskURCNNModule` for configurations where `segmenter_cls` is not None!
-    # Classes other than None are not supprted here
-    segmenter_cls: Optional[Type[Segmenter]] = None  # [optional] segmentation head as in RetinaUNet
+    # Not supprted here; see `MaskRCNN`
+    segmenter_cls: Optional[Type[Segmenter]] = None
 
     ########################
     # RoI Head Configuration
     ########################
     # RoI classes
-    roi_conv_cls: Type[CONVSEQ] = ...  # conv class used for RoI head
+    roi_conv_cls = ...  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = ...  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = ...  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = ...  # box head classifier class
@@ -90,15 +78,15 @@ class MaskRCNNModule(
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
-    roi_masker_cls: Type[Masker] = ...  # class of RoI mask head
-    roi_mask_pooler_cls: Type[RoIPooler] = ...  # class of RoI mask pooler
-    roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+    # Not supprted here; see `MaskRCNN`
+    roi_masker_cls = None  # class of RoI mask head
+    roi_mask_pooler_cls = None  # class of RoI mask pooler
+    roi_mask_post_cls = None
 
 
 @MODULE_REGISTRY.register
-class MaskURCNNModule(
+class RetinaUNet2SModule(
     LightningBaseModule,  # Detection Base
-    BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
@@ -106,7 +94,7 @@ class MaskURCNNModule(
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     """
-    MaskRCNNModule with Box Output
+    This is similar to RetinaU-Net 2 Stage if trained with Retina U-Net as RPN
     """
 
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
@@ -129,17 +117,17 @@ class MaskURCNNModule(
     head_regressor_cls: Type[DenseRegressor] = ...  # define class for head regressor
     # [optional] sampler class for negative mining
     # if None: no sampler will be given to the head
-    head_sampler_cls: Optional[Type[AbstractSampler]] = ...
+    head_sampler_cls: Type[AbstractSampler] = ...
 
     matcher_cls: Type[Matcher] = ...  # define class to match anchors to ground truth
-    box_post_cls: Type[BoxPostprocessing] = ...  # define box postprocessing strategy
-    segmenter_cls: Optional[Type[Segmenter]] = ...  # segmentation head as in RetinaUNet
+    # Segmentation for head for RPN
+    segmenter_cls: Optional[Type[Segmenter]] = ...
 
     ########################
     # RoI Head Configuration
     ########################
     # RoI classes
-    roi_conv_cls: Type[CONVSEQ] = ...  # conv class used for RoI head
+    roi_conv_cls = ...  # conv class used for RoI head
     roi_module_cls: Type[RoIModule] = ...  # class of RoI module
     roi_head_cls: Type[RoIBoxHead] = ...  # class of box head of RoI module
     roi_classifier_cls: Type[RoIClassifier] = ...  # box head classifier class
@@ -150,6 +138,7 @@ class MaskURCNNModule(
     roi_box_pooler_cls: Type[RoIPooler] = ...  # class of RoI box pooler
     roi_box_post_cls: Type[BoxPostprocessing] = ...  # define roi box postprocessing strategy
 
-    roi_masker_cls: Type[Masker] = ...  # class of RoI mask head
-    roi_mask_pooler_cls: Type[RoIPooler] = ...  # class of RoI mask pooler
-    roi_mask_post_cls: Type[MaskPostprocessing] = NoMaskPostprocessing  # define roi mask postprocessing strategy
+    # Not supprted here; see `MaskRCNN`
+    roi_masker_cls = None  # class of RoI mask head
+    roi_mask_pooler_cls = None  # class of RoI mask pooler
+    roi_mask_post_cls = None

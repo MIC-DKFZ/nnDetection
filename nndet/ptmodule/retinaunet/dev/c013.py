@@ -7,7 +7,7 @@ from nndet.nn.heads.comb import BoxHeadAll, BoxHeadHNM
 from nndet.nn.heads.regressor import L1Regressor
 from nndet.nn.layers.conv import ConvBatchLReLU, ConvGroupLReLU, ConvInstanceLReLU
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 
 @MODULE_REGISTRY.register
