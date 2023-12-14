@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nndet.ptmodule.retinaunet.dev import *
-from nndet.ptmodule.retinaunet.run001 import RetinaUNetModule
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import RetinaUNetFocalV002, RetinaUNetHNMV002
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v002 import RetinaUNetFocalV002, RetinaUNetHNMV002
+from nndet.ptmodule.retinaunet.runm import RetinaUNetModule

@@ -26,11 +26,11 @@ from nndet.nn.heads.segmenter import DiCESegmenterFgBg
 from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.mrcnn.cm001 import CascadeMaskURCNNModule
+from nndet.ptmodule.retinaunet2sm.runcm import RetinaUNetCascadeModule
 
 
 @MODULE_REGISTRY.register
-class CascadeMaskURCNNC001(CascadeMaskURCNNModule):
+class CascadeMaskURCNNC001(RetinaUNetCascadeModule):
     # Use `detector_cls` to set RPN module class
     full_detector_cls = RCNN  # Two stage detector class RCNN
     # define detector cls

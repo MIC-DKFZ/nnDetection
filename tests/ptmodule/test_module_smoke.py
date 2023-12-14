@@ -8,10 +8,10 @@ from omegaconf.omegaconf import OmegaConf
 
 from nndet.core.rois.pooler.roi_align import roi_align_3d
 from nndet.ptmodule.detr.dev.c002 import BoxDETRC002
-from nndet.ptmodule.mrcnn.mv002 import BoxMaskRCNNV002, BoxMaskURCNNV002
-from nndet.ptmodule.retinanet.rnv002 import RetinaNetFocalV002, RetinaNetHNMV002
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
-from nndet.ptmodule.retinaunet.runv002 import RetinaUNetFocalV002, RetinaUNetHNMV002
+from nndet.ptmodule.retinanet.rn_v002 import RetinaNetFocalV002, RetinaNetHNMV002
+from nndet.ptmodule.retinaunet2sm.run2sm_v002 import RetinaNet2SMV002, RetinaUNet2SMV002
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v002 import RetinaUNetFocalV002, RetinaUNetHNMV002
 
 
 @pytest.fixture
@@ -112,8 +112,8 @@ CASES = [
 
 if roi_align_3d is not None and torch.cuda.is_available():
     # Two Stage
-    CASES.append((BoxMaskRCNNV002, "mrcnn_v002"))
-    CASES.append((BoxMaskURCNNV002, "mrcnn_v002"))
+    CASES.append((RetinaNet2SMV002, "mrcnn_v002"))
+    CASES.append((RetinaUNet2SMV002, "mrcnn_v002"))
 
 
 DEVICES = ["cpu"]

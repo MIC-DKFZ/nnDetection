@@ -25,7 +25,7 @@ from nndet.nn.layers.conv import ConvGroupLReLU, ConvInstanceLReLU
 
 # from nndet.nn.layers.wrapper import Generator
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetV001
 from nndet.training.ema import EMAWeightsCB
 from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer.utils import get_params_no_wd_on_norm

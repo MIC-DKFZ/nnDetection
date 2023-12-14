@@ -28,7 +28,7 @@ from nndet.nn.layers.conv import (
     ConvInstanceSwish,
 )
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetV001
 from nndet.training.learning_rate import LinearWarmupPolyLR
 from nndet.training.optimizer import get_params_no_wd_on_norm
 

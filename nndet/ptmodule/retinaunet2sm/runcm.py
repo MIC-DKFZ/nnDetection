@@ -35,7 +35,7 @@ from nndet.utils.typing import CONVSEQ
 
 
 @MODULE_REGISTRY.register
-class CascadeMaskURCNNModule(
+class RetinaUNetCascadeModule(
     LightningBaseModule,  # Detection Base
     BinaryMasksPrepareMixin,  # prepare binary masks for instance segmentation training
     SemanticFgPrepareMixin,  # prepare batch for semantic segmentation training

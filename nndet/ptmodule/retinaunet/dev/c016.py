@@ -19,7 +19,7 @@ from nndet.nn.layers.initializer import InitHeV2
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.fpn import UFPN, UpFPN
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.retinaunet.runv001 import RetinaUNetCV001Focal, RetinaUNetV001
+from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetCV001Focal, RetinaUNetV001
 
 
 @MODULE_REGISTRY.register
