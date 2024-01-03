@@ -19,7 +19,7 @@ from nndet.utils.nnunet import Exporter
 
 @env_guard
 def run(cfg, target_dir, stuff: bool):
-    base_dir = Path(os.getenv("det_data") / cfg["task"] / "raw_splitted")
+    base_dir = Path(os.getenv("det_data")) / cfg["task"] / "raw_splitted"
     target_dir.mkdir(exist_ok=True, parents=True)
 
     if (base_dir / "imagesTs").is_dir():
