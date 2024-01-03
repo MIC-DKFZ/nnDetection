@@ -12,12 +12,14 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from nndet.io import get_task
+from nndet.utils.check import env_guard
 from nndet.utils.config import compose
 from nndet.utils.nnunet import Exporter
 
 
+@env_guard
 def run(cfg, target_dir, stuff: bool):
-    base_dir = Path(cfg.host.splitted_4d_output_dir)
+    base_dir = Path(os.getenv("det_data") / cfg["task"] / "raw_splitted")
     target_dir.mkdir(exist_ok=True, parents=True)
 
     if (base_dir / "imagesTs").is_dir():
