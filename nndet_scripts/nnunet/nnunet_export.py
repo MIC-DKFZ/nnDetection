@@ -3,12 +3,12 @@
 
 import argparse
 import copy
+import os
 import sys
 from pathlib import Path
 
 from hydra import initialize_config_module
 from loguru import logger
-from nnunet.paths import nnUNet_raw_data
 from omegaconf import OmegaConf
 
 from nndet.io import get_task
@@ -82,8 +82,10 @@ if __name__ == "__main__":
     for task, new_task in zip(tasks, new_tasks):
         task = get_task(task, name=True)
 
-        if nnUNet_raw_data is None:
-            raise RuntimeError("Please set `nnUNet_raw_data` for nnUNet!")
+        nnunet_base = os.getenv("nnUNet_raw_data_base", None)
+        if nnunet_base is None:
+            raise ValueError("Need to set environment variable 'nnUNet_raw_data_base' to run nnunet_export!")
+        nnUNet_raw_data = Path(nnunet_base) / "nnUNet_raw_data"
         target_dir = Path(nnUNet_raw_data) / new_task
 
         logger.remove()
