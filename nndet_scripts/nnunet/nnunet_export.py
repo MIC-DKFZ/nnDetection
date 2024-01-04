@@ -3,21 +3,23 @@
 
 import argparse
 import copy
+import os
 import sys
 from pathlib import Path
 
 from hydra import initialize_config_module
 from loguru import logger
-from nnunet.paths import nnUNet_raw_data
 from omegaconf import OmegaConf
 
 from nndet.io import get_task
+from nndet.utils.check import env_guard
 from nndet.utils.config import compose
 from nndet.utils.nnunet import Exporter
 
 
+@env_guard
 def run(cfg, target_dir, stuff: bool):
-    base_dir = Path(cfg.host.splitted_4d_output_dir)
+    base_dir = Path(os.getenv("det_data")) / cfg["task"] / "raw_splitted"
     target_dir.mkdir(exist_ok=True, parents=True)
 
     if (base_dir / "imagesTs").is_dir():
@@ -82,8 +84,10 @@ if __name__ == "__main__":
     for task, new_task in zip(tasks, new_tasks):
         task = get_task(task, name=True)
 
-        if nnUNet_raw_data is None:
-            raise RuntimeError("Please set `nnUNet_raw_data` for nnUNet!")
+        nnunet_base = os.getenv("nnUNet_raw_data_base", None)
+        if nnunet_base is None:
+            raise ValueError("Need to set environment variable 'nnUNet_raw_data_base' to run nnunet_export!")
+        nnUNet_raw_data = Path(nnunet_base) / "nnUNet_raw_data"
         target_dir = Path(nnUNet_raw_data) / new_task
 
         logger.remove()

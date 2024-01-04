@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from loguru import logger
 
 
-@torch.compile
+# @torch.compile
 def swish(x: torch.Tensor, inplace: bool = False) -> torch.Tensor:
     """
     Apples swish function as described in
@@ -41,7 +41,7 @@ class Swish(torch.nn.Module):
         return swish(x, inplace=self.inplace)
 
 
-@torch.compile
+# @torch.compile
 def mish(
     x: torch.Tensor,
     inplace: bool = False,
