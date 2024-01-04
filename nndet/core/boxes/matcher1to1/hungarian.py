@@ -67,8 +67,10 @@ class HungarianMatcher(BaseMatcher):
         cost_box = sum(cost_boxes)  # [batch_size * num_queries, num_gt_elements]
 
         C = cost_class + cost_box
-        C = C.view(bs, num_queries, -1).cpu()
+        C = C.view(bs, num_queries, -1).cpu()  # [batch_size, num_queries, num_gt_elements]
         sizes = [len(v) for v in target_boxes]
+        # split ground truth per image -> index batch of gt_i with i
+        # returns selected predictions and ground truth indices which build pairs
         indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
 
         out_indices = [
