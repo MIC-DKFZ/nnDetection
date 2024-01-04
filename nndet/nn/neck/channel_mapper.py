@@ -28,18 +28,21 @@ class ChannelMapper(nn.Module):
     ):
         """
         Channel Mapper for reducing/increasing channels of backbone features to
-        the same dimension.
+        the same dimension. Each level receives a sepearte convolution.
 
         Args:
             conv: generator to create the convolution
             in_channels: list containing the number of channels of the backbone
-                features
+                features (all feature maps)
             num_in_features: number of backbone feature maps that should be used
+                (will use the last ``num_in_features`` maps)
             kernel_size: Size of the convolution kernel for each scale.
             out_channels: Number of output channels for each scale.
             num_outs: (Optional) Number of output feature maps. There will be
                 ``extra_convs`` when ``num_outs`` is larger than the length of
-                ``in_features``.
+                ``in_features``. The last feature map (specified by
+                ``num_in_features``) will be further processed by these
+                convolutions and each convolution provides a new output.
             **kwargs: kwargs used by the convolution generator, could be
                 'stride', 'groups', 'bias' or other
         """
@@ -51,6 +54,11 @@ class ChannelMapper(nn.Module):
 
         if num_outs is None:
             num_outs = len(in_channels_per_feature)
+        if num_outs < len(in_channels_per_feature):
+            raise ValueError(
+                f"num_outs ({num_outs}) should be larger or equal than the number of input "
+                f"features ({len(in_channels_per_feature)})"
+            )
 
         self.convs = nn.ModuleList()
         padding = compute_padding_for_kernel(kernel_size)

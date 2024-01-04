@@ -19,7 +19,7 @@ class PositionEmbeddingLearned(BasePositionEmbedding):
         Args:
             dim: number of spatial dimensions
             num_pos_feats: number of positional encoding features (d in formula)
-            num_embeddings: #TODO
+            num_embeddings: size of lookup table
         """
         super().__init__(dim=dim, num_pos_feats=num_pos_feats)
 
