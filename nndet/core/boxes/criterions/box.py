@@ -59,7 +59,7 @@ class GIoUCenterBoxCriterion(BoxCriterion):
         target_boxes: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Compute l1 box criterion
+        Compute GIoU box criterion
 
         Args:
             pred_coords: predicted bounding box coords [B * R, dims * 2]
