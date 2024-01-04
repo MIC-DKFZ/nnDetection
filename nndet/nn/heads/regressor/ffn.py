@@ -39,9 +39,13 @@ class FFNRegressor(torch.nn.Module):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             kwargs: passed to linear generator class
         """
         super().__init__()
+
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
         self.in_channels = in_channels
@@ -56,10 +60,13 @@ class FFNRegressor(torch.nn.Module):
             dropout_rate=dropout_rate,
             **kwargs,
         )
+
+        # configure MLPs
         self.encoder_mlp = None
         self.aux_mlp = None
         self.share_mlp = share_mlp
         self.num_decoder_layers = num_decoder_layers
+
         if not self.share_mlp:
             self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(self.mlp) for i in range(num_decoder_layers - 1)])
             if use_encoder_mlp:
@@ -67,6 +74,7 @@ class FFNRegressor(torch.nn.Module):
         elif use_encoder_mlp:
             self.encoder_mlp = self.mlp
 
+        # losses
         self.loss_name: str = "ffn_reg_spec"
         self.box_loss_name: str = "ffn_reg_box"
         self.loss: Optional[torch.nn.Module] = None
@@ -229,6 +237,9 @@ class L1FFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         beta: float = 1.0,
         reduction: Optional[str] = "sum",
@@ -248,6 +259,9 @@ class L1FFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             beta: L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
@@ -263,6 +277,9 @@ class L1FFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.loss_name = "ffn_reg_l1"
@@ -284,6 +301,9 @@ class GIoUFFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         reduction: Optional[str] = "sum",
         box_loss_weight: float = 1.0,
@@ -302,6 +322,9 @@ class GIoUFFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             box_loss_weight: scalar to balance multiple losses
             box_loss_fp32: If True, loss is forced to be computed in float32
@@ -315,6 +338,9 @@ class GIoUFFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.box_loss_name = "ffn_reg_giou"
@@ -335,6 +361,9 @@ class L1GIoUFFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         beta: float = 1.0,
         reduction: Optional[str] = "sum",
@@ -346,7 +375,7 @@ class L1GIoUFFNRegressor(FFNRegressor):
     ) -> None:
         """
         Feed forward network head (usually used in DETR like models)
-        trained with L1 + GIoU loss
+        trained with (smooth) L1 + GIoU loss
 
         Args:
             linear: generator object to obtain linear layer blocks
@@ -356,6 +385,9 @@ class L1GIoUFFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             beta: L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
@@ -371,6 +403,9 @@ class L1GIoUFFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.loss_name = "ffn_reg_l1"
@@ -398,8 +433,10 @@ class L1UGIoUFFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss parameter
-        beta: float = 1.0,
         reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
@@ -419,8 +456,9 @@ class L1UGIoUFFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
-            beta: L1 to L2 change point.
-                For beta values < 1e-5, L1 loss is computed.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -434,6 +472,9 @@ class L1UGIoUFFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.loss_name = "ffn_reg_l1"

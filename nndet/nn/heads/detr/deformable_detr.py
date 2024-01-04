@@ -39,11 +39,13 @@ class DeformableDETRHead(DETRHead):
             outputs_coord = tmp.sigmoid()
             class_logit_list.append(outputs_class)
             box_logits_list.append(outputs_coord)
+
         class_logits = torch.stack(class_logit_list)
         # tensor shape: [num_decoder_layers, bs, num_query, num_classes]
         box_logits = torch.stack(box_logits_list)
         # tensor shape: [num_decoder_layers, bs, num_query, 6]
         box_logits = box_logits[..., [0, 1, 3, 4, 2, 5]]
+
         preds = {"pred_cls_logits": class_logits[-1], "pred_box_coords": box_logits[-1]}
         if self.aux_loss:
             aux = [{"pred_cls_logits": a, "pred_box_coords": b} for a, b in zip(class_logits[:-1], box_logits[:-1])]

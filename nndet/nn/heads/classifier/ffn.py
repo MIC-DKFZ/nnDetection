@@ -42,10 +42,19 @@ class FFNClassifier(torch.nn.Module):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
+            binary_classes: if class agnostic aux heads are used, the number
+                of predictions foreground classes needs to be provided (1
+                for sigmoid based losses, 2 for softmax based losses)
             kwargs: passed to linear generator class
         """
         super().__init__()
 
+        if num_layers < 1:
+            raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
         self.in_channels = in_channels
         self.internal_channels = internal_channels
         self.num_classes = num_classes
@@ -63,17 +72,26 @@ class FFNClassifier(torch.nn.Module):
         self.aux_mlp = None
         self.share_mlp = share_mlp
         self.num_decoder_layers = num_decoder_layers
+
+        # configre MLPs
+        if self.share_mlp and class_agnostic_aux:
+            raise ValueError("Class agnostic aux heads can not be used with shared MLPs")
+
         if not self.share_mlp:
-            if not class_agnostic_aux:
-                aux_mlp = self.mlp
-            else:
+            if class_agnostic_aux:
+                if binary_classes is None:
+                    raise ValueError("Binary classes must be given for class agnostic aux heads")
                 aux_mlp = self._build_module(linear, binary_classes, add_norm, dropout_rate, **kwargs)
+            else:
+                aux_mlp = self.mlp
+
             self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(aux_mlp) for i in range(num_decoder_layers - 1)])
             if use_encoder_mlp:
                 self.encoder_mlp = copy.deepcopy(aux_mlp)
         elif use_encoder_mlp:
             self.encoder_mlp = self.mlp
 
+        # losses
         self.loss_name: str = "ffn_cls"
         self.loss: Optional[torch.nn.Module] = None
         self.logits_convert_fn: Optional[torch.nn.Module] = None
@@ -209,6 +227,10 @@ class SoftmaxFFNClassifier(FFNClassifier):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        class_agnostic_aux: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -223,6 +245,10 @@ class SoftmaxFFNClassifier(FFNClassifier):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
             kwargs: passed to linear generator class
         """
         super().__init__(
@@ -233,6 +259,10 @@ class SoftmaxFFNClassifier(FFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            class_agnostic_aux=class_agnostic_aux,
             binary_classes=2,
             **kwargs,
         )
@@ -263,6 +293,10 @@ class SigmoidFFNClassifier(FFNClassifier):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        class_agnostic_aux: bool = False,
         prior_prob: Optional[float] = None,
         **kwargs,
     ) -> None:
@@ -278,6 +312,10 @@ class SigmoidFFNClassifier(FFNClassifier):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
             prior_prob: initialize final layer with given prior probability
             kwargs: passed to linear generator class
         """
@@ -291,6 +329,10 @@ class SigmoidFFNClassifier(FFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            class_agnostic_aux=class_agnostic_aux,
             binary_classes=1,
             **kwargs,
         )
@@ -338,6 +380,10 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        class_agnostic_aux: bool = False,
         weight: Optional[torch.Tensor] = None,
         background_weight: Optional[float] = None,
         reduction: str = "sum",
@@ -357,6 +403,10 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
             weight: weight in cross entrpoy loss (see pytorch for more info)
             background_weight: weight for background class. Can only be used if
                 no other weight is provided.
@@ -373,6 +423,10 @@ class CEFFNClassifier(SoftmaxFFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            class_agnostic_aux=class_agnostic_aux,
             **kwargs,
         )
 
@@ -401,6 +455,10 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        class_agnostic_aux: bool = False,
         prior_prob: Optional[float] = None,
         weight: Optional[torch.Tensor] = None,
         reduction: str = "sum",
@@ -421,6 +479,10 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
             prior_prob: initialize final layer with given prior probability
             weight: weight in BCEWithLogitsLoss (see pytorch for more info)
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
@@ -437,6 +499,10 @@ class BCEFFNClassifier(SigmoidFFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            class_agnostic_aux=class_agnostic_aux,
             prior_prob=prior_prob,
             **kwargs,
         )
@@ -460,6 +526,10 @@ class FocalFFNClassifier(SigmoidFFNClassifier):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        class_agnostic_aux: bool = False,
         prior_prob: Optional[float] = None,
         gamma: float = 2,
         alpha: float = -1,
@@ -481,6 +551,10 @@ class FocalFFNClassifier(SigmoidFFNClassifier):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            class_agnostic_aux: use class agnostic MLP heads for aux predictions
             prior_prob: initialize final layer with given prior probability
             gamma: focal loss gamma
             alpha: focal loss alpha
@@ -498,6 +572,10 @@ class FocalFFNClassifier(SigmoidFFNClassifier):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            class_agnostic_aux=class_agnostic_aux,
             prior_prob=prior_prob,
             **kwargs,
         )
