@@ -121,6 +121,6 @@ class DETRTransformer(AbstractTransformer):
         )
         hidden_state = hidden_state.transpose(
             1, 2
-        )  # [num_decoder_layers, num_queries, bs, C] -> [, bs, num_queries, C]
+        )  # [num_decoder_layers, num_queries, bs, C] -> [num_decoder_layers, bs, num_queries, C]
 
         return hidden_state, references, None

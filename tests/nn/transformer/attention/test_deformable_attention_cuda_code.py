@@ -9,6 +9,7 @@ from torch.autograd import gradcheck
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
     MultiScaleDeformableAttnFunction,
+    ms_deform_import,
     multi_scale_deformable_attn_3d_pytorch,
 )
 
@@ -43,6 +44,8 @@ TEST_SETTINGS = [
 # shapes = torch.as_tensor([(2,2,2)], dtype=torch.long).cuda() # DxHxW shapes. Why DHW not HWD: https://discuss.pytorch.org/t/why-use-dxhxw-for-3d-input-data-instead-of-hxwxd/104045
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(not ms_deform_import, reason="nnDetection was not build with GPU support")
 @pytest.mark.parametrize("bs, num_heads, embed_dim, num_queries, num_levels, num_points, shapes", TEST_SETTINGS)
 @torch.no_grad()
 def test_forward_equal_with_pytorch_double(bs, num_heads, embed_dim, num_queries, num_levels, num_points, shapes):
@@ -77,6 +80,8 @@ def test_forward_equal_with_pytorch_double(bs, num_heads, embed_dim, num_queries
     assert torch.allclose(output_cuda, output_pytorch)
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(not ms_deform_import, reason="nnDetection was not build with GPU support")
 @pytest.mark.parametrize("bs, num_heads, embed_dim, num_queries, num_levels, num_points, shapes", TEST_SETTINGS)
 @torch.no_grad()
 def test_forward_equal_with_pytorch_float(bs, num_heads, embed_dim, num_queries, num_levels, num_points, shapes):
@@ -102,6 +107,8 @@ def test_forward_equal_with_pytorch_float(bs, num_heads, embed_dim, num_queries,
     assert torch.allclose(output_cuda, output_pytorch)
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(not ms_deform_import, reason="nnDetection was not build with GPU support")
 @pytest.mark.parametrize("bs, num_heads, embed_dim, num_queries, num_levels, num_points, shapes", TEST_SETTINGS)
 def test_gradient_numerical(
     bs,

@@ -8,6 +8,7 @@ import torch
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
     MultiScaleDeformableAttention,
     MultiScaleDeformableAttnFunction,
+    ms_deform_import,
     multi_scale_deformable_attn_3d_pytorch,
 )
 
@@ -25,6 +26,8 @@ def get_grid_points(x, y, z):
     return img
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="No cuda gpu available")
+@pytest.mark.skipif(not ms_deform_import, reason="nnDetection was not build with GPU support")
 @pytest.mark.parametrize("embed_dim,num_heads,num_levels,num_points", TEST_SETTINGS_SELF)
 def test_deformable_attention_xyz_dimension(embed_dim, num_heads, num_levels, num_points):
     # test which dimension is which

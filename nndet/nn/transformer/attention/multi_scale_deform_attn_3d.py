@@ -25,9 +25,20 @@ from typing import Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from loguru import logger
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn.init import constant_, xavier_uniform_
+
+try:
+    from nndet._C import ms_deform_attn_backward, ms_deform_attn_forward
+
+    ms_deform_import = True
+except ImportError:
+    logger.warning("nnDetection was not build with GPU support!")
+    ms_deform_attn_forward = None
+    ms_deform_attn_backward = None
+    ms_deform_import = False
 
 
 # helpers
@@ -50,7 +61,7 @@ class MultiScaleDeformableAttnFunction(Function):
         im2col_step,
     ):
         ctx.im2col_step = im2col_step
-        output = _C.ms_deform_attn_forward(
+        output = ms_deform_attn_forward(
             value,
             value_spatial_shapes,
             value_level_start_index,
@@ -78,7 +89,7 @@ class MultiScaleDeformableAttnFunction(Function):
             sampling_locations,
             attention_weights,
         ) = ctx.saved_tensors
-        grad_value, grad_sampling_loc, grad_attn_weight = _C.ms_deform_attn_backward(
+        grad_value, grad_sampling_loc, grad_attn_weight = ms_deform_attn_backward(
             value,
             value_spatial_shapes,
             value_level_start_index,
@@ -147,23 +158,6 @@ def multi_scale_deformable_attn_3d_pytorch(
 
 
 class MultiScaleDeformableAttention(nn.Module):
-    """Multi-Scale Deformable Attention Module used in Deformable-DETR
-
-    `Deformable DETR: Deformable Transformers for End-to-End Object Detection.
-    <https://arxiv.org/pdf/2010.04159.pdf>`_.
-
-    Args:
-        embed_dim (int): The embedding dimension of Attention. Default: 256.
-        num_heads (int): The number of attention heads. Default: 8.
-        num_levels (int): The number of feature map used in Attention. Default: 4.
-        num_points (int): The number of sampling points for each query
-            in each head. Default: 4.
-        img2col_steps (int): The step used in image_to_column. Defualt: 64.
-            dropout (float): Dropout layer used in output. Default: 0.1.
-        batch_first (bool): if ``True``, then the input and output tensor will be
-            provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
-    """
-
     def __init__(
         self,
         embed_dim: int = 256,
@@ -174,6 +168,22 @@ class MultiScaleDeformableAttention(nn.Module):
         dropout: float = 0.1,
         batch_first: bool = False,
     ):
+        """Multi-Scale Deformable Attention Module used in Deformable-DETR
+
+        `Deformable DETR: Deformable Transformers for End-to-End Object Detection.
+        <https://arxiv.org/pdf/2010.04159.pdf>`_.
+
+        Args:
+            embed_dim: The embedding dimension of Attention. Default: 256.
+            num_heads: The number of attention heads. Default: 8.
+            num_levels: The number of feature map used in Attention. Default: 4.
+            num_points: The number of sampling points for each query
+                in each head. Default: 4.
+            img2col_steps: The step used in image_to_column. Defualt: 64.
+                dropout: Dropout layer used in output. Default: 0.1.
+            batch_first: if ``True``, then the input and output tensor will be
+                provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
+        """
         super().__init__()
         if embed_dim % num_heads != 0:
             raise ValueError("embed_dim must be divisible by num_heads, but got {} and {}".format(embed_dim, num_heads))
@@ -350,66 +360,3 @@ class MultiScaleDeformableAttention(nn.Module):
             output = output.permute(1, 0, 2)
 
         return self.dropout(output) + identity
-
-
-def create_dummy_class(klass, dependency, message=""):
-    """
-    When a dependency of a class is not available, create a dummy class which throws ImportError
-    when used.
-
-    Args:
-        klass (str): name of the class.
-        dependency (str): name of the dependency.
-        message: extra message to print
-    Returns:
-        class: a class object
-    """
-    err = "Cannot import '{}', therefore '{}' is not available.".format(dependency, klass)
-    if message:
-        err = err + " " + message
-
-    class _DummyMetaClass(type):
-        # throw error on class attribute access
-        def __getattr__(_, __):  # noqa: B902
-            raise ImportError(err)
-
-    class _Dummy(object, metaclass=_DummyMetaClass):
-        # throw error on constructor
-        def __init__(self, *args, **kwargs):
-            raise ImportError(err)
-
-    return _Dummy
-
-
-def create_dummy_func(func, dependency, message=""):
-    """
-    When a dependency of a function is not available, create a dummy function which throws
-    ImportError when used.
-
-    Args:
-        func (str): name of the function.
-        dependency (str or list[str]): name(s) of the dependency.
-        message: extra message to print
-    Returns:
-        function: a function object
-    """
-    err = "Cannot import '{}', therefore '{}' is not available.".format(dependency, func)
-    if message:
-        err = err + " " + message
-
-    if isinstance(dependency, (list, tuple)):
-        dependency = ",".join(dependency)
-
-    def _dummy(*args, **kwargs):
-        raise ImportError(err)
-
-    return _dummy
-
-
-try:
-    from nndet import _C
-except ImportError:
-    # TODO: register ops natively so there is no need to import _C.
-    _msg = "nndet is not compiled successfully, please build following the instructions!"
-    _args = ("nndet._C", _msg)
-    MultiScaleDeformableAttention = create_dummy_class("MultiScaleDeformableAttention", *_args)  # noqa
