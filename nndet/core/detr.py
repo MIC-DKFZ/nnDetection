@@ -258,7 +258,11 @@ class BaseDETR(AbstractDetector):
         query_embeds = None
         if not self.two_stage:
             query_embeds = self.query_pos.weight
-        out_sequence, reference, encoder_predictions = self.transformer(mapped_features, query_embeds, pos_embeds)
+        out_sequence, reference, encoder_predictions = self.transformer(
+            features=mapped_features,
+            query_embed=query_embeds,
+            pos_embed=pos_embeds,
+        )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
         # predictions: Dict containing already made predictions

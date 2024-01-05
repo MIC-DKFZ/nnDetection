@@ -24,7 +24,10 @@ from nndet.nn.layers.conv import ConvGroupRelu
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
-from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 from nndet.nn.transformer.layers.deformable_detr import (
     DeformableDETRTransformerDecoder,
     DeformableDETRTransformerEncoder,
@@ -42,8 +45,8 @@ class BoxDeformableDETRC001Focal(DeformableSetModelMixin, BoxDETRC001):
     channel_mapper_cls: Type[ChannelMapper] = ChannelMapper
     channel_mapper_conv_cls: Type[CONVSEQ] = ConvGroupRelu
 
-    transformer_encoder_cls: TransformerLayerSequence = DeformableDETRTransformerEncoder
-    transformer_decoder_cls: TransformerLayerSequence = DeformableDETRTransformerDecoder
+    transformer_encoder_cls: BaseTransformerEncoder = DeformableDETRTransformerEncoder
+    transformer_decoder_cls: BaseTransformerDecoder = DeformableDETRTransformerDecoder
     transformer_cls: AbstractTransformer = DeformableDETRTransformer
 
     head_cls: DETRHead = DeformableDETRHead  #: main DETR head

@@ -58,7 +58,7 @@ class DETRTransformer(AbstractTransformer):
     def forward(
         self,
         features: List[torch.Tensor],
-        query_embed: torch.Tensor,
+        query_embed: Optional[torch.Tensor],
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
@@ -67,12 +67,18 @@ class DETRTransformer(AbstractTransformer):
         embedding and query embedding
         Args:
             features: features from the backbone in form of a
-            List[Tensor(bs, C, H, W, (Z))]
+                List[bs, C, dims], where bs is the batch size, C is the
+                embedding dimension and dims is the number of feature
+                dimensions (2 or 3)
             query_embed: object queries = input for the transformer decoder
+                [num_queries, C], where C is the embedding dimension and
+                num_queries is the number of object queries (predictions)
             pos_embed: position embedding for the features, same shape as
-                features
+                features [1, C, dims], where C is the number of channels
+                for the positional embeddind and dims are spatial
+                dimensions (2 or 3)
             mask: mask to mask out certain pixels of the feature maps, same
-                shape as features
+                shape as features. Not used.
 
         Returns:
             Tensor: output box embeddings (output of the decoder)
@@ -107,7 +113,7 @@ class DETRTransformer(AbstractTransformer):
             key=None,
             value=None,
             query_pos=pos_embed,
-            key_pos=None,
+            key_pos=None,  # TODO: check if key pos is really correct here!
             query_key_padding_mask=mask,
         )
 

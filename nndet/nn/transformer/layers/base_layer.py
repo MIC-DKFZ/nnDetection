@@ -167,35 +167,3 @@ class BaseTransformerLayer(nn.Module):
                 ffn_index += 1
 
         return query
-
-
-class TransformerLayerSequence(nn.Module):
-    def __init__(
-        self,
-        transformer_layers: Union[List[BaseTransformerLayer], BaseTransformerLayer],
-        num_layers: int,
-    ):
-        """
-        Base class for the layers of the TransformerEncoder and
-        TransformerDecoder, which will copy the passed `transformer_layers`
-        module `num_layers` time or save the passed list of `transformer_layers`
-        as parameters named ``self.layers`` which is the type of
-        ``nn.ModuleList``.
-
-        Args:
-            transformer_layers: A list of BaseTransformerLayer. If it is
-                obj:`BaseTransformerLayer`, it would be repeated `num_layers`
-                times
-                to a list[BaseTransformerLayer]
-            num_layers: The number of `TransformerLayer`.
-        """
-        super(TransformerLayerSequence, self).__init__()
-        self.num_layers = num_layers
-        self.layers = nn.ModuleList()
-        if isinstance(transformer_layers, nn.Module):
-            for _ in range(num_layers):
-                self.layers.append(copy.deepcopy(transformer_layers))
-        else:
-            assert isinstance(transformer_layers, list) and len(transformer_layers) == num_layers
-            for i in range(num_layers):
-                self.layers.append(transformer_layers[i])

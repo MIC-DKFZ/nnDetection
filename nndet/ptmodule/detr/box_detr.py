@@ -17,7 +17,10 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
-from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model.detr import SetModelMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
@@ -44,8 +47,8 @@ class BoxDETRModule(
 
     # transformer
     pos_embed_cls: BasePositionEmbedding = ...
-    transformer_encoder_cls: Type[TransformerLayerSequence] = ...
-    transformer_decoder_cls: Type[TransformerLayerSequence] = ...
+    transformer_encoder_cls: Type[BaseTransformerEncoder] = ...
+    transformer_decoder_cls: Type[BaseTransformerDecoder] = ...
     transformer_cls: Type[AbstractTransformer] = ...
 
     # head blocks

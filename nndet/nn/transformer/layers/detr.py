@@ -6,6 +6,7 @@
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 from typing import List, Optional, Tuple
 
 import torch
@@ -17,10 +18,7 @@ from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
     BaseTransformerEncoder,
 )
-from nndet.nn.transformer.layers.base_layer import (
-    BaseTransformerLayer,
-    TransformerLayerSequence,
-)
+from nndet.nn.transformer.layers.base_layer import BaseTransformerLayer
 
 
 class DETRTransformerEncoder(BaseTransformerEncoder):
@@ -58,28 +56,30 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
             batch_first: use batch first computations in the transformer
         """
         super().__init__(embed_dim=embed_dim, dim=dim)
-        self.layer_sequence = TransformerLayerSequence(
-            transformer_layers=BaseTransformerLayer(
-                attn=MultiheadAttention(
-                    embed_dim=embed_dim,
-                    num_heads=num_heads,
-                    attn_drop_value=attn_dropout,
-                    proj_drop_value=proj_dropout,
-                    batch_first=batch_first,
-                ),
-                ffn=ReluDropIdentityMLP(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    num_layers=num_ffn_layers,
-                ),
-                norm=nn.LayerNorm(
-                    normalized_shape=embed_dim,
-                ),
-                operation_order=("self_attn", "norm", "ffn", "norm"),
+
+        transformer_layer = BaseTransformerLayer(
+            attn=MultiheadAttention(
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                attn_drop_value=attn_dropout,
+                proj_drop_value=proj_dropout,
+                batch_first=batch_first,
             ),
-            num_layers=num_layers,
+            ffn=ReluDropIdentityMLP(
+                embed_dim=embed_dim,
+                feedforward_dim=feedforward_dim,
+                ffn_drop=ffn_dropout,
+                num_layers=num_ffn_layers,
+            ),
+            norm=nn.LayerNorm(
+                normalized_shape=embed_dim,
+            ),
+            operation_order=("self_attn", "norm", "ffn", "norm"),
         )
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.layers.append(copy.deepcopy(transformer_layer))
+
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
         else:
@@ -118,7 +118,7 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
             Tensor: Sequence of refined features (sequence_length, bs, C)
         """
 
-        for layer in self.layer_sequence.layers:
+        for layer in self.layers:
             query = layer(
                 query,
                 key,
@@ -172,28 +172,37 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
             batch_first: use batch first computations in the transformer
         """
         super().__init__(embed_dim=embed_dim, dim=dim)
-        self.layer_sequence = TransformerLayerSequence(
-            transformer_layers=BaseTransformerLayer(
-                attn=MultiheadAttention(
-                    embed_dim=embed_dim,
-                    num_heads=num_heads,
-                    attn_drop_value=attn_dropout,
-                    proj_drop_value=proj_dropout,
-                    batch_first=batch_first,
-                ),
-                ffn=ReluDropIdentityMLP(
-                    embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    num_layers=num_ffn_layers,
-                ),
-                norm=nn.LayerNorm(
-                    normalized_shape=embed_dim,
-                ),
-                operation_order=("self_attn", "norm", "cross_attn", "norm", "ffn", "norm"),
+
+        transformer_layer = BaseTransformerLayer(
+            attn=MultiheadAttention(
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                attn_drop_value=attn_dropout,
+                proj_drop_value=proj_dropout,
+                batch_first=batch_first,
             ),
-            num_layers=num_layers,
+            ffn=ReluDropIdentityMLP(
+                embed_dim=embed_dim,
+                feedforward_dim=feedforward_dim,
+                ffn_drop=ffn_dropout,
+                num_layers=num_ffn_layers,
+            ),
+            norm=nn.LayerNorm(
+                normalized_shape=embed_dim,
+            ),
+            operation_order=(
+                "self_attn",
+                "norm",
+                "cross_attn",
+                "norm",
+                "ffn",
+                "norm",
+            ),
         )
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.layers.append(copy.deepcopy(transformer_layer))
+
         self.return_intermediate = return_intermediate
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -238,7 +247,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
         """
 
         if not self.return_intermediate:
-            for layer in self.layer_sequence.layers:
+            for layer in self.layers:
                 query = layer(
                     query,
                     key,
@@ -257,7 +266,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
         else:
             # return intermediate
             intermediate = []
-            for layer in self.layer_sequence.layers:
+            for layer in self.layers:
                 query = layer(
                     query,
                     key,

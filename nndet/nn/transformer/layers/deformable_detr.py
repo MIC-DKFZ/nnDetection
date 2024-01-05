@@ -5,6 +5,7 @@
 # Parts of this code are from detrex licensed under
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
+import copy
 from typing import Optional
 
 import torch
@@ -21,10 +22,7 @@ from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
     BaseTransformerEncoder,
 )
-from nndet.nn.transformer.layers.base_layer import (
-    BaseTransformerLayer,
-    TransformerLayerSequence,
-)
+from nndet.nn.transformer.layers.base_layer import BaseTransformerLayer
 
 
 class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
@@ -48,31 +46,33 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
             embed_dim=embed_dim,
             dim=dim,
         )
-        self.layer_sequence = TransformerLayerSequence(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    MultiScaleDeformableAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        dropout=attn_dropout,
-                        batch_first=batch_first,
-                        num_levels=num_feature_levels,
-                        num_points=num_points,
-                    )
-                ],
-                ffn=ReluDropIdentityMLP(
+
+        transformer_layer = BaseTransformerLayer(
+            attn=[
+                MultiScaleDeformableAttention(
                     embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    num_layers=num_ffn_layers,
-                ),
-                norm=nn.LayerNorm(embed_dim),
-                operation_order=("self_attn", "norm", "ffn", "norm"),
+                    num_heads=num_heads,
+                    dropout=attn_dropout,
+                    batch_first=batch_first,
+                    num_levels=num_feature_levels,
+                    num_points=num_points,
+                )
+            ],
+            ffn=ReluDropIdentityMLP(
+                embed_dim=embed_dim,
+                feedforward_dim=feedforward_dim,
+                ffn_drop=ffn_dropout,
+                num_layers=num_ffn_layers,
             ),
-            num_layers=num_layers,
+            norm=nn.LayerNorm(embed_dim),
+            operation_order=("self_attn", "norm", "ffn", "norm"),
         )
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.layers.append(copy.deepcopy(transformer_layer))
+
         self.embed_dim = embed_dim
-        self.pre_norm = self.layer_sequence.layers[0].pre_norm
+        self.pre_norm = self.layers[0].pre_norm
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -85,14 +85,13 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
         key,
         value,
         query_pos=None,
-        key_pos=None,
+        key_pos=None,  # TODO: check if this is needed
         attn_masks=None,
         query_key_padding_mask=None,
         key_padding_mask=None,
         **kwargs,
     ):
-
-        for layer in self.layer_sequence.layers:
+        for layer in self.layers:
             query = layer(
                 query,
                 key,
@@ -131,43 +130,45 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
             embed_dim=embed_dim,
             dim=dim,
         )
-        self.layer_sequence = TransformerLayerSequence(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    MultiheadAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        attn_drop_value=attn_dropout,
-                        proj_drop_value=proj_dropout,
-                        batch_first=batch_first,
-                    ),
-                    MultiScaleDeformableAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        dropout=attn_dropout,
-                        batch_first=True,
-                        num_levels=num_feature_levels,
-                        num_points=num_points,
-                    ),
-                ],
-                ffn=ReluDropIdentityMLP(
+
+        transformer_layer = BaseTransformerLayer(
+            attn=[
+                MultiheadAttention(
                     embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    num_layers=num_ffn_layers,
+                    num_heads=num_heads,
+                    attn_drop_value=attn_dropout,
+                    proj_drop_value=proj_dropout,
+                    batch_first=batch_first,
                 ),
-                norm=nn.LayerNorm(embed_dim),
-                operation_order=(
-                    "self_attn",
-                    "norm",
-                    "cross_attn",
-                    "norm",
-                    "ffn",
-                    "norm",
+                MultiScaleDeformableAttention(
+                    embed_dim=embed_dim,
+                    num_heads=num_heads,
+                    dropout=attn_dropout,
+                    batch_first=True,
+                    num_levels=num_feature_levels,
+                    num_points=num_points,
                 ),
+            ],
+            ffn=ReluDropIdentityMLP(
+                embed_dim=embed_dim,
+                feedforward_dim=feedforward_dim,
+                ffn_drop=ffn_dropout,
+                num_layers=num_ffn_layers,
             ),
-            num_layers=num_layers,
+            norm=nn.LayerNorm(embed_dim),
+            operation_order=(
+                "self_attn",
+                "norm",
+                "cross_attn",
+                "norm",
+                "ffn",
+                "norm",
+            ),
         )
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.layers.append(copy.deepcopy(transformer_layer))
+
         self.return_intermediate = return_intermediate
         self.regressor = regressor
 
@@ -189,7 +190,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
 
         intermediate = []
         intermediate_reference_points = []
-        for layer_idx, layer in enumerate(self.layer_sequence.layers):
+        for layer_idx, layer in enumerate(self.layers):
             if reference_points.shape[-1] == 6:
                 reference_points_input = (
                     reference_points[:, :, None] * torch.cat([valid_ratios, valid_ratios], -1)[:, None]

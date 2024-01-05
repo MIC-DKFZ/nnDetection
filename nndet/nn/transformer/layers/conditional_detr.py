@@ -6,6 +6,7 @@
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 import math
 from typing import List, Optional, Tuple
 
@@ -18,10 +19,7 @@ from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalSelfAttention,
 )
 from nndet.nn.transformer.layers.abstract import BaseTransformerDecoder
-from nndet.nn.transformer.layers.base_layer import (
-    BaseTransformerLayer,
-    TransformerLayerSequence,
-)
+from nndet.nn.transformer.layers.base_layer import BaseTransformerLayer
 
 
 def gen_sine_embed_for_position(
@@ -70,7 +68,10 @@ def gen_sine_embed_for_position(
         elif dimension_delta % dim == 1:
             pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, : cut - 1]), dim=2)
         else:
-            pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, : cut - 1], pos_z[:, :, : cut - 1]), dim=2)
+            pos_embed = torch.cat(
+                (pos_x[:, :, :cut], pos_y[:, :, : cut - 1], pos_z[:, :, : cut - 1]),
+                dim=2,
+            )
 
     else:  # 2D Case
         dimension_delta = dim * feats - num_pos_feats
@@ -120,37 +121,39 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             batch_first: use batch first computations in the transformer
         """
         super().__init__(embed_dim=embed_dim, dim=dim)
-        self.layer_sequence = TransformerLayerSequence(
-            transformer_layers=BaseTransformerLayer(
-                attn=[
-                    ConditionalSelfAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        attn_drop_value=attn_dropout,
-                        proj_drop_value=proj_dropout,
-                        batch_first=batch_first,
-                    ),
-                    ConditionalCrossAttention(
-                        embed_dim=embed_dim,
-                        num_heads=num_heads,
-                        attn_drop_value=attn_dropout,
-                        proj_drop_value=proj_dropout,
-                        batch_first=batch_first,
-                    ),
-                ],
-                ffn=ReluDropIdentityMLP(
+
+        transformer_layer = BaseTransformerLayer(
+            attn=[
+                ConditionalSelfAttention(
                     embed_dim=embed_dim,
-                    feedforward_dim=feedforward_dim,
-                    ffn_drop=ffn_dropout,
-                    num_layers=num_ffn_layers,
+                    num_heads=num_heads,
+                    attn_drop_value=attn_dropout,
+                    proj_drop_value=proj_dropout,
+                    batch_first=batch_first,
                 ),
-                norm=nn.LayerNorm(
-                    normalized_shape=embed_dim,
+                ConditionalCrossAttention(
+                    embed_dim=embed_dim,
+                    num_heads=num_heads,
+                    attn_drop_value=attn_dropout,
+                    proj_drop_value=proj_dropout,
+                    batch_first=batch_first,
                 ),
-                operation_order=("self_attn", "norm", "cross_attn", "norm", "ffn", "norm"),
+            ],
+            ffn=ReluDropIdentityMLP(
+                embed_dim=embed_dim,
+                feedforward_dim=feedforward_dim,
+                ffn_drop=ffn_dropout,
+                num_layers=num_ffn_layers,
             ),
-            num_layers=num_layers,
+            norm=nn.LayerNorm(
+                normalized_shape=embed_dim,
+            ),
+            operation_order=("self_attn", "norm", "cross_attn", "norm", "ffn", "norm"),
         )
+        self.layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.layers.append(copy.deepcopy(transformer_layer))
+
         self.return_intermediate = return_intermediate
         self.query_scale = ReluMLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
         self.ref_point_head = ReluMLP(self.embed_dim, self.embed_dim, dim, 2)
@@ -161,7 +164,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             self.post_norm_layer = None
 
         for idx in range(num_layers - 1):
-            self.layer_sequence.layers[idx + 1].attentions[1].query_pos_proj = None
+            self.layers[idx + 1].attentions[1].query_pos_proj = None
 
     def forward(
         self,
@@ -204,7 +207,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
         reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
 
-        for idx, layer in enumerate(self.layer_sequence.layers):
+        for idx, layer in enumerate(self.layers):
             obj_center = reference_points.transpose(0, 1)  # [num_queries, batch_size, dim]
 
             # do not apply transform in position in the first decoder layer

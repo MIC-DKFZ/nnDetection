@@ -21,7 +21,10 @@ from nndet.nn.layers.wrapper import Generator
 from nndet.nn.neck.abstract import AbstractNeck
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
-from nndet.nn.transformer.layers.base_layer import TransformerLayerSequence
+from nndet.nn.transformer.layers.abstract import (
+    BaseTransformerDecoder,
+    BaseTransformerEncoder,
+)
 from nndet.ptmodule.mixins.model import ModelMixin
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
@@ -39,8 +42,8 @@ class SetModelMixin(ModelMixin):
     # transformer
     transformer_cls: Type[AbstractTransformer] = ...  #: define detector transformer architecture
     pos_embed_cls: BasePositionEmbedding = ...  #: define positional embedding for feature maps
-    transformer_encoder_cls: TransformerLayerSequence = ...  #: define encoder class of transformer
-    transformer_decoder_cls: TransformerLayerSequence = ...  #: define decoder class of transformer
+    transformer_encoder_cls: BaseTransformerEncoder = ...  #: define encoder class of transformer
+    transformer_decoder_cls: BaseTransformerDecoder = ...  #: define decoder class of transformer
 
     # head blocks
     head_cls: DETRHead = ...  #: main DETR head
