@@ -24,6 +24,7 @@ from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.neck.channel_mapper import ChannelMapper
+from nndet.nn.transformer.detr_transformer import DETRTransformer
 from nndet.nn.transformer.layers.conditional_detr import (
     ConditionalDETRTransformerDecoder,
 )
@@ -31,7 +32,6 @@ from nndet.nn.transformer.layers.detr import (
     DETRTransformerDecoder,
     DETRTransformerEncoder,
 )
-from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation.boxes import BoxEvalMixin
 from nndet.ptmodule.mixins.model.detr import SetModelMixin

@@ -113,6 +113,7 @@ class BaseTransformerLayer(nn.Module):
         attn_index = 0
         ffn_index = 0
         identity = query
+
         if attn_masks is None:
             attn_masks = [None for _ in range(self.num_attn)]
         elif isinstance(attn_masks, torch.Tensor):
@@ -128,12 +129,15 @@ class BaseTransformerLayer(nn.Module):
 
         for layer in self.operation_order:
             if layer == "self_attn":
+                # self-attn: key = value = query
+                # self-attn: query_pos = key_pos = [object queries]
                 temp_key = temp_value = query
+                _attn_identity = identity if self.pre_norm else query
                 query = self.attentions[attn_index](
-                    query,
-                    temp_key,
-                    temp_value,
-                    identity if self.pre_norm else None,
+                    query=query,
+                    key=temp_key,
+                    value=temp_value,
+                    identity=_attn_identity,
                     query_pos=query_pos,
                     key_pos=query_pos,
                     attn_mask=attn_masks[attn_index],
@@ -141,18 +145,21 @@ class BaseTransformerLayer(nn.Module):
                     **kwargs,
                 )
                 attn_index += 1
-                identity = query
+                identity = query  # update identity
 
             elif layer == "norm":
                 query = self.norms[norm_index](query)
                 norm_index += 1
 
             elif layer == "cross_attn":
+                # cross-attn: key = value = query
+                # cross-attn: query_pos != key_pos; query_pos = object queries; key_pos = pos embedding
+                _attn_identity = identity if self.pre_norm else query
                 query = self.attentions[attn_index](
-                    query,
-                    key,
-                    value,
-                    identity if self.pre_norm else None,
+                    query=query,
+                    key=key,
+                    value=value,
+                    identity=_attn_identity,
                     query_pos=query_pos,
                     key_pos=key_pos,
                     attn_mask=attn_masks[attn_index],
@@ -160,10 +167,11 @@ class BaseTransformerLayer(nn.Module):
                     **kwargs,
                 )
                 attn_index += 1
-                identity = query
+                identity = query  # update identity
 
             elif layer == "ffn":
-                query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
+                _ffn_identity = identity if self.pre_norm else query
+                query = self.ffns[ffn_index](query, identity=_ffn_identity)
                 ffn_index += 1
 
         return query

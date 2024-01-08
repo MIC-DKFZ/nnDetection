@@ -110,12 +110,12 @@ class DETRTransformer(AbstractTransformer):
 
         memory = self.encoder(
             query=features,
-            key=None,
+            key=None,  # key = val = query in self-attention
             value=None,
             query_pos=pos_embed,
-            key_pos=None,  # TODO: check if key pos is really correct here!
+            key_pos=None,  # key_pos = query_pos in self-attention
             query_key_padding_mask=mask,
-        )
+        )  # [mul(dims), bs, c]
 
         target = torch.zeros_like(query_embed)
         hidden_state, references = self.decoder(

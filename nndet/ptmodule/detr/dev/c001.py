@@ -33,6 +33,7 @@ from nndet.nn.layers.pos_embed.base import BasePositionEmbedding
 from nndet.nn.layers.pos_embed.sine import PositionEmbeddingSine
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
+from nndet.nn.transformer.detr_transformer import DETRTransformer
 from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
     BaseTransformerEncoder,
@@ -44,7 +45,6 @@ from nndet.nn.transformer.layers.detr import (
     DETRTransformerDecoder,
     DETRTransformerEncoder,
 )
-from nndet.nn.transformer.transformer import DETRTransformer
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.box_detr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ

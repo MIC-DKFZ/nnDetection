@@ -28,7 +28,7 @@ class BaseDETR(AbstractDetector):
         query_dim: int,
         segmenter: Optional[Segmenter] = None,
         two_stage: bool = False,
-        use_pos_queries: bool = False,
+        use_pos_queries: bool = False,  # TODO: docs
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation

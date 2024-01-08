@@ -5,6 +5,7 @@ import pytest
 import torch
 from pytest_mock import MockerFixture
 
+from nndet.nn.transformer.detr_transformer import DETRTransformer
 from nndet.nn.transformer.layers.conditional_detr import (
     ConditionalDETRTransformerDecoder,
 )
@@ -12,7 +13,6 @@ from nndet.nn.transformer.layers.detr import (
     DETRTransformerDecoder,
     DETRTransformerEncoder,
 )
-from nndet.nn.transformer.transformer import DETRTransformer
 
 TEST_CASES_SHAPE = [
     (

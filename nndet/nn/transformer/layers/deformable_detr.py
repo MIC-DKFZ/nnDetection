@@ -85,7 +85,7 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
         key,
         value,
         query_pos=None,
-        key_pos=None,  # TODO: check if this is needed
+        key_pos=None,
         attn_masks=None,
         query_key_padding_mask=None,
         key_padding_mask=None,
