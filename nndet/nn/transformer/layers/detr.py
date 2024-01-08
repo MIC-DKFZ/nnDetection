@@ -223,7 +223,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
     ) -> Tuple[torch.Tensor, None]:
         """
         Compute a sequence of output box embeddings given object queries and
-            features.
+        features.
 
         Args:
             query: Object queries (num_queries, bs, C)
@@ -261,8 +261,8 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
                 )
 
             if self.post_norm_layer is not None:
-                query = self.post_norm_layer(query)[None]
-            return query, None
+                query = self.post_norm_layer(query)
+            return query[None], None
         else:
             # return intermediate
             intermediate = []

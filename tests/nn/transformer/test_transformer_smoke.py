@@ -3,7 +3,6 @@
 
 import pytest
 import torch
-from pytest_mock import MockerFixture
 
 from nndet.nn.transformer.detr_transformer import DETRTransformer
 from nndet.nn.transformer.layers.conditional_detr import (
@@ -119,14 +118,10 @@ TEST_CASES_SHAPE = [
 ]
 
 
-class TestDETRTransformer:
-    def test_transformer_settings(self, mocker: MockerFixture):
-        encoder = mocker.MagicMock()
-
-    @pytest.mark.parametrize("encoder,decoder,input_tensor,query_embed,pos_embed", TEST_CASES_SHAPE)
-    def test_transformer_check_output_shape(self, encoder, decoder, input_tensor, query_embed, pos_embed):
-        transformer = DETRTransformer(encoder=encoder, decoder=decoder)
-        num_decoder_layers = transformer.decoder.layer_sequence.num_layers
-        out_sequence, reference, encoder_output = transformer([input_tensor], query_embed, [pos_embed])
-        out_shape = torch.Size([num_decoder_layers, input_tensor.shape[0], query_embed.shape[0], query_embed.shape[1]])
-        assert out_sequence.shape == out_shape
+@pytest.mark.parametrize("encoder,decoder,input_tensor,query_embed,pos_embed", TEST_CASES_SHAPE)
+def test_transformer_check_output_shape(self, encoder, decoder, input_tensor, query_embed, pos_embed):
+    transformer = DETRTransformer(encoder=encoder, decoder=decoder)
+    num_decoder_layers = transformer.decoder.layer_sequence.num_layers
+    out_sequence, reference, encoder_output = transformer([input_tensor], query_embed, [pos_embed])
+    out_shape = torch.Size([num_decoder_layers, input_tensor.shape[0], query_embed.shape[0], query_embed.shape[1]])
+    assert out_sequence.shape == out_shape
