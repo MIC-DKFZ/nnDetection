@@ -85,6 +85,7 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
 
@@ -125,6 +126,7 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
 
@@ -185,7 +187,6 @@ class DETRHead(torch.nn.Module):
 
         # enc losses
         if "enc_outputs" in pred_detection:
-            # TODO:check in details here
             enc_outputs = pred_detection["enc_outputs"]
             l_dict, _ = self._match_and_compute_loss(
                 pred_logits=enc_outputs["pred_cls_logits"],
@@ -276,6 +277,7 @@ class DETRHead(torch.nn.Module):
                 [B, R, num_classes] where B=batch size, R=number of
                 predictions, num_classes=number of classe
             pred_coords: predicted normalized coords from RegressorFFN
+                in center format (cx, cy, dx, dy (,cz, dz)).
                 [B, R, dims * 2] where B=batch size, R=number of
                 predictions, dims=number of spatial dimensions
             target_boxes: target boxes in center format List([N, dims * 2])
@@ -450,6 +452,7 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
 

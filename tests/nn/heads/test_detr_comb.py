@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.criterions.box import L1RegCriterion
 from nndet.core.boxes.criterions.cls import SimpleClassCriterionSigmoid
 from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
@@ -9,6 +10,7 @@ from nndet.nn.heads.classifier.ffn import BCEFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.regressor.ffn import L1FFNRegressor
 from nndet.nn.layers.linear import LayerLinearReluDrop
+from nndet.utils.enums import AuxLossNorm
 
 IN_CHANNELS = 8
 INTERNAL_CHANNELS = 16
@@ -44,6 +46,14 @@ def detr_head():
         norm_cls_loss_by_num_boxes=True,
         norm_reg_loss_by_num_boxes=True,
     )
+
+
+@pytest.fixture
+def sig75() -> float:
+    val = torch.tensor(0.75)
+    sig_inv = ops_torch.inverse_sigmoid(val)
+    assert torch.allclose(torch.functional.F.sigmoid(sig_inv), val)
+    return sig_inv.item()
 
 
 def test_prepare_targets(detr_head):
@@ -243,13 +253,87 @@ def test_forward(detr_head):
         assert output["aux_outputs"][i]["pred_box_coords"].shape == expected_coords_shape
 
 
-def test_postprocess_for_inference():
-    pass
+def test_postprocess_for_inference(detr_head, sig75):
+    num_det = 2
+    bs = 2
+
+    example_boxes = torch.zeros(bs, num_det, DIM * 2, dtype=torch.float)  # [B, R, num_classes]
+    example_boxes[0, 0] = torch.tensor([0.25, 0.25, 0.5, 0.5, 0.25, 0.5])  # point: [0, 0, 0.5, 0.5, 0, 0.5] pre scale
+    example_boxes[0, 1] = torch.tensor([0.75, 0.75, 0.5, 0.5, 0.75, 0.5])  # point: [0.5, 0.5, 1, 1, 0.5, 1] pre scale
+    example_boxes[1, 0] = torch.tensor([0.75, 0.75, 0.5, 0.5, 0.75, 0.5])  # point: [0.5, 0.5, 1, 1, 0.5, 1] pre scale
+    example_boxes[1, 1] = torch.tensor([0.25, 0.25, 0.5, 0.5, 0.25, 0.5])  # point: [0, 0, 0.5, 0.5, 0, 0.5] pre scale
+
+    example_logits = torch.zeros(bs, num_det, NUM_CLASSES, dtype=torch.float)  # [B, R, dims * 2]
+    example_logits[0, 0, 0] = sig75
+    example_logits[0, 1, 1] = sig75
+    example_logits[1, 0, 0] = sig75
+    example_logits[1, 1, 1] = sig75
+
+    expected_probs = [torch.tensor([0.75, 0.75]), torch.tensor([0.75, 0.75])]
+    expected_labels = [torch.tensor([0, 1]), torch.tensor([0, 1])]
+    expected_boxes = [
+        torch.tensor(
+            [
+                [0, 0, 1, 1, 0, 1],
+                [1, 1, 2, 2, 1, 2],
+            ],
+            dtype=torch.float,
+        ),
+        torch.tensor(
+            [
+                [1, 1, 2, 2, 1, 2],
+                [0, 0, 1, 1, 0, 1],
+            ],
+            dtype=torch.float,
+        ),
+    ]
+
+    predictions = detr_head.postprocess_for_inference(
+        pred_detection={
+            "pred_cls_logits": example_logits,
+            "pred_box_coords": example_boxes,
+        },
+        img_shape=(2, 2, 2),
+    )
+
+    assert len(predictions["pred_boxes"]) == 2
+    assert len(predictions["pred_scores"]) == 2
+    assert len(predictions["pred_labels"]) == 2
+
+    for i in range(2):
+        assert torch.allclose(predictions["pred_boxes"][i], expected_boxes[i])
+        assert torch.allclose(predictions["pred_scores"][i], expected_probs[i])
+        assert torch.allclose(predictions["pred_labels"][i], expected_labels[i])
 
 
-def test_format_scale_aux_losses():
-    pass
+def test_format_scale_aux_losses_none(detr_head):
+    detr_head.scale_aux_loss = AuxLossNorm.NONE
+
+    losses = {"cls": torch.tensor(1.0), "reg": torch.tensor(2.0)}
+    losses_aux = detr_head.format_scale_aux_losses(losses, num_aux_outputs=4, aux_idx=2)
+
+    assert len(losses_aux) == 2
+    assert torch.allclose(losses_aux["aux_cls_2"], losses["cls"])
+    assert torch.allclose(losses_aux["aux_reg_2"], losses["reg"])
 
 
-def test_compute_loss():
-    pass  # TBD
+def test_format_scale_aux_losses_mean(detr_head):
+    detr_head.scale_aux_loss = AuxLossNorm.MEAN
+
+    losses = {"cls": torch.tensor(1.0), "reg": torch.tensor(2.0)}
+    losses_aux = detr_head.format_scale_aux_losses(losses, num_aux_outputs=4, aux_idx=2)
+
+    assert len(losses_aux) == 2
+    assert torch.allclose(losses_aux["aux_cls_2"], losses["cls"] / 4)
+    assert torch.allclose(losses_aux["aux_reg_2"], losses["reg"] / 4)
+
+
+def test_format_scale_aux_losses_reduced(detr_head):
+    detr_head.scale_aux_loss = AuxLossNorm.REDUCED
+
+    losses = {"cls": torch.tensor(1.0), "reg": torch.tensor(2.0)}
+    losses_aux = detr_head.format_scale_aux_losses(losses, num_aux_outputs=4, aux_idx=2)
+
+    assert len(losses_aux) == 2
+    assert torch.allclose(losses_aux["aux_cls_2"], losses["cls"] / 3)
+    assert torch.allclose(losses_aux["aux_reg_2"], losses["reg"] / 3)
