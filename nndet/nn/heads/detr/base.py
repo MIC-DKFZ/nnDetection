@@ -415,7 +415,6 @@ class DETRHead(torch.nn.Module):
                 the predictions to bring them into the same order as the
                 ground truth
         """
-
         batch_idx = [torch.full_like(src, i) for i, (src, _) in enumerate(indices) if src is not None]
         src_idx = [src for (src, _) in indices if src is not None]
 
