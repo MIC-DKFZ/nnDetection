@@ -356,8 +356,6 @@ class DETRHead(torch.nn.Module):
         )
         if self.norm_cls_loss_by_num_boxes:
             loss = {key: item / num_boxes_all for key, item in loss.items()}
-
-        # TODO: add class error
         return loss
 
     def compute_box_loss(
