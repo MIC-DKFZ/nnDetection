@@ -6,15 +6,22 @@ from typing import Optional, Sequence, Type
 
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.criterions.box import GIoUCenterBoxCriterion, L1RegCriterion
-from nndet.core.boxes.criterions.cls import FocalClassCriterionSigmoid
+from nndet.core.boxes.criterions.cls import (
+    FocalClassCriterionSigmoid,
+    SimpleClassCriterionSoftmax,
+)
 from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
-from nndet.core.post.detr import DETRBoxPost, TopKBoxPost
+from nndet.core.post.detr import DETRBoxPost, MaxFGBoxPost, TopKBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
 from nndet.nn.backbone.blueprints.conv import ConvBackbone
 from nndet.nn.backbone.blueprints.nextconv import ConvNeXtBackbone
 from nndet.nn.backbone.blueprints.resconv import ResConvWithPoolBackbone
-from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
+from nndet.nn.heads.classifier.ffn import (
+    CEFFNClassifier,
+    FFNClassifier,
+    FocalFFNClassifier,
+)
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1GIoUFFNRegressor
@@ -95,6 +102,13 @@ class BoxDETRC002(
             model_cfg=model_cfg,
             patch_size=patch_size,
         )
+
+
+@MODULE_REGISTRY.register
+class BoxDETRCEC002(BoxDETRC002):
+    head_classifier_cls: FFNClassifier = CEFFNClassifier  #: define classifier class
+    head_box_post_cls: DETRBoxPost = MaxFGBoxPost  #: define postprocessing strategy during inference
+    matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
 
 
 @MODULE_REGISTRY.register
