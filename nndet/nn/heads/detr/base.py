@@ -133,6 +133,8 @@ class DETRHead(torch.nn.Module):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
 
+                # TODO add enc_outputs
+
             target_boxes: target boxes in point format List([N, dims * 2])
                 (x0, y0, x1, y1 (,z0, z1))
             target_labels: target labels in numerical format List([N])
@@ -159,7 +161,7 @@ class DETRHead(torch.nn.Module):
             img_shape=img_shape,
         )
 
-        # compute losses
+        # main loss
         losses, criterion_log = self._match_and_compute_loss(
             pred_logits=pred_detection["pred_cls_logits"],
             pred_coords=pred_detection["pred_box_coords"],
@@ -167,6 +169,8 @@ class DETRHead(torch.nn.Module):
             target_labels=target_labels,
             num_boxes_all=num_boxes_all,
         )
+
+        # aux losses
         if "aux_outputs" in pred_detection:
             num_aux_outputs = len(pred_detection["aux_outputs"])
             for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
@@ -179,6 +183,7 @@ class DETRHead(torch.nn.Module):
                 )
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
 
+        # enc losses
         if "enc_outputs" in pred_detection:
             # TODO:check in details here
             enc_outputs = pred_detection["enc_outputs"]
@@ -365,6 +370,7 @@ class DETRHead(torch.nn.Module):
 
         Args:
             pred_coords: predicted normalized coords from RegressorFFN
+                in center format (cx, cy, dx, dy (,cz, dz)).
                 [B, R, dims * 2] where B=batch size, R=number of
                 predictions, dims=number of spatial dimensions
             target_boxes: target boxes in center format List([N, dims * 2])
@@ -406,7 +412,9 @@ class DETRHead(torch.nn.Module):
         Permute predictions following indices
 
         Args:
-            indices: paried indices as obtained from `matcher1to1`
+            indices: paried indices as obtained from `matcher1to1`.
+                First element of tuple contains the prediction indices
+                and the second element contains the ground truth indices.
 
         Returns:
             torch.Tensor: tensor containing the batch indices of the
