@@ -119,9 +119,9 @@ TEST_CASES_SHAPE = [
 
 
 @pytest.mark.parametrize("encoder,decoder,input_tensor,query_embed,pos_embed", TEST_CASES_SHAPE)
-def test_transformer_check_output_shape(self, encoder, decoder, input_tensor, query_embed, pos_embed):
+def test_transformer_check_output_shape(encoder, decoder, input_tensor, query_embed, pos_embed):
     transformer = DETRTransformer(encoder=encoder, decoder=decoder)
-    num_decoder_layers = transformer.decoder.layer_sequence.num_layers
+    num_decoder_layers = len(transformer.decoder.layers)
     out_sequence, reference, encoder_output = transformer([input_tensor], query_embed, [pos_embed])
     out_shape = torch.Size([num_decoder_layers, input_tensor.shape[0], query_embed.shape[0], query_embed.shape[1]])
     assert out_sequence.shape == out_shape

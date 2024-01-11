@@ -86,7 +86,17 @@ def test_transformer_base_layer(input, base_layer):
     assert len(base_layer.norms) == base_layer.operation_order.count("norm")
     assert len(base_layer.ffns) == base_layer.operation_order.count("ffn")
 
-    out = base_layer(input)
+    key = torch.zeros_like(input)
+    value = torch.zeros_like(input)
+    query_pos = torch.zeros_like(input)
+    key_pos = torch.zeros_like(input)
+    out = base_layer(
+        query=input,
+        key=key,
+        value=value,
+        query_pos=query_pos,
+        key_pos=key_pos,
+    )
     assert input.shape == out.shape
 
 

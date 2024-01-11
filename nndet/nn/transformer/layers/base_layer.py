@@ -129,6 +129,8 @@ class BaseTransformerLayer(nn.Module):
 
         for layer in self.operation_order:
             if layer == "self_attn":
+                assert query is not None
+                assert query_pos is not None
                 # self-attn: key = value = query
                 # self-attn: query_pos = key_pos = [object queries]
                 temp_key = temp_value = query
@@ -152,6 +154,9 @@ class BaseTransformerLayer(nn.Module):
                 norm_index += 1
 
             elif layer == "cross_attn":
+                assert query is not None
+                assert query_pos is not None
+                assert key_pos is not None
                 # cross-attn: key = value = query
                 # cross-attn: query_pos != key_pos; query_pos = object queries; key_pos = pos embedding
                 _attn_identity = identity if self.pre_norm else query

@@ -107,7 +107,7 @@ CASES = [
     (RetinaNetHNMV002, "retinaunet_hnm_v002"),
     (RetinaNetFocalV002, "retinaunet_focal_v002"),
     # Set Prediction
-    (BoxDETRC002, "detr_c002"),
+    (BoxDETRC002, "detr_softm_c002"),
 ]
 
 if roi_align_3d is not None and torch.cuda.is_available():
