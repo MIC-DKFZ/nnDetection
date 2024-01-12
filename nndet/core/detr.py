@@ -268,7 +268,10 @@ class BaseDETR(AbstractDetector):
         # predictions: Dict containing already made predictions
 
         # Calculate Boxes and Class predictions
-        pred_detections = self.head(out_sequence, reference)
+        pred_detections = self.head(
+            out_sequence=out_sequence,
+            reference=reference,
+        )
 
         # if a two-stage model is used, add encoder predictions to output
         if self.two_stage:
