@@ -22,7 +22,7 @@ from nndet.nn.transformer.layers.abstract import (
     BaseTransformerEncoder,
 )
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
-from nndet.ptmodule.mixins.model.detr import SetModelMixin
+from nndet.ptmodule.mixins.model.set import DETRModelMixin
 from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -33,7 +33,7 @@ class BoxDETRModule(
     LightningBaseModule,  # Main module
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Bounding Box Evaluation
-    SetModelMixin,  # DETR Mixin to build the model
+    DETRModelMixin,  # DETR Mixin to build the model
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     # define detector cls

@@ -32,8 +32,9 @@ class ConditionalDETRHead(DETRHead):
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
             reference: reference output of the transformer
-                (not used in original DETR head)
-                #TODO
+                Used as (unnormalized) reference point in conditional
+                detr [B, R, dims], where B is the batch size, R=number
+                of predictions, dims=number of spatial dimensions
 
         Returns:
             Dict[str, torch.Tensor]: predictions and auxiliary information
@@ -62,6 +63,7 @@ class ConditionalDETRHead(DETRHead):
         for lvl in range(out_sequence.shape[0]):
             tmp = self.regressor(out_sequence[lvl])
 
+            # select center point indices
             if tmp.shape[-1] == 4:
                 inds = torch.tensor([0, 1], device=out_sequence.device)  # [cx, cy]
             else:

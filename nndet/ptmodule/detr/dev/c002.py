@@ -41,7 +41,7 @@ from nndet.nn.transformer.layers.detr import (
 )
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation.boxes import BoxEvalMixin
-from nndet.ptmodule.mixins.model.detr import SetModelMixin
+from nndet.ptmodule.mixins.model.set import ConditionalDETRModelMixin, DETRModelMixin
 from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixin
 from nndet.ptmodule.mixins.prepare.boxes import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
@@ -53,7 +53,7 @@ class BoxDETRC002(
     LightningBaseModule,  # Main module
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Bounding Box Evaluation
-    SetModelMixin,  # DETR Mixin to build the model
+    DETRModelMixin,  # DETR Mixin to build the model
     BoxPredictionMixin,  # Bounding Box Sweep
 ):
     # Stride 16 + Focal Loss
@@ -105,18 +105,66 @@ class BoxDETRC002(
 
 
 @MODULE_REGISTRY.register
+class BoxCDETRC002(
+    LightningBaseModule,  # Main module
+    BoxesPrepareMixin,  # prepare batch for box training
+    BoxEvalMixin,  # Bounding Box Evaluation
+    ConditionalDETRModelMixin,  # DETR Mixin to build the model
+    BoxPredictionMixin,  # Bounding Box Sweep
+):
+    # Stride 16 + Focal Loss
+    backbone_cls: Type[AbstractBackbone] = ConvBackbone  #: define class for backbone
+    backbone_conv_cls: Type[CONVSEQ] = ConvInstanceRelu  #: conv class used for backbone
+    channel_mapper_cls: Type[ChannelMapper] = ChannelMapper  #: map channels from backbone to transformer
+    channel_mapper_conv_cls: Type[CONVSEQ] = ConvOnly  #: conv class used for channel mapper
+
+    # transformer
+    transformer_cls = DETRTransformer  #: define detector transformer architecture
+    pos_embed_cls: BasePositionEmbedding = PositionEmbeddingSine  #: define positional embedding for feature maps
+    transformer_encoder_cls = DETRTransformerEncoder  #: define encoder class of transformer
+    transformer_decoder_cls = ConditionalDETRTransformerDecoder  #: define decoder class of transformer
+
+    # head blocks
+    head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
+    head_linear_cls: LINEARSEQ = LayerLinearReluDrop  #: conv class used for head
+    head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
+    head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
+    head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
+
+    # matcher
+    matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
+    matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
+    # either reg or box criterion need to be set
+    # reg criterion usually operates on encoded targets while box cirterion operates on raw boxes
+    # there is no structural difference though and just a nomenclature
+    matcher_reg_criterion_cls: Optional[BoxCriterion] = L1RegCriterion  #: criterion to compute regression cost matrix
+    matcher_box_criterion_cls: Optional[
+        BoxCriterion
+    ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
+
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
+    ) -> AbstractBackbone:
+        # stride ~16
+        _plan_arch = copy.deepcopy(plan_arch)
+        _plan_arch["conv_kernels"] = _plan_arch["conv_kernels"][:-1]
+        _plan_arch["strides"] = _plan_arch["strides"][:-1]
+        return super()._build_backbone(
+            plan_arch=_plan_arch,
+            model_cfg=model_cfg,
+            patch_size=patch_size,
+        )
+
+
+@MODULE_REGISTRY.register
 class BoxDETRCEC002(BoxDETRC002):
     head_classifier_cls: FFNClassifier = CEFFNClassifier  #: define classifier class
     head_box_post_cls: DETRBoxPost = MaxFGBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = SimpleClassCriterionSoftmax  #: criterion to compute class cost matrix
-
-
-@MODULE_REGISTRY.register
-class BoxCDETRC002(BoxDETRC002):
-    transformer_encoder_cls = DETRTransformerEncoder
-    transformer_decoder_cls = ConditionalDETRTransformerDecoder
-    transformer_cls = DETRTransformer
-    head_cls: DETRHead = ConditionalDETRHead  #: main DETR head
 
 
 @MODULE_REGISTRY.register

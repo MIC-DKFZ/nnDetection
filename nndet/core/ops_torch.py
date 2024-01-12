@@ -884,6 +884,30 @@ def inverse_sigmoid(data: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
     return torch.log(x1 / x2)
 
 
+class InverseSigmoid(torch.nn.Module):
+    def _init_(self, eps: float = 1e-5):
+        """
+        Inverse Sigmoid Module
+
+        Args:
+            eps: epsilon for numerical stability. Defaults to 1e-5.
+        """
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Inverse Sigmoid Function
+
+        Args:
+            data: input tensor [*], arbitrary shape
+
+        Returns:
+            torch.Tensor: inverse sigmoid of values in original tensor [*]
+        """
+        return inverse_sigmoid(data, eps=self.eps)
+
+
 def box_point_norm_with_size(
     boxes: torch.Tensor,
     img_shape: ND_TUPLE_INT,

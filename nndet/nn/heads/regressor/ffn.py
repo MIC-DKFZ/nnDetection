@@ -14,6 +14,9 @@ from nndet.utils.typing import LINEARSEQ
 
 
 class FFNRegressor(torch.nn.Module):
+    _box_norm_fn = torch.functional.F.sigmoid
+    _inverse_box_norm_fn = ops_torch.inverse_sigmoid
+
     def __init__(
         self,
         linear: LINEARSEQ,
@@ -165,7 +168,8 @@ class FFNRegressor(torch.nn.Module):
         """
         return self.encoder_mlp
 
-    def apply_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+    @classmethod
+    def apply_non_lin(cls, x: torch.Tensor) -> torch.Tensor:
         """
         Normalise predictions
 
@@ -175,9 +179,10 @@ class FFNRegressor(torch.nn.Module):
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return torch.sigmoid(x)
+        return cls._box_norm_fn(x)
 
-    def apply_inverse_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+    @classmethod
+    def apply_inverse_non_lin(cls, x: torch.Tensor) -> torch.Tensor:
         """
         Invert the non-linearity which is used to normalize the predictions
 
@@ -187,7 +192,7 @@ class FFNRegressor(torch.nn.Module):
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return ops_torch.inverse_sigmoid(x)
+        return cls._inverse_box_norm_fn(x)
 
     def compute_loss(
         self,

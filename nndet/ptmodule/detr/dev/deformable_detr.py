@@ -34,7 +34,7 @@ from nndet.nn.transformer.layers.deformable_detr import (
 )
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.detr.dev.c001 import BoxDETRC001
-from nndet.ptmodule.mixins.model.deformable_detr import DeformableSetModelMixin
+from nndet.ptmodule.mixins.model.set import DeformableSetModelMixin
 from nndet.utils.typing import CONVSEQ
 
 

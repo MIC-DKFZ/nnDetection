@@ -13,6 +13,7 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.layers.mlp import ReluDropIdentityMLP, ReluMLP
 from nndet.nn.transformer.attention.conditional_attention import (
     ConditionalCrossAttention,
@@ -100,6 +101,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         return_intermediate: bool = True,
         dim: int = 3,
         batch_first: bool = False,
+        ffn_regressor_cls: FFNRegressor = FFNRegressor,
     ):
         """
         Transformer Decoder for Conditional DETR
@@ -119,6 +121,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             return_intermediate: return the outputs of all
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
+            reg_point_norm_fn: module to normalise the reference point
         """
         super().__init__(embed_dim=embed_dim, dim=dim)
 
@@ -157,6 +160,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         self.return_intermediate = return_intermediate
         self.query_scale = ReluMLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
         self.ref_point_head = ReluMLP(self.embed_dim, self.embed_dim, dim, 2)
+        self.ffn_regressor_cls = ffn_regressor_cls
 
         if post_norm:
             self.post_norm_layer = nn.LayerNorm(self.embed_dim)
@@ -205,11 +209,9 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
 
         intermediate = []
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
-        reference_points = reference_points_before_sigmoid.sigmoid().transpose(0, 1)
+        reference_points_normed = self.ffn_regressor_cls.apply_non_lin(reference_points_before_sigmoid)
 
         for idx, layer in enumerate(self.layers):
-            obj_center = reference_points.transpose(0, 1)  # [num_queries, batch_size, dim]
-
             # do not apply transform in position in the first decoder layer
             if idx == 0:
                 position_transform = 1
@@ -217,7 +219,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
                 position_transform = self.query_scale(query)
 
             # get sine embedding for the query vector
-            query_sine_embed = gen_sine_embed_for_position(obj_center, self.embed_dim)
+            query_sine_embed = gen_sine_embed_for_position(reference_points_normed, self.embed_dim)
             # apply position transform
             query_sine_embed = query_sine_embed * position_transform
 
@@ -250,7 +252,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         if self.return_intermediate:
             return (
                 torch.stack(intermediate),
-                reference_points,
+                reference_points_before_sigmoid.transpose(0, 1),  # [batch_size, num_queries, dim]
             )
-
-        return query.unsqueeze(0), reference_points
+        else:
+            return query.unsqueeze(0), reference_points_before_sigmoid.transpose(0, 1)  # [batch_size, num_queries, dim]
