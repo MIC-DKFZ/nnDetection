@@ -1,6 +1,0 @@
-pytest
-pytest-cov
-pytest-mock
-pre-commit
-sphinx
-pydata-sphinx-theme
