@@ -209,6 +209,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
 
         intermediate = []
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
+        assert reference_points_before_sigmoid.shape[-1] == self.dim
         reference_points_normed = self.ffn_regressor_cls.apply_non_lin(reference_points_before_sigmoid)
 
         for idx, layer in enumerate(self.layers):

@@ -133,15 +133,16 @@ class BaseTransformerLayer(nn.Module):
                 assert query_pos is not None
                 # self-attn: key = value = query
                 # self-attn: query_pos = key_pos = [object queries]
-                temp_key = temp_value = query
+                _temp_key = query
+                _temp_key_pos = query_pos
                 _attn_identity = identity if self.pre_norm else query
                 query = self.attentions[attn_index](
                     query=query,
-                    key=temp_key,
-                    value=temp_value,
+                    key=_temp_key,
+                    value=_temp_key,
                     identity=_attn_identity,
                     query_pos=query_pos,
-                    key_pos=query_pos,
+                    key_pos=_temp_key_pos,
                     attn_mask=attn_masks[attn_index],
                     key_padding_mask=query_key_padding_mask,
                     **kwargs,

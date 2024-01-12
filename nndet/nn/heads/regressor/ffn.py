@@ -5,6 +5,7 @@ import copy
 from typing import Dict, Optional, Union
 
 import torch
+from loguru import logger
 
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
@@ -136,8 +137,9 @@ class FFNRegressor(torch.nn.Module):
         Init weights
         """
         if self.ffn_weight_init == FFNRegWeightInit.NONE:
-            return
+            pass
         elif self.ffn_weight_init == FFNRegWeightInit.ZERO:
+            logger.info("Init FFN regressor with weight and bias zero")
             # zero weight & bias init
             torch.nn.init.constant_(self.mlp[-1][-1].weight.data[self.dim :], 0.0)
             torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
@@ -152,6 +154,7 @@ class FFNRegressor(torch.nn.Module):
                 torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
 
         elif self.ffn_weight_init == FFNRegWeightInit.ZERO_BIAS:
+            logger.info("Init FFN regressor with bias zero")
             # zero bias init
             torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
 

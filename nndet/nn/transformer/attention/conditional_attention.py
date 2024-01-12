@@ -6,7 +6,6 @@
 # SPDX-FileCopyrightText: 2022, The IDEA Authors
 # SPDX-License-Identifier: Apache-2.0
 import math
-import warnings
 from typing import Optional
 
 import torch
@@ -114,20 +113,7 @@ class ConditionalSelfAttention(nn.Module):
                 indicates which elements within `key` to be ignored in
                 attention.
         """
-        if key is None:
-            key = query
-        if value is None:
-            value = key
-        if identity is None:
-            identity = query
-        if key_pos is None:
-            if query_pos is not None:
-                # use query_pos if key_pos is not available
-                if query_pos.shape == key.shape:
-                    key_pos = query_pos
-                else:
-                    warnings.warn(f"position encoding of key is" f"missing in {self.__class__.__name__}.")
-
+        assert identity is not None
         assert (
             query_pos is not None and key_pos is not None
         ), "query_pos and key_pos must be passed into ConditionalAttention Module"
@@ -271,20 +257,7 @@ class ConditionalCrossAttention(nn.Module):
                 attention.
             is_first_layer: bool whether its the first decoder layer
         """
-        if key is None:
-            key = query
-        if value is None:
-            value = key
-        if identity is None:
-            identity = query
-        if key_pos is None:
-            if query_pos is not None:
-                # use query_pos if key_pos is not available
-                if query_pos.shape == key.shape:
-                    key_pos = query_pos
-                else:
-                    warnings.warn(f"position encoding of key is" f"missing in {self.__class__.__name__}.")
-
+        assert identity is not None
         assert (
             query_pos is not None and key_pos is not None
         ), "query_pos and key_pos must be passed into ConditionalAttention Module"
