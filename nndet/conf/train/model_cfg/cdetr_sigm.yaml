@@ -5,46 +5,41 @@
 # detector settings
 detector:
   detection_per_img: 24  # number of detections per image # FIXME make configurable
-  two_stage: True  # perform two stage detection #FIXME conditional detr
+  two_stage: False  # perform two stage detection #FIXME conditional detr
 
 # backbone
-backbone_kwargs: {}
+backbone_kwargs: # keyword arguments passed to encoder
+  pooling_mode: conv_kernel # one of 'block' | 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
+  start_channels: 48 # number of starting channels
+  max_channels: 512 # maximum number of channels
 
-# Channel Mapper
+# channel Mapper
 channel_mapper_kwargs:
-  num_feature_levels: ${model_cfg.transformer.num_feature_levels}
+  num_feature_levels: 1
   extra_levels: 0
   kernel_size: 1
-  conv_kwargs:
-    num_groups: 16
-    bias: True
-    add_act: False
+  conv_kwargs: {}
 
 # transformer
 transformer:
-  hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
-  num_feature_levels: 4  # number fo feature levels to use for deformable attention
-  use_pos_queries: True
+  hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
 
-# Transformer Encoder
 transformer_encoder_kwargs:
   num_layers: 3
   post_norm: False
-  attn_dropout: 0.0
-  proj_dropout: 0.0
-  ffn_dropout: 0.0
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
   dim_feedforward: 1024
-  hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
-  num_points: 4 # number of pixels attended to by deformable attention
 
 transformer_decoder_kwargs:
-  num_layers: 6
-  attn_dropout: 0.0
-  proj_dropout: 0.0
-  ffn_dropout: 0.0
+  num_layers: 3
+  post_norm: True
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
   dim_feedforward: 1024
-  hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
 
 # positional embedding keyword arguments
@@ -65,36 +60,27 @@ head_kwargs:
 # classifier
 head_classifier_kwargs:
   internal_channels: ${model_cfg.transformer.hidden_dim}
-  num_layers: 1
+  num_layers: 2
   add_norm: False
   dropout_rate: 0.0
-  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
-  share_mlp: False
-  use_encoder_mlp: ${model_cfg.detector.two_stage}
-  class_agnostic_aux: False
-  prior_prob: 0.05
+  prior_prob: 0.01
   # loss
   gamma: 1 # gamma for focal loss
   alpha: 0.75  # alpha for focal loss
-  loss_weight: 1 # cls loss weight
+  loss_weight: 2 # cls loss weight
   reduction: "mean_last_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
-  loss_fp32: True
 
 # regressor
 head_regressor_kwargs:
   internal_channels: ${model_cfg.transformer.hidden_dim}
-  num_layers: 3
+  num_layers: 2
   add_norm: False
   dropout_rate: 0.0
-  num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
-  share_mlp: False
-  use_encoder_mlp: ${model_cfg.detector.two_stage}
+  ffn_weight_init: "zero" # conditional detr default
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
-  loss_fp32: True
-  box_loss_fp32: True
 
 # matcher
 matcher_class_criterion_kwargs:

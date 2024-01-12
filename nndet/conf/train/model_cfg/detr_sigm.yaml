@@ -76,11 +76,11 @@ head_regressor_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
+  ffn_weight_init: "none" # detr default
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU
   reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
-  # weight_init_mode: "base" or "last_layer_zero"
 
 # matcher
 matcher_class_criterion_kwargs:

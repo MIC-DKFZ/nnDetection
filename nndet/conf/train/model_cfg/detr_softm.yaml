@@ -74,6 +74,7 @@ head_regressor_kwargs:
   num_layers: 3
   add_norm: False
   dropout_rate: 0.0
+  ffn_weight_init: "none" # detr default
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import torch
 
@@ -10,6 +10,7 @@ import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
 from nndet.losses.regression.l1 import L1Loss
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
+from nndet.utils.enums import FFNRegWeightInit
 from nndet.utils.typing import LINEARSEQ
 
 
@@ -29,6 +30,7 @@ class FFNRegressor(torch.nn.Module):
         num_decoder_layers: int = 0,
         share_mlp: bool = True,
         use_encoder_mlp: bool = False,
+        ffn_weight_init: Optional[Union[str, FFNRegWeightInit]] = None,
         **kwargs,
     ) -> None:
         """
@@ -45,6 +47,7 @@ class FFNRegressor(torch.nn.Module):
             num_decoder_layers: number of decoder layers in transformer
             share_mlp: share MLP between layers
             use_encoder_mlp: add an additional MLP for the transformer encoder
+            zero_init: initialise last layer with zeros (weight and bias)
             kwargs: passed to linear generator class
         """
         super().__init__()
@@ -55,6 +58,9 @@ class FFNRegressor(torch.nn.Module):
         self.internal_channels = internal_channels
         self.num_layers = num_layers
         self.dim = dim
+        if ffn_weight_init is None:
+            ffn_weight_init = "none"
+        self.ffn_weight_init = FFNRegWeightInit(ffn_weight_init)
 
         # Create final output mlp
         self.mlp = self._build_module(
@@ -82,6 +88,7 @@ class FFNRegressor(torch.nn.Module):
         self.box_loss_name: str = "ffn_reg_box"
         self.loss: Optional[torch.nn.Module] = None
         self.box_loss: Optional[torch.nn.Module] = None
+
         self.init_weights()
 
     def _build_module(
@@ -128,13 +135,34 @@ class FFNRegressor(torch.nn.Module):
         """
         Init weights
         """
-        if self.encoder_mlp is not None:
-            # Two stage model
-            torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+        if self.ffn_weight_init == FFNRegWeightInit.NONE:
+            return
+        elif self.ffn_weight_init == FFNRegWeightInit.ZERO:
+            # zero weight & bias init
+            torch.nn.init.constant_(self.mlp[-1][-1].weight.data[self.dim :], 0.0)
             torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
-            if self.aux_mlp is not None:
+
+            if not self.share_mlp and self.aux_mlp is not None:
+                for mlp in self.aux_mlp:
+                    torch.nn.init.constant_(mlp[-1][-1].weight.data[self.dim :], 0.0)
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
+
+            if not self.share_mlp and self.encoder_mlp is not None:
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].weight.data[self.dim :], 0.0)
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+
+        elif self.ffn_weight_init == FFNRegWeightInit.ZERO_BIAS:
+            # zero bias init
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
+
+            if not self.share_mlp and self.aux_mlp is not None:
                 for mlp in self.aux_mlp:
                     torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
+
+            if not self.share_mlp and self.encoder_mlp is not None:
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+        else:
+            raise ValueError(f"Unknown weight init {self.ffn_weight_init}")
 
     def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
         """
