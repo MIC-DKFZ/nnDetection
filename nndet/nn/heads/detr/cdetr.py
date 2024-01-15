@@ -54,7 +54,6 @@ class ConditionalDETRHead(DETRHead):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
         """
-
         # regressor
         reference_before_sigmoid = self.regressor.apply_inverse_non_lin(reference)
 

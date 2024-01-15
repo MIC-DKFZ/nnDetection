@@ -8,6 +8,7 @@ from nndet.core.boxes.matcher1to1.hungarian import HungarianMatcher
 from nndet.core.post.detr import MaxFGBoxPost
 from nndet.nn.heads.classifier.ffn import BCEFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
+from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.regressor.ffn import L1FFNRegressor
 from nndet.nn.layers.linear import LayerLinearReluDrop
 from nndet.utils.enums import AuxLossNorm
@@ -18,8 +19,7 @@ NUM_CLASSES = 2
 DIM = 3
 
 
-@pytest.fixture
-def detr_head():
+def prepare_modules():
     classifier = BCEFFNClassifier(
         linear=LayerLinearReluDrop,
         in_channels=IN_CHANNELS,
@@ -37,7 +37,27 @@ def detr_head():
         box_criterion=[L1RegCriterion(1.0)],
     )
     box_post = MaxFGBoxPost()
+    return classifier, regressor, matcher, box_post
+
+
+@pytest.fixture
+def detr_head():
+    classifier, regressor, matcher, box_post = prepare_modules()
     return DETRHead(
+        classifier=classifier,
+        regressor=regressor,
+        matcher=matcher,
+        box_post=box_post,
+        aux_loss=True,
+        norm_cls_loss_by_num_boxes=True,
+        norm_reg_loss_by_num_boxes=True,
+    )
+
+
+@pytest.fixture
+def cdetr_head():
+    classifier, regressor, matcher, box_post = prepare_modules()
+    return ConditionalDETRHead(
         classifier=classifier,
         regressor=regressor,
         matcher=matcher,
@@ -235,22 +255,32 @@ def test_compute_box_loss(detr_head):
     assert torch.allclose(loss, torch.tensor(0, dtype=torch.float))
 
 
-def test_forward(detr_head):
+class TestForward:
     num_dec = 4
     num_det = 5
     bs = 3
-    example_sequence = torch.rand(num_dec, bs, num_det, IN_CHANNELS)
-    expected_logit_shape = (bs, num_det, NUM_CLASSES)
-    expected_coords_shape = (bs, num_det, DIM * 2)
 
-    output = detr_head(example_sequence, reference=None)
+    def test_detr_forward(self, detr_head):
+        self._forward_assert_module(detr_head)
 
-    assert output["pred_cls_logits"].shape == expected_logit_shape
-    assert output["pred_box_coords"].shape == expected_coords_shape
-    assert len(output["aux_outputs"]) == num_dec - 1
-    for i in range(num_dec - 1):
-        assert output["aux_outputs"][i]["pred_cls_logits"].shape == expected_logit_shape
-        assert output["aux_outputs"][i]["pred_box_coords"].shape == expected_coords_shape
+    def test_cdetr_forward(self, cdetr_head):
+        reference = torch.rand(self.bs, self.num_det, DIM)
+        self._forward_assert_module(cdetr_head, reference=reference)
+
+    def _forward_assert_module(self, module, reference=None):
+
+        example_sequence = torch.rand(self.num_dec, self.bs, self.num_det, IN_CHANNELS)
+        expected_logit_shape = (self.bs, self.num_det, NUM_CLASSES)
+        expected_coords_shape = (self.bs, self.num_det, DIM * 2)
+
+        output = module(example_sequence, reference=reference)
+
+        assert output["pred_cls_logits"].shape == expected_logit_shape
+        assert output["pred_box_coords"].shape == expected_coords_shape
+        assert len(output["aux_outputs"]) == self.num_dec - 1
+        for i in range(self.num_dec - 1):
+            assert output["aux_outputs"][i]["pred_cls_logits"].shape == expected_logit_shape
+            assert output["aux_outputs"][i]["pred_box_coords"].shape == expected_coords_shape
 
 
 def test_postprocess_for_inference(detr_head, sig75):

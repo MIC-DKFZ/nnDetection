@@ -47,7 +47,7 @@ transformer_decoder_kwargs:
 pos_embed:
   # sine embedding
   temperature: 10000
-  normalize: True  # old default was False
+  normalize: True  # old default
   scale:
   offset: 0.0
 
@@ -77,7 +77,7 @@ head_regressor_kwargs:
   num_layers: 2
   add_norm: False
   dropout_rate: 0.0
-  ffn_weight_init: "none" # detr default
+  ffn_weight_init: "zero" # conditional detr
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

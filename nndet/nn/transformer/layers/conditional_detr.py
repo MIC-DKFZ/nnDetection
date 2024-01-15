@@ -217,28 +217,32 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             Tensor: Sequence of output embeddings, either of the last layer if
                 return_intermediate is false  or of all layers with shape
                 ((num_decoder_layers), num_queries, bs, C)
+
+            Tensor: normalized (!) reference points of shape
+                [num_queries, batch_size, dim]
         """
 
         intermediate = []
         reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
         assert reference_points_before_sigmoid.shape[-1] == self.dim
-        reference_points_normed = self.ffn_regressor_cls.apply_non_lin(reference_points_before_sigmoid)
+        reference_points = self.ffn_regressor_cls.apply_non_lin(reference_points_before_sigmoid)
 
         for idx, layer in enumerate(self.layers):
             # do not apply transform in position in the first decoder layer
             if idx == 0:
                 position_transform = 1
             else:
-                position_transform = self.query_scale(query)
+                position_transform = self.query_scale(query)  # [num_queries, batch_size, embed_dim]
 
             # get sine embedding for the query vector
             query_sine_embed = gen_sine_embed_for_position(
-                reference_points_normed,
+                reference_points,  # reference_points = obj_center
                 num_pos_feats=self.embed_dim,
                 temperature=self.temperature,
-            )
+            )  # [num_queries, batch_size, embed_dim]
+
             # apply position transform
-            query_sine_embed = query_sine_embed * position_transform
+            query_sine_embed = query_sine_embed * position_transform  # [num_queries, batch_size, embed_dim]
 
             query = layer(
                 query,
@@ -269,7 +273,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         if self.return_intermediate:
             return (
                 torch.stack(intermediate),
-                reference_points_before_sigmoid.transpose(0, 1),  # [batch_size, num_queries, dim]
+                reference_points.transpose(0, 1),  # [batch_size, num_queries, dim]
             )
         else:
-            return query.unsqueeze(0), reference_points_before_sigmoid.transpose(0, 1)  # [batch_size, num_queries, dim]
+            return query.unsqueeze(0), reference_points.transpose(0, 1)  # [batch_size, num_queries, dim]
