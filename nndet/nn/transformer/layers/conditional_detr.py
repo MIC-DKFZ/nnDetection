@@ -33,24 +33,28 @@ def gen_sine_embed_for_position(
     normal position encoding which computes position based on pixels)
 
     Args:
-        pos_tensor: tensor of shape (bs, num_pos, dim)
+        pos_tensor: tensor of shape `(bs, num_pos, dim)`
         num_pos_feats: number of out features (output dimension)
         temperature: temperature of the position encoding
 
     Returns:
         Tensor: tensor containing position embedding
+            `(bs, num_pos, num_pos_feats)`
     """
     dim = pos_tensor.shape[2]
     assert dim in [2, 3]
 
     scale = 2 * math.pi
     feats = 2 * math.ceil(num_pos_feats / (2 * dim))
+
     dim_t = torch.arange(feats, dtype=torch.float32, device=pos_tensor.device)
     dim_t = temperature ** (2 * torch.div(dim_t, 2, rounding_mode="floor") / feats)
-    x_embed = pos_tensor[:, :, 0] * scale
-    y_embed = pos_tensor[:, :, 1] * scale
-    pos_x = x_embed[:, :, None] / dim_t
-    pos_y = y_embed[:, :, None] / dim_t
+
+    x_embed = pos_tensor[:, :, 0] * scale  # [batch_size, num_pos]
+    y_embed = pos_tensor[:, :, 1] * scale  # [batch_size, num_pos]
+
+    pos_x = x_embed[:, :, None] / dim_t  # [batch_size, num_pos, feats]
+    pos_y = y_embed[:, :, None] / dim_t  # [batch_size, num_pos, feats]
     pos_x = torch.stack((pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()), dim=3).flatten(2)
     pos_y = torch.stack((pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()), dim=3).flatten(2)
 
@@ -59,11 +63,14 @@ def gen_sine_embed_for_position(
         z_embed = pos_tensor[:, :, 2] * scale
         pos_z = z_embed[:, :, None] / dim_t
         pos_z = torch.stack((pos_z[:, :, 0::2].sin(), pos_z[:, :, 1::2].cos()), dim=3).flatten(2)
+
         # If num_pos_feats is not divisible by 3 we have to remove some values
         dimension_delta = dim * feats - num_pos_feats
         cut = feats
+
         if dimension_delta >= 3:
             cut = feats - 1
+
         if dimension_delta % dim == 0:
             pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut], pos_z[:, :, :cut]), dim=2)
         elif dimension_delta % dim == 1:
@@ -73,12 +80,13 @@ def gen_sine_embed_for_position(
                 (pos_x[:, :, :cut], pos_y[:, :, : cut - 1], pos_z[:, :, : cut - 1]),
                 dim=2,
             )
-
     else:  # 2D Case
         dimension_delta = dim * feats - num_pos_feats
         cut = feats
+
         if dimension_delta >= 2:
             cut = feats - 1
+
         if num_pos_feats % dim == 0:
             pos_embed = torch.cat((pos_x[:, :, :cut], pos_y[:, :, :cut]), dim=2)
         else:
@@ -102,6 +110,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         dim: int = 3,
         batch_first: bool = False,
         ffn_regressor_cls: FFNRegressor = FFNRegressor,
+        temperature: int = 10000,
     ):
         """
         Transformer Decoder for Conditional DETR
@@ -122,6 +131,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
             reg_point_norm_fn: module to normalise the reference point
+            temperature: temperature factor for computig positional encoding
         """
         super().__init__(embed_dim=embed_dim, dim=dim)
 
@@ -156,6 +166,8 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         self.layers = nn.ModuleList()
         for _ in range(num_layers):
             self.layers.append(copy.deepcopy(transformer_layer))
+
+        self.temperature = temperature
 
         self.return_intermediate = return_intermediate
         self.query_scale = ReluMLP(self.embed_dim, self.embed_dim, self.embed_dim, 2)
@@ -220,7 +232,11 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
                 position_transform = self.query_scale(query)
 
             # get sine embedding for the query vector
-            query_sine_embed = gen_sine_embed_for_position(reference_points_normed, self.embed_dim)
+            query_sine_embed = gen_sine_embed_for_position(
+                reference_points_normed,
+                num_pos_feats=self.embed_dim,
+                temperature=self.temperature,
+            )
             # apply position transform
             query_sine_embed = query_sine_embed * position_transform
 
