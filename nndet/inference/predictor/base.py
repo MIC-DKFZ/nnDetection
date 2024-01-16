@@ -214,25 +214,43 @@ class Predictor:
 
         tiles = []
         for crop in crops:
-            tile = {}
-            for key_idx, key in enumerate(self.tile_keys):
-                if key_idx == 0:
-                    _data, tile["tile_origin"], tile["crop"] = save_get_crop(
-                        case[key],
-                        crop,
-                        **self.save_get_kwargs,
-                    )
-                else:
-                    _data, _, _ = save_get_crop(
-                        case[key],
-                        crop,
-                        **self.save_get_kwargs,
-                    )
-                tile[key] = _data
+            try:
+                # try selected extraction mode
+                tile = {key: save_get_crop(case[key], crop, mode=self.save_get_mode)[0] for key in self.tile_keys}
+                _, tile["tile_origin"], tile["crop"] = save_get_crop(
+                    case[self.tile_keys[0]], crop, mode=self.save_get_mode
+                )
+            except RuntimeError:
+                # fallback to symmetric
+                logger.warning("Path size is bigger than whole case, padding case to match patch size")
+                tile = {key: save_get_crop(case[key], crop, mode="symmetric")[0] for key in self.tile_keys}
+                _, tile["tile_origin"], tile["crop"] = save_get_crop(case[self.tile_keys[0]], crop, mode="symmetric")
 
             if update_remaining:
                 tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
             tiles.append(tile)
+
+        # tiles = []
+        # for crop in crops:
+        #     tile = {}
+        #     for key_idx, key in enumerate(self.tile_keys):
+        #         if key_idx == 0:
+        #             _data, tile["tile_origin"], tile["crop"] = save_get_crop(
+        #                 case[key],
+        #                 crop,
+        #                 **self.save_get_kwargs,
+        #             )
+        #         else:
+        #             _data, _, _ = save_get_crop(
+        #                 case[key],
+        #                 crop,
+        #                 **self.save_get_kwargs,
+        #             )
+        #         tile[key] = _data
+
+        #     if update_remaining:
+        #         tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
+        #     tiles.append(tile)
         return tiles
 
     @torch.no_grad()
