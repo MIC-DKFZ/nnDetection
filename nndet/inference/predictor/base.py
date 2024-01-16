@@ -105,7 +105,9 @@ class Predictor:
         self.pre_transform = pre_transform
 
         self.grid_mode = "symmetric"
-        self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
+        # self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
+        self.save_get_kwargs = {"mode": "shift"}
+
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
             f"batch size {self.batch_size} overlap {self.overlap}"
