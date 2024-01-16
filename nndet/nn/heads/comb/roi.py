@@ -10,6 +10,7 @@ from torch import Tensor
 from nndet.core.boxes.coder import BoxCoderND
 from nndet.nn.heads.comb.base import RoIHead
 from nndet.training.ema import EMABiasStepsModule
+from nndet.utils.dist import get_world_size, is_dist_avail_and_initialized
 
 
 class RoIBoxHead(RoIHead):
@@ -48,6 +49,12 @@ class RoIBoxHead(RoIHead):
         else:
             self.pos_ema = None
             self.all_ema = None
+
+        if is_dist_avail_and_initialized():
+            logger.warning(
+                "Distributed training with Hard Negative Mining is not implemented in a way which is "
+                "fully compatible with distributed training and unexpecetd bahvior might arise."
+            )
 
     def compute_loss(
         self,
@@ -103,6 +110,16 @@ class RoIBoxHead(RoIHead):
 
         _numel_all = sampled_inds.numel()
         _numel_pos = sampled_pos_inds.numel()
+
+        # average number of boxes for norm in distributed setting
+        _numel_all = torch.tensor([_numel_all], dtype=torch.float, device=box_logits.device)
+        _numel_pos = torch.tensor([_numel_pos], dtype=torch.float, device=box_logits.device)
+        if is_dist_avail_and_initialized():
+            torch.distributed.all_reduce(_numel_all)
+            torch.distributed.all_reduce(_numel_pos)
+            _numel_all = _numel_all / get_world_size()
+            _numel_pos = _numel_pos / get_world_size()
+
         if self.all_ema is not None:
             self.all_ema.add(_numel_all)
             self.pos_ema.add(_numel_pos)
