@@ -216,15 +216,21 @@ class Predictor:
         for crop in crops:
             try:
                 # try selected extraction mode
-                tile = {key: save_get_crop(case[key], crop, mode=self.save_get_mode)[0] for key in self.tile_keys}
+                tile = {key: save_get_crop(case[key], crop, **self.save_get_kwargs)[0] for key in self.tile_keys}
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
-                    case[self.tile_keys[0]], crop, mode=self.save_get_mode
+                    data=case[self.tile_keys[0]],
+                    crop=crop,
+                    **self.save_get_kwargs,
                 )
             except RuntimeError:
                 # fallback to symmetric
                 logger.warning("Path size is bigger than whole case, padding case to match patch size")
                 tile = {key: save_get_crop(case[key], crop, mode="symmetric")[0] for key in self.tile_keys}
-                _, tile["tile_origin"], tile["crop"] = save_get_crop(case[self.tile_keys[0]], crop, mode="symmetric")
+                _, tile["tile_origin"], tile["crop"] = save_get_crop(
+                    data=case[self.tile_keys[0]],
+                    crop=crop,
+                    mode="symmetric",
+                )
 
             if update_remaining:
                 tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
