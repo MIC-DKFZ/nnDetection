@@ -757,6 +757,7 @@ def _evaluate_task(
     current_time = datetime.now()
     current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
     logger.info(f"+++ Running evaluation {current_time_str} +++")
+    logger.info(f"Evaluating training dir: {training_dir}")
 
     # prepare paths
     modes = [True]
