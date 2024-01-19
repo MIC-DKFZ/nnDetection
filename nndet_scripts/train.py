@@ -557,7 +557,7 @@ def _train(
     )
 
     train_start = time.time()
-    trainer.fit(module, datamodule=datamodule)
+    trainer.fit(module, datamodule=datamodule, **fit_kwargs)
     train_end = time.time()
     train_time = train_end - train_start
 
