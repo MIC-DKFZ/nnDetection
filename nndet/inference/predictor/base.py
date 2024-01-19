@@ -106,7 +106,7 @@ class Predictor:
 
         self.grid_mode = "symmetric"
         # self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
-        self.save_get_kwargs = {"mode": "shift"}
+        self.save_get_kwargs = {"mode": "shift"}  # FIXME
 
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
