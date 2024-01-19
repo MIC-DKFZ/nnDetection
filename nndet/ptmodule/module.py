@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import pytorch_lightning as pl
@@ -11,7 +13,7 @@ import torch
 from loguru import logger
 
 from nndet.core.abstract import AbstractDetector
-from nndet.io.transforms import Compose, TransferInputChannel
+from nndet.io.transforms import Compose
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
 from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
 from nndet.training.swa import SWACycleLinear
@@ -118,21 +120,6 @@ class LightningBaseModule(pl.LightningModule):
         Initialize pre transforms from Mixin
         """
         trafos = self.get_pre_transforms(plan=self.plan)
-
-        # handle transfer learning
-        data_channels = self.plan["num_modalities"]  # number of channels of source data
-        network_channels = self.plan["architecture"]["in_channels"]  # number of channels of target data
-        if network_channels > data_channels:
-            logger.info(
-                "Detected Transfer Learning Setup with different soruce "
-                "and target channels. Adding additional transformation."
-            )
-            trafos.append(
-                TransferInputChannel(
-                    out_channels=network_channels,
-                    data_key="data",
-                )
-            )
         return Compose(trafos)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -360,3 +347,19 @@ class LightningBaseModule(pl.LightningModule):
                 )
             )
         return callbacks
+
+    def load_transfer_learning(self, ckpt: os.PathLike) -> None:
+        """
+        Prepare model for transfer learning
+
+        Args:
+            ckpt: path to checkpoint with weights to load
+        """
+        ckpt = Path(ckpt)
+        if not ckpt.is_file():
+            _s = f"Path {ckpt} for checkpoint for transfer learning does not exist."
+            logger.error(_s)
+            raise RuntimeError(_s)
+
+        ckpt_all = torch.load(ckpt, map_location="cpu")
+        self.load_state_dict(ckpt_all["state_dict"], strict=True)

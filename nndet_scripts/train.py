@@ -484,26 +484,19 @@ def _train(
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
+    fit_kwargs = {}
+    if continue_training and transfer_learning:
+        _s = "Found continue training and transfer learning, only one can be activated at the same time!"
+        logger.error(_s)
+        raise RuntimeError(_s)
     if continue_training:
         _path = train_dir / "model_last.ckpt"
         logger.info(f"Continue training -> loading checkpoint: {_path}")
-        trainer_kwargs["resume_from_checkpoint"] = _path
+        fit_kwargs["ckpt_path"] = _path
     if transfer_learning:
         _path = train_dir / "model_transfer.ckpt"
         logger.info(f"Performing transfer learning -> loading model weights: {_path}")
-        if continue_training:
-            _s = "Found continue training and transfer learning, only one can be activated at the same time!"
-            logger.error(_s)
-            raise RuntimeError(_s)
-        else:
-            if not _path.is_file():
-                _s = f"Transfer learning active, expected {_path} to exist."
-                logger.error(_s)
-                raise RuntimeError(_s)
-            module.load_state_dict(torch.load(_path)["state_dict"], strict=True)
-
-    num_gpus = cfg["accelerator_cfg"]["gpus"]
-    logger.info(f"Using {num_gpus} GPUs for training")
+        module.load_transfer_learning(ckpt=_path)
 
     plugins = []
     if p := cfg["trainer_cfg"].get("plugins", None):
@@ -524,6 +517,8 @@ def _train(
     else:
         detect_anomaly = False
 
+    num_gpus = cfg["accelerator_cfg"]["gpus"]
+    logger.info(f"Using {num_gpus} GPUs for training")
     if cfg["accelerator_cfg"]["precision"] == "16-mixed":
         logger.info("Using mixed precision training: '16-mixed'")
         device = "cuda" if num_gpus > 0 else "cpu"
