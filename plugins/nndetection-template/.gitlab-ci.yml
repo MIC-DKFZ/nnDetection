@@ -20,7 +20,7 @@ format-job:
     - pre-commit install
     - echo "Run pre-commit hooks"
     - pre-commit run --all-files --show-diff-on-failure
-    - reuse --root nndet_[project] lint
+    - reuse --root XXX lint # FIXME
 
 build-job:
   stage: build

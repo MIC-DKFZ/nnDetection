@@ -12,6 +12,7 @@ from nndet.nn.heads.classifier.dense import DenseClassifier
 from nndet.nn.heads.comb.base import AnchorHead
 from nndet.nn.heads.regressor.dense import DenseRegressor
 from nndet.training.ema import EMABiasStepsModule
+from nndet.utils.dist import get_world_size, is_dist_avail_and_initialized
 
 
 class BoxHeadAll(AnchorHead):
@@ -104,7 +105,13 @@ class BoxHeadAll(AnchorHead):
         sampled_inds = torch.where(target_labels >= 0)[0]
         sampled_pos_inds = torch.where(target_labels >= 1)[0]
 
+        # average number of boxes for norm in distributed setting
         _numel_pos = sampled_pos_inds.numel()
+        _numel_pos = torch.tensor([_numel_pos], dtype=torch.float, device=box_logits.device)
+        if is_dist_avail_and_initialized():
+            torch.distributed.all_reduce(_numel_pos)
+            _numel_pos = _numel_pos / get_world_size()
+
         if self.pos_ema is not None:
             self.pos_ema.add(_numel_pos)
             _numel_pos = self.pos_ema.get()

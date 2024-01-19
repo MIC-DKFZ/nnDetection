@@ -644,6 +644,9 @@ def _sweep(
         print(f"Additional import found {imp}")
         importlib.import_module(imp)
 
+    if cfg["exp"]["id"] != model:
+        raise ValueError("Config and model name do not match! " f"Found {cfg['exp']['id']} and {model} in cfg & model")
+
     logger.remove()
     logger.add(
         sys.stdout,
@@ -699,7 +702,7 @@ def _sweep(
 
     _evaluate_task(
         task=cfg["task"],
-        model=cfg["exp"]["id"],
+        model=model,
         fold=fold,
         test=False,
         preprocessed=True,
@@ -754,6 +757,7 @@ def _evaluate_task(
     current_time = datetime.now()
     current_time_str = current_time.strftime("%d/%m/%Y %H:%M:%S")
     logger.info(f"+++ Running evaluation {current_time_str} +++")
+    logger.info(f"Evaluating training dir: {training_dir}")
 
     # prepare paths
     modes = [True]

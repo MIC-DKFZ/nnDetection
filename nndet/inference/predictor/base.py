@@ -105,7 +105,9 @@ class Predictor:
         self.pre_transform = pre_transform
 
         self.grid_mode = "symmetric"
-        self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
+        # self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
+        self.save_get_kwargs = {"mode": "shift"}
+
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
             f"batch size {self.batch_size} overlap {self.overlap}"
@@ -212,25 +214,49 @@ class Predictor:
 
         tiles = []
         for crop in crops:
-            tile = {}
-            for key_idx, key in enumerate(self.tile_keys):
-                if key_idx == 0:
-                    _data, tile["tile_origin"], tile["crop"] = save_get_crop(
-                        case[key],
-                        crop,
-                        **self.save_get_kwargs,
-                    )
-                else:
-                    _data, _, _ = save_get_crop(
-                        case[key],
-                        crop,
-                        **self.save_get_kwargs,
-                    )
-                tile[key] = _data
+            try:
+                # try selected extraction mode
+                tile = {key: save_get_crop(case[key], crop, **self.save_get_kwargs)[0] for key in self.tile_keys}
+                _, tile["tile_origin"], tile["crop"] = save_get_crop(
+                    data=case[self.tile_keys[0]],
+                    crop=crop,
+                    **self.save_get_kwargs,
+                )
+            except RuntimeError:
+                # fallback to symmetric
+                logger.warning("Path size is bigger than whole case, padding case to match patch size")
+                tile = {key: save_get_crop(case[key], crop, mode="symmetric")[0] for key in self.tile_keys}
+                _, tile["tile_origin"], tile["crop"] = save_get_crop(
+                    data=case[self.tile_keys[0]],
+                    crop=crop,
+                    mode="symmetric",
+                )
 
             if update_remaining:
                 tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
             tiles.append(tile)
+
+        # tiles = []
+        # for crop in crops:
+        #     tile = {}
+        #     for key_idx, key in enumerate(self.tile_keys):
+        #         if key_idx == 0:
+        #             _data, tile["tile_origin"], tile["crop"] = save_get_crop(
+        #                 case[key],
+        #                 crop,
+        #                 **self.save_get_kwargs,
+        #             )
+        #         else:
+        #             _data, _, _ = save_get_crop(
+        #                 case[key],
+        #                 crop,
+        #                 **self.save_get_kwargs,
+        #             )
+        #         tile[key] = _data
+
+        #     if update_remaining:
+        #         tile.update({key: item for key, item in case.items() if key not in self.tile_keys})
+        #     tiles.append(tile)
         return tiles
 
     @torch.no_grad()

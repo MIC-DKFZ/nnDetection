@@ -31,7 +31,7 @@ extras = {
 readme = read_file(os.path.join(os.path.dirname(__file__), "README.md"))
 
 setup(
-    name="nndet_[project]",
+    name="XXX",  # FIXME
     version="0.0.1",
     packages=find_packages(),
     long_description=readme,
