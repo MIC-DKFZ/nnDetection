@@ -178,6 +178,49 @@ class SingleStageMixin(ModelMixin):
                 neck=neck,
             )
 
+        return cls._build_single_stage_model(
+            plan_arch=plan_arch,
+            model_cfg=model_cfg,
+            backbone=backbone,
+            neck=neck,
+            anchor_generator=anchor_generator,
+            matcher=matcher,
+            head=head,
+            box_post=box_post,
+            **detector_kwargs,
+        )
+
+    @classmethod
+    def _build_single_stage_model(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        backbone: AbstractBackbone,
+        neck: AbstractNeck,
+        head: AnchorHead,
+        anchor_generator: AnchorGenerator,
+        matcher: Matcher,
+        box_post: BoxPostprocessing,
+        **kwargs,
+    ) -> AbstractOneStageDetector:
+        """
+        Build detector
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            backbone: backbone instance
+            neck: neck instance
+            head: head instance
+            anchor_generator: anchor generator instance
+            matcher: matcher instance
+            box_post: box postprocessing instance
+            kwargs: passed to detector clss
+
+        Returns:
+            AbstractOneStageDetector: detector instance
+        """
+        logger.info(f"Building:: detector {cls.detector_cls.__name__}")
         return cls.detector_cls(
             dim=plan_arch["dim"],
             backbone=backbone,
@@ -187,7 +230,7 @@ class SingleStageMixin(ModelMixin):
             matcher=matcher,
             decoder_levels=plan_arch["decoder_levels"],
             box_post=box_post,
-            **detector_kwargs,
+            **kwargs,
         )
 
     @classmethod
