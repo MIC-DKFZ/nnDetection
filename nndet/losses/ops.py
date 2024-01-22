@@ -101,6 +101,7 @@ class SigmoidBaseLoss(Loss):
         self,
         preds: torch.Tensor,
         targets: torch.Tensor,
+        **kwargs,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
@@ -112,6 +113,7 @@ class SigmoidBaseLoss(Loss):
             targets: target classes. 0 is treated as background, >0 are
                 treated as foreground classes. [*] where * are arbitrary
                 spatial dimensions
+            kwargs: keyword arguments passed to `comp_loss` function
 
         Returns:
             torch.Tensor: loss
@@ -127,11 +129,13 @@ class SigmoidBaseLoss(Loss):
                 loss = self.comp_loss(
                     preds=preds.float(),
                     targets=target_onehot.float(),
+                    **kwargs,
                 )
         else:
             loss = self.comp_loss(
                 preds=preds,
                 targets=target_onehot.to(dtype=preds.dtype),
+                **kwargs,
             )
         return self.loss_weight * loss
 
