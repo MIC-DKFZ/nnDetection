@@ -106,7 +106,9 @@ class Predictor:
 
         self.grid_mode = "symmetric"
         # self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
-        self.save_get_kwargs = {"mode": "shift"}
+        self.save_get_kwargs = {
+            "mode": "shift"
+        }  # FIXME: check is boxes outside of images will get removed -> get it as is
 
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
