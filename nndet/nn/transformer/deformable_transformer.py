@@ -99,49 +99,104 @@ class DeformableDETRTransformer(nn.Module):
         Compute Encoder proposals from the encoder output (memory)
 
         Args:
-            memory:
-            memory_padding_mask:
-            spatial_shapes:
+            memory: output from transformer encoder, shape
+                [bs, ref_points, embed_dim], where ref_points is the number
+                of reference points in the encoder (usually the sum of the
+                number of pixels across the multi-scale feature maps)
+            spatial_shapes: the shape of all feature maps, has shape
+                (num_level, 3).
 
         Returns:
-
+            torch.Tensor: #TODO
+            torch.Tensor: #TODO
         """
-        N, S, C = memory.shape
+        N, _, _ = memory.shape
         proposals = []
-        _cur = 0
-        for lvl, (D, H, W) in enumerate(spatial_shapes):
-            mask_flatten_ = memory_padding_mask[:, _cur : (_cur + D * H * W)].view(N, D, H, W, 1)
-            valid_D = torch.sum(~mask_flatten_[:, :, 0, 0, 0], 1)
-            valid_H = torch.sum(~mask_flatten_[:, 0, :, 0, 0], 1)
-            valid_W = torch.sum(~mask_flatten_[:, 0, 0, :, 0], 1)
-            grid_x, grid_y, grid_z = torch.meshgrid(
-                torch.linspace(0, W - 1, W, dtype=torch.float32, device=memory.device),
-                torch.linspace(0, H - 1, H, dtype=torch.float32, device=memory.device),
-                torch.linspace(0, D - 1, D, dtype=torch.float32, device=memory.device),
+        for lvl, (ax0, ax1, ax2) in enumerate(spatial_shapes):
+            grid_ax0, grid_ax1, grid_ax2 = torch.meshgrid(
+                torch.linspace(0, ax0 - 1, ax0, dtype=torch.float32, device=memory.device),
+                torch.linspace(0, ax1 - 1, ax1, dtype=torch.float32, device=memory.device),
+                torch.linspace(0, ax2 - 1, ax2, dtype=torch.float32, device=memory.device),
                 indexing="ij",
             )
-            grid = torch.cat([grid_x.unsqueeze(-1), grid_y.unsqueeze(-1), grid_z.unsqueeze(-1)], -1)
-
-            scale = torch.cat([valid_W.unsqueeze(-1), valid_H.unsqueeze(-1), valid_D.unsqueeze(-1)], 1).view(
-                N, 1, 1, 1, 3
+            grid = torch.stack([grid_ax0, grid_ax1, grid_ax2], -1)  # ax0, ax1, ax2, 3
+            scale = (
+                torch.as_tensor([ax0, ax1, ax2], dtype=torch.float32, device=memory.device)[None]
+                .expand(N, 1)
+                .view(N, 1, 1, 1, 3)
             )
             grid = (grid.unsqueeze(0).expand(N, -1, -1, -1, -1) + 0.5) / scale
-            whd = torch.ones_like(grid) * 0.05 * (2.0**lvl)
-            proposal = torch.cat((grid, whd), -1).view(N, -1, 6)
+            ax012 = torch.ones_like(grid) * 0.05 * (2.0**lvl)
+            proposal = torch.cat((grid, ax012), -1).view(N, -1, 6)
             proposals.append(proposal)
-            _cur += W * H * D
 
+        # proposals
         output_proposals = torch.cat(proposals, 1)
         output_proposals_valid = ((output_proposals > 0.01) & (output_proposals < 0.99)).all(-1, keepdim=True)
         output_proposals = torch.log(output_proposals / (1 - output_proposals))
-        output_proposals = output_proposals.masked_fill(memory_padding_mask.unsqueeze(-1), float("inf"))
         output_proposals = output_proposals.masked_fill(~output_proposals_valid, float("inf"))
 
+        # memory
         output_memory = memory
-        output_memory = output_memory.masked_fill(memory_padding_mask.unsqueeze(-1), float(0))
         output_memory = output_memory.masked_fill(~output_proposals_valid, float(0))
         output_memory = self.enc_output_norm(self.enc_output(output_memory))
         return output_memory, output_proposals
+
+    # def gen_encoder_output_proposals(
+    #     self,
+    #     memory: torch.Tensor,
+    #     memory_padding_mask: torch.Tensor,
+    #     spatial_shapes: torch.Tensor,
+    # ) -> Tuple[torch.Tensor, torch.Tensor]:
+    #     """
+    #     Compute Encoder proposals from the encoder output (memory)
+
+    #     Args:
+    #         memory:
+    #         memory_padding_mask:
+    #         spatial_shapes:
+
+    #     Returns:
+
+    #     """
+    #     N, S, C = memory.shape
+    #     proposals = []
+    #     _cur = 0
+    #     for lvl, (D, H, W) in enumerate(spatial_shapes):
+    #         mask_flatten_ = memory_padding_mask[:, _cur : (_cur + D * H * W)].view(N, D, H, W, 1)
+    #         valid_D = torch.sum(~mask_flatten_[:, :, 0, 0, 0], 1)
+    #         valid_H = torch.sum(~mask_flatten_[:, 0, :, 0, 0], 1)
+    #         valid_W = torch.sum(~mask_flatten_[:, 0, 0, :, 0], 1)
+
+    #         grid_x, grid_y, grid_z = torch.meshgrid(
+    #             torch.linspace(0, W - 1, W, dtype=torch.float32, device=memory.device),
+    #             torch.linspace(0, H - 1, H, dtype=torch.float32, device=memory.device),
+    #             torch.linspace(0, D - 1, D, dtype=torch.float32, device=memory.device),
+    #             indexing="ij",
+    #         )
+    #         grid = torch.cat([grid_x.unsqueeze(-1), grid_y.unsqueeze(-1), grid_z.unsqueeze(-1)], -1)
+
+    #         scale = torch.cat([valid_W.unsqueeze(-1), valid_H.unsqueeze(-1), valid_D.unsqueeze(-1)], 1).view(
+    #             N, 1, 1, 1, 3
+    #         )
+    #         grid = (grid.unsqueeze(0).expand(N, -1, -1, -1, -1) + 0.5) / scale
+    #         whd = torch.ones_like(grid) * 0.05 * (2.0**lvl)
+    #         proposal = torch.cat((grid, whd), -1).view(N, -1, 6)
+    #         proposals.append(proposal)
+    #         _cur += W * H * D
+    #     from IPython import embed; embed()
+
+    #     output_proposals = torch.cat(proposals, 1)
+    #     output_proposals_valid = ((output_proposals > 0.01) & (output_proposals < 0.99)).all(-1, keepdim=True)
+    #     output_proposals = torch.log(output_proposals / (1 - output_proposals))
+    #     output_proposals = output_proposals.masked_fill(memory_padding_mask.unsqueeze(-1), float("inf"))
+    #     output_proposals = output_proposals.masked_fill(~output_proposals_valid, float("inf"))
+
+    #     output_memory = memory
+    #     output_memory = output_memory.masked_fill(memory_padding_mask.unsqueeze(-1), float(0))
+    #     output_memory = output_memory.masked_fill(~output_proposals_valid, float(0))
+    #     output_memory = self.enc_output_norm(self.enc_output(output_memory))
+    #     return output_memory, output_proposals
 
     @staticmethod
     def get_reference_points(
@@ -178,7 +233,7 @@ class DeformableDETRTransformer(nn.Module):
             reference_points_list.append(ref)
         reference_points = torch.cat(reference_points_list, 1)  # bs, p-dims, 3
         reference_points = reference_points[:, :, None].repeat(1, 1, num_level, 1)  # bs, p-dims, num_levels, 3
-        return reference_points
+        return reference_points  # TODO: check if expand might be sufficient here -> saves copying data
 
     def get_proposal_pos_embed(
         self,
@@ -273,6 +328,7 @@ class DeformableDETRTransformer(nn.Module):
             valid_ratios=valid_ratios,
             **kwargs,
         )
+
         bs, _, c = memory.shape
         if self.two_stage:
             output_memory, output_proposals = self.gen_encoder_output_proposals(memory, mask_flatten, spatial_shapes)
