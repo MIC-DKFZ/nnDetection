@@ -146,65 +146,39 @@ class DeformableDETRTransformer(nn.Module):
     @staticmethod
     def get_reference_points(
         spatial_shapes: torch.Tensor,
-        valid_ratios: torch.Tensor,
+        batch_size: int,
         device: torch.device,
     ) -> torch.Tensor:
         """
         Get the reference points used in decoder.
 
         Args:
-            spatial_shapes: The shape of all
-                feature maps, has shape (num_level, 3).
-            valid_ratios: The ratios of valid
-                points on the feature map, has shape
-                (bs, num_levels, 3)
-            device: The device where
-                reference_points should be.
+            spatial_shapes: the shape of all feature maps,
+                has shape (num_level, 3).
+            batch_size: the batch size of the input data.
+            device: the device where reference_points should be.
 
         Returns:
-            Tensor: reference points used in decoder, has \
-                shape (bs, num_keys, num_levels, 3).
+            Tensor: reference points used in decoder, has shape
+                (bs, p-dims, num_levels, 3). Points are normalized.
         """
+        num_level = len(spatial_shapes)
         reference_points_list = []
-        for lvl, (D, H, W) in enumerate(spatial_shapes):
-            #  TODO  check this 0.5
-            ref_x, ref_y, ref_z = torch.meshgrid(
-                torch.linspace(0.5, W - 0.5, W, dtype=torch.float32, device=device),
-                torch.linspace(0.5, H - 0.5, H, dtype=torch.float32, device=device),
-                torch.linspace(0.5, D - 0.5, D, dtype=torch.float32, device=device),
+        for lvl, (ax0_shape, ax1_shape, ax2_shape) in enumerate(spatial_shapes):
+            ref_ax0, ref_ax1, ref_ax2 = torch.meshgrid(
+                torch.linspace(0.5, ax0_shape - 0.5, ax0_shape, dtype=torch.float32, device=device),
+                torch.linspace(0.5, ax1_shape - 0.5, ax1_shape, dtype=torch.float32, device=device),
+                torch.linspace(0.5, ax2_shape - 0.5, ax2_shape, dtype=torch.float32, device=device),
                 indexing="ij",
             )
-            ref_x = ref_x.reshape(-1)[None] / (valid_ratios[:, None, lvl, 0] * W)
-            ref_y = ref_y.reshape(-1)[None] / (valid_ratios[:, None, lvl, 1] * H)
-            ref_z = ref_z.reshape(-1)[None] / (valid_ratios[:, None, lvl, 2] * D)
-
-            ref = torch.stack((ref_x, ref_y, ref_z), -1)
+            ref_ax0 = (ref_ax0.reshape(-1))[None].repeat(batch_size, 1) / ax0_shape
+            ref_ax1 = (ref_ax1.reshape(-1))[None].repeat(batch_size, 1) / ax1_shape
+            ref_ax2 = (ref_ax2.reshape(-1))[None].repeat(batch_size, 1) / ax2_shape
+            ref = torch.stack((ref_ax0, ref_ax1, ref_ax2), -1)  # bs, p-dims, 3
             reference_points_list.append(ref)
-        reference_points = torch.cat(reference_points_list, 1)
-        reference_points = reference_points[:, :, None] * valid_ratios[:, None]
+        reference_points = torch.cat(reference_points_list, 1)  # bs, p-dims, 3
+        reference_points = reference_points[:, :, None].repeat(1, 1, num_level, 1)  # bs, p-dims, num_levels, 3
         return reference_points
-
-    @staticmethod
-    def get_valid_ratio(mask: torch.Tensor) -> torch.Tensor:
-        """
-        Get ratio of non-masked pixels for each dimension through the image
-
-        Args:
-            mask: mask of the image with shape (N, D, H, W)
-
-        Returns:
-            Tensor: ratios with shape (N, ?)
-        """
-        _, D, H, W = mask.shape
-        valid_D = torch.sum(~mask[:, :, 0, 0], 1)
-        valid_H = torch.sum(~mask[:, 0, :, 0], 1)
-        valid_W = torch.sum(~mask[:, 0, 0, :], 1)
-
-        valid_ratio_d = valid_D.float() / D
-        valid_ratio_h = valid_H.float() / H
-        valid_ratio_w = valid_W.float() / W
-        valid_ratio = torch.stack([valid_ratio_w, valid_ratio_h, valid_ratio_d], -1)
-        return valid_ratio
 
     def get_proposal_pos_embed(
         self,
@@ -239,7 +213,6 @@ class DeformableDETRTransformer(nn.Module):
         features: List[torch.Tensor],
         query_embed: torch.Tensor,
         pos_embed: List[torch.Tensor],
-        mask: Optional[List[torch.Tensor]] = None,
         **kwargs,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
         """
@@ -248,12 +221,10 @@ class DeformableDETRTransformer(nn.Module):
 
         Args:
             features: features from the backbone in form of a
-            List[Tensor(bs, C, X, Y, Z)]
+                List[Tensor(bs, C, dims)]
             query_embed: object queries = input for the transformer decoder
             pos_embed: position embedding for the features, same shape as
                 features
-            mask: mask to mask out certain pixels of the feature maps, same
-                shape as features
 
         Returns:
             Tensor: output box embeddings (output of the decoder)
@@ -262,35 +233,33 @@ class DeformableDETRTransformer(nn.Module):
             Optional(Tensor): References from the transformer decoder
                 ((num_decoder_layers), bs, num_queries, dim)
         """
+        assert len(features) == len(pos_embed)
         assert self.two_stage or query_embed is not None
+
         feat_flatten = []
         lvl_pos_embed_flatten = []
         spatial_shapes = []
-        mask_list = [] if mask is None else mask
-        mask_flatten = []
-        # Permute to d, h, w format
-        for lvl, (feat, pos_embed) in enumerate(zip(features, pos_embed)):
-            bs, c, w, h, d = feat.shape
-            spatial_shape = (d, h, w)
-            spatial_shapes.append(spatial_shape)
-            if mask is None:
-                mask_list.append(torch.zeros((bs, d, h, w), dtype=torch.bool, device=feat.device))
-                mask_flatten.append(mask_list[lvl].flatten(1))  # bs, dhw
-            else:
-                mask_flatten.append(mask_list[lvl].permute(0, 3, 2, 1).flatten(1))  # bs, dhw
-            feat = feat.permute(0, 1, 4, 3, 2).flatten(2).transpose(1, 2)  # bs, dhw, c
+
+        for lvl, (feat, pos_embed_feat) in enumerate(zip(features, pos_embed)):
+            bs, _, ax0, ax1, ax2 = feat.shape
+            spatial_shapes.append((ax0, ax1, ax2))  # permute
+            feat = feat.flatten(2).transpose(1, 2)  # bs, embed_dim, p-dims -> bs, p-dims, embed_dim
             feat_flatten.append(feat)
-            pos_embed = pos_embed.permute(0, 1, 4, 3, 2).flatten(2).transpose(1, 2)  # bs, dhw, c
-            lvl_pos_embed = pos_embed + self.level_embeds[lvl].view(1, 1, -1)
+
+            pos_embed_feat = pos_embed_feat.flatten(2).transpose(1, 2)  # bs, embed_dim, p-dims -> bs, p-dims, embed_dim
+            lvl_pos_embed = pos_embed_feat + self.level_embeds[lvl].view(
+                1, 1, -1
+            )  # num_level, embed_dim -> 1, 1, embed_dim -> 1, p-dims, embed_dim
             lvl_pos_embed_flatten.append(lvl_pos_embed)
 
-        feat_flatten = torch.cat(feat_flatten, 1)
-        mask_flatten = torch.cat(mask_flatten, 1)
-        lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)
-        spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=feat_flatten.device)
-        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
-        valid_ratios = torch.stack([self.get_valid_ratio(m) for m in mask_list], 1)
-        reference_points = self.get_reference_points(spatial_shapes, valid_ratios, device=feat_flatten[-1].device)
+        feat_flatten = torch.cat(feat_flatten, 1)  # bs, level * p-dims, embed_dim
+        lvl_pos_embed_flatten = torch.cat(lvl_pos_embed_flatten, 1)  # 1, level * p-dims, embed_dim
+        spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=feat_flatten.device)  # nlvl, 3
+        level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))  # nlvl
+
+        mask_flatten = torch.zeros((bs, feat_flatten.shape[1]), dtype=torch.bool, device=feat_flatten.device)  # FIXME
+        valid_ratios = torch.ones((bs, len(features), 3), dtype=torch.float32, device=feat_flatten.device)  # FIXME
+        reference_points = self.get_reference_points(spatial_shapes, batch_size=bs, device=feat_flatten[-1].device)
 
         memory = self.encoder(
             query=feat_flatten,
@@ -343,6 +312,7 @@ class DeformableDETRTransformer(nn.Module):
             key=None,  # bs, num_tokens, embed_dims
             value=memory,  # bs, num_tokens, embed_dims
             query_pos=query_pos,
+            key_pos=query_pos,
             key_padding_mask=mask_flatten,  # bs, num_tokens
             reference_points=reference_points,  # num_queries, 6
             spatial_shapes=spatial_shapes,  # nlvl, 2

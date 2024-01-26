@@ -21,7 +21,7 @@ class ConditionalDETRHead(DETRHead):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        reference: torch.Tensor,
+        references: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using the ClassifierFFN and
@@ -31,7 +31,7 @@ class ConditionalDETRHead(DETRHead):
             out_sequence: output sequence of the transformer [D, B, R, C]
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
-            reference: reference output of the transformer
+            references: reference output of the transformer
                 Used as (unnormalized) reference point in conditional
                 detr [B, R, dims], where B is the batch size, R=number
                 of predictions, dims=number of spatial dimensions
@@ -55,7 +55,7 @@ class ConditionalDETRHead(DETRHead):
                     `pred_box_coords`
         """
         # regressor
-        reference_before_sigmoid = self.regressor.apply_inverse_non_lin(reference)
+        reference_before_sigmoid = self.regressor.apply_inverse_non_lin(references)
 
         outputs_coords = []
         # Also let intermediate level predict, but don't use it for the output

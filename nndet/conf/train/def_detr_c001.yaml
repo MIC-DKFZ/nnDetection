@@ -8,7 +8,7 @@ defaults:
   - io_cfg: offset
   - trainer_cfg: adamw_75ep_high_wd
   - accelerator_cfg: gpu1_mixed16
-  - model_cfg: deformable_detr_focal
+  - model_cfg: deformable_detr_sigm
 
 module: BoxDeformableDETRC001Focal
 plan: D3V001_3d # plan used for training

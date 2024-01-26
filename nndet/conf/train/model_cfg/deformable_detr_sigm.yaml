@@ -12,7 +12,6 @@ backbone_kwargs: {}
 
 # Channel Mapper
 channel_mapper_kwargs:
-  num_feature_levels: ${model_cfg.transformer.num_feature_levels}
   extra_levels: 0
   kernel_size: 1
   conv_kwargs:
@@ -89,7 +88,7 @@ head_regressor_kwargs:
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
   share_mlp: False
   use_encoder_mlp: ${model_cfg.detector.two_stage}
-  ffn_weight_init: "todo" # deformable detr default #TODO wweight init
+  ffn_weight_init: "none" # TODO deformable detr default #TODO wweight init
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

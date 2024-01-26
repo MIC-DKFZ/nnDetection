@@ -62,7 +62,7 @@ class DETRHead(torch.nn.Module):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        reference: Optional[torch.Tensor] = None,
+        references: Optional[torch.Tensor] = None,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using the ClassifierFFN and
@@ -72,7 +72,7 @@ class DETRHead(torch.nn.Module):
             out_sequence: output sequence of the transformer [D, B, R, C]
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
-            reference: reference output of the transformer
+            references: reference output of the transformer
                 (not used in default DETR head)
 
         Returns:
@@ -94,7 +94,7 @@ class DETRHead(torch.nn.Module):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
         """
-        assert reference is None, "Reference is not used in default DETR head"
+        assert references is None, "Reference is not used in default DETR head"
 
         box_logits = self.regressor.apply_non_lin(self.regressor(out_sequence))
         class_logits = self.classifier(out_sequence)
