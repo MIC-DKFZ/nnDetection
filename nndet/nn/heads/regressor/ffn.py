@@ -200,30 +200,32 @@ class FFNRegressor(torch.nn.Module):
         return self.encoder_mlp
 
     @classmethod
-    def apply_non_lin(cls, x: torch.Tensor) -> torch.Tensor:
+    def apply_non_lin(cls, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Normalise predictions
 
         Args:
             x: input tensor of arbitrary shape
+            kwargs: keyword arguments passed to function
 
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return cls._box_norm_fn(x)
+        return cls._box_norm_fn(x, **kwargs)
 
     @classmethod
-    def apply_inverse_non_lin(cls, x: torch.Tensor) -> torch.Tensor:
+    def apply_inverse_non_lin(cls, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Invert the non-linearity which is used to normalize the predictions
 
         Args:
             x: input tensor of arbitrary shape
+            kwargs: keyword arguments passed to function
 
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return cls._inverse_box_norm_fn(x)
+        return cls._inverse_box_norm_fn(x, **kwargs)
 
     def compute_loss(
         self,
