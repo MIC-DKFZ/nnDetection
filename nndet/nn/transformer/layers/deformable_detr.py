@@ -7,12 +7,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from torch import nn as nn
 
-import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
@@ -40,9 +39,31 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = True,
-        num_feature_levels: int = 4,
-        num_points: int = 4,
+        num_feature_levels: int = 4,  # TODO: add to config
+        num_points: int = 4,  # TODO: add to config
     ):
+        """
+        Transformer Encoder for Deformable DETR Model
+
+        Args:
+            embed_dim: embed dimension (hidden dimension) of the transformer
+                decoder
+            num_heads: number of attention heads
+            num_layers: number of decoder layers
+            attn_dropout: dropout in the attention modules
+            proj_dropout: dropout of the final linear projection after attention
+                Not used here! Use `attn_dropout` instead.
+            feedforward_dim: hidden dimension of the feed forward network in the
+                transformer layer
+            ffn_dropout: dropout of the feed forward network
+            num_ffn_layers: number of layers in the transformer ffn
+            post_norm: apply an additional layer norm to all outputs
+            dim: dimension of the input, has to be 2 or 3
+            batch_first: use batch first computations in the transformer
+            num_feature_levels: number of feature levels used for multi-scale
+                attention
+            num_points: number of sampling points for each query
+        """
         super().__init__(
             embed_dim=embed_dim,
             dim=dim,
@@ -82,22 +103,40 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
 
     def forward(
         self,
-        query,
-        key,
-        value,
-        query_pos=None,
-        key_pos=None,
-        attn_masks=None,
-        query_key_padding_mask=None,
-        key_padding_mask=None,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        attn_masks: Optional[torch.Tensor] = None,
+        query_key_padding_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
-    ):
+    ) -> torch.Tensor:
+        """
+        Perform forward pass through the transformer encoders
+
+        Args:
+            query: Query embeddings with shape `(num_query, bs, embed_dim)`
+            key: Key embeddings with shape `(num_key, bs, embed_dim)`
+            value: Value embeddings with shape `(num_key, bs, embed_dim)`
+            query_pos: The position embedding for `query`. Default: None.
+            key_pos: (Optional) position embedding for the given key
+            attn_masks: (Optional) mask for the attention layer
+            query_key_padding_mask: (Optional) query key padding mask for
+                attention
+            key_padding_mask: (Optional) key padding mask for attention
+
+        Returns:
+            torch.Tensor: processed features (seq_length, bs, C)
+        """
         for layer in self.layers:
             query = layer(
-                query,
-                key,
-                value,
+                query=query,
+                key=key,
+                value=value,
                 query_pos=query_pos,
+                key_pos=key_pos,
                 attn_masks=attn_masks,
                 query_key_padding_mask=query_key_padding_mask,
                 key_padding_mask=key_padding_mask,
@@ -127,6 +166,30 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
         num_points: int = 4,
         regressor: Optional[FFNRegressor] = None,
     ):
+        """
+        Transformer Decoder for Deformable DETR Model
+
+        Args:
+            embed_dim: embed dimension (hidden dimension) of the transformer
+                decoder
+            num_heads: number of attention heads
+            num_layers: number of decoder layers
+            attn_dropout: dropout in the attention modules
+            proj_dropout: dropout of the final linear projection after attention
+                Not used here! Use `attn_dropout` instead.
+            ffn_dropout: dropout of the feed forward network
+            feedforward_dim: hidden dimension of the feed forward network in the
+                transformer layer
+            num_ffn_layers: number of layers in the transformer ffn
+            return_intermediate: return the outputs of all decoder layers
+            dim: dimension of the input, has to be 2 or 3
+            batch_first: use batch first computations in the transformer
+            num_feature_levels: number of feature levels used for multi-scale
+                attention
+            num_points: number of sampling points for each query
+            regressor: regressor to update boxes/points for iterative box
+                refinement
+        """
         super().__init__(
             embed_dim=embed_dim,
             dim=dim,
@@ -145,7 +208,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
                     embed_dim=embed_dim,
                     num_heads=num_heads,
                     dropout=attn_dropout,
-                    batch_first=True,
+                    batch_first=True,  # TODO: check
                     num_levels=num_feature_levels,
                     num_points=num_points,
                 ),
@@ -172,38 +235,56 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
 
         self.return_intermediate = return_intermediate
         self.regressor = regressor
+        self.num_feature_levels = num_feature_levels
 
     def forward(
         self,
-        query,
-        key,
-        value,
-        query_pos=None,
-        key_pos=None,
-        attn_masks=None,
-        query_key_padding_mask=None,
-        key_padding_mask=None,
-        reference_points=None,  # num_queries, 4. normalized.
-        valid_ratios=None,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        reference_points: torch.Tensor,
+        query_pos: Optional[torch.Tensor] = None,
+        key_pos: Optional[torch.Tensor] = None,
+        attn_masks: Optional[torch.Tensor] = None,
+        query_key_padding_mask: Optional[torch.Tensor] = None,
+        key_padding_mask: Optional[torch.Tensor] = None,
         **kwargs,
-    ):
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Perform forward pass through the transformer encoders
+
+        Args:
+            query: Query embeddings with shape `(num_query, bs, embed_dim)`
+            key: Key embeddings with shape `(num_key, bs, embed_dim)`
+            value: Value embeddings with shape `(num_key, bs, embed_dim)`
+            reference_points: reference points for deformable attention
+                of shape: `(bs, num_queries, 2 * dims)` [`two_stage` enabled]
+                or `(bs, num_queries, dims)`  [`two_stage` disabled].
+                Reference points need to be normalized and in format center
+                format of shape `cx, cy, cz` [`two_stage` disabled] or
+                `cx, cy, cz, dx, dy, dz` [`two_stage` enabled]
+            query_pos: The position embedding for `query`. Default: None.
+            key_pos: (Optional) position embedding for the given key
+            attn_masks: (Optional) mask for the attention layer
+            query_key_padding_mask: (Optional) query key padding mask for
+                attention
+            key_padding_mask: (Optional) key padding mask for attention
+
+        Returns:
+            torch.Tensor: processed features (seq_length, bs, C)
+        """
         output = query
 
         intermediate = []
         intermediate_reference_points = []
         for layer_idx, layer in enumerate(self.layers):
-            if reference_points.shape[-1] == 6:
-                reference_points_input = (
-                    reference_points[:, :, None] * torch.cat([valid_ratios, valid_ratios], -1)[:, None]
-                )
-            else:
-                assert reference_points.shape[-1] == 3
-                reference_points_input = reference_points[:, :, None] * valid_ratios[:, None]
+            assert reference_points.shape[-1] in [self.dim, self.dim * 2]
+            reference_points_input = reference_points[:, :, None].expand(-1, -1, self.num_feature_levels, -1)
 
             output = layer(
-                output,
-                key,
-                value,
+                query=output,
+                key=key,
+                value=value,
                 query_pos=query_pos,
                 key_pos=key_pos,
                 attn_masks=attn_masks,
@@ -215,16 +296,9 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
 
             if self.regressor is not None:
                 tmp = self.regressor(output, layer_idx)
-                # FIXME the order xyz,whd might be wrong here
-                if reference_points.shape[-1] == 6:
-                    new_reference_points = tmp + ops_torch.inverse_sigmoid(reference_points)
-                    new_reference_points = new_reference_points.sigmoid()
-                else:
-                    assert reference_points.shape[-1] == 3
-                    new_reference_points = tmp
-                    new_reference_points[..., :3] = tmp[..., :3] + ops_torch.inverse_sigmoid(reference_points)
-                    new_reference_points = new_reference_points.sigmoid()
-                reference_points = new_reference_points.detach()
+                new_reference_points = tmp + self.regressor.apply_inverse_non_lin(reference_points)
+                new_reference_points = self.regressor.apply_non_lin(new_reference_points)
+                reference_points = new_reference_points.detach()  # stop gradient
 
             if self.return_intermediate:
                 intermediate.append(output)

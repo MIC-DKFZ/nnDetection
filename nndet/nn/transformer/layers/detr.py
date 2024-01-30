@@ -167,7 +167,7 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
             ffn_dropout: dropout of the feed forward network
             num_ffn_layers: number of layers in the transformer ffn
             post_norm: apply an additional layer norm to all outputs
-            return_intermediate: return the outputs of all
+            return_intermediate: return the outputs of all decoder layers
             dim: dimension of the input, has to be 2 or 3
             batch_first: use batch first computations in the transformer
         """
