@@ -7,6 +7,7 @@ import torch
 from nndet.nn.heads.classifier.ffn import FocalFFNClassifier
 from nndet.nn.heads.regressor.ffn import L1FFNRegressor
 from nndet.nn.layers.linear import LayerLinearReluDrop
+from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import ms_deform_import
 from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
 from nndet.nn.transformer.layers.deformable_detr import (
     DeformableDETRTransformerDecoder,
@@ -293,3 +294,72 @@ def test_get_proposal_pos_embed():
 
     assert pos_embed_coords.shape == (1, 2, 12)
     assert torch.allclose(pos_embed_coords, expected_pos_embed_coords)
+
+
+TEST_CASES_SHAPE_DEFORMABLE = [
+    (
+        DeformableDETRTransformerEncoder(
+            embed_dim=64,
+            num_heads=2,
+            num_layers=2,
+            num_feature_levels=2,
+        ),  # encoder
+        DeformableDETRTransformerDecoder(
+            embed_dim=64,
+            num_heads=2,
+            num_layers=2,
+            num_feature_levels=2,
+        ),  # decoder
+        FocalFFNClassifier(
+            linear=LayerLinearReluDrop,
+            in_channels=64,
+            internal_channels=32,
+            num_classes=2,
+            use_encoder_mlp=True,
+            share_mlp=False,
+        ),  # classifier
+        L1FFNRegressor(
+            linear=LayerLinearReluDrop,
+            in_channels=64,
+            internal_channels=32,
+            dim=3,
+            use_encoder_mlp=True,
+            share_mlp=False,
+        ),  # regressor
+    ),
+]
+
+
+@pytest.mark.skipif(not ms_deform_import, reason="nnDetection was not build with GPU support")
+@pytest.mark.parametrize(
+    "encoder,decoder,classifier,regressor",
+    TEST_CASES_SHAPE_DEFORMABLE,
+)
+@pytest.mark.parametrize("two_stage", [True, False])
+def test_deformable_transformer_check_output_shape(
+    encoder,
+    decoder,
+    classifier,
+    regressor,
+    two_stage: bool,
+):
+    torch.manual_seed(0)
+
+    features = [torch.rand((4, 64, 16, 16, 16)), torch.rand((4, 64, 8, 8, 8))]
+    query_embed = torch.rand(24, 2 * 64)  # n_det, embed_dim
+    pos_embed = [torch.zeros((4, 64, 16, 16, 16)), torch.zeros((4, 64, 8, 8, 8))]
+
+    transformer = DeformableDETRTransformer(
+        encoder=encoder,
+        decoder=decoder,
+        classifier=classifier,
+        regressor=regressor,
+        num_feature_levels=len(features),
+        two_stage=two_stage,
+        two_stage_num_proposals=24,
+    )
+    inter_states, references, enc_outputs = transformer(
+        features=features,
+        query_embed=query_embed,
+        pos_embed=pos_embed,
+    )

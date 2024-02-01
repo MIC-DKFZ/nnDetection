@@ -148,6 +148,7 @@ class DeformableDETRTransformer(nn.Module):
                 is the number of spatial dimensions. The coordinates
                 are inverted with respect to the regressor non-linearity!
         """
+        # from IPython import embed; embed();
         assert len(features) == len(pos_embed)
         assert self.two_stage or query_embed is not None
 
@@ -172,21 +173,21 @@ class DeformableDETRTransformer(nn.Module):
         spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=feat_flatten.device)  # nlvl, 3
         level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))  # nlvl
 
-        mask_flatten = torch.zeros((bs, feat_flatten.shape[1]), dtype=torch.bool, device=feat_flatten.device)  # FIXME
-        valid_ratios = torch.ones((bs, len(features), 3), dtype=torch.float32, device=feat_flatten.device)  # FIXME
         # (bs, p-dims, num_levels, 3) , normalized coordinated
         reference_points = self.get_reference_points(spatial_shapes, batch_size=bs, device=feat_flatten[-1].device)
 
         memory = self.encoder(
-            query=feat_flatten,
+            query=feat_flatten,  # bs, level * p-dims, embed_dim
             key=None,
             value=None,
-            query_pos=lvl_pos_embed_flatten,
-            query_key_padding_mask=mask_flatten,
+            query_pos=lvl_pos_embed_flatten,  # bs, level * p-dims, embed_dim
+            key_pos=None,
             spatial_shapes=spatial_shapes,
             reference_points=reference_points,  # bs, num_token, num_level, 2
             level_start_index=level_start_index,
-            valid_ratios=valid_ratios,
+            attn_masks=None,
+            query_key_padding_mask=None,
+            key_padding_mask=None,
             **kwargs,
         )
 
@@ -228,13 +229,15 @@ class DeformableDETRTransformer(nn.Module):
             value=memory,  # bs, num_tokens, embed_dims
             query_pos=query_pos,
             key_pos=query_pos,
-            key_padding_mask=mask_flatten,  # bs, num_tokens
             reference_points=reference_points,  # num_queries, 6
             spatial_shapes=spatial_shapes,  # nlvl, 2
             level_start_index=level_start_index,  # nlvl
-            valid_ratios=valid_ratios,  # bs, nlvl, 2
+            attn_masks=None,
+            query_key_padding_mask=None,
+            key_padding_mask=None,
             **kwargs,
         )
+
         # Concatenate references into one array
         reference_out = torch.cat([init_reference_out.unsqueeze(0), inter_references], dim=0)
         if self.two_stage:

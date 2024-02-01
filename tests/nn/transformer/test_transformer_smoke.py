@@ -123,5 +123,12 @@ def test_transformer_check_output_shape(encoder, decoder, input_tensor, query_em
     transformer = DETRTransformer(encoder=encoder, decoder=decoder)
     num_decoder_layers = len(transformer.decoder.layers)
     out_sequence, reference, encoder_output = transformer([input_tensor], query_embed, [pos_embed])
-    out_shape = torch.Size([num_decoder_layers, input_tensor.shape[0], query_embed.shape[0], query_embed.shape[1]])
+    out_shape = torch.Size(
+        [
+            num_decoder_layers,
+            input_tensor.shape[0],
+            query_embed.shape[0],
+            query_embed.shape[1],
+        ]
+    )
     assert out_sequence.shape == out_shape

@@ -208,7 +208,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
                     embed_dim=embed_dim,
                     num_heads=num_heads,
                     dropout=attn_dropout,
-                    batch_first=True,  # TODO: check
+                    batch_first=batch_first,
                     num_levels=num_feature_levels,
                     num_points=num_points,
                 ),
@@ -271,7 +271,16 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
             key_padding_mask: (Optional) key padding mask for attention
 
         Returns:
-            torch.Tensor: processed features (seq_length, bs, C)
+            torch.Tensor: processed features of shape
+                `(num_layers, bs, num_queries, embed_dim)` where num_layers
+                is the number of decoder layers, bs is the batch size and
+                num_queries is the number of queries (aka predictions).
+            torch.Tensor: intermediate reference points after regression
+                prediction (num_layers, bs, num_queries, 2 * dims).
+                Reference points are in center format
+                of shape `cx, cy, cz` [`two_stage` disabled  & `regressor=None`]
+                or `cx, cy, cz, dx, dy, dz` [`two_stage` enabled] and
+                normalized.
         """
         output = query
 
@@ -295,9 +304,17 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
             )
 
             if self.regressor is not None:
-                tmp = self.regressor(output, layer_idx)
-                new_reference_points = tmp + self.regressor.apply_inverse_non_lin(reference_points)
-                new_reference_points = self.regressor.apply_non_lin(new_reference_points)
+                tmp = self.regressor(output, layer_idx)  # bs, num_queries, 2 * dims
+                if reference_points.shape[-1] == self.dim * 2:
+                    new_reference_points = tmp + self.regressor.apply_inverse_non_lin(reference_points)
+                    new_reference_points = self.regressor.apply_non_lin(new_reference_points)
+                else:
+                    assert reference_points.shape[-1] == self.dim
+                    new_reference_points = tmp
+                    new_reference_points[..., : self.dim] = tmp[..., : self.dim] + self.regressor.apply_inverse_non_lin(
+                        reference_points
+                    )
+                    new_reference_points = self.regressor.apply_non_lin(new_reference_points)
                 reference_points = new_reference_points.detach()  # stop gradient
 
             if self.return_intermediate:

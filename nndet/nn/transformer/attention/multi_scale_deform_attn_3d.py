@@ -205,7 +205,7 @@ class MultiScaleDeformableAttention(nn.Module):
         self.num_heads = num_heads
         self.num_levels = num_levels
         self.num_points = num_points
-        self.sampling_offsets = nn.Linear(embed_dim, num_heads * num_levels * num_points * 3)
+        self.sampling_offsets = nn.Linear(embed_dim, num_heads * num_levels * num_points * 3)  # FIXME: dim
         self.attention_weights = nn.Linear(embed_dim, num_heads * num_levels * num_points)
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.output_proj = nn.Linear(embed_dim, embed_dim)
@@ -299,8 +299,9 @@ class MultiScaleDeformableAttention(nn.Module):
         if key_padding_mask is not None:
             value = value.masked_fill(key_padding_mask[..., None], float(0))
         value = value.view(bs, num_value, self.num_heads, -1)
+
         sampling_offsets = self.sampling_offsets(query).view(
-            bs, num_query, self.num_heads, self.num_levels, self.num_points, 3
+            bs, num_query, self.num_heads, self.num_levels, self.num_points, 3  # TODO: dim
         )
         attention_weights = self.attention_weights(query).view(
             bs, num_query, self.num_heads, self.num_levels * self.num_points
@@ -315,7 +316,7 @@ class MultiScaleDeformableAttention(nn.Module):
         )
 
         # bs, num_query, num_heads, num_levels, num_points, 2
-        if reference_points.shape[-1] == 3:
+        if reference_points.shape[-1] == 3:  # FIXME: dim
             offset_normalizer = torch.stack(
                 [
                     spatial_shapes[..., 2],
