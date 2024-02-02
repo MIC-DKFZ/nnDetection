@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/stale@v5
         with:
-          exempt-issue-labels: bug,documentation,enhancement,fix with next release,help wanted,investigating
+          exempt-issue-labels: bug,documentation,enhancement,fix with next release,help wanted,investigating,question
           days-before-issue-stale: 30
           days-before-issue-close: 14
           stale-issue-label: "stale"
