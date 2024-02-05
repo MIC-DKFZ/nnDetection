@@ -304,7 +304,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
             )
 
             if self.regressor is not None:
-                tmp = self.regressor(output, layer_idx)  # bs, num_queries, 2 * dims
+                tmp = self.regressor(features=output, layer=layer_idx)  # bs, num_queries, 2 * dims
                 if reference_points.shape[-1] == self.dim * 2:
                     new_reference_points = tmp + self.regressor.apply_inverse_non_lin(reference_points)
                     new_reference_points = self.regressor.apply_non_lin(new_reference_points)
@@ -312,7 +312,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
                     assert reference_points.shape[-1] == self.dim
                     new_reference_points = tmp
                     new_reference_points[..., : self.dim] = tmp[..., : self.dim] + self.regressor.apply_inverse_non_lin(
-                        reference_points
+                        reference_points  # ref points are normed
                     )
                     new_reference_points = self.regressor.apply_non_lin(new_reference_points)
                 reference_points = new_reference_points.detach()  # stop gradient

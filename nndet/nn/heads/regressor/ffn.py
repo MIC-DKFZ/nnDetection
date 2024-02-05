@@ -172,10 +172,11 @@ class FFNRegressor(torch.nn.Module):
         Forward feature through module
 
         Args:
-            layer: index for
+            layer: index of current decoder layer
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
-                channels
+                channels; For some DETR models (e.g. Deformable DETR) the
+                number of decodr layer is omitted!
 
         Returns:
             torch.Tensor: output prediction, normalized image coordinates
@@ -183,7 +184,7 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-
+        breakpoint()
         # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
         if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
             return self.mlp(features)
