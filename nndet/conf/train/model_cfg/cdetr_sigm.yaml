@@ -15,13 +15,13 @@ backbone_kwargs: # keyword arguments passed to encoder
 
 # channel Mapper
 channel_mapper_kwargs:
-  num_feature_levels: 1
   extra_levels: 0
   kernel_size: 1
   conv_kwargs: {}
 
 # transformer
 transformer:
+  num_feature_levels: 1 # number of feature level used for transformer
   do_weight_init: True # initialize weight with given (DETR Xavier init) initialisation
   hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
 
