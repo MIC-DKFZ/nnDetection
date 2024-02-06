@@ -259,25 +259,27 @@ class BaseDETR(AbstractDetector):
         if not self.two_stage:
             query_embed = self.query_pos.weight
 
-        out_sequence, references, encoder_predictions = self.transformer(
+        out_sequence, refs_ccddcd_norm, encoder_predictions = self.transformer(
             features=mapped_features,
             query_embed=query_embed,
             pos_embed=pos_embeds,
         )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # references: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
-        # references: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
+        # refs_ccddcd_norm: None for DETR
+        # refs_ccddcd_norm: (bs, num_detections, 3 or 6) for conditional detr
+        # refs_ccddcd_norm: (decoder_layers + 1, bs, num_detections, 3 or 6) for deformable detr
         # encoder_predictions: tuple of classification and regression output of encoder
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(
             out_sequence=out_sequence,
-            references=references,
+            refs_ccddcd_norm=refs_ccddcd_norm,
         )
 
         # if a two-stage model is used, add encoder predictions to output
         if self.two_stage:
             assert encoder_predictions is not None, "Two stage is not supported by this transformer"
+            # FIXME: coord reorder in transformer
             pred_detections["enc_outputs"] = {
                 "pred_cls_logits": encoder_predictions[0],
                 "pred_box_coords": encoder_predictions[1][..., [0, 1, 3, 4, 2, 5]].sigmoid(),

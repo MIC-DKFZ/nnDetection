@@ -223,9 +223,10 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         """
 
         intermediate = []
-        reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
-        assert reference_points_before_sigmoid.shape[-1] == self.dim
-        reference_points = self.ffn_regressor_cls.apply_non_lin(reference_points_before_sigmoid)
+        ref_point_ccc_raw = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
+        # reference_points_before_sigmoid = self.ref_point_head(query_pos)  # [num_queries, batch_size, dim]
+        assert ref_point_ccc_raw.shape[-1] == self.dim
+        ref_points_ccc_norm = self.ffn_regressor_cls.apply_non_lin(ref_point_ccc_raw)
 
         for idx, layer in enumerate(self.layers):
             # do not apply transform in position in the first decoder layer
@@ -236,7 +237,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
 
             # get sine embedding for the query vector
             query_sine_embed = gen_sine_embed_for_position(
-                reference_points,  # reference_points = obj_center
+                ref_points_ccc_norm,  # reference_points = obj_center
                 num_pos_feats=self.embed_dim,
                 temperature=self.temperature,
             )  # [num_queries, batch_size, embed_dim]
@@ -273,7 +274,7 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
         if self.return_intermediate:
             return (
                 torch.stack(intermediate),
-                reference_points.transpose(0, 1),  # [batch_size, num_queries, dim]
+                ref_points_ccc_norm.transpose(0, 1),  # [batch_size, num_queries, dim]
             )
         else:
-            return query.unsqueeze(0), reference_points.transpose(0, 1)  # [batch_size, num_queries, dim]
+            return query.unsqueeze(0), ref_points_ccc_norm.transpose(0, 1)  # [batch_size, num_queries, dim]

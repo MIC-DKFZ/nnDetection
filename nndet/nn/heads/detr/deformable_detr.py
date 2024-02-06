@@ -12,7 +12,7 @@ class DeformableDETRHead(DETRHead):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        references: torch.Tensor,
+        refs_ccddcd_norm: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using two MLPs
@@ -26,31 +26,37 @@ class DeformableDETRHead(DETRHead):
         class_logit_list = []
         box_logits_list = []
 
-        for lvl in range(out_sequence.shape[0]):
-            # TODO references passed must be all be stored in reference
-            reference = references[lvl]
-            reference = self.regressor.apply_inverse_non_lin(reference)
-            outputs_class = self.classifier(out_sequence[lvl], lvl)
-            tmp = self.regressor(out_sequence[lvl], lvl)
+        # select center point indices
+        if refs_ccddcd_norm.shape[-1] in [2, 4]:
+            inds = torch.tensor([0, 1], device=out_sequence.device)  # [cx, cy]
+        else:
+            inds = torch.tensor([0, 1, 4], device=out_sequence.device)  # [cx, cy, cz]
 
-            if reference.shape[-1] in [4, 6]:  # entire box
-                tmp += reference
+        for lvl in range(out_sequence.shape[0]):
+            outputs_class = self.classifier(out_sequence[lvl], lvl)
+            ref_ccddcd_norm = refs_ccddcd_norm[lvl]
+            ref_ccddcd_raw = self.regressor.apply_inverse_non_lin(ref_ccddcd_norm)
+            box_coords_ccddcd_raw = self.regressor(out_sequence[lvl], lvl)
+
+            if ref_ccddcd_norm.shape[-1] in [4, 6]:  # entire box
+                box_coords_ccddcd_raw += ref_ccddcd_raw
             else:  # only center point
-                assert reference.shape[-1] in [2, 3]
-                if tmp.shape[-1] == 4:
-                    tmp[..., :2] += reference
+                assert ref_ccddcd_norm.shape[-1] in [2, 3]
+                if box_coords_ccddcd_raw.shape[-1] == 4:
+                    box_coords_ccddcd_raw[..., inds] += ref_ccddcd_raw
                 else:
-                    tmp[..., :3] += reference
-            outputs_coord = self.regressor.apply_non_lin(tmp)
+                    box_coords_ccddcd_raw[..., inds] += ref_ccddcd_raw
+
+            box_coords_ccddcd_norm = self.regressor.apply_non_lin(box_coords_ccddcd_raw)
             class_logit_list.append(outputs_class)
-            box_logits_list.append(outputs_coord)
+            box_logits_list.append(box_coords_ccddcd_norm)
 
         # [num_decoder_layers, bs, num_query, num_classes]
         class_logits = torch.stack(class_logit_list)
         # [num_decoder_layers, bs, num_query, 6]
         box_logits = torch.stack(box_logits_list)
 
-        if box_logits.shape[-1] == 6:
+        if box_logits.shape[-1] == 6:  # FIXME: coord reorder in transformer
             # cx, cy, cz, dx, dy, dz -> cx, cy, dx, dy, cz, dz
             box_logits = box_logits[..., [0, 1, 3, 4, 2, 5]]
 

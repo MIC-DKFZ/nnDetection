@@ -62,7 +62,7 @@ class DETRHead(torch.nn.Module):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        references: Optional[torch.Tensor] = None,
+        refs_ccddcd_norm: Optional[torch.Tensor] = None,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using the ClassifierFFN and
@@ -72,7 +72,7 @@ class DETRHead(torch.nn.Module):
             out_sequence: output sequence of the transformer [D, B, R, C]
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
-            references: reference output of the transformer
+            refs_ccddcd_norm: reference output of the transformer
                 (not used in default DETR head)
 
         Returns:
@@ -87,14 +87,16 @@ class DETRHead(torch.nn.Module):
                     predicted normalized coords from RegressorFFN
                     in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
-                    predictions, dims=number of spatial dimensions
+                    predictions, dims=number of spatial dimensions.
+                    Box coordinates are of format (cx, cy, dx, dy, cz, dz)
+                    and normed to [0, 1].
 
                 ``"aux_outputs"`` List[Dict[str, torch.Tensor]]
                     list with predictions from previous decoder layers
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
         """
-        assert references is None, "Reference is not used in default DETR head"
+        assert refs_ccddcd_norm is None, "Reference is not used in default DETR head"
 
         box_logits = self.regressor.apply_non_lin(self.regressor(out_sequence))
         class_logits = self.classifier(out_sequence)
@@ -137,10 +139,16 @@ class DETRHead(torch.nn.Module):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
 
-                # TODO add enc_outputs
+                ``"enc_outputs"`` Dict[str, torch.Tensor]
+                    additional predictions with `pred_cls_logits` which
+                    contains the classification logits of the same shape
+                    and `pred_cls_logits` and `pred_box_coords` which
+                    contains the normalized box coordinates of the same
+                    shape as `pred_box_coords`
 
             target_boxes: target boxes in point format List([N, dims * 2])
                 (x0, y0, x1, y1 (,z0, z1))
+
             target_labels: target labels in numerical format List([N])
             img_shape: image size
 
