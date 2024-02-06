@@ -15,12 +15,40 @@ class DeformableDETRHead(DETRHead):
         refs_ccddcd_norm: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
-        Predict bounding boxes and classes using two MLPs
+        Predict bounding boxes and classes using the ClassifierFFN and
+        RegressionFFN
+
         Args:
-            out_sequence:
-            references:
+            out_sequence: output sequence of the transformer [D, B, R, C]
+                where D=number of decoder layers, B=batch size,
+                R=number of predictions, C=number of channels
+            refs_ccddcd_norm: reference output of the transformer
+                Used as normalised reference points/boxes in deformable
+                detr [D+1, B, R, dims], where D is the number
+                of transformer decoder layers, B is the batch size, R=number
+                of predictions, dims=number of spatial dimensions
+                with center format (cx, cy, cz) orbox format
+                (cx, cy, dx, dy, cz, dz)
+
         Returns:
-            Dict containing "pred_logits" and "pred_boxes"
+            Dict[str, torch.Tensor]: predictions and auxiliary information
+
+                ``"pred_cls_logits"`` torch.Tensor
+                    predicted logits from ClassifierFFN [B, R, num_classes]
+                    where B=batch size, R=number of predictions,
+                    num_classes=number of classes
+
+                ``"pred_box_coords"`` torch.Tensor
+                    predicted normalized coords from RegressorFFN
+                    [B, R, dims * 2] where B=batch size, R=number of
+                    predictions, dims=number of spatial dimensions
+                    Box coordinates are of format (cx, cy, dx, dy, cz, dz)
+                    and normed to [0, 1].
+
+                ``"aux_outputs"`` List[Dict[str, torch.Tensor]]
+                    list with predictions from previous decoder layers
+                    following the same format as `pred_cls_logits` and
+                    `pred_box_coords`
         """
         # Calculate output coordinates and classes.
         class_logit_list = []

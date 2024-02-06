@@ -152,7 +152,8 @@ class FFNClassifier(torch.nn.Module):
             layer: index to know which MLP to use
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
-                channels
+                channels. For some DETR models (e.g. Deformable DETR) the
+                number of decodr layer is omitted!
 
         Returns:
             torch.Tensor: output prediction [D, B, R, num_classes] where
