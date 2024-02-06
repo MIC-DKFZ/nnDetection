@@ -266,7 +266,8 @@ class BaseDETR(AbstractDetector):
         )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # references: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
-        # predictions: Dict containing already made predictions
+        # references: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
+        # encoder_predictions: tuple of classification and regression output of encoder
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(

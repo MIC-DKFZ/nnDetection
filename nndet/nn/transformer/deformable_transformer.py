@@ -136,7 +136,8 @@ class DeformableDETRTransformer(nn.Module):
                 object queries, and C is the number of channels in the
                 transformer. If not `two_stage` is `False`, it will contain
                 points of shape (num_decoder_layers + 1, bs, num_queries,
-                dim) # TODO: inverted-act or normed? if not two stage
+                dim). Reference points are normed to [0, 1] and in
+                center format (cx, cy, cz, dx, dy, dz).
             Optional(Tensor): if `two_stage` is `False` returns None.
                 if `two_stage` is `True` returns the output of the
                 encoder head which is a tuple where the first entry
@@ -148,7 +149,6 @@ class DeformableDETRTransformer(nn.Module):
                 is the number of spatial dimensions. The coordinates
                 are inverted with respect to the regressor non-linearity!
         """
-        # from IPython import embed; embed();
         assert len(features) == len(pos_embed)
         assert self.two_stage or query_embed is not None
 

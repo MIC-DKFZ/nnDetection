@@ -184,7 +184,6 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-        breakpoint()
         # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
         if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
             return self.mlp(features)
