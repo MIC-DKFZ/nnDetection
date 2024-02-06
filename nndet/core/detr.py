@@ -259,16 +259,16 @@ class BaseDETR(AbstractDetector):
         if not self.two_stage:
             query_embed = self.query_pos.weight
 
-        out_sequence, refs_ccddcd_norm, encoder_predictions = self.transformer(
-            features=mapped_features,
-            query_embed=query_embed,
-            pos_embed=pos_embeds,
-        )
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
         # refs_ccddcd_norm: None for DETR
         # refs_ccddcd_norm: (bs, num_detections, 3 or 6) for conditional detr
         # refs_ccddcd_norm: (decoder_layers + 1, bs, num_detections, 3 or 6) for deformable detr
         # encoder_predictions: tuple of classification and regression output of encoder
+        out_sequence, refs_ccddcd_norm, encoder_predictions = self.transformer(
+            features=mapped_features,
+            query_embed=query_embed,
+            pos_embed=pos_embeds,
+        )
 
         # Calculate Boxes and Class predictions
         pred_detections = self.head(
