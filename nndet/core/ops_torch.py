@@ -1026,3 +1026,39 @@ def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
             cz + 0.5 * dz,
         ]
     return torch.stack(bp, dim=-1)
+
+
+def box_cccddd2ccddcd(boxes: torch.Tensor) -> torch.Tensor:
+    """
+    Convert boxes from cccddd format to ccddcd format. If
+    boxes are only 2D, nothing is done.
+
+    Args:
+        boxes: convert boxes from (cx, cy, cz, dx, dy, dz) to
+            (cx, cy, dx, dy, cz, dz).
+
+    Returns:
+        torch.Tensor: boxes in ccddcd format
+    """
+    if boxes.shape[-1] == 6:
+        return boxes[..., [0, 1, 3, 4, 2, 5]]
+    else:
+        return boxes
+
+
+def box_ccddcd2cccddd(boxes: torch.Tensor) -> torch.Tensor:
+    """
+    Convert boxes from ccddcd format to cccddd format. If
+    boxes are only 2D, nothing is done.
+
+    Args:
+        boxes: convert boxes from (cx, cy, dx, dy, cz, dz) to
+        (cx, cy, cz, dx, dy, dz).
+
+    Returns:
+        torch.Tensor: boxes in cccddd format
+    """
+    if boxes.shape[-1] == 6:
+        return boxes[..., [0, 1, 4, 2, 3, 5]]
+    else:
+        return boxes

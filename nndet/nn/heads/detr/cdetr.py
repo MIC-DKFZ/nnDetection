@@ -21,7 +21,7 @@ class ConditionalDETRHead(DETRHead):
     def forward(
         self,
         out_sequence: torch.Tensor,
-        references: torch.Tensor,
+        refs_ccddcd_norm: torch.Tensor,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using the ClassifierFFN and
@@ -31,10 +31,11 @@ class ConditionalDETRHead(DETRHead):
             out_sequence: output sequence of the transformer [D, B, R, C]
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
-            references: reference output of the transformer
-                Used as (unnormalized) reference point in conditional
+            refs_ccddcd_norm: reference output of the transformer
+                Used as normalised reference point in conditional
                 detr [B, R, dims], where B is the batch size, R=number
                 of predictions, dims=number of spatial dimensions
+                with center format (cx, cy, cz)
 
         Returns:
             Dict[str, torch.Tensor]: predictions and auxiliary information
@@ -48,6 +49,8 @@ class ConditionalDETRHead(DETRHead):
                     predicted normalized coords from RegressorFFN
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
+                    Box coordinates are of format (cx, cy, dx, dy, cz, dz)
+                    and normed to [0, 1].
 
                 ``"aux_outputs"`` List[Dict[str, torch.Tensor]]
                     list with predictions from previous decoder layers
@@ -55,22 +58,21 @@ class ConditionalDETRHead(DETRHead):
                     `pred_box_coords`
         """
         # regressor
-        reference_before_sigmoid = self.regressor.apply_inverse_non_lin(references)
+        refs_ccc_norm = refs_ccddcd_norm  # rename for clarity
+        refs_ccc_raw = self.regressor.apply_inverse_non_lin(refs_ccc_norm)
+        # select center point indices
+        if refs_ccc_raw.shape[-1] == 2:
+            inds = torch.tensor([0, 1], device=out_sequence.device)  # [cx, cy]
+        else:
+            inds = torch.tensor([0, 1, 4], device=out_sequence.device)  # [cx, cy, cz]
 
         outputs_coords = []
         # Also let intermediate level predict, but don't use it for the output
         for lvl in range(out_sequence.shape[0]):
-            tmp = self.regressor(out_sequence[lvl])
-
-            # select center point indices
-            if tmp.shape[-1] == 4:
-                inds = torch.tensor([0, 1], device=out_sequence.device)  # [cx, cy]
-            else:
-                inds = torch.tensor([0, 1, 4], device=out_sequence.device)  # [cx, cy, cz]
-
-            tmp[..., inds] += reference_before_sigmoid
-            outputs_coord = self.regressor.apply_non_lin(tmp)
-            outputs_coords.append(outputs_coord)
+            box_coords_ccddcd_raw = self.regressor(out_sequence[lvl])
+            box_coords_ccddcd_raw[..., inds] += refs_ccc_raw
+            box_coords_ccddcd_norm = self.regressor.apply_non_lin(box_coords_ccddcd_raw)
+            outputs_coords.append(box_coords_ccddcd_norm)
         box_logits = torch.stack(outputs_coords)
 
         # classifier

@@ -77,7 +77,7 @@ def test_deformable_detr_decoder_two_stage(deformable_detr_decoder):
     query = torch.rand((bs, N_PRED, EMBED_DIM))
     value = torch.rand((bs, n_points, EMBED_DIM))
     query_pos = torch.zeros_like(query)
-    reference_points = torch.zeros((bs, N_PRED, DIM * 2), dtype=query.dtype, device=query.device)
+    refs_cccddd_norm = torch.zeros((bs, N_PRED, DIM * 2), dtype=query.dtype, device=query.device)
 
     output, reference_points = deformable_detr_decoder(
         query=query,
@@ -85,7 +85,7 @@ def test_deformable_detr_decoder_two_stage(deformable_detr_decoder):
         value=value,
         query_pos=query_pos,
         key_pos=query_pos,
-        reference_points=reference_points,
+        refs_cccddd_norm=refs_cccddd_norm,
         spatial_shapes=spatial_shapes,
         level_start_index=level_start_index,
         attn_masks=None,
@@ -120,7 +120,7 @@ def test_deformable_detr_decoder(deformable_detr_decoder):
     query = torch.rand((bs, N_PRED, EMBED_DIM))
     value = torch.rand((bs, n_points, EMBED_DIM))
     query_pos = torch.zeros_like(query)
-    reference_points = torch.zeros((bs, N_PRED, DIM), dtype=query.dtype, device=query.device)
+    refs_cccddd_norm = torch.zeros((bs, N_PRED, DIM), dtype=query.dtype, device=query.device)
 
     output, reference_points = deformable_detr_decoder(
         query=query,
@@ -128,7 +128,7 @@ def test_deformable_detr_decoder(deformable_detr_decoder):
         value=value,
         query_pos=query_pos,
         key_pos=query_pos,
-        reference_points=reference_points,
+        refs_cccddd_norm=refs_cccddd_norm,
         spatial_shapes=spatial_shapes,
         level_start_index=level_start_index,
         attn_masks=None,
