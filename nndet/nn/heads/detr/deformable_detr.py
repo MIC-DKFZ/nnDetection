@@ -25,26 +25,34 @@ class DeformableDETRHead(DETRHead):
         # Calculate output coordinates and classes.
         class_logit_list = []
         box_logits_list = []
+
         for lvl in range(out_sequence.shape[0]):
             # TODO references passed must be all be stored in reference
             reference = references[lvl]
             reference = self.regressor.apply_inverse_non_lin(reference)
             outputs_class = self.classifier(out_sequence[lvl], lvl)
             tmp = self.regressor(out_sequence[lvl], lvl)
-            if reference.shape[-1] == 6:
+
+            if reference.shape[-1] in [4, 6]:  # entire box
                 tmp += reference
-            else:
-                assert reference.shape[-1] == 3
-                tmp[..., :3] += reference
-            outputs_coord = tmp.sigmoid()
+            else:  # only center point
+                assert reference.shape[-1] in [2, 3]
+                if tmp.shape[-1] == 4:
+                    tmp[..., :2] += reference
+                else:
+                    tmp[..., :3] += reference
+            outputs_coord = self.regressor.apply_non_lin(tmp)
             class_logit_list.append(outputs_class)
             box_logits_list.append(outputs_coord)
 
+        # [num_decoder_layers, bs, num_query, num_classes]
         class_logits = torch.stack(class_logit_list)
-        # tensor shape: [num_decoder_layers, bs, num_query, num_classes]
+        # [num_decoder_layers, bs, num_query, 6]
         box_logits = torch.stack(box_logits_list)
-        # tensor shape: [num_decoder_layers, bs, num_query, 6]
-        box_logits = box_logits[..., [0, 1, 3, 4, 2, 5]]
+
+        if box_logits.shape[-1] == 6:
+            # cx, cy, cz, dx, dy, dz -> cx, cy, dx, dy, cz, dz
+            box_logits = box_logits[..., [0, 1, 3, 4, 2, 5]]
 
         preds = {"pred_cls_logits": class_logits[-1], "pred_box_coords": box_logits[-1]}
         if self.aux_loss:
