@@ -194,6 +194,8 @@ def reduction_helper(
         return torch.mean(data, dim=1).sum()
     if reduction.lower() == "mean_last_sum":
         return torch.mean(data, dim=-1).sum()
+    if reduction.lower() == "sum_one_mean":
+        return torch.sum(data, dim=1).mean()
     raise AttributeError("Reduction parameter unknown.")
 
 
