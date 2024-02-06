@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
@@ -137,7 +138,7 @@ class DeformableDETRTransformer(nn.Module):
                 transformer. If not `two_stage` is `False`, it will contain
                 points of shape (num_decoder_layers + 1, bs, num_queries,
                 dim). Reference points are normed to [0, 1] and in
-                center format (cx, cy, cz, dx, dy, dz).
+                nndet center format (cx, cy, dx, dy, cz, dz).
             Optional(Tensor): if `two_stage` is `False` returns None.
                 if `two_stage` is `True` returns the output of the
                 encoder head which is a tuple where the first entry
@@ -146,8 +147,9 @@ class DeformableDETRTransformer(nn.Module):
                 output (shape [bs, s-dims, dims * 2]), where bs
                 is the batch size, s-dims is the sum of the number of
                 pixels across the multi-scale feature maps, and dims
-                is the number of spatial dimensions. The coordinates
-                are inverted with respect to the regressor non-linearity!
+                is the number of spatial dimensions. The coordiantes are
+                normed to [0, 1] and in nndet center format
+                (cx, cy, dx, dy, cz, dz).
         """
         assert len(features) == len(pos_embed)
         assert self.two_stage or query_embed is not None
@@ -174,7 +176,7 @@ class DeformableDETRTransformer(nn.Module):
         level_start_index = torch.cat((spatial_shapes.new_zeros((1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))  # nlvl
 
         # (bs, p-dims, num_levels, 3) , normalized coordinated
-        reference_points = self.get_reference_points(spatial_shapes, batch_size=bs, device=feat_flatten[-1].device)
+        refs_ccc_norm = self.get_reference_points(spatial_shapes, batch_size=bs, device=feat_flatten[-1].device)
 
         memory = self.encoder(
             query=feat_flatten,  # bs, level * p-dims, embed_dim
@@ -183,7 +185,7 @@ class DeformableDETRTransformer(nn.Module):
             query_pos=lvl_pos_embed_flatten,  # bs, level * p-dims, embed_dim
             key_pos=None,
             spatial_shapes=spatial_shapes,
-            reference_points=reference_points,  # bs, num_token, num_level, 2
+            refs_cccddd_norm=refs_ccc_norm,  # bs, num_token, num_level, dims
             level_start_index=level_start_index,
             attn_masks=None,
             query_key_padding_mask=None,
@@ -195,23 +197,28 @@ class DeformableDETRTransformer(nn.Module):
         if self.two_stage:
             # output_memory: bs, num_tokens, c
             # output_proposals: bs, num_tokens, 6. coords non-lin-inverted.
-            output_memory, output_proposals = self.gen_encoder_output_proposals(memory, spatial_shapes)
+            output_memory, output_proposals_cccddd_raw = self.gen_encoder_output_proposals(memory, spatial_shapes)
 
             # bs, num_tokens, num_classes
             enc_outputs_class = self.classifier.encoder_mlp(output_memory)
             # bs, num_tokens, dims: coords non-lin-inverted.
-            enc_outputs_coord_unact = self.regressor.encoder_mlp(output_memory) + output_proposals
+            enc_output_cccddd_raw = ops_torch.box_ccddcd2cccddd(self.regressor.encoder_mlp(output_memory))
+            enc_output_cccddd_raw = enc_output_cccddd_raw + output_proposals_cccddd_raw
 
             # bs, num_tokens, num_classes -> bs, num_tokens -> topk(1) -> bs, topk: topk indices as tensor
             topk_proposals = torch.topk(enc_outputs_class.max(-1)[0], self.two_stage_num_proposals, dim=1)[1]
 
             # bs, topk, dims
-            topk_coords_unact = torch.gather(enc_outputs_coord_unact, 1, topk_proposals.unsqueeze(-1).repeat(1, 1, 6))
-            topk_coords_unact = topk_coords_unact.detach()
-            reference_points = self.regressor.apply_non_lin(topk_coords_unact)  # normalized coords, actually boxes
-            init_reference_out = reference_points
+            topk_coords_cccdddd_raw = torch.gather(
+                enc_output_cccddd_raw, 1, topk_proposals.unsqueeze(-1).repeat(1, 1, 6)
+            )
+            topk_coords_cccdddd_raw = topk_coords_cccdddd_raw.detach()
+            refs_cccddd_norm = self.regressor.apply_non_lin(
+                topk_coords_cccdddd_raw
+            )  # normalized coords, actually boxes
+            init_refs_out_cccddd_norm = refs_cccddd_norm
 
-            pos_trans_out = self.get_proposal_pos_embed(topk_coords_unact)
+            pos_trans_out = self.get_proposal_pos_embed(topk_coords_cccdddd_raw)
             pos_trans_out = self.pos_trans_norm(self.pos_trans(pos_trans_out))
             query_pos, query = torch.split(pos_trans_out, c, dim=2)
         else:
@@ -219,17 +226,17 @@ class DeformableDETRTransformer(nn.Module):
             query_pos, query = torch.split(query_embed, c, dim=1)
             query_pos = query_pos.unsqueeze(0).expand(bs, -1, -1)
             query = query.unsqueeze(0).expand(bs, -1, -1)
-            reference_points = self.regressor.apply_non_lin(self.reference_points(query_pos))
-            init_reference_out = reference_points
+            refs_cccddd_norm = self.regressor.apply_non_lin(self.reference_points(query_pos))
+            init_refs_out_cccddd_norm = refs_cccddd_norm
 
         # decoder
-        inter_states, inter_references = self.decoder(
+        inter_states, inter_refs_cccddd_norm = self.decoder(
             query=query,  # bs, num_queries, embed_dims
             key=None,  # bs, num_tokens, embed_dims
             value=memory,  # bs, num_tokens, embed_dims
             query_pos=query_pos,
             key_pos=query_pos,
-            reference_points=reference_points,  # num_queries, 6
+            refs_cccddd_norm=refs_cccddd_norm,  # num_queries, 6
             spatial_shapes=spatial_shapes,  # nlvl, 2
             level_start_index=level_start_index,  # nlvl
             attn_masks=None,
@@ -238,12 +245,14 @@ class DeformableDETRTransformer(nn.Module):
             **kwargs,
         )
 
-        # Concatenate references into one array
-        reference_out = torch.cat([init_reference_out.unsqueeze(0), inter_references], dim=0)
+        refs_out_cccddd_norm = torch.cat([init_refs_out_cccddd_norm.unsqueeze(0), inter_refs_cccddd_norm], dim=0)
+        refs_out_ccddcd_norm = ops_torch.box_cccddd2ccddcd(refs_out_cccddd_norm)
         if self.two_stage:
-            return inter_states, reference_out, (enc_outputs_class, enc_outputs_coord_unact)
+            enc_output_cccddd_norm = self.regressor.apply_non_lin(enc_output_cccddd_raw)
+            enc_output_ccddcd_norm = ops_torch.box_cccddd2ccddcd(enc_output_cccddd_norm)
+            return inter_states, refs_out_ccddcd_norm, (enc_outputs_class, enc_output_ccddcd_norm)
         else:
-            return inter_states, reference_out, None
+            return inter_states, refs_out_ccddcd_norm, None
 
     @staticmethod
     def get_reference_points(
@@ -262,7 +271,8 @@ class DeformableDETRTransformer(nn.Module):
 
         Returns:
             Tensor: reference points used in decoder, has shape
-                (bs, p-dims, num_levels, 3). Points are normalized.
+                (bs, p-dims, num_levels, 3). Points are normalized and
+                in center format (cx, cy, cz).
         """
         num_level = len(spatial_shapes)
         reference_points_list = []
@@ -280,10 +290,10 @@ class DeformableDETRTransformer(nn.Module):
 
             ref = torch.stack((ref_ax0, ref_ax1, ref_ax2), -1)  # bs, p-dims, 3
             reference_points_list.append(ref)
-        reference_points = torch.cat(reference_points_list, 1)  # bs, p-dims, 3
+        refs_ccc_norm = torch.cat(reference_points_list, 1)  # bs, p-dims, 3
         # bs, p-dims, num_levels, 3
-        reference_points = reference_points[:, :, None].expand(-1, -1, num_level, -1)
-        return reference_points
+        refs_ccc_norm = refs_ccc_norm[:, :, None].expand(-1, -1, num_level, -1)
+        return refs_ccc_norm
 
     def gen_encoder_output_proposals(
         self,
@@ -348,30 +358,31 @@ class DeformableDETRTransformer(nn.Module):
 
     def get_proposal_pos_embed(
         self,
-        proposals: torch.Tensor,
+        proposals_cccddd_raw: torch.Tensor,
     ) -> torch.Tensor:
         """
         Get the position embedding of the proposal.
 
         Args:
-            proposals: proposals for encoder prediction in center-format
-                (cx, cy, cz, dx, dy, dz) with shape [bs, R, 2 * dims], where
-                bs is the batch size, R is the number of proposals, and dims
-                is the number of spatial dimensions. Proposals should be
-                non-lin-inverted (not normalised) coordinates.
+            proposals_cccddd_raw: proposals for encoder prediction in
+                center-format (cx, cy, cz, dx, dy, dz) with shape
+                [bs, R, 2 * dims], where bs is the batch size, R is the number
+                of proposals, and dims is the number of spatial dimensions.
+                Proposals should be non-lin-inverted (not normalised)
+                coordinates.
 
         Returns:
             torch.Tensor: positional embedding of proposals, shape
                 [bs, R, `self.pos_embed_num_feats` * 2 * dims], where bs is the batch size, R
                 is the number of proposals
         """
-        dim_t = torch.arange(self.pos_embed_num_feats, dtype=torch.float32, device=proposals.device)
+        dim_t = torch.arange(self.pos_embed_num_feats, dtype=torch.float32, device=proposals_cccddd_raw.device)
         dim_t = self.pos_embed_temperature ** (
             2 * torch.div(dim_t, 2, rounding_mode="floor") / self.pos_embed_num_feats
         )
 
         # bs, R, 2 * dims: normalized coords
-        proposals = self.regressor.apply_non_lin(proposals) * 2 * np.pi
-        pos = proposals[..., None] / dim_t  # bs, R, 2 * dims, num_pos_feats
+        proposals_cccddd_raw = self.regressor.apply_non_lin(proposals_cccddd_raw) * 2 * np.pi
+        pos = proposals_cccddd_raw[..., None] / dim_t  # bs, R, 2 * dims, num_pos_feats
         pos = torch.stack((pos[..., 0::2].sin(), pos[..., 1::2].cos()), dim=-1).flatten(2)
         return pos

@@ -40,12 +40,9 @@ class DeformableDETRHead(DETRHead):
 
             if ref_ccddcd_norm.shape[-1] in [4, 6]:  # entire box
                 box_coords_ccddcd_raw += ref_ccddcd_raw
-            else:  # only center point
+            else:  # only center point ccc
                 assert ref_ccddcd_norm.shape[-1] in [2, 3]
-                if box_coords_ccddcd_raw.shape[-1] == 4:
-                    box_coords_ccddcd_raw[..., inds] += ref_ccddcd_raw
-                else:
-                    box_coords_ccddcd_raw[..., inds] += ref_ccddcd_raw
+                box_coords_ccddcd_raw[..., inds] += ref_ccddcd_raw
 
             box_coords_ccddcd_norm = self.regressor.apply_non_lin(box_coords_ccddcd_raw)
             class_logit_list.append(outputs_class)
@@ -55,10 +52,6 @@ class DeformableDETRHead(DETRHead):
         class_logits = torch.stack(class_logit_list)
         # [num_decoder_layers, bs, num_query, 6]
         box_logits = torch.stack(box_logits_list)
-
-        if box_logits.shape[-1] == 6:  # FIXME: coord reorder in transformer
-            # cx, cy, cz, dx, dy, dz -> cx, cy, dx, dy, cz, dz
-            box_logits = box_logits[..., [0, 1, 3, 4, 2, 5]]
 
         preds = {"pred_cls_logits": class_logits[-1], "pred_box_coords": box_logits[-1]}
         if self.aux_loss:

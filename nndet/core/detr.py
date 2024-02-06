@@ -279,10 +279,9 @@ class BaseDETR(AbstractDetector):
         # if a two-stage model is used, add encoder predictions to output
         if self.two_stage:
             assert encoder_predictions is not None, "Two stage is not supported by this transformer"
-            # FIXME: coord reorder in transformer
             pred_detections["enc_outputs"] = {
                 "pred_cls_logits": encoder_predictions[0],
-                "pred_box_coords": encoder_predictions[1][..., [0, 1, 3, 4, 2, 5]].sigmoid(),
+                "pred_box_coords": encoder_predictions[1],
             }
 
         # optionally forward seg head

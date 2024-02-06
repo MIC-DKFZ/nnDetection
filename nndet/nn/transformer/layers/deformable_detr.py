@@ -12,6 +12,7 @@ from typing import Optional, Tuple
 import torch
 from torch import nn as nn
 
+import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
@@ -242,7 +243,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
-        reference_points: torch.Tensor,
+        refs_cccddd_norm: torch.Tensor,
         query_pos: Optional[torch.Tensor] = None,
         key_pos: Optional[torch.Tensor] = None,
         attn_masks: Optional[torch.Tensor] = None,
@@ -257,7 +258,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
             query: Query embeddings with shape `(num_query, bs, embed_dim)`
             key: Key embeddings with shape `(num_key, bs, embed_dim)`
             value: Value embeddings with shape `(num_key, bs, embed_dim)`
-            reference_points: reference points for deformable attention
+            refs_cccddd_norm: reference points for deformable attention
                 of shape: `(bs, num_queries, 2 * dims)` [`two_stage` enabled]
                 or `(bs, num_queries, dims)`  [`two_stage` disabled].
                 Reference points need to be normalized and in format center
@@ -285,10 +286,10 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
         output = query
 
         intermediate = []
-        intermediate_reference_points = []
+        intermediate_refs_cccddd_norm = []
         for layer_idx, layer in enumerate(self.layers):
-            assert reference_points.shape[-1] in [self.dim, self.dim * 2]
-            reference_points_input = reference_points[:, :, None].expand(-1, -1, self.num_feature_levels, -1)
+            assert refs_cccddd_norm.shape[-1] in [self.dim, self.dim * 2]
+            refs_cccddd_norm_input = refs_cccddd_norm[:, :, None].expand(-1, -1, self.num_feature_levels, -1)
 
             output = layer(
                 query=output,
@@ -299,29 +300,30 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
                 attn_masks=attn_masks,
                 query_key_padding_mask=query_key_padding_mask,
                 key_padding_mask=key_padding_mask,
-                reference_points=reference_points_input,
+                refs_cccddd_norm=refs_cccddd_norm_input,
                 **kwargs,
             )
 
             if self.regressor is not None:
-                tmp = self.regressor(features=output, layer=layer_idx)  # bs, num_queries, 2 * dims
-                if reference_points.shape[-1] == self.dim * 2:
-                    new_reference_points = tmp + self.regressor.apply_inverse_non_lin(reference_points)
-                    new_reference_points = self.regressor.apply_non_lin(new_reference_points)
+                # bs, num_queries, 2 * dims
+                box_coords_cccddd_raw = ops_torch.box_ccddcd2cccddd(self.regressor(features=output, layer=layer_idx))
+                if refs_cccddd_norm.shape[-1] == self.dim * 2:
+                    new_refs_cccddd_raw = box_coords_cccddd_raw + self.regressor.apply_inverse_non_lin(refs_cccddd_norm)
+                    new_refs_cccddd_norm = self.regressor.apply_non_lin(new_refs_cccddd_raw)
                 else:
-                    assert reference_points.shape[-1] == self.dim
-                    new_reference_points = tmp
-                    new_reference_points[..., : self.dim] = tmp[..., : self.dim] + self.regressor.apply_inverse_non_lin(
-                        reference_points  # ref points are normed
-                    )
-                    new_reference_points = self.regressor.apply_non_lin(new_reference_points)
-                reference_points = new_reference_points.detach()  # stop gradient
+                    assert refs_cccddd_norm.shape[-1] == self.dim
+                    new_refs_cccddd_raw = box_coords_cccddd_raw
+                    new_refs_cccddd_raw[..., : self.dim] = box_coords_cccddd_raw[
+                        ..., : self.dim
+                    ] + self.regressor.apply_inverse_non_lin(refs_cccddd_norm)
+                    new_refs_cccddd_norm = self.regressor.apply_non_lin(new_refs_cccddd_raw)
+                refs_cccddd_norm = new_refs_cccddd_norm.detach()  # stop gradient
 
             if self.return_intermediate:
                 intermediate.append(output)
-                intermediate_reference_points.append(reference_points)
+                intermediate_refs_cccddd_norm.append(refs_cccddd_norm)
 
         if self.return_intermediate:
-            return torch.stack(intermediate), torch.stack(intermediate_reference_points)
-
-        return output, reference_points
+            return torch.stack(intermediate), torch.stack(intermediate_refs_cccddd_norm)
+        else:
+            return output, refs_cccddd_norm

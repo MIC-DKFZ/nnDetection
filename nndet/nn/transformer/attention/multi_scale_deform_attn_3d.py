@@ -244,7 +244,7 @@ class MultiScaleDeformableAttention(nn.Module):
         identity: Optional[torch.Tensor] = None,
         query_pos: Optional[torch.Tensor] = None,
         key_padding_mask: Optional[torch.Tensor] = None,
-        reference_points: Optional[torch.Tensor] = None,
+        refs_cccddd_norm: Optional[torch.Tensor] = None,
         spatial_shapes: Optional[torch.Tensor] = None,
         level_start_index: Optional[torch.Tensor] = None,
         **kwargs
@@ -262,7 +262,7 @@ class MultiScaleDeformableAttention(nn.Module):
             query_pos: The position embedding for `query`. Default: None.
             key_padding_mask: ByteTensor for `query`, with shape `(bs, num_key)`,
                 indicating which elements within `key` to be ignored in attention.
-            reference_points: The normalized reference points
+            refs_cccddd_norm: The normalized reference points
                 with shape `(bs, num_query, num_levels, 3)`,
                 all elements is range in [0, 1]
                 or `(N, Length_{query}, num_levels, 6)`, add additional
@@ -316,7 +316,7 @@ class MultiScaleDeformableAttention(nn.Module):
         )
 
         # bs, num_query, num_heads, num_levels, num_points, 2
-        if reference_points.shape[-1] == 3:  # FIXME: dim
+        if refs_cccddd_norm.shape[-1] == 3:  # FIXME: dim
             offset_normalizer = torch.stack(
                 [
                     spatial_shapes[..., 2],
@@ -326,17 +326,17 @@ class MultiScaleDeformableAttention(nn.Module):
                 -1,
             )
             sampling_locations = (
-                reference_points[:, :, None, :, None, :]
+                refs_cccddd_norm[:, :, None, :, None, :]
                 + sampling_offsets / offset_normalizer[None, None, None, :, None, :]
             )
-        elif reference_points.shape[-1] == 6:
+        elif refs_cccddd_norm.shape[-1] == 6:
             sampling_locations = (
-                reference_points[:, :, None, :, None, :3]
-                + sampling_offsets / self.num_points * reference_points[:, :, None, :, None, 3:] * 0.5
+                refs_cccddd_norm[:, :, None, :, None, :3]
+                + sampling_offsets / self.num_points * refs_cccddd_norm[:, :, None, :, None, 3:] * 0.5
             )
         else:
             raise ValueError(
-                "Last dim of reference_points must be 3 or 6, but get {} instead.".format(reference_points.shape[-1])
+                "Last dim of reference_points must be 3 or 6, but get {} instead.".format(refs_cccddd_norm.shape[-1])
             )
         if torch.cuda.is_available() and value.is_cuda:
             output = MultiScaleDeformableAttnFunction.apply(
