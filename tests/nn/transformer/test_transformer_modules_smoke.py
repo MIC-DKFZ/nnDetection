@@ -219,7 +219,7 @@ def test_deformable_detr_encoder_smoke(module, embed_dim: int, dim: int):
     query = torch.rand((bs, n_points, embed_dim))
     query_pos = torch.rand_like(query)
     spatial_shapes = torch.as_tensor(spatial_shapes, dtype=torch.long, device=query.device)
-    reference_points = torch.rand((bs, n_points, len(spatial_shapes), dim))
+    refs_cccddd_norm = torch.rand((bs, n_points, len(spatial_shapes), dim))
 
     memory = module(
         query=query,  # bs, level * p-dims, embed_dim
@@ -228,7 +228,7 @@ def test_deformable_detr_encoder_smoke(module, embed_dim: int, dim: int):
         query_pos=query_pos,  # bs, level * p-dims, embed_dim
         key_pos=None,
         spatial_shapes=spatial_shapes,
-        reference_points=reference_points,  # bs, num_token, num_level, 2
+        refs_cccddd_norm=refs_cccddd_norm,  # bs, num_token, num_level, 2
         level_start_index=level_start_index,
         attn_masks=None,
         query_key_padding_mask=None,
@@ -261,7 +261,7 @@ def test_deformable_detr_decoder_smoke(module, embed_dim: int, dim: int, two_sta
         ref_dim = dim * 2
     else:
         ref_dim = dim
-    reference_points = torch.rand((bs, n_pred, ref_dim))
+    refs_cccddd_norm = torch.rand((bs, n_pred, ref_dim))
 
     inter_states, inter_references = module(
         query=query,  # bs, num_queries, embed_dims; num_queries = topk
@@ -269,7 +269,7 @@ def test_deformable_detr_decoder_smoke(module, embed_dim: int, dim: int, two_sta
         value=memory,  # bs, num_tokens, embed_dims
         query_pos=query_pos,
         key_pos=query_pos,
-        reference_points=reference_points,  # num_queries, 6
+        refs_cccddd_norm=refs_cccddd_norm,  # num_queries, 6
         spatial_shapes=spatial_shapes,  # nlvl, 2
         level_start_index=level_start_index,  # nlvl
         attn_masks=None,

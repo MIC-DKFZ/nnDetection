@@ -17,6 +17,11 @@ from nndet.nn.transformer.layers.deformable_detr import (
 EMBED_DIM = 16
 
 
+class IdentL1Regressor(L1FFNRegressor):
+    _box_norm_fn = torch.nn.Identity()
+    _inverse_box_norm_fn = torch.nn.Identity()
+
+
 @pytest.fixture
 def deformable_transformer():
     encoder = DeformableDETRTransformerEncoder(embed_dim=EMBED_DIM)
@@ -236,14 +241,12 @@ def test_gen_encoder_output_proposals_shape(deformable_transformer_two_stage):
 def test_get_proposal_pos_embed():
     encoder = DeformableDETRTransformerEncoder(embed_dim=4, num_heads=1)
     decoder = DeformableDETRTransformerDecoder(embed_dim=4, num_heads=1)
-    regressor = L1FFNRegressor(
+    regressor = IdentL1Regressor(
         linear=LayerLinearReluDrop,
         in_channels=2,
         internal_channels=2,
         dim=3,
     )
-    L1FFNRegressor._box_norm_fn = torch.nn.Identity()
-    L1FFNRegressor._inverse_box_norm_fn = torch.nn.Identity()
 
     transformer = DeformableDETRTransformer(
         encoder=encoder,
