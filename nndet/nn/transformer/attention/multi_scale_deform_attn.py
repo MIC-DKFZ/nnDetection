@@ -60,6 +60,7 @@ class MultiScaleDeformableAttnFunction(Function):
         attention_weights,
         im2col_step,
     ):
+        # POINT FORMAT IS (z, y, x) for a (x, y, z) image!
         ctx.im2col_step = im2col_step
         output = ms_deform_attn_forward(
             value,
@@ -122,6 +123,7 @@ def multi_scale_deformable_attn_3d_pytorch(
         level_start_index: start index of each level of shape (num_levels, )
         sampling_locations: locations to sample feature from of
             shape (bs, num_queries, num_heads, num_levels, num_points, 3)
+            FORMAT IS (z, y, x) for a (x, y, z) image!
         attention_weights: attention weight for each sampling location of
             shape (bs, num_queries, num_heads, num_levels, num_points)
 

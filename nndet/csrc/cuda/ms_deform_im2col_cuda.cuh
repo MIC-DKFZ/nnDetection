@@ -389,7 +389,7 @@ __global__ void ms_deformable_im2col_gpu_kernel(const int n,
                                                 const int num_point,
                                                 scalar_t *data_col)
 {
-  CUDA_KERNEL_LOOP(index, n)
+  CUDA_KERNEL_LOOP(index, n)  // for index; i < n, i += blockDim.x * gridDim.x
   {
     int _temp = index;
     const int c_col = _temp % channels; // reverse-engeneered current C index: C_
