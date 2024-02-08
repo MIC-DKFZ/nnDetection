@@ -157,7 +157,7 @@ class BaseTransformerLayer(nn.Module):
             elif layer == "cross_attn":
                 assert query is not None
                 assert query_pos is not None
-                assert key_pos is not None
+                # assert key_pos is not None
                 # cross-attn: key = value = query
                 # cross-attn: query_pos != key_pos; query_pos = object queries; key_pos = pos embedding
                 _attn_identity = identity if self.pre_norm else query

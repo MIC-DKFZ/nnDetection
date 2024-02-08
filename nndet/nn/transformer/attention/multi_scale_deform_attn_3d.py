@@ -108,52 +108,75 @@ def multi_scale_deformable_attn_3d_pytorch(
     sampling_locations: torch.Tensor,
     attention_weights: torch.Tensor,
 ) -> torch.Tensor:
+    """
+    Perform Multi Scale Deformable Attention 3D
 
+    Args:
+        value: values features, these are features from the feature maps
+            of shape (bs, num_value, num_heads, red_embed_dim), where
+            red_embed_dim is embed_dim // num_heads and num_value is the
+            number of points across all multi-scale feature maps which are
+            used for multi-scale attention.
+        value_spatial_shapes: spatial shapes of feature maps of shape
+            (num_levels, 3)
+        level_start_index: start index of each level of shape (num_levels, )
+        sampling_locations: locations to sample feature from of
+            shape (bs, num_queries, num_heads, num_levels, num_points, 3)
+        attention_weights: attention weight for each sampling location of
+            shape (bs, num_queries, num_heads, num_levels, num_points)
+
+    Returns:
+        torch.Tensor: computed features of shape
+            bs, num_query, embed_dims
+    """
     bs, _, num_heads, embed_dims = value.shape
     _, num_queries, num_heads, num_levels, num_points, _ = sampling_locations.shape
 
     # Split projection of input features back into individual levels
-    value_list = value.split([D_ * H_ * W_ for D_, H_, W_ in value_spatial_shapes], dim=1)
+    value_list = value.split([sx * sy * sz for sx, sy, sz in value_spatial_shapes], dim=1)
+
+    # rescale sampling locations; grid_sample expects [-1, 1] range
     sampling_grids = 2 * sampling_locations - 1
     sampling_value_list = []
-    for level, (D_, H_, W_) in enumerate(value_spatial_shapes):
-        # bs, H_*W_, num_heads, embed_dims ->
-        # bs, H_*W_, num_heads*embed_dims ->
-        # bs, num_heads*embed_dims, D_*H_*W_ ->
-        # bs*num_heads, embed_dims, D_, H_, W_
+    for level, (sx, sy, sz) in enumerate(value_spatial_shapes):
+        # bs, sx * sy * sz, num_heads, embed_dims ->
+        # bs, sx * sy * sz, num_heads * embed_dims ->
+        # bs, num_heads * embed_dims, sx * sy * sz ->
+        # bs * num_heads, embed_dims, sx * sy * sz
         # Resize the input features back to a 3D grid, flatten batch and head to have 5D tensor
-        value_l_ = value_list[level].flatten(2).transpose(1, 2).reshape(bs * num_heads, embed_dims, D_, H_, W_)
-        # sampling grid shape: bs, num_queries, num_heads, num_levels, num_points, dim=3
-        # pick a level
-        # bs, num_queries, num_heads, num_points, 3 ->
-        # transpose
-        # bs, num_heads, num_queries, num_points, 3 ->
-        # flatten batch and head
-        # bs*num_heads, num_queries, num_points, 3
+        value_l_ = value_list[level].flatten(2).transpose(1, 2).reshape(bs * num_heads, embed_dims, sx, sy, sz)
+
+        # bs, num_queries, num_heads, num_levels, num_points, dim=3
+        # pick a level -> bs, num_queries, num_heads, num_points, 3
+        # transpose -> bs, num_heads, num_queries, num_points, 3
+        # flatten -> bs * num_heads, num_queries, num_points, 3
+        # unsqeeze -> bs * num_heads, 1, num_queries, num_points, 3
         # The output requires to have 3 "spatial" dimensions -> unsqueeze dimension 1 (will be squeezed later)
         sampling_grid_l_ = sampling_grids[:, :, :, level].transpose(1, 2).flatten(0, 1).unsqueeze(1)
         # bs*num_heads, 1, embed_dims, num_queries, num_points
+
         sampling_value_l_ = F.grid_sample(
-            value_l_,
-            sampling_grid_l_,
+            value_l_,  # bs * num_heads, embed_dims, sx * sy * sz
+            sampling_grid_l_,  # bs * num_heads, 1, num_queries, num_points, 3
             mode="bilinear",
             padding_mode="zeros",
             align_corners=False,
-        )
+        )  # bs * num_heads, embed_dims, 1, num_queries, num_points
         sampling_value_list.append(sampling_value_l_)
+
     # (bs, num_queries, num_heads, num_levels, num_points) ->
     # (bs, num_heads, num_queries, num_levels, num_points) ->
-    # (bs, num_heads, 1, num_queries, num_levels*num_points)
-
+    # (bs * num_heads, 1, num_queries, num_levels * num_points)
     attention_weights = attention_weights.transpose(1, 2).reshape(
         bs * num_heads, 1, num_queries, num_levels * num_points
     )
-    # squeeze dimension of size 1 again
+
     output = (
         (torch.stack(sampling_value_list, dim=-2).flatten(-2).squeeze(2) * attention_weights)
         .sum(-1)
         .view(bs, num_heads * embed_dims, num_queries)
     )
+    # bs, embed_dims * num_heads, num_queries -> bs, num_queries, embed_dims * num_heads
     return output.transpose(1, 2).contiguous()
 
 
@@ -168,7 +191,8 @@ class MultiScaleDeformableAttention(nn.Module):
         dropout: float = 0.1,
         batch_first: bool = False,
     ):
-        """Multi-Scale Deformable Attention Module used in Deformable-DETR
+        """
+        Multi-Scale Deformable Attention Module used in Deformable-DETR
 
         `Deformable DETR: Deformable Transformers for End-to-End Object Detection.
         <https://arxiv.org/pdf/2010.04159.pdf>`_.
@@ -200,16 +224,17 @@ class MultiScaleDeformableAttention(nn.Module):
                 """
             )
 
+        self.dim = 3  # FIXME: add dim parameter
         self.im2col_step = img2col_step
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.num_levels = num_levels
         self.num_points = num_points
-        self.sampling_offsets = nn.Linear(embed_dim, num_heads * num_levels * num_points * 3)  # FIXME: dim
+
+        self.sampling_offsets = nn.Linear(embed_dim, num_heads * num_levels * num_points * self.dim)
         self.attention_weights = nn.Linear(embed_dim, num_heads * num_levels * num_points)
         self.value_proj = nn.Linear(embed_dim, embed_dim)
         self.output_proj = nn.Linear(embed_dim, embed_dim)
-
         self.init_weights()
 
     def init_weights(self):
@@ -239,56 +264,57 @@ class MultiScaleDeformableAttention(nn.Module):
     def forward(
         self,
         query: torch.Tensor,
+        value: torch.Tensor,
+        identity: torch.Tensor,
+        query_pos: torch.Tensor,
+        refs_cccddd_norm: torch.Tensor,
+        spatial_shapes: torch.Tensor,
+        level_start_index: torch.Tensor,
         key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
-        identity: Optional[torch.Tensor] = None,
-        query_pos: Optional[torch.Tensor] = None,
         key_padding_mask: Optional[torch.Tensor] = None,
-        refs_cccddd_norm: Optional[torch.Tensor] = None,
-        spatial_shapes: Optional[torch.Tensor] = None,
-        level_start_index: Optional[torch.Tensor] = None,
         **kwargs
     ) -> torch.Tensor:
-
         """
         Forward Function of MultiScaleDeformableAttention
 
         Args:
             query: Query embeddings with shape `(num_query, bs, embed_dim)`
-            key: Key embeddings with shape `(num_key, bs, embed_dim)`
-            value: Value embeddings with shape `(num_key, bs, embed_dim)`
+                if `batch_first` is False, or `(bs, num_query, embed_dim)`
+            value: Value embeddings with shape `(num_value, bs, embed_dim)`
+                if `batch_first` is False, or `(bs, num_value, embed_dim)`.
+                `num_value` corresponds to the number of points across all
+                multi-scale feature maps which are used for multi-scale
+                attention.
             identity: The tensor used for addition, with the same shape as
                 `query`. Default: None. If None, `query` will be used.
             query_pos: The position embedding for `query`. Default: None.
-            key_padding_mask: ByteTensor for `query`, with shape `(bs, num_key)`,
-                indicating which elements within `key` to be ignored in attention.
-            refs_cccddd_norm: The normalized reference points
+            refs_cccddd_norm: The *normalized* reference points
                 with shape `(bs, num_query, num_levels, 3)`,
                 all elements is range in [0, 1]
                 or `(N, Length_{query}, num_levels, 6)`, add additional
-                two dimensions `(h, w, d)` to form reference boxes.
+                two dimensions `(dx, dy, dz)` to form reference boxes.
             spatial_shapes: Spatial shape of features in different levels.
-                With shape `(num_levels, 3)`, last dimension represents `(d_x, d_y, d_z)`.
+                With shape `(num_levels, 3)`, last dimension
+                represents `(sx, sy, sz)`.
             level_start_index: The start index of each level. A tensor with
                 shape `(num_levels, )` which can be represented as
-                `[0, h_0 * w_0, h_0 * w_0 + h_1 * w_1, ...]`.
+                `[0, x0 * y0 * z0 , x0 * y0 * z0 + x1 * y1 * z1, ...]`.
+            key: X - unused
+            key_padding_mask: ByteTensor for `query`, with shape `(bs, num_key)`,
+                indicating which elements within `key` to be ignored in attention.
 
         Returns:
             torch.Tensor: forward results with shape `(num_query, bs, embed_dim)`
         """
+        assert identity is not None
 
-        if value is None:
-            value = query
-
-        if identity is None:
-            identity = query
         if query_pos is not None:
             query = query + query_pos
 
         if not self.batch_first:
             # change to (bs, num_query ,embed_dims)
-            query = query.permute(1, 0, 2)
-            value = value.permute(1, 0, 2)
+            query = query.permute(1, 0, 2)  # bs, num_query, embed_dims
+            value = value.permute(1, 0, 2)  # bs, num_query, embed_dims
 
         bs, num_query, _ = query.shape
         bs, num_value, _ = value.shape
@@ -298,15 +324,20 @@ class MultiScaleDeformableAttention(nn.Module):
         value = self.value_proj(value)
         if key_padding_mask is not None:
             value = value.masked_fill(key_padding_mask[..., None], float(0))
-        value = value.view(bs, num_value, self.num_heads, -1)
+        value = value.view(bs, num_value, self.num_heads, -1)  # bs, num_value, num_heads, red_embed_dim
 
+        # bs, num_query, embed_dims -> bs, num_query, embed_dims, num_heads * num_levels * num_points * dim
+        # -> bs, num_query, num_heads, num_levels, num_points, dim
         sampling_offsets = self.sampling_offsets(query).view(
-            bs, num_query, self.num_heads, self.num_levels, self.num_points, 3  # TODO: dim
+            bs, num_query, self.num_heads, self.num_levels, self.num_points, self.dim
         )
+        # bs, num_query, embed_dims-> bs, num_query, num_heads * num_levels * num_points
+        # -> bs, num_query, num_heads, num_levels * num_points
         attention_weights = self.attention_weights(query).view(
             bs, num_query, self.num_heads, self.num_levels * self.num_points
         )
         attention_weights = attention_weights.softmax(-1)
+        # bs, num_query, num_heads, num_levels * num_points -> bs, num_query, num_heads, num_levels, num_points
         attention_weights = attention_weights.view(
             bs,
             num_query,
@@ -316,45 +347,90 @@ class MultiScaleDeformableAttention(nn.Module):
         )
 
         # bs, num_query, num_heads, num_levels, num_points, 2
-        if refs_cccddd_norm.shape[-1] == 3:  # FIXME: dim
+        if refs_cccddd_norm.shape[-1] == self.dim:
             offset_normalizer = torch.stack(
                 [
-                    spatial_shapes[..., 2],
-                    spatial_shapes[..., 1],
                     spatial_shapes[..., 0],
+                    spatial_shapes[..., 1],
+                    spatial_shapes[..., 2],
                 ],
                 -1,
             )
             sampling_locations = (
                 refs_cccddd_norm[:, :, None, :, None, :]
                 + sampling_offsets / offset_normalizer[None, None, None, :, None, :]
-            )
-        elif refs_cccddd_norm.shape[-1] == 6:
+            )  # bs, num_query, num_heads, num_levels, num_points, dim
+        elif refs_cccddd_norm.shape[-1] == self.dim * 2:
+            centers = refs_cccddd_norm[:, :, None, :, None, : self.dim]  # bs, num_query, 1, num_levels, 1, 3
+            sizes = refs_cccddd_norm[:, :, None, :, None, self.dim :]  # bs, num_query, 1, num_levels, 1, 3
             sampling_locations = (
-                refs_cccddd_norm[:, :, None, :, None, :3]
-                + sampling_offsets / self.num_points * refs_cccddd_norm[:, :, None, :, None, 3:] * 0.5
-            )
+                centers + sampling_offsets / self.num_points * sizes * 0.5
+            )  # bs, num_query, num_heads, num_levels, num_points, dim
         else:
             raise ValueError(
                 "Last dim of reference_points must be 3 or 6, but get {} instead.".format(refs_cccddd_norm.shape[-1])
             )
-        if torch.cuda.is_available() and value.is_cuda:
-            output = MultiScaleDeformableAttnFunction.apply(
-                value,
-                spatial_shapes,
-                level_start_index,
-                sampling_locations,
-                attention_weights,
-                self.im2col_step,
-            )
-        else:
-            output = multi_scale_deformable_attn_3d_pytorch(
-                value, spatial_shapes, sampling_locations, attention_weights
-            )
 
-        output = self.output_proj(output)
+        output = self.apply_deformable_attention(
+            value=value,
+            value_spatial_shapes=spatial_shapes,
+            value_level_start_index=level_start_index,
+            sampling_locations=sampling_locations,
+            attention_weights=attention_weights,
+        )
+        # output shape: bs, num_query, embed_dims(value)
 
+        output = self.output_proj(output)  # bs, num_query, embed_dims
         if not self.batch_first:
             output = output.permute(1, 0, 2)
 
         return self.dropout(output) + identity
+
+    def apply_deformable_attention(
+        self,
+        value: torch.Tensor,
+        value_spatial_shapes: torch.Tensor,
+        value_level_start_index: torch.Tensor,
+        sampling_locations: torch.Tensor,
+        attention_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Perform Multi Scale Deformable Attention
+
+        Args:
+            value: values features, these are features from the feature maps
+                of shape (bs, num_value, num_heads, red_embed_dim), where
+                red_embed_dim is embed_dim // num_heads and num_value is the
+                number of points across all multi-scale feature maps which are
+                used for multi-scale attention.
+            value_spatial_shapes: spatial shapes of feature maps of shape
+                (num_levels, dims)
+            level_start_index: start index of each level of shape (num_levels, )
+            sampling_locations: locations to sample feature from of
+                shape (bs, num_queries, num_heads, num_levels, num_points, dims)
+            attention_weights: attention weight for each sampling location of
+                shape (bs, num_queries, num_heads, num_levels, num_points)
+
+        Returns:
+            torch.Tensor: computed features of shape
+                bs, num_query, embed_dim
+        """
+        assert value_spatial_shapes.shape[1] == 3
+        if torch.cuda.is_available() and value.is_cuda:
+            # TODO: check correct ordering of axes in cuda code
+            output = MultiScaleDeformableAttnFunction.apply(
+                value=value,
+                value_spatial_shapes=value_spatial_shapes,
+                value_level_start_index=value_level_start_index,
+                sampling_locations=sampling_locations,
+                attention_weights=attention_weights,
+                im2col_step=self.im2col_step,
+            )
+        else:
+            output = multi_scale_deformable_attn_3d_pytorch(
+                value=value,
+                value_spatial_shapes=value_spatial_shapes,
+                sampling_locations=sampling_locations,
+                attention_weights=attention_weights,
+            )
+        return output

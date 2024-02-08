@@ -180,8 +180,8 @@ class DeformableDETRTransformer(nn.Module):
 
         memory = self.encoder(
             query=feat_flatten,  # bs, level * p-dims, embed_dim
-            key=None,
-            value=None,
+            key=None,  # key = val = query in self-attention; key remains unused in deformable attention
+            value=None,  # key = val = query in self-attention
             query_pos=lvl_pos_embed_flatten,  # bs, level * p-dims, embed_dim
             key_pos=None,
             spatial_shapes=spatial_shapes,
@@ -232,10 +232,10 @@ class DeformableDETRTransformer(nn.Module):
         # decoder
         inter_states, inter_refs_cccddd_norm = self.decoder(
             query=query,  # bs, num_queries, embed_dims
-            key=None,  # bs, num_tokens, embed_dims
             value=memory,  # bs, num_tokens, embed_dims
-            query_pos=query_pos,
-            key_pos=query_pos,
+            key=None,  # key remains unused in deformable detr
+            query_pos=query_pos,  # bs, num_queries, embed_dims
+            key_pos=None,  # key remains unused in deformable detr
             refs_cccddd_norm=refs_cccddd_norm,  # num_queries, 6
             spatial_shapes=spatial_shapes,  # nlvl, 2
             level_start_index=level_start_index,  # nlvl

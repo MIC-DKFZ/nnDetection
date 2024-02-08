@@ -22,6 +22,7 @@ channel_mapper_kwargs:
 # transformer
 transformer:
   hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
+  num_points: 4 # number of pixels attended to by deformable attention
   num_feature_levels: 4  # number fo feature levels to use for deformable attention
   use_pos_queries: True
 
@@ -35,7 +36,7 @@ transformer_encoder_kwargs:
   dim_feedforward: 1024
   hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
-  num_points: 4 # number of pixels attended to by deformable attention
+  num_points: ${model_cfg.transformer.num_points} # number of pixels attended to by deformable attention
 
 transformer_decoder_kwargs:
   num_layers: 6
@@ -45,6 +46,7 @@ transformer_decoder_kwargs:
   dim_feedforward: 1024
   hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
+  num_points: ${model_cfg.transformer.num_points} # number of pixels attended to by deformable attention
 
 # positional embedding keyword arguments
 pos_embed:

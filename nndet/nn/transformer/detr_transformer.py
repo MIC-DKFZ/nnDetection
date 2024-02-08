@@ -111,7 +111,7 @@ class DETRTransformer(AbstractTransformer):
         memory = self.encoder(
             query=features,
             key=None,  # key = val = query in self-attention
-            value=None,
+            value=None,  # key = val = query in self-attention
             query_pos=pos_embed,
             key_pos=None,  # key_pos = query_pos in self-attention
             query_key_padding_mask=mask,

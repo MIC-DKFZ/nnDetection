@@ -185,8 +185,8 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
     def forward(
         self,
         query: torch.Tensor,
-        key: torch.Tensor = None,
-        value: torch.Tensor = None,
+        key: torch.Tensor,
+        value: torch.Tensor,
         query_pos: Optional[torch.Tensor] = None,
         key_pos: Optional[torch.Tensor] = None,
         attn_masks: Optional[List[torch.Tensor]] = None,
@@ -246,9 +246,9 @@ class ConditionalDETRTransformerDecoder(BaseTransformerDecoder):
             query_sine_embed = query_sine_embed * position_transform  # [num_queries, batch_size, embed_dim]
 
             query = layer(
-                query,
-                key,
-                value,
+                query=query,
+                key=key,
+                value=value,
                 query_pos=query_pos,
                 key_pos=key_pos,
                 query_sine_embed=query_sine_embed,

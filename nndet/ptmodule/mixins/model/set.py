@@ -681,7 +681,7 @@ class DeformableSetModelMixin(DETRModelMixin):
             feedforward_dim=decoder_kwargs["dim_feedforward"],
             ffn_dropout=decoder_kwargs["ffn_dropout"],
             num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
-            num_points=encoder_kwargs["num_points"],
+            num_points=decoder_kwargs["num_points"],
             dim=plan_arch["dim"],
             regressor=decoder_regressor,
         )

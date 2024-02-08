@@ -120,9 +120,9 @@ class DETRTransformerEncoder(BaseTransformerEncoder):
 
         for layer in self.layers:
             query = layer(
-                query,
-                key,
-                value,
+                query=query,
+                key=key,
+                value=value,
                 query_pos=query_pos,
                 key_pos=key_pos,
                 attn_masks=attn_masks,
@@ -249,9 +249,9 @@ class DETRTransformerDecoder(BaseTransformerDecoder):
         if not self.return_intermediate:
             for layer in self.layers:
                 query = layer(
-                    query,
-                    key,
-                    value,
+                    query=query,
+                    key=key,
+                    value=value,
                     query_pos=query_pos,
                     key_pos=key_pos,
                     attn_masks=attn_masks,
