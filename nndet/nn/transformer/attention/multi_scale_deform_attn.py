@@ -205,6 +205,7 @@ class MultiScaleDeformableAttention(nn.Module):
             num_points: The number of sampling points for each query
                 in each head. Default: 4.
             img2col_steps: The step used in image_to_column. Defualt: 64.
+                Batch size needs to be smaller or a multiple of this.
             dropout: Dropout layer used in output. Default: 0.1.
             batch_first: if ``True``, then the input and output tensor will be
                 provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
@@ -417,14 +418,15 @@ class MultiScaleDeformableAttention(nn.Module):
             torch.Tensor: computed features of shape
                 bs, num_query, embed_dim
         """
+        _sampling_locations = sampling_locations[..., [2, 1, 0]]
+        # _sampling_locations = sampling_locations
         assert value_spatial_shapes.shape[1] == 3
         if torch.cuda.is_available() and value.is_cuda:
-            # TODO: check correct ordering of axes in cuda code
             output = MultiScaleDeformableAttnFunction.apply(
                 value,
                 value_spatial_shapes,
                 value_level_start_index,
-                sampling_locations,
+                _sampling_locations,
                 attention_weights,
                 self.im2col_step,
             )
@@ -432,7 +434,7 @@ class MultiScaleDeformableAttention(nn.Module):
             output = multi_scale_deformable_attn_3d_pytorch(
                 value=value,
                 value_spatial_shapes=value_spatial_shapes,
-                sampling_locations=sampling_locations,
+                sampling_locations=_sampling_locations,
                 attention_weights=attention_weights,
             )
         return output
