@@ -6,7 +6,7 @@ import torch
 
 from nndet.nn.heads.regressor.ffn import L1FFNRegressor
 from nndet.nn.layers.linear import LayerLinearReluDrop
-from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import ms_deform_import
+from nndet.nn.transformer.attention.multi_scale_deform_attn import ms_deform_import
 from nndet.nn.transformer.layers.deformable_detr import (
     DeformableDETRTransformerDecoder,
     DeformableDETRTransformerEncoder,

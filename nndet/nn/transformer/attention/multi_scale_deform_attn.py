@@ -18,8 +18,8 @@
 # SPDX-FileCopyrightText: 2020, SenseTime
 # SPDX-License-Identifier: Apache-2.0
 
+
 import math
-import warnings
 from typing import Optional
 
 import torch
@@ -190,6 +190,7 @@ class MultiScaleDeformableAttention(nn.Module):
         img2col_step: int = 64,
         dropout: float = 0.1,
         batch_first: bool = False,
+        dim: int = 3,
     ):
         """
         Multi-Scale Deformable Attention Module used in Deformable-DETR
@@ -207,6 +208,7 @@ class MultiScaleDeformableAttention(nn.Module):
             dropout: Dropout layer used in output. Default: 0.1.
             batch_first: if ``True``, then the input and output tensor will be
                 provided as `(bs, n, embed_dim)`. Default: False. `(n, bs, embed_dim)`
+            dim: The dimension of the input data. Default: 3.
         """
         super().__init__()
         if embed_dim % num_heads != 0:
@@ -217,14 +219,14 @@ class MultiScaleDeformableAttention(nn.Module):
         self.batch_first = batch_first
 
         if not _is_power_of_2(head_dim):
-            warnings.warn(
+            logger.warning(
                 """
-                You'd better set d_model in MSDeformAttn to make sure that
+                Prefer to set `d_model` in MSDeformAttn to make sure that
                 each dim of the attention head a power of 2, which is more efficient.
                 """
             )
 
-        self.dim = 3  # FIXME: add dim parameter
+        self.dim = dim
         self.im2col_step = img2col_step
         self.embed_dim = embed_dim
         self.num_heads = num_heads
@@ -419,12 +421,12 @@ class MultiScaleDeformableAttention(nn.Module):
         if torch.cuda.is_available() and value.is_cuda:
             # TODO: check correct ordering of axes in cuda code
             output = MultiScaleDeformableAttnFunction.apply(
-                value=value,
-                value_spatial_shapes=value_spatial_shapes,
-                value_level_start_index=value_level_start_index,
-                sampling_locations=sampling_locations,
-                attention_weights=attention_weights,
-                im2col_step=self.im2col_step,
+                value,
+                value_spatial_shapes,
+                value_level_start_index,
+                sampling_locations,
+                attention_weights,
+                self.im2col_step,
             )
         else:
             output = multi_scale_deformable_attn_3d_pytorch(

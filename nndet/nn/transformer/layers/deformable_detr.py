@@ -16,7 +16,7 @@ import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.layers.mlp import ReluDropIdentityMLP
 from nndet.nn.transformer.attention.attention import MultiheadAttention
-from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
+from nndet.nn.transformer.attention.multi_scale_deform_attn import (
     MultiScaleDeformableAttention,
 )
 from nndet.nn.transformer.layers.abstract import (
@@ -79,6 +79,7 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
                     batch_first=batch_first,
                     num_levels=num_feature_levels,
                     num_points=num_points,
+                    dim=dim,
                 )
             ],
             ffn=ReluDropIdentityMLP(
@@ -212,6 +213,7 @@ class DeformableDETRTransformerDecoder(BaseTransformerDecoder):
                     batch_first=batch_first,
                     num_levels=num_feature_levels,
                     num_points=num_points,
+                    dim=dim,
                 ),
             ],
             ffn=ReluDropIdentityMLP(

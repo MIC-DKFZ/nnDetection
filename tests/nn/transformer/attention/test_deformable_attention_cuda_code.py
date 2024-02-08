@@ -8,7 +8,7 @@ import pytest
 import torch
 from torch.autograd import gradcheck
 
-from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
+from nndet.nn.transformer.attention.multi_scale_deform_attn import (
     MultiScaleDeformableAttnFunction,
     ms_deform_import,
     multi_scale_deformable_attn_3d_pytorch,
@@ -49,6 +49,60 @@ TEST_SETTINGS = [
         24,  # num queries
         3,  # num levels
         8,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        64,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        128,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        256,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        512,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        1024,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
+        torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
+    ),
+    (
+        1,  # batch size
+        8,  # num heads
+        2048,  # embed dim
+        12,  # num queries
+        3,  # num levels
+        4,  # num_points
         torch.as_tensor([[16, 16, 16], [8, 8, 8], [4, 4, 4]], dtype=torch.long).cuda(),  # shapes
     ),
 ]

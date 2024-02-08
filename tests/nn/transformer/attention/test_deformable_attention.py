@@ -7,7 +7,7 @@ from typing import Optional
 import pytest
 import torch
 
-from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
+from nndet.nn.transformer.attention.multi_scale_deform_attn import (
     MultiScaleDeformableAttention,
 )
 

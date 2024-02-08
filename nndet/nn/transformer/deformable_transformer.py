@@ -15,7 +15,7 @@ import torch.nn as nn
 import nndet.core.ops_torch as ops_torch
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.regressor.ffn import FFNRegressor
-from nndet.nn.transformer.attention.multi_scale_deform_attn_3d import (
+from nndet.nn.transformer.attention.multi_scale_deform_attn import (
     MultiScaleDeformableAttention,
 )
 from nndet.nn.transformer.layers.abstract import (
