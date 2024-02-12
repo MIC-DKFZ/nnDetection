@@ -11,8 +11,6 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
-from nndet.nn.heads.classifier.ffn import FFNClassifier
-from nndet.nn.heads.regressor.ffn import FFNRegressor
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.layers.abstract import (
     BaseTransformerDecoder,
@@ -25,9 +23,6 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: BaseTransformerEncoder,
         decoder: BaseTransformerDecoder,
-        classifier: Optional[FFNClassifier] = None,
-        regressor: Optional[FFNRegressor] = None,
-        two_stage: bool = False,
         do_weight_init: bool = True,
     ):
         """
@@ -37,18 +32,13 @@ class DETRTransformer(AbstractTransformer):
             decoder: Transformer decoder
         """
         super().__init__()
-        if two_stage:
-            raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
+
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.decoder.embed_dim
         self.dim = decoder.dim
         if do_weight_init:
             self.init_weights()
-        if classifier is not None:
-            self.classifier = classifier
-        if regressor is not None:
-            self.regressor = regressor
 
     def init_weights(self):
         for p in self.parameters():
@@ -130,3 +120,14 @@ class DETRTransformer(AbstractTransformer):
         )  # [num_decoder_layers, num_queries, bs, C] -> [num_decoder_layers, bs, num_queries, C]
 
         return hidden_state, references, None
+
+    @classmethod
+    def is_batch_first(cls) -> bool:
+        """
+        Return if transformer uses batch first to call encoder and decoder
+
+        Returns:
+            bool: `True` is first dimenesion corresponds to batch, otherwise
+                `False`.
+        """
+        return False

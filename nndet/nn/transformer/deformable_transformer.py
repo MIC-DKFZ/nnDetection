@@ -394,3 +394,14 @@ class DeformableDETRTransformer(nn.Module):
         pos = proposals_cccddd_raw[..., None] / dim_t  # bs, R, 2 * dims, num_pos_feats
         pos = torch.stack((pos[..., 0::2].sin(), pos[..., 1::2].cos()), dim=-1).flatten(2)
         return pos
+
+    @classmethod
+    def is_batch_first(cls) -> bool:
+        """
+        Return if transformer uses batch first to call encoder and decoder
+
+        Returns:
+            bool: `True` is first dimenesion corresponds to batch, otherwise
+                `False`.
+        """
+        return True

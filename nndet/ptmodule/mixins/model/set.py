@@ -304,12 +304,6 @@ class DETRModelMixin(ModelMixin):
         Returns:
             AbstractTransformer: transformer module
         """
-        if model_cfg["transformer"]["two_stage"]:
-            encoder_classifier = classifier
-            encoder_regressor = regressor
-        else:
-            encoder_classifier, encoder_regressor = None, None
-
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
             embed_dim=model_cfg["transformer"]["hidden_dim"],
@@ -321,6 +315,7 @@ class DETRModelMixin(ModelMixin):
             ffn_dropout=encoder_kwargs["ffn_dropout"],
             post_norm=encoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
         decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
         decoder = cls.transformer_decoder_cls(
@@ -333,12 +328,11 @@ class DETRModelMixin(ModelMixin):
             ffn_dropout=decoder_kwargs["ffn_dropout"],
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
-            classifier=encoder_classifier,
-            regressor=encoder_regressor,
         )
 
     @classmethod
@@ -619,6 +613,7 @@ class ConditionalDETRModelMixin(DETRModelMixin):
             ffn_dropout=encoder_kwargs["ffn_dropout"],
             post_norm=encoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
         decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
         decoder = cls.transformer_decoder_cls(
@@ -632,6 +627,7 @@ class ConditionalDETRModelMixin(DETRModelMixin):
             post_norm=decoder_kwargs["post_norm"],
             dim=plan_arch["dim"],
             ffn_regressor_cls=cls.head_regressor_cls,
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
         return cls.transformer_cls(
             encoder=encoder,
@@ -670,6 +666,7 @@ class DeformableSetModelMixin(DETRModelMixin):
             num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
             num_points=encoder_kwargs["num_points"],
             dim=plan_arch["dim"],
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
         decoder_kwargs = model_cfg["transformer_decoder_kwargs"]
         decoder = cls.transformer_decoder_cls(
@@ -684,6 +681,7 @@ class DeformableSetModelMixin(DETRModelMixin):
             num_points=decoder_kwargs["num_points"],
             dim=plan_arch["dim"],
             regressor=decoder_regressor,
+            batch_first=cls.transformer_cls.is_batch_first(),
         )
 
         return cls.transformer_cls(
