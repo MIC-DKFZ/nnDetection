@@ -141,29 +141,29 @@ class FFNRegressor(torch.nn.Module):
         elif self.ffn_weight_init == FFNRegWeightInit.ZERO:
             logger.info("Init FFN regressor with weight and bias zero")
             # zero weight & bias init
-            torch.nn.init.constant_(self.mlp[-1][-1].weight.data[self.dim :], 0.0)
-            torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
+            torch.nn.init.constant_(self.mlp[-1][-1].weight.data, 0.0)
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data, 0.0)
 
             if not self.share_mlp and self.aux_mlp is not None:
                 for mlp in self.aux_mlp:
-                    torch.nn.init.constant_(mlp[-1][-1].weight.data[self.dim :], 0.0)
-                    torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
+                    torch.nn.init.constant_(mlp[-1][-1].weight.data, 0.0)
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data, 0.0)
 
             if not self.share_mlp and self.encoder_mlp is not None:
-                torch.nn.init.constant_(self.encoder_mlp[-1][-1].weight.data[self.dim :], 0.0)
-                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].weight.data, 0.0)
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data, 0.0)
 
         elif self.ffn_weight_init == FFNRegWeightInit.ZERO_BIAS:
             logger.info("Init FFN regressor with bias zero")
             # zero bias init
-            torch.nn.init.constant_(self.mlp[-1][-1].bias.data[self.dim :], 0.0)
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data, 0.0)
 
             if not self.share_mlp and self.aux_mlp is not None:
                 for mlp in self.aux_mlp:
-                    torch.nn.init.constant_(mlp[-1][-1].bias.data[self.dim :], 0.0)
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data, 0.0)
 
             if not self.share_mlp and self.encoder_mlp is not None:
-                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data[self.dim :], 0.0)
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data, 0.0)
         else:
             raise ValueError(f"Unknown weight init {self.ffn_weight_init}")
 

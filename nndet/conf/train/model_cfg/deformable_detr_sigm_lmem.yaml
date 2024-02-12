@@ -95,7 +95,7 @@ head_regressor_kwargs:
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
   share_mlp: False
   use_encoder_mlp: ${model_cfg.transformer.two_stage}
-  ffn_weight_init: "none" # TODO deformable detr default #TODO wweight init
+  ffn_weight_init: "none" # one of none | zero_bias | zero
   # loss
   loss_weight: 5 # loss weight L1
   box_loss_weight: 2 # loss weight GIoU

@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from functools import partial
 from typing import Type
 
 from nndet.core.boxes.criterions.base import ClassCriterion
@@ -15,6 +16,7 @@ from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.deformable_detr import DeformableDETRHead
 from nndet.nn.heads.regressor.ffn import FFNRegressor, L1UGIoUFFNRegressor
 from nndet.nn.layers.conv import ConvGroupRelu
+from nndet.nn.layers.initializer import InitXavierUniform
 from nndet.nn.neck.channel_mapper import ChannelMapper
 from nndet.nn.transformer.abstract_transformer import AbstractTransformer
 from nndet.nn.transformer.deformable_transformer import DeformableDETRTransformer
@@ -66,3 +68,8 @@ class BoxDeformableDETRC002Res(DeformableSetModelMixin, BoxDETRC001):
     head_regressor_cls: FFNRegressor = L1UGIoUFFNRegressor  #: define regressor class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
     matcher_class_criterion_cls: ClassCriterion = FocalClassCriterionSigmoid  #: criterion to compute class cost matrix
+
+
+@MODULE_REGISTRY.register
+class BoxDeformableDETRC002Xav(BoxDeformableDETRC002):
+    channel_mapper_conv_cls: Type[CONVSEQ] = partial(ConvGroupRelu, initializer=InitXavierUniform(gain=1))

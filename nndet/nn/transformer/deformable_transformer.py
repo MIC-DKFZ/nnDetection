@@ -97,7 +97,7 @@ class DeformableDETRTransformer(nn.Module):
         Initialize the weights of the transformer modules
         """
         for n, p in self.named_parameters():
-            if p.dim() > 1 and "regressor" not in n:
+            if p.dim() > 1 and "regressor" not in n and "classifier" not in n:
                 nn.init.xavier_uniform_(p)
         for m in self.modules():
             if isinstance(m, MultiScaleDeformableAttention):

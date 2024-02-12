@@ -69,6 +69,5 @@ class BoxPointMode(Enum):
 
 class FFNRegWeightInit(Enum):
     NONE = "none"  # default weight initialisation by linear layer
-    ZERO = "zero"  # set weight and bias to zero (as in Conditional DETR)
+    ZERO = "zero"  # set weight and bias to zero
     ZERO_BIAS = "zero_bias"  # set bias to zero
-    # TODO: deformable detr weight init
