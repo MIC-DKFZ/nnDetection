@@ -440,13 +440,7 @@ def _train(
     plan = load_pickle(plan_path)
     data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
-    # initiate module
-    module = MODULE_REGISTRY[cfg["module"]](
-        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
-        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
-        accelerator_cfg=OmegaConf.to_container(cfg["accelerator_cfg"], resolve=True),
-        plan=plan,
-    )
+    module_cls = MODULE_REGISTRY[cfg["module"]]
 
     # setup io
     datamodule = Datamodule(
@@ -455,11 +449,19 @@ def _train(
         plan=plan,
         data_dir=data_dir,
         fold=fold,
-        use_box_io=module.use_box_io(),
+        use_box_io=module_cls.use_box_io(),
         log_aug=log_aug,
     )
     plan["patch_size"] = list(datamodule.patch_size)
     plan["batch_size"] = int(datamodule.batch_size)
+
+    # initiate module
+    module = module_cls(
+        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
+        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
+        accelerator_cfg=OmegaConf.to_container(cfg["accelerator_cfg"], resolve=True),
+        plan=plan,
+    )
 
     # callbacks
     callbacks = []
