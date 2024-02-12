@@ -28,7 +28,7 @@ class BaseDETR(AbstractDetector):
         query_dim: int,
         segmenter: Optional[Segmenter] = None,
         two_stage: bool = False,
-        use_pos_queries: bool = False,  # TODO: docs
+        use_pos_queries: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
@@ -49,9 +49,13 @@ class BaseDETR(AbstractDetector):
                 from the feature maps
             two_stage: toggle whether the encoder should predict objects and use
                 those as query candidates
-
+            use_pos_queries: double number of query channels which will later
+                be splitted into content and positional
         """
         super().__init__()
+        if use_pos_queries and two_stage:
+            raise ValueError("Can not use `use_pos_queries` and `two stage` simultaniously")
+
         # Obtain important hyperparameters
         self.detection_per_img = detection_per_img
         # Set Backbone and get channels and feature levels

@@ -5,7 +5,6 @@
 # detector settings
 detector:
   detection_per_img: 24  # number of detections per image # FIXME make configurable
-  two_stage: False  # perform two stage detection #FIXME conditional detr
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder

@@ -33,9 +33,10 @@ class DeformableDETRTransformer(nn.Module):
         regressor: Optional[FFNRegressor] = None,
         num_feature_levels: int = 4,
         two_stage: bool = False,
-        two_stage_num_proposals: int = 300,  # TODO: add to config
-        two_stage_base_object_scale: float = 0.05,  # TODO: add to config
-        pos_embed_temperature: float = 10000,  # TODO: add to config
+        two_stage_num_proposals: int = 300,
+        two_stage_base_object_scale: float = 0.05,
+        pos_embed_temperature: float = 10000,
+        enc_class_agnostic_loss: bool = False,
     ):
         """
         Transformer module for Deformable DETR
@@ -56,6 +57,9 @@ class DeformableDETRTransformer(nn.Module):
                 deformable DETR (Formula can be found in Deformable DETR
                 paper, appendix 'Two-Stage Deformable DETR').
             pos_embed_temperature: temperature for positional embedding
+            enc_class_agnostic_loss: only use first channel (class 0)
+                from class embed to select topk proposals; loss
+                is only computed based on binary labels
 
         Warning:
             Only sigmoid based classifiers are supported right now!
@@ -71,6 +75,7 @@ class DeformableDETRTransformer(nn.Module):
         self.two_stage_base_object_scale = two_stage_base_object_scale
         self.pos_embed_num_feats = self.embed_dim // 2
         self.pos_embed_temperature = pos_embed_temperature
+        self.enc_class_agnostic_loss = enc_class_agnostic_loss
 
         self.level_embeds = nn.Parameter(torch.Tensor(self.num_feature_levels, self.embed_dim))
 
@@ -206,7 +211,10 @@ class DeformableDETRTransformer(nn.Module):
             enc_output_cccddd_raw = enc_output_cccddd_raw + output_proposals_cccddd_raw
 
             # bs, num_tokens, num_classes -> bs, num_tokens -> topk(1) -> bs, topk: topk indices as tensor
-            topk_proposals = torch.topk(enc_outputs_class.max(-1)[0], self.two_stage_num_proposals, dim=1)[1]
+            if self.enc_class_agnostic_loss:
+                topk_proposals = torch.topk(enc_outputs_class[..., 0], self.two_stage_num_proposals, dim=1)[1]
+            else:
+                topk_proposals = torch.topk(enc_outputs_class.max(-1)[0], self.two_stage_num_proposals, dim=1)[1]
 
             # bs, topk, dims
             topk_coords_cccdddd_raw = torch.gather(

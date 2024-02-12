@@ -30,6 +30,7 @@ class DETRHead(torch.nn.Module):
         scale_aux_loss: str = "none",
         norm_cls_loss_by_num_boxes: bool = False,
         norm_reg_loss_by_num_boxes: bool = False,
+        enc_class_agnostic_loss: bool = False,
     ) -> None:
         """
         Head module for DETR like networks (head is placed behind transformer)
@@ -47,6 +48,8 @@ class DETRHead(torch.nn.Module):
                 average number of bounding boxes in batch. Defaults to False.
             norm_reg_loss_by_num_boxes: Normalize regression loss by
                 average number of bounding boxes in batch. Defaults to False.
+            enc_class_agnostic_loss: compute encoder class loss on binary
+                labels
         """
         super().__init__()
         self.classifier = classifier
@@ -57,6 +60,7 @@ class DETRHead(torch.nn.Module):
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
         self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
+        self.enc_class_agnostic_loss = enc_class_agnostic_loss
         self.extended_logging = os.getenv("det_extended_logging", 0)
 
     def forward(
@@ -198,17 +202,20 @@ class DETRHead(torch.nn.Module):
         # enc losses
         if "enc_outputs" in pred_detection:
             enc_outputs = pred_detection["enc_outputs"]
+
+            if self.enc_class_agnostic_loss:
+                _target_labels = [torch.zeros_like(tl) for tl in target_labels]
+            else:
+                _target_labels = target_labels
+
             l_dict, _ = self._match_and_compute_loss(
                 pred_logits=enc_outputs["pred_cls_logits"],
                 pred_coords=enc_outputs["pred_box_coords"],
                 target_boxes=target_boxes,
-                target_labels=target_labels,
+                target_labels=_target_labels,
                 num_boxes_all=num_boxes_all,
             )
-            # TODO might want to scale this
-            losses.update(self.format_scale_aux_losses(l_dict, 1, "enc"))
-            # Don't log auxiliary criteria
-            # criterion_log.update(m_dict)
+            losses.update(self.format_scale_aux_losses(l_dict, 1, 0, "aux_enc"))
 
         if self.extended_logging:
             losses.update(criterion_log)
@@ -220,6 +227,7 @@ class DETRHead(torch.nn.Module):
         loss_dict: Dict[str, torch.Tensor],
         num_aux_outputs: int,
         aux_idx: Union[int, str],
+        pre_fix: str = "aux",
     ) -> Dict[str, torch.Tensor]:
         """
         Format and optionally scale the auxiliary losses
@@ -233,12 +241,12 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: formatted and scaled auxiliary output
         """
         if self.scale_aux_loss == AuxLossNorm.NONE:
-            loss_dict = {f"aux_{k}_{aux_idx}": v for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.MEAN:
-            loss_dict = {f"aux_{k}_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.REDUCED:
             w = 1 / (num_aux_outputs - aux_idx + 1)
-            loss_dict = {f"aux_{k}_{aux_idx}": v * w for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v * w for k, v in loss_dict.items()}
         return loss_dict
 
     def prepare_targets(

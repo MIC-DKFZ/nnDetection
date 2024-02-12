@@ -205,8 +205,8 @@ class DETRModelMixin(ModelMixin):
             query_dim=hidden_dim,
             segmenter=segmenter,
             detection_per_img=model_cfg["detector"]["detection_per_img"],
-            two_stage=model_cfg["detector"].get("two_stage", False),
-            use_pos_queries=model_cfg["detector"].get("use_pos_queries", False),
+            two_stage=model_cfg["transformer"].get("two_stage", False),
+            use_pos_queries=model_cfg["transformer"].get("use_pos_queries", False),
         )
 
     @classmethod
@@ -304,7 +304,7 @@ class DETRModelMixin(ModelMixin):
         Returns:
             AbstractTransformer: transformer module
         """
-        if model_cfg["detector"]["two_stage"]:
+        if model_cfg["transformer"]["two_stage"]:
             encoder_classifier = classifier
             encoder_regressor = regressor
         else:
@@ -602,7 +602,7 @@ class ConditionalDETRModelMixin(DETRModelMixin):
         Returns:
             AbstractTransformer: transformer module
         """
-        if model_cfg["detector"]["two_stage"]:
+        if model_cfg["transformer"]["two_stage"]:
             encoder_classifier = classifier
             encoder_regressor = regressor
         else:
@@ -650,7 +650,7 @@ class DeformableSetModelMixin(DETRModelMixin):
         classifier: Optional[FFNClassifier] = None,
         regressor: Optional[FFNRegressor] = None,
     ):
-        if model_cfg["detector"]["two_stage"]:
+        if model_cfg["transformer"]["two_stage"]:
             encoder_classifier = classifier
             encoder_regressor = regressor
             decoder_regressor = regressor
@@ -692,6 +692,6 @@ class DeformableSetModelMixin(DETRModelMixin):
             classifier=encoder_classifier,
             regressor=encoder_regressor,
             num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
-            two_stage=model_cfg["detector"]["two_stage"],
-            two_stage_num_proposals=model_cfg["detector"]["detection_per_img"],
+            two_stage=model_cfg["transformer"]["two_stage"],
+            **model_cfg["transformer"]["transformer_kwargs"],
         )

@@ -5,7 +5,6 @@
 # detector settings
 detector:
   detection_per_img: 24  # number of detections per image # FIXME make configurable
-  two_stage: True  # perform two stage detection #FIXME conditional detr
 
 # backbone
 backbone_kwargs:
@@ -24,8 +23,14 @@ channel_mapper_kwargs:
 transformer:
   hidden_dim: 256 # feature length of the transformer input (must be divisible by the number of attention heads)
   num_points: 8 # number of pixels attended to by deformable attention
+  two_stage: True  # perform two stage detection (deformable detr only)
+  use_pos_queries: False # double number of query channels which will later be splitted into content and positional
   num_feature_levels: 4  # number fo feature levels to use for deformable attention
-  use_pos_queries: True
+  transformer_kwargs: # keyword arguments passed to transformer class
+    two_stage_num_proposals: ${model_cfg.detector.detection_per_img} # number of proposals used for two stage predictions (two stage only)
+    two_stage_base_object_scale: 0.05 # base object scale for two-stage deformable DETR (two stage only)
+    pos_embed_temperature: 10000 # temperature for positional embedding of proposals (two stage only)
+    enc_class_agnostic_loss: ${model_cfg.head_kwargs.enc_class_agnostic_loss} # use binary labels to compute encoder loss (two stage only)
 
 # Transformer Encoder
 transformer_encoder_kwargs:
@@ -72,7 +77,7 @@ head_classifier_kwargs:
   dropout_rate: 0.0
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
   share_mlp: False
-  use_encoder_mlp: ${model_cfg.detector.two_stage}
+  use_encoder_mlp: ${model_cfg.transformer.two_stage}
   class_agnostic_aux: False
   prior_prob: 0.05
   # loss
@@ -90,7 +95,7 @@ head_regressor_kwargs:
   dropout_rate: 0.0
   num_decoder_layers: ${model_cfg.transformer_decoder_kwargs.num_layers}
   share_mlp: False
-  use_encoder_mlp: ${model_cfg.detector.two_stage}
+  use_encoder_mlp: ${model_cfg.transformer.two_stage}
   ffn_weight_init: "none" # TODO deformable detr default #TODO wweight init
   # loss
   loss_weight: 5 # loss weight L1

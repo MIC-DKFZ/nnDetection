@@ -40,8 +40,8 @@ class DeformableDETRTransformerEncoder(BaseTransformerEncoder):
         post_norm: bool = False,
         dim: int = 3,
         batch_first: bool = True,
-        num_feature_levels: int = 4,  # TODO: add to config
-        num_points: int = 4,  # TODO: add to config
+        num_feature_levels: int = 4,
+        num_points: int = 4,
     ):
         """
         Transformer Encoder for Deformable DETR Model
