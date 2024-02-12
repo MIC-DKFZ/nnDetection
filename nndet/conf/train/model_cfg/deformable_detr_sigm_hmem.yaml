@@ -8,7 +8,8 @@ detector:
   two_stage: True  # perform two stage detection #FIXME conditional detr
 
 # backbone
-backbone_kwargs: {}
+backbone_kwargs:
+  max_channels: 384
 
 # Channel Mapper
 channel_mapper_kwargs:
@@ -21,8 +22,8 @@ channel_mapper_kwargs:
 
 # transformer
 transformer:
-  hidden_dim: 128 # feature length of the transformer input (must be divisible by the number of attention heads)
-  num_points: 4 # number of pixels attended to by deformable attention
+  hidden_dim: 256 # feature length of the transformer input (must be divisible by the number of attention heads)
+  num_points: 8 # number of pixels attended to by deformable attention
   num_feature_levels: 4  # number fo feature levels to use for deformable attention
   use_pos_queries: True
 
@@ -39,7 +40,7 @@ transformer_encoder_kwargs:
   num_points: ${model_cfg.transformer.num_points} # number of pixels attended to by deformable attention
 
 transformer_decoder_kwargs:
-  num_layers: 6 # smallish influence on memory (200-300mb between 3 & 6)
+  num_layers: 3 # smallish influence on memory (200-300mb between 3 & 6)
   attn_dropout: 0.0
   proj_dropout: 0.0
   ffn_dropout: 0.0

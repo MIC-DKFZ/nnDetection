@@ -33,17 +33,17 @@ transformer_encoder_kwargs:
   attn_dropout: 0.0
   proj_dropout: 0.0
   ffn_dropout: 0.0
-  dim_feedforward: 1024 # medium influence on memory (~ 1GB between 1024 & 512)
+  dim_feedforward: 512 # medium influence on memory (~ 1GB between 1024 & 512)
   hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
   num_points: ${model_cfg.transformer.num_points} # number of pixels attended to by deformable attention
 
 transformer_decoder_kwargs:
-  num_layers: 6 # smallish influence on memory (200-300mb between 3 & 6)
+  num_layers: 3 # smallish influence on memory (200-300mb between 3 & 6)
   attn_dropout: 0.0
   proj_dropout: 0.0
   ffn_dropout: 0.0
-  dim_feedforward: 1024 # medium influence on memory (~ 1GB between 1024 & 512)
+  dim_feedforward: 512 # medium influence on memory (~ 1GB between 1024 & 512)
   hidden_dim: ${model_cfg.transformer.hidden_dim} # feature length of the transformer input (must be divisible by the number of attention heads)
   attention_heads: 8  # number of attention heads in the transformer
   num_points: ${model_cfg.transformer.num_points} # number of pixels attended to by deformable attention
