@@ -140,3 +140,116 @@ def test_cat_and_index(boxes0_3d, boxes1_3d):
     boxes, idx = ops_torch.cat_and_index([boxes0_3d, torch.tensor([[]]).reshape(-1, 6), boxes1_3d])
     assert torch.allclose(boxes, torch.cat([boxes0_3d, boxes1_3d], dim=0))
     assert torch.allclose(idx, torch.tensor([0, 0, 2, 2, 2], dtype=boxes0_3d.dtype))
+
+
+def test_clip_boxes_2d_inplace():
+    boxes = torch.tensor([[-1, -2, 102, 200]])
+    boxes = ops_torch.clip_boxes_to_image_(boxes, (100, 200))
+    expected = torch.tensor([[-1, -1, 100, 200]])
+    assert (expected == boxes).all()
+
+
+def test_clip_boxes_3d_inplace():
+    boxes = torch.tensor([[-1, -2, 102, 200, -5, 30]])
+    boxes = ops_torch.clip_boxes_to_image_(boxes, (100, 200, 16))
+    expected = torch.tensor([[-1, -1, 100, 200, -1, 16]])
+    assert (expected == boxes).all()
+
+
+def test_clip_boxes_2d():
+    boxes = torch.tensor([[-1, -2, 102, 200]])
+    boxes = ops_torch.clip_boxes_to_image(boxes, (100, 200))
+    expected = torch.tensor([[-1, -1, 100, 200]])
+    assert (expected == boxes).all()
+
+
+def test_clip_boxes_3d():
+    boxes = torch.tensor([[-1, -2, 102, 200, -5, 30]])
+    boxes = ops_torch.clip_boxes_to_image(boxes, (100, 200, 16))
+    expected = torch.tensor([[-1, -1, 100, 200, -1, 16]])
+    assert (expected == boxes).all()
+
+
+def test_box_ccddcd2cccddd_2d(boxes0_2d):
+    expected_output = torch.clone(boxes0_2d)
+    output = ops_torch.box_ccddcd2cccddd(boxes0_2d)
+    assert torch.allclose(expected_output, output)
+
+
+def test_box_ccddcd2cccddd_3d(boxes0_3d):
+    expected_output = torch.tensor([[0, 0, 0, 2, 2, 2], [0, 0, 0, 2, 2, 2]]).float()
+    output = ops_torch.box_ccddcd2cccddd(boxes0_3d)
+    assert torch.allclose(expected_output, output)
+
+
+def test_box_cccddd2ccddcd_2d(boxes0_2d):
+    expected_output = torch.clone(boxes0_2d)
+    output = ops_torch.box_ccddcd2cccddd(boxes0_2d)
+    assert torch.allclose(expected_output, output)
+
+
+def test_box_cccddd2ccddcd_3d(boxes0_3d):
+    boxes_input = torch.tensor([[0, 0, 0, 2, 2, 2], [0, 0, 0, 2, 2, 2]]).float()
+    output = ops_torch.box_cccddd2ccddcd(boxes_input)
+    assert torch.allclose(boxes0_3d, output)
+
+
+def test_box_center2point_format_2d(boxes0_2d):
+    boxes_input = torch.tensor([[1.0, 1.0, 2.0, 2.0], [1.0, 1.0, 2.0, 2.0]]).float()
+    output = ops_torch.box_center2point_format(boxes_input)
+    assert torch.allclose(boxes0_2d, output)
+
+
+def test_box_point2center_format_2d(boxes0_2d):
+    expected_output = torch.tensor([[1.0, 1.0, 2.0, 2.0], [1.0, 1.0, 2.0, 2.0]]).float()
+    output = ops_torch.box_point2center_format(boxes0_2d)
+    assert torch.allclose(expected_output, output)
+
+
+def test_box_center2point_format_3d(boxes0_3d):
+    boxes_input = torch.tensor(
+        [
+            [1.0, 1.0, 2.0, 2.0, 1.0, 2.0],
+            [1.0, 1.0, 2.0, 2.0, 1.0, 2.0],
+        ]
+    ).float()
+    output = ops_torch.box_center2point_format(boxes_input)
+    assert torch.allclose(boxes0_3d, output)
+
+
+def test_box_point2center_format_3d(boxes0_3d):
+    expected_output = torch.tensor(
+        [
+            [1.0, 1.0, 2.0, 2.0, 1.0, 2.0],
+            [1.0, 1.0, 2.0, 2.0, 1.0, 2.0],
+        ]
+    ).float()
+    output = ops_torch.box_point2center_format(boxes0_3d)
+    assert torch.allclose(expected_output, output)
+
+
+def test_box_point_rescale_with_size_2d(boxes0_2d):
+    scaled_boxes = ops_torch.box_point_rescale_with_size(boxes0_2d, (1, 2))
+    expected_output = torch.tensor([[0, 0, 2, 4], [0, 0, 2, 4]]).float()
+    assert torch.allclose(expected_output, scaled_boxes)
+
+
+def test_box_point_rescale_with_size_3d(boxes0_3d):
+    scaled_boxes = ops_torch.box_point_rescale_with_size(boxes0_3d, (1, 2, 3))
+    expected_output = torch.tensor([[0, 0, 2, 4, 0, 6], [0, 0, 2, 4, 0, 6]]).float()
+    assert torch.allclose(expected_output, scaled_boxes)
+
+
+# TODO: test extra batched
+
+
+def test_box_point_norm_with_size_2d(boxes0_2d):
+    scaled_boxes = ops_torch.box_point_norm_with_size(boxes0_2d, (1, 2))
+    expected_output = torch.tensor([[0, 0, 2, 1], [0, 0, 2, 1]]).float()
+    assert torch.allclose(expected_output, scaled_boxes)
+
+
+def test_box_point_norm_with_size_3d(boxes0_3d):
+    scaled_boxes = ops_torch.box_point_norm_with_size(boxes0_3d, (1, 2, 0.5))
+    expected_output = torch.tensor([[0, 0, 2, 1, 0, 4], [0, 0, 2, 1, 0, 4]]).float()
+    assert torch.allclose(expected_output, scaled_boxes)
