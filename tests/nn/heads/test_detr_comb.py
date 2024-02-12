@@ -264,16 +264,16 @@ class TestForward:
         self._forward_assert_module(detr_head)
 
     def test_cdetr_forward(self, cdetr_head):
-        reference = torch.rand(self.bs, self.num_det, DIM)
-        self._forward_assert_module(cdetr_head, reference=reference)
+        refs_ccddcd_norm = torch.rand(self.bs, self.num_det, DIM)
+        self._forward_assert_module(cdetr_head, refs_ccddcd_norm=refs_ccddcd_norm)
 
-    def _forward_assert_module(self, module, reference=None):
+    def _forward_assert_module(self, module, refs_ccddcd_norm=None):
 
         example_sequence = torch.rand(self.num_dec, self.bs, self.num_det, IN_CHANNELS)
         expected_logit_shape = (self.bs, self.num_det, NUM_CLASSES)
         expected_coords_shape = (self.bs, self.num_det, DIM * 2)
 
-        output = module(example_sequence, reference=reference)
+        output = module(example_sequence, refs_ccddcd_norm=refs_ccddcd_norm)
 
         assert output["pred_cls_logits"].shape == expected_logit_shape
         assert output["pred_box_coords"].shape == expected_coords_shape
