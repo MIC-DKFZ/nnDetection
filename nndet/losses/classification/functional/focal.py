@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Optional
+
 import torch
 from torch.nn import functional as F
 
@@ -14,6 +16,7 @@ def focal_loss_with_logits(
     gamma: float,
     alpha: float = -1,
     reduction: str = "mean",
+    mask: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """
     Focal loss
@@ -29,6 +32,8 @@ def focal_loss_with_logits(
             mean: mean of loss over entire batch
             sum: sum of loss over entire batch
             none: no reduction
+        mask: optional binary mask to mask certain regions from loss. Only
+            entries with `True` are considered for loss computation. Shape [*]
 
     Returns:
         torch.Tensor: loss
@@ -43,4 +48,6 @@ def focal_loss_with_logits(
     if alpha >= 0:
         alpha_t = alpha * target + (1 - alpha) * (1 - target)
         loss = alpha_t * loss
+    if mask is not None:
+        loss[~mask] = 0
     return reduction_helper(loss, reduction=reduction)

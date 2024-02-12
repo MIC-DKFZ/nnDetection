@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Optional
+
 import torch
 
 from nndet.losses.classification.functional.asymfocal import (
@@ -49,17 +51,17 @@ class BFocalLoss(SigmoidBaseLoss):
         self,
         preds: torch.Tensor,
         targets: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Compute loss with subclass loss function
 
         Args:
-            preds: predictions (pre act) with shape [*, C], where
-                * are arbitrary spatial dimensions, C is the number of
-                *foreground* classes
-            targets: target classes. 0 is treated as background, >0 are
-                treated as foreground classes. [*] where * are arbitrary
-                spatial dimensions
+            preds: predictions (pre act) with shape [*]
+            targets: target binary map [*]
+            mask: optional binary mask to mask certain regions from loss. Only
+                entries with `True` are considered for loss computation.
+                Shape [*]
 
         Returns:
             torch.Tensor: loss
@@ -70,6 +72,7 @@ class BFocalLoss(SigmoidBaseLoss):
             gamma=self.gamma,
             alpha=self.alpha,
             reduction=self.reduction,
+            mask=mask,
         )
 
     def extra_repr(self) -> str:
