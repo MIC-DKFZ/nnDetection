@@ -68,6 +68,7 @@ head_kwargs:
   scale_aux_loss: 'none' # one of 'none' | 'mean' | 'reduced'
   norm_cls_loss_by_num_boxes: True # normalize classification loss by avg number of boxes
   norm_reg_loss_by_num_boxes: True # normalize regression loss by avg number of boxes
+  enc_class_agnostic_loss: False # default Deformable DETR: True; compute enc class loss on binary labels
 
 # classifier
 head_classifier_kwargs:
