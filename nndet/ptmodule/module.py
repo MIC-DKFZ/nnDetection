@@ -349,14 +349,12 @@ class LightningBaseModule(pl.LightningModule):
             )
         return callbacks
     
-    def load_custom_state_dict(self, path, key):
+    def load_custom_state_dict(self, path):
         """"
         Load custom state_dict
 
         Args:
             path: filepath to model checkpoint
-            key: key to access state_dict (default = "state_dict")
         """
-
-        return torch.nn.Module.load_state_dict(torch.load(path)[key], strict=True)
+        return torch.nn.Module.load_state_dict(torch.load(path)["state_dict"], strict=True)
 
