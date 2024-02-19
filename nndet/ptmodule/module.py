@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
@@ -348,13 +349,14 @@ class LightningBaseModule(pl.LightningModule):
                 )
             )
         return callbacks
-    
-    def load_custom_state_dict(self, path):
-        """"
+
+    def load_custom_state_dict(self, path: os.Pathlike) -> None:
+        """ "
         Load custom state_dict
 
         Args:
             path: filepath to model checkpoint
         """
-        return torch.nn.Module.load_state_dict(torch.load(path)["state_dict"], strict=True)
-
+        checkpoint = torch.load(str(path), map_location="cpu")
+        self.load_state_dict(checkpoint["state_dict"], strict=True)
+        return
