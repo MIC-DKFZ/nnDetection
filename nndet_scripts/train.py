@@ -47,7 +47,6 @@ from nndet.utils.info import (
     write_requirements,
 )
 
-
 @env_guard
 def train() -> None:
     """
@@ -500,7 +499,7 @@ def _train(
                 _s = f"Transfer learning active, expected {_path} to exist."
                 logger.error(_s)
                 raise RuntimeError(_s)
-            module.load_state_dict(torch.load(_path)["state_dict"], strict=True)
+            module.load_custom_state_dict(_path)
 
     num_gpus = cfg["accelerator_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
