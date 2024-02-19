@@ -351,7 +351,7 @@ class LightningBaseModule(pl.LightningModule):
         return callbacks
 
     def load_custom_state_dict(self, path: os.Pathlike) -> None:
-        """ "
+        """
         Load custom state_dict
 
         Args:
