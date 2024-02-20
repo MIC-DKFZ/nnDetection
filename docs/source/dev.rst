@@ -6,6 +6,15 @@ TODO: interaction diagram of the different classes  (ptmodule = core)
 
 Intro ... # TODO
 
+Developer Flags
+===============
+
+nnDetection supports a broad range of configurations to provide extended information regarding models and training behavior.
+These need to be specifically enable by the user for e.g. debugging purposes:
+
+* `det_extended_logging`: Enable extended logging for some of the models (e.g. criterions for DETR).
+
+
 Registries
 ==========
 

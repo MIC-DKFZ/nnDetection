@@ -1,18 +1,24 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, Optional
+import copy
+from typing import Dict, Optional, Union
 
 import torch
+from loguru import logger
 
 import nndet.core.ops_torch as ops_torch
 from nndet.losses.regression.giou import GIoULossPaired
+from nndet.losses.regression.l1 import L1Loss
 from nndet.losses.regression.smoothl1 import SmoothL1Loss
 from nndet.utils.enums import FFNRegWeightInit
 from nndet.utils.typing import LINEARSEQ
 
 
 class FFNRegressor(torch.nn.Module):
+    _box_norm_fn = torch.functional.F.sigmoid
+    _inverse_box_norm_fn = ops_torch.inverse_sigmoid
+
     def __init__(
         self,
         linear: LINEARSEQ,
@@ -22,7 +28,10 @@ class FFNRegressor(torch.nn.Module):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
-        weight_init_mode: str = "base",
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        ffn_weight_init: Optional[Union[str, FFNRegWeightInit]] = None,
         **kwargs,
     ) -> None:
         """
@@ -36,17 +45,25 @@ class FFNRegressor(torch.nn.Module):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            zero_init: initialise last layer with zeros (weight and bias)
             kwargs: passed to linear generator class
         """
         super().__init__()
+
         if num_layers < 1:
             raise ValueError(f"Need at least one linear layer in FFN head got {num_layers}!")
         self.in_channels = in_channels
         self.internal_channels = internal_channels
         self.num_layers = num_layers
         self.dim = dim
-        self.weight_init_mode = FFNRegWeightInit(weight_init_mode)
+        if ffn_weight_init is None:
+            ffn_weight_init = "none"
+        self.ffn_weight_init = FFNRegWeightInit(ffn_weight_init)
 
+        # Create final output mlp
         self.mlp = self._build_module(
             linear=linear,
             add_norm=add_norm,
@@ -54,10 +71,25 @@ class FFNRegressor(torch.nn.Module):
             **kwargs,
         )
 
+        # configure MLPs
+        self.encoder_mlp = None
+        self.aux_mlp = None
+        self.share_mlp = share_mlp
+        self.num_decoder_layers = num_decoder_layers
+
+        if not self.share_mlp:
+            self.aux_mlp = torch.nn.ModuleList([copy.deepcopy(self.mlp) for i in range(num_decoder_layers - 1)])
+            if use_encoder_mlp:
+                self.encoder_mlp = copy.deepcopy(self.mlp)
+        elif use_encoder_mlp:
+            self.encoder_mlp = self.mlp
+
+        # losses
         self.loss_name: str = "ffn_reg_spec"
         self.box_loss_name: str = "ffn_reg_box"
         self.loss: Optional[torch.nn.Module] = None
         self.box_loss: Optional[torch.nn.Module] = None
+
         self.init_weights()
 
     def _build_module(
@@ -98,28 +130,53 @@ class FFNRegressor(torch.nn.Module):
                     **kwargs,
                 )
             )
-
-        if len(modules) == 1:
-            return modules[0]
-        else:
-            return torch.nn.Sequential(*modules)
+        return torch.nn.Sequential(*modules)
 
     def init_weights(self):
         """
         Init weights
         """
-        if self.weight_init_mode == FFNRegWeightInit.LAST_LAYER_ZERO:
-            torch.nn.init.constant_(self.mlp[-1].fc.weight, 0)
-            torch.nn.init.constant_(self.mlp[-1].fc.bias, 0)
+        if self.ffn_weight_init == FFNRegWeightInit.NONE:
+            pass
+        elif self.ffn_weight_init == FFNRegWeightInit.ZERO:
+            logger.info("Init FFN regressor with weight and bias zero")
+            # zero weight & bias init
+            torch.nn.init.constant_(self.mlp[-1][-1].weight.data, 0.0)
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data, 0.0)
 
-    def forward(self, features: torch.Tensor) -> torch.Tensor:
+            if not self.share_mlp and self.aux_mlp is not None:
+                for mlp in self.aux_mlp:
+                    torch.nn.init.constant_(mlp[-1][-1].weight.data, 0.0)
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data, 0.0)
+
+            if not self.share_mlp and self.encoder_mlp is not None:
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].weight.data, 0.0)
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data, 0.0)
+
+        elif self.ffn_weight_init == FFNRegWeightInit.ZERO_BIAS:
+            logger.info("Init FFN regressor with bias zero")
+            # zero bias init
+            torch.nn.init.constant_(self.mlp[-1][-1].bias.data, 0.0)
+
+            if not self.share_mlp and self.aux_mlp is not None:
+                for mlp in self.aux_mlp:
+                    torch.nn.init.constant_(mlp[-1][-1].bias.data, 0.0)
+
+            if not self.share_mlp and self.encoder_mlp is not None:
+                torch.nn.init.constant_(self.encoder_mlp[-1][-1].bias.data, 0.0)
+        else:
+            raise ValueError(f"Unknown weight init {self.ffn_weight_init}")
+
+    def forward(self, features: torch.Tensor, layer: Optional[int] = None) -> torch.Tensor:
         """
         Forward feature through module
 
         Args:
+            layer: index of current decoder layer
             features: input feature [D, B, R, C] where D=number of decoder
                 layers, B=batch size, R=number of predictions, C=number of
-                channels
+                channels; For some DETR models (e.g. Deformable DETR) the
+                number of decodr layer is omitted!
 
         Returns:
             torch.Tensor: output prediction, normalized image coordinates
@@ -127,31 +184,48 @@ class FFNRegressor(torch.nn.Module):
                 B=batch size, R=number of predictions, dims=number of
                 spatial dimensions
         """
-        return self.mlp(features)
+        # If mlps are shared, or no layer is given, or the last layer is accessed, return the main mlp
+        if self.share_mlp or layer is None or layer == self.num_decoder_layers - 1:
+            return self.mlp(features)
+        # else it is a not shared aux layer
+        return self.aux_mlp[layer](features)
 
-    def apply_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+    def get_encoder_regressor(self):
+        """
+        Get the regressor module for the encoder outputs
+
+        Returns:
+            nn.Module containing the encoder classifier
+        """
+        return self.encoder_mlp
+
+    @classmethod
+    def apply_non_lin(cls, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Normalise predictions
 
         Args:
             x: input tensor of arbitrary shape
+            kwargs: keyword arguments passed to function
 
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return torch.sigmoid(x)
+        return cls._box_norm_fn(x, **kwargs)
 
-    def apply_inverse_non_lin(self, x: torch.Tensor) -> torch.Tensor:
+    @classmethod
+    def apply_inverse_non_lin(cls, x: torch.Tensor, **kwargs) -> torch.Tensor:
         """
         Invert the non-linearity which is used to normalize the predictions
 
         Args:
             x: input tensor of arbitrary shape
+            kwargs: keyword arguments passed to function
 
         Returns:
             torch.Tensor: output tensor of same shape
         """
-        return ops_torch.inverse_sigmoid(x)
+        return cls._inverse_box_norm_fn(x, **kwargs)
 
     def compute_loss(
         self,
@@ -201,6 +275,9 @@ class L1FFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         beta: float = 1.0,
         reduction: Optional[str] = "sum",
@@ -220,6 +297,9 @@ class L1FFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             beta: L1 to L2 change point.
                 For beta values < 1e-5, L1 loss is computed.
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
@@ -235,6 +315,9 @@ class L1FFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.loss_name = "ffn_reg_l1"
@@ -256,6 +339,9 @@ class GIoUFFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         reduction: Optional[str] = "sum",
         box_loss_weight: float = 1.0,
@@ -274,6 +360,9 @@ class GIoUFFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             box_loss_weight: scalar to balance multiple losses
             box_loss_fp32: If True, loss is forced to be computed in float32
@@ -287,6 +376,9 @@ class GIoUFFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.box_loss_name = "ffn_reg_giou"
@@ -307,8 +399,82 @@ class L1GIoUFFNRegressor(FFNRegressor):
         num_layers: int = 1,
         add_norm: bool = False,
         dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
         # Loss paramter
         beta: float = 1.0,
+        reduction: Optional[str] = "sum",
+        loss_weight: float = 1.0,
+        loss_fp32: bool = False,
+        box_loss_weight: float = 1.0,
+        box_loss_fp32: bool = False,
+        **kwargs,
+    ) -> None:
+        """
+        Feed forward network head (usually used in DETR like models)
+        trained with (smooth) L1 + GIoU loss
+
+        Args:
+            linear: generator object to obtain linear layer blocks
+            in_channels: number of input channels
+            internal_channels: number of internal channels to use
+            dim: number of spatial dimensions
+            num_layers: Number of linear layers to use. Defaults to 1.
+            add_norm: Add normalisation layers. Defaults to False.
+            dropout_rate: Dropout probability in last layer. Defaults to 0.0.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
+            beta: L1 to L2 change point.
+                For beta values < 1e-5, L1 loss is computed.
+            reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
+            loss_weight: scalar to balance multiple losses
+            loss_fp32: If True, loss is forced to be computed in float32
+            kwargs: passed to linear generator class
+        """
+        super().__init__(
+            linear=linear,
+            in_channels=in_channels,
+            internal_channels=internal_channels,
+            dim=dim,
+            num_layers=num_layers,
+            add_norm=add_norm,
+            dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
+            **kwargs,
+        )
+        self.loss_name = "ffn_reg_l1"
+        self.loss = SmoothL1Loss(
+            beta=beta,
+            reduction=reduction,
+            loss_weight=loss_weight,
+            loss_fp32=loss_fp32,
+        )
+        self.box_loss_name = "ffn_reg_giou"
+        self.box_loss = GIoULossPaired(
+            reduction=reduction,
+            loss_weight=box_loss_weight,
+            loss_fp32=box_loss_fp32,
+        )
+
+
+class L1UGIoUFFNRegressor(FFNRegressor):
+    def __init__(
+        self,
+        linear: LINEARSEQ,
+        in_channels: int,
+        internal_channels: int,
+        dim: int,
+        num_layers: int = 1,
+        add_norm: bool = False,
+        dropout_rate: float = 0.0,
+        num_decoder_layers: int = 0,
+        share_mlp: bool = True,
+        use_encoder_mlp: bool = False,
+        # Loss parameter
         reduction: Optional[str] = "sum",
         loss_weight: float = 1.0,
         loss_fp32: bool = False,
@@ -328,8 +494,9 @@ class L1GIoUFFNRegressor(FFNRegressor):
             num_layers: Number of linear layers to use. Defaults to 1.
             add_norm: Add normalisation layers. Defaults to False.
             dropout_rate: Dropout probability in last layer. Defaults to 0.0.
-            beta: L1 to L2 change point.
-                For beta values < 1e-5, L1 loss is computed.
+            num_decoder_layers: number of decoder layers in transformer
+            share_mlp: share MLP between layers
+            use_encoder_mlp: add an additional MLP for the transformer encoder
             reduction: reduction to apply to loss. 'sum' | 'mean' | 'none'
             loss_weight: scalar to balance multiple losses
             loss_fp32: If True, loss is forced to be computed in float32
@@ -343,11 +510,13 @@ class L1GIoUFFNRegressor(FFNRegressor):
             num_layers=num_layers,
             add_norm=add_norm,
             dropout_rate=dropout_rate,
+            num_decoder_layers=num_decoder_layers,
+            share_mlp=share_mlp,
+            use_encoder_mlp=use_encoder_mlp,
             **kwargs,
         )
         self.loss_name = "ffn_reg_l1"
-        self.loss = SmoothL1Loss(
-            beta=beta,
+        self.loss = L1Loss(
             reduction=reduction,
             loss_weight=loss_weight,
             loss_fp32=loss_fp32,

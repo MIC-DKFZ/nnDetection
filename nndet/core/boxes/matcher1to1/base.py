@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
-
+import os
 from abc import abstractmethod
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -38,6 +38,7 @@ class BaseMatcher(nn.Module):
         super().__init__()
         self.class_criterion = class_criterion
         self.box_criterion = box_criterion
+        self.extended_logging = os.getenv("det_extended_logging", 0)
 
     @torch.no_grad()
     def forward(
@@ -46,7 +47,7 @@ class BaseMatcher(nn.Module):
         pred_coords: torch.Tensor,
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
-    ) -> List[Tuple[Optional[Tensor], Optional[Tensor]]]:
+    ) -> Tuple[List[Tuple[Optional[Tensor], Optional[Tensor]]], Dict[str, torch.Tensor]]:
         """
         Perform matching over whole batch
 
@@ -73,6 +74,7 @@ class BaseMatcher(nn.Module):
                 len(index_i) = len(index_j) = min(num_pred, num_target_boxes)
                 Entries with None correspond to images without ground truth
                 objects.
+            Optional[Dict]: Dict containing the matching cost
         """
         # Filter out patches with no boxes in them
         num_boxes = 0
@@ -89,7 +91,7 @@ class BaseMatcher(nn.Module):
                 mask.append(True)
 
         if num_boxes > 0:
-            masked_indices = self.match(
+            masked_indices, log_dict = self.match(
                 pred_logits=pred_logits[mask],
                 pred_coords=pred_coords[mask],
                 target_boxes=masked_boxes,
@@ -97,9 +99,10 @@ class BaseMatcher(nn.Module):
             )
         else:
             masked_indices = []
+            log_dict = {}
 
         indices = self.unmask_indices(mask, masked_indices)
-        return indices
+        return indices, log_dict
 
     @classmethod
     def unmask_indices(

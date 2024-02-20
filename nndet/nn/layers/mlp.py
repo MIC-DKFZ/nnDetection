@@ -26,20 +26,20 @@ class MLP(nn.Module):
         output_dim: Optional[int] = None,
         ffn_drop: Optional[float] = 0.0,
         fc_bias: Optional[bool] = True,
-        add_identity: Optional[bool] = True,
     ):
         """
         The implementation of a fully connected network with identity connection.
+        (lin -> act -> do) X (num_layers - 1) -> (lin -> do)
 
         Args:
             embed_dim: The feature dimension.
             feedforward_dim: The hidden dimension of FFNs.
-            output_dim: The output feature dimension of FFNs. If None, the
-                `embed_dim` will be used.
             num_layers: The number of fully-connected layers in FFNs.
             activation: The activation layer used in FFNs.
+            output_dim: The output feature dimension of FFNs. If None, the
+                `embed_dim` will be used.
             ffn_drop: Probability of an element to be zeroed in FFN.
-            add_identity: Whether to add the identity connection.
+            fc_bias: whether to use bias in linear layers
         """
         super().__init__()
         assert num_layers >= 2, "num_layers should be no less " f"than 2. got {num_layers}."
@@ -64,7 +64,6 @@ class MLP(nn.Module):
         layers.append(nn.Linear(feedforward_dim, output_dim, bias=fc_bias))
         layers.append(nn.Dropout(ffn_drop))
         self.layers = nn.Sequential(*layers)
-        self.add_identity = add_identity
 
     def forward(
         self,
@@ -83,11 +82,9 @@ class MLP(nn.Module):
             the forward results of `FFN` layer
         """
         out = self.layers(x)
-        if not self.add_identity:
-            return out
-        if identity is None:
-            identity = x
-        return identity + out
+        if identity is not None:
+            out = out + identity
+        return out
 
 
 class ReluMLP(MLP):
@@ -116,7 +113,6 @@ class ReluMLP(MLP):
             ffn_drop=0.0,
             activation=nn.ReLU(inplace=True),
             fc_bias=True,
-            add_identity=False,
         )
 
 
@@ -126,7 +122,6 @@ class ReluDropIdentityMLP(MLP):
         embed_dim: int,
         feedforward_dim: int,
         num_layers: int,
-        output_dim: Optional[int] = None,
         ffn_drop: Optional[float] = 0.0,
         fc_bias: Optional[bool] = True,
     ):
@@ -134,19 +129,21 @@ class ReluDropIdentityMLP(MLP):
         MLP with ReLU activation, dropout and a skip connection. Used in
         transformer layers.
 
+        (lin -> ReLU -> do) X (num_layers - 1) -> (lin -> do)
+
         Args:
             embed_dim: number of input neurons
             feedforward_dim: number of neurons in the hidden layers
-            output_dim: number of output neurons
             num_layers: number of layers
+            ffn_drop: Probability of an element to be zeroed in FFN.
+            fc_bias: whether to use bias in linear layers
         """
         super().__init__(
             embed_dim=embed_dim,
             feedforward_dim=feedforward_dim,
-            output_dim=output_dim,
+            output_dim=None,
             num_layers=num_layers,
-            activation=nn.ReLU(),
+            activation=nn.ReLU(inplace=True),
             ffn_drop=ffn_drop,
             fc_bias=fc_bias,
-            add_identity=True,
         )

@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# DETR
+# detector settings
+detector:
+  detection_per_img: 24  # number of detections per image # FIXME make configurable
+
+# backbone
+backbone_kwargs: # keyword arguments passed to encoder
+  pooling_mode: conv_kernel # one of 'block' | 'conv_stride' | 'max_kernel' | 'max_stride | 'avg_kernel' | 'avg_stride'
+  start_channels: 48 # number of starting channels
+  max_channels: 512 # maximum number of channels
+
+# channel Mapper
+channel_mapper_kwargs:
+  extra_levels: 0
+  kernel_size: 1
+  conv_kwargs: {}
+
+# transformer
+transformer:
+  num_feature_levels: 1 # number of feature level used for transformer
+  do_weight_init: True # initialize weight with given (DETR Xavier init) initialisation
+  hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+  two_stage: False # only used in Deformable DETR
+
+transformer_encoder_kwargs:
+  num_layers: 3
+  post_norm: False
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  attention_heads: 8  # number of attention heads in the transformer
+
+transformer_decoder_kwargs:
+  num_layers: 3
+  post_norm: True
+  attn_dropout: 0.1
+  proj_dropout: 0.1
+  ffn_dropout: 0.1
+  dim_feedforward: 1024
+  attention_heads: 8  # number of attention heads in the transformer
+
+# positional embedding keyword arguments
+pos_embed:
+  # sine embedding
+  temperature: 10000
+  normalize: True  # old default was False
+  scale:
+  offset: 0.0
+
+# head
+head_kwargs:
+  aux_loss: True
+  scale_aux_loss: 'none' # one of 'none' | 'mean' | 'reduced'
+  norm_cls_loss_by_num_boxes: True # normalize classification loss by avg number of boxes
+  norm_reg_loss_by_num_boxes: True # normalize regression loss by avg number of boxes
+
+# classifier
+head_classifier_kwargs:
+  internal_channels: ${model_cfg.transformer.hidden_dim}
+  num_layers: 2
+  add_norm: False
+  dropout_rate: 0.0
+  prior_prob: 0.01
+  # loss
+  gamma: 1 # gamma for focal loss
+  alpha: 0.75  # alpha for focal loss
+  loss_weight: 2 # cls loss weight
+  reduction: "mean_last_sum"  # set to 'sum' if norm_cls_loss_by_num_boxes is True, otherwise 'mean'
+
+# regressor
+head_regressor_kwargs:
+  internal_channels: ${model_cfg.transformer.hidden_dim}
+  num_layers: 2
+  add_norm: False
+  dropout_rate: 0.0
+  ffn_weight_init: "zero_bias" # conditional detr default: zero
+  # loss
+  loss_weight: 5 # loss weight L1
+  box_loss_weight: 2 # loss weight GIoU
+  reduction: "sum"  # set to 'sum' if norm_reg_loss_by_num_boxes is True, otherwise 'mean'
+
+# matcher
+matcher_class_criterion_kwargs:
+  loss_weight: 2
+  gamma: ${model_cfg.head_classifier_kwargs.gamma}
+  alpha: ${model_cfg.head_classifier_kwargs.alpha}
+matcher_reg_criterion_kwargs:
+  loss_weight: 5
+matcher_box_criterion_kwargs:
+  loss_weight: 2
+matcher_kwargs: {}
+
+# postprocessing
+head_box_post_kwargs:
+  topk: ${model_cfg.detector.detection_per_img}

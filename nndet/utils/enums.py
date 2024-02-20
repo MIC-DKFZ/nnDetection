@@ -68,5 +68,6 @@ class BoxPointMode(Enum):
 
 
 class FFNRegWeightInit(Enum):
-    BASE = "base"
-    LAST_LAYER_ZERO = "last_layer_zero"
+    NONE = "none"  # default weight initialisation by linear layer
+    ZERO = "zero"  # set weight and bias to zero
+    ZERO_BIAS = "zero_bias"  # set bias to zero

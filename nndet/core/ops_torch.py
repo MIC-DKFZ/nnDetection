@@ -884,6 +884,30 @@ def inverse_sigmoid(data: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
     return torch.log(x1 / x2)
 
 
+class InverseSigmoid(torch.nn.Module):
+    def _init_(self, eps: float = 1e-5):
+        """
+        Inverse Sigmoid Module
+
+        Args:
+            eps: epsilon for numerical stability. Defaults to 1e-5.
+        """
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Inverse Sigmoid Function
+
+        Args:
+            data: input tensor [*], arbitrary shape
+
+        Returns:
+            torch.Tensor: inverse sigmoid of values in original tensor [*]
+        """
+        return inverse_sigmoid(data, eps=self.eps)
+
+
 def box_point_norm_with_size(
     boxes: torch.Tensor,
     img_shape: ND_TUPLE_INT,
@@ -1002,3 +1026,39 @@ def box_center2point_format(boxes_center: torch.Tensor) -> torch.Tensor:
             cz + 0.5 * dz,
         ]
     return torch.stack(bp, dim=-1)
+
+
+def box_cccddd2ccddcd(boxes: torch.Tensor) -> torch.Tensor:
+    """
+    Convert boxes from cccddd format to ccddcd format. If
+    boxes are only 2D, nothing is done.
+
+    Args:
+        boxes: convert boxes from (cx, cy, cz, dx, dy, dz) to
+            (cx, cy, dx, dy, cz, dz).
+
+    Returns:
+        torch.Tensor: boxes in ccddcd format
+    """
+    if boxes.shape[-1] == 6:
+        return boxes[..., [0, 1, 3, 4, 2, 5]]
+    else:
+        return boxes
+
+
+def box_ccddcd2cccddd(boxes: torch.Tensor) -> torch.Tensor:
+    """
+    Convert boxes from ccddcd format to cccddd format. If
+    boxes are only 2D, nothing is done.
+
+    Args:
+        boxes: convert boxes from (cx, cy, dx, dy, cz, dz) to
+        (cx, cy, cz, dx, dy, dz).
+
+    Returns:
+        torch.Tensor: boxes in cccddd format
+    """
+    if boxes.shape[-1] == 6:
+        return boxes[..., [0, 1, 4, 2, 3, 5]]
+    else:
+        return boxes

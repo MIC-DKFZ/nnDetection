@@ -12,6 +12,17 @@ class AbstractTransformer(nn.Module):
     Abstract Transformer Class for DETR like models
     """
 
+    @classmethod
+    def is_batch_first(cls) -> bool:
+        """
+        Return if transformer uses batch first to call encoder and decoder
+
+        Returns:
+            bool: `True` is first dimenesion corresponds to batch, otherwise
+                `False`.
+        """
+        return False
+
     @abstractmethod
     def forward(
         self,

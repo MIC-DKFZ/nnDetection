@@ -36,7 +36,7 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             dim: number of spatial dimensions
             num_pos_feats: number of positional encoding features (d in formula)
             temperature: term in denominator to compute position
-            noramlize: normalize t to the [0, 1] range
+            normalize: normalize t to the [0, 1] range
             scale: scale t to different range, only applicable if normalize is
                 set to `True`
             offset: add offset to t, only applicable if normalize is set to
@@ -46,11 +46,6 @@ class PositionEmbeddingSine(BasePositionEmbedding):
             dim=dim,
             num_pos_feats=num_pos_feats,
         )
-
-        if self.dim == 3 and self.num_pos_feats % 6 != 0:
-            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 3 (in 3D)")
-        if self.dim == 2 and self.num_pos_feats % 4 != 0:
-            raise ValueError("Sine encoding can only be used if num_pos_feats is divisible by 2 (in 2D)")
 
         self.temperature = temperature
         self.normalize = normalize
@@ -77,9 +72,9 @@ class PositionEmbeddingSine(BasePositionEmbedding):
                 N = batch size, dims = spatial dimensions
         """
         if self.dim == 3:
-            _num_pos_feats = self.num_pos_feats // 3
+            _num_pos_feats = 2 * math.ceil(self.num_pos_feats / 6)
         else:
-            _num_pos_feats = self.num_pos_feats // 2
+            _num_pos_feats = 2 * math.ceil(self.num_pos_feats / 4)
 
         if data.ndim == 4:  # 2D
             stack_dim = 4
@@ -116,7 +111,19 @@ class PositionEmbeddingSine(BasePositionEmbedding):
         if data.ndim == 5:
             pos_z = z_embed[..., None] / dim_t  # [batch, ax0, ax1(, ax2), _num_pos_feats]
             pos_z = torch.stack((pos_z[..., 0::2].sin(), pos_z[..., 1::2].cos()), dim=stack_dim).flatten(-2)
-            pos = torch.cat((pos_x, pos_y, pos_z), dim=4).permute(0, 4, 1, 2, 3)
+            # reduce dimension in a symmetric way
+            cut_dims = 3 * _num_pos_feats - self.num_pos_feats
+            slice_x, slice_y, slice_z = _num_pos_feats - torch.clamp(
+                torch.div(cut_dims + torch.arange(0, 3, device=data.device), 3, rounding_mode="floor"), 0
+            )
+            pos = torch.cat((pos_x[..., :slice_x], pos_y[..., :slice_y], pos_z[..., :slice_z]), dim=4).permute(
+                0, 4, 1, 2, 3
+            )
         else:
-            pos = torch.cat((pos_x, pos_y), dim=3).permute(0, 3, 1, 2)
+            cut_dims = 2 * _num_pos_feats - self.num_pos_feats
+            slice_x, slice_y = _num_pos_feats - torch.clamp(
+                torch.div(cut_dims + torch.arange(0, 2, device=data.device), 2, rounding_mode="floor"), 0
+            )
+            pos = torch.cat((pos_x[..., :slice_x], pos_y[..., :slice_y]), dim=3).permute(0, 3, 1, 2)
+        # Remove channels, this only removes z positions
         return pos

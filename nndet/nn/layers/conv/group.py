@@ -38,6 +38,7 @@ class ConvGroupRelu(BaseConvNormAct):
         act_inplace: Optional[bool] = None,
         norm_eps: float = 1e-5,
         norm_affine: bool = True,
+        num_groups: Optional[int] = None,
         norm_channels_per_group: int = 16,
         initializer: Callable[[nn.Module], None] = None,
     ):
@@ -72,6 +73,9 @@ class ConvGroupRelu(BaseConvNormAct):
             norm_channels_per_group: channels per group for group norm
             initializer: initilize weights
         """
+        # TODO enable proper support for both options
+        if num_groups is not None and norm_channels_per_group == 16:
+            norm_channels_per_group = None
         norm = "Group" if add_norm else None
         act = "ReLU" if add_act else None
 
@@ -91,6 +95,7 @@ class ConvGroupRelu(BaseConvNormAct):
             norm_kwargs={
                 "eps": norm_eps,
                 "affine": norm_affine,
+                "num_groups": num_groups,
                 "channels_per_group": norm_channels_per_group,
             },
             act_inplace=act_inplace,

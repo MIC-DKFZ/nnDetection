@@ -11,11 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import warnings
 from typing import Optional
 
 import torch
 import torch.nn as nn
+from loguru import logger
 
 
 class MultiheadAttention(nn.Module):
@@ -61,9 +61,9 @@ class MultiheadAttention(nn.Module):
     def forward(
         self,
         query: torch.Tensor,
-        key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
-        identity: Optional[torch.Tensor] = None,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        identity: torch.Tensor,
         query_pos: Optional[torch.Tensor] = None,
         key_pos: Optional[torch.Tensor] = None,
         attn_mask: Optional[torch.Tensor] = None,
@@ -99,19 +99,10 @@ class MultiheadAttention(nn.Module):
         Returns:
             the output sequence with shape `(num_query, bs, embed_dim)`
         """
-        if key is None:
-            key = query
-        if value is None:
-            value = key
-        if identity is None:
-            identity = query
-        if key_pos is None:
-            if query_pos is not None:
-                # use query_pos if key_pos is not available
-                if query_pos.shape == key.shape:
-                    key_pos = query_pos
-                else:
-                    warnings.warn(f"position encoding of key is" f"missing in {self.__class__.__name__}.")
+        assert identity is not None
+        if query_pos is None and key_pos is None:
+            logger.warning(f"position encoding of query and key is" f"missing in {self.__class__.__name__}.")
+
         if query_pos is not None:
             query = query + query_pos
         if key_pos is not None:

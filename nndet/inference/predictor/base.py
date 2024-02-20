@@ -38,6 +38,8 @@ class Predictor:
         model_weights: Sequence[float] = None,
         device: torch_device = "cuda:0",
         ensemble_on_device: bool = True,
+        save_get_shift_kwargs: Optional[dict] = None,
+        save_get_pad_kwargs: Optional[dict] = None,
     ):
         """
         Predict entire cases with TTA and Model-Ensembling
@@ -56,6 +58,10 @@ class Predictor:
                     - inverse tta transform
                     - forward predictions and batch to ensembler classes
         <- return patient result
+
+        Predictor first tries to extract crop with specififed
+        `save_get_shift_kwargs`, if extraction fails (e.g. crop bigger than
+        image) it will backup to `save_get_pad_kwargs`.
 
         Args:
             ensembler: Callable to instantiate ensembler from case and
@@ -80,6 +86,12 @@ class Predictor:
             ensemble_on_device: The results will be passed to the ensembler
                 class with the current device. The ensembler needs to make
                 sure to avoid memory leaks!
+            save_get_shift_kwargs: keyword arguments passed to croppig function
+                for shifted extraction. If None, `{mode: shift}` will be
+                passed.
+            save_get_pad_kwargs: keyword arguments passed to cropping function
+                for padded extraction. If None, `{mode: symmetric}` will be
+                passed.
         """
         self.ensemble_on_device = ensemble_on_device
         self.device = device
@@ -105,8 +117,14 @@ class Predictor:
         self.pre_transform = pre_transform
 
         self.grid_mode = "symmetric"
-        # self.save_get_kwargs = {"mode": "constant", "constant_values": 0}
-        self.save_get_kwargs = {"mode": "shift"}  # FIXME
+        if save_get_shift_kwargs is None:
+            self.save_get_shift_kwargs = {"mode": "shift"}
+        else:
+            self.save_get_shift_kwargs = save_get_shift_kwargs
+        if save_get_pad_kwargs is None:
+            self.save_get_pad_kwargs = {"mode": "symmetric"}
+        else:
+            self.save_get_pad_kwargs = save_get_pad_kwargs
 
         logger.info(
             f"Initialized predictor with patch size {self.crop_size} "
@@ -216,20 +234,20 @@ class Predictor:
         for crop in crops:
             try:
                 # try selected extraction mode
-                tile = {key: save_get_crop(case[key], crop, **self.save_get_kwargs)[0] for key in self.tile_keys}
+                tile = {key: save_get_crop(case[key], crop, **self.save_get_shift_kwargs)[0] for key in self.tile_keys}
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
                     data=case[self.tile_keys[0]],
                     crop=crop,
-                    **self.save_get_kwargs,
+                    **self.save_get_shift_kwargs,
                 )
             except RuntimeError:
                 # fallback to symmetric
                 logger.warning("Path size is bigger than whole case, padding case to match patch size")
-                tile = {key: save_get_crop(case[key], crop, mode="symmetric")[0] for key in self.tile_keys}
+                tile = {key: save_get_crop(case[key], crop, **self.save_get_pad_kwargs)[0] for key in self.tile_keys}
                 _, tile["tile_origin"], tile["crop"] = save_get_crop(
                     data=case[self.tile_keys[0]],
                     crop=crop,
-                    mode="symmetric",
+                    **self.save_get_pad_kwargs,
                 )
 
             if update_remaining:

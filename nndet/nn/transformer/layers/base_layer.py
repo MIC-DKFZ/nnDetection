@@ -113,6 +113,7 @@ class BaseTransformerLayer(nn.Module):
         attn_index = 0
         ffn_index = 0
         identity = query
+
         if attn_masks is None:
             attn_masks = [None for _ in range(self.num_attn)]
         elif isinstance(attn_masks, torch.Tensor):
@@ -128,31 +129,43 @@ class BaseTransformerLayer(nn.Module):
 
         for layer in self.operation_order:
             if layer == "self_attn":
-                temp_key = temp_value = query
+                assert query is not None
+                assert query_pos is not None
+                # self-attn: key = value = query
+                # self-attn: query_pos = key_pos = [object queries]
+                _temp_key = query
+                _temp_key_pos = query_pos
+                _attn_identity = identity if self.pre_norm else query
                 query = self.attentions[attn_index](
-                    query,
-                    temp_key,
-                    temp_value,
-                    identity if self.pre_norm else None,
+                    query=query,
+                    key=_temp_key,
+                    value=_temp_key,
+                    identity=_attn_identity,
                     query_pos=query_pos,
-                    key_pos=query_pos,
+                    key_pos=_temp_key_pos,
                     attn_mask=attn_masks[attn_index],
                     key_padding_mask=query_key_padding_mask,
                     **kwargs,
                 )
                 attn_index += 1
-                identity = query
+                identity = query  # update identity
 
             elif layer == "norm":
                 query = self.norms[norm_index](query)
                 norm_index += 1
 
             elif layer == "cross_attn":
+                assert query is not None
+                assert query_pos is not None
+                # assert key_pos is not None
+                # cross-attn: key = value = query
+                # cross-attn: query_pos != key_pos; query_pos = object queries; key_pos = pos embedding
+                _attn_identity = identity if self.pre_norm else query
                 query = self.attentions[attn_index](
-                    query,
-                    key,
-                    value,
-                    identity if self.pre_norm else None,
+                    query=query,
+                    key=key,
+                    value=value,
+                    identity=_attn_identity,
                     query_pos=query_pos,
                     key_pos=key_pos,
                     attn_mask=attn_masks[attn_index],
@@ -160,42 +173,11 @@ class BaseTransformerLayer(nn.Module):
                     **kwargs,
                 )
                 attn_index += 1
-                identity = query
+                identity = query  # update identity
 
             elif layer == "ffn":
-                query = self.ffns[ffn_index](query, identity if self.pre_norm else None)
+                _ffn_identity = identity if self.pre_norm else query
+                query = self.ffns[ffn_index](query, identity=_ffn_identity)
                 ffn_index += 1
 
         return query
-
-
-class TransformerLayerSequence(nn.Module):
-    def __init__(
-        self,
-        transformer_layers: Union[List[BaseTransformerLayer], BaseTransformerLayer],
-        num_layers: int,
-    ):
-        """
-        Base class for the layers of the TransformerEncoder and
-        TransformerDecoder, which will copy the passed `transformer_layers`
-        module `num_layers` time or save the passed list of `transformer_layers`
-        as parameters named ``self.layers`` which is the type of
-        ``nn.ModuleList``.
-
-        Args:
-            transformer_layers: A list of BaseTransformerLayer. If it is
-                obj:`BaseTransformerLayer`, it would be repeated `num_layers`
-                times
-                to a list[BaseTransformerLayer]
-            num_layers: The number of `TransformerLayer`.
-        """
-        super(TransformerLayerSequence, self).__init__()
-        self.num_layers = num_layers
-        self.layers = nn.ModuleList()
-        if isinstance(transformer_layers, nn.Module):
-            for _ in range(num_layers):
-                self.layers.append(copy.deepcopy(transformer_layers))
-        else:
-            assert isinstance(transformer_layers, list) and len(transformer_layers) == num_layers
-            for i in range(num_layers):
-                self.layers.append(transformer_layers[i])

@@ -26,9 +26,9 @@ class BaseDETR(AbstractDetector):
         hidden_dim: int,
         detection_per_img: int,
         query_dim: int,
-        num_feature_levels: int = 1,
         segmenter: Optional[Segmenter] = None,
         two_stage: bool = False,
+        use_pos_queries: bool = False,
     ):
         """
         Basic DETR Module, Implements forward pass, loss computation
@@ -38,34 +38,38 @@ class BaseDETR(AbstractDetector):
             channel_mapper: Module that maps the features channel dimension
                 to the hidden_dim in the transformer
             transformer: Transformer Model
-            head: Head used for classification, regression, loss computation
-                and postprocessing
+            head: Head used for classification, regression, loss computation and
+                postprocessing
             pos_embed: module to generate positional embedding
             hidden_dim: Dimension of the transformer sequence
             detection_per_img: number of detections the model does per patch
-            query_dim: dimension of object queries in the decoder (usually
-                same as hidden dim except for DABDETR)
-            num_feature_levels: which levels of backbone input should be used
-                for the transformer input (currently only one supported)
+            pos_embed: module to generate positional embedding
+            query_dim: dimension of object queries in the decoder
             segmenter: (Optional) segmenter to predict a semantic segmentations
                 from the feature maps
-            two_stage: toggle whether the encoder should predict objects and
-                use those as query candidates
+            two_stage: toggle whether the encoder should predict objects and use
+                those as query candidates
+            use_pos_queries: double number of query channels which will later
+                be splitted into content and positional
         """
         super().__init__()
+        if use_pos_queries and two_stage:
+            raise ValueError("Can not use `use_pos_queries` and `two stage` simultaniously")
+
         # Obtain important hyperparameters
         self.detection_per_img = detection_per_img
         # Set Backbone and get channels and feature levels
         self.backbone = backbone
         self.channel_mapper = channel_mapper
         self.hidden_dim = hidden_dim
-        self.num_feature_levels = num_feature_levels
         self.two_stage = two_stage
 
         # Build Transformer Specific Architecture
         self.pos_embed = pos_embed
         self.transformer = transformer
-        self.query_pos = nn.Embedding(detection_per_img, query_dim)
+        if use_pos_queries:
+            query_dim = 2 * query_dim
+        self.query_pos = nn.Embedding(detection_per_img, query_dim) if not two_stage else None
 
         # Build the final layers for classification and box regression
         self.head = head
@@ -202,7 +206,7 @@ class BaseDETR(AbstractDetector):
         Perform inference for a batch of images
 
         Args:
-            images: batch of input images [N, C, W, H, (D)]
+            images: batch of input images [N, C, dims]
 
         Returns:
             Dict: predictions
@@ -248,33 +252,40 @@ class BaseDETR(AbstractDetector):
             Dict: semantic segmentation prediction, None if no segmenter was given
             List[torch.Tensor]: feature maps from decoder
         """
-
         # Compute feature list from backbone
         features = self.backbone(inp)  # [num_features] (N, C_i, px, py, (pz))
         # Reduce channel dimension with 1x1 convolution to hidden_dim
         mapped_features = self.channel_mapper(features)  # [num_feature_levels] (N, C, px, py, (pz))
         # Get Position Embedding
-        pos_embeds = []
-        for feature in mapped_features:
-            pos_embeds.append(self.pos_embed(feature))
+        pos_embeds = [self.pos_embed(feature) for feature in mapped_features]
         # transformer
-        out_sequence, reference, encoder_predictions = self.transformer(
-            mapped_features, self.query_pos.weight, pos_embeds
-        )
+        query_embed = None
+        if not self.two_stage:
+            query_embed = self.query_pos.weight
+
         # out_sequence: (decoder_layers or 1, bs, num_detections, hidden_dim)
-        # reference: (bs, num_detections, 3 or 6) or None: used for bounding box calculation
-        # predictions: Dict containing already made predictions
+        # refs_ccddcd_norm: None for DETR
+        # refs_ccddcd_norm: (bs, num_detections, 3 or 6) for conditional detr
+        # refs_ccddcd_norm: (decoder_layers + 1, bs, num_detections, 3 or 6) for deformable detr
+        # encoder_predictions: tuple of classification and regression output of encoder
+        out_sequence, refs_ccddcd_norm, encoder_predictions = self.transformer(
+            features=mapped_features,
+            query_embed=query_embed,
+            pos_embed=pos_embeds,
+        )
 
         # Calculate Boxes and Class predictions
-        pred_detections = self.head(out_sequence, reference)
+        pred_detections = self.head(
+            out_sequence=out_sequence,
+            refs_ccddcd_norm=refs_ccddcd_norm,
+        )
 
         # if a two-stage model is used, add encoder predictions to output
         if self.two_stage:
             assert encoder_predictions is not None, "Two stage is not supported by this transformer"
-            enc_outputs_coord = encoder_predictions[1].sigmoid()
             pred_detections["enc_outputs"] = {
-                "pred_logits": encoder_predictions[0],
-                "pred_boxes": enc_outputs_coord,
+                "pred_cls_logits": encoder_predictions[0],
+                "pred_box_coords": encoder_predictions[1],
             }
 
         # optionally forward seg head

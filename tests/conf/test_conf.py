@@ -56,12 +56,3 @@ def test_v001():
     with initialize_config_module(config_module="nndet.conf"):
         cfg_mod = compose("config.yaml", overrides=["train=retinaunet_v001_mod"])
     assert OmegaConf.to_container(cfg_backup) == OmegaConf.to_container(cfg_mod)
-
-
-# @pytest.mark.parametrize("name", ["c014", "c014_focal"])
-# def test_backups(name):
-#     with initialize_config_module(config_module="nndet.conf", version_base="1.1"):
-#         cfg_backup = compose("config.yaml", overrides=[f"train={name}_backup"])
-#     with initialize_config_module(config_module="nndet.conf", version_base="1.1"):
-#         cfg_mod = compose("config.yaml", overrides=[f"train={name}"])
-#     assert OmegaConf.to_container(cfg_backup) == OmegaConf.to_container(cfg_mod)

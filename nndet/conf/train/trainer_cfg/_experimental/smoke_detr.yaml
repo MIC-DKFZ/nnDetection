@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 save_top_k: 1 # topk model selection [optonal; Default 1]
-sweep_key: mAP_IoU_0.10_0.50_0.05_MaxDet_100
+sweep_key: mAP_IoU_0.10_0.50_0.05
 monitor_key: val/box_${trainer_cfg.sweep_key} # used to determine the best model
 monitor_mode: "max" # metric operation mode "min" or "max"
 
@@ -30,7 +30,7 @@ beta2: 0.999
 eps: 1e-6
 amsgrad: True # PyTorch Default False
 
-warm_iterations: 1000 # number of iterations with warmup
+warm_iterations: 0 # number of iterations with warmup
 warm_lr: 1.e-7 # learning rate to start warmup from
 
 poly_gamma: 0.9 # poly learning rate gamma

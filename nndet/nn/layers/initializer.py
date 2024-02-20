@@ -89,3 +89,37 @@ class InitHeV2(object):
                 nn.init.constant_(module.weight, 1)
             if module.bias is not None:
                 nn.init.constant_(module.bias, 0)
+
+
+class InitXavierUniform(object):
+    def __init__(
+        self,
+        gain: float = 1,
+    ):
+        """
+        Init weights according to https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
+
+        Args:
+            gain: scaling parameter
+        """
+        self.gain = gain
+
+    def __call__(self, module: nn.Module):
+        """
+        Apply weight init
+
+        Args:
+            module: module to initialize weights of (only inits wights of convs)
+        """
+        if isinstance(module, CONV_TYPES):
+            module.weight = nn.init.xavier_uniform_(
+                module.weight,
+                gain=self.gain,
+            )
+            if module.bias is not None:
+                module.bias = nn.init.constant_(module.bias, 0)
+        elif isinstance(module, NORM_TYPES):
+            if module.weight is not None:
+                nn.init.constant_(module.weight, 1)
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0)

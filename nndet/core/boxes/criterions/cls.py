@@ -84,6 +84,7 @@ class SimpleClassCriterionSigmoid(ClassCriterion):
         """
         pred_probs = self.logits_convert_fn(pred_logits)
         target_labels_idx = target_labels - 1
+        assert (target_labels_idx >= 0).all()
 
         return self.loss_weight * -1 * pred_probs[:, target_labels_idx]
 
@@ -96,6 +97,19 @@ class FocalClassCriterionSigmoid(ClassCriterion):
         loss_weight: float,
         eps: float = 1e-6,
     ) -> None:
+        """
+        Compute simplified focal loss criterion with sigmoid logits
+
+        negative_cost = (1 - alpha) * p ** gamma * -log(1 - p + eps)
+        postivie_cost = alpha * (1 - p) ** gamma * -log(p + eps)
+        cost = positive_cost - negative_cost [only for target class]
+
+        Args:
+            alpha: weight for positive and negative cost
+            gamma: exponent for criterion
+            loss_weight: weighting for computed loss
+            eps: Factor for numerical stability. Defaults to 1e-6.
+        """
         super().__init__(loss_weight)
         self.alpha = alpha
         self.gamma = gamma

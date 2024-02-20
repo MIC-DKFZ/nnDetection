@@ -30,7 +30,7 @@ beta2: 0.999
 eps: 1e-6
 amsgrad: True # PyTorch Default False
 
-warm_iterations: 150 # number of iterations with warmup
+warm_iterations: 0 # number of iterations with warmup
 warm_lr: 1.e-6 # learning rate to start warmup from
 
 poly_gamma: 0.9 # poly learning rate gamma

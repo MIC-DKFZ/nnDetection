@@ -439,13 +439,7 @@ def _train(
     plan = load_pickle(plan_path)
     data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
-    # initiate module
-    module = MODULE_REGISTRY[cfg["module"]](
-        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
-        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
-        accelerator_cfg=OmegaConf.to_container(cfg["accelerator_cfg"], resolve=True),
-        plan=plan,
-    )
+    module_cls = MODULE_REGISTRY[cfg["module"]]
 
     # setup io
     datamodule = Datamodule(
@@ -454,11 +448,19 @@ def _train(
         plan=plan,
         data_dir=data_dir,
         fold=fold,
-        use_box_io=module.use_box_io(),
+        use_box_io=module_cls.use_box_io(),
         log_aug=log_aug,
     )
     plan["patch_size"] = list(datamodule.patch_size)
     plan["batch_size"] = int(datamodule.batch_size)
+
+    # initiate module
+    module = module_cls(
+        model_cfg=OmegaConf.to_container(cfg["model_cfg"], resolve=True),
+        trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
+        accelerator_cfg=OmegaConf.to_container(cfg["accelerator_cfg"], resolve=True),
+        plan=plan,
+    )
 
     # callbacks
     callbacks = []
@@ -483,10 +485,15 @@ def _train(
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
+    fit_kwargs = {}
+    if continue_training and transfer_learning:
+        _s = "Found continue training and transfer learning, only one can be activated at the same time!"
+        logger.error(_s)
+        raise RuntimeError(_s)
     if continue_training:
         _path = train_dir / "model_last.ckpt"
         logger.info(f"Continue training -> loading checkpoint: {_path}")
-        trainer_kwargs["resume_from_checkpoint"] = _path
+        fit_kwargs["ckpt_path"] = _path
     if transfer_learning:
         _path = train_dir / "model_transfer.ckpt"
         logger.info(f"Performing transfer learning -> loading model weights: {_path}")
@@ -523,6 +530,8 @@ def _train(
     else:
         detect_anomaly = False
 
+    num_gpus = cfg["accelerator_cfg"]["gpus"]
+    logger.info(f"Using {num_gpus} GPUs for training")
     if cfg["accelerator_cfg"]["precision"] == "16-mixed":
         logger.info("Using mixed precision training: '16-mixed'")
         device = "cuda" if num_gpus > 0 else "cpu"
@@ -561,7 +570,7 @@ def _train(
     )
 
     train_start = time.time()
-    trainer.fit(module, datamodule=datamodule)
+    trainer.fit(module, datamodule=datamodule, **fit_kwargs)
     train_end = time.time()
     train_time = train_end - train_start
 

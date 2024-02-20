@@ -341,6 +341,7 @@ class TestPredictorBoxEnsembler:
             models=[DummyBoxModel()],
             crop_size=crop_size,
             device="cpu",
+            save_get_pad_kwargs={"mode": "constant", "constant_values": 0},
         )
         prediction = predictor.predict_case(case=case, properties=properties_simple)
 

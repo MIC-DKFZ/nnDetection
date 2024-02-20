@@ -23,7 +23,6 @@ class DETRTransformer(AbstractTransformer):
         self,
         encoder: BaseTransformerEncoder,
         decoder: BaseTransformerDecoder,
-        two_stage: bool = False,
         do_weight_init: bool = True,
     ):
         """
@@ -33,8 +32,7 @@ class DETRTransformer(AbstractTransformer):
             decoder: Transformer decoder
         """
         super().__init__()
-        if two_stage:
-            raise ValueError("Two stage for DETR and Conditional DETR is not yet supported")
+
         self.encoder = encoder
         self.decoder = decoder
         self.embed_dim = self.decoder.embed_dim
@@ -50,7 +48,7 @@ class DETRTransformer(AbstractTransformer):
     def forward(
         self,
         features: List[torch.Tensor],
-        query_embed: torch.Tensor,
+        query_embed: Optional[torch.Tensor],
         pos_embed: List[torch.Tensor],
         mask: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor, torch.Tensor]]]:
@@ -59,12 +57,18 @@ class DETRTransformer(AbstractTransformer):
         embedding and query embedding
         Args:
             features: features from the backbone in form of a
-            List[Tensor(bs, C, H, W, (Z))]
+                List[bs, C, dims], where bs is the batch size, C is the
+                embedding dimension and dims is the number of feature
+                dimensions (2 or 3)
             query_embed: object queries = input for the transformer decoder
+                [num_queries, C], where C is the embedding dimension and
+                num_queries is the number of object queries (predictions)
             pos_embed: position embedding for the features, same shape as
-                features
+                features [1, C, dims], where C is the number of channels
+                for the positional embeddind and dims are spatial
+                dimensions (2 or 3)
             mask: mask to mask out certain pixels of the feature maps, same
-                shape as features
+                shape as features. Not used.
 
         Returns:
             Tensor: output box embeddings (output of the decoder)
@@ -96,12 +100,12 @@ class DETRTransformer(AbstractTransformer):
 
         memory = self.encoder(
             query=features,
-            key=None,
-            value=None,
+            key=None,  # key = val = query in self-attention
+            value=None,  # key = val = query in self-attention
             query_pos=pos_embed,
-            key_pos=None,
+            key_pos=None,  # key_pos = query_pos in self-attention
             query_key_padding_mask=mask,
-        )
+        )  # [mul(dims), bs, c]
 
         target = torch.zeros_like(query_embed)
         hidden_state, references = self.decoder(
@@ -113,6 +117,17 @@ class DETRTransformer(AbstractTransformer):
         )
         hidden_state = hidden_state.transpose(
             1, 2
-        )  # [num_decoder_layers, num_queries, bs, C] -> [, bs, num_queries, C]
+        )  # [num_decoder_layers, num_queries, bs, C] -> [num_decoder_layers, bs, num_queries, C]
 
         return hidden_state, references, None
+
+    @classmethod
+    def is_batch_first(cls) -> bool:
+        """
+        Return if transformer uses batch first to call encoder and decoder
+
+        Returns:
+            bool: `True` is first dimenesion corresponds to batch, otherwise
+                `False`.
+        """
+        return False

@@ -5,8 +5,7 @@
 # Original code from DETR https://github.com/facebookresearch/detr
 # SPDX-FileCopyrightText: 2020 Facebook, Inc
 # SPDX-License-Identifier: Apache-2.0
-
-
+import os
 from typing import Dict, List, Optional, Tuple, Union
 
 import torch
@@ -31,6 +30,7 @@ class DETRHead(torch.nn.Module):
         scale_aux_loss: str = "none",
         norm_cls_loss_by_num_boxes: bool = False,
         norm_reg_loss_by_num_boxes: bool = False,
+        enc_class_agnostic_loss: bool = False,
     ) -> None:
         """
         Head module for DETR like networks (head is placed behind transformer)
@@ -48,6 +48,8 @@ class DETRHead(torch.nn.Module):
                 average number of bounding boxes in batch. Defaults to False.
             norm_reg_loss_by_num_boxes: Normalize regression loss by
                 average number of bounding boxes in batch. Defaults to False.
+            enc_class_agnostic_loss: compute encoder class loss on binary
+                labels
         """
         super().__init__()
         self.classifier = classifier
@@ -58,11 +60,13 @@ class DETRHead(torch.nn.Module):
         self.scale_aux_loss = AuxLossNorm(scale_aux_loss)
         self.norm_cls_loss_by_num_boxes = norm_cls_loss_by_num_boxes
         self.norm_reg_loss_by_num_boxes = norm_reg_loss_by_num_boxes
+        self.enc_class_agnostic_loss = enc_class_agnostic_loss
+        self.extended_logging = os.getenv("det_extended_logging", 0)
 
     def forward(
         self,
         out_sequence: torch.Tensor,
-        reference: torch.Tensor,
+        refs_ccddcd_norm: Optional[torch.Tensor] = None,
     ) -> Tuple[Dict[str, torch.Tensor], Optional[List[Dict[str, torch.Tensor]]]]:
         """
         Predict bounding boxes and classes using the ClassifierFFN and
@@ -72,9 +76,8 @@ class DETRHead(torch.nn.Module):
             out_sequence: output sequence of the transformer [D, B, R, C]
                 where D=number of decoder layers, B=batch size,
                 R=number of predictions, C=number of channels
-            reference: reference output of the transformer
-                (not used in original DETR head)
-                #TODO
+            refs_ccddcd_norm: reference output of the transformer
+                (not used in default DETR head)
 
         Returns:
             Dict[str, torch.Tensor]: predictions and auxiliary information
@@ -86,14 +89,19 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
-                    predictions, dims=number of spatial dimensions
+                    predictions, dims=number of spatial dimensions.
+                    Box coordinates are of format (cx, cy, dx, dy, cz, dz)
+                    and normed to [0, 1].
 
                 ``"aux_outputs"`` List[Dict[str, torch.Tensor]]
                     list with predictions from previous decoder layers
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
         """
+        assert refs_ccddcd_norm is None, "Reference is not used in default DETR head"
+
         box_logits = self.regressor.apply_non_lin(self.regressor(out_sequence))
         class_logits = self.classifier(out_sequence)
 
@@ -126,6 +134,7 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
 
@@ -134,8 +143,16 @@ class DETRHead(torch.nn.Module):
                     following the same format as `pred_cls_logits` and
                     `pred_box_coords`
 
+                ``"enc_outputs"`` Dict[str, torch.Tensor]
+                    additional predictions with `pred_cls_logits` which
+                    contains the classification logits of the same shape
+                    and `pred_cls_logits` and `pred_box_coords` which
+                    contains the normalized box coordinates of the same
+                    shape as `pred_box_coords`
+
             target_boxes: target boxes in point format List([N, dims * 2])
                 (x0, y0, x1, y1 (,z0, z1))
+
             target_labels: target labels in numerical format List([N])
             img_shape: image size
 
@@ -160,18 +177,20 @@ class DETRHead(torch.nn.Module):
             img_shape=img_shape,
         )
 
-        # compute losses
-        losses = self._match_and_compute_loss(
+        # main loss
+        losses, criterion_log = self._match_and_compute_loss(
             pred_logits=pred_detection["pred_cls_logits"],
             pred_coords=pred_detection["pred_box_coords"],
             target_boxes=target_boxes,
             target_labels=target_labels,
             num_boxes_all=num_boxes_all,
         )
+
+        # aux losses
         if "aux_outputs" in pred_detection:
             num_aux_outputs = len(pred_detection["aux_outputs"])
             for aux_idx, aux_outputs in enumerate(pred_detection["aux_outputs"]):
-                l_dict = self._match_and_compute_loss(
+                l_dict, _ = self._match_and_compute_loss(
                     pred_logits=aux_outputs["pred_cls_logits"],
                     pred_coords=aux_outputs["pred_box_coords"],
                     target_boxes=target_boxes,
@@ -179,13 +198,36 @@ class DETRHead(torch.nn.Module):
                     num_boxes_all=num_boxes_all,
                 )
                 losses.update(self.format_scale_aux_losses(l_dict, num_aux_outputs, aux_idx))
+
+        # enc losses
+        if "enc_outputs" in pred_detection:
+            enc_outputs = pred_detection["enc_outputs"]
+
+            if self.enc_class_agnostic_loss:
+                _target_labels = [torch.zeros_like(tl) for tl in target_labels]
+            else:
+                _target_labels = target_labels
+
+            l_dict, _ = self._match_and_compute_loss(
+                pred_logits=enc_outputs["pred_cls_logits"],
+                pred_coords=enc_outputs["pred_box_coords"],
+                target_boxes=target_boxes,
+                target_labels=_target_labels,
+                num_boxes_all=num_boxes_all,
+            )
+            losses.update(self.format_scale_aux_losses(l_dict, 1, 0, "aux_enc"))
+
+        if self.extended_logging:
+            losses.update(criterion_log)
+
         return losses
 
     def format_scale_aux_losses(
         self,
         loss_dict: Dict[str, torch.Tensor],
         num_aux_outputs: int,
-        aux_idx: int,
+        aux_idx: Union[int, str],
+        pre_fix: str = "aux",
     ) -> Dict[str, torch.Tensor]:
         """
         Format and optionally scale the auxiliary losses
@@ -199,12 +241,12 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: formatted and scaled auxiliary output
         """
         if self.scale_aux_loss == AuxLossNorm.NONE:
-            loss_dict = {k + f"_{aux_idx}": v for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.MEAN:
-            loss_dict = {k + f"_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v * (1 / num_aux_outputs) for k, v in loss_dict.items()}
         elif self.scale_aux_loss == AuxLossNorm.REDUCED:
             w = 1 / (num_aux_outputs - aux_idx + 1)
-            loss_dict = {k + f"_{aux_idx}": v * w for k, v in loss_dict.items()}
+            loss_dict = {f"{pre_fix}_{k}_{aux_idx}": v * w for k, v in loss_dict.items()}
         return loss_dict
 
     def prepare_targets(
@@ -243,7 +285,7 @@ class DETRHead(torch.nn.Module):
         target_boxes: List[torch.Tensor],
         target_labels: List[torch.Tensor],
         num_boxes_all: int,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
         """
         Perform matching of predictions and ground truth objects and
         compute losses
@@ -253,6 +295,7 @@ class DETRHead(torch.nn.Module):
                 [B, R, num_classes] where B=batch size, R=number of
                 predictions, num_classes=number of classe
             pred_coords: predicted normalized coords from RegressorFFN
+                in center format (cx, cy, dx, dy (,cz, dz)).
                 [B, R, dims * 2] where B=batch size, R=number of
                 predictions, dims=number of spatial dimensions
             target_boxes: target boxes in center format List([N, dims * 2])
@@ -264,7 +307,7 @@ class DETRHead(torch.nn.Module):
             Dict[str, torch.Tensor]: computed losses. Exact entries depend on
                 FFNClassifier and FFNRegressor
         """
-        indices = self.matcher(
+        indices, criterion_log = self.matcher(
             pred_logits=pred_logits,
             pred_coords=pred_coords,
             target_boxes=target_boxes,
@@ -288,7 +331,7 @@ class DETRHead(torch.nn.Module):
                 num_boxes_all=num_boxes_all,
             )
         )
-        return losses
+        return losses, criterion_log
 
     def compute_class_loss(
         self,
@@ -331,8 +374,6 @@ class DETRHead(torch.nn.Module):
         )
         if self.norm_cls_loss_by_num_boxes:
             loss = {key: item / num_boxes_all for key, item in loss.items()}
-
-        # TODO: add class error
         return loss
 
     def compute_box_loss(
@@ -347,6 +388,7 @@ class DETRHead(torch.nn.Module):
 
         Args:
             pred_coords: predicted normalized coords from RegressorFFN
+                in center format (cx, cy, dx, dy (,cz, dz)).
                 [B, R, dims * 2] where B=batch size, R=number of
                 predictions, dims=number of spatial dimensions
             target_boxes: target boxes in center format List([N, dims * 2])
@@ -388,7 +430,9 @@ class DETRHead(torch.nn.Module):
         Permute predictions following indices
 
         Args:
-            indices: paried indices as obtained from `matcher1to1`
+            indices: paried indices as obtained from `matcher1to1`.
+                First element of tuple contains the prediction indices
+                and the second element contains the ground truth indices.
 
         Returns:
             torch.Tensor: tensor containing the batch indices of the
@@ -397,7 +441,6 @@ class DETRHead(torch.nn.Module):
                 the predictions to bring them into the same order as the
                 ground truth
         """
-
         batch_idx = [torch.full_like(src, i) for i, (src, _) in enumerate(indices) if src is not None]
         src_idx = [src for (src, _) in indices if src is not None]
 
@@ -425,6 +468,7 @@ class DETRHead(torch.nn.Module):
 
                 ``"pred_box_coords"`` torch.Tensor
                     predicted normalized coords from RegressorFFN
+                    in center format (cx, cy, dx, dy (,cz, dz)).
                     [B, R, dims * 2] where B=batch size, R=number of
                     predictions, dims=number of spatial dimensions
 
