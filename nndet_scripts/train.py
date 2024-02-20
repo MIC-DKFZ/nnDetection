@@ -47,6 +47,7 @@ from nndet.utils.info import (
     write_requirements,
 )
 
+
 @env_guard
 def train() -> None:
     """
