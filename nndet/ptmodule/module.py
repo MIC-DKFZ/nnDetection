@@ -348,18 +348,20 @@ class LightningBaseModule(pl.LightningModule):
             )
         return callbacks
 
-    def load_transfer_learning(self, ckpt: os.PathLike) -> None:
+    def load_custom_state_dict(self, path: os.Pathlike) -> None:
         """
-        Prepare model for transfer learning
+        Load custom state_dict
 
         Args:
-            ckpt: path to checkpoint with weights to load
+            path: filepath to model checkpoint
         """
-        ckpt = Path(ckpt)
-        if not ckpt.is_file():
-            _s = f"Path {ckpt} for checkpoint for transfer learning does not exist."
+
+        path = Path(path)
+        if not path.is_file():
+            _s = f"Path {path} for checkpoint for transfer learning does not exist."
             logger.error(_s)
             raise RuntimeError(_s)
 
-        ckpt_all = torch.load(ckpt, map_location="cpu")
-        self.load_state_dict(ckpt_all["state_dict"], strict=True)
+        checkpoint = torch.load(str(path), map_location="cpu")
+        self.load_state_dict(checkpoint["state_dict"], strict=True)
+        return

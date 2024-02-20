@@ -47,7 +47,6 @@ from nndet.utils.info import (
     write_requirements,
 )
 
-
 @env_guard
 def train() -> None:
     """
@@ -498,7 +497,19 @@ def _train(
     if transfer_learning:
         _path = train_dir / "model_transfer.ckpt"
         logger.info(f"Performing transfer learning -> loading model weights: {_path}")
-        module.load_transfer_learning(ckpt=_path)
+        if continue_training:
+            _s = "Found continue training and transfer learning, only one can be activated at the same time!"
+            logger.error(_s)
+            raise RuntimeError(_s)
+        else:
+            if not _path.is_file():
+                _s = f"Transfer learning active, expected {_path} to exist."
+                logger.error(_s)
+                raise RuntimeError(_s)
+            module.load_custom_state_dict(_path)
+
+    num_gpus = cfg["accelerator_cfg"]["gpus"]
+    logger.info(f"Using {num_gpus} GPUs for training")
 
     plugins = []
     if p := cfg["trainer_cfg"].get("plugins", None):
