@@ -596,12 +596,6 @@ class ConditionalDETRModelMixin(DETRModelMixin):
         Returns:
             AbstractTransformer: transformer module
         """
-        if model_cfg["transformer"]["two_stage"]:
-            encoder_classifier = classifier
-            encoder_regressor = regressor
-        else:
-            encoder_classifier, encoder_regressor = None, None
-
         encoder_kwargs = model_cfg["transformer_encoder_kwargs"]
         encoder = cls.transformer_encoder_cls(
             embed_dim=model_cfg["transformer"]["hidden_dim"],
@@ -632,8 +626,6 @@ class ConditionalDETRModelMixin(DETRModelMixin):
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
-            classifier=encoder_classifier,
-            regressor=encoder_regressor,
         )
 
 

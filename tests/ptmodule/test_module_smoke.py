@@ -8,6 +8,7 @@ from omegaconf.omegaconf import OmegaConf
 
 from nndet.core.rois.pooler.roi_align import roi_align_3d
 from nndet.ptmodule.detr.dev.c002 import BoxCDETRC002, BoxDETRC002, BoxDETRCEC002
+from nndet.ptmodule.detr.dev.def_detr_c002 import BoxDeformableDETRC002
 from nndet.ptmodule.retinanet.rn_v002 import RetinaNetFocalV002, RetinaNetHNMV002
 from nndet.ptmodule.retinaunet2sm.run2sm_v002 import RetinaNet2SMV002, RetinaUNet2SMV002
 from nndet.ptmodule.retinaunet.run_v001 import RetinaUNetV001
@@ -110,6 +111,7 @@ CASES = [
     (BoxDETRCEC002, "detr_softm_c002"),
     (BoxDETRC002, "detr_sigm_c002"),
     (BoxCDETRC002, "detr_sigm_c002"),
+    (BoxDeformableDETRC002, "def_detr_c002"),
 ]
 
 

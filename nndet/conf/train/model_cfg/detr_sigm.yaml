@@ -23,6 +23,7 @@ transformer:
   num_feature_levels: 1 # number of feature level used for transformer
   do_weight_init: True # initialize weight with given (DETR Xavier init) initialisation
   hidden_dim: 384 # feature length of the transformer input (must be divisible by the number of attention heads)
+  two_stage: False # only used in Deformable DETR
 
 transformer_encoder_kwargs:
   num_layers: 3
