@@ -58,6 +58,7 @@ Classifier Heads
 
    dense
    roi
+   ffn
 
 
 Regression Heads
@@ -71,6 +72,7 @@ Regression Heads
 
    dense
    roi
+   ffn
 
 
 Comb Heads
@@ -87,6 +89,18 @@ Comb Heads
    anchor_all
    anchor_sampled
 
+DETR Heads
+----------
+
+.. currentmodule:: nndet.nn.heads.detr
+
+.. autosummary::
+   :toctree: DETR Heads
+   :nosignatures:
+
+   base
+   cdetr
+   deformable_detr
 
 Mask Heads
 ----------
@@ -122,6 +136,8 @@ Layers
 
    initializer
    wrapper
+   linear
+   mlp
 
 
 .. currentmodule:: nndet.nn.layers.conv
@@ -134,6 +150,55 @@ Layers
    batch
    group
    instance
+
+
+.. currentmodule:: nndet.nn.layers.pos_embed
+
+.. autosummary::
+   :toctree: Layers
+   :nosignatures:
+
+   base
+   learned
+   sine
+
+
+Transformer
+-----------
+
+.. currentmodule:: nndet.nn.transformer
+
+.. autosummary::
+   :toctree: Transformer
+   :nosignatures:
+
+   abstract_transformer
+   detr_transformer
+   deformable_transformer
+
+
+.. currentmodule:: nndet.nn.transformer.layers
+
+.. autosummary::
+   :toctree: Transformer
+   :nosignatures:
+
+   abstract
+   base_layer
+   detr
+   conditional_detr
+   deformable_detr
+
+
+.. currentmodule:: nndet.nn.transformer.attention
+
+.. autosummary::
+   :toctree: Transformer
+   :nosignatures:
+
+   attention
+   conditional_attention
+   multi_scale_deform_attn
 
 
 Ops

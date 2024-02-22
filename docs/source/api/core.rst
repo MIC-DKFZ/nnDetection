@@ -12,6 +12,7 @@ Detector Blueprints
 
    retina
    rcnn
+   detr
 
 Postprocessing
 --------------
@@ -24,6 +25,7 @@ Postprocessing
 
    box
    mask
+   detr
 
 
 Boxes
@@ -43,15 +45,47 @@ Anchor Generators
 Matcher
 ~~~~~~~
 
+.. currentmodule:: nndet.core.boxes.matcher
+
+.. autosummary::
+   :toctree: Matcher
+   :nosignatures:
+
+   base
+   iou
+   atss
+
+
 .. currentmodule:: nndet.core.boxes
 
 .. autosummary::
-   :toctree: Coder
+   :toctree: Matcher
    :nosignatures:
 
-   matcher
    assign
 
+Matcher1to1
+~~~~~~~~~~~
+
+.. currentmodule:: nndet.core.boxes.matcher1to1
+
+.. autosummary::
+   :toctree: Matcher1to1
+   :nosignatures:
+
+   base
+   hungarian
+
+
+.. currentmodule:: nndet.core.boxes.criterions
+
+.. autosummary::
+   :toctree: Matcher1to1
+   :nosignatures:
+
+   base
+   box
+   cls
 
 Coder
 ~~~~~
@@ -114,5 +148,31 @@ Ops Numpy
    ops_np
 
 
-Rois
-----
+RoI
+---
+
+RoI Module
+~~~~~~~~~~
+
+.. currentmodule:: nndet.core.rois.module
+
+.. autosummary::
+   :toctree: RoI Module
+   :nosignatures:
+
+   base
+   single
+   cascade
+
+
+RoI Pooler
+~~~~~~~~~~
+
+.. currentmodule:: nndet.core.rois.pooler
+
+.. autosummary::
+   :toctree: RoI Pooler
+   :nosignatures:
+
+   base
+   roi_align
