@@ -50,7 +50,8 @@ Models
    :toctree: Models
    :nosignatures:
 
-   rn001
+   rnm
+   rn_v002
 
 .. currentmodule:: nndet.ptmodule.retinaunet
 
@@ -58,24 +59,26 @@ Models
    :toctree: Models
    :nosignatures:
 
-   run001
-   runv001
+   runm
+   run_v001
+   run_v002
 
 
-.. currentmodule:: nndet.ptmodule.mrcnn
-
-.. autosummary::
-   :toctree: Models
-   :nosignatures:
-
-   m001
-   cm001
-
-.. currentmodule:: nndet.ptmodule.frcnn
+.. currentmodule:: nndet.ptmodule.retinaunet2sm
 
 .. autosummary::
    :toctree: Models
    :nosignatures:
 
-   f001
-   cf001
+   runcm
+   run2smm
+   run2sm_v002
+
+.. currentmodule:: nndet.ptmodule.retinanet2s
+
+.. autosummary::
+   :toctree: Models
+   :nosignatures:
+
+   rn2sm
+   rn2s_v002
