@@ -191,10 +191,11 @@ class MemoryEstimatorDetection(MemoryEstimator):
         device = torch.device("cuda", self.gpu_id)
         logger.info(f"Estimating on {device} with shape {shape} and "
                     f"batch size {self.batch_size} and num_instances {num_instances}")
+        loss = None
+        opt = None
+        inp = None
+        block_tensor = None
         try:
-            loss = None
-            opt = None
-            inp = None
             with cudnn_deterministic():
                 torch.cuda.reset_peak_memory_stats()
                 network = network.to(device)
@@ -237,17 +238,16 @@ class MemoryEstimatorDetection(MemoryEstimator):
                     scaler.step(opt)
                     scaler.update()
                 dyn_mem = torch.cuda.memory_reserved()
-        except (RuntimeError,) as e:
+        except Exception as e:
             logger.info(f"Caught error (If out of memory error do not worry): {e}")
             empty_mem = 0
             fixed_mem = float('Inf')
             dyn_mem = float('Inf')
         finally:
             del loss
-        
-        del opt
-        del inp
-        del block_tensor
+            del opt
+            del inp
+            del block_tensor
 
         network.cpu()
         torch.cuda.empty_cache()
