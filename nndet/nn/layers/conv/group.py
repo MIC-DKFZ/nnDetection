@@ -74,7 +74,7 @@ class ConvGroupRelu(BaseConvNormAct):
                 Default 16.
             initializer: initilize weights
         """
-        if num_groups is not None and norm_channels_per_group is not None:
+        if num_groups is not None and norm_channels_per_group != 16:
             raise ValueError("Can not use both `num_groups` and `channels_per_group`")
         if num_groups is not None and norm_channels_per_group == 16:
             norm_channels_per_group = None
