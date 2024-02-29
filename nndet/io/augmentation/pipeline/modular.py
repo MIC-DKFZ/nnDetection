@@ -123,6 +123,26 @@ class AugModular(NoAug):
         if self.params.get("dummy_2D"):
             tr_transforms.append(Convert2DTo3DTransform())
 
+        # Additional spatial transformations
+        if self.params.get("do_rot90", False):
+            if self.any_matching_axes():
+                tr_transforms.append(
+                    Rot90Transform(
+                        num_rot=(0, 1, 2, 3),
+                        axes=self.same_axes(),
+                        p_per_sample=self.params["rot90"]["p_per_sample"],
+                    ),
+                )
+
+        if self.params.get("do_transpose_axes", False):
+            if self.any_matching_axes():
+                tr_transforms.append(
+                    TransposeAxesTransform(
+                        transpose_any_of_these=self.same_axes(),
+                        p_per_sample=self.params["transpose_axes"]["p_per_sample"],
+                    )
+                )
+
         # we need to put the color augmentations after the dummy 2d part (if applicable). Otherwise the overloaded color
         # channel gets in the way
 

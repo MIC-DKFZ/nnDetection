@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-# comapared to more_modular_ord1:
-# bump p_rot and p_scale to 0.3
-# do_sim_low_res True, with p 0.1
+# compared to mega_modular_ord1:
+# adds rot90 (p=0.2) and transpose axes (p=0.1)
 
-name: "mega_modular_ord1"
+name: "giga_modular_ord1"
 transforms: "AugModular"
 transforms_kwargs: {}
 
@@ -28,6 +27,17 @@ p_rot: 0.3
 rotation_x: [-30, 30]
 rotation_y: [-30, 30]
 rotation_z: [-30, 30]
+
+
+# Additional spatial transforms
+do_rot90: True
+rot90:
+  p_per_sample: 0.2
+
+do_transpose_axes: True
+transpose_axes:
+  p_per_sample: 0.1
+
 
 # GaussianNoiseTransform
 p_per_sample_gaussian_noise: 0.1
