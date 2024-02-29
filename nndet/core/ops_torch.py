@@ -885,7 +885,7 @@ def inverse_sigmoid(data: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
 
 
 class InverseSigmoid(torch.nn.Module):
-    def _init_(self, eps: float = 1e-5):
+    def __init__(self, eps: float = 1e-5):
         """
         Inverse Sigmoid Module
 

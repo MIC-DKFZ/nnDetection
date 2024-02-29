@@ -240,7 +240,12 @@ def test_box_point_rescale_with_size_3d(boxes0_3d):
     assert torch.allclose(expected_output, scaled_boxes)
 
 
-# TODO: test extra batched
+def test_box_point_rescale_with_size_3d_extra_batched(boxes0_3d):
+    boxes0_3d_extra_batched = torch.stack([boxes0_3d, boxes0_3d])
+    scaled_boxes = ops_torch.box_point_rescale_with_size(boxes0_3d_extra_batched, (1, 2, 3), extra_batched=True)
+    expected_output = torch.tensor([[0, 0, 2, 4, 0, 6], [0, 0, 2, 4, 0, 6]]).float()
+    expected_output_extra_batched = torch.stack([expected_output, expected_output])
+    assert torch.allclose(expected_output_extra_batched, scaled_boxes)
 
 
 def test_box_point_norm_with_size_2d(boxes0_2d):
@@ -253,3 +258,20 @@ def test_box_point_norm_with_size_3d(boxes0_3d):
     scaled_boxes = ops_torch.box_point_norm_with_size(boxes0_3d, (1, 2, 0.5))
     expected_output = torch.tensor([[0, 0, 2, 1, 0, 4], [0, 0, 2, 1, 0, 4]]).float()
     assert torch.allclose(expected_output, scaled_boxes)
+
+
+def test_inverse_sigmoid():
+    torch.random.manual_seed(42)
+    x = torch.rand(100) + 0.0001
+    x_sigmoid = torch.nn.functional.sigmoid(x)
+    x_inv = ops_torch.inverse_sigmoid(x_sigmoid, eps=0)
+    assert torch.allclose(x, x_inv, atol=1e-5)
+
+
+def test_inverse_sigmoid_module():
+    torch.random.manual_seed(42)
+    x = torch.rand(100) + 0.0001
+    x_sigmoid = torch.nn.functional.sigmoid(x)
+    module = ops_torch.InverseSigmoid(eps=0)
+    x_inv = module(x_sigmoid)
+    assert torch.allclose(x, x_inv, atol=1e-5)
