@@ -32,6 +32,7 @@ class BasePositionEmbedding(torch.nn.Module):
             dims = spatial dimensions
 
         Returns:
-            torch.Tensor: spatial embedding [] #TODO: insert here
+            torch.Tensor: spatial embedding [N, num_pos_feats, dims] where
+                N = batch size, dims = spatial dimensions
         """
         raise NotImplementedError

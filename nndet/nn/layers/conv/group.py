@@ -39,7 +39,7 @@ class ConvGroupRelu(BaseConvNormAct):
         norm_eps: float = 1e-5,
         norm_affine: bool = True,
         num_groups: Optional[int] = None,
-        norm_channels_per_group: int = 16,
+        norm_channels_per_group: Optional[int] = 16,
         initializer: Callable[[nn.Module], None] = None,
     ):
         """
@@ -70,12 +70,15 @@ class ConvGroupRelu(BaseConvNormAct):
                 if a normalization follows otherwise False
             norm_eps: instance norm eps (see pytorch for more info)
             norm_affine: instance affine parameter (see pytorch for more info)
-            norm_channels_per_group: channels per group for group norm
+            norm_channels_per_group: channels per group for group norm.
+                Default 16.
             initializer: initilize weights
         """
-        # TODO enable proper support for both options
+        if num_groups is not None and norm_channels_per_group is not None:
+            raise ValueError("Can not use both `num_groups` and `channels_per_group`")
         if num_groups is not None and norm_channels_per_group == 16:
             norm_channels_per_group = None
+
         norm = "Group" if add_norm else None
         act = "ReLU" if add_act else None
 
