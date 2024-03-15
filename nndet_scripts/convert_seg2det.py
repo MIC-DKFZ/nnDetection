@@ -173,36 +173,43 @@ def main():
         logger.add(sys.stdout, level="INFO")
         logger.add(splitted_dir / "convert_seg2det.log", level="DEBUG")
         logger.info(f"+++++ Running covnersion: {datetime.now()} +++++")
-        logger.info(
-            f"Running min_size {cfg['data'].get('min_size', 0)} and " f"min_vol {cfg['data'].get('min_vol', 0)}"
-        )
+
+        _seg2det_things = list(cfg["data"]["seg2det_things"])
+        _seg2det_stuff = list(cfg["data"]["seg2det_stuff"])
+        _min_size = cfg["data"].get("min_size", 0)
+        _min_vol = cfg["data"].get("min_vol", 0)
+
+        logger.info(f"Running conversion with seg2det_things {_seg2det_things} and seg2det_stuff {_seg2det_stuff}")
+        logger.info(f"Running min_size {_min_size} and " f"min_vol {_min_vol}")
 
         for postfix in ["Tr", "Ts"]:
             label_dir = splitted_dir / f"labels{postfix}"
             case_ids = [f.name[:-7] for f in label_dir.glob("*.nii.gz")]
             logger.info(f"Found {len(case_ids)} cases for conversion with postfix {postfix}.")
 
-            # for cid in case_ids:
-            #     prepare_detection_label(case_id=cid,
-            #                             label_dir=label_dir,
-            #                             stuff_classes=cfg["data"]["seg2det_stuff"],
-            #                             things_classes=cfg["data"]["seg2det_things"],
-            #                             min_size=cfg["data"].get("min_size", 0),
-            #                             min_vol=cfg["data"].get("min_vol", 0),
-            #                             )
-
-            with Pool(processes=num_processes) as p:
-                p.starmap(
-                    prepare_detection_label,
-                    zip(
-                        case_ids,
-                        repeat(label_dir),
-                        repeat(cfg["data"]["seg2det_things"]),
-                        repeat(cfg["data"]["seg2det_stuff"]),
-                        repeat(cfg["data"].get("min_size", 0)),
-                        repeat(cfg["data"].get("min_vol", 0)),
-                    ),
-                )
+            if num_processes == 0:
+                for cid in case_ids:
+                    prepare_detection_label(
+                        case_id=cid,
+                        label_dir=label_dir,
+                        stuff_classes=_seg2det_things,
+                        things_classes=_seg2det_stuff,
+                        min_size=_min_size,
+                        min_vol=_min_vol,
+                    )
+            else:
+                with Pool(processes=num_processes) as p:
+                    p.starmap(
+                        prepare_detection_label,
+                        zip(
+                            case_ids,
+                            repeat(label_dir),
+                            repeat(_seg2det_things),
+                            repeat(_seg2det_stuff),
+                            repeat(_min_size),
+                            repeat(_min_vol),
+                        ),
+                    )
 
         if do_volume_ranking:
             for postfix in ["Tr", "Ts"]:
