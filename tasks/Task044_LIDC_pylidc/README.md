@@ -5,6 +5,10 @@ Please make sure to read the requirements and usage policies of the data and **g
 Please read the information from the homepage carefully and follow the rules and instructions provided by the original authors when using the data.
 - Homepage: https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=1966254
 
+```
+Armato SG 3rd, McLennan G, Bidaut L, McNitt-Gray MF, Meyer CR, Reeves AP, Zhao B, Aberle DR, Henschke CI, Hoffman EA, Kazerooni EA, MacMahon H, Van Beeke EJ, Yankelevitz D, Biancardi AM, Bland PH, Brown MS, Engelmann RM, Laderach GE, Max D, Pais RC, Qing DP, Roberts RY, Smith AR, Starkey A, Batrah P, Caligiuri P, Farooqi A, Gladish GW, Jude CM, Munden RF, Petkovska I, Quint LE, Schwartz LH, Sundaram B, Dodd LE, Fenimore C, Gur D, Petrick N, Freymann J, Kirby J, Hughes B, Casteele AV, Gupte S, Sallamm M, Heath MD, Kuhn MH, Dharaiya E, Burns R, Fryd DS, Salganicoff M, Anand V, Shreter U, Vastagh S, Croft BY.  The Lung Image Database Consortium (LIDC) and Image Database Resource Initiative (IDRI): A completed reference database of lung nodules on CT scans. Medical Physics, 38: 915--931, 2011. DOI: https://doi.org/10.1118/1.3528204
+```
+
 ## PyLIDC preparations
 
 1. Create a new env (tested with python 3.8)
@@ -22,7 +26,8 @@ The folder structure should now look like this:
 5. Go into the task directory of nndetection `Task044_LIDC_pylidc`.
 6. Execute `python prepare.py` to run the preparation of the binary data set, run `python prepare.py --malignant` to prepare the two class problem.
 7. Create split `nndet_cv_split 044 --with_patients` and/or `nndet_cv_split 045 --with_patients`
-8. Continue with nnDetection.
+
+The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
 
 
 ## Manual Grouping Information

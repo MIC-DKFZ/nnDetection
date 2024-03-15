@@ -6,6 +6,10 @@ Please read the information from the homepage carefully and follow the rules and
 - Homepage: http://adam.isi.uu.nl/
 - Subtask: Task 1
 
+```
+Timmins, Kimberley M., et al. "Comparing methods of detecting and segmenting unruptured intracranial aneurysms on TOF-MRAS: the ADAM challenge." Neuroimage 238 (2021): 118216.
+```
+
 ## Setup
 
 Note: This will prepare a different version of the ADAM dataset for training and evalation. In contrast to the nnDetection V1 verison
