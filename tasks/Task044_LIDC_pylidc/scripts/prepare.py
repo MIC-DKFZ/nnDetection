@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import traceback
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import List, Sequence, Tuple
@@ -265,11 +266,14 @@ def main():
                 class_vote=class_vote,
             )
             for i, (img_itk, mask_itk, mask_meta) in enumerate(patient_data):
+                logger.info(f"Writing {case_identifier} with img idx {i}")
                 sitk.WriteImage(img_itk, target_data_dir / f"lidc{idx:04d}_{i:03d}_0000.nii.gz")
                 sitk.WriteImage(mask_itk, target_label_dir / f"lidc{idx:04d}_{i:03d}.nii.gz")
                 save_json(mask_meta, target_label_dir / f"lidc{idx:04d}_{i:03d}.json")
         except Exception as e:
+            logger.error(traceback.format_exc())
             logger.error(str(e))
+        logger.info(f"Finished {case_identifier}")
 
 
 if __name__ == "__main__":

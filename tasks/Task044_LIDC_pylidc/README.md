@@ -1,3 +1,10 @@
+## LIDC
+**Disclaimer**: We are not the host of the data.
+Please make sure to read the requirements and usage policies of the data and **give credit to the authors of the dataset**!
+
+Please read the information from the homepage carefully and follow the rules and instructions provided by the original authors when using the data.
+- Homepage: https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=1966254
+
 ## PyLIDC preparations
 
 1. Create a new env (tested with python 3.8)
