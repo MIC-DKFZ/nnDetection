@@ -30,8 +30,9 @@ def prepare_detection_label(
     label_dir: Path,
     things_classes: Sequence[int],
     stuff_classes: Sequence[int],
-    min_size: float = 0,
-    min_vol: float = 0,
+    min_size: float = 0,  # voxel
+    min_vol: float = 0,  # voxel
+    min_vol_mm3: float = 0,  # mm^3
 ):
     if (label_dir / f"{case_id}.json").is_file():
         logger.info(f"Found existing case {case_id} -> skipping")
@@ -40,6 +41,13 @@ def prepare_detection_label(
     seg_itk = load_sitk(label_dir / f"{case_id}.nii.gz")
     spacing = np.asarray(seg_itk.GetSpacing())[::-1]
     seg = sitk.GetArrayFromImage(seg_itk)
+
+    if len(seg_itk.GetSize()) == 3:
+        voxel_mm3 = seg_itk.GetSpacing()[0] * seg_itk.GetSpacing()[1] * seg_itk.GetSpacing()[2]
+    elif seg_itk.GetSize() == 2:
+        voxel_mm3 = seg_itk.GetSpacing()[0] * seg_itk.GetSpacing()[1]
+    else:
+        raise ValueError(f"Unknown dimension {seg_itk.GetSize()} expected to have 2 or 3 dimensions")
 
     # prepare stuff information
     stuff_seg = np.zeros_like(seg)
@@ -73,8 +81,13 @@ def prepare_detection_label(
             bsize_world = bsize * spacing
             instance_mask = instances_not_filtered == iid
             instance_vol = instance_mask.sum()
+            instance_vol_mm3 = instance_vol * voxel_mm3
 
-            if all(bsize_world[isotopic_axis] > min_size) and (instance_vol > min_vol):
+            if (
+                all(bsize_world[isotopic_axis] > min_size)
+                and (instance_vol > min_vol)
+                and (instance_vol_mm3 > min_vol_mm3)
+            ):
                 instances[instance_mask] = start_id
                 semantic_class = instances_not_filtered_classes[int(iid)]
                 final_mapping[start_id] = things_classes.index(semantic_class)
@@ -178,9 +191,10 @@ def main():
         _seg2det_stuff = list(cfg["data"]["seg2det_stuff"])
         _min_size = cfg["data"].get("min_size", 0)
         _min_vol = cfg["data"].get("min_vol", 0)
+        _min_vol_mm3 = cfg["data"].get("min_vol_mm3", 0)
 
         logger.info(f"Running conversion with seg2det_things {_seg2det_things} and seg2det_stuff {_seg2det_stuff}")
-        logger.info(f"Running min_size {_min_size} and " f"min_vol {_min_vol}")
+        logger.info(f"Running min_size {_min_size} and min_vol {_min_vol} and min_vol_mm3 {_min_vol_mm3}")
 
         for postfix in ["Tr", "Ts"]:
             label_dir = splitted_dir / f"labels{postfix}"
@@ -196,6 +210,7 @@ def main():
                         things_classes=_seg2det_stuff,
                         min_size=_min_size,
                         min_vol=_min_vol,
+                        min_vol_mm3=_min_vol_mm3,
                     )
             else:
                 with Pool(processes=num_processes) as p:
@@ -208,6 +223,7 @@ def main():
                             repeat(_seg2det_stuff),
                             repeat(_min_size),
                             repeat(_min_vol),
+                            repeat(_min_vol_mm3),
                         ),
                     )
 
