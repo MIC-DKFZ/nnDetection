@@ -10,10 +10,12 @@ from contextlib import contextmanager
 from functools import partial, reduce
 from typing import Callable, Sequence, Tuple, Union
 
+import numpy as np
 import torch
 from loguru import logger
 
 from nndet.core.abstract import AbstractDetector
+from nndet.utils.format import to_nd_tuple
 
 """
 This is just a first prototype to estimate VRAM consumption for different GPUs
@@ -45,6 +47,129 @@ class MemoryEstimator(ABC):
     @abstractmethod
     def estimate(self, *args, **kwargs):
         raise NotImplementedError
+
+
+class NoGPUMemoryEstimator(MemoryEstimator):
+    def __init__(
+        self,
+        target_mem_mb: int,
+        batch_size: int,
+        buffer_mb: int = 910,
+    ):
+        """
+        Estimate if model will fit into VRAM
+
+        Args:
+            target_mem_mb: memory of target GPU in mb
+            batch_size: batch size during training
+            buffer: additional vram buffer to account for uncertainty
+                of estimate in mb
+        """
+        super().__init__()
+        self.target_mem_mb = target_mem_mb
+        self.batch_size = batch_size
+        self.buffer_mb = buffer_mb
+        self.cuda_context_mb = 910
+
+    def _estimate_feature_voxels(
+        self,
+        model_cfg: dict,
+        plan_arch: dict,
+        patch_size: Sequence[int],
+        in_channels: int = None,
+        num_instances: int = 1,
+    ):
+        # we assume a plain RetinaU-Net for estimation
+        # other architectures will consume more or less VRAM and need
+        # to be adjusted manually
+
+        num_levels = len(plan_arch["conv_kernels"])
+        rel_strides = plan_arch["strides"]
+        decoder_levels = plan_arch["decoder_levels"]
+        # first level 3 convs (2 enc, 1 dec), other 2 enc + 2 dec
+        # each conv has conv -> norm -> arct (where act is inplace)
+        conv_maps = [1 + 4 * 3] + [3 * 4] * (num_levels - 1)
+        conv_maps_heads = 3 * 1
+        num_classes = plan_arch["classifier_classes"]
+        n_iou_ops = 3
+
+        # top level has 3 convs + out conv; out convs are computed separately
+        feature_maps = [patch_size]
+        _current_shape = patch_size
+        for i in rel_strides:
+            nd_stride = to_nd_tuple(i, len(patch_size))
+            assert len(nd_stride) == len(patch_size)
+
+            _current_shape = [cs / s for cs, s in zip(_current_shape, nd_stride)]
+            feature_maps.append(_current_shape)
+
+        assert len(feature_maps) == len(conv_maps)
+        encoder_decoder_voxels = np.sum(
+            [nc * np.prod(fm, dtype=np.int64) for nc, fm in zip(conv_maps, feature_maps)],
+            dtype=np.int64,
+        )
+
+        shared_head_fmap = [feature_maps[dl] for dl in decoder_levels]
+        shared_head_voxels = np.sum(
+            [conv_maps_heads * np.prod(fm, dtype=np.int64) for fm in shared_head_fmap],
+            dtype=np.int64,
+        )
+
+        seg_out_voxels = num_classes * np.prod(patch_size, dtype=np.int64)
+        cls_out_voxels = num_classes * shared_head_voxels
+        box_out_voxels = 3 * 9 * shared_head_voxels
+        iou_matrix_entries = n_iou_ops * (3 * 9 * shared_head_voxels * num_instances)
+
+        final_estimate = (
+            encoder_decoder_voxels
+            + shared_head_voxels
+            + seg_out_voxels
+            + cls_out_voxels
+            + box_out_voxels
+            + iou_matrix_entries
+        )
+        return final_estimate
+
+    def estimate(
+        self,
+        target_shape: Sequence[int],
+        model_cfg: dict,
+        plan_arch: dict,
+        network: AbstractDetector,
+        optimizer_cls: Callable = torch.optim.Adam,
+        in_channels: int = None,
+        num_instances: int = 1,
+        **kwargs,
+    ) -> Tuple[int, bool]:
+        # use 32 bit parameters
+        base_type = 32
+
+        number_parameters = np.sum([p.numel() for p in network.parameters()], dtype=np.int64)
+        feature_voxels = self._estimate_feature_voxels(
+            model_cfg=model_cfg,
+            plan_arch=plan_arch,
+            patch_size=target_shape,
+            in_channels=in_channels,
+            num_instances=num_instances,
+        )
+
+        # need to account for batch size
+        vram_estimate_mb = self.batch_size * b2mb(feature_voxels * base_type)
+
+        # need to account for optimizer
+        # default optimizers are ADAM and SGD
+        if issubclass(optimizer_cls, (torch.optim.Adam, torch.optim.AdamW)):
+            param_multiplicator = 2
+        else:
+            param_multiplicator = 1
+
+        optimizer_vram_bit = number_parameters * param_multiplicator * base_type
+        optimizer_vram_mb = b2mb(optimizer_vram_bit)
+
+        full_estimate = vram_estimate_mb + optimizer_vram_mb + self.buffer_mb + self.cuda_context_mb
+        print(f"Full estimate: {full_estimate} mb with patch size {target_shape}")
+        breakpoint()
+        return full_estimate, full_estimate <= self.target_mem_mb
 
 
 class MemoryEstimatorDetection(MemoryEstimator):
@@ -105,6 +230,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         optimizer_cls: Callable = torch.optim.Adam,
         in_channels: int = None,
         num_instances: int = 1,
+        **kwargs,
     ) -> Tuple[int, bool]:
         if in_channels is not None:
             min_shape = [in_channels, *min_shape]

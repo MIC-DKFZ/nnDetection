@@ -14,11 +14,12 @@ from typing import Dict, List
 import numpy as np
 from loguru import logger
 
-from nndet.io.load import load_pickle, save_pickle
+from nndet.io.load import load_pickle, save_json, save_pickle
 from nndet.io.paths import get_case_ids_from_dir
 from nndet.planning.architecture.abstract import ArchitecturePlanner
 from nndet.planning.experiment.utils import run_create_label_preprocessed
 from nndet.preprocessing.preprocessor import GenericPreprocessor
+from nndet.utils.format import make_plan_json_compatible
 
 
 class AbstractPlanner(ABC):
@@ -330,7 +331,18 @@ class AbstractPlanner(ABC):
             exist_ok=True,
         )
         identifier = f"{self.__class__.__name__}_{mode}"
+
+        # we modify how plans are saved here
+        # handle dataset properties separately
+        properties_path = self.preprocessed_output_dir / "properties.pkl"
+        properties = plan.pop("dataset_properties")
+        if not properties_path.is_file():
+            save_pickle(properties, properties_path)
+
+        # handle plan
+        plan = make_plan_json_compatible(plan)
         save_pickle(plan, self.preprocessed_output_dir / f"{identifier}.pkl")
+        save_json(plan, self.preprocessed_output_dir / f"{identifier}.json")
         return identifier
 
     def run_preprocessing(
