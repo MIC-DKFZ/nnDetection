@@ -71,6 +71,12 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         self.buffer_mb = buffer_mb
         self.cuda_context_mb = 910
 
+        self.n_encoder_ops_per_level = 2
+        self.n_decoder_ops_per_level = 1
+        self.n_det_head_ops = 1
+        self.n_iou_matrix_ops = 1
+        self.heuristic_factor = 0.6  # heuristic factor to get close to estimates from nnDet V1
+
     def _estimate_feature_voxels(
         self,
         model_cfg: dict,
@@ -83,61 +89,99 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # other architectures will consume more or less VRAM and need
         # to be adjusted manually
 
-        # TODO incorporate channel information into computation
-
         num_levels = len(plan_arch["conv_kernels"])
         rel_strides = plan_arch["strides"]
         decoder_levels = plan_arch["decoder_levels"]
-        # first level 3 convs (2 enc, 1 dec), other 2 enc + 2 dec
-        # each conv has conv -> norm -> arct (where act is inplace)
-        conv_maps = [1 + 4 * 3] + [3 * 4] * (num_levels - 1)
-        conv_maps_heads = 3 * 1
-        num_channels = [min(32 * (2 ^ i), 320) for i in range(len(num_levels))]
+        start_channels = plan_arch["start_channels"]
+        max_channels = plan_arch["max_channels"]
         num_classes = plan_arch["classifier_classes"]
+        fpn_channels = plan_arch["fpn_channels"]
+        num_anchors = 27
 
-        # top level has 3 convs + out conv; out convs are computed separately
-        feature_maps = [patch_size]
+        first_decoder_level = min(decoder_levels)
+
+        # determine sizes of feature maps
+        feature_map_sizes = [patch_size]
+        encoder_channels = [start_channels]
+        decoder_channels = [int(fpn_channels * (2 ** (-1 * first_decoder_level)))]
         _current_shape = patch_size
-        for i in rel_strides:
-            nd_stride = to_nd_tuple(i, len(patch_size))
+        for level_idx, level_stride in enumerate(rel_strides, start=1):
+            nd_stride = to_nd_tuple(level_stride, len(patch_size))
             assert len(nd_stride) == len(patch_size)
-
             _current_shape = [cs / s for cs, s in zip(_current_shape, nd_stride)]
-            feature_maps.append(_current_shape)
+            feature_map_sizes.append(_current_shape)
 
-        assert len(feature_maps) == len(conv_maps)
-        assert len(num_channels) == len(feature_maps)
-        encoder_decoder_voxels = np.sum(
-            [cm * np.prod(fm, dtype=np.int64) * nc for cm, fm, nc in zip(conv_maps, feature_maps, num_channels)],
+            encoder_channels.append(min(start_channels * (2**level_idx), max_channels))
+            decoder_channels.append(min(int(fpn_channels * (2 ** (level_idx - first_decoder_level))), fpn_channels))
+
+        # sanity checks
+        assert len(feature_map_sizes) == num_levels
+        assert len(feature_map_sizes) == len(encoder_channels)
+        assert len(feature_map_sizes) == len(decoder_channels)
+
+        # compute voxels in input
+        input_voxels = np.prod(patch_size, dtype=np.int64) * in_channels
+
+        # compute voxels in encoder
+        encoder_voxel_ops = np.sum(
+            [
+                self.n_encoder_ops_per_level * np.prod(fm_size, dtype=np.int64) * fm_channels
+                for fm_size, fm_channels in zip(feature_map_sizes, encoder_channels)
+            ],
+            dtype=np.int64,
+        )
+        # compute voxels in decoder
+        decoder_voxel_ops = np.sum(
+            [
+                self.n_decoder_ops_per_level * np.prod(fm_size, dtype=np.int64) * fm_channels
+                for fm_size, fm_channels in zip(feature_map_sizes, decoder_channels)
+            ],
             dtype=np.int64,
         )
 
-        shared_head_fmap = [feature_maps[dl] for dl in decoder_levels]
-        shared_head_voxels = np.sum(
-            [conv_maps_heads * np.prod(fm, dtype=np.int64) for fm in shared_head_fmap],
+        # compute voxels in detection head
+        det_feature_map_sizes = [feature_map_sizes[dl] for dl in decoder_levels]
+        det_head_voxel_ops = np.sum(
+            [self.n_det_head_ops * np.prod(fm, dtype=np.int64) * fpn_channels for fm in det_feature_map_sizes],
+            dtype=np.int64,
+        )
+        det_head_cls_voxel_ops = np.sum(
+            [num_classes * np.prod(fm, dtype=np.int64) for fm in det_feature_map_sizes],
+            dtype=np.int64,
+        )
+        det_head_box_voxel_ops = np.sum(
+            [num_anchors * np.prod(fm, dtype=np.int64) for fm in det_feature_map_sizes],
             dtype=np.int64,
         )
 
-        seg_out_voxels = np.prod(patch_size, dtype=np.int64)
-        cls_out_voxels = num_classes * shared_head_voxels
-        box_out_voxels = 3 * 9 * shared_head_voxels
-        iou_matrix_entries = 3 * 9 * shared_head_voxels * num_instances
+        # compute voxels in segmentation head
+        seg_voxels = np.prod(patch_size, dtype=np.int64) * num_classes
 
-        final_estimate = (
-            encoder_decoder_voxels
-            + shared_head_voxels
-            + seg_out_voxels
-            + cls_out_voxels
-            + box_out_voxels
-            + iou_matrix_entries
+        # compute elements of IoU matrix
+        iou_matrix_ops = self.n_iou_matrix_ops * det_head_box_voxel_ops * num_instances
+
+        final_estimate = self.heuristic_factor * (
+            input_voxels
+            + encoder_voxel_ops
+            + decoder_voxel_ops
+            + det_head_voxel_ops
+            + det_head_cls_voxel_ops
+            + det_head_box_voxel_ops
+            + seg_voxels
+            + iou_matrix_ops
         )
+        base_type = 16
         print(
-            f"++++++ Estimate: encoder_decoder_voxels {b2mb(encoder_decoder_voxels * 32)} "
-            f"seg_out {b2mb(seg_out_voxels * 32)} "
-            f"cls {b2mb(cls_out_voxels * 32)} "
-            f"box {b2mb(cls_out_voxels * 32)} "
-            f"iou {b2mb(box_out_voxels * 32)} ni {num_instances}++++++"
+            f"++++++ Estimated:: {b2mb(final_estimate * base_type)} "
+            f"enc {b2mb(encoder_voxel_ops * base_type)} "
+            f"dec {b2mb(decoder_voxel_ops * base_type)} "
+            f"det {b2mb(det_head_voxel_ops * base_type)} "
+            f"cls {b2mb(det_head_cls_voxel_ops * base_type)} "
+            f"box {b2mb(det_head_box_voxel_ops * base_type)} "
+            f"seg {b2mb(seg_voxels * base_type)} "
+            f"iou {b2mb(iou_matrix_ops * base_type)} ni {num_instances}++++++"
         )
+        breakpoint()
         return final_estimate
 
     def estimate(
@@ -154,7 +198,7 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # use 16 bit parameters
         base_type = 16
 
-        number_parameters = np.sum([p.numel() for p in network.parameters()], dtype=np.int64)
+        print(f"++++++ Estimating with patch size {target_shape} ++++++")
         feature_voxels = self._estimate_feature_voxels(
             model_cfg=model_cfg,
             plan_arch=plan_arch,
@@ -162,22 +206,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             in_channels=in_channels,
             num_instances=num_instances,
         )
-
-        # need to account for batch size
-        vram_estimate_mb = self.batch_size * b2mb(feature_voxels * base_type)
-
-        # need to account for optimizer
-        # default optimizers are ADAM and SGD
-        if issubclass(optimizer_cls, (torch.optim.Adam, torch.optim.AdamW)):
-            param_multiplicator = 2
-        else:
-            param_multiplicator = 1
-
-        optimizer_vram_bit = number_parameters * param_multiplicator * base_type
-        optimizer_vram_mb = b2mb(optimizer_vram_bit)
-
-        full_estimate = vram_estimate_mb + optimizer_vram_mb + self.buffer_mb + self.cuda_context_mb
-        print(f"++++++ Full estimate: {full_estimate} mb with patch size {target_shape} ++++++")
+        full_estimate = self.batch_size * b2mb(feature_voxels * base_type)
+        print(f"++++++ Final estimate {full_estimate} ++++++")
         return full_estimate, full_estimate <= self.target_mem_mb
 
 
