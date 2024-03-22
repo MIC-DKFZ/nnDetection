@@ -83,6 +83,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # other architectures will consume more or less VRAM and need
         # to be adjusted manually
 
+        # TODO incorporate channel information into computation
+
         num_levels = len(plan_arch["conv_kernels"])
         rel_strides = plan_arch["strides"]
         decoder_levels = plan_arch["decoder_levels"]
@@ -90,8 +92,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # each conv has conv -> norm -> arct (where act is inplace)
         conv_maps = [1 + 4 * 3] + [3 * 4] * (num_levels - 1)
         conv_maps_heads = 3 * 1
+        num_channels = [min(32 * (2 ^ i), 320) for i in range(len(num_levels))]
         num_classes = plan_arch["classifier_classes"]
-        n_iou_ops = 3
 
         # top level has 3 convs + out conv; out convs are computed separately
         feature_maps = [patch_size]
@@ -104,8 +106,9 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             feature_maps.append(_current_shape)
 
         assert len(feature_maps) == len(conv_maps)
+        assert len(num_channels) == len(feature_maps)
         encoder_decoder_voxels = np.sum(
-            [nc * np.prod(fm, dtype=np.int64) for nc, fm in zip(conv_maps, feature_maps)],
+            [cm * np.prod(fm, dtype=np.int64) * nc for cm, fm, nc in zip(conv_maps, feature_maps, num_channels)],
             dtype=np.int64,
         )
 
@@ -115,10 +118,10 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             dtype=np.int64,
         )
 
-        seg_out_voxels = num_classes * np.prod(patch_size, dtype=np.int64)
+        seg_out_voxels = np.prod(patch_size, dtype=np.int64)
         cls_out_voxels = num_classes * shared_head_voxels
         box_out_voxels = 3 * 9 * shared_head_voxels
-        iou_matrix_entries = n_iou_ops * (3 * 9 * shared_head_voxels * num_instances)
+        iou_matrix_entries = 3 * 9 * shared_head_voxels * num_instances
 
         final_estimate = (
             encoder_decoder_voxels
@@ -127,6 +130,13 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             + cls_out_voxels
             + box_out_voxels
             + iou_matrix_entries
+        )
+        print(
+            f"++++++ Estimate: encoder_decoder_voxels {b2mb(encoder_decoder_voxels * 32)} "
+            f"seg_out {b2mb(seg_out_voxels * 32)} "
+            f"cls {b2mb(cls_out_voxels * 32)} "
+            f"box {b2mb(cls_out_voxels * 32)} "
+            f"iou {b2mb(box_out_voxels * 32)} ni {num_instances}++++++"
         )
         return final_estimate
 
@@ -141,8 +151,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         num_instances: int = 1,
         **kwargs,
     ) -> Tuple[int, bool]:
-        # use 32 bit parameters
-        base_type = 32
+        # use 16 bit parameters
+        base_type = 16
 
         number_parameters = np.sum([p.numel() for p in network.parameters()], dtype=np.int64)
         feature_voxels = self._estimate_feature_voxels(
@@ -167,8 +177,7 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         optimizer_vram_mb = b2mb(optimizer_vram_bit)
 
         full_estimate = vram_estimate_mb + optimizer_vram_mb + self.buffer_mb + self.cuda_context_mb
-        print(f"Full estimate: {full_estimate} mb with patch size {target_shape}")
-        breakpoint()
+        print(f"++++++ Full estimate: {full_estimate} mb with patch size {target_shape} ++++++")
         return full_estimate, full_estimate <= self.target_mem_mb
 
 

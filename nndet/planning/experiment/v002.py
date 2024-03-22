@@ -26,6 +26,11 @@ from nndet.ptmodule import MODULE_REGISTRY
 
 @PLANNER_REGISTRY.register
 class D3V002(D3V001):
+    pass
+
+
+@PLANNER_REGISTRY.register
+class D3V002T(D3V001):
     def plan_experiment(
         self,
         model_name: str,
@@ -64,7 +69,6 @@ class D3V002(D3V001):
             prev_res_patch_size=plan_3d["patch_size"],
             transpose_forward=plan_3d["transpose_forward"],
         )
-        breakpoint()
         identifiers.append(self.save_plan(plan=plan_3d, mode=plan_3d["mode"]))
 
         if plan_3d["trigger_lr1"]:
