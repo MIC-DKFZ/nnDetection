@@ -17,11 +17,6 @@ from loguru import logger
 from nndet.core.abstract import AbstractDetector
 from nndet.utils.format import to_nd_tuple
 
-"""
-This is just a first prototype to estimate VRAM consumption for different GPUs
-I hope to update this soon.
-"""
-
 
 def b2mb(x):
     return x / (2**20)  # noqa: E704
@@ -70,12 +65,18 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         self.batch_size = batch_size
         self.buffer_mb = buffer_mb
         self.cuda_context_mb = 910
+        self.base_type = 16
 
-        self.n_encoder_ops_per_level = 2
-        self.n_decoder_ops_per_level = 1
-        self.n_det_head_ops = 1
-        self.n_iou_matrix_ops = 1
-        self.heuristic_factor = 0.6  # heuristic factor to get close to estimates from nnDet V1
+        # heuristics to get close to estimates from nnDet V1
+        # this slightly underestimates the memory copared to V1 for some cases
+        # due to improved memory management of PyTorch & CUDA optimizations
+        # it should still remain below the memory budget
+        self.encoder_heuristic = 1.2
+        self.decoder_heuristic = 1.0
+        self.det_head_heuristic = 2.6
+        self.seg_heuristic = 1.0
+        self.iou_matrix_heuristic = 1.81
+        self.heuristic_factor = 0.5
 
     def _estimate_feature_voxels(
         self,
@@ -123,17 +124,17 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         input_voxels = np.prod(patch_size, dtype=np.int64) * in_channels
 
         # compute voxels in encoder
-        encoder_voxel_ops = np.sum(
+        encoder_voxel_ops = self.encoder_heuristic * np.sum(
             [
-                self.n_encoder_ops_per_level * np.prod(fm_size, dtype=np.int64) * fm_channels
+                np.prod(fm_size, dtype=np.int64) * fm_channels
                 for fm_size, fm_channels in zip(feature_map_sizes, encoder_channels)
             ],
             dtype=np.int64,
         )
         # compute voxels in decoder
-        decoder_voxel_ops = np.sum(
+        decoder_voxel_ops = self.decoder_heuristic * np.sum(
             [
-                self.n_decoder_ops_per_level * np.prod(fm_size, dtype=np.int64) * fm_channels
+                np.prod(fm_size, dtype=np.int64) * fm_channels
                 for fm_size, fm_channels in zip(feature_map_sizes, decoder_channels)
             ],
             dtype=np.int64,
@@ -141,8 +142,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
 
         # compute voxels in detection head
         det_feature_map_sizes = [feature_map_sizes[dl] for dl in decoder_levels]
-        det_head_voxel_ops = np.sum(
-            [self.n_det_head_ops * np.prod(fm, dtype=np.int64) * fpn_channels for fm in det_feature_map_sizes],
+        det_head_voxel_ops = self.det_head_heuristic * np.sum(
+            [np.prod(fm, dtype=np.int64) * fpn_channels for fm in det_feature_map_sizes],
             dtype=np.int64,
         )
         det_head_cls_voxel_ops = np.sum(
@@ -155,10 +156,10 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         )
 
         # compute voxels in segmentation head
-        seg_voxels = np.prod(patch_size, dtype=np.int64) * num_classes
+        seg_voxels = self.seg_heuristic * np.prod(patch_size, dtype=np.int64)  #  * num_classes
 
         # compute elements of IoU matrix
-        iou_matrix_ops = self.n_iou_matrix_ops * det_head_box_voxel_ops * num_instances
+        iou_matrix_ops = self.iou_matrix_heuristic * det_head_box_voxel_ops * num_instances
 
         final_estimate = self.heuristic_factor * (
             input_voxels
@@ -170,18 +171,16 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             + seg_voxels
             + iou_matrix_ops
         )
-        base_type = 16
-        print(
-            f"++++++ Estimated:: {b2mb(final_estimate * base_type)} "
-            f"enc {b2mb(encoder_voxel_ops * base_type)} "
-            f"dec {b2mb(decoder_voxel_ops * base_type)} "
-            f"det {b2mb(det_head_voxel_ops * base_type)} "
-            f"cls {b2mb(det_head_cls_voxel_ops * base_type)} "
-            f"box {b2mb(det_head_box_voxel_ops * base_type)} "
-            f"seg {b2mb(seg_voxels * base_type)} "
-            f"iou {b2mb(iou_matrix_ops * base_type)} ni {num_instances}++++++"
-        )
-        breakpoint()
+        # logger.debug(
+        #     f"++++++ Estimated:: {b2mb(final_estimate * self.base_type)} "
+        #     f"enc {b2mb(encoder_voxel_ops * self.base_type)} "
+        #     f"dec {b2mb(decoder_voxel_ops * self.base_type)} "
+        #     f"det {b2mb(det_head_voxel_ops * self.base_type)} "
+        #     f"cls {b2mb(det_head_cls_voxel_ops * self.base_type)} "
+        #     f"box {b2mb(det_head_box_voxel_ops * self.base_type)} "
+        #     f"seg {b2mb(seg_voxels * self.base_type)} "
+        #     f"iou {b2mb(iou_matrix_ops * self.base_type)} ni {num_instances}++++++"
+        # )
         return final_estimate
 
     def estimate(
@@ -195,10 +194,6 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         num_instances: int = 1,
         **kwargs,
     ) -> Tuple[int, bool]:
-        # use 16 bit parameters
-        base_type = 16
-
-        print(f"++++++ Estimating with patch size {target_shape} ++++++")
         feature_voxels = self._estimate_feature_voxels(
             model_cfg=model_cfg,
             plan_arch=plan_arch,
@@ -206,8 +201,8 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             in_channels=in_channels,
             num_instances=num_instances,
         )
-        full_estimate = self.batch_size * b2mb(feature_voxels * base_type)
-        print(f"++++++ Final estimate {full_estimate} ++++++")
+        full_estimate = self.batch_size * b2mb(feature_voxels * self.base_type) + self.cuda_context_mb
+        logger.info(f"++++++ Final estimate {full_estimate} for path size {target_shape} ++++++")
         return full_estimate, full_estimate <= self.target_mem_mb
 
 
