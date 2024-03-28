@@ -185,7 +185,7 @@ class BaseDatamodule(BaseModule):
             params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
 
         params["selected_seg_channels"] = [0]
-        params["use_mask_for_norm"] = self.plan["use_mask_for_norm"]
+        params["use_mask_for_norm"] = {int(k): i for k, i in self.plan["use_mask_for_norm"].items()}
         params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
         params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
         params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]

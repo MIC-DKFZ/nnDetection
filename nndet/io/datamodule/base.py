@@ -11,8 +11,9 @@ import numpy as np
 import pytorch_lightning as pl
 from loguru import logger
 
-from nndet.io.load import load_pickle, save_txt
+from nndet.io.load import save_txt
 from nndet.io.utils import load_dataset_id
+from nndet.utils.config import load_splits_from_task
 
 # from sklearn.model_selection import KFold
 
@@ -96,9 +97,9 @@ class BaseModule(pl.LightningDataModule):
             logger.warning(f"Found splits_file overwrite: {f}")
 
         if f.endswith("pkl"):
-            self._splits_file = f
+            self._splits_file = f[:-4]
         else:
-            self._splits_file = f + ".pkl"
+            self._splits_file = f
 
     @property
     def patch_size(self) -> np.ndarray:
@@ -143,20 +144,8 @@ class BaseModule(pl.LightningDataModule):
         If not split is found, a new split is created.
         Results are saved into :attr:`dataset_tr` and :attr:`dataset_val`
         """
-        splits_file = self.preprocessed_dir / self.splits_file
-        # if self.splits_file == "splits_final.pkl":
-        #     if not splits_file.is_file():
-        #         self.create_new_split(splits_file)
-        # else:
-        #     if not splits_file.is_file():
-        #         raise RuntimeError(
-        #             f"Provided split file does not exist {self.splits_file}."
-        #         )
-
-        if not splits_file.is_file():
-            raise RuntimeError("Split file does not exist, run 'nndet_cv_split' to generate one.")
-        logger.info(f"Using splits {splits_file} with fold {self.fold}")
-        splits = load_pickle(splits_file)
+        logger.info(f"Using splits {self.splits_file} with fold {self.fold}")
+        splits = load_splits_from_task(self.splits_file, self.preprocessed_dir.parent.name)
 
         if self.fold is None:
             raise RuntimeError("Not supported anymore, remove this on own risk")
@@ -182,25 +171,3 @@ class BaseModule(pl.LightningDataModule):
                 "IMPORTANT: Found data samples which are not present "
                 f"in split file and will be ignored: {list(_dataset.keys())}"
             )
-
-    # def create_new_split(self, splits_file: Path) -> None:
-    #     """
-    #     Create a new 5 fold split with a fixed seed
-
-    #     Args:
-    #         splits_file: path where splits file should be saved
-    #     """
-    #     logger.info("Creating new split...")
-    #     splits = []
-    #     all_keys_sorted = np.sort(list(self.dataset.keys()))
-
-    #     kfold = KFold(n_splits=5, shuffle=True, random_state=12345)
-    #     for i, (train_idx, test_idx) in enumerate(kfold.split(all_keys_sorted)):
-
-    #         train_keys = np.array(all_keys_sorted)[train_idx]
-    #         test_keys = np.array(all_keys_sorted)[test_idx]
-
-    #         splits.append(OrderedDict())
-    #         splits[-1]["train"] = train_keys
-    #         splits[-1]["val"] = test_keys
-    #     save_pickle(splits, splits_file)
