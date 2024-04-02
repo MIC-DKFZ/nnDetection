@@ -45,12 +45,6 @@ class BaseModule(pl.LightningDataModule):
                     ratio of foreground and background inside of batches,
                     defaults to 0.33
 
-                ``"patch_size"`` Sequence[int], optional
-                    overwrite patch size
-
-                ``"batch_size"`` int, optional
-                    overwrite patch size
-
             augment_cfg: provide settings for augmentation
             data_dir: path to preprocessed data dir. Needs to follow:
                 `.../preprocessed/[data_identifier]/imagesTr`
@@ -108,9 +102,8 @@ class BaseModule(pl.LightningDataModule):
         io config
         """
         if "patch_size" in self.io_cfg:
-            ps = self.io_cfg["patch_size"]
-            logger.warning(f"Patch Size Overwrite Found: running patch size {ps}")
-            return np.array(ps).astype(np.int32)
+            logger.error("Patch Size Overwrite Found: this is not supported anymore. Simply edit the plan file.")
+            raise NotImplementedError("Patch size overwrite not supported anymore")
         else:
             return np.array(self.plan["patch_size"]).astype(np.int32)
 
@@ -121,9 +114,8 @@ class BaseModule(pl.LightningDataModule):
         io config
         """
         if "batch_size" in self.io_cfg:
-            bs = self.io_cfg["batch_size"]
-            logger.warning(f"Batch Size Overwrite Found: running batch size {bs}")
-            return bs
+            logger.error("Batch Size Overwrite Found: this is not supported anymore. Simply edit the plan file.")
+            raise NotImplementedError("Batch size overwrite not supported anymore")
         else:
             return self.plan["batch_size"]
 

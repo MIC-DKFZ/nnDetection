@@ -116,8 +116,8 @@ class DETRModelMixin(ModelMixin):
             patch_size: patch size for training. Defaults to None.
         """
         if "plan_arch_overwrites" in model_cfg:
-            logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} ")
-            plan_arch.update(model_cfg["plan_arch_overwrites"])
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,

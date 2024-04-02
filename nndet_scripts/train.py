@@ -459,8 +459,6 @@ def _train(
         use_box_io=module_cls.use_box_io(),
         log_aug=log_aug,
     )
-    plan["patch_size"] = [int(p) for p in datamodule.patch_size]
-    plan["batch_size"] = int(datamodule.batch_size)
 
     # initiate module
     module = module_cls(

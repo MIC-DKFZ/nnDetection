@@ -114,13 +114,13 @@ class SingleStageMixin(ModelMixin):
                 to check compatibility with backbone
             **kwargs: ignored
         """
-        logger.info(
-            f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
-            f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}"
-        )
         logger.info(f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}")
-        plan_arch.update(model_cfg["plan_arch_overwrites"])
-        plan_anchors.update(model_cfg["plan_anchors_overwrites"])
+        if "plan_arch_overwrites" in model_cfg:
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
+        if "plan_anchors_overwrites" in model_cfg:
+            logger.error("plan_anchors_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_anchors_overwrites not supported anymore")
         logger.info(
             f"Start channels: {plan_arch['start_channels']}; "
             f"head channels: {plan_arch['head_channels']}; "

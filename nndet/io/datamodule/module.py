@@ -114,12 +114,6 @@ class BaseDatamodule(BaseModule):
                     ratio of foreground and background inside of batches,
                     defaults to 0.33
 
-                ``"patch_size"`` Sequence[int], optional
-                    overwrite patch size
-
-                ``"batch_size"`` int, optional
-                    overwrite patch size
-
             plan: current plan
             preprocessed_dir: path to base preprocessed dir
             data_dir: path to preprocessed data dir

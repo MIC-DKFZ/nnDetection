@@ -570,7 +570,9 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
                 to check compatibility with backbone
             **kwargs: ignored
         """
-        plan_arch.update(model_cfg["plan_arch_overwrites"])
+        if "plan_arch_overwrites" in model_cfg:
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
         logger.info(
             f"Start channels: {plan_arch['start_channels']}; "
             f"head channels: {plan_arch['head_channels']}; "

@@ -118,7 +118,6 @@ def _predict(
     num_tta_transforms: int,
     overwrites: Sequence[Any],
     load_models: LoadModels,
-    batch_size: Optional[int] = None,
     case_ids: Optional[Sequence[str]] = None,
 ) -> None:
     """
@@ -135,8 +134,6 @@ def _predict(
             overwrites to plan! (plan includes infos like batch size
             and path size)
         load_models: Define model weights, one of all | last | best
-        batch_size: Optionally overwrite batch size during inference.
-            Defaults to None.
         case_ids: Optionally provide case ids which should be predicted.
             Defaults to None.
     """
@@ -175,13 +172,6 @@ def _predict(
             "Plan used from fold 0, not updated with consolidation!"
             "This could lead to supoptimal results during inference."
         )
-
-    if batch_size is not None:
-        logger.info(
-            f"Found batch size {batch_size} provided by inference script, "
-            f"running inference with provided batch size."
-        )
-        plan["batch_size"] = batch_size
 
     # select model
     if load_models == LoadModels.ALL:
@@ -297,14 +287,6 @@ def entrypoint_predict_with_imagesTs():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -323,9 +305,6 @@ def entrypoint_predict_with_imagesTs():
     fold = args.fold
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -363,7 +342,6 @@ def entrypoint_predict_with_imagesTs():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -413,14 +391,6 @@ def entrypoint_predict_with_task():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -441,9 +411,6 @@ def entrypoint_predict_with_task():
     fold = args.fold
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -476,7 +443,6 @@ def entrypoint_predict_with_task():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -520,14 +486,6 @@ def entrypoint_predict_with_folders():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -546,9 +504,6 @@ def entrypoint_predict_with_folders():
     training_dir = args.training
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -584,7 +539,6 @@ def entrypoint_predict_with_folders():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -634,14 +588,6 @@ def entrypoint_predict_test_split():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -662,9 +608,6 @@ def entrypoint_predict_test_split():
         raise ValueError("Fold 'consolidated' is not compatible with test split inference.")
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     if load_models == LoadModels.ALL:
         raise ValueError("Load all models is not compatible with test split inference.")
@@ -691,7 +634,6 @@ def entrypoint_predict_test_split():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=case_ids,
     )
 

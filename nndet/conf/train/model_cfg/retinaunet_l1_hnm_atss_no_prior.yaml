@@ -48,6 +48,3 @@ segmenter_kwargs:
 matcher_kwargs: # keyword arguments passed to matcher
   num_candidates: 4
   center_in_gt: False
-
-plan_arch_overwrites: {} # overwrite arguments of architecture
-plan_anchors_overwrites: {} # overwrite arguments of anchors
