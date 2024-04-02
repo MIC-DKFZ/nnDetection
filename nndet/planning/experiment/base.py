@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import os
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
@@ -327,52 +327,6 @@ class AbstractPlanner(ABC):
                     use_mask_for_norm[i] = False
         return use_mask_for_norm
 
-    def save_plan(self, plan: dict, mode: str) -> str:
-        """
-        Save plan
-
-        Args:
-            mode: plan mode
-
-        Return:
-            str: plan identifier
-        """
-        self.preprocessed_output_dir.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-        identifier = f"{self.__class__.__name__}_{mode}"
-
-        # we modify how plans are saved here
-        # handle dataset properties separately
-        properties_path = self.preprocessed_output_dir / "properties.pkl"
-        properties = plan.pop("dataset_properties")
-        if not properties_path.is_file():
-            save_pickle(properties, properties_path)
-
-        # we need to filter some properties to keep the plan reasonably sized
-        reduced_properties = {}
-        for key, item in properties.items():
-            if key == "intensity_properties":
-                reduced_item = {
-                    modality_key: {
-                        k: float(i)  #  if isinstance(i, np.ndarray) and i.size == 1 else i
-                        for k, i in modality_props.items()
-                        if k not in self.plan_filter_intensity_keys
-                    }
-                    for modality_key, modality_props in item.items()
-                }
-                reduced_properties[key] = reduced_item
-            elif key not in self.plan_filter_keys:
-                reduced_properties[key] = item
-        plan["dataset_properties"] = reduced_properties
-
-        # handle plan
-        plan = make_plan_json_compatible(plan)
-        save_pickle(plan, self.preprocessed_output_dir / f"{identifier}.pkl")
-        save_json(plan, self.preprocessed_output_dir / f"{identifier}.json")
-        return identifier
-
     def run_preprocessing(
         self,
         cropped_data_dir: os.PathLike,
@@ -501,6 +455,61 @@ class AbstractPlanner(ABC):
             for c in cases_paths:
                 preprocessor.run_test(c, plan["target_spacing"], preprocessed_data_dir)
 
-    @abstractclassmethod
-    def get_plan_identifiers(cls):
+    def get_plan_identifiers(self) -> List[str]:
+        """
+        Retrieve all plan identifier starting from highest res (fullres) to
+        lowest res (highest target spacing)
+
+        Returns:
+            List[str]: ordered list of plan identifier
+        """
         raise NotImplementedError
+
+    def _get_identifier(self, mode: str) -> str:
+        return f"{self.__class__.__name__}_{mode}"
+
+    def save_plan(self, plan: dict, mode: str) -> str:
+        """
+        Save plan
+
+        Args:
+            mode: plan mode
+
+        Return:
+            str: plan identifier
+        """
+        self.preprocessed_output_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        identifier = self._get_identifier(mode=mode)
+
+        # we modify how plans are saved here
+        # handle dataset properties separately
+        properties_path = self.preprocessed_output_dir / "properties.pkl"
+        properties = plan.pop("dataset_properties")
+        if not properties_path.is_file():
+            save_pickle(properties, properties_path)
+
+        # we need to filter some properties to keep the plan reasonably sized
+        reduced_properties = {}
+        for key, item in properties.items():
+            if key == "intensity_properties":
+                reduced_item = {
+                    modality_key: {
+                        k: float(i)  #  if isinstance(i, np.ndarray) and i.size == 1 else i
+                        for k, i in modality_props.items()
+                        if k not in self.plan_filter_intensity_keys
+                    }
+                    for modality_key, modality_props in item.items()
+                }
+                reduced_properties[key] = reduced_item
+            elif key not in self.plan_filter_keys:
+                reduced_properties[key] = item
+        plan["dataset_properties"] = reduced_properties
+
+        # handle plan
+        plan = make_plan_json_compatible(plan)
+        save_pickle(plan, self.preprocessed_output_dir / f"{identifier}.pkl")
+        save_json(plan, self.preprocessed_output_dir / f"{identifier}.json")
+        return identifier

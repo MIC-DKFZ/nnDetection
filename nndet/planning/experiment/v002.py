@@ -1,23 +1,19 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List, Sequence
+from typing import Dict, List
 
-import numpy as np
 from loguru import logger
 
-import nndet.core.ops_np as ops_np
 from nndet.planning.architecture.boxes import BoxC002
-from nndet.planning.architecture.boxes.utils import concatenate_property_boxes
 from nndet.planning.estimator import NoGPUMemoryEstimator
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-from nndet.preprocessing.preprocessor import GenericPreprocessor
+from nndet.preprocessing.preprocessor.generic import DynDTypePreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.utils.config import load_plan_from_dir
 
 # TODO: introduce use_box_io as plan parameter + add different plan identifiers
-
-# TODO: think about this ... -> dynamic dtype for data and seg
 
 
 @PLANNER_REGISTRY.register
@@ -65,8 +61,6 @@ class D3V002T(D3V001):
                 prev_res_patch_size=plan_3d["patch_size"] * (2 ** (lowres_idx - 1)),
                 transpose_forward=plan_3d["transpose_forward"],
             )
-            if lowres_idx == 1:
-                plan_3d["trigger_lr"] = trigger_lr
             if not trigger_lr:
                 break
 
@@ -84,8 +78,26 @@ class D3V002T(D3V001):
                 model_cfg=model_cfg,
             )
             identifiers.append(self.save_plan(plan=plan_3dlr, mode=plan_3dlr["mode"]))  # save lowres
+        plan_3d["lowres_identifiers"] = identifiers
         identifiers.append(self.save_plan(plan=plan_3d, mode=plan_3d["mode"]))  # save fullres
         return identifiers
+
+    def get_data_identifier(self, mode: str) -> str:
+        """
+        D3V001 and D3V002 share the same data preprocessing paramters
+        and preprocessor -> thus we use D3V001 data for this plan as well
+
+        Args:
+            mode: current operation mode
+
+        Returns:
+            str: data identifier
+        """
+        class_identifier = list(self.__class__.__name__)
+        class_identifier[5] = "1"
+        class_identifier.pop(6)  # FIXME
+        class_identifier = "".join(class_identifier)
+        return f"{class_identifier}_{mode}"
 
     def create_architecture_planner(
         self,
@@ -110,12 +122,27 @@ class D3V002T(D3V001):
         )
         return architecture_planner
 
+    def get_plan_identifiers(self) -> List[str]:
+        """
+        Retrieve all plan identifier starting from highest res (fullres) to
+        lowest res (highest target spacing)
+
+        Returns:
+            List[str]: ordered list of plan identifier
+        """
+        fullres_identifier = self._get_identifier("3d")
+        fullres_plan = load_plan_from_dir(self.preprocessed_output_dir, fullres_identifier)
+        return [fullres_identifier] + fullres_plan["lowres_identifiers"]
+
+
+@PLANNER_REGISTRY.register
+class D3V002DynDtype(D3V001):
     @staticmethod
-    def create_preprocessor(plan: Dict) -> GenericPreprocessor:
+    def create_preprocessor(plan: Dict) -> DynDTypePreprocessor:
         """
         Create Preprocessor
         """
-        preprocessor = GenericPreprocessor(
+        preprocessor = DynDTypePreprocessor(
             norm_scheme_per_modality=plan["normalization_schemes"],
             use_mask_for_norm=plan["use_mask_for_norm"],
             transpose_forward=plan["transpose_forward"],
@@ -123,58 +150,3 @@ class D3V002T(D3V001):
             resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
         )
         return preprocessor
-
-    def determine_target_spacing(self, mode: str) -> np.ndarray:
-        """
-        Determine target spacing
-
-        Args:
-            mode: Current planning mode. Typically one of '2d' | '3d' | '3dlr1'
-
-        Raises:
-            RuntimeError: not supported mode (supported are 2d, 3d, 3dlrX)
-
-        Returns:
-            np.ndarray: target spacing
-        """
-        base_target_spacing = self._target_spacing_base()
-        if mode == "3d" or mode == "2d":
-            target_spacing = base_target_spacing
-        else:
-            if "lr" not in mode:
-                raise RuntimeError(f"Mode {mode} is not supported for target spacing.")
-            downscale = int(mode.split("lr")[-1])
-            target_spacing = base_target_spacing * (2**downscale)
-        return target_spacing
-
-    def trigger_low_res_model(
-        self,
-        prev_res_patch_size: Sequence[int],
-        transpose_forward: Sequence[int],
-    ) -> bool:
-        """
-        Trigger additional low resolution model
-
-        Args:
-            prev_res_patch_size: patch size of previous stage
-
-        Returns:
-            bool: If True, trigger a low resolution model. If False, current
-                resolution is ok.
-        """
-        all_boxes = [case["boxes"] for case_id, case in self.data_properties["instance_props_per_patient"].items()]
-        all_boxes = concatenate_property_boxes(all_boxes)
-        object_size = np.percentile(ops_np.box_size_np(all_boxes), 99.5, axis=0)
-        object_size = object_size[list(transpose_forward)]
-
-        if (np.asarray(prev_res_patch_size) < object_size).any():
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_plan_identifiers(cls):
-        ids = []
-        for mode in ["3d", "3dlr1"]:
-            ids.append(f"{cls.__name__}_{mode}")
-        return ids
