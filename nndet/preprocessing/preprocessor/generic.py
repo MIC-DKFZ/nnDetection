@@ -48,10 +48,10 @@ class GenericPreprocessor(AbstractPreprocessor):
             :self:`data_id`: unique identifier of GenericPreprocessor
         """
         self.resample_anisotropy_threshold = resample_anisotropy_threshold
-        self.intensity_properties = intensity_properties
+        self.intensity_properties = {int(k): i for k, i in intensity_properties.items()}
         self.transpose_forward = list(transpose_forward)
-        self.use_mask_for_norm = use_mask_for_norm
-        self.norm_scheme_per_modality = norm_scheme_per_modality
+        self.use_mask_for_norm = {int(k): i for k, i in use_mask_for_norm.items()}
+        self.norm_scheme_per_modality = {int(k): i for k, i in norm_scheme_per_modality.items()}
         self.norm_schemes = self.init_norm_schemes()
 
     def init_norm_schemes(self):

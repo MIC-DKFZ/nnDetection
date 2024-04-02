@@ -36,7 +36,6 @@ def make_plan_json_compatible(plan: dict) -> dict:
     Returns:
         dict: json compatible plan
     """
-    _ = plan.pop("dataset_properties", None)
     plan = {key: item if not isinstance(item, (np.ndarray)) else item.tolist() for key, item in plan.items()}
     plan["transpose_forward"] = [int(i) for i in plan["transpose_forward"]]
     plan["transpose_backward"] = [int(i) for i in plan["transpose_backward"]]

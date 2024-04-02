@@ -15,9 +15,15 @@ from omegaconf import OmegaConf
 
 from nndet.inference.helper import extract_results
 from nndet.inference.loading import get_latest_model
-from nndet.io import get_task, load_pickle, save_pickle
+from nndet.io import get_task
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.check import env_guard
+from nndet.utils.config import (
+    load_plan_from_model,
+    load_splits_from_model,
+    save_plan_to_model,
+    save_splits_to_model,
+)
 
 
 def consolidate_models(source_dirs: Sequence[Path], target_dir: Path, ckpt: str):
@@ -183,10 +189,9 @@ def main():
         consolidate=consolidate,
     )
 
-    shutil.copy2(training_dirs[0] / "plan.pkl", target_dir)
+    # handle config
     shutil.copy2(training_dirs[0] / "config.yaml", target_dir)
 
-    # invoke new parameter sweeps
     cfg = OmegaConf.load(str(target_dir / "config.yaml"))
     ov = ov if ov is not None else []
     if ov is not None:
@@ -199,10 +204,16 @@ def main():
         print(f"Additional import found {imp}")
         importlib.import_module(imp)
 
-    preprocessed_output_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed"
-    plan = load_pickle(target_dir / "plan.pkl")
-    gt_dir = preprocessed_output_dir / plan["data_identifier"] / "labelsTr"
+    # handle splits
+    splits = load_splits_from_model(task=task, model=model, fold=0)
+    save_splits_to_model(splits, task=task, model=model, fold=-1)
 
+    # handle plan
+    plan = load_plan_from_model(task=task, model=model, fold=0)
+    save_plan_to_model(plan, task=task, model=model, fold=-1)
+
+    preprocessed_output_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed"
+    gt_dir = preprocessed_output_dir / plan["data_identifier"] / "labelsTr"
     module = MODULE_REGISTRY[cfg["module"]]
     ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
 
@@ -222,10 +233,10 @@ def main():
         )
         inference_plan = sweeper.run_postprocessing_sweep()
 
-    plan = load_pickle(target_dir / "plan.pkl")
     if consolidate != "copy":
         plan["inference_plan"] = inference_plan
-        save_pickle(plan, target_dir / "plan_inference.pkl")
+        plan["consolidate_sweep_performed"] = True
+        save_plan_to_model(plan, task=task, model=model, fold=-1, save_name="plan_inference")
 
         for restore in [True, False]:
             export_dir = target_dir / "val_predictions" if restore else target_dir / "val_predictions_preprocessed"
@@ -237,8 +248,13 @@ def main():
                 **inference_plan,
             )
     else:
-        logger.warning("Plan used from fold 0, not updated with consolidation")
-        save_pickle(plan, target_dir / "plan_inference.pkl")
+        logger.warning(
+            "Plan used from fold 0, not updated with consolidation!"
+            "This could lead to supoptimal results during inference."
+        )
+        plan_inference = load_plan_from_model(task=task, model=model, fold=0, save_name="plan_inference")
+        plan_inference["consolidate_sweep_performed"] = False
+        save_plan_to_model(plan, task=task, model=model, fold=-1, save_name="plan_inference")
 
 
 if __name__ == "__main__":

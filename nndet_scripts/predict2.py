@@ -18,6 +18,7 @@ from nndet.io import get_task, get_training_dir
 from nndet.io.load import load_pickle
 from nndet.planning import PLANNER_REGISTRY
 from nndet.utils.check import env_guard
+from nndet.utils.config import load_plan_from_dir, load_splits_from_dir
 from nndet.utils.enums import LoadModels
 
 
@@ -83,16 +84,7 @@ def _preprocess(
     preprocessed_dir.mkdir(exist_ok=True, parents=True)
 
     _setup_logger(data_dir)
-
-    # load plan
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
-        )
-    plan = load_pickle(plan_inference_path)
+    plan = load_plan_from_dir(training_dir, "plan_inference")
 
     # load config
     config_path = training_dir / "config.yaml"
@@ -177,14 +169,12 @@ def _predict(
     cfg.pop("host", None)
 
     # load plan
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
+    plan = load_plan_from_dir(training_dir, "plan_inference")
+    if "consolidate_sweep_performed" in plan and not plan["consolidate_sweep_performed"]:
+        logger.warning(
+            "Plan used from fold 0, not updated with consolidation!"
+            "This could lead to supoptimal results during inference."
         )
-    plan = load_pickle(plan_inference_path)
 
     if batch_size is not None:
         logger.info(
@@ -353,14 +343,7 @@ def entrypoint_predict_with_imagesTs():
     data_dir = task_data_dir / "raw_splitted" / "imagesTs"
 
     if skip_preprocessing:
-        plan_inference_path = training_dir / "plan_inference.pkl"
-        if not plan_inference_path.is_file():
-            raise RuntimeError(
-                f"Expected {plan_inference_path} to contain the plan for "
-                "running inference. Either run nndet_consolidate to predict "
-                "ensembles or nndet_sweep for single fold models."
-            )
-        plan = load_pickle(plan_inference_path)
+        plan = load_plan_from_dir(training_dir, "plan_inference")
         preprocessed_data_dir = task_data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = task_data_dir / "preprocessed"
@@ -473,14 +456,7 @@ def entrypoint_predict_with_task():
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
     if skip_preprocessing:
-        plan_inference_path = training_dir / "plan_inference.pkl"
-        if not plan_inference_path.is_file():
-            raise RuntimeError(
-                f"Expected {plan_inference_path} to contain the plan for "
-                "running inference. Either run nndet_consolidate to predict "
-                "ensembles or nndet_sweep for single fold models."
-            )
-        plan = load_pickle(plan_inference_path)
+        plan = load_plan_from_dir(training_dir, "plan_inference")
         preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = data_dir / "preprocessed"
@@ -701,21 +677,12 @@ def entrypoint_predict_test_split():
     prediction_dir = training_dir / "test_predictions"
 
     # determine preprocessed data
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
-        )
-    plan = load_pickle(plan_inference_path)
+    plan = load_plan_from_dir(training_dir, "plan_inference")
     preprocessed_data_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     # determine case ids
-    splits_path = training_dir / "splits.pkl"
-    if not splits_path.is_file():
-        raise RuntimeError(f"Expected {splits_path} to contain the splits for " "running inference.")
-    case_ids = load_pickle(splits_path)[fold]["test"]
+    splits = load_splits_from_dir(training_dir, "splits")
+    case_ids = splits[fold]["test"]
 
     _predict(
         training_dir=training_dir,

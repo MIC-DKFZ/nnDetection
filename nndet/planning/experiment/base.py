@@ -46,6 +46,17 @@ class AbstractPlanner(ABC):
 
         self.data_properties = self.load_data_properties()
 
+        self.plan_filter_keys = [
+            "all_sizes",
+            "all_spacings",
+            "all_classes",
+            "all_ious",
+            "size_reductions",
+            "class_ious",
+            "instance_props_per_patient",
+        ]
+        self.plan_filter_intensity_keys = ["local_props"]
+
     @abstractmethod
     def plan_experiment(
         self,
@@ -338,6 +349,23 @@ class AbstractPlanner(ABC):
         properties = plan.pop("dataset_properties")
         if not properties_path.is_file():
             save_pickle(properties, properties_path)
+
+        # we need to filter some properties to keep the plan reasonably sized
+        reduced_properties = {}
+        for key, item in properties.items():
+            if key == "intensity_properties":
+                reduced_item = {
+                    modality_key: {
+                        k: float(i)  #  if isinstance(i, np.ndarray) and i.size == 1 else i
+                        for k, i in modality_props.items()
+                        if k not in self.plan_filter_intensity_keys
+                    }
+                    for modality_key, modality_props in item.items()
+                }
+                reduced_properties[key] = reduced_item
+            elif key not in self.plan_filter_keys:
+                reduced_properties[key] = item
+        plan["dataset_properties"] = reduced_properties
 
         # handle plan
         plan = make_plan_json_compatible(plan)

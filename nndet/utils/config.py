@@ -133,6 +133,33 @@ def load_plan_from_model(
     return plan
 
 
+def load_plan_from_dir(plan_dir: os.PathLike, plan_name: str) -> dict:
+    """
+    Load plan from directory
+
+    Args:
+        plan_dir: directory to load plan from
+        plan_name: name of plan to load
+
+    Returns:
+        dict: restored plan
+    """
+    if plan_name.endswith(".pkl") or plan_name.endswith(".json") or plan_name.endswith(".pickle"):
+        raise ValueError("Please provide the plan name without file extension")
+
+    plan_json_path = plan_dir / f"{plan_name}.json"
+    plan_pkl_path = plan_dir / f"{plan_name}.pkl"
+
+    if plan_json_path.is_file():
+        plan = load_json(plan_json_path)
+    elif plan_pkl_path.is_file():
+        logger.warning(f"Loading plan from {plan_pkl_path} which is deprected since nnDetV2")
+        plan = load_pickle(plan_pkl_path)
+    else:
+        raise ValueError(f"Did not find plan {plan_name} in {plan_dir}")
+    return plan
+
+
 def save_plan_to_model(
     plan: dict,
     task: str,
@@ -242,7 +269,34 @@ def load_splits_from_model(
         logger.warning(f"Loading splits from {splits_pkl_path} which is deprected since nnDetV2")
         splits = load_pickle(splits_pkl_path)
     else:
-        raise ValueError(f"Did not find plan {splits_name} in {task_dir}")
+        raise ValueError(f"Did not find splits {splits_name} in {task_dir}")
+    return splits
+
+
+def load_splits_from_dir(splits_dir: os.PathLike, splits_name: str) -> dict:
+    """
+    Load splits from directory
+
+    Args:
+        splits_dir: directory to load splits from
+        splits_name: name of splits to load
+
+    Returns:
+        dict: restored splits
+    """
+    if splits_name.endswith(".pkl") or splits_name.endswith(".json") or splits_name.endswith(".pickle"):
+        raise ValueError("Please provide the splits name without file extension")
+
+    splits_json_path = splits_dir / f"{splits_name}.json"
+    splits_pkl_path = splits_dir / f"{splits_name}.pkl"
+
+    if splits_json_path.is_file():
+        splits = load_json(splits_json_path)
+    elif splits_pkl_path.is_file():
+        logger.warning(f"Loading splits from {splits_pkl_path} which is deprected since nnDetV2")
+        splits = load_pickle(splits_pkl_path)
+    else:
+        raise ValueError(f"Did not find splits {splits_name} in {splits_dir}")
     return splits
 
 
