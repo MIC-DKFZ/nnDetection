@@ -15,13 +15,9 @@ from nndet.planning.experiment.v001 import D3V001
 from nndet.preprocessing.preprocessor import GenericPreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
 
-# TODO: trigger cascade of resolution stages
-# TODO: plan as json
 # TODO: introduce use_box_io as plan parameter + add different plan identifiers
 
 # TODO: think about this ... -> dynamic dtype for data and seg
-
-# TODO: introduce different compute budgets? -> scale batch & channels
 
 
 @PLANNER_REGISTRY.register
@@ -62,30 +58,33 @@ class D3V002T(D3V001):
             model_name=model_name,
             model_cfg=model_cfg,
         )
-        # TODO: manually handle batch size and base channels
 
-        # determine if additional low res model needs to be trained
-        plan_3d["trigger_lr1"] = self.trigger_low_res_model(
-            prev_res_patch_size=plan_3d["patch_size"],
-            transpose_forward=plan_3d["transpose_forward"],
-        )
-        identifiers.append(self.save_plan(plan=plan_3d, mode=plan_3d["mode"]))
+        # determine if additional low res models need to be trained
+        for lowres_idx in range(1, 6):  # trigger max 6 low resolution stages
+            trigger_lr = self.trigger_low_res_model(
+                prev_res_patch_size=plan_3d["patch_size"] * (2 ** (lowres_idx - 1)),
+                transpose_forward=plan_3d["transpose_forward"],
+            )
+            if lowres_idx == 1:
+                plan_3d["trigger_lr"] = trigger_lr
+            if not trigger_lr:
+                break
 
-        if plan_3d["trigger_lr1"]:
-            logger.info("Triggered Low Resolution Model")
-            mode = "3dlr1"
-            plan_3dlr1 = self.plan_base(mode=mode)
-            plan_3dlr1["network_dim"] = 3
-            plan_3dlr1["dataloader_kwargs"] = {}
-            plan_3dlr1["data_identifier"] = self.get_data_identifier(mode=mode)
-            plan_3dlr1["postprocessing"] = self.determine_postprocessing(mode=mode)
+            logger.info(f"Triggered Low Resolution Model {lowres_idx}")
+            mode = f"3dlr{lowres_idx}"
+            plan_3dlr = self.plan_base(mode=mode)
+            plan_3dlr["network_dim"] = 3
+            plan_3dlr["dataloader_kwargs"] = {}
+            plan_3dlr["data_identifier"] = self.get_data_identifier(mode=mode)
+            plan_3dlr["postprocessing"] = self.determine_postprocessing(mode=mode)
 
-            plan_3dlr1 = self.plan_base_stage(
-                plan_3dlr1,
+            plan_3dlr = self.plan_base_stage(
+                plan_3dlr,
                 model_name=model_name,
                 model_cfg=model_cfg,
             )
-            identifiers.append(self.save_plan(plan=plan_3dlr1, mode=plan_3dlr1["mode"]))
+            identifiers.append(self.save_plan(plan=plan_3dlr, mode=plan_3dlr["mode"]))  # save lowres
+        identifiers.append(self.save_plan(plan=plan_3d, mode=plan_3d["mode"]))  # save fullres
         return identifiers
 
     def create_architecture_planner(
