@@ -195,6 +195,7 @@ class DETRModelMixin(ModelMixin):
         else:
             segmenter = None
 
+        detection_per_img = cls._get_detection_per_img(plan_arch=plan_arch, model_cfg=model_cfg)
         return cls.detector_cls(
             backbone=backbone,
             transformer=transformer,
@@ -204,10 +205,15 @@ class DETRModelMixin(ModelMixin):
             hidden_dim=hidden_dim,
             query_dim=hidden_dim,
             segmenter=segmenter,
-            detection_per_img=model_cfg["detector"]["detection_per_img"],
+            detection_per_img=detection_per_img,
             two_stage=model_cfg["transformer"].get("two_stage", False),
             use_pos_queries=model_cfg["transformer"].get("use_pos_queries", False),
         )
+
+    @classmethod
+    def _get_detection_per_img(cls, plan_arch: dict, model_cfg: dict) -> int:
+        est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
+        return max(model_cfg["detector"]["min_detection_per_img"], 3 * est_instances_patch)
 
     @classmethod
     def _build_backbone(
@@ -462,6 +468,7 @@ class DETRModelMixin(ModelMixin):
         """
         name = cls.head_box_post_cls.__name__
         kwargs = model_cfg["head_box_post_kwargs"]
+        kwargs["topk"] = cls._get_detection_per_img(plan_arch=plan_arch, model_cfg=model_cfg)
 
         logger.info(f"Building:: box post {name} with {kwargs}")
         return cls.head_box_post_cls(**kwargs)
@@ -676,6 +683,10 @@ class DeformableSetModelMixin(DETRModelMixin):
             batch_first=cls.transformer_cls.is_batch_first(),
         )
 
+        transformer_kwargs = model_cfg["transformer"]["transformer_kwargs"]
+        transformer_kwargs["two_stage_num_proposals"] = cls._get_detection_per_img(
+            plan_arch=plan_arch, model_cfg=model_cfg
+        )
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
@@ -683,5 +694,5 @@ class DeformableSetModelMixin(DETRModelMixin):
             regressor=encoder_regressor,
             num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
             two_stage=model_cfg["transformer"]["two_stage"],
-            **model_cfg["transformer"]["transformer_kwargs"],
+            **transformer_kwargs,
         )

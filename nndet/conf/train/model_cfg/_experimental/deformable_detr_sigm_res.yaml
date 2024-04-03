@@ -30,7 +30,6 @@ transformer: # general configutation of transformer module
   use_pos_queries: False # double number of query channels which will later be splitted into content and positional
   num_feature_levels: 4  # number fo feature levels to use for deformable attention
   transformer_kwargs: # keyword arguments passed to transformer class
-    two_stage_num_proposals: ${model_cfg.detector.detection_per_img} # number of proposals used for two stage predictions (two stage only)
     two_stage_base_object_scale: 0.05 # base object scale for two-stage deformable DETR (two stage only)
     pos_embed_temperature: 10000 # temperature for positional embedding of proposals (two stage only)
     enc_class_agnostic_loss: ${model_cfg.head_kwargs.enc_class_agnostic_loss} # use binary labels to compute encoder loss (two stage only)
@@ -120,5 +119,4 @@ matcher_box_criterion_kwargs:
 matcher_kwargs: {}
 
 # postprocessing
-head_box_post_kwargs:
-  topk: ${model_cfg.detector.detection_per_img}
+head_box_post_kwargs: {}

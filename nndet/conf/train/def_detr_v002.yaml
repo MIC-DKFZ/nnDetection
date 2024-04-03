@@ -11,5 +11,5 @@ defaults:
   - model_cfg: deformable_detr_sigm
 
 module: BoxDeformableDETRC002 # TODO: change default module
-plan: D3V001_3d # plan used for training
-planner: D3V001 # planner used for preprocessing
+plan: D3V002_3d # plan used for training
+planner: D3V002 # planner used for preprocessing

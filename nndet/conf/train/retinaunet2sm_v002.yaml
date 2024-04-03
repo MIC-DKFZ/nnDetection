@@ -11,5 +11,5 @@ defaults:
   - model_cfg: mrcnn_l1_hnm_atss_c0_ema_s5
 
 module: RetinaUNet2SMV002
-plan: D3V001_3d # plan used for training
-planner: D3V001 # planner used for preprocessing
+plan: D3V002_3d # plan used for training
+planner: D3V002 # planner used for preprocessing
