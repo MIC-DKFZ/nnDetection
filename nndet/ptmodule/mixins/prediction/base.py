@@ -71,6 +71,19 @@ class PredictionMixin(ABC):
         """
         raise NotImplementedError
 
+    def _get_detections_per_image(self, plan: Dict, **kwargs) -> Dict:
+        """
+        Get detections per image
+
+        Args:
+            plan: plan obtained from preprocessing
+            kwargs: keyword arguments passed to get_predictor
+
+        Returns:
+            Dict: detections per image
+        """
+        raise NotImplementedError
+
     @classmethod
     def get_predictor(
         cls,

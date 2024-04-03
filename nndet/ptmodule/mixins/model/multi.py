@@ -349,10 +349,13 @@ class RoIBuildMixin:
         kwargs = model_cfg["roi_box_post_kwargs"]
         logger.info(f"Building:: roi box postprocessing {name}: {kwargs}")
 
+        kwargs = model_cfg["roi_box_post_kwargs"]
+        kwargs["detections_per_img"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
+
         roi_box_post = cls.roi_box_post_cls(
             num_classes=plan_arch["classifier_classes"],
             is_class_agnostic=cls.roi_regressor_cls.is_class_agnostic(),
-            **model_cfg["roi_box_post_kwargs"],
+            **kwargs,
         )
         return roi_box_post
 

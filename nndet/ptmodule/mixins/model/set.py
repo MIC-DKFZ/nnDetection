@@ -195,7 +195,7 @@ class DETRModelMixin(ModelMixin):
         else:
             segmenter = None
 
-        detection_per_img = cls._get_detection_per_img(plan_arch=plan_arch, model_cfg=model_cfg)
+        detection_per_img = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
         return cls.detector_cls(
             backbone=backbone,
             transformer=transformer,
@@ -211,7 +211,18 @@ class DETRModelMixin(ModelMixin):
         )
 
     @classmethod
-    def _get_detection_per_img(cls, plan_arch: dict, model_cfg: dict) -> int:
+    def _get_detections_per_patch(cls, plan_arch: dict, model_cfg: dict) -> int:
+        """
+        Heuristic to compute the number of detection of the model for a
+        single patch
+
+        Args:
+            plan_arch: architecture plan
+            model_cfg: manual model configuration
+
+        Returns:
+            int: number of detections for model
+        """
         est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
         return max(model_cfg["detector"]["min_detection_per_img"], 3 * est_instances_patch)
 
@@ -468,7 +479,7 @@ class DETRModelMixin(ModelMixin):
         """
         name = cls.head_box_post_cls.__name__
         kwargs = model_cfg["head_box_post_kwargs"]
-        kwargs["topk"] = cls._get_detection_per_img(plan_arch=plan_arch, model_cfg=model_cfg)
+        kwargs["topk"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
 
         logger.info(f"Building:: box post {name} with {kwargs}")
         return cls.head_box_post_cls(**kwargs)
@@ -684,7 +695,7 @@ class DeformableSetModelMixin(DETRModelMixin):
         )
 
         transformer_kwargs = model_cfg["transformer"]["transformer_kwargs"]
-        transformer_kwargs["two_stage_num_proposals"] = cls._get_detection_per_img(
+        transformer_kwargs["two_stage_num_proposals"] = cls._get_detections_per_patch(
             plan_arch=plan_arch, model_cfg=model_cfg
         )
         return cls.transformer_cls(

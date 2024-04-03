@@ -10,6 +10,10 @@ module: RetinaUNetV001
 plan: D3V001_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
+# detector settings
+detector:
+  min_detection_per_img: 100 # minimum number of detections per image
+
 io_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}

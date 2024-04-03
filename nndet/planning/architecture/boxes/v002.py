@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List, Sequence
 
 import numpy as np
 
@@ -38,17 +38,40 @@ class BoxV002(BoxC002):
             target_spacing_transposed=target_spacing_transposed,
             median_shape_transposed=median_shape_transposed,
         )
-        num_instances_per_image_est = self._estimate_num_instances_per_patch(
+        num_instances_per_patch_est = self._estimate_num_instances_per_patch(
             patch_size=plan["patch_size"],
             target_spacing_transposed=target_spacing_transposed,
             transpose_forward=transpose_forward,
         )
         est_instances_patch = {
-            "min": int(min(num_instances_per_image_est)),
-            "max": int(max(num_instances_per_image_est)),
-            "mean": int(np.mean(num_instances_per_image_est)),
-            "median": int(np.median(num_instances_per_image_est)),
-            "perc95": int(np.percentile(num_instances_per_image_est, 95)),
+            "min": int(min(num_instances_per_patch_est)),
+            "max": int(max(num_instances_per_patch_est)),
+            "mean": int(np.mean(num_instances_per_patch_est)),
+            "median": int(np.median(num_instances_per_patch_est)),
+            "perc95": int(np.percentile(num_instances_per_patch_est, 95)),
         }
         plan["architecture"]["est_instances_patch"] = est_instances_patch
+
+        num_instances_per_image = self._get_num_instances_per_img()
+        instances_img = {
+            "min": int(min(num_instances_per_image)),
+            "max": int(max(num_instances_per_image)),
+            "mean": int(np.mean(num_instances_per_image)),
+            "median": int(np.median(num_instances_per_image)),
+            "perc95": int(np.percentile(num_instances_per_image, 95)),
+        }
+        plan["architecture"]["instances_img"] = instances_img
         return plan
+
+    def _get_num_instances_per_img(
+        self,
+    ) -> List[int]:
+        num_instances = []
+        for boxes in self.all_boxes:
+            if isinstance(boxes, list):
+                num_instances.append(0)
+            elif boxes.size > 0:
+                num_instances.append(boxes.shape[0])
+            else:
+                num_instances.append(0)
+        return num_instances

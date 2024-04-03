@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+# detector settings
+detector:
+  min_detection_per_img: 100 # minimum number of detections per image
+
 backbone_kwargs: {} # keyword arguments passed to encoder
 neck_kwargs: # keyword arguments passed to decoder
   min_out_channels: 8

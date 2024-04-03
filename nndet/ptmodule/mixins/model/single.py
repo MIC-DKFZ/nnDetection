@@ -474,15 +474,7 @@ class SingleStageMixin(ModelMixin):
             BoxPostprocessing: module to perform postprocessing of boxes
         """
         kwargs = {}
-
-        # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
-        if "rpn_detections_per_img" in model_cfg:
-            kwargs["detections_per_img"] = model_cfg["rpn_detections_per_img"]
-        elif "detections_per_img" in model_cfg:
-            kwargs["detections_per_img"] = model_cfg["detections_per_img"]
-        else:
-            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME important
-
+        kwargs["detections_per_img"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
         kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
         kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)
         kwargs["remove_small_boxes"] = plan_arch.get("remove_small_boxes", 0.01)
@@ -501,6 +493,23 @@ class SingleStageMixin(ModelMixin):
             **kwargs,
         )
         return box_post
+
+    @classmethod
+    def _get_detections_per_patch(cls, plan_arch: dict, model_cfg: dict) -> int:
+        """
+        Heuristic to compute the number of predictions of the model for a
+        single patch
+
+        Args:
+            plan_arch: architecture plan
+            model_cfg: manual model configuration
+
+        Returns:
+            int: number of detections for model
+        """
+        est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
+        min_detections_per_img = model_cfg["detector"].get("min_detections_per_img", 100)
+        return max(min_detections_per_img, 4 * est_instances_patch)
 
     @classmethod
     def has_segmenter(cls):
