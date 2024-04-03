@@ -222,13 +222,13 @@ class BaseDatamodule(BaseModule):
         tr_transforms = self.augmentation.get_training_transforms()
         self.log_augmentation(tr_transforms)
         num_processes = get_allowed_n_proc_DA()
-        num_cached = get_allowed_num_cached(num_processes)
+        num_cached_per_queue = self.io_cfg.get("num_cached_per_queue", get_allowed_num_cached(num_processes))
 
         tr_gen = self.get_augmenter(
             dataloader=dl_tr,
             transform=tr_transforms,
             num_processes=num_processes,
-            num_cached_per_queue=num_cached,
+            num_cached_per_queue=num_cached_per_queue,
             multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,
@@ -260,12 +260,12 @@ class BaseDatamodule(BaseModule):
 
         val_transforms = self.augmentation.get_validation_transforms()
         num_processes = get_allowed_n_proc_DA()
-        num_cached = get_allowed_num_cached(num_processes)
+        num_cached_per_queue = self.io_cfg.get("num_cached_per_queue", get_allowed_num_cached(num_processes))
         val_gen = self.get_augmenter(
             dataloader=dl_val,
             transform=val_transforms,
             num_processes=num_processes,
-            num_cached_per_queue=num_cached,
+            num_cached_per_queue=num_cached_per_queue,
             multiprocessing=self.io_cfg.get("multiprocessing", True),
             seeds=None,
             pin_memory=True,

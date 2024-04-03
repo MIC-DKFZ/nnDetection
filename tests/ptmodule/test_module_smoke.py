@@ -108,10 +108,9 @@ CASES = [
     (RetinaNetHNMV002, "retinaunet_hnm_v002"),
     (RetinaNetFocalV002, "retinaunet_focal_v002"),
     # Set Prediction
-    (BoxDETRCEC002, "detr_softm_c002"),
-    (BoxDETRC002, "detr_sigm_c002"),
-    (BoxCDETRC002, "detr_sigm_c002"),
-    (BoxDeformableDETRC002, "def_detr_c002"),
+    (BoxDETRC002, "detr_sigm_v002"),
+    (BoxCDETRC002, "detr_sigm_v002"),
+    (BoxDeformableDETRC002, "def_detr_v002"),
 ]
 
 
