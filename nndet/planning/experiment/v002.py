@@ -5,7 +5,8 @@ from typing import Dict, List
 
 from loguru import logger
 
-from nndet.planning.architecture.boxes import BoxC002
+from nndet.planning.architecture.boxes import BaseBoxesPlanner
+from nndet.planning.architecture.boxes.v002 import BoxV002
 from nndet.planning.estimator import MemoryEstimatorDetection, NoGPUMemoryEstimator
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
@@ -96,7 +97,7 @@ class D3V002(D3V001):
         model_name: str,
         model_cfg: dict,
         mode: str,
-    ) -> BoxC002:
+    ) -> BaseBoxesPlanner:
         """
         Create Architecture planner
         """
@@ -105,7 +106,7 @@ class D3V002(D3V001):
             batch_size=4,
             buffer_mb=910,
         )
-        architecture_planner = BoxC002(
+        architecture_planner = BoxV002(
             preprocessed_output_dir=self.preprocessed_output_dir,
             save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
             estimator=estimator,
@@ -134,12 +135,12 @@ class D3V002EstV1(D3V002):
         model_name: str,
         model_cfg: dict,
         mode: str,
-    ) -> BoxC002:
+    ) -> BaseBoxesPlanner:
         """
         Create Architecture planner
         """
         estimator = MemoryEstimatorDetection()
-        architecture_planner = BoxC002(
+        architecture_planner = BoxV002(
             preprocessed_output_dir=self.preprocessed_output_dir,
             save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
             estimator=estimator,
