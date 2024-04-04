@@ -31,7 +31,7 @@ from nndet.nn.neck.fpn import FPN
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixinV2
 from nndet.ptmodule.mixins.prepare import BinaryMasksPrepareMixin, BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
@@ -44,7 +44,7 @@ class RetinaNet2SV002(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     """
     MaskRCNNModule with Box Output

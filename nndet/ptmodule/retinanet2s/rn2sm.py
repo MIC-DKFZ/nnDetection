@@ -22,7 +22,7 @@ from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import TwoStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixinV2
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
@@ -34,7 +34,7 @@ class RetinaNet2SModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN
     # Use `detector_cls` to set RPN module class
@@ -91,7 +91,7 @@ class RetinaUNet2SModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     TwoStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     """
     This is similar to RetinaU-Net 2 Stage if trained with Retina U-Net as RPN

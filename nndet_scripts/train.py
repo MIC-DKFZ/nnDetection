@@ -683,7 +683,7 @@ def _sweep(
         plan=plan,
     )
 
-    splits = load_splits_from_model(task=cfg["task"], model=cfg["exp"]["id"], fold=fold, plan_name="splits")
+    splits = load_splits_from_model(task=cfg["task"], model=cfg["exp"]["id"], fold=fold, splits_name="splits")
     case_ids = splits[fold]["val"]
 
     if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:

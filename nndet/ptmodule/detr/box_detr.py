@@ -23,7 +23,7 @@ from nndet.nn.transformer.layers.abstract import (
 )
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin
 from nndet.ptmodule.mixins.model.set import DETRModelMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixinV2
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
@@ -34,7 +34,7 @@ class BoxDETRModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxEvalMixin,  # Bounding Box Evaluation
     DETRModelMixin,  # DETR Mixin to build the model
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     # define detector cls
     detector_cls: Type[AbstractOneStageDetector] = BaseDETR  #: define base detector class

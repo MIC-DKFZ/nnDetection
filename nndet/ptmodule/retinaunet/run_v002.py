@@ -29,7 +29,7 @@ from nndet.nn.neck.fpn import UFPN
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxEvalMixin, SemanticFgEvalMixin
 from nndet.ptmodule.mixins.model import SingleStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin
+from nndet.ptmodule.mixins.prediction.boxes import BoxPredictionMixinV2
 from nndet.ptmodule.mixins.prepare import BoxesPrepareMixin, SemanticFgPrepareMixin
 from nndet.ptmodule.module import LightningBaseModule
 from nndet.utils.typing import CONVSEQ
@@ -43,7 +43,7 @@ class RetinaUNetHNMV002(
     SemanticFgEvalMixin,  # Semantic Segmentation Evaluation
     BoxEvalMixin,  # Boundig Box Evaluation
     SingleStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     """
     Retina U-Net V002 with Hard Negative Mining
