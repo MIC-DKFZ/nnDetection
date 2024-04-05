@@ -775,5 +775,41 @@ def create_cv_split():
     save_pickle(splits, splits_path_pkl)
 
 
+@env_guard
+def splits_pkl_to_json():
+    import argparse
+    import os
+    from pathlib import Path
+
+    from nndet.io import load_pickle, save_json
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("--splits_name", type=str, help="Name of splits file", required=False, default="splits_final")
+
+    args = parser.parse_args()
+    task = args.task
+    splits_name = args.splits_name
+
+    task_name = get_task(task, name=True)
+    task_dir = Path(os.getenv("det_data")) / task_name
+
+    if not task_dir.is_dir():
+        raise ValueError(f"{task_dir} is not a valid task directory!")
+    preprocessed_dir = task_dir / "preprocessed"
+    if not preprocessed_dir.is_dir():
+        raise ValueError(f"{preprocessed_dir} is not a directory!")
+
+    splits_path_json = preprocessed_dir / f"{splits_name}.json"
+    splits_path_pkl = preprocessed_dir / f"{splits_name}.pkl"
+
+    if not splits_path_pkl.is_file():
+        raise ValueError(f"{splits_path_pkl} is not a valid splits file!")
+
+    print(f"Converting {splits_path_pkl} to {splits_path_json}")
+    splits = load_pickle(splits_path_pkl)
+    save_json(splits, splits_path_json)
+
+
 if __name__ == "__main__":
     env()
