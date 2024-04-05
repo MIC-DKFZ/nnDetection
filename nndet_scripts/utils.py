@@ -3,6 +3,8 @@
 
 from typing import List
 
+import numpy as np
+
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
 
@@ -808,7 +810,11 @@ def splits_pkl_to_json():
 
     print(f"Converting {splits_path_pkl} to {splits_path_json}")
     splits = load_pickle(splits_path_pkl)
-    save_json(splits, splits_path_json)
+
+    splits_no_array = []
+    for fold in splits:
+        splits_no_array.append({k: list(x) if isinstance(x, np.ndarray) else x for k, x in fold.items()})
+    save_json(splits_no_array, splits_path_json)
 
 
 if __name__ == "__main__":
