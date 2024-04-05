@@ -30,7 +30,7 @@ class BoxV002(BoxC002):
         See Also:
             :method:`_plan_architecture`, :method:`_plan_anchors`
         """
-        if mode != "3d":
+        if not mode.startswith("3d"):
             raise NotImplementedError("Only 3d planning is supported")
         plan = BoxC001.plan(
             self,
