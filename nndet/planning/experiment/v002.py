@@ -19,7 +19,7 @@ from nndet.utils.config import load_plan_from_dir
 
 
 @PLANNER_REGISTRY.register
-class D3C003(D3V001):
+class D3C010(D3V001):
     def plan_experiment(
         self,
         model_name: str,
