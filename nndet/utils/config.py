@@ -12,7 +12,7 @@ from hydra import compose as hydra_compose
 from loguru import logger
 from omegaconf import OmegaConf
 
-from nndet.io.load import load_json, load_pickle, save_json
+from nndet.io.load import load_json, load_pickle, save_json, save_pickle
 from nndet.io.paths import get_task
 
 
@@ -192,8 +192,11 @@ def save_plan_to_model(
         fold_str = "consolidated" if fold == -1 else f"fold{fold}"
     model_dir = task_dir / model / fold_str
 
-    save_json(plan, model_dir / f"{save_name}")
-    # save_pickle(plan, model_dir / f"{save_name}")
+    try:
+        save_json(plan, model_dir / f"{save_name}")
+    except TypeError:
+        logger.warning(f"Saving plan to {model_dir / f'{save_name}'} which is deprected since nnDetV2")
+        save_pickle(plan, model_dir / f"{save_name}")
 
 
 def load_splits_from_task(splits_id: str, task: str) -> List[dict]:
@@ -332,5 +335,8 @@ def save_splits_to_model(
         fold_str = "consolidated" if fold == -1 else f"fold{fold}"
     model_dir = task_dir / model / fold_str
 
-    save_json(splits, model_dir / f"{save_name}")
-    # save_pickle(splits, model_dir / f"{save_name}")
+    try:
+        save_json(splits, model_dir / f"{save_name}")
+    except TypeError:
+        logger.warning(f"Saving splits to {model_dir / f'{save_name}'} which is deprected since nnDetV2")
+        save_pickle(splits, model_dir / f"{save_name}")
