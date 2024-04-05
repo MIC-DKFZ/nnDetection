@@ -224,6 +224,9 @@ class BoxC002(BoxC001):
                     transpose_forward=transpose_forward,
                 )
             )
+            self.architecture_kwargs["est_instances_patch"] = {}
+            for k in ["max", "mean", "median", "perc95"]:
+                self.architecture_kwargs["est_instances_patch"][k] = num_instances_est
             _, fits_in_mem = self.estimator.estimate(
                 min_shape=must_be_divisible_by,
                 target_shape=patch_size,
@@ -238,6 +241,7 @@ class BoxC002(BoxC001):
                 optimizer_cls=torch.optim.Adam,
                 num_instances=num_instances_est,
             )
+            self.architecture_kwargs.pop("est_instances_patch")
             if fits_in_mem:
                 break
             first_run = False
