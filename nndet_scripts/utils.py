@@ -599,6 +599,11 @@ def create_test_data_split():
     logger.info(f"+++ Running nndet_test_split {current_time_str} +++")
 
     meta = load_dataset_info(task_dir)
+    session_id = meta.get("session_id", False)
+    if session_id:
+        _error_str = "Session id is enabled, which is supported in this script. Please create the test set manually!"
+        logger.error(_error_str)
+        raise RuntimeError(_error_str)
 
     create_test_split(
         raw_splitted_dir,
@@ -654,23 +659,22 @@ def create_cv_split():
     from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 
     from nndet.io import load_json, save_json, save_pickle
+    from nndet.utils.config import load_dataset_info
 
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("--num_folds", type=int, default=5, help="Number of folds")
-    parser.add_argument(
-        "--with_patients",
-        action="store_true",
-        help="Derive patient information from names.",
-    )
 
     args = parser.parse_args()
     task = args.task
     num_folds = args.num_folds
-    with_patients = args.with_patients
 
     task_name = get_task(task, name=True)
     task_dir = Path(os.getenv("det_data")) / task_name
+    dataset_info = load_dataset_info(task_dir)
+    with_patients = dataset_info.get("session_id", False)
+    session_id_str = "enabled" if with_patients else "disabled"
+    logger.info(f"Running cv splits with session_id: {session_id_str}")
 
     if not task_dir.is_dir():
         raise ValueError(f"{task_dir} is not a valid task directory!")
