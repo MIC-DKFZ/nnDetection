@@ -10,10 +10,6 @@ module: RetinaUNetV001
 plan: ${planner}_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
-# detector settings
-detector:
-  min_detection_per_img: 100 # minimum number of detections per image
-
 io_cfg:
   num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
   num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
@@ -75,6 +71,10 @@ accelerator_cfg:
   terminate_on_nan: False # [optional; Default True]
 
 model_cfg:
+  # detector settings
+  detector:
+    min_detection_per_img: 100 # minimum number of detections per image
+
   backbone_kwargs: {} # keyword arguments passed to encoder
   neck_kwargs: # keyword arguments passed to decoder
     min_out_channels: 8

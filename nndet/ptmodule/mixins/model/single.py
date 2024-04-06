@@ -507,9 +507,17 @@ class SingleStageMixin(ModelMixin):
         Returns:
             int: number of detections for model
         """
-        est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
-        min_detections_per_img = model_cfg["detector"].get("min_detections_per_img", 100)
-        return max(min_detections_per_img, 4 * est_instances_patch)
+        if "detector" in model_cfg and "est_instances_patch" in plan_arch:
+            est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
+            min_detections_per_img = model_cfg["detector"].get("min_detections_per_img", 100)
+            res = max(min_detections_per_img, 4 * est_instances_patch)
+        else:
+            logger.warning(
+                "Did not find all necessary information for V2 model, using V1 default calue of "
+                "100. Please prefer to use a V2 model instead!"
+            )
+            res = 100
+        return res
 
     @classmethod
     def has_segmenter(cls):

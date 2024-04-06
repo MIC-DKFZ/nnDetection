@@ -32,6 +32,14 @@ def example_plan():
             "conv_kernels": [3, 3, 3, 3, 3],
             "strides": [2, 2, 2, 2],
             "max_channels": 320,
+            "est_instances_patch": {
+                "min": 1,
+                "max": 1,
+                "mean": 1,
+                "median": 1,
+                "perc95": 1,
+            },
+            "instances_img": {"min": 0, "max": 1, "mean": 0, "median": 1, "perc95": 1},
         },
         "anchors": {
             "width": [
