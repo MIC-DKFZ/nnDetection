@@ -27,6 +27,8 @@ def write_all_annotations_case():
     output_dir = args.output_dir
     img_idx = args.img_idx
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     lidc_id = f"LIDC-IDRI-{case_identifier:04d}"
     scans = pl.query(pl.Scan).filter(pl.Scan.patient_id == lidc_id)
     curr_img_idx = 1

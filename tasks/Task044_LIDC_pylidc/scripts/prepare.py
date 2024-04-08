@@ -108,25 +108,33 @@ def create_mask(
     for lesion_anns in annotations:  # iterate lesions
         if len(lesion_anns) >= min_lesion_votes:
             lesion_index += 1
-
+            # build temporary mask
             tmp_mask = np.zeros_like(mask_np)
-
-            # iterate annotators for each lesion
             for annotator_lesion_ann in lesion_anns:
                 tmp_mask[annotator_lesion_ann.bbox()][annotator_lesion_ann.boolean_mask()] += 1
-                lesion_meta["orig_malignancy"][lesion_index].append(annotator_lesion_ann.malignancy)
-                lesion_meta["orig_texture"][lesion_index].append(annotator_lesion_ann.texture)
 
             if mask_voting == "union":
-                mask_np[tmp_mask > 0] = lesion_index
+                tmp_mask_bin = tmp_mask > 0
             elif mask_voting == "lesion_majority":
-                mask_np[tmp_mask >= len(lesion_anns) / 2] = lesion_index
+                tmp_mask_bin = tmp_mask >= len(lesion_anns) / 2
             elif mask_voting == "lesion_majority_abs":
-                mask_np[tmp_mask > len(lesion_anns) / 2] = lesion_index
+                tmp_mask_bin = tmp_mask > len(lesion_anns) / 2
             elif mask_voting == "annotator_majority":
-                mask_np[tmp_mask >= MAX_ANNOTATORS / 2] = lesion_index
+                tmp_mask_bin = tmp_mask >= MAX_ANNOTATORS / 2
             else:
                 raise ValueError(f"Unknown mask_voting: {mask_voting}")
+
+            if tmp_mask_bin.max() == 0:
+                # sometimes disjunct masks are grouped together without overlap (2 instances in the entire dataset..)
+                # we need to roll back our index and continue in these cases since the mask would be empty
+                lesion_index -= 1
+                continue
+            else:
+                # assign values for mask
+                for annotator_lesion_ann in lesion_anns:
+                    lesion_meta["orig_malignancy"][lesion_index].append(annotator_lesion_ann.malignancy)
+                    lesion_meta["orig_texture"][lesion_index].append(annotator_lesion_ann.texture)
+                mask_np[tmp_mask_bin] = lesion_index
 
     for lesion_idx, lesion_malignancy in lesion_meta["orig_malignancy"].items():
         if class_vote == "none":
