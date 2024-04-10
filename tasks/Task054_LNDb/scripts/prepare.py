@@ -37,9 +37,11 @@ def prepare_case(
     mask_np = np.zeros_like(sitk.GetArrayViewFromImage(data_itk), dtype=np.uint8)
 
     # iterate lesions
-    if case_id in df_labels.index:
-        df_case = df_labels.loc[int(case_id.rsplit("-", 1)[1])]
+    case_id_int = int(case_id.rsplit("-", 1)[1])
+    if case_id_int in df_labels.index:
+        df_case = df_labels.loc[[case_id_int]]
         df_case = df_case[df_case["Nodule"] == 1]  # filter for nodules
+
         for lesion_id, (_, row) in enumerate(df_case.iterrows(), start=1):
             assert lesion_id > 0, "Lesion ID must be positive"
             rad_ids = [int(i) for i in str(row["RadID"]).split(",")]
@@ -64,7 +66,7 @@ def prepare_case(
             }
     else:
         logger.info(f"No annotations for case {case_id} in csv")
-        for _, item in label_np_dict:
+        for _, item in label_np_dict.items():
             assert item.max() == 0
     assert mask_np.max() == len(instances), "Missing instances"
 

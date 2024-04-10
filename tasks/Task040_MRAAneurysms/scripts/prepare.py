@@ -35,10 +35,10 @@ def prepare_case(
     assert data_dir.is_dir(), f"Data dir {data_dir} does not exist"
     assert label_dir.is_dir(), f"Label dir {label_dir} does not exist"
 
-    t1_file = data_dir / f"{case_id}_{session_name}_T1w.nii.gz"
+    # t1_file = data_dir / f"{case_id}_{session_name}_T1w.nii.gz"
     tof_file = data_dir / f"{case_id}_{session_name}_angio.nii.gz"
 
-    assert t1_file.is_file(), f"T1 file {t1_file} does not exist"
+    # assert t1_file.is_file(), f"T1 file {t1_file} does not exist"
     assert tof_file.is_file(), f"TOF file {tof_file} does not exist"
 
     lesion_files = [
@@ -49,15 +49,15 @@ def prepare_case(
     lesion_files.sort()
 
     # handle data
-    t1_itk = load_sitk(t1_file)
     tof_itk = load_sitk(tof_file)
-    resampler = sitk.ResampleImageFilter()
-    resampler.SetInterpolator(sitk.sitkBSpline)
-    resampler.SetReferenceImage(tof_itk)
-    t1_resampled_itk = resampler.Execute(t1_itk)
+    sitk.WriteImage(tof_itk, str(target_data_dir / f"{case_id}_0000.nii.gz"))
 
-    sitk.WriteImage(t1_resampled_itk, str(target_data_dir / f"{case_id}_0000.nii.gz"))
-    sitk.WriteImage(tof_itk, str(target_data_dir / f"{case_id}_0001.nii.gz"))
+    # t1_itk = load_sitk(t1_file)
+    # resampler = sitk.ResampleImageFilter()
+    # resampler.SetInterpolator(sitk.sitkBSpline)
+    # resampler.SetReferenceImage(tof_itk)
+    # t1_resampled_itk = resampler.Execute(t1_itk)
+    # sitk.WriteImage(t1_resampled_itk, str(target_data_dir / f"{case_id}_0000.nii.gz"))
 
     # handle label
     tof_np = sitk.GetArrayFromImage(tof_itk)
@@ -114,7 +114,7 @@ def main():
         "target_class": None,
         "test_labels": True,
         "labels": {"0": "aneurysm"},
-        "modalities": {"0": "T1", "1": "TOF"},
+        "modalities": {"0": "TOF"},
     }
     save_json(meta, task_data_dir / "dataset.json")
 
