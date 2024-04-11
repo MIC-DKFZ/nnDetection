@@ -199,6 +199,7 @@ def main():
         for postfix in ["Tr", "Ts"]:
             label_dir = splitted_dir / f"labels{postfix}"
             case_ids = [f.name[:-7] for f in label_dir.glob("*.nii.gz")]
+            case_ids.sort()
             logger.info(f"Found {len(case_ids)} cases for conversion with postfix {postfix}.")
 
             if num_processes == 0:
@@ -206,8 +207,8 @@ def main():
                     prepare_detection_label(
                         case_id=cid,
                         label_dir=label_dir,
-                        stuff_classes=_seg2det_things,
-                        things_classes=_seg2det_stuff,
+                        things_classes=_seg2det_things,
+                        stuff_classes=_seg2det_stuff,
                         min_size=_min_size,
                         min_vol=_min_vol,
                         min_vol_mm3=_min_vol_mm3,
