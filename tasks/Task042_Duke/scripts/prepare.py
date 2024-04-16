@@ -29,6 +29,18 @@ SEQUENCES = {
 REF = "pre"
 RESAMPLE = ["T1"]
 
+# exlude cases due to missing post_3 seq
+exclude_cases = [
+    "Breast_MRI_103",
+    "Breast_MRI_164",
+    "Breast_MRI_253",
+    "Breast_MRI_282",
+    "Breast_MRI_700",
+    "Breast_MRI_728",
+    "Breast_MRI_801",
+    "Breast_MRI_893",
+]
+
 
 def select_folder_from_directory(directory: Path) -> Path:
     all_dirs = [p for p in directory.iterdir() if p.is_dir()]
@@ -242,7 +254,7 @@ def main():
     logger.info(f"Found {len(case_ids)} case ids")
     assert len(case_ids) == 922, "Missing cases"
 
-    # case_ids = ["Breast_MRI_001", "Breast_MRI_015"]
+    case_ids = ["Breast_MRI_103"]
     num_processes = int(os.getenv("det_num_threads", 4))
     if num_processes < 1:
         # multiprocess version

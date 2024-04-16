@@ -32,4 +32,20 @@ Please read the information from the homepage carefully and follow the rules and
 
 #TODO: split test?
 
+Note:
+Some cases were filtered due to missing `post_3` sequence.
+
+```python
+exclude_cases = [
+    "Breast_MRI_103",
+    "Breast_MRI_164",
+    "Breast_MRI_253",
+    "Breast_MRI_282",
+    "Breast_MRI_700",
+    "Breast_MRI_728",
+    "Breast_MRI_801",
+    "Breast_MRI_893",
+]
+```
+
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.
