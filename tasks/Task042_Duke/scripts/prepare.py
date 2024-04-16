@@ -249,12 +249,13 @@ def main():
     save_json(meta, task_data_dir / "dataset.json")
 
     # prepare data & label
-    case_ids = [p.name for p in source_data_dir.iterdir() if p.is_dir()]
+    case_ids_all = [p.name for p in source_data_dir.iterdir() if p.is_dir()]
+    case_ids = list(set(case_ids_all) - set(exclude_cases))
     case_ids.sort()
-    logger.info(f"Found {len(case_ids)} case ids")
-    assert len(case_ids) == 922, "Missing cases"
+    logger.info(f"Found {len(case_ids_all)} case ids folder and retained {len(case_ids)} cases after filtering.")
+    assert len(case_ids_all) == 922, "Missing cases"
+    assert len(case_ids) == (922 - len(exclude_cases)), "Missing cases"
 
-    case_ids = ["Breast_MRI_103"]
     num_processes = int(os.getenv("det_num_threads", 4))
     if num_processes < 1:
         # multiprocess version
@@ -270,7 +271,7 @@ def main():
             )
     else:
         logger.info(f"Using {num_processes} processes for preparation")
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(processes=num_processes) as pool:
             pool.starmap(
                 filter_and_prepare_case,
                 zip(
