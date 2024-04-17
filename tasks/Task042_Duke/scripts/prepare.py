@@ -152,6 +152,7 @@ def prepare_case(
     target_label_dir: Path,
 ) -> None:
     # process case
+    seq_size = None
     for seq_idx, excel_seq in enumerate(SEQUENCES.values()):
         df_case_seq = df_case[df_case["modality_identifier"] == excel_seq].sort_values(by="original_path_and_filename")
 
@@ -161,6 +162,12 @@ def prepare_case(
         dcm_paths = get_dcm_paths(seq_dir, df_case_seq["rel_path"])
 
         seq_itk = read_dcm_sitk(dcm_paths)
+        if seq_idx == 0:
+            seq_size = seq_itk.GetSize()
+        else:
+            assert seq_size is not None
+            assert seq_size == seq_itk.GetSize(), f"Size mismatch for case {case_id} and sequence {excel_seq}"
+
         if excel_seq == REF:
             is_inverted = check_inverted_file_ordering(dcm_paths)
             if is_inverted:
