@@ -24,7 +24,9 @@ from nndet.nn.neck.abstract import AbstractNeck
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.mixins.evaluation import BoxWithRPNEvalMixin
 from nndet.ptmodule.mixins.model import MultiStageMixin
-from nndet.ptmodule.mixins.prediction import BoxPredictionMixin  # MaskPredictionMixin,
+from nndet.ptmodule.mixins.prediction.boxes import (
+    BoxPredictionMixinV2,  # MaskPredictionMixin,
+)
 from nndet.ptmodule.mixins.prepare import (
     BinaryMasksPrepareMixin,
     BoxesPrepareMixin,
@@ -42,7 +44,7 @@ class RetinaUNetCascadeModule(
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
     MultiStageMixin,  # Single Stage Detector
-    BoxPredictionMixin,  # Bounding Box Sweep
+    BoxPredictionMixinV2,  # Bounding Box Sweep
     # MaskPredictionMixin,  # Mask Sweep
 ):
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN

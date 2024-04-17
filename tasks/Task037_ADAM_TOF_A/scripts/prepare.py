@@ -140,13 +140,17 @@ def main():
 
     # prepare dataset info
     meta = {
-        "name": "ADAM",
+        # mandatory keys
         "task": "Task037_ADAM_TOF_A",
-        "target_class": None,
-        "test_labels": False,
+        "dim": 3,
         "labels": {"0": "Aneurysm"},  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "TOF"},
-        "dim": 3,
+        # important setting for adam! Multiple scans per patient available
+        "session_id": True,
+        # optional keys
+        "name": "ADAM",
+        "target_class": None,
+        "test_labels": False,
     }
     save_json(meta, task_data_dir / "dataset.json")
 

@@ -25,7 +25,6 @@ The folder structure should now look like this:
 
 5. Go into the task directory of nndetection `Task044_LIDC_pylidc`.
 6. Execute `python prepare.py` to run the preparation of the binary data set, run `python prepare.py --malignant` to prepare the two class problem.
-7. Create split `nndet_cv_split 044 --with_patients` and/or `nndet_cv_split 045 --with_patients`
 
 The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.
 

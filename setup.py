@@ -160,6 +160,7 @@ setup(
             "nndet_env = nndet_scripts.utils:env",
             "nndet_print_reg = nndet_scripts.utils:print_reg",
             "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
+            "nndet_splits_pkl_to_json = nndet_scripts.utils:splits_pkl_to_json",
         ]
     },
 )

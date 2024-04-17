@@ -108,3 +108,76 @@ class BoxPredictionMixin(PredictionMixin):
         if plan["network_dim"] == 2:
             predictor.pre_transform = Inference2D(["data"])
         return predictor
+
+
+class BoxPredictionMixinV2(BoxPredictionMixin):
+    @classmethod
+    def _get_detections_per_image(cls, plan: dict) -> int:
+        """
+        Heuristic to compute the number of predictions of the model for a
+        single image
+
+        Args:
+            plan: plan for model and dataset
+
+        Returns:
+            int: number of detections for model
+        """
+        instances_image = plan["architecture"]["instances_img"]["perc95"]
+        return max(1000, 10 * instances_image)  # use a conversative topk value here
+
+    @classmethod
+    def get_predictor(
+        cls,
+        plan: Dict,
+        models: Sequence[LightningBaseModule],
+        num_tta_transforms: int = None,
+        do_seg: bool = False,
+        **kwargs,
+    ) -> Predictor:
+        # process plan
+        crop_size = plan["patch_size"]
+        batch_size = plan["batch_size"]
+        inference_plan = plan.get("inference_plan", {})
+        det_per_image = cls._get_detections_per_image(plan)
+        for k in ["model_topk", "ensemble_topk", "model_detections_per_image"]:
+            if k in inference_plan:
+                logger.warning(f"Overwriting {k} in inference plan with value {det_per_image}.")
+            inference_plan[k] = det_per_image
+        logger.info(f"Found inference plan: {inference_plan} for prediction")
+        if num_tta_transforms is None:
+            num_tta_transforms = 8 if plan["network_dim"] == 3 else 4
+
+        # setup
+        tta_transforms, tta_inverse_transforms = get_tta_transforms(
+            num_tta_transforms=num_tta_transforms,
+            inverse_boxes=cls.requires_box_eval(),
+            inverse_masks=cls.requires_mask_eval(),
+            inverse_seg=(cls.requires_seg_eval() or do_seg),
+        )
+        logger.info(f"Using {len(tta_transforms)} tta transformations for prediction (one dummy trafo).")
+
+        ensembler_cls = cls.get_ensembler_cls(dim=plan["network_dim"])
+        _ensembler, _ensembler_key = ensembler_cls.constructor(parameters=inference_plan)
+        ensembler = {_ensembler_key: _ensembler}
+
+        if do_seg:
+            seg_ensembler_cls = cls._get_ensembler_cls(
+                key="seg",
+                dim=plan["network_dim"],
+            )
+            seg_ensembler, seg_ensembler_key = seg_ensembler_cls.constructor()
+            ensembler[seg_ensembler_key] = seg_ensembler
+
+        predictor = Predictor(
+            ensembler=ensembler,
+            models=models,
+            crop_size=crop_size,
+            tta_transforms=tta_transforms,
+            tta_inverse_transforms=tta_inverse_transforms,
+            batch_size=batch_size,
+            **kwargs,
+        )
+        if plan["network_dim"] == 2:
+            predictor.pre_transform = Inference2D(["data"])
+        return predictor

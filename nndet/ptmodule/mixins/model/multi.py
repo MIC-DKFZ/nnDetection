@@ -349,10 +349,13 @@ class RoIBuildMixin:
         kwargs = model_cfg["roi_box_post_kwargs"]
         logger.info(f"Building:: roi box postprocessing {name}: {kwargs}")
 
+        kwargs = model_cfg["roi_box_post_kwargs"]
+        kwargs["detections_per_img"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
+
         roi_box_post = cls.roi_box_post_cls(
             num_classes=plan_arch["classifier_classes"],
             is_class_agnostic=cls.roi_regressor_cls.is_class_agnostic(),
-            **model_cfg["roi_box_post_kwargs"],
+            **kwargs,
         )
         return roi_box_post
 
@@ -570,7 +573,9 @@ class TwoStageMixin(RoIBuildMixin, SingleStageMixin):
                 to check compatibility with backbone
             **kwargs: ignored
         """
-        plan_arch.update(model_cfg["plan_arch_overwrites"])
+        if "plan_arch_overwrites" in model_cfg:
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
         logger.info(
             f"Start channels: {plan_arch['start_channels']}; "
             f"head channels: {plan_arch['head_channels']}; "

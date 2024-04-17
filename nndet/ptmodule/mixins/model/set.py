@@ -116,8 +116,8 @@ class DETRModelMixin(ModelMixin):
             patch_size: patch size for training. Defaults to None.
         """
         if "plan_arch_overwrites" in model_cfg:
-            logger.info(f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} ")
-            plan_arch.update(model_cfg["plan_arch_overwrites"])
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
         backbone = cls._build_backbone(
             plan_arch=plan_arch,
             model_cfg=model_cfg,
@@ -195,6 +195,7 @@ class DETRModelMixin(ModelMixin):
         else:
             segmenter = None
 
+        detection_per_img = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
         return cls.detector_cls(
             backbone=backbone,
             transformer=transformer,
@@ -204,10 +205,26 @@ class DETRModelMixin(ModelMixin):
             hidden_dim=hidden_dim,
             query_dim=hidden_dim,
             segmenter=segmenter,
-            detection_per_img=model_cfg["detector"]["detection_per_img"],
+            detection_per_img=detection_per_img,
             two_stage=model_cfg["transformer"].get("two_stage", False),
             use_pos_queries=model_cfg["transformer"].get("use_pos_queries", False),
         )
+
+    @classmethod
+    def _get_detections_per_patch(cls, plan_arch: dict, model_cfg: dict) -> int:
+        """
+        Heuristic to compute the number of detection of the model for a
+        single patch
+
+        Args:
+            plan_arch: architecture plan
+            model_cfg: manual model configuration
+
+        Returns:
+            int: number of detections for model
+        """
+        est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
+        return max(model_cfg["detector"]["min_detection_per_img"], 3 * est_instances_patch)
 
     @classmethod
     def _build_backbone(
@@ -462,6 +479,7 @@ class DETRModelMixin(ModelMixin):
         """
         name = cls.head_box_post_cls.__name__
         kwargs = model_cfg["head_box_post_kwargs"]
+        kwargs["topk"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
 
         logger.info(f"Building:: box post {name} with {kwargs}")
         return cls.head_box_post_cls(**kwargs)
@@ -676,6 +694,10 @@ class DeformableSetModelMixin(DETRModelMixin):
             batch_first=cls.transformer_cls.is_batch_first(),
         )
 
+        transformer_kwargs = model_cfg["transformer"]["transformer_kwargs"]
+        transformer_kwargs["two_stage_num_proposals"] = cls._get_detections_per_patch(
+            plan_arch=plan_arch, model_cfg=model_cfg
+        )
         return cls.transformer_cls(
             encoder=encoder,
             decoder=decoder,
@@ -683,5 +705,5 @@ class DeformableSetModelMixin(DETRModelMixin):
             regressor=encoder_regressor,
             num_feature_levels=model_cfg["transformer"]["num_feature_levels"],
             two_stage=model_cfg["transformer"]["two_stage"],
-            **model_cfg["transformer"]["transformer_kwargs"],
+            **transformer_kwargs,
         )

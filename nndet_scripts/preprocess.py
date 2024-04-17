@@ -29,7 +29,7 @@ from nndet.utils.check import (
     check_dataset_file,
     env_guard,
 )
-from nndet.utils.config import compose
+from nndet.utils.config import compose, load_plan_from_dir
 
 
 def run_cropping_and_convert(
@@ -142,21 +142,20 @@ def run_preprocess(
     cropped_output_dir: Path,
     preprocessed_output_dir: Path,
     num_processes: int,
+    skip_all_lowres: bool,
 ) -> None:
     planner_cls = PLANNER_REGISTRY.get(planner_name)
     planner = planner_cls(preprocessed_output_dir=preprocessed_output_dir)
     plan_identifiers = planner.get_plan_identifiers()
     logger.info(f"Found plan identifiers {plan_identifiers} from " f"planner {planner_cls.__name__}")
 
-    processed_at_least_one_plan = False
-    for plan_id in plan_identifiers:
-        plan_path = preprocessed_output_dir / f"{plan_id}.pkl"
-        if not plan_path.is_file():
-            logger.info(f"Skipping plan identifier {plan_id} since it does not exist.")
-            continue
+    if skip_all_lowres:
+        plan_identifiers = [plan_identifiers[0]]
+        logger.info(f"Flag skip_all_lowres is set. Only running fullres plan {plan_identifiers[0]}.")
 
-        plan = load_pickle(plan_path)
-        processed_at_least_one_plan = True
+    for plan_id in plan_identifiers:
+        plan = load_plan_from_dir(preprocessed_output_dir, plan_id)
+
         planner.run_preprocessing(
             cropped_data_dir=cropped_output_dir / "imagesTr",
             plan=plan,
@@ -191,9 +190,6 @@ def run_preprocess(
                 logger.info("Fixed corrupted files.")
         else:
             logger.info(f"{plan_id} check successful: Loading check completed")
-
-    if not processed_at_least_one_plan:
-        raise RuntimeError("Did not find any processable plans, something went wrong")
 
     create_labels(
         preprocessed_output_dir=preprocessed_output_dir,
@@ -301,6 +297,7 @@ def run(
     skip_analyze: bool,
     skip_plan: bool,
     skip_process: bool,
+    skip_all_lowres: bool,
     overwrite_existing: bool,
     num_processes: int,
     num_processes_preprocessing: int,
@@ -364,6 +361,7 @@ def run(
             cropped_output_dir=cropped_output_dir,
             preprocessed_output_dir=preprocessed_output_dir,
             num_processes=num_processes_preprocessing,
+            skip_all_lowres=skip_all_lowres,
         )
 
 
@@ -411,6 +409,11 @@ def main():
         help="Skip preprocessing",
     )
     parser.add_argument(
+        "--skip_all_lowres",
+        action="store_true",
+        help="Skip preprocessing of lowres stages",
+    )
+    parser.add_argument(
         "--full_check",
         help="Run a full check of the data.",
         action="store_true",
@@ -446,6 +449,7 @@ def main():
     skip_analyze = args.skip_analyze
     skip_plan = args.skip_plan
     skip_process = args.skip_process
+    skip_all_lowres = args.skip_all_lowres
 
     overwrite_existing = args.overwrite_existing
 
@@ -483,6 +487,7 @@ def main():
             skip_analyze=skip_analyze,
             skip_plan=skip_plan,
             skip_process=skip_process,
+            skip_all_lowres=skip_all_lowres,
             overwrite_existing=overwrite_existing,
             num_processes=num_processes,
             num_processes_preprocessing=num_processes_preprocessing,

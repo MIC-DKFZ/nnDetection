@@ -10,15 +10,16 @@ from contextlib import contextmanager
 from functools import partial, reduce
 from typing import Callable, Sequence, Tuple, Union
 
+import numpy as np
 import torch
 from loguru import logger
 
 from nndet.core.abstract import AbstractDetector
+from nndet.utils.format import to_nd_tuple
 
-"""
-This is just a first prototype to estimate VRAM consumption for different GPUs
-I hope to update this soon.
-"""
+
+def bit2mb(x):
+    return (x / 8) / (2**20)  # noqa: E704
 
 
 def b2mb(x):
@@ -45,6 +46,201 @@ class MemoryEstimator(ABC):
     @abstractmethod
     def estimate(self, *args, **kwargs):
         raise NotImplementedError
+
+
+class NoGPUMemoryEstimator(MemoryEstimator):
+    def __init__(
+        self,
+        target_mem_mb: int,
+        batch_size: int,
+        buffer_mb: int = 910,
+    ):
+        """
+        Estimate if model will fit into VRAM
+
+        Args:
+            target_mem_mb: memory of target GPU in mb
+            batch_size: batch size during training
+            buffer: additional vram buffer to account for uncertainty
+                of estimate in mb
+        """
+        super().__init__()
+        self.target_mem_mb = target_mem_mb
+        self.batch_size = batch_size
+        self.buffer_mb = buffer_mb
+        self.cuda_context_mb = 910
+        self.base_type = 16
+
+        # heuristics to get close to estimates from nnDet V1
+        # this slightly underestimates the memory copared to V1 for some cases
+        # due to improved memory management of PyTorch & CUDA optimizations
+        # it should still remain below the memory budget
+        # self.encoder_heuristic = 1.2
+        # self.decoder_heuristic = 1.0
+        # self.det_head_heuristic = 2.6
+        # self.seg_heuristic = 1.0
+        # self.iou_matrix_heuristic = 1.81
+        # self.heuristic_factor = 0.5
+        # self.param_factor = 1.0
+
+        # self.encoder_heuristic = 2 # conv + act + norm
+        # self.decoder_heuristic = 2 # conv
+        # self.det_head_heuristic = 6.0 # conv + act + norm
+        # self.seg_heuristic = 1.0
+        # self.iou_matrix_heuristic = 5
+        # # self.param_factor = 3.0  # model + grad + optim state
+        # # self.heuristic_factor = 2.05
+
+        # heuristics to get close to estimates from nnDet V1
+        self.encoder_heuristic = 2.5  # conv + act + norm
+        self.decoder_heuristic = 2  # conv
+        self.det_head_heuristic = 5.0  # conv + act + norm
+        self.seg_heuristic = 1.0
+        self.iou_matrix_heuristic = 7
+        self.param_factor = 3.0  # model + grad + optim state
+        self.heuristic_factor = 2.0
+
+    def _estimate_feature_voxels(
+        self,
+        model_cfg: dict,
+        plan_arch: dict,
+        patch_size: Sequence[int],
+        in_channels: int = None,
+        num_instances: int = 1,
+    ):
+        # we assume a plain RetinaU-Net for estimation
+        # other architectures will consume more or less VRAM and need
+        # to be adjusted manually
+
+        num_levels = len(plan_arch["conv_kernels"])
+        rel_strides = plan_arch["strides"]
+        decoder_levels = plan_arch["decoder_levels"]
+        start_channels = plan_arch["start_channels"]
+        max_channels = plan_arch["max_channels"]
+        num_classes = plan_arch["classifier_classes"]
+        fpn_channels = plan_arch["fpn_channels"]
+        num_anchors = 27
+
+        first_decoder_level = min(decoder_levels)
+
+        # determine sizes of feature maps
+        feature_map_sizes = [patch_size]
+        encoder_channels = [start_channels]
+        decoder_channels = [int(fpn_channels * (2 ** (-1 * first_decoder_level)))]
+        _current_shape = patch_size
+        for level_idx, level_stride in enumerate(rel_strides, start=1):
+            nd_stride = to_nd_tuple(level_stride, len(patch_size))
+            assert len(nd_stride) == len(patch_size)
+            _current_shape = [cs / s for cs, s in zip(_current_shape, nd_stride)]
+            feature_map_sizes.append(_current_shape)
+
+            encoder_channels.append(min(start_channels * (2**level_idx), max_channels))
+            decoder_channels.append(min(int(fpn_channels * (2 ** (level_idx - first_decoder_level))), fpn_channels))
+
+        # sanity checks
+        assert len(feature_map_sizes) == num_levels
+        assert len(feature_map_sizes) == len(encoder_channels)
+        assert len(feature_map_sizes) == len(decoder_channels)
+
+        # compute voxels in input
+        input_voxels = np.prod(patch_size, dtype=np.int64) * in_channels
+
+        # compute voxels in encoder
+        encoder_voxel_ops = self.encoder_heuristic * np.sum(
+            [
+                np.prod(fm_size, dtype=np.int64) * fm_channels
+                for fm_size, fm_channels in zip(feature_map_sizes, encoder_channels)
+            ],
+            dtype=np.int64,
+        )
+        # compute voxels in decoder
+        decoder_voxel_ops = self.decoder_heuristic * np.sum(
+            [
+                np.prod(fm_size, dtype=np.int64) * fm_channels
+                for fm_size, fm_channels in zip(feature_map_sizes, decoder_channels)
+            ],
+            dtype=np.int64,
+        )
+
+        # compute voxels in detection head
+        det_feature_map_sizes = [feature_map_sizes[dl] for dl in decoder_levels]
+        det_head_voxel_ops = self.det_head_heuristic * np.sum(
+            [np.prod(fm, dtype=np.int64) * fpn_channels for fm in det_feature_map_sizes],
+            dtype=np.int64,
+        )
+        det_head_cls_voxel_ops = np.sum(
+            [num_classes * np.prod(fm, dtype=np.int64) for fm in det_feature_map_sizes],
+            dtype=np.int64,
+        )
+        det_head_box_voxel_ops = np.sum(
+            [num_anchors * np.prod(fm, dtype=np.int64) for fm in det_feature_map_sizes],
+            dtype=np.int64,
+        )
+
+        # compute voxels in segmentation head
+        seg_voxels = self.seg_heuristic * np.prod(patch_size, dtype=np.int64)  # * num_classes
+
+        # compute elements of IoU matrix
+        iou_matrix_ops = self.iou_matrix_heuristic * det_head_box_voxel_ops * num_instances
+
+        final_estimate = (
+            input_voxels
+            + encoder_voxel_ops
+            + decoder_voxel_ops
+            + det_head_voxel_ops
+            + det_head_cls_voxel_ops
+            + det_head_box_voxel_ops
+            + seg_voxels
+            + iou_matrix_ops
+        )
+
+        logger.info(
+            f"++++++ Estimated no scale::"
+            f"enc {bit2mb(encoder_voxel_ops * self.base_type / self.encoder_heuristic)} "
+            f"dec {bit2mb(decoder_voxel_ops * self.base_type) / self.decoder_heuristic} "
+            f"det {bit2mb(det_head_voxel_ops * self.base_type) / self.det_head_heuristic} "
+            f"cls {bit2mb(det_head_cls_voxel_ops * self.base_type)} "
+            f"box {bit2mb(det_head_box_voxel_ops * self.base_type)} "
+            f"seg {bit2mb(seg_voxels * self.base_type) / self.seg_heuristic} "
+            f"iou {bit2mb(iou_matrix_ops * self.base_type) / self.iou_matrix_heuristic} ni {num_instances}++++++"
+        )
+        logger.info(
+            f"++++++ Estimated:: {bit2mb(final_estimate * self.base_type)} "
+            f"enc {bit2mb(encoder_voxel_ops * self.base_type)} "
+            f"dec {bit2mb(decoder_voxel_ops * self.base_type)} "
+            f"det {bit2mb(det_head_voxel_ops * self.base_type)} "
+            f"cls {bit2mb(det_head_cls_voxel_ops * self.base_type)} "
+            f"box {bit2mb(det_head_box_voxel_ops * self.base_type)} "
+            f"seg {bit2mb(seg_voxels * self.base_type)} "
+            f"iou {bit2mb(iou_matrix_ops * self.base_type)} ni {num_instances}++++++"
+        )
+        return final_estimate
+
+    def estimate(
+        self,
+        target_shape: Sequence[int],
+        model_cfg: dict,
+        plan_arch: dict,
+        network: AbstractDetector,
+        optimizer_cls: Callable = torch.optim.Adam,
+        in_channels: int = None,
+        num_instances: int = 1,
+        **kwargs,
+    ) -> Tuple[int, bool]:
+        params = np.sum([np.prod(n.shape, dtype=np.int64) for n in network.parameters()])
+        feature_voxels = self._estimate_feature_voxels(
+            model_cfg=model_cfg,
+            plan_arch=plan_arch,
+            patch_size=target_shape,
+            in_channels=in_channels,
+            num_instances=num_instances,
+        )
+        param_mb = bit2mb(self.param_factor * params * self.base_type)
+        voxel_mb = self.heuristic_factor * self.batch_size * bit2mb(feature_voxels * self.base_type)
+        full_estimate = param_mb + voxel_mb + self.cuda_context_mb
+        logger.info(f"++++++ Final estimate {full_estimate} for path size {target_shape} ++++++")
+        # from IPython import embed; embed();
+        return full_estimate, full_estimate <= self.target_mem_mb
 
 
 class MemoryEstimatorDetection(MemoryEstimator):
@@ -105,6 +301,7 @@ class MemoryEstimatorDetection(MemoryEstimator):
         optimizer_cls: Callable = torch.optim.Adam,
         in_channels: int = None,
         num_instances: int = 1,
+        **kwargs,
     ) -> Tuple[int, bool]:
         if in_channels is not None:
             min_shape = [in_channels, *min_shape]

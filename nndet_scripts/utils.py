@@ -3,6 +3,8 @@
 
 from typing import List
 
+import numpy as np
+
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
 
@@ -597,6 +599,11 @@ def create_test_data_split():
     logger.info(f"+++ Running nndet_test_split {current_time_str} +++")
 
     meta = load_dataset_info(task_dir)
+    session_id = meta.get("session_id", False)
+    if session_id:
+        _error_str = "Session id is enabled, which is supported in this script. Please create the test set manually!"
+        logger.error(_error_str)
+        raise RuntimeError(_error_str)
 
     create_test_split(
         raw_splitted_dir,
@@ -652,23 +659,22 @@ def create_cv_split():
     from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 
     from nndet.io import load_json, save_json, save_pickle
+    from nndet.utils.config import load_dataset_info
 
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("--num_folds", type=int, default=5, help="Number of folds")
-    parser.add_argument(
-        "--with_patients",
-        action="store_true",
-        help="Derive patient information from names.",
-    )
 
     args = parser.parse_args()
     task = args.task
     num_folds = args.num_folds
-    with_patients = args.with_patients
 
     task_name = get_task(task, name=True)
     task_dir = Path(os.getenv("det_data")) / task_name
+    dataset_info = load_dataset_info(task_dir)
+    with_patients = dataset_info.get("session_id", False)
+    session_id_str = "enabled" if with_patients else "disabled"
+    logger.info(f"Running cv splits with session_id: {session_id_str}")
 
     if not task_dir.is_dir():
         raise ValueError(f"{task_dir} is not a valid task directory!")
@@ -773,6 +779,46 @@ def create_cv_split():
     # save splits
     save_json(splits, splits_path_json)
     save_pickle(splits, splits_path_pkl)
+
+
+@env_guard
+def splits_pkl_to_json():
+    import argparse
+    import os
+    from pathlib import Path
+
+    from nndet.io import load_pickle, save_json
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("--splits_name", type=str, help="Name of splits file", required=False, default="splits_final")
+
+    args = parser.parse_args()
+    task = args.task
+    splits_name = args.splits_name
+
+    task_name = get_task(task, name=True)
+    task_dir = Path(os.getenv("det_data")) / task_name
+
+    if not task_dir.is_dir():
+        raise ValueError(f"{task_dir} is not a valid task directory!")
+    preprocessed_dir = task_dir / "preprocessed"
+    if not preprocessed_dir.is_dir():
+        raise ValueError(f"{preprocessed_dir} is not a directory!")
+
+    splits_path_json = preprocessed_dir / f"{splits_name}.json"
+    splits_path_pkl = preprocessed_dir / f"{splits_name}.pkl"
+
+    if not splits_path_pkl.is_file():
+        raise ValueError(f"{splits_path_pkl} is not a valid splits file!")
+
+    print(f"Converting {splits_path_pkl} to {splits_path_json}")
+    splits = load_pickle(splits_path_pkl)
+
+    splits_no_array = []
+    for fold in splits:
+        splits_no_array.append({k: list(x) if isinstance(x, np.ndarray) else x for k, x in fold.items()})
+    save_json(splits_no_array, splits_path_json)
 
 
 if __name__ == "__main__":

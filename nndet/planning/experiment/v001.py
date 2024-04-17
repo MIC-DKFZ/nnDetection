@@ -14,6 +14,7 @@ from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.base import AbstractPlanner
 from nndet.preprocessing.preprocessor import DynDTypePreprocessor, GenericPreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.utils.config import load_plan_from_dir
 
 
 @PLANNER_REGISTRY.register
@@ -212,11 +213,19 @@ class D3V001(AbstractPlanner):
         else:
             return False
 
-    @classmethod
-    def get_plan_identifiers(cls):
-        ids = []
-        for mode in ["3d", "3dlr1"]:
-            ids.append(f"{cls.__name__}_{mode}")
+    def get_plan_identifiers(self) -> List[str]:
+        """
+        Retrieve all plan identifier starting from highest res (fullres) to
+        lowest res (highest target spacing)
+
+        Returns:
+            List[str]: ordered list of plan identifier
+        """
+        fullres_identifier = self._get_identifier("3d")
+        fullres_plan = load_plan_from_dir(self.preprocessed_output_dir, fullres_identifier)
+        ids = [fullres_identifier]
+        if fullres_plan["trigger_lr1"]:
+            ids.append(self._get_identifier("3dlr1"))
         return ids
 
 

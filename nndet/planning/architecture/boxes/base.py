@@ -557,12 +557,14 @@ class BoxC001(BaseBoxesPlanner):
             self.architecture_kwargs["decoder_levels"] = tuple(
                 [i for i in range(decoder_levels_start, num_resolutions)]
             )
-            print(self.architecture_kwargs["decoder_levels"])
-            print(self.get_anchors_for_estimation())
+            # print(self.architecture_kwargs["decoder_levels"])
+            # print(self.get_anchors_for_estimation())
             _, fits_in_mem = self.estimator.estimate(
                 min_shape=must_be_divisible_by,
                 target_shape=patch_size,
                 in_channels=self.architecture_kwargs["in_channels"],
+                model_cfg=self.model_cfg,
+                plan_arch=self.plan_arch,
                 network=self.network_cls.from_config_plan(
                     model_cfg=self.model_cfg,
                     plan_arch=self.architecture_kwargs,

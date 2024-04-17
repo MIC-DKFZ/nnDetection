@@ -15,6 +15,4 @@ multiprocessing: True # only deactivate this if debugging
 batch_size: 6
 
 # Additional overwrites
-# patch_size; Default: plan
-# batch_size; Default: plan
 # splits; Default: splits_final

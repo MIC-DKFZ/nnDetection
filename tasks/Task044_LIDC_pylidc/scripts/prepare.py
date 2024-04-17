@@ -250,12 +250,16 @@ def main():
 
     # prepare dataset info
     meta = {
+        # mandatory keys
         "task": t,
-        "target_class": target_class,
-        "test_labels": False,
+        "dim": 3,
         "labels": labels,
         "modalities": {"0": "CT"},
-        "dim": 3,
+        # important setting for adam! Multiple scans per patient available
+        "session_id": True,
+        # optional keys
+        "target_class": target_class,
+        "test_labels": False,
     }
     save_json(meta, task_data_dir / "dataset.json")
 

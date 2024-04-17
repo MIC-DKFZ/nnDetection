@@ -93,23 +93,25 @@ All data sets should reside inside `Task[Number]_[Name]` folders inside the spec
 To avoid conflicts with our provided pretrained models we recommend to use task numbers starting from 100.
 An overview is provided below ([Name] symbolise folders, `-` symbolise files, indents refer to substructures)
 Note: Please avoid `.` inside file names since it can influence how paths/names are splitted.
+File names can follow two format definitions `{patient id}_{session id}_{modality id}.{data extension}` (if `session_id` is enabled in `dataset.json`) or `{patient id}_{modality id}.{data extension}` (if `session_id` is disabled in `dataset.json`).
+The first format groups multiple scans of the same patient to avoid leakage between training, validation and test sets.
 
 .. code-block:: text
 
     ${det_data}
         [Task000_Example]
-            - dataset.yaml # dataset.json works too
+            - dataset.json # dataset.json works too
             [raw_splitted]
                 [imagesTr]
-                    - case0000_0000.nii.gz # case0000 modality 0
-                    - case0000_0001.nii.gz # case0000 modality 1
-                    - case0001_0000.nii.gz # case0001 modality 0
-                    - case0000_0001.nii.gz # case0001 modality 1
+                    - case0000_000_0000.nii.gz # patient case0000 session 000 modality 0
+                    - case0000_000_0001.nii.gz # patient case0000 session 000 modality 1
+                    - case0001_000_0000.nii.gz # patient case0001 session 000 modality 0
+                    - case0000_000_0001.nii.gz # patient case0001 session 000 modality 1
                 [labelsTr]
-                    - case0000.nii.gz # instance segmentation case0000
-                    - case0000.json # properties of case0000
-                    - case0001.nii.gz # instance segmentation case0001
-                    - case0001.json # properties of case0001
+                    - case0000_000.nii.gz # segmentation patient case0000 session 000
+                    - case0000_000.json # properties of patient case0000 session 000
+                    - case0001_000.nii.gz # segmentation patient case0001 session 000
+                    - case0001_000.json # properties of patient case0001 session 000
                 [imagesTs] # optional, same structure as imagesTr
                 ...
                 [labelsTs] # optional, same structure as labelsTr
@@ -125,14 +127,9 @@ Note: [Important] Classes and modalities start with index 0!
 
 .. code-block:: yaml
 
+    # [mandatory information]
     task: Task000D3_Example
-
-    name: "Example" # [Optional]
     dim: 3 # number of spatial dimensions of the data
-
-    # Note: need to use integer value which is defined below of target class!
-    target_class: 1 # [Optional] define class of interest for patient level evaluations
-    test_labels: True # manually splitted test set
 
     labels: # classes of data set; need to start at 0
         "0": "Square"
@@ -140,6 +137,12 @@ Note: [Important] Classes and modalities start with index 0!
 
     modalities: # modalities of data set; need to start at 0
         "0": "CT"
+
+    # [optional information]
+    # Note: need to use integer value which is defined below of target class!
+    session_id: False # if multiple sessions of the same patient are available, default `False`
+    target_class: 1 # define class of interest for patient level evaluations, default `None`
+    test_labels: True # manually splitted test set for further evaluation, default `False`
 
 
 Image Format
@@ -153,11 +156,11 @@ An example with two modalities could look like this:
 
 .. code-block:: text
 
-    - case001_0000.nii.gz # Case ID: case001; Modality: 0
-    - case001_0001.nii.gz # Case ID: case001; Modality: 1
+    - case001_000_0000.nii.gz # Case ID    patient: case001; session: 000; Modality: 0
+    - case001_000_0001.nii.gz # Case ID    patient: case001; session: 000; Modality: 1
 
-    - case002_0000.nii.gz # Case ID: case002; Modality: 0
-    - case002_0001.nii.gz # Case ID: case002; Modality: 1
+    - case002_000_0000.nii.gz # Case ID    patient: case002; session: 000; Modality: 0
+    - case002_000_0001.nii.gz # Case ID    patient: case002; session: 000; Modality: 1
 
 If multiple modalities are available, please check beforehand if they need to be registered and perform registration befor nnDetection preprocessing. nnDetection does (!)not(!) include automatic registration of multiple modalities.
 

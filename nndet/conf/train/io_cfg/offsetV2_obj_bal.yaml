@@ -13,6 +13,4 @@ dataloader_kwargs:
 multiprocessing: True # only deactivate this if debugging
 
 # Additional overwrites
-# patch_size; Default: plan
-# batch_size; Default: plan
 # splits; Default: splits_final
