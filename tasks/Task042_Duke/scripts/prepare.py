@@ -34,6 +34,7 @@ exclude_cases = [
     "Breast_MRI_103",
     "Breast_MRI_164",
     "Breast_MRI_253",
+    "Breast_MRI_258",
     "Breast_MRI_282",
     "Breast_MRI_700",
     "Breast_MRI_728",
@@ -151,6 +152,10 @@ def prepare_case(
     target_data_dir: Path,
     target_label_dir: Path,
 ) -> None:
+    # if (target_label_dir / f"{case_id}.nii.gz").is_file():
+    #     logger.info(f"Case {case_id} already prepared, skipping")
+    #     return
+
     # process case
     seq_size = None
     for seq_idx, excel_seq in enumerate(SEQUENCES.values()):
