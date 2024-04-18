@@ -28,4 +28,4 @@ Please read the information from the homepage carefully and follow the rules and
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.
 
 ## Notes
-Since not all sizes are cleanly divisable by 2 there is ~1 pixel uncertainty in back and forth conversion of the bounding box annotations wrt. to the orignal csv file.
+Since not all sizes are cleanly divisable by 2 there is ~1 pixel uncertainty in back and forth conversion of the bounding box annotations wrt. to the orignal csv file. The prepare script will show some warning regaring boxes which are outside of the image which is also normal.
