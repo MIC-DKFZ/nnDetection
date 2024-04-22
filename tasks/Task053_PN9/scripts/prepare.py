@@ -345,9 +345,15 @@ def main():
     if not source_labels_test.is_file():
         raise RuntimeError(f"{source_labels_test} should contain the train annotations.")
     test_labels_df = pd.read_csv(source_labels_test)
+    test_labels_df["volume"] = test_labels_df.apply(
+        lambda row: float(row["xmax"] - row["xmin"])
+        * float(row["ymax"] - row["ymin"])
+        * float(row["zmax"] - row["zmin"]),
+        axis=1,
+    )
 
     logger.info(f"Found {len(test_case_ids)} case ids for testing")
-    assert len(set(case_ids)) == 2091, "Missing cases in test data"
+    assert len(set(test_case_ids)) == 2091, "Missing cases in test data"
 
     num_processes = int(os.getenv("det_num_threads", 4))
     if num_processes < 1:
