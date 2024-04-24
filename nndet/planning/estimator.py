@@ -75,30 +75,13 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # this slightly underestimates the memory copared to V1 for some cases
         # due to improved memory management of PyTorch & CUDA optimizations
         # it should still remain below the memory budget
-        # self.encoder_heuristic = 1.2
-        # self.decoder_heuristic = 1.0
-        # self.det_head_heuristic = 2.6
-        # self.seg_heuristic = 1.0
-        # self.iou_matrix_heuristic = 1.81
-        # self.heuristic_factor = 0.5
-        # self.param_factor = 1.0
-
-        # self.encoder_heuristic = 2 # conv + act + norm
-        # self.decoder_heuristic = 2 # conv
-        # self.det_head_heuristic = 6.0 # conv + act + norm
-        # self.seg_heuristic = 1.0
-        # self.iou_matrix_heuristic = 5
-        # # self.param_factor = 3.0  # model + grad + optim state
-        # # self.heuristic_factor = 2.05
-
-        # heuristics to get close to estimates from nnDet V1
-        self.encoder_heuristic = 2.5  # conv + act + norm
-        self.decoder_heuristic = 2  # conv
-        self.det_head_heuristic = 5.0  # conv + act + norm
-        self.seg_heuristic = 1.0
-        self.iou_matrix_heuristic = 7
-        self.param_factor = 3.0  # model + grad + optim state
-        self.heuristic_factor = 2.0
+        self.encoder_heuristic = 4.800000000000003  # conv + act + norm
+        self.decoder_heuristic = 0.0  # conv
+        self.det_head_heuristic = 4.5  # conv + act + norm
+        self.seg_heuristic = 3
+        self.iou_matrix_heuristic = 4
+        self.param_factor = 0.0  # model + grad + optim state
+        self.heuristic_factor = 2
 
     def _estimate_feature_voxels(
         self,

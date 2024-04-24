@@ -10,4 +10,4 @@ PLANNER_REGISTRY: Mapping[str, Type[AbstractPlanner]] = Registry()
 
 from nndet.planning.experiment.dev import D2C004, D3V001AEP, D3V001FP16I16
 from nndet.planning.experiment.v001 import D3V001
-from nndet.planning.experiment.v002 import D3C010  # D3V002
+from nndet.planning.experiment.v002 import D3V002

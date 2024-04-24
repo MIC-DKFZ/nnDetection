@@ -7,19 +7,16 @@ from loguru import logger
 
 from nndet.planning.architecture.boxes import BaseBoxesPlanner
 from nndet.planning.architecture.boxes.v002 import BoxV002
-
-# from nndet.planning.estimator import MemoryEstimatorDetection, NoGPUMemoryEstimator
-from nndet.planning.estimator import NoGPUMemoryEstimator
+from nndet.planning.estimator import MemoryEstimatorDetection, NoGPUMemoryEstimator
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-
-# from nndet.preprocessing.preprocessor.generic import DynDTypePreprocessor
+from nndet.preprocessing.preprocessor.generic import DynDTypePreprocessor
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.config import load_plan_from_dir
 
 
 @PLANNER_REGISTRY.register
-class D3C010(D3V001):
+class D3V002(D3V001):
     def plan_experiment(
         self,
         model_name: str,
@@ -90,23 +87,10 @@ class D3C010(D3V001):
         Returns:
             str: data identifier
         """
-        return f"D3V001_{mode}"
-
-    # def get_data_identifier(self, mode: str) -> str:
-    #     """
-    #     D3V001 and D3V002 share the same data preprocessing paramters
-    #     and preprocessor -> thus we use D3V001 data for this plan as well
-
-    #     Args:
-    #         mode: current operation mode
-
-    #     Returns:
-    #         str: data identifier
-    #     """
-    #     class_identifier = list(self.__class__.__name__)
-    #     class_identifier[5] = "1"
-    #     class_identifier = "".join(class_identifier)
-    #     return f"{class_identifier}_{mode}"
+        class_identifier = list(self.__class__.__name__)
+        class_identifier[5] = "1"
+        class_identifier = "".join(class_identifier)
+        return f"{class_identifier}_{mode}"
 
     def create_architecture_planner(
         self,
@@ -144,40 +128,53 @@ class D3C010(D3V001):
         return [fullres_identifier] + fullres_plan["lowres_identifiers"]
 
 
-# @PLANNER_REGISTRY.register
-# class D3V002EstV1(D3V002):
-#     def create_architecture_planner(
-#         self,
-#         model_name: str,
-#         model_cfg: dict,
-#         mode: str,
-#     ) -> BaseBoxesPlanner:
-#         """
-#         Create Architecture planner
-#         """
-#         estimator = MemoryEstimatorDetection()
-#         architecture_planner = BoxV002(
-#             preprocessed_output_dir=self.preprocessed_output_dir,
-#             save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
-#             estimator=estimator,
-#             network_cls=MODULE_REGISTRY.get(model_name),
-#             model_cfg=model_cfg,
-#         )
-#         return architecture_planner
+@PLANNER_REGISTRY.register
+class D3V002EstV1(D3V002):
+    def get_data_identifier(self, mode: str) -> str:
+        """
+        D3V001 and D3V002 share the same data preprocessing paramters
+        and preprocessor -> thus we use D3V001 data for this plan as well
+
+        Args:
+            mode: current operation mode
+
+        Returns:
+            str: data identifier
+        """
+        return f"D3V001_{mode}"
+
+    def create_architecture_planner(
+        self,
+        model_name: str,
+        model_cfg: dict,
+        mode: str,
+    ) -> BaseBoxesPlanner:
+        """
+        Create Architecture planner
+        """
+        estimator = MemoryEstimatorDetection()
+        architecture_planner = BoxV002(
+            preprocessed_output_dir=self.preprocessed_output_dir,
+            save_dir=self.preprocessed_output_dir / "analysis" / f"{self.__class__.__name__}_{mode}",
+            estimator=estimator,
+            network_cls=MODULE_REGISTRY.get(model_name),
+            model_cfg=model_cfg,
+        )
+        return architecture_planner
 
 
-# @PLANNER_REGISTRY.register
-# class D3V002DynDtype(D3V002):
-#     @staticmethod
-#     def create_preprocessor(plan: Dict) -> DynDTypePreprocessor:
-#         """
-#         Create Preprocessor
-#         """
-#         preprocessor = DynDTypePreprocessor(
-#             norm_scheme_per_modality=plan["normalization_schemes"],
-#             use_mask_for_norm=plan["use_mask_for_norm"],
-#             transpose_forward=plan["transpose_forward"],
-#             intensity_properties=plan["dataset_properties"]["intensity_properties"],
-#             resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
-#         )
-#         return preprocessor
+@PLANNER_REGISTRY.register
+class D3V002DynDtype(D3V002):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> DynDTypePreprocessor:
+        """
+        Create Preprocessor
+        """
+        preprocessor = DynDTypePreprocessor(
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+        )
+        return preprocessor
