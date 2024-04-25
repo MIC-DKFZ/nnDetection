@@ -78,10 +78,16 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         self.encoder_heuristic = 4.8  # conv + act + norm
         self.decoder_heuristic = 0.0  # conv
         self.det_head_heuristic = 4.5  # conv + act + norm
-        self.seg_heuristic = 3
+        self.seg_heuristic = 2
         self.iou_matrix_heuristic = 4
         self.param_factor = 0.0  # model + grad + optim state
         self.heuristic_factor = 2
+        logger.info(
+            f"Estimating with heuristics: encoder {self.encoder_heuristic}, "
+            f"decoder {self.decoder_heuristic}, det_head {self.det_head_heuristic}, "
+            f"seg {self.seg_heuristic}, iou {self.iou_matrix_heuristic}, "
+            f"param {self.param_factor}, heuristic {self.heuristic_factor}"
+        )
 
     def _estimate_feature_voxels(
         self,
@@ -126,7 +132,7 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         assert len(feature_map_sizes) == len(decoder_channels)
 
         # compute voxels in input
-        input_voxels = np.prod(patch_size, dtype=np.int64) * in_channels
+        # input_voxels = np.prod(patch_size, dtype=np.int64) * in_channels
 
         # compute voxels in encoder
         encoder_voxel_ops = self.encoder_heuristic * np.sum(
@@ -167,14 +173,14 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         iou_matrix_ops = self.iou_matrix_heuristic * det_head_box_voxel_ops * num_instances
 
         final_estimate = (
-            input_voxels
-            + encoder_voxel_ops
+            encoder_voxel_ops
             + decoder_voxel_ops
             + det_head_voxel_ops
             + det_head_cls_voxel_ops
             + det_head_box_voxel_ops
             + seg_voxels
             + iou_matrix_ops
+            # + input_voxels
         )
 
         logger.info(

@@ -131,7 +131,18 @@ class D3V002(D3V001):
 @PLANNER_REGISTRY.register
 class D3C010(D3V002):
     # temporary renaming for final testing of some last aspects :)
-    pass
+    def get_data_identifier(self, mode: str) -> str:
+        """
+        D3V001 and D3V002 share the same data preprocessing paramters
+        and preprocessor -> thus we use D3V001 data for this plan as well
+
+        Args:
+            mode: current operation mode
+
+        Returns:
+            str: data identifier
+        """
+        return f"D3V001_{mode}"
 
 
 @PLANNER_REGISTRY.register
