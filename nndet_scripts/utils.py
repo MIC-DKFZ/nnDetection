@@ -581,10 +581,12 @@ def create_test_data_split():
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("--size", type=float, help="Size of test split", default=0.3)
+    parser.add_argument("--stratify", action="store_true", help="Enable a best effort stratification of patients.")
 
     args = parser.parse_args()
     task = args.task
     test_size = args.size
+    stratify = args.stratify
 
     task_name = get_task(task, name=True)
     task_dir = Path(os.getenv("det_data")) / task_name
@@ -611,6 +613,7 @@ def create_test_data_split():
         test_size=test_size,
         random_state=0,
         shuffle=True,
+        do_stratify=stratify,
     )
 
 

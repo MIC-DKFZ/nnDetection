@@ -126,6 +126,7 @@ setup(
             "nndet_prep = nndet_scripts.preprocess:main",
             "nndet_prep_labels = nndet_scripts.preprocess:main_prep_labels",
             "nndet_cv_split = nndet_scripts.utils:create_cv_split",
+            "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
             # training
             "nndet_train = nndet_scripts.train:train",
             "nndet_sweep = nndet_scripts.train:sweep",
@@ -159,7 +160,6 @@ setup(
             "nndet_seg2nii = nndet_scripts.utils:seg2nii",
             "nndet_env = nndet_scripts.utils:env",
             "nndet_print_reg = nndet_scripts.utils:print_reg",
-            "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
             "nndet_splits_pkl_to_json = nndet_scripts.utils:splits_pkl_to_json",
         ]
     },
