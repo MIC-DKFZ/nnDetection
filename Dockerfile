@@ -14,7 +14,7 @@
 
 # Contains pytorch, torchvision, cuda, cudnn
 # FROM nvcr.io/nvidia/pytorch:20.12-py3
-FROM nvcr.io/nvidia/pytorch:23.05-py3
+FROM nvcr.io/nvidia/pytorch:24.01-py3
 
 ARG env_det_num_threads=6
 ARG env_det_verbose=1

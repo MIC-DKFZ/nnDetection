@@ -161,6 +161,9 @@ def write_requirements(output_dir: Union[str, Path]) -> None:
     Args:
         path (str): path to file (including file name and extension)
     """
+    result_pip = None
+    result_conda = None
+
     output_dir = Path(output_dir)
     pip_output_file = output_dir / "requirements_pip.txt"
     if pip_output_file.is_file():
