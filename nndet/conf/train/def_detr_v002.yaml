@@ -10,6 +10,6 @@ defaults:
   - accelerator_cfg: gpu1_mixed16
   - model_cfg: deformable_detr_sigm
 
-module: BoxDeformableDETRC002 # TODO: change default module
+module: BoxDeformableDETRV002
 plan: ${planner}_3d # plan used for training
 planner: D3V002 # planner used for preprocessing

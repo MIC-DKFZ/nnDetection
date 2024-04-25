@@ -128,7 +128,7 @@ def main():
     if num_processes > 0:
         # multiprocess version
         logger.info(f"Using {num_processes} processes for preparation")
-        with multiprocessing.Pool() as pool:
+        with multiprocessing.Pool(processes=num_processes) as pool:
             pool.starmap(
                 prepare_case,
                 zip(

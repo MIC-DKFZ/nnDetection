@@ -1,8 +1,9 @@
+import multiprocessing
 import os
 import shutil
 import sys
+from itertools import repeat
 from pathlib import Path
-from re import M
 from typing import Dict, List
 
 import numpy as np
@@ -17,14 +18,14 @@ from nndet.utils.info import maybe_verbose_iterable
 
 
 def add_ellipsoid(
-    mask,  # z, y, x
-    idx,
-    cx,
-    cy,
-    cz,
-    dx,
-    dy,
-    dz,
+    mask: np.ndarray,  # z, y, x
+    idx: int,
+    cx: int,
+    cy: int,
+    cz: int,
+    dx: int,
+    dy: int,
+    dz: int,
 ) -> np.ndarray:
     assert idx > 0
 
@@ -83,20 +84,55 @@ def run_prep(
         instances[int(idx)] = 0
 
     mask_itk = sitk.GetImageFromArray(mask_np)
-    mask_itk.SetOrigin(data_itk.GetOrigin())
-    mask_itk.SetDirection(data_itk.GetDirection())
-    mask_itk.SetSpacing(data_itk.GetSpacing())
+    mask_itk.CopyInformation(data_itk)
 
     # saving
     sitk.WriteImage(mask_itk, str(target_label_dir / f"{cid}.nii.gz"))
     save_json({"instances": instances}, target_label_dir / f"{cid}.json")
 
 
+def filter_and_prep_case(
+    cid: str,
+    label_df: pd.DataFrame,
+    source_data: Path,
+    target_data_dir: Path,
+    target_label_dir: Path,
+) -> None:
+    logger.info(f"Processing case {cid}")
+    # data
+    shutil.copy2(source_data / f"{cid}.nii.gz", target_data_dir / f"{cid}_0000.nii.gz")
+
+    # label
+    case_df = label_df[label_df["public_id"] == cid]
+    temp = case_df.to_dict()
+    boxes_mela_format = []
+
+    for i in temp["public_id"].keys():
+        boxes_mela_format.append(
+            {
+                "cx": temp["coordX"][i],
+                "cy": temp["coordY"][i],
+                "cz": temp["coordZ"][i],
+                "dx": temp["x_length"][i],
+                "dy": temp["y_length"][i],
+                "dz": temp["z_length"][i],
+            }
+        )
+    run_prep(
+        cid=cid,
+        source_data=target_data_dir,
+        target_label_dir=target_label_dir,
+        boxes_mela_format=boxes_mela_format,
+    )
+
+
 @env_guard
 def main():
-    task_name = "Task033_MelaSpace"
+    task_name = "Task050_MELA"
     det_data_dir = Path(os.getenv("det_data"))
+
     task_data_dir = det_data_dir / task_name
+    raw_data_dir = task_data_dir / "raw"
 
     logger.remove()
     logger.add(sys.stdout, level="INFO")
@@ -104,68 +140,79 @@ def main():
     logger.info(f"Preparing task: {task_name}")
 
     # setup raw splitted dirs
-    target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"
-    if not target_data_dir.is_dir():
-        raise RuntimeError(
-            "Please read the README of the prepare script, " f"required folder {target_data_dir} does not exist."
-        )
-    target_label_dir = task_data_dir / "raw_splitted" / "labelsTr"
-    target_label_dir.mkdir(exist_ok=True, parents=True)
+    source_data_tr = raw_data_dir / "imagesTr"
+    source_data_ts = raw_data_dir / "imagesTs"
+    if not source_data_tr.is_dir():
+        raise RuntimeError(f"{source_data_tr} should contain the raw data but does not exist.")
+    if not source_data_ts.is_dir():
+        raise RuntimeError(f"{source_data_ts} should contain the raw data but does not exist.")
 
-    label_df_path = task_data_dir / "mela_train_val_annotations.csv"
+    label_df_path = raw_data_dir / "mela_train_val_annotations.csv"
     if not label_df_path.is_file():
         raise RuntimeError(f"Expected labels file at {label_df_path}, aborting.")
+    label_df = pd.read_csv(label_df_path)
+
+    target_data_tr = task_data_dir / "raw_splitted" / "imagesTr"
+    target_data_tr.mkdir(exist_ok=True, parents=True)
+    target_label_tr = task_data_dir / "raw_splitted" / "labelsTr"
+    target_label_tr.mkdir(exist_ok=True, parents=True)
+
+    target_data_ts = task_data_dir / "raw_splitted" / "imagesTs"
+    target_data_ts.mkdir(exist_ok=True, parents=True)
+    target_label_ts = task_data_dir / "raw_splitted" / "labelsTs"
+    target_label_ts.mkdir(exist_ok=True, parents=True)
 
     # prepare dataset info
     meta = {
-        "name": "Mela",
-        "task": "Task030_Mela",
+        "task": task_name,
+        "dim": 3,
         "target_class": None,
-        "test_labels": False,
+        "test_labels": True,
         "labels": {"0": "lesion"},
         "modalities": {"0": "CT"},
-        "dim": 3,
     }
     save_json(meta, task_data_dir / "dataset.json")
 
-    # prepare data & label
-    case_names = [p.name for p in target_data_dir.glob("*.nii.gz")]
-    case_names.sort()
-    case_ids = [f"mela_{(cn).split('.')[0].split('_')[1]}" for cn in case_names]
-    # case_ids = [(cn).split('.')[0] for cn in case_names]
-    print(f"Found {len(case_ids)} case ids")
-    print(case_ids)
-    for cid, cn in maybe_verbose_iterable(zip(case_ids, case_names)):
-        if len(list(cid.split("_"))) == 3:
-            print(f"{cid} seems to be renamed already, skipping for now")
+    for source_data, target_data, target_label in zip(
+        [source_data_tr, source_data_ts],
+        [target_data_tr, target_data_ts],
+        [target_label_tr, target_label_ts],
+    ):
+        logger.info("------------------------------------")
+        logger.info(f"Processing data in {source_data}...")
+        logger.info("------------------------------------")
 
-        os.rename(target_data_dir / f"{cn}", target_data_dir / f"{cid}_0000.nii.gz")
+        # prepare data & label
+        case_ids = [p.name.rsplit(".", 2)[0] for p in source_data.glob("*.nii.gz")]
+        case_ids.sort()
+        logger.info(f"Found {len(case_ids)} case ids")
+        logger.info(case_ids)
 
-    label_df = pd.read_csv(label_df_path)
-    print(label_df)
-    for rid, cid in maybe_verbose_iterable(enumerate(case_ids)):
-        logger.info(f"Processing case {cid}")
-
-        case_df = label_df[label_df["public_id"] == cid]
-        temp = case_df.to_dict()
-        boxes_mela_format = []
-        for i in temp["public_id"].keys():
-            boxes_mela_format.append(
-                {
-                    "cx": temp["coordX"][i],
-                    "cy": temp["coordY"][i],
-                    "cz": temp["coordZ"][i],
-                    "dx": temp["x_length"][i],
-                    "dy": temp["y_length"][i],
-                    "dz": temp["z_length"][i],
-                }
-            )
-        run_prep(
-            cid=cid,
-            source_data=target_data_dir,
-            target_label_dir=target_label_dir,
-            boxes_mela_format=boxes_mela_format,
-        )
+        num_processes = int(os.getenv("det_num_threads", 4))
+        if num_processes < 1:
+            # multiprocess version
+            logger.info(f"Only using main process for preparation")
+            for cid in maybe_verbose_iterable(case_ids):
+                filter_and_prep_case(
+                    cid=cid,
+                    label_df=label_df,
+                    source_data=source_data,
+                    target_data_dir=target_data,
+                    target_label_dir=target_label,
+                )
+        else:
+            logger.info(f"Using {num_processes} processes for preparation")
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                pool.starmap(
+                    filter_and_prep_case,
+                    zip(
+                        case_ids,
+                        repeat(label_df),
+                        repeat(source_data),
+                        repeat(target_data),
+                        repeat(target_label),
+                    ),
+                )
 
 
 if __name__ == "__main__":
