@@ -37,13 +37,9 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive && apt-get install -
 RUN pip install numpy
 
 # Install own code
-COPY ./requirements.txt .
 RUN mkdir ${det_data} \
   && mkdir ${det_models} \
-  && mkdir -p /opt/code/nndet \
-  && pip install -r requirements.txt  \
-  && pip install hydra-core --upgrade --pre
-  # && pip install git+https://github.com/mibaumgartner/pytorch_model_summary.git
+  && mkdir -p /opt/code/nndet
 
 WORKDIR /opt/code/nndet
 COPY . .

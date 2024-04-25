@@ -311,7 +311,7 @@ def get_pl_logger(cfg: dict, fold: int) -> Union[Logger, bool]:
     Returns:
         LightningLoggerBase: Instantiated logger
     """
-    logger_name = os.getenv("det_logger", "mlflow").lower()
+    logger_name = os.getenv("det_logger", "tensorboard").lower()
     save_dir = os.getenv("det_logging", None)
 
     pl_logger = [
