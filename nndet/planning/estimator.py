@@ -75,7 +75,7 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         # this slightly underestimates the memory copared to V1 for some cases
         # due to improved memory management of PyTorch & CUDA optimizations
         # it should still remain below the memory budget
-        self.encoder_heuristic = 4.800000000000003  # conv + act + norm
+        self.encoder_heuristic = 4.8  # conv + act + norm
         self.decoder_heuristic = 0.0  # conv
         self.det_head_heuristic = 4.5  # conv + act + norm
         self.seg_heuristic = 3
@@ -187,16 +187,16 @@ class NoGPUMemoryEstimator(MemoryEstimator):
             f"seg {bit2mb(seg_voxels * self.base_type) / self.seg_heuristic} "
             f"iou {bit2mb(iou_matrix_ops * self.base_type) / self.iou_matrix_heuristic} ni {num_instances}++++++"
         )
-        logger.info(
-            f"++++++ Estimated:: {bit2mb(final_estimate * self.base_type)} "
-            f"enc {bit2mb(encoder_voxel_ops * self.base_type)} "
-            f"dec {bit2mb(decoder_voxel_ops * self.base_type)} "
-            f"det {bit2mb(det_head_voxel_ops * self.base_type)} "
-            f"cls {bit2mb(det_head_cls_voxel_ops * self.base_type)} "
-            f"box {bit2mb(det_head_box_voxel_ops * self.base_type)} "
-            f"seg {bit2mb(seg_voxels * self.base_type)} "
-            f"iou {bit2mb(iou_matrix_ops * self.base_type)} ni {num_instances}++++++"
-        )
+        # logger.info(
+        #     f"++++++ Estimated:: {bit2mb(final_estimate * self.base_type)} "
+        #     f"enc {bit2mb(encoder_voxel_ops * self.base_type)} "
+        #     f"dec {bit2mb(decoder_voxel_ops * self.base_type)} "
+        #     f"det {bit2mb(det_head_voxel_ops * self.base_type)} "
+        #     f"cls {bit2mb(det_head_cls_voxel_ops * self.base_type)} "
+        #     f"box {bit2mb(det_head_box_voxel_ops * self.base_type)} "
+        #     f"seg {bit2mb(seg_voxels * self.base_type)} "
+        #     f"iou {bit2mb(iou_matrix_ops * self.base_type)} ni {num_instances}++++++"
+        # )
         return final_estimate
 
     def estimate(
@@ -220,10 +220,10 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         )
         param_mb = bit2mb(self.param_factor * params * self.base_type)
         voxel_mb = self.heuristic_factor * self.batch_size * bit2mb(feature_voxels * self.base_type)
-        full_estimate = param_mb + voxel_mb + self.cuda_context_mb
+        full_estimate = param_mb + voxel_mb + self.cuda_context_mb + self.buffer_mb
+        breakpoint()
         logger.info(f"++++++ Final estimate {full_estimate} for path size {target_shape} ++++++")
-        # from IPython import embed; embed();
-        return full_estimate, full_estimate <= self.target_mem_mb
+        return full_estimate, full_estimate < self.target_mem_mb
 
 
 class MemoryEstimatorDetection(MemoryEstimator):

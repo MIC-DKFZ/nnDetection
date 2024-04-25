@@ -104,7 +104,7 @@ class D3V002(D3V001):
         estimator = NoGPUMemoryEstimator(
             target_mem_mb=11247,
             batch_size=4,
-            buffer_mb=910,
+            buffer_mb=0,
         )
         architecture_planner = BoxV002(
             preprocessed_output_dir=self.preprocessed_output_dir,
@@ -126,6 +126,12 @@ class D3V002(D3V001):
         fullres_identifier = self._get_identifier("3d")
         fullres_plan = load_plan_from_dir(self.preprocessed_output_dir, fullres_identifier)
         return [fullres_identifier] + fullres_plan["lowres_identifiers"]
+
+
+@PLANNER_REGISTRY.register
+class D3C010(D3V002):
+    # temporary renaming for final testing of some last aspects :)
+    pass
 
 
 @PLANNER_REGISTRY.register
