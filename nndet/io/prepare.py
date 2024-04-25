@@ -183,6 +183,7 @@ def create_test_split(
             f"Reduced classes: train {train_reduced_classes} test {test_reduced_classes}"
         )
 
+    logger.info("Moving data ...")
     for cid in test_ids:
         for modality in range(num_modalities):
             shutil.move(

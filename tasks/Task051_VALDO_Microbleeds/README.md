@@ -28,5 +28,6 @@ Please read the information from the homepage carefully and follow the rules and
 
 3. Execute `python prepare.py` in the `nndet / tasks / Task051_VALDO_Microbleeds / scripts` directory
 4. Run `nndet_seg2det 051` to convert the semantic segmentation into instanes
+5. Run `nndet_test_data_split 051 --size 0.3 --stratify` to split a test set
 
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.

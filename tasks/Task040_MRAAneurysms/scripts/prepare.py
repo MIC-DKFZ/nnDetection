@@ -10,8 +10,7 @@ from loguru import logger
 
 from nndet.io import load_sitk
 from nndet.io.load import save_json
-
-# from nndet.io.prepare import create_test_split
+from nndet.io.prepare import create_test_split
 from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
 
@@ -152,13 +151,14 @@ def main():
                 target_label_dir=target_label_dir,
             )
 
-    # create_test_split(
-    #     splitted_dir=raw_splitted_dir,
-    #     num_modalities=len(meta["modalities"]),
-    #     test_size=0.3,
-    #     random_state=0,
-    #     shuffle=True,
-    # )
+    create_test_split(
+        splitted_dir=raw_splitted_dir,
+        num_modalities=len(meta["modalities"]),
+        test_size=0.3,
+        random_state=0,
+        shuffle=True,
+        do_stratify=True,
+    )
 
 
 if __name__ == "__main__":

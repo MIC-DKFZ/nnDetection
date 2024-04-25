@@ -23,6 +23,4 @@ Please read the information from the homepage carefully and follow the rules and
 
 4. Execute `export det_num_threads=4 && python prepare.py` in the `nndet / tasks / Task040_MRAAneurysms / scripts` directory. Adjust `det_num_threads` according to your CPU and RAM availability (RAM will likely be the major bottleneck since the images as quite large). Remember to reset `det_num_threads` to its original afterwards (usually higher for training networks).
 
-#TODO: split test?
-
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.
