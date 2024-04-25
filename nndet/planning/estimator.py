@@ -221,7 +221,7 @@ class NoGPUMemoryEstimator(MemoryEstimator):
         param_mb = bit2mb(self.param_factor * params * self.base_type)
         voxel_mb = self.heuristic_factor * self.batch_size * bit2mb(feature_voxels * self.base_type)
         full_estimate = param_mb + voxel_mb + self.cuda_context_mb + self.buffer_mb
-        breakpoint()
+        # breakpoint()
         logger.info(f"++++++ Final estimate {full_estimate} for path size {target_shape} ++++++")
         return full_estimate, full_estimate < self.target_mem_mb
 
