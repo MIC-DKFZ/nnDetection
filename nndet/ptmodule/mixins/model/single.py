@@ -114,13 +114,13 @@ class SingleStageMixin(ModelMixin):
                 to check compatibility with backbone
             **kwargs: ignored
         """
-        logger.info(
-            f"Architecture overwrites: {model_cfg['plan_arch_overwrites']} "
-            f"Anchor overwrites: {model_cfg['plan_anchors_overwrites']}"
-        )
         logger.info(f"Building architecture according to plan of {plan_arch.get('arch_name', 'not_found')}")
-        plan_arch.update(model_cfg["plan_arch_overwrites"])
-        plan_anchors.update(model_cfg["plan_anchors_overwrites"])
+        if "plan_arch_overwrites" in model_cfg:
+            logger.error("plan_arch_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_arch_overwrites not supported anymore")
+        if "plan_anchors_overwrites" in model_cfg:
+            logger.error("plan_anchors_overwrites found in model config, this is not supported anymore.")
+            raise NotImplementedError("plan_anchors_overwrites not supported anymore")
         logger.info(
             f"Start channels: {plan_arch['start_channels']}; "
             f"head channels: {plan_arch['head_channels']}; "
@@ -474,15 +474,7 @@ class SingleStageMixin(ModelMixin):
             BoxPostprocessing: module to perform postprocessing of boxes
         """
         kwargs = {}
-
-        # model_max_instances_per_batch_element (in mdt per img, per class; here: per img)
-        if "rpn_detections_per_img" in model_cfg:
-            kwargs["detections_per_img"] = model_cfg["rpn_detections_per_img"]
-        elif "detections_per_img" in model_cfg:
-            kwargs["detections_per_img"] = model_cfg["detections_per_img"]
-        else:
-            kwargs["detections_per_img"] = plan_arch.get("detections_per_img", 100)  # FIXME important
-
+        kwargs["detections_per_img"] = cls._get_detections_per_patch(plan_arch=plan_arch, model_cfg=model_cfg)
         kwargs["score_thresh"] = plan_arch.get("score_thresh", 0)
         kwargs["topk_candidates"] = plan_arch.get("topk_candidates", 10000)
         kwargs["remove_small_boxes"] = plan_arch.get("remove_small_boxes", 0.01)
@@ -501,6 +493,31 @@ class SingleStageMixin(ModelMixin):
             **kwargs,
         )
         return box_post
+
+    @classmethod
+    def _get_detections_per_patch(cls, plan_arch: dict, model_cfg: dict) -> int:
+        """
+        Heuristic to compute the number of predictions of the model for a
+        single patch
+
+        Args:
+            plan_arch: architecture plan
+            model_cfg: manual model configuration
+
+        Returns:
+            int: number of detections for model
+        """
+        if "detector" in model_cfg and "est_instances_patch" in plan_arch:
+            est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
+            min_detections_per_img = model_cfg["detector"].get("min_detections_per_img", 100)
+            res = max(min_detections_per_img, 4 * est_instances_patch)
+        else:
+            logger.warning(
+                "Did not find all necessary information for V2 model, using V1 default calue of "
+                "100. Please prefer to use a V2 model instead!"
+            )
+            res = 100
+        return res
 
     @classmethod
     def has_segmenter(cls):

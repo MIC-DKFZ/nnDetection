@@ -33,7 +33,7 @@ def main():
         "dim": 3,
         "task": task_name,
         "target_class": None,
-        "test_labels": False,
+        "test_labels": True,
         "labels": {
             "0": "CMB",
         },

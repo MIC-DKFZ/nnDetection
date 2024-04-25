@@ -70,7 +70,7 @@ def main():
         "task": task,
         "dim": 3,
         "target_class": None,
-        "test_labels": False,
+        "test_labels": True,
         "labels": {"0": "tumor"},
         "modalities": {"0": "ABUS"},
     }
@@ -109,13 +109,14 @@ def main():
                 ),
             )
 
-    # create_test_split(
-    #     splitted_dir=raw_splitted_dir,
-    #     num_modalities=len(meta["modalities"]),
-    #     test_size=0.3,
-    #     random_state=0,
-    #     shuffle=True,
-    # )
+    create_test_split(
+        splitted_dir=raw_splitted_dir,
+        num_modalities=len(meta["modalities"]),
+        test_size=0.3,
+        random_state=0,
+        shuffle=True,
+        do_stratify=True,
+    )
 
 
 if __name__ == "__main__":

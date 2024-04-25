@@ -114,7 +114,7 @@ def main():
         "task": task,
         "dim": 3,
         "target_class": None,
-        "test_labels": False,
+        "test_labels": True,
         "labels": {"0": "nodule"},
         "modalities": {"0": "CT"},
     }

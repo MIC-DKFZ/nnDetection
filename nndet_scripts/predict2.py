@@ -18,6 +18,7 @@ from nndet.io import get_task, get_training_dir
 from nndet.io.load import load_pickle
 from nndet.planning import PLANNER_REGISTRY
 from nndet.utils.check import env_guard
+from nndet.utils.config import load_plan_from_dir, load_splits_from_dir
 from nndet.utils.enums import LoadModels
 
 
@@ -83,16 +84,7 @@ def _preprocess(
     preprocessed_dir.mkdir(exist_ok=True, parents=True)
 
     _setup_logger(data_dir)
-
-    # load plan
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
-        )
-    plan = load_pickle(plan_inference_path)
+    plan = load_plan_from_dir(training_dir, "plan_inference")
 
     # load config
     config_path = training_dir / "config.yaml"
@@ -126,7 +118,6 @@ def _predict(
     num_tta_transforms: int,
     overwrites: Sequence[Any],
     load_models: LoadModels,
-    batch_size: Optional[int] = None,
     case_ids: Optional[Sequence[str]] = None,
 ) -> None:
     """
@@ -143,8 +134,6 @@ def _predict(
             overwrites to plan! (plan includes infos like batch size
             and path size)
         load_models: Define model weights, one of all | last | best
-        batch_size: Optionally overwrite batch size during inference.
-            Defaults to None.
         case_ids: Optionally provide case ids which should be predicted.
             Defaults to None.
     """
@@ -177,21 +166,12 @@ def _predict(
     cfg.pop("host", None)
 
     # load plan
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
+    plan = load_plan_from_dir(training_dir, "plan_inference")
+    if "consolidate_sweep_performed" in plan and not plan["consolidate_sweep_performed"]:
+        logger.warning(
+            "Plan used from fold 0, not updated with consolidation!"
+            "This could lead to supoptimal results during inference."
         )
-    plan = load_pickle(plan_inference_path)
-
-    if batch_size is not None:
-        logger.info(
-            f"Found batch size {batch_size} provided by inference script, "
-            f"running inference with provided batch size."
-        )
-        plan["batch_size"] = batch_size
 
     # select model
     if load_models == LoadModels.ALL:
@@ -307,14 +287,6 @@ def entrypoint_predict_with_imagesTs():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -333,9 +305,6 @@ def entrypoint_predict_with_imagesTs():
     fold = args.fold
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -353,14 +322,7 @@ def entrypoint_predict_with_imagesTs():
     data_dir = task_data_dir / "raw_splitted" / "imagesTs"
 
     if skip_preprocessing:
-        plan_inference_path = training_dir / "plan_inference.pkl"
-        if not plan_inference_path.is_file():
-            raise RuntimeError(
-                f"Expected {plan_inference_path} to contain the plan for "
-                "running inference. Either run nndet_consolidate to predict "
-                "ensembles or nndet_sweep for single fold models."
-            )
-        plan = load_pickle(plan_inference_path)
+        plan = load_plan_from_dir(training_dir, "plan_inference")
         preprocessed_data_dir = task_data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = task_data_dir / "preprocessed"
@@ -380,7 +342,6 @@ def entrypoint_predict_with_imagesTs():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -430,14 +391,6 @@ def entrypoint_predict_with_task():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -458,9 +411,6 @@ def entrypoint_predict_with_task():
     fold = args.fold
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -473,14 +423,7 @@ def entrypoint_predict_with_task():
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
     if skip_preprocessing:
-        plan_inference_path = training_dir / "plan_inference.pkl"
-        if not plan_inference_path.is_file():
-            raise RuntimeError(
-                f"Expected {plan_inference_path} to contain the plan for "
-                "running inference. Either run nndet_consolidate to predict "
-                "ensembles or nndet_sweep for single fold models."
-            )
-        plan = load_pickle(plan_inference_path)
+        plan = load_plan_from_dir(training_dir, "plan_inference")
         preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
     else:
         preprocessed_dir: Path = data_dir / "preprocessed"
@@ -500,7 +443,6 @@ def entrypoint_predict_with_task():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -544,14 +486,6 @@ def entrypoint_predict_with_folders():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -570,9 +504,6 @@ def entrypoint_predict_with_folders():
     training_dir = args.training
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     num_processes_preprocessing = args.num_processes_preprocessing
     overwrites = args.overwrites
@@ -608,7 +539,6 @@ def entrypoint_predict_with_folders():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=None,
     )
 
@@ -658,14 +588,6 @@ def entrypoint_predict_test_split():
         required=False,
     )
     parser.add_argument(
-        "-bs",
-        "--batch_size",
-        type=int,
-        default=0,
-        help="Batch size to use for inference. If 0, batch size from plan is used.",
-        required=False,
-    )
-    parser.add_argument(
         "-o",
         "--overwrites",
         type=str,
@@ -686,9 +608,6 @@ def entrypoint_predict_test_split():
         raise ValueError("Fold 'consolidated' is not compatible with test split inference.")
 
     num_tta_transforms = args.num_tta_transforms
-    batch_size = args.batch_size
-    if batch_size == 0:
-        batch_size = None
     load_models = LoadModels(args.load_models)
     if load_models == LoadModels.ALL:
         raise ValueError("Load all models is not compatible with test split inference.")
@@ -701,21 +620,12 @@ def entrypoint_predict_test_split():
     prediction_dir = training_dir / "test_predictions"
 
     # determine preprocessed data
-    plan_inference_path = training_dir / "plan_inference.pkl"
-    if not plan_inference_path.is_file():
-        raise RuntimeError(
-            f"Expected {plan_inference_path} to contain the plan for "
-            "running inference. Either run nndet_consolidate to predict "
-            "ensembles or nndet_sweep for single fold models."
-        )
-    plan = load_pickle(plan_inference_path)
+    plan = load_plan_from_dir(training_dir, "plan_inference")
     preprocessed_data_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     # determine case ids
-    splits_path = training_dir / "splits.pkl"
-    if not splits_path.is_file():
-        raise RuntimeError(f"Expected {splits_path} to contain the splits for " "running inference.")
-    case_ids = load_pickle(splits_path)[fold]["test"]
+    splits = load_splits_from_dir(training_dir, "splits")
+    case_ids = splits[fold]["test"]
 
     _predict(
         training_dir=training_dir,
@@ -724,7 +634,6 @@ def entrypoint_predict_test_split():
         num_tta_transforms=num_tta_transforms,
         overwrites=overwrites,
         load_models=load_models,
-        batch_size=batch_size,
         case_ids=case_ids,
     )
 

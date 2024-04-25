@@ -10,6 +10,6 @@ defaults:
   - accelerator_cfg: gpu1_mixed16
   - model_cfg: detr_sigm
 
-module: BoxDETRC002
-plan: D3V001_3d # plan used for training
-planner: D3V001 # planner used for preprocessing
+module: BoxCDETRV002
+plan: ${planner}_3d # plan used for training
+planner: D3V002 # planner used for preprocessing

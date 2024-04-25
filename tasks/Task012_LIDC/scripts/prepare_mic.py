@@ -112,6 +112,11 @@ def main():
     if not (p := source_data_dir / "characteristics.csv").is_file():
         raise ValueError(f"Expted {p} to contain exist")
 
+    print(
+        "WARNING: this is an old LIDC script where splits need to be created manually."
+        "Please prefer our simpler Task 044 script for future experiments!"
+    )
+
     target_dir = task_data_dir / "raw_splitted"
     target_data_dir = task_data_dir / "raw_splitted" / "imagesTr"
     target_data_dir.mkdir(exist_ok=True, parents=True)

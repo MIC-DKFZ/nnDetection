@@ -7,7 +7,7 @@ defaults:
   - augment_cfg: base_more
 
 module: RetinaUNetV001
-plan: D3V001_3d # plan used for training
+plan: ${planner}_3d # plan used for training
 planner: D3V001 # planner used for preprocessing
 
 io_cfg:
@@ -71,6 +71,10 @@ accelerator_cfg:
   terminate_on_nan: False # [optional; Default True]
 
 model_cfg:
+  # detector settings
+  detector:
+    min_detection_per_img: 100 # minimum number of detections per image
+
   backbone_kwargs: {} # keyword arguments passed to encoder
   neck_kwargs: # keyword arguments passed to decoder
     min_out_channels: 8
@@ -118,6 +122,3 @@ model_cfg:
   matcher_kwargs: # keyword arguments passed to matcher
     num_candidates: 4
     center_in_gt: False
-
-  plan_arch_overwrites: {} # overwrite arguments of architecture
-  plan_anchors_overwrites: {} # overwrite arguments of anchors

@@ -33,14 +33,22 @@ from nndet.eval.registry import (
 )
 from nndet.inference.helper import extract_results
 from nndet.io.datamodule.module import PtDatamodule as Datamodule
-from nndet.io.load import load_json, load_pickle, load_yaml, save_json, save_pickle
+from nndet.io.load import load_json, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.check import env_guard
-from nndet.utils.config import compose, load_dataset_info
+from nndet.utils.config import (
+    compose,
+    load_dataset_info,
+    load_plan_from_model,
+    load_plan_from_task,
+    load_splits_from_model,
+    load_splits_from_task,
+    save_plan_to_model,
+    save_splits_to_model,
+)
 from nndet.utils.info import (
     ModelSummary,
-    create_debug_plan,
     flatten_mapping,
     host_and_env_info,
     log_git,
@@ -436,8 +444,7 @@ def _train(
     save_json(meta_data, "./meta.json")
     _ = write_requirements(train_dir)
 
-    plan_path = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / f"{cfg['plan']}.pkl"
-    plan = load_pickle(plan_path)
+    plan = load_plan_from_task(cfg["plan"], cfg["task"])
     data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     module_cls = MODULE_REGISTRY[cfg["module"]]
@@ -452,8 +459,6 @@ def _train(
         use_box_io=module_cls.use_box_io(),
         log_aug=log_aug,
     )
-    plan["patch_size"] = list(datamodule.patch_size)
-    plan["batch_size"] = int(datamodule.batch_size)
 
     # initiate module
     module = module_cls(
@@ -480,10 +485,9 @@ def _train(
 
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config.yaml"))
     OmegaConf.save(cfg, str(Path(os.getcwd()) / "config_resolved.yaml"), resolve=True)
-    save_pickle(plan, train_dir / "plan.pkl")  # backup plan
-    save_json(create_debug_plan(plan), "./plan_debug.json")  # easy read backup
-    splits = load_pickle(Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / datamodule.splits_file)
-    save_pickle(splits, train_dir / "splits.pkl")
+    save_plan_to_model(plan, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="plan")  # backup plan
+    splits = load_splits_from_task(datamodule.splits_file, cfg["task"])
+    save_splits_to_model(splits, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="splits")
 
     trainer_kwargs = {}
     fit_kwargs = {}
@@ -598,7 +602,7 @@ def _train(
         run_info["sweep_h"] = sweep_time / 3600
 
         plan["inference_plan"] = inference_plan
-        save_pickle(plan, train_dir / "plan_inference.pkl")
+        save_plan_to_model(plan, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="plan_inference")
 
         eval_start = time.time()
         ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
@@ -670,7 +674,7 @@ def _sweep(
     logger.info(f"+++ Running sweep {current_time_str} +++")
     logger.info(f"Log file at {log_file}")
 
-    plan = load_pickle(train_dir / "plan.pkl")
+    plan = load_plan_from_model(task=cfg["task"], model=cfg["exp"]["id"], fold=fold, plan_name="plan")
     data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
     module = MODULE_REGISTRY[cfg["module"]](
@@ -679,7 +683,7 @@ def _sweep(
         plan=plan,
     )
 
-    splits = load_pickle(train_dir / "splits.pkl")
+    splits = load_splits_from_model(task=cfg["task"], model=cfg["exp"]["id"], fold=fold, splits_name="splits")
     case_ids = splits[fold]["val"]
 
     if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
@@ -696,7 +700,7 @@ def _sweep(
     )
 
     plan["inference_plan"] = inference_plan
-    save_pickle(plan, train_dir / "plan_inference.pkl")
+    save_plan_to_model(plan, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="plan_inference")
 
     ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
     for restore in [True, False]:
@@ -781,7 +785,7 @@ def _evaluate_task(
             gt_dir_name = "labelsTs" if test else "labelsTr"
             gt_dir = data_dir_task / "preprocessed" / gt_dir_name
         else:
-            plan = load_pickle(training_dir / "plan.pkl")
+            plan = load_plan_from_model(task=task, model=model, fold=fold, plan_name="plan")
             pred_dir_name = f"{prefix}_predictions_preprocessed"
             gt_dir = data_dir_task / "preprocessed" / plan["data_identifier"] / "labelsTr"
 

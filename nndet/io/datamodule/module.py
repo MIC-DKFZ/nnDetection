@@ -114,12 +114,6 @@ class BaseDatamodule(BaseModule):
                     ratio of foreground and background inside of batches,
                     defaults to 0.33
 
-                ``"patch_size"`` Sequence[int], optional
-                    overwrite patch size
-
-                ``"batch_size"`` int, optional
-                    overwrite patch size
-
             plan: current plan
             preprocessed_dir: path to base preprocessed dir
             data_dir: path to preprocessed data dir
@@ -185,7 +179,7 @@ class BaseDatamodule(BaseModule):
             params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
 
         params["selected_seg_channels"] = [0]
-        params["use_mask_for_norm"] = self.plan["use_mask_for_norm"]
+        params["use_mask_for_norm"] = {int(k): i for k, i in self.plan["use_mask_for_norm"].items()}
         params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
         params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
         params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]

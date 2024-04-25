@@ -217,22 +217,31 @@ class BoxC002(BoxC001):
             self.architecture_kwargs["decoder_levels"] = tuple(
                 [i for i in range(decoder_levels_start, num_resolutions)]
             )
+            num_instances_est = max(
+                self._estimate_num_instances_per_patch(
+                    patch_size=patch_size,
+                    target_spacing_transposed=target_spacing_transposed,
+                    transpose_forward=transpose_forward,
+                )
+            )
+            self.architecture_kwargs["est_instances_patch"] = {}
+            for k in ["max", "mean", "median", "perc95"]:
+                self.architecture_kwargs["est_instances_patch"][k] = num_instances_est
             _, fits_in_mem = self.estimator.estimate(
                 min_shape=must_be_divisible_by,
                 target_shape=patch_size,
                 in_channels=self.architecture_kwargs["in_channels"],
+                model_cfg=self.model_cfg,
+                plan_arch=self.architecture_kwargs,
                 network=self.network_cls.from_config_plan(
                     model_cfg=self.model_cfg,
                     plan_arch=self.architecture_kwargs,
                     plan_anchors=self.get_anchors_for_estimation(),
                 ),
                 optimizer_cls=torch.optim.Adam,
-                num_instances=self._estimte_num_instances_per_patch(
-                    patch_size=patch_size,
-                    target_spacing_transposed=target_spacing_transposed,
-                    transpose_forward=transpose_forward,
-                ),
+                num_instances=num_instances_est,
             )
+            self.architecture_kwargs.pop("est_instances_patch")
             if fits_in_mem:
                 break
             first_run = False
@@ -244,12 +253,12 @@ class BoxC002(BoxC001):
         )
         return patch_size
 
-    def _estimte_num_instances_per_patch(
+    def _estimate_num_instances_per_patch(
         self,
         patch_size,
         target_spacing_transposed,
         transpose_forward,
-    ) -> int:
+    ) -> List[int]:
         max_instances_per_image = []
         for boxes in self._get_scaled_boxes(
             target_spacing_transposed=target_spacing_transposed,
@@ -257,7 +266,7 @@ class BoxC002(BoxC001):
             cat=False,
         ):
             max_instances_per_image.append(max(proxy_num_boxes_in_patch(torch.from_numpy(boxes), patch_size)).item())
-        return max(max_instances_per_image)
+        return max_instances_per_image
 
     def _plan_anchors(
         self,

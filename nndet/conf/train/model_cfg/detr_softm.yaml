@@ -4,7 +4,7 @@
 # DETR
 # detector settings
 detector:
-  detection_per_img: 24  # number of detections per image # FIXME make configurable
+  min_detection_per_img: 12 # minimum number of detections per image
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder

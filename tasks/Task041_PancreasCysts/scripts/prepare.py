@@ -78,14 +78,6 @@ def main():
             target_label_dir=target_label_dir,
         )
 
-    create_test_split(
-        splitted_dir=raw_splitted_dir,
-        num_modalities=len(meta["modalities"]),
-        test_size=0.3,
-        random_state=0,
-        shuffle=True,
-    )
-
 
 if __name__ == "__main__":
     main()

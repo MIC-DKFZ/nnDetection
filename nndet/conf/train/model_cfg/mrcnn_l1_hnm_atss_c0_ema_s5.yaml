@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+# detector settings
+detector:
+  min_detection_per_img: 100 # minimum number of detections per image
+
 # RPN Parameters
 ################
 backbone_kwargs: {} # keyword arguments passed to encoder
@@ -50,9 +54,6 @@ segmenter_kwargs:
 matcher_kwargs: # keyword arguments passed to matcher
   num_candidates: 4
   center_in_gt: False
-
-plan_arch_overwrites: {} # overwrite arguments of architecture
-plan_anchors_overwrites: {} # overwrite arguments of anchors
 
 # RoI (Cascading) Parameters
 ############################
@@ -121,7 +122,6 @@ roi_module_kwargs:
 # this parameters are used for online val and a pre-reduction during inference.
 # the predictor will apply a different set of parameters during pat val / inference.
 roi_box_post_kwargs: # keyword arguments passed to roi box postprocessing
-  detections_per_img: 50
   nms_thresh: 0.6 # choose conservative threshold here
   remove_small_boxes: 1 # only keep non empty boxes
 

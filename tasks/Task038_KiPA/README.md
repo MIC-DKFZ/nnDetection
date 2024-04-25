@@ -24,5 +24,6 @@ Please read the information from the homepage carefully and follow the rules and
 
 4. Execute `python prepare.py` in the `nndet / tasks / Task038_KiPA / scripts` directory
 5. Run `nndet_seg2det 038` to convert the semantic segmentation into instanes (all images will have a single instance except 2 which have 2 instances)
+6. Run `nndet_test_data_split 038 --size 0.3` to split a test set
 
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.

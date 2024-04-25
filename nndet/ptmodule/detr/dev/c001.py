@@ -46,7 +46,7 @@ from nndet.nn.transformer.layers.detr import (
     DETRTransformerEncoder,
 )
 from nndet.ptmodule import MODULE_REGISTRY
-from nndet.ptmodule.detr.box_detr import BoxDETRModule
+from nndet.ptmodule.detr.boxdetr import BoxDETRModule
 from nndet.utils.typing import CONVSEQ, LINEARSEQ
 
 
