@@ -12,4 +12,4 @@ defaults:
 
 module: RetinaUNetFocalV002 # RetinaUNetFocalC017
 plan: ${planner}_3d # plan used for training
-planner: D3V001 # planner used for preprocessing
+planner: D3V002 # planner used for preprocessing
