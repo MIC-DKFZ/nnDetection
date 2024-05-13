@@ -10,7 +10,7 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import pytorch_lightning as pl
 import torch
@@ -36,6 +36,8 @@ from nndet.io.datamodule.module import PtDatamodule as Datamodule
 from nndet.io.load import load_json, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
+from nndet.ptmodule.module import LightningBaseModule
+from nndet.training.callbacks import LossNaNError, WeightsNaNError
 from nndet.utils.check import env_guard
 from nndet.utils.config import (
     compose,
@@ -407,17 +409,6 @@ def _train(
     cfg = compose(task, "config.yaml", overrides=ov)
 
     train_dir = init_train_dir(cfg, fold=fold)
-    pl_logger = get_pl_logger(cfg, fold=fold)
-    params = {
-        "module": cfg["module"],
-        "plan": cfg["plan"],
-        "aug_name": cfg["augment_cfg"]["name"],
-        "aug_transforms": cfg["augment_cfg"]["transforms"],
-        **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
-        **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
-    }
-    for _pl_logger in pl_logger:
-        _pl_logger.log_hyperparams(params)
 
     logger.remove()
     logger.add(
@@ -447,6 +438,103 @@ def _train(
     plan = load_plan_from_task(cfg["plan"], cfg["task"])
     data_dir = Path(os.getenv("det_data")) / cfg["task"] / "preprocessed" / plan["data_identifier"] / "imagesTr"
 
+    try:
+        module, run_info = _train_module(
+            cfg=cfg,
+            plan=plan,
+            fold=fold,
+            data_dir=data_dir,
+            train_dir=train_dir,
+            transfer_learning=transfer_learning,
+            continue_training=continue_training,
+            log_net=log_net,
+            log_aug=log_aug,
+        )
+    except (WeightsNaNError, LossNaNError) as e:
+        # sometimes we want to restart the training with a different optimizer
+        if cfg["trainer_cfg"].get("do_restart"):
+            logger.warning(
+                "Found NaN in weights or loss, restarting training with different "
+                "optimizer settings as defined in config!"
+            )
+            logger.info(f"Updating optimizer settings to {cfg['trainer_cfg']['restart_overwrites']}")
+            cfg["trainer_cfg"].update(cfg["trainer_cfg"]["restart_overwrites"])
+            logger.info(f"Running training with trainer_cfg {cfg['trainer_cfg']}")
+            module, run_info = _train_module(
+                cfg=cfg,
+                plan=plan,
+                fold=fold,
+                data_dir=data_dir,
+                train_dir=train_dir,
+                transfer_learning=transfer_learning,
+                continue_training=continue_training,
+                log_net=log_net,
+                log_aug=log_aug,
+            )
+        else:
+            raise e
+
+    if do_sweep:
+        splits = load_splits_from_model(task=cfg["task"], model=cfg["exp"]["id"], fold=fold, splits_name="splits")
+        case_ids = splits[fold]["val"]
+        if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
+            logger.warning("[!!!] Detected debug mode for sweep using reduced set of cases")
+            case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
+
+        sweep_start = time.time()
+        inference_plan = module.sweep(
+            cfg=OmegaConf.to_container(cfg, resolve=True),
+            save_dir=train_dir,
+            train_data_dir=data_dir,
+            case_ids=case_ids,
+            run_prediction=True,
+        )
+        sweep_end = time.time()
+        sweep_time = sweep_end - sweep_start
+        run_info["sweep_s"] = sweep_time
+        run_info["sweep_h"] = sweep_time / 3600
+
+        plan["inference_plan"] = inference_plan
+        save_plan_to_model(plan, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="plan_inference")
+
+        eval_start = time.time()
+        ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
+        for restore in [True, False]:
+            target_dir = train_dir / "val_predictions" if restore else train_dir / "val_predictions_preprocessed"
+            extract_results(
+                source_dir=train_dir / "sweep_predictions",
+                target_dir=target_dir,
+                ensembler_cls=ensembler_cls,
+                restore=restore,
+                **inference_plan,
+            )
+        _evaluate_task(
+            task=cfg["task"],
+            model=cfg["exp"]["id"],
+            fold=fold,
+            test=False,
+            preprocessed=True,
+            do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
+            do_boxes_eval=module.requires_box_eval(),
+        )
+        eval_end = time.time()
+        eval_time = eval_end - eval_start
+        run_info["eval_s"] = eval_time
+        run_info["eval_h"] = eval_time / 3600
+    save_json(run_info, "./run_info.json")
+
+
+def _train_module(
+    cfg: dict,
+    plan: dict,
+    fold: int,
+    data_dir: Path,
+    train_dir: Path,
+    transfer_learning: bool,
+    continue_training: bool,
+    log_net: bool,
+    log_aug: bool,
+) -> Tuple[LightningBaseModule, dict]:
     module_cls = MODULE_REGISTRY[cfg["module"]]
 
     # setup io
@@ -469,6 +557,18 @@ def _train(
     )
 
     # callbacks
+    pl_logger = get_pl_logger(cfg, fold=fold)
+    params = {
+        "module": cfg["module"],
+        "plan": cfg["plan"],
+        "aug_name": cfg["augment_cfg"]["name"],
+        "aug_transforms": cfg["augment_cfg"]["transforms"],
+        **flatten_mapping({"model": OmegaConf.to_container(cfg["model_cfg"], resolve=True)}),
+        **flatten_mapping({"trainer": OmegaConf.to_container(cfg["trainer_cfg"], resolve=True)}),
+    }
+    for _pl_logger in pl_logger:
+        _pl_logger.log_hyperparams(params)
+
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
@@ -582,53 +682,7 @@ def _train(
     run_info = host_and_env_info()
     run_info["train_s"] = train_time
     run_info["train_h"] = train_time / 3600
-    if do_sweep:
-        case_ids = splits[fold]["val"]
-        if "debug" in cfg["trainer_cfg"] and "num_cases_val" in cfg["trainer_cfg"]["debug"]:
-            logger.warning("[!!!] Detected debug mode for sweep using reduced set of cases")
-            case_ids = case_ids[: cfg["trainer_cfg"]["debug"]["num_cases_val"]]
-
-        sweep_start = time.time()
-        inference_plan = module.sweep(
-            cfg=OmegaConf.to_container(cfg, resolve=True),
-            save_dir=train_dir,
-            train_data_dir=data_dir,
-            case_ids=case_ids,
-            run_prediction=True,
-        )
-        sweep_end = time.time()
-        sweep_time = sweep_end - sweep_start
-        run_info["sweep_s"] = sweep_time
-        run_info["sweep_h"] = sweep_time / 3600
-
-        plan["inference_plan"] = inference_plan
-        save_plan_to_model(plan, task=cfg["task"], model=cfg["exp"]["id"], fold=fold, save_name="plan_inference")
-
-        eval_start = time.time()
-        ensembler_cls = module.get_ensembler_cls(dim=plan["network_dim"])
-        for restore in [True, False]:
-            target_dir = train_dir / "val_predictions" if restore else train_dir / "val_predictions_preprocessed"
-            extract_results(
-                source_dir=train_dir / "sweep_predictions",
-                target_dir=target_dir,
-                ensembler_cls=ensembler_cls,
-                restore=restore,
-                **inference_plan,
-            )
-        _evaluate_task(
-            task=cfg["task"],
-            model=cfg["exp"]["id"],
-            fold=fold,
-            test=False,
-            preprocessed=True,
-            do_case_eval=(module.requires_case_eval and (cfg["data"]["target_class"] is not None)),
-            do_boxes_eval=module.requires_box_eval(),
-        )
-        eval_end = time.time()
-        eval_time = eval_end - eval_start
-        run_info["eval_s"] = eval_time
-        run_info["eval_h"] = eval_time / 3600
-    save_json(run_info, "./run_info.json")
+    return module, run_info
 
 
 def _sweep(
