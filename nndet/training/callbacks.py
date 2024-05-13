@@ -12,6 +12,22 @@ from pytorch_lightning.callbacks import Callback
 from nndet.training.ema import EMA
 
 
+class WeightsNaNError(Exception):
+    """
+    Custom exception if NaN weights are found during training.
+    """
+
+    pass
+
+
+class LossNaNError(Exception):
+    """
+    Custom exception if NaN loss is found during training.
+    """
+
+    pass
+
+
 class CheckWeightsNaN(Callback):
     def on_train_epoch_end(
         self,
@@ -25,7 +41,7 @@ class CheckWeightsNaN(Callback):
                 logger.error(f"Found NaN parameter in module {name}, aborting training.")
 
         if found_nan:
-            raise RuntimeError("Found NaN parameter in module, aborting training.")
+            raise WeightsNaNError("Found NaN parameter in module, aborting training.")
 
         return super().on_train_epoch_end(trainer, pl_module)
 

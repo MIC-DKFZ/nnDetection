@@ -15,7 +15,7 @@ from loguru import logger
 from nndet.core.abstract import AbstractDetector
 from nndet.io.transforms import Compose
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
-from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback
+from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback, LossNaNError
 from nndet.training.swa import SWACycleLinear
 from nndet.utils.check import check_torch_version
 
@@ -168,6 +168,9 @@ class LightningBaseModule(pl.LightningModule):
         # Exclude logging keys starting with __
         info = {key: losses.pop(key) for key in list(losses.keys()) if key.startswith("__")}
         loss = sum(losses.values())
+
+        if torch.isnan(loss):
+            raise LossNaNError("Found NaN loss in training step.")
 
         out = {"loss": loss.detach().item(), **{f"loss_{key}": l.detach().item() for key, l in losses.items()}, **info}
         self.log("train_step_loss", out["loss"], prog_bar=True, logger=False, batch_size=1)
