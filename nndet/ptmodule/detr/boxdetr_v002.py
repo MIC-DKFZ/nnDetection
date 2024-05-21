@@ -16,7 +16,7 @@ from nndet.nn.heads.classifier.ffn import FFNClassifier, FocalFFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
 from nndet.nn.heads.detr.cdetr import ConditionalDETRHead
 from nndet.nn.heads.detr.deformable_detr import DeformableDETRHead
-from nndet.nn.heads.regressor.ffn import FFNRegressor, L1GIoUFFNRegressor
+from nndet.nn.heads.regressor.ffn import FFNRegressor, L1UGIoUFFNRegressor
 from nndet.nn.layers.conv import ConvInstanceRelu
 from nndet.nn.layers.conv.conv_only import ConvOnly
 from nndet.nn.layers.conv.group import ConvGroupRelu
@@ -74,7 +74,7 @@ class BoxDETRV002(
     head_cls: DETRHead = DETRHead  #: main DETR head
     head_linear_cls: LINEARSEQ = LayerLinearReluDrop  #: conv class used for head
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
-    head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
+    head_regressor_cls: FFNRegressor = L1UGIoUFFNRegressor  #: define regressor class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
 
     matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
@@ -142,7 +142,7 @@ class BoxDeformableDETRV002(
     head_cls: DETRHead = DeformableDETRHead  #: main DETR head
     head_linear_cls: LINEARSEQ = LayerLinearReluDrop  #: conv class used for head
     head_classifier_cls: FFNClassifier = FocalFFNClassifier  #: define classifier class
-    head_regressor_cls: FFNRegressor = L1GIoUFFNRegressor  #: define regressor class
+    head_regressor_cls: FFNRegressor = L1UGIoUFFNRegressor  #: define regressor class
     head_box_post_cls: DETRBoxPost = TopKBoxPost  #: define postprocessing strategy during inference
 
     matcher_cls: BaseMatcher = HungarianMatcher  #: matching algorithm
