@@ -86,7 +86,7 @@ def load_plan_from_task(plan_id: str, task: str) -> dict:
         logger.warning(f"Loading plan from {plan_pkl_path} which is deprected since nnDetV2")
         plan = load_pickle(plan_pkl_path)
     else:
-        raise ValueError(f"Did not find plan {plan_id} in {task_dir}")
+        raise ValueError(f"Did not find plan {plan_id} in {task_dir / 'preprocessed'}")
     return plan
 
 
