@@ -30,21 +30,24 @@ Please read the information from the homepage carefully and follow the rules and
 
 4. Execute `export det_num_threads=4 && python prepare.py` in the `nndet / tasks / Task042_Duke / scripts` directory. Adjust `det_num_threads` according to your CPU and RAM availability (RAM will likely be the major bottleneck since the images as quite large). Remember to reset `det_num_threads` to its original afterwards (usually higher for training networks).
 
-#TODO: split test?
-
 Note:
-Some cases were filtered due to missing `post_3` sequence.
+Some cases were filtered due to missing `post_3` sequence and two scans due to different origins between the sequences.
 
 ```python
 exclude_cases = [
+    # exlude cases due to missing post_3 seq
     "Breast_MRI_103",
     "Breast_MRI_164",
     "Breast_MRI_253",
+    "Breast_MRI_258",
     "Breast_MRI_282",
     "Breast_MRI_700",
     "Breast_MRI_728",
     "Breast_MRI_801",
     "Breast_MRI_893",
+    # excluded due to different origins
+    "Breast_MRI_394",
+    "Breast_MRI_679",
 ]
 ```
 

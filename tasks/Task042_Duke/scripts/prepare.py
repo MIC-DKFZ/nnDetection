@@ -29,8 +29,8 @@ SEQUENCES = {
 REF = "pre"
 RESAMPLE = ["T1"]
 
-# exlude cases due to missing post_3 seq
 exclude_cases = [
+    # exlude cases due to missing post_3 seq
     "Breast_MRI_103",
     "Breast_MRI_164",
     "Breast_MRI_253",
@@ -40,6 +40,9 @@ exclude_cases = [
     "Breast_MRI_728",
     "Breast_MRI_801",
     "Breast_MRI_893",
+    # excluded due to different origins
+    "Breast_MRI_394",
+    "Breast_MRI_679",
 ]
 
 
