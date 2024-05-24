@@ -349,9 +349,9 @@ def _check_itk_params(
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
         if not ((np.asarray(img_seq[0].GetSize()) == np.asarray(img.GetSize()))).all():
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same dimensions!")
-        if not np.allclose(np.asarray(img_seq[0].GetOrigin()), np.asarray(img.GetOrigin())):
+        if not np.allclose(np.asarray(img_seq[0].GetOrigin()), np.asarray(img.GetOrigin()), atol=1e-4):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same origin!")
-        if not np.allclose(np.asarray(img_seq[0].GetDirection()), np.asarray(img.GetDirection())):
+        if not np.allclose(np.asarray(img_seq[0].GetDirection()), np.asarray(img.GetDirection()), atol=1e-4):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same direction!")
-        if not np.allclose(np.asarray(img_seq[0].GetSpacing()), np.asarray(img.GetSpacing())):
+        if not np.allclose(np.asarray(img_seq[0].GetSpacing()), np.asarray(img.GetSpacing()), atol=1e-4):
             raise ValueError(f"Expected {paths[idx]} and {paths[0]} to have same spacing!")
