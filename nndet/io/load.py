@@ -251,6 +251,9 @@ def npz2npy(
         if a is not None:
             np.save(npz_file[:-3] + "npy", data)
             np.save(npz_file[:-4] + "_seg.npy", seg)
+    else:
+        print(f"Found {npz_file[:-3] + 'npy'}, skipping npz conversion")
+
     if delete_npz:
         os.remove(npz_file)
 
