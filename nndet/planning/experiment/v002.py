@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 from loguru import logger
 
@@ -126,6 +126,28 @@ class D3V002(D3V001):
         fullres_identifier = self._get_identifier("3d")
         fullres_plan = load_plan_from_dir(self.preprocessed_output_dir, fullres_identifier)
         return [fullres_identifier] + fullres_plan["lowres_identifiers"]
+
+    def determine_dummy_2d_data_augmentation(
+        self,
+        target_spacing_transposed: Sequence[float],
+        median_shape_transposed: Sequence[int],
+        patch_size: Sequence[int],
+    ):
+        """
+        Determine if dummy 2d data augmentation should be used
+
+        Args:
+            target_spacing_transposed: target spacing after applying forward
+                transposing
+            median_shape_transposed: median shape after applying forward
+                transposing
+            patch_size: patch size for training
+
+        Returns:
+            bool: if dummy 2d data augmentation should be used
+        """
+        do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) >= self.anisotropy_threshold
+        return do_dummy_2d_data_aug
 
 
 @PLANNER_REGISTRY.register

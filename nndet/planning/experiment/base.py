@@ -9,7 +9,7 @@ from collections import OrderedDict
 from itertools import repeat
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 import numpy as np
 from loguru import logger
@@ -254,14 +254,39 @@ class AbstractPlanner(ABC):
             mode=base_plan["mode"],
         )
 
-        patch_size = architecture_plan["patch_size"]
-        do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) > self.anisotropy_threshold
+        do_dummy_2d_data_aug = self.determine_dummy_2d_data_augmentation(
+            target_spacing_transposed=target_spacing_transposed,
+            median_shape_transposed=median_shape_transposed,
+            patch_size=architecture_plan["patch_size"],
+        )
 
         base_plan.update(architecture_plan)
         base_plan["target_spacing_transposed"] = target_spacing_transposed
         base_plan["median_shape_transposed"] = median_shape_transposed
         base_plan["do_dummy_2D_data_aug"] = do_dummy_2d_data_aug
         return base_plan
+
+    def determine_dummy_2d_data_augmentation(
+        self,
+        target_spacing_transposed: Sequence[float],
+        median_shape_transposed: Sequence[int],
+        patch_size: Sequence[int],
+    ):
+        """
+        Determine if dummy 2d data augmentation should be used
+
+        Args:
+            target_spacing_transposed: target spacing after applying forward
+                transposing
+            median_shape_transposed: median shape after applying forward
+                transposing
+            patch_size: patch size for training
+
+        Returns:
+            bool: if dummy 2d data augmentation should be used
+        """
+        do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) > self.anisotropy_threshold
+        return do_dummy_2d_data_aug
 
     def determine_postprocessing(self, mode: str) -> dict:
         """
