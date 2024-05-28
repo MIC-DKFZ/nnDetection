@@ -445,18 +445,18 @@ def unpack():
     parser.add_argument("path", type=Path, help="Path to folder to unpack")
     parser.add_argument("num_processes", type=int, help="number of processes to use for unpacking")
     parser.add_argument("--data_float16", action="store_true", help="Convert data to float16")
-    parser.add_argument("--label_uint8", action="store_true", help="Convert label to uint8")
+    parser.add_argument("--label_int8", action="store_true", help="Convert label to int8")
 
     args = parser.parse_args()
     p = args.path
     num_processes = args.num_processes
     data_float16: bool = args.data_float16
-    label_uint8: bool = args.label_uint8
+    label_int8: bool = args.label_int8
 
     data_dtype = np.float16 if data_float16 else None
-    label_dtype = np.uint8 if label_uint8 else None
+    label_dtype = np.int8 if label_int8 else None
 
-    if data_float16 or label_uint8:
+    if data_float16 or label_int8:
         print("WARNING: Use at your own risk. Manual dtypes set, no additional check will be performed.")
 
     unpack_dataset(
@@ -491,17 +491,17 @@ def unpack_task():
         required=False,
     )
     parser.add_argument("--data_float16", action="store_true", help="Convert data to float16")
-    parser.add_argument("--label_uint8", action="store_true", help="Convert label to uint8")
+    parser.add_argument("--label_int8", action="store_true", help="Convert label to int8")
     args = parser.parse_args()
 
     task: str = args.task
     data_identifiers: List[str] = args.data_identifiers
     num_processes: int = args.num_processes
     data_float16: bool = args.data_float16
-    label_uint8: bool = args.label_uint8
+    label_int8: bool = args.label_int8
 
     data_dtype = np.float16 if data_float16 else None
-    label_dtype = np.uint8 if label_uint8 else None
+    label_dtype = np.int8 if label_int8 else None
 
     task_path = get_task(task)
     preprocessed_path = task_path / "preprocessed"
@@ -513,7 +513,7 @@ def unpack_task():
         if not _data_identifier_path.is_dir():
             raise ValueError(f"{di} is not a valid data identifier since {_data_identifier_path} does not exist")
 
-        if data_float16 or label_uint8:
+        if data_float16 or label_int8:
             print("WARNING: Use at your own risk. Manual dtypes set, no additional check will be performed.")
 
         unpack_dataset(
