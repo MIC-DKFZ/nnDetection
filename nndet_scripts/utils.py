@@ -444,10 +444,28 @@ def unpack():
     parser = argparse.ArgumentParser()
     parser.add_argument("path", type=Path, help="Path to folder to unpack")
     parser.add_argument("num_processes", type=int, help="number of processes to use for unpacking")
+    parser.add_argument("--data_float16", action="store_true", help="Convert data to float16")
+    parser.add_argument("--label_uint8", action="store_true", help="Convert label to uint8")
+
     args = parser.parse_args()
     p = args.path
     num_processes = args.num_processes
-    unpack_dataset(p, num_processes, False)
+    data_float16: bool = args.data_float16
+    label_uint8: bool = args.label_uint8
+
+    data_dtype = np.float16 if data_float16 else None
+    label_dtype = np.uint8 if label_uint8 else None
+
+    if data_float16 or label_uint8:
+        print("WARNING: Use at your own risk. Manual dtypes set, no additional check will be performed.")
+
+    unpack_dataset(
+        p,
+        processes=num_processes,
+        delete_npz=False,
+        data_dtype=data_dtype,
+        seg_dtype=label_dtype,
+    )
 
 
 @env_guard
@@ -472,21 +490,39 @@ def unpack_task():
         default=6,
         required=False,
     )
+    parser.add_argument("--data_float16", action="store_true", help="Convert data to float16")
+    parser.add_argument("--label_uint8", action="store_true", help="Convert label to uint8")
     args = parser.parse_args()
 
     task: str = args.task
     data_identifiers: List[str] = args.data_identifiers
     num_processes: int = args.num_processes
+    data_float16: bool = args.data_float16
+    label_uint8: bool = args.label_uint8
+
+    data_dtype = np.float16 if data_float16 else None
+    label_dtype = np.uint8 if label_uint8 else None
 
     task_path = get_task(task)
     preprocessed_path = task_path / "preprocessed"
     if not preprocessed_path.is_dir():
         raise ValueError(f"Expected {preprocessed_path} to exist, please run preprocessing first.")
+
     for di in data_identifiers:
         _data_identifier_path = preprocessed_path / di
         if not _data_identifier_path.is_dir():
             raise ValueError(f"{di} is not a valid data identifier since {_data_identifier_path} does not exist")
-        unpack_dataset(_data_identifier_path / "imagesTr", num_processes, False)
+
+        if data_float16 or label_uint8:
+            print("WARNING: Use at your own risk. Manual dtypes set, no additional check will be performed.")
+
+        unpack_dataset(
+            _data_identifier_path / "imagesTr",
+            processes=num_processes,
+            delete_npz=False,
+            data_dtype=data_dtype,
+            seg_dtype=label_dtype,
+        )
 
 
 def env():
@@ -581,7 +617,11 @@ def create_test_data_split():
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("--size", type=float, help="Size of test split", default=0.3)
-    parser.add_argument("--stratify", action="store_true", help="Enable a best effort stratification of patients.")
+    parser.add_argument(
+        "--stratify",
+        action="store_true",
+        help="Enable a best effort stratification of patients.",
+    )
 
     args = parser.parse_args()
     task = args.task
@@ -794,7 +834,13 @@ def splits_pkl_to_json():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
-    parser.add_argument("--splits_name", type=str, help="Name of splits file", required=False, default="splits_final")
+    parser.add_argument(
+        "--splits_name",
+        type=str,
+        help="Name of splits file",
+        required=False,
+        default="splits_final",
+    )
 
     args = parser.parse_args()
     task = args.task

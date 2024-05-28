@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from itertools import repeat
 from multiprocessing.pool import Pool
 from pathlib import Path
-from typing import Any, Sequence, Tuple, Union
+from typing import Any, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import SimpleITK as sitk
@@ -168,7 +168,13 @@ def npy_dataset(
             del_npy(Path(folder))
 
 
-def unpack_dataset(folder: os.PathLike, processes: int, delete_npz: bool = False):
+def unpack_dataset(
+    folder: os.PathLike,
+    processes: int,
+    delete_npz: bool = False,
+    data_dtype: Optional[np.dtype] = None,
+    seg_dtype: Optional[np.dtype] = None,
+):
     """
     unpacks all npz files in a folder to npy
     (whatever you want to have unpacked must be saved under key)
@@ -178,14 +184,28 @@ def unpack_dataset(folder: os.PathLike, processes: int, delete_npz: bool = False
         processes: number of processes to use
         key: key which should be extracted
         delete_npz: delete the npz file after conversion
+        data_dtype: optionally specify the dtype of the saved data
+        seg_dtype: optionally specify the dtype of the saved segmentation
     """
     logger.info("Unpacking dataset")
     npz_files = subfiles(Path(folder), identifier="*.npz", join=True)
     with Pool(processes) as p:
-        p.starmap(npz2npy, zip(npz_files, repeat(delete_npz)))
+        p.starmap(
+            npz2npy,
+            zip(
+                npz_files,
+                repeat(delete_npz),
+                repeat(data_dtype),
+                repeat(seg_dtype),
+            ),
+        )
 
 
-def pack_dataset(folder, processes: int, key: str):
+def pack_dataset(
+    folder,
+    processes: int,
+    key: str,
+):
     """
     Pack dataset (from npy to npz)
 
@@ -200,19 +220,37 @@ def pack_dataset(folder, processes: int, key: str):
         p.starmap(npy2npz, zip(npy_files, repeat(key)))
 
 
-def npz2npy(npz_file: str, delete_npz: bool = False):
+def npz2npy(
+    npz_file: str,
+    delete_npz: bool = False,
+    data_dtype: Optional[np.dtype] = None,
+    seg_dtype: Optional[np.dtype] = None,
+):
     """
     convert npz to npy
 
     Args:
         npz_file: path to npz file
         delete_npz: delete the npz file after conversion
+        data_dtype: optionally specify the dtype of the saved data
+        seg_dtype: optionally specify the dtype of the saved segmentation
     """
     if not os.path.isfile(npz_file[:-3] + "npy"):
         a = load_npz_looped(npz_file, keys=["data", "seg"], num_tries=3)
+
+        if data_dtype is not None:
+            data = a["data"].astype(data_dtype)
+        else:
+            data = a["data"]
+
+        if seg_dtype is not None:
+            seg = a["seg"].astype(seg_dtype)
+        else:
+            seg = a["seg"]
+
         if a is not None:
-            np.save(npz_file[:-3] + "npy", a["data"])
-            np.save(npz_file[:-4] + "_seg.npy", a["seg"])
+            np.save(npz_file[:-3] + "npy", data)
+            np.save(npz_file[:-4] + "_seg.npy", seg)
     if delete_npz:
         os.remove(npz_file)
 
