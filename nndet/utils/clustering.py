@@ -203,6 +203,7 @@ def softmax_to_instances(
     stuff: Optional[Sequence[int]] = None,
     min_num_voxel: int = 0,
     min_threshold: Optional[float] = None,
+    mode: str = "voted",
 ) -> dict:
     """
     Compute instance segmentation results from a semantic segmentation
@@ -220,6 +221,10 @@ def softmax_to_instances(
             it is used as a probability threshold for the foreground class.
             if multiple foreground classes exceed the threshold, the
             foreground class with the largest probability is selected.
+        mode: one of "voted" | "connected". If "voted" connected components
+            are extracted a binary segmenation created from all foreground
+            classes. If "connected" connected components are extracted for each
+            class separately.
 
     Returns:
         dict: predictions
@@ -236,10 +241,10 @@ def softmax_to_instances(
             cluster_map = np.max(probs[1:], axis=0) > min_threshold
             class_map = np.argmax(probs[1:], axis=0) + 1
 
-            seg = np.zeros_like(probs[0])
+            seg = np.zeros_like(probs[0], dtype=int)
             seg[cluster_map] = class_map[cluster_map]
         else:
-            seg = probs[1] > min_threshold
+            seg = (probs[1] > min_threshold).astype(int)
     else:
         seg = np.argmax(probs, axis=0)
 
@@ -247,7 +252,12 @@ def softmax_to_instances(
         for s in stuff:
             seg[seg == s] = 0
 
-    instances, instance_classes = seg_to_instances_voted(seg, min_num_voxel=min_num_voxel)
+    if mode == "connected":
+        instances, instance_classes = seg_to_instances(seg, min_num_voxel=min_num_voxel)
+    elif mode == "voted":
+        instances, instance_classes = seg_to_instances_voted(seg, min_num_voxel=min_num_voxel)
+    else:
+        raise ValueError(f"mode {mode} is not supported")
 
     instance_scores = compute_score_from_seg(
         instances,

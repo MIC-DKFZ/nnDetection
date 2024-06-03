@@ -43,6 +43,42 @@ def import_nnunet_boxes(
     sweep_dir = Path(nnunet_prediction_dir)
     postprocessing_settings = {}
 
+    # optimize import method
+    logger.info("Looking for optimal clustering mode")
+    modes = ["voted", "connected"]
+    scores = []
+    for mode in modes:
+        # create temp dir
+        sweep_prediction = sweep_dir / f"sweep_mode_{mode}"
+        sweep_prediction.mkdir(parents=True)
+
+        # import with settings
+        import_dir(
+            nnunet_prediction_dir=nnunet_prediction_dir,
+            target_dir=sweep_prediction,
+            mode=mode,
+            save_seg=False,
+            save_iseg=False,
+            stuff=stuff,
+            num_workers=num_workers,
+        )
+
+        # evaluate
+        _scores, _ = evaluate_box_dir(
+            pred_dir=sweep_prediction,
+            gt_dir=boxes_gt_dir,
+            classes=classes,
+            save_dir=None,
+        )
+        scores.append(_scores[TARGET_METRIC])
+        summary.append({f"Mode {mode}": _scores[TARGET_METRIC]})
+        logger.info(f"Mode {mode} :: {_scores[TARGET_METRIC]}")
+        shutil.rmtree(sweep_prediction)
+
+    idx = int(np.argmax(scores))
+    postprocessing_settings["mode"] = modes[idx]
+    logger.info(f"Found mode {modes[idx]} with score {scores[idx]}")
+
     # optimize min num voxels
     logger.info("Looking for optimal min voxel size")
     min_num_voxel_settings = [0, 5, 10, 15, 20]
@@ -162,6 +198,7 @@ def import_dir(
     aggregation="max",
     min_num_voxel=0,
     min_threshold=None,
+    mode: str = "voted",
     save_seg: bool = True,
     save_iseg: bool = True,
     stuff: Optional[Sequence[int]] = None,
@@ -174,6 +211,7 @@ def import_dir(
         aggregation=aggregation,
         min_num_voxel=min_num_voxel,
         min_threshold=min_threshold,
+        mode=mode,
         save_seg=save_seg,
         save_iseg=save_iseg,
         stuff=stuff,
@@ -193,6 +231,7 @@ def import_single_case(
     aggregation: str,
     min_num_voxel: int,
     min_threshold: Optional[float],
+    mode: str,
     save_seg: bool = True,
     save_iseg: bool = True,
     stuff: Optional[Sequence[int]] = None,
@@ -233,6 +272,7 @@ def import_single_case(
         aggregation=aggregation,
         min_num_voxel=min_num_voxel,
         min_threshold=min_threshold,
+        mode=mode,
         stuff=stuff,
     )
 
