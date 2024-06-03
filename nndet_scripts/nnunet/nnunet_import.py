@@ -240,7 +240,12 @@ def import_single_case(
     segmentation_target = logits_target_dir / f"{case_name}_segmentation.pkl"
     instances_target = logits_target_dir / f"{case_name}_instances.pkl"
 
-    boxes = {key: res[key] for key in ["pred_boxes", "pred_labels", "pred_scores"]}
+    boxes = {}
+    for key in ["pred_boxes", "pred_labels", "pred_scores"]:
+        if not isinstance(res[key], np.ndarray):
+            boxes[key] = np.array(res[key])
+        else:
+            boxes[key] = res[key]
     boxes["original_size_of_raw_data"] = properties_dict["original_size_of_raw_data"]
     boxes["itk_origin"] = properties_dict["itk_origin"]
     boxes["itk_direction"] = properties_dict["itk_direction"]
