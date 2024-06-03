@@ -349,6 +349,14 @@ if __name__ == "__main__":
         action="store_true",
         help="Argmax with max probability aggregation.",
     )
+    parser.add_argument(
+        "--nnunet_model_name",
+        type=str,
+        default="nnUNet",
+        help="Name of model which will be saved to nndetection directory",
+        required=False,
+    )
+
     # Evaluation related settings
     parser.add_argument("--save_seg", help="Save semantic segmentation", action="store_true")
     parser.add_argument("--save_iseg", help="Save instance segmentation", action="store_true")
@@ -360,6 +368,7 @@ if __name__ == "__main__":
     mode = args.mode
     num_workers = args.num_workers
     simple = args.simple
+    nnunet_model_name = args.nnunet_model_name
 
     save_seg = args.save_seg
     save_iseg = args.save_iseg
@@ -392,9 +401,9 @@ if __name__ == "__main__":
     logger.add(log_file, level="INFO")
 
     if simple:
-        nndet_unet_dir = task_dir / "nnUNet_Simple" / "consolidated"
+        nndet_unet_dir = task_dir / f"{nnunet_model_name}_Simple" / "consolidated"
     else:
-        nndet_unet_dir = task_dir / "nnUNet" / "consolidated"
+        nndet_unet_dir = task_dir / f"{nnunet_model_name}" / "consolidated"
 
     instance_classes = cfg["data"]["labels"]
     stuff_classes = cfg.get("labels_stuff", {})
