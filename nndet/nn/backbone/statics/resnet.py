@@ -102,7 +102,7 @@ if BaseResNet is not None:
             """
             x = self.conv1(x)
             x = self.bn1(x)
-            p1 = self.relu(x)
+            p1 = self.act(x)
 
             if not self.no_max_pool:
                 x = self.maxpool(p1)
