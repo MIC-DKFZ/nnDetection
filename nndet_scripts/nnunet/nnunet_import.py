@@ -435,15 +435,15 @@ if __name__ == "__main__":
     initialize_config_module(config_module="nndet.conf", version_base="1.1")
     cfg = compose(task, "config.yaml", overrides=[])
 
-    logger.remove()
-    logger.add(sys.stdout, level="INFO")
-    log_file = task_dir / "nnUNet" / "import.log"
-    logger.add(log_file, level="INFO")
-
     if simple:
         nndet_unet_dir = task_dir / f"{nnunet_model_name}_Simple" / "consolidated"
     else:
         nndet_unet_dir = task_dir / f"{nnunet_model_name}" / "consolidated"
+
+    logger.remove()
+    logger.add(sys.stdout, level="INFO")
+    log_file = nndet_unet_dir / "import.log"
+    logger.add(log_file, level="INFO")
 
     instance_classes = cfg["data"]["labels"]
     stuff_classes = cfg.get("labels_stuff", {})
