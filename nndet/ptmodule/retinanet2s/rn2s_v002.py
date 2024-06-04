@@ -43,7 +43,7 @@ class RetinaNet2SV002(
     LightningBaseModule,  # Detection Base
     BoxesPrepareMixin,  # prepare batch for box training
     BoxWithRPNEvalMixin,  # Bounding Box Evaluation (with RPN)
-    TwoStageMixin,  # Single Stage Detector
+    TwoStageMixin,  # Two Stage Detector
     BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     """
