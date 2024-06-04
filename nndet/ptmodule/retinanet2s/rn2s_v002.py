@@ -47,7 +47,7 @@ class RetinaNet2SV002(
     BoxPredictionMixinV2,  # Bounding Box Sweep
 ):
     """
-    MaskRCNNModule with Box Output
+    FasterRCNNModule with Box Output
     """
 
     full_detector_cls: Type[AbstractDetector] = RCNN  # Two stage detector class RCNN

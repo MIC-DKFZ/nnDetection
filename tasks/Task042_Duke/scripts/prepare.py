@@ -159,6 +159,8 @@ def prepare_case(
     #     logger.info(f"Case {case_id} already prepared, skipping")
     #     return
 
+    new_case_id = case_id.replace("_", "")
+
     # process case
     seq_size = None
     for seq_idx, excel_seq in enumerate(SEQUENCES.values()):
@@ -185,9 +187,9 @@ def prepare_case(
                 ref_itk=seq_itk,
                 is_inverted=is_inverted,
             )
-            sitk.WriteImage(mask_itk, str(target_label_dir / f"{case_id}.nii.gz"))
-            save_json({"instances": instances}, target_label_dir / f"{case_id}.json")
-        sitk.WriteImage(seq_itk, str(target_data_dir / f"{case_id}_{seq_idx:04d}.nii.gz"))
+            sitk.WriteImage(mask_itk, str(target_label_dir / f"{new_case_id}.nii.gz"))
+            save_json({"instances": instances}, target_label_dir / f"{new_case_id}.json")
+        sitk.WriteImage(seq_itk, str(target_data_dir / f"{new_case_id}_{seq_idx:04d}.nii.gz"))
 
 
 def filter_and_prepare_case(
