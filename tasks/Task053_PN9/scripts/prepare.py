@@ -88,7 +88,7 @@ def run_prep(
     logger.info(f"Processing case {case_id}")
     data_np = np.load(source_data / f"{case_id}_zoom.npy")
     assert data_np.ndim == 4
-    mask_np = np.zeros_like(data_np[0])
+    mask_np = np.zeros_like(data_np[0], dtype=np.int32)
 
     boxes_image_df = labels_df[labels_df["pid"] == int(case_id)]
     # sort objects from largest to smalles -> smaller objects will only partially cover larger objects
@@ -152,9 +152,13 @@ def run_prep(
     data_itk = sitk.GetImageFromArray(data_np[0].astype(np.float32))
     sitk.WriteImage(data_itk, str(target_data_dir / f"{case_id}_0000.nii.gz"))
 
-    mask_itk = sitk.GetImageFromArray(mask_np)
+    mask_itk = sitk.GetImageFromArray(mask_np.astype(np.int32))
     sitk.WriteImage(mask_itk, str(target_label_dir / f"{case_id}.nii.gz"))
-    save_json({"instances": instances, "meta": other_info}, target_label_dir / f"{case_id}.json")
+    instances_nodule = {k: 0 for k in instances.keys()}
+    save_json(
+        {"instances": instances_nodule, "instances_cls": instances, "meta": other_info},
+        target_label_dir / f"{case_id}.json",
+    )
 
     return case_id
 
@@ -260,7 +264,8 @@ def main():
         "task": "Task053_PN9",
         "target_class": None,
         "test_labels": True,
-        "labels": {item: key for key, item in PN9CLASSES.items()},
+        # "labels": {item: key for key, item in PN9CLASSES.items()},
+        "labels": {"0": "nodule"},
         # scans are already preprocessed, default CT scheme does not apply
         "modalities": {"0": "CT_preprocessed"},
     }
