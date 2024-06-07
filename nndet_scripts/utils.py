@@ -108,6 +108,116 @@ def boxes2mitk():
 
 
 @env_guard
+def boxes2mitkv2():
+    """
+    Only for visualisation purposes.
+    MITKv2 Format
+    """
+    import argparse
+    import os
+    from pathlib import Path
+
+    import numpy as np
+    from loguru import logger
+
+    from nndet.io import load_pickle, save_json
+    from nndet.io.paths import get_task, get_training_dir
+    from nndet.utils.info import maybe_verbose_iterable
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument("fold", type=int, help="experiment fold")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Minimum probability of predictions",
+        required=False,
+        default=0.5,
+    )
+    parser.add_argument("--test", action="store_true")
+
+    args = parser.parse_args()
+    model = args.model
+    fold = args.fold
+    task = args.task
+    test = args.test
+    threshold = args.threshold
+
+    task_name = get_task(task, name=True, models=True)
+    task_dir = Path(os.getenv("det_models")) / task_name
+
+    training_dir = get_training_dir(task_dir / model, fold)
+
+    prediction_dir = training_dir / "test_predictions" if test else training_dir / "val_predictions"
+    save_dir = training_dir / "test_predictions_nii" if test else training_dir / "val_predictions_nii"
+    save_dir.mkdir(exist_ok=True)
+
+    case_ids = [p.stem.rsplit("_", 1)[0] for p in prediction_dir.glob("*_boxes.pkl")]
+    case_ids.sort()
+    for cid in maybe_verbose_iterable(case_ids):
+        res = load_pickle(prediction_dir / f"{cid}_boxes.pkl")
+        boxes = res["pred_boxes"]
+        scores = res["pred_scores"]
+        labels = res["pred_labels"]
+
+        img_size = res["original_size_of_raw_data"].tolist()[::-1]
+        origin = np.array(res["itk_origin"])
+        spacing = np.array(res["itk_spacing"])
+        direction = np.array(res["itk_direction"]).reshape((3, 3))
+        spacing_matrix = np.diag(spacing)
+        rotation_scaling = np.dot(direction, spacing_matrix)
+
+        # Create the full transformation matrix (4x4)
+        transform = np.eye(4)
+        transform[:3, :3] = rotation_scaling
+        transform[3, :3] = origin
+        transform = transform.reshape(-1).tolist()
+
+        mitk_json = {
+            "FileFormat": "MITK ROI",
+            "Version": 2,
+            "Caption": "{label}: {score}",
+            "Geometry": {
+                "Size": img_size,
+                "Transform": transform,
+            },
+            "ROIs": [],
+        }
+
+        # filter predictions
+        _mask = scores >= threshold
+        boxes = boxes[_mask]
+        labels = labels[_mask]
+        scores = scores[_mask]
+
+        idx = np.argsort(scores)
+        scores = scores[idx]
+        boxes = boxes[idx]
+        labels = labels[idx]
+
+        _dtype = float
+        for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
+            mitk_json["ROIs"].append(
+                {
+                    "ID": instance_id,
+                    "Min": [_dtype(pbox[0]), _dtype(pbox[1]), _dtype(pbox[4])][::-1],
+                    "Max": [_dtype(pbox[2]), _dtype(pbox[3]), _dtype(pbox[5])][::-1],
+                    "Properties": {
+                        "ColorProperty": {"color": [1, 0, 0]},  # color of bounding box
+                        "FloatProperty": {
+                            "score": round(float(pscore), 2),
+                            "label": float(plabel),
+                            "lineWidth": 2,  # line width of bounding box
+                        },
+                    },
+                }
+            )
+        logger.info(f"Created prediction {cid} with {len(mitk_json['ROIs'])} instances.")
+        save_json(mitk_json, save_dir / f"{cid}_boxes_mitkv2.json")
+
+
+@env_guard
 def boxes2nii():
     """
     Only for visualisation purposes.

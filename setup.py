@@ -154,6 +154,7 @@ setup(
             "nndet_seg2det = nndet_scripts.convert_seg2det:main",
             "nndet_pretrain = nndet_scripts.pretrain:pretrain",
             "nndet_boxes2mitk = nndet_scripts.utils:boxes2mitk",
+            "nndet_boxes2mitkv2 = nndet_scripts.utils:boxes2mitkv2",
             "nndet_boxes2nii = nndet_scripts.utils:boxes2nii",
             "nndet_boxes2nii2 = nndet_scripts.utils:boxes2nii2",
             "nndet_masks2nii = nndet_scripts.utils:masks2nii",
