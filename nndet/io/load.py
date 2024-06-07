@@ -180,6 +180,9 @@ def unpack_dataset(folder: Pathlike,
     """
     logger.info("Unpacking dataset")
     npz_files = subfiles(Path(folder), identifier="*.npz", join=True)
+    if not npz_files:
+        logger.warning(f'No paths found in {Path(folder)} matching *.npz')
+        return
     with Pool(processes) as p:
         p.starmap(npz2npy, zip(npz_files, repeat(delete_npz)))
 
