@@ -34,7 +34,7 @@ def subfiles(dir_path: Path, identifier: str, join: bool) -> List[str]:
     Returns:
         List[str]: found paths/file names
     """
-    paths = list(map(str, list(Path(dir_path).glob(identifier))))
+    paths = list(map(str, list(Path(os.path.expandvars(dir_path)).glob(identifier))))
     if not join:
         paths = [p.rsplit(os.path.sep, 1)[-1] for p in paths]
     return paths
