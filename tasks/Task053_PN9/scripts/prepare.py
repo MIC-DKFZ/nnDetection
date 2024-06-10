@@ -306,7 +306,7 @@ def main():
 
     ############################### Splits #####################################
     # create custom split
-    logger.info("Create Custom Split for PN9 (train ids are split into 5 groups, val ids are fixed)")
+    logger.info("Create Custom Split for PN9")
     train_ids_path = raw_data_dir / "train.txt"
     if not train_ids_path.is_file():
         raise RuntimeError(f"File {train_ids_path} does not exist.")
@@ -330,16 +330,16 @@ def main():
     fixed_val_splits = []
     for split in splits_train:
         fixed_val_splits.append({"train": split["train"], "val": val_case_ids})
-    save_json(single_split, task_data_dir / "splits_official_val.json")
-    save_pickle(single_split, task_data_dir / "splits_official_val.pkl")
+    save_json(fixed_val_splits, task_data_dir / "splits_official_val.json")
+    save_pickle(fixed_val_splits, task_data_dir / "splits_official_val.pkl")
 
     # all (train + val) data 5 Fold cv
     splits_all = create_custom_split(
         case_ids=case_ids,
         label_dir=target_label_dir_train,
     )
-    save_json(single_split, task_data_dir / "splits_all.json")
-    save_pickle(single_split, task_data_dir / "splits_all.pkl")
+    save_json(splits_all, task_data_dir / "splits_all.json")
+    save_pickle(splits_all, task_data_dir / "splits_all.pkl")
 
     ############################### TEST DATA ##################################
     # prepare test data
