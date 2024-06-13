@@ -10,6 +10,7 @@ from typing import Dict, List, Sequence, Tuple, Union
 import numpy as np
 from loguru import logger
 
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.load import load_case_cropped, save_pickle
 from nndet.io.paths import get_case_id_from_path, get_case_ids_from_dir
 from nndet.io.transforms.instances import instances_to_boxes_np
@@ -28,6 +29,9 @@ class GenericPreprocessor(AbstractPreprocessor):
         transpose_forward: Sequence[int],
         intensity_properties: Dict[int, Dict] = None,
         resample_anisotropy_threshold: float = 3.0,
+        image_size: Tuple[int, int, int, int] = (1, 256, 256, 256),
+        patch_size: Union[Tuple[int, int], Tuple[int, int, int]] = (128, 128, 128),
+        preprocessed_data_format: str = "b2nd"
     ):
         """
         Preprocess data
@@ -53,6 +57,9 @@ class GenericPreprocessor(AbstractPreprocessor):
         self.use_mask_for_norm = {int(k): i for k, i in use_mask_for_norm.items()}
         self.norm_scheme_per_modality = {int(k): i for k, i in norm_scheme_per_modality.items()}
         self.norm_schemes = self.init_norm_schemes()
+        self.image_size = tuple([1] * (4-len(image_size)) + [int(x) for x in image_size])
+        self.patch_size = tuple([int(x) for x in patch_size])
+        self.with_preprocessed_data_format = data_format_to_class_mapping[preprocessed_data_format]
 
     def init_norm_schemes(self):
         return {
@@ -82,6 +89,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes: number of processes used for preprocessing
             overwrite: overwrite existing data
         """
+       
         case_ids, num_processes = self.initialize_run(
             target_spacings=target_spacings,
             cropped_data_dir=cropped_data_dir,
@@ -190,10 +198,12 @@ class GenericPreprocessor(AbstractPreprocessor):
         )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(
-            str(output_dir_stage / f"{case_id}.npz"),
+        self.with_preprocessed_data_format.save(
+            truncated_path=f"{output_dir_stage}/{case_id}",
             data=data,
             seg=seg,
+            image_size=self.image_size,
+            patch_size=self.patch_size
         )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
