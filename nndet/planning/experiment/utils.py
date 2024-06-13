@@ -10,6 +10,7 @@ from typing import Dict
 import numpy as np
 from loguru import logger
 
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.itk import load_sitk_as_array
 from nndet.io.load import load_json, load_pickle, save_pickle
 from nndet.io.paths import get_case_ids_from_dir
@@ -151,6 +152,7 @@ def run_create_label_preprocessed(
     case_id: str,
     dim: int,
     target_dir: Path,
+    data_format: str
 ):
     """
     Helper to run preparation with multiprocessing
@@ -161,7 +163,8 @@ def run_create_label_preprocessed(
         dim: number of spatial dimensions
         target_dir: directory to save results
     """
-    instances = np.load(str(source_dir / f"{case_id}.npz"), mmap_mode="r")["seg"]
+    with_data_format = data_format_to_class_mapping[data_format]
+    instances = with_data_format.load_seg(source_dir, case_id)[:]
     properties = load_pickle(source_dir / f"{case_id}.pkl")
 
     mapping = {int(key): int(item) for key, item in properties["instances"].items()}
