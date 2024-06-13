@@ -28,6 +28,7 @@ class nnDetDataBlosc2(object):
     file_extension = "b2nd"
     block_size = None
     chunk_size = None
+    blosc2.set_nthreads(1)
     
     @staticmethod 
     def load():
@@ -48,8 +49,6 @@ class nnDetDataBlosc2(object):
         if nnDetDataBlosc2.chunk_size is None:
             nnDetDataBlosc2.block_size, nnDetDataBlosc2.chunk_size = \
                 nnDetDataBlosc2.comp_blosc2_params(image_size, patch_size)
-        
-        blosc2.set_nthreads(1)
 
         cparams = {
             'codec': blosc2.Codec.ZSTD,
