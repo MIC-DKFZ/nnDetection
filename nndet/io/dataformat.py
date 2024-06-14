@@ -76,7 +76,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         pass
     
     def load_seg(self, source_dir: str, case_id: str):
-        return blosc2.open(urlpath=str(source_dir / f"{case_id}_seg.b2nd"), mode='r')
+        return blosc2.open(urlpath=str(source_dir / f"{case_id}_seg.b2nd"), mode='r')[:]
 
     def save(
         self,
