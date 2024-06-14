@@ -64,7 +64,11 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         super().__init__(file_extension="b2nd")
         self.block_size = None
         self.chunk_size = None
-        self.image_size = None
+        self.seg_block_size = None
+        self.seg_chunk_size = None
+        
+        self.data_size = None
+        self.seg_size = None
         self.patch_size = None
         blosc2.set_nthreads(1)
     
@@ -74,19 +78,19 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
     def load_seg(self, source_dir: str, case_id: str):
         return blosc2.open(urlpath=str(source_dir / f"{case_id}_seg.b2nd"), mode='r')
 
-    @staticmethod
     def save(
         self,
         truncated_path: str,
         data: np.ndarray,
         seg: np.ndarray,
-        image_size: Tuple[int, int, int, int],
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]]
     ):
-        if (self.image_size != image_size) or (self.patch_size != patch_size):
-            self.image_size = image_size
+        if (self.data_size != data.shape) or (self.seg_size != seg.shape) or (self.patch_size != patch_size):
+            self.data_size = data.shape
+            self.seg_size = seg.shape
             self.patch_size = patch_size
-            self.block_size, self.chunk_size = self.comp_blosc2_params(image_size, patch_size)
+            self.block_size, self.chunk_size = self.comp_blosc2_params(self.data_size, self.patch_size, data.itemsize)
+            self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(self.seg_size, self.patch_size, seg.itemsize)
 
         cparams = {
             'codec': blosc2.Codec.ZSTD,
@@ -98,7 +102,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
                        chunks=self.chunk_size, blocks=self.block_size, 
                        cparams=cparams, mode='w')
         blosc2.asarray(np.ascontiguousarray(seg), urlpath=truncated_path + '_seg.b2nd', 
-                       chunks=self.chunk_size, blocks=self.block_size, 
+                       chunks=self.seg_chunk_size, blocks=self.seg_block_size, 
                        cparams=cparams, mode='w')
     
     @staticmethod

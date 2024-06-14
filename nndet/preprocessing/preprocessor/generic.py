@@ -29,7 +29,6 @@ class GenericPreprocessor(AbstractPreprocessor):
         transpose_forward: Sequence[int],
         intensity_properties: Dict[int, Dict] = None,
         resample_anisotropy_threshold: float = 3.0,
-        image_size: Tuple[int, int, int, int] = (1, 256, 256, 256),
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]] = (128, 128, 128),
         preprocessed_data_format: str = "b2nd"
     ):
@@ -57,7 +56,6 @@ class GenericPreprocessor(AbstractPreprocessor):
         self.use_mask_for_norm = {int(k): i for k, i in use_mask_for_norm.items()}
         self.norm_scheme_per_modality = {int(k): i for k, i in norm_scheme_per_modality.items()}
         self.norm_schemes = self.init_norm_schemes()
-        self.image_size = tuple([1] * (4-len(image_size)) + [int(x) for x in image_size])
         self.patch_size = tuple([int(x) for x in patch_size])
         self.with_preprocessed_data_format = data_format_to_class_mapping[preprocessed_data_format]
 
@@ -76,7 +74,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         cropped_data_dir: Path,
         preprocessed_output_dir: Path,
         num_processes: Union[int, Sequence[int]],
-        overwrite: bool = False,
+        overwrite: bool = False
     ):
         """
         Run preprocessing
@@ -89,7 +87,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes: number of processes used for preprocessing
             overwrite: overwrite existing data
         """
-       
+        
         case_ids, num_processes = self.initialize_run(
             target_spacings=target_spacings,
             cropped_data_dir=cropped_data_dir,
@@ -123,7 +121,7 @@ class GenericPreprocessor(AbstractPreprocessor):
                             repeat(spacing),
                             _case_ids,
                             repeat(output_dir_stage),
-                            repeat(cropped_data_dir),
+                            repeat(cropped_data_dir)
                         ),
                     )
 
@@ -202,7 +200,6 @@ class GenericPreprocessor(AbstractPreprocessor):
             truncated_path=f"{output_dir_stage}/{case_id}",
             data=data,
             seg=seg,
-            image_size=self.image_size,
             patch_size=self.patch_size
         )
 
