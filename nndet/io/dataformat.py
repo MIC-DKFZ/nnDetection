@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 
 class PreprocessedDataset(ABC):
     
-    def __init__(self, file_extension):
+    def __init__(self, file_extension: str):
         self.file_extension = file_extension
 
     @abstractmethod
@@ -100,8 +100,8 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         image_size: Tuple[int, int, int, int],
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
         bytes_per_pixel: int = 4,  # 4 byte are float32
-        l1_cache_size_per_core_in_bytes=32768,  # 1 Kibibyte (KiB) = 2^10 Byte;  32 KiB = 32768 Byte
-        l3_cache_size_per_core_in_bytes=1441792,
+        l1_cache_size_per_core_in_bytes: int = 32768,  # 1 Kibibyte (KiB) = 2^10 Byte;  32 KiB = 32768 Byte
+        l3_cache_size_per_core_in_bytes: int = 1441792,
         # 1 Mibibyte (MiB) = 2^20 Byte = 1.048.576 Byte; 1.375MiB = 1441792 Byte
         safety_factor: float = 0.8  # we dont will the caches to the brim. 0.8 means we target 80% of the caches
     ):
