@@ -3,19 +3,47 @@ import math
 import numpy as np
 import blosc2
 from typing import Union, Tuple
+from abc import ABC, abstractmethod
 
-class nnDetDataNumpy(object):
-    file_extension = "npz"
-        
-    @staticmethod
-    def load():
+class PreprocessedDataset(ABC):
+    
+    def __init__(self, file_extension):
+        self.file_extension = file_extension
+
+    @abstractmethod
+    def load(self):
+        pass
+
+    @abstractmethod
+    def load_seg(self, source_dir: str, case_id: str):
+        pass
+
+    @abstractmethod
+    def save(
+        self,
+        truncated_path: str,
+        data: np.ndarray,
+        seg: np.ndarray,
+        **kwargs
+    ):
         pass
     
-    def load_seg(source_dir: str, case_id: str):
+    def get_file_extension(self):
+        return self.file_extension
+    
+
+class PreprocessedDatasetNumpy(PreprocessedDataset):
+    def __init__(self) -> None:
+        super().__init__(file_extension="npz")
+    
+    def load(self):
+        pass
+    
+    def load_seg(self, source_dir: str, case_id: str):
         return np.load(str(source_dir / f"{case_id}.npz"), mmap_mode="r")["seg"]
         
-    @staticmethod
     def save(
+        self,
         truncated_path: str,
         data: np.ndarray,
         seg: np.ndarray,
@@ -24,31 +52,35 @@ class nnDetDataNumpy(object):
         np.savez_compressed(truncated_path + ".npz", data=data, seg=seg)
     
     
-class nnDetDataBlosc2(object):
-    file_extension = "b2nd"
-    block_size = None
-    chunk_size = None
-    blosc2.set_nthreads(1)
+class PreprocessedDatasetBlosc2(PreprocessedDataset):
     
-    @staticmethod 
-    def load():
+    def __init__(self):
+        super().__init__(file_extension="b2nd")
+        self.block_size = None
+        self.chunk_size = None
+        self.image_size = None
+        self.patch_size = None
+        blosc2.set_nthreads(1)
+    
+    def load(self):
         pass
     
-    @staticmethod
-    def load_seg(source_dir: str, case_id: str):
+    def load_seg(self, source_dir: str, case_id: str):
         return blosc2.open(urlpath=str(source_dir / f"{case_id}_seg.b2nd"), mode='r')
 
     @staticmethod
     def save(
+        self,
         truncated_path: str,
         data: np.ndarray,
         seg: np.ndarray,
         image_size: Tuple[int, int, int, int],
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]]
     ):
-        if nnDetDataBlosc2.chunk_size is None:
-            nnDetDataBlosc2.block_size, nnDetDataBlosc2.chunk_size = \
-                nnDetDataBlosc2.comp_blosc2_params(image_size, patch_size)
+        if (self.image_size != image_size) or (self.patch_size != patch_size):
+            self.image_size = image_size
+            self.patch_size = patch_size
+            self.block_size, self.chunk_size = self.comp_blosc2_params(image_size, patch_size)
 
         cparams = {
             'codec': blosc2.Codec.ZSTD,
@@ -57,10 +89,10 @@ class nnDetDataBlosc2(object):
             'clevel': 8,
         }
         blosc2.asarray(np.ascontiguousarray(data), urlpath=truncated_path + '.b2nd', 
-                       chunks=nnDetDataBlosc2.chunk_size, blocks=nnDetDataBlosc2.block_size, 
+                       chunks=self.chunk_size, blocks=self.block_size, 
                        cparams=cparams, mode='w')
         blosc2.asarray(np.ascontiguousarray(seg), urlpath=truncated_path + '_seg.b2nd', 
-                       chunks=nnDetDataBlosc2.chunk_size, blocks=nnDetDataBlosc2.block_size, 
+                       chunks=self.chunk_size, blocks=self.block_size, 
                        cparams=cparams, mode='w')
     
     @staticmethod
@@ -151,6 +183,6 @@ class nnDetDataBlosc2(object):
 
     
 data_format_to_class_mapping = {
-    nnDetDataNumpy.file_extension : nnDetDataNumpy,
-    nnDetDataBlosc2.file_extension: nnDetDataBlosc2
+    "npz" : PreprocessedDatasetNumpy(),
+    "b2nd": PreprocessedDatasetBlosc2()
 }
