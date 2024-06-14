@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# Acknowledgements: The following changes in this codebase have been implemented following the updates and improvements made in the nnU-Net repository.
+# nnU-Net repository: https://github.com/MIC-DKFZ/nnUNet
+
 from copy import deepcopy
 import math
 import numpy as np
