@@ -123,7 +123,7 @@ def get_case_ids_from_dir(
         List[str]: all case ids inside the folder
     """
     files = map(str, list(Path(dir_path).glob(pattern)))
-    case_ids = [get_case_id_from_path(f, remove_modality=remove_modality) for f in files if 'seg' not in f]
+    case_ids = [get_case_id_from_path(f, remove_modality=remove_modality) for f in files if '_seg' not in f]
     if unique:
         case_ids = list(set(case_ids))
     if join:

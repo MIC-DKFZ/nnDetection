@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+from os import PathLike
 from typing import Dict, List, Sequence
 
 from loguru import logger
@@ -166,6 +167,11 @@ class D3C010(D3V002):
         """
         return f"D3V001_{mode}"
 
+@PLANNER_REGISTRY.register
+class D3V002Blosc(D3V002):
+    def __init__(self, preprocessed_output_dir: PathLike):
+        super().__init__(preprocessed_output_dir)
+        self.preprocessed_data_format = "b2nd"
 
 @PLANNER_REGISTRY.register
 class D3V002EstV1(D3V002):

@@ -36,7 +36,7 @@ class AbstractPlanner(ABC):
         """
         super().__init__()
         self.preprocessed_output_dir = Path(preprocessed_output_dir)
-        self.preprocessed_data_format = "b2nd" # or npz
+        self.preprocessed_data_format = "npz"
         
         self.transpose_forward = None
         self.transpose_backward = None
