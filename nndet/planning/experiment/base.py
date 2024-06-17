@@ -200,6 +200,7 @@ class AbstractPlanner(ABC):
             "transpose_backward": self.transpose_backward,
             "dataset_properties": self.data_properties,
             "planner_id": self.__class__.__name__,
+            "preprocessed_data_format": self.preprocessed_data_format,
         }
         return plan
 
@@ -367,7 +368,7 @@ class AbstractPlanner(ABC):
             plan: plan to use for preprocessing
             num_processes: number of processes to use for preprocessing
         """
-        preprocessor = self.create_preprocessor(plan=plan)
+        preprocessor = self.create_preprocessor(plan=plan, preprocessed_data_format=self.preprocessed_data_format)
         preprocessor.run(
             target_spacings=[plan["target_spacing"]],
             identifiers=[plan["data_identifier"]],
@@ -381,8 +382,8 @@ class AbstractPlanner(ABC):
             num_processes=num_processes,
         )
 
-    @staticmethod
     def create_labels_tr_preprocessed(
+        self,
         preprocessed_plan_dir: Path,
         dim: int,
         num_processes: int = 6,
@@ -403,7 +404,7 @@ class AbstractPlanner(ABC):
         case_ids = get_case_ids_from_dir(
             source_dir,
             remove_modality=False,
-            pattern="*.npz",
+            pattern=f"*.{self.preprocessed_data_format}",
         )
         logger.info("Preparing preprocessed evaluation labels")
         if num_processes > 0:
@@ -415,11 +416,12 @@ class AbstractPlanner(ABC):
                         case_ids,
                         repeat(dim),
                         repeat(target_dir),
+                        repeat(self.preprocessed_data_format)
                     ),
                 )
         else:
             for cid in case_ids:
-                run_create_label_preprocessed(source_dir, cid, dim, target_dir)
+                run_create_label_preprocessed(source_dir, cid, dim, target_dir, self.preprocessed_data_format)
 
     @classmethod
     def run_preprocessing_test2(
