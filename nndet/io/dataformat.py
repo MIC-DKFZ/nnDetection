@@ -17,11 +17,11 @@ class PreprocessedDataset(ABC):
         self.file_extension = file_extension
 
     @abstractmethod
-    def load(self):
+    def load_data(self, path: str, is_path_truncated: bool = False):
         pass
 
     @abstractmethod
-    def load_seg(self, source_dir: str, case_id: str):
+    def load_seg(self, path: str, is_path_truncated: bool = False):
         pass
 
     @abstractmethod
@@ -42,11 +42,28 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
     
-    def load(self):
-        pass
+    def load_data(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            data = np.load(f"{path}.npz", mmap_mode='r')
+        else:
+            data = np.load(path, mmap_mode='r')
+            
+        if type(data) == np.memmap:
+            return data
+        else:
+            return data['data']
     
-    def load_seg(self, source_dir: str, case_id: str):
-        return np.load(str(source_dir / f"{case_id}.npz"), mmap_mode="r")["seg"]
+    def load_seg(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            data = np.load(f"{path}.npz", mmap_mode='r')
+        else:
+            data = np.load(path, mmap_mode='r')
+        
+        if type(data) == np.memmap:
+            return data
+        else:
+            return data['seg']
+        
         
     def save(
         self,
@@ -72,11 +89,17 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         self.patch_size = None
         blosc2.set_nthreads(1)
     
-    def load(self):
-        pass
+    def load_data(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            return blosc2.open(urlpath=f"{path}.b2nd", mode='r')
+        else:
+            return blosc2.open(urlpath=path, mode='r')
     
-    def load_seg(self, source_dir: str, case_id: str):
-        return blosc2.open(urlpath=str(source_dir / f"{case_id}_seg.b2nd"), mode='r')[:]
+    def load_seg(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            return blosc2.open(urlpath=f"{path}_seg.b2nd", mode='r')
+        else:
+            return blosc2.open(urlpath=path, mode='r')
 
     def save(
         self,
