@@ -39,7 +39,7 @@ def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
     return case_paths
 
 
-def load_dataset_id(data_dir: os.PathLike, label_dir: Optional[os.PathLike] = None) -> dict:
+def load_dataset_id(data_dir: os.PathLike, preprocessed_data_format: str, label_dir: Optional[os.PathLike] = None) -> dict:
     """
     Load dataset (path and properties, NOT the actual data) and
     save them into dict by their identifier
@@ -64,9 +64,8 @@ def load_dataset_id(data_dir: os.PathLike, label_dir: Optional[os.PathLike] = No
     dataset = OrderedDict()
     for c in case_ids:
         dataset[c] = OrderedDict()
-        dataset[c]["data_file"] = str(folder / f"{c}.npy")
-        dataset[c]["data_file"] = str(folder / f"{c}.npy")
-        dataset[c]["seg_file"] = str(folder / f"{c}_seg.npy")
+        dataset[c]["data_file"] = str(folder / f"{c}.{preprocessed_data_format.replace('npz', 'npy')}")
+        dataset[c]["seg_file"] = str(folder / f"{c}_seg.{preprocessed_data_format.replace('npz', 'npy')}")
         dataset[c]["properties_file"] = str(folder / f"{c}.pkl")
         dataset[c]["boxes_file"] = str(folder / f"{c}_boxes.pkl")
 
