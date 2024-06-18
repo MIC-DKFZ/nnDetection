@@ -64,7 +64,8 @@ class BaseModule(pl.LightningDataModule):
 
         self.dataset_tr = {}
         self.dataset_val = {}
-        self.dataset = load_dataset_id(self.data_dir, self.plan['preprocessed_data_format'], self.label_dir)
+        self.preprocessed_data_format = self.plan.get("preprocessed_data_format", "npz")
+        self.dataset = load_dataset_id(self.data_dir, self.preprocessed_data_format, self.label_dir)
         self.do_split()
 
     @staticmethod
