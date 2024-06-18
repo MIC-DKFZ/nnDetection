@@ -252,7 +252,7 @@ def main():
             "Plan used from fold 0, not updated with consolidation!"
             "This could lead to supoptimal results during inference."
         )
-        plan_inference = load_plan_from_model(task=task, model=model, fold=0, save_name="plan_inference")
+        plan_inference = load_plan_from_model(task=task, model=model, fold=0, plan_name="plan_inference")
         plan_inference["consolidate_sweep_performed"] = False
         save_plan_to_model(plan, task=task, model=model, fold=-1, save_name="plan_inference")
 
