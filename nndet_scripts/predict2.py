@@ -602,7 +602,9 @@ def entrypoint_predict_test_split():
 
     # determine preprocessed data
     plan = load_plan_from_dir(training_dir, "plan_inference")
-    preprocessed_data_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
+    preprocessed_data_dir = (
+        Path(os.getenv("det_data")) / task_name / "preprocessed" / plan["data_identifier"] / "imagesTr"
+    )
 
     # determine case ids
     splits = load_splits_from_dir(training_dir, "splits")
