@@ -554,24 +554,11 @@ def entrypoint_predict_test_split():
         help="fold to use for prediction. -1 for consolidated",
     )
     parser.add_argument(
-        "--skip_preprocessing",
-        action="store_true",
-        help="Skip preprocessing of data, data needs to be in preprocessed format already!",
-    )
-    parser.add_argument(
         "--load_models",
         type=str,
         help="Define model weights, one of all | last | best",
         default="all",
         required=False,
-    )
-    parser.add_argument(
-        "-npp",
-        "--num_processes_preprocessing",
-        type=int,
-        default=2,
-        required=False,
-        help="Number of processes to use for preprocessing.",
     )
     parser.add_argument(
         "-ntta",
