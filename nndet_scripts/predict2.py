@@ -546,12 +546,6 @@ def entrypoint_predict_with_folders():
 @env_guard
 def entrypoint_predict_test_split():
     parser = argparse.ArgumentParser()
-    parser.add_argument("data", type=Path, help="Path to directory containing data.")
-    parser.add_argument(
-        "prediction",
-        type=Path,
-        help="Path to directory where predictions should be saved.",
-    )
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument(
