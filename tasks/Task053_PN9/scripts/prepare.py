@@ -329,9 +329,9 @@ def main():
     )
     fixed_val_splits = []
     for split in splits_train:
-        fixed_val_splits.append({"train": split["train"], "val": val_case_ids})
-    save_json(fixed_val_splits, task_data_dir / "splits_official_val.json")
-    save_pickle(fixed_val_splits, task_data_dir / "splits_official_val.pkl")
+        fixed_val_splits.append({"train": split["train"], "val": split["val"], "val_off": val_case_ids})
+    save_json(fixed_val_splits, task_data_dir / "splits_val.json")
+    save_pickle(fixed_val_splits, task_data_dir / "splits_val.pkl")
 
     # all (train + val) data 5 Fold cv
     splits_all = create_custom_split(
