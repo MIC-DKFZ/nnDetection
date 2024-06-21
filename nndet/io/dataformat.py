@@ -44,9 +44,9 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
     
     def load_data(self, path: str, is_path_truncated: bool = False):
         if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode='r')
+            data = np.load(f"{path}.npz", mmap_mode='r', allow_pickle=True)
         else:
-            data = np.load(path, mmap_mode='r')
+            data = np.load(path, mmap_mode='r', allow_pickle=True)
             
         if type(data) == np.memmap:
             return data
