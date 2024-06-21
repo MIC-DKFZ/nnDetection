@@ -55,9 +55,9 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
     
     def load_seg(self, path: str, is_path_truncated: bool = False):
         if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode='r')
+            data = np.load(f"{path}.npz", mmap_mode='r', allow_pickle=True)
         else:
-            data = np.load(path, mmap_mode='r')
+            data = np.load(path, mmap_mode='r', allow_pickle=True)
         
         if type(data) == np.memmap:
             return data
@@ -87,19 +87,30 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         self.data_size = None
         self.seg_size = None
         self.patch_size = None
+        
+        self.cparams = {
+            'codec': blosc2.Codec.ZSTD,
+            # 'filters': [blosc2.Filter.SHUFFLE],
+            # 'splitmode': blosc2.SplitMode.ALWAYS_SPLIT,
+            'clevel': 8,
+        }
+        self.dparams = {
+            'nthreads': 1
+        }
         blosc2.set_nthreads(1)
     
     def load_data(self, path: str, is_path_truncated: bool = False):
         if is_path_truncated:
-            return blosc2.open(urlpath=f"{path}.b2nd", mode='r')
+            return blosc2.open(urlpath=f"{path}.b2nd", mode='r', dparams=self.dparams, mmap_mode='r')
         else:
-            return blosc2.open(urlpath=path, mode='r')
+            return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
     
     def load_seg(self, path: str, is_path_truncated: bool = False):
+        
         if is_path_truncated:
-            return blosc2.open(urlpath=f"{path}_seg.b2nd", mode='r')
+            return blosc2.open(urlpath=f"{path}_seg.b2nd", dparams=self.dparams, mode='r', mmap_mode='r')
         else:
-            return blosc2.open(urlpath=path, mode='r')
+            return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
 
     def save(
         self,
@@ -115,18 +126,12 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             self.block_size, self.chunk_size = self.comp_blosc2_params(self.data_size, self.patch_size, data.itemsize)
             self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(self.seg_size, self.patch_size, seg.itemsize)
 
-        cparams = {
-            'codec': blosc2.Codec.ZSTD,
-            # 'filters': [blosc2.Filter.SHUFFLE],
-            # 'splitmode': blosc2.SplitMode.ALWAYS_SPLIT,
-            'clevel': 8,
-        }
         blosc2.asarray(np.ascontiguousarray(data), urlpath=truncated_path + '.b2nd', 
                        chunks=self.chunk_size, blocks=self.block_size, 
-                       cparams=cparams, mode='w')
+                       cparams=self.cparams, mmap_mode='w+')
         blosc2.asarray(np.ascontiguousarray(seg), urlpath=truncated_path + '_seg.b2nd', 
                        chunks=self.seg_chunk_size, blocks=self.seg_block_size, 
-                       cparams=cparams, mode='w')
+                       cparams=self.cparams, mmap_mode='w+')
     
     @staticmethod
     def comp_blosc2_params(
