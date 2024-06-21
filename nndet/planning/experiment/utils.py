@@ -164,7 +164,7 @@ def run_create_label_preprocessed(
         target_dir: directory to save results
     """
     with_data_format = data_format_to_class_mapping[data_format]
-    instances = with_data_format.load_seg(str(source_dir / f"{case_id}"), is_path_truncated=True)[:]
+    instances = with_data_format.load_seg(str(source_dir / f"{case_id}") + f"_seg.{with_data_format.get_file_extension()}")[:]
     properties = load_pickle(source_dir / f"{case_id}.pkl")
 
     mapping = {int(key): int(item) for key, item in properties["instances"].items()}

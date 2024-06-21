@@ -12,16 +12,32 @@ from typing import Union, Tuple
 from abc import ABC, abstractmethod
 
 class PreprocessedDataset(ABC):
-    
+    "Interface for preprocessed dataset"
     def __init__(self, file_extension: str):
+        """
+        Args:
+            file_extension: file extension of the preprocessed data
+        """
         self.file_extension = file_extension
 
     @abstractmethod
-    def load_data(self, path: str, is_path_truncated: bool = False):
+    def load_data(self, path: str):
+        """
+        Load the preprocessed data
+        
+        Args:
+            path: path to the preprocessed data
+        """
         pass
 
     @abstractmethod
-    def load_seg(self, path: str, is_path_truncated: bool = False):
+    def load_seg(self, path: str):
+        """
+        Load the preprocessed segmentation data
+        
+        Args:
+            path: path to the preprocessed data
+        """
         pass
 
     @abstractmethod
@@ -42,22 +58,16 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
     
-    def load_data(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode='r', allow_pickle=True)
-        else:
-            data = np.load(path, mmap_mode='r', allow_pickle=True)
+    def load_data(self, path: str):
+        data = np.load(path, mmap_mode='r', allow_pickle=True)
             
         if type(data) == np.memmap:
             return data
         else:
             return data['data']
     
-    def load_seg(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode='r', allow_pickle=True)
-        else:
-            data = np.load(path, mmap_mode='r', allow_pickle=True)
+    def load_seg(self, path: str):
+        data = np.load(path, mmap_mode='r', allow_pickle=True)
         
         if type(data) == np.memmap:
             return data
@@ -99,18 +109,11 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         }
         blosc2.set_nthreads(1)
     
-    def load_data(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
-            return blosc2.open(urlpath=f"{path}.b2nd", mode='r', dparams=self.dparams, mmap_mode='r')
-        else:
-            return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
+    def load_data(self, path: str):
+        return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
     
-    def load_seg(self, path: str, is_path_truncated: bool = False):
-        
-        if is_path_truncated:
-            return blosc2.open(urlpath=f"{path}_seg.b2nd", dparams=self.dparams, mode='r', mmap_mode='r')
-        else:
-            return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
+    def load_seg(self, path: str):        
+        return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
 
     def save(
         self,
