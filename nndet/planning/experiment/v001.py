@@ -95,7 +95,7 @@ class D3V001(AbstractPlanner):
         return architecture_planner
 
     @staticmethod
-    def create_preprocessor(plan: Dict, preprocessed_data_format:str) -> GenericPreprocessor:
+    def create_preprocessor(plan: Dict, preprocessed_data_format: str) -> GenericPreprocessor:
         """
         Create Preprocessor
         """
@@ -105,8 +105,8 @@ class D3V001(AbstractPlanner):
             transpose_forward=plan["transpose_forward"],
             intensity_properties=plan["dataset_properties"]["intensity_properties"],
             resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
-            patch_size=plan['patch_size'],
-            preprocessed_data_format=preprocessed_data_format
+            patch_size=plan["patch_size"],
+            preprocessed_data_format=preprocessed_data_format,
         )
         return preprocessor
 

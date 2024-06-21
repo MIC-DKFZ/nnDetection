@@ -37,7 +37,7 @@ class AbstractPlanner(ABC):
         super().__init__()
         self.preprocessed_output_dir = Path(preprocessed_output_dir)
         self.preprocessed_data_format = "npz"
-        
+
         self.transpose_forward = None
         self.transpose_backward = None
 
@@ -416,7 +416,7 @@ class AbstractPlanner(ABC):
                         case_ids,
                         repeat(dim),
                         repeat(target_dir),
-                        repeat(self.preprocessed_data_format)
+                        repeat(self.preprocessed_data_format),
                     ),
                 )
         else:

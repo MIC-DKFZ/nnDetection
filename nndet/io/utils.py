@@ -39,7 +39,9 @@ def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
     return case_paths
 
 
-def load_dataset_id(data_dir: os.PathLike, preprocessed_data_format: str, label_dir: Optional[os.PathLike] = None) -> dict:
+def load_dataset_id(
+    data_dir: os.PathLike, preprocessed_data_format: str, label_dir: Optional[os.PathLike] = None
+) -> dict:
     """
     Load dataset (path and properties, NOT the actual data) and
     save them into dict by their identifier

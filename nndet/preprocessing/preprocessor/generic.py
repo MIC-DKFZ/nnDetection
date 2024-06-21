@@ -30,7 +30,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         intensity_properties: Dict[int, Dict] = None,
         resample_anisotropy_threshold: float = 3.0,
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]] = (128, 128, 128),
-        preprocessed_data_format: str = "b2nd"
+        preprocessed_data_format: str = "b2nd",
     ):
         """
         Preprocess data
@@ -74,7 +74,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         cropped_data_dir: Path,
         preprocessed_output_dir: Path,
         num_processes: Union[int, Sequence[int]],
-        overwrite: bool = False
+        overwrite: bool = False,
     ):
         """
         Run preprocessing
@@ -87,7 +87,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes: number of processes used for preprocessing
             overwrite: overwrite existing data
         """
-        
+
         case_ids, num_processes = self.initialize_run(
             target_spacings=target_spacings,
             cropped_data_dir=cropped_data_dir,
@@ -117,12 +117,7 @@ class GenericPreprocessor(AbstractPreprocessor):
                 with Pool(processes=nump) as p:
                     p.starmap(
                         self.run_process,
-                        zip(
-                            repeat(spacing),
-                            _case_ids,
-                            repeat(output_dir_stage),
-                            repeat(cropped_data_dir)
-                        ),
+                        zip(repeat(spacing), _case_ids, repeat(output_dir_stage), repeat(cropped_data_dir)),
                     )
 
     def initialize_run(
@@ -197,10 +192,7 @@ class GenericPreprocessor(AbstractPreprocessor):
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
         self.with_preprocessed_data_format.save(
-            truncated_path=f"{output_dir_stage}/{case_id}",
-            data=data,
-            seg=seg,
-            patch_size=self.patch_size
+            truncated_path=f"{output_dir_stage}/{case_id}", data=data, seg=seg, patch_size=self.patch_size
         )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")

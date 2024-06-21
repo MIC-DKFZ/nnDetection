@@ -1,18 +1,22 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
-# Acknowledgements: The following changes in this codebase have been implemented following the updates and improvements made in the nnU-Net repository.
+# Acknowledgements: The following changes in this codebase have been implemented following the updates
+# and improvements made in the nnU-Net repository.
 # nnU-Net repository: https://github.com/MIC-DKFZ/nnUNet
 
-from copy import deepcopy
 import math
-import numpy as np
-import blosc2
-from typing import Union, Tuple
 from abc import ABC, abstractmethod
+from copy import deepcopy
+from typing import Tuple, Union
+
+import blosc2
+import numpy as np
+
 
 class PreprocessedDataset(ABC):
     "Interface for preprocessed dataset"
+
     def __init__(self, file_extension: str):
         """
         Args:
@@ -24,7 +28,7 @@ class PreprocessedDataset(ABC):
     def load_data(self, path: str):
         """
         Load the preprocessed data
-        
+
         Args:
             path: path to the preprocessed data
         """
@@ -34,108 +38,104 @@ class PreprocessedDataset(ABC):
     def load_seg(self, path: str):
         """
         Load the preprocessed segmentation data
-        
+
         Args:
             path: path to the preprocessed data
         """
         pass
 
     @abstractmethod
-    def save(
-        self,
-        truncated_path: str,
-        data: np.ndarray,
-        seg: np.ndarray,
-        **kwargs
-    ):
+    def save(self, truncated_path: str, data: np.ndarray, seg: np.ndarray, **kwargs):
         pass
-    
+
     def get_file_extension(self):
         return self.file_extension
-    
+
 
 class PreprocessedDatasetNumpy(PreprocessedDataset):
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
-    
+
     def load_data(self, path: str):
-        data = np.load(path, mmap_mode='r', allow_pickle=True)
-            
+        data = np.load(path, mmap_mode="r", allow_pickle=True)
+
         if type(data) == np.memmap:
             return data
         else:
-            return data['data']
-    
+            return data["data"]
+
     def load_seg(self, path: str):
-        data = np.load(path, mmap_mode='r', allow_pickle=True)
-        
+        data = np.load(path, mmap_mode="r", allow_pickle=True)
+
         if type(data) == np.memmap:
             return data
         else:
-            return data['seg']
-        
-        
-    def save(
-        self,
-        truncated_path: str,
-        data: np.ndarray,
-        seg: np.ndarray,
-        **kwargs
-    ):
+            return data["seg"]
+
+    def save(self, truncated_path: str, data: np.ndarray, seg: np.ndarray, **kwargs):
         np.savez_compressed(truncated_path + ".npz", data=data, seg=seg)
-    
-    
+
+
 class PreprocessedDatasetBlosc2(PreprocessedDataset):
-    
     def __init__(self):
         super().__init__(file_extension="b2nd")
         self.block_size = None
         self.chunk_size = None
         self.seg_block_size = None
         self.seg_chunk_size = None
-        
+
         self.data_size = None
         self.seg_size = None
         self.patch_size = None
-        
+
         self.cparams = {
-            'codec': blosc2.Codec.ZSTD,
+            "codec": blosc2.Codec.ZSTD,
             # 'filters': [blosc2.Filter.SHUFFLE],
             # 'splitmode': blosc2.SplitMode.ALWAYS_SPLIT,
-            'clevel': 8,
+            "clevel": 8,
         }
-        self.dparams = {
-            'nthreads': 1
-        }
+        self.dparams = {"nthreads": 1}
         blosc2.set_nthreads(1)
-    
+
     def load_data(self, path: str):
-        return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
-    
-    def load_seg(self, path: str):        
-        return blosc2.open(urlpath=path, mode='r', dparams=self.dparams, mmap_mode='r')
+        return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
+
+    def load_seg(self, path: str):
+        return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
 
     def save(
         self,
         truncated_path: str,
         data: np.ndarray,
         seg: np.ndarray,
-        patch_size: Union[Tuple[int, int], Tuple[int, int, int]]
+        patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
     ):
         if (self.data_size != data.shape) or (self.seg_size != seg.shape) or (self.patch_size != patch_size):
             self.data_size = data.shape
             self.seg_size = seg.shape
             self.patch_size = patch_size
             self.block_size, self.chunk_size = self.comp_blosc2_params(self.data_size, self.patch_size, data.itemsize)
-            self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(self.seg_size, self.patch_size, seg.itemsize)
+            self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(
+                self.seg_size, self.patch_size, seg.itemsize
+            )
 
-        blosc2.asarray(np.ascontiguousarray(data), urlpath=truncated_path + '.b2nd', 
-                       chunks=self.chunk_size, blocks=self.block_size, 
-                       cparams=self.cparams, mmap_mode='w+')
-        blosc2.asarray(np.ascontiguousarray(seg), urlpath=truncated_path + '_seg.b2nd', 
-                       chunks=self.seg_chunk_size, blocks=self.seg_block_size, 
-                       cparams=self.cparams, mmap_mode='w+')
-    
+        blosc2.asarray(
+            np.ascontiguousarray(data),
+            urlpath=truncated_path + ".b2nd",
+            chunks=self.chunk_size,
+            blocks=self.block_size,
+            cparams=self.cparams,
+            mmap_mode="w+",
+        )
+        blosc2.asarray(
+            np.ascontiguousarray(seg),
+            urlpath=truncated_path + "_seg.b2nd",
+            chunks=self.seg_chunk_size,
+            blocks=self.seg_block_size,
+            cparams=self.cparams,
+            mmap_mode="w+",
+        )
+
     @staticmethod
     def comp_blosc2_params(
         image_size: Tuple[int, int, int, int],
@@ -144,7 +144,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         l1_cache_size_per_core_in_bytes: int = 32768,  # 1 Kibibyte (KiB) = 2^10 Byte;  32 KiB = 32768 Byte
         l3_cache_size_per_core_in_bytes: int = 1441792,
         # 1 Mibibyte (MiB) = 2^20 Byte = 1.048.576 Byte; 1.375MiB = 1441792 Byte
-        safety_factor: float = 0.8  # we dont will the caches to the brim. 0.8 means we target 80% of the caches
+        safety_factor: float = 0.8,  # we dont will the caches to the brim. 0.8 means we target 80% of the caches
     ):
         """
         Computes a recommended block and chunk size for saving arrays with blosc v2.
@@ -157,7 +157,8 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         -> We are not 100% sure how to optimize for that. For now we try to fit the uncompressed block in L1. This
         might spill over into L2, which is fine in our books.
 
-        Note: this is optimized for nnU-Net dataloading where each read operation is done by one core. We cannot use threading
+        Note: this is optimized for nnU-Net dataloading where each read operation is done by one core.
+        We cannot use threading
 
         Cache default values computed based on old Intel 4110 CPU with 32K L1, 128K L2 and 1408K L3 cache per core.
         We cannot optimize further for more modern CPUs with more cache as the data will need be be read by the
@@ -168,7 +169,8 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             patch_size: Patch size, spatial dimensions only. So (x, y) or (x, y, z)
             bytes_per_pixel: Number of bytes per element. Example: float32 -> 4 bytes
             l1_cache_size_per_core_in_bytes: The size of the L1 cache per core in Bytes.
-            l3_cache_size_per_core_in_bytes: The size of the L3 cache exclusively accessible by each core. Usually the global size of the L3 cache divided by the number of cores.
+            l3_cache_size_per_core_in_bytes: The size of the L3 cache exclusively accessible by each core.
+                Usually the global size of the L3 cache divided by the number of cores.
 
         Returns:
             The recommended block and the chunk size.
@@ -222,8 +224,5 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         # print(image_size, chunk_size, block_size)
         return tuple(block_size), tuple(chunk_size)
 
-    
-data_format_to_class_mapping = {
-    "npz" : PreprocessedDatasetNumpy(),
-    "b2nd": PreprocessedDatasetBlosc2()
-}
+
+data_format_to_class_mapping = {"npz": PreprocessedDatasetNumpy(), "b2nd": PreprocessedDatasetBlosc2()}

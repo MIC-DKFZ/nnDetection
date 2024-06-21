@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 
-from nndet.io.dataformat import data_format_to_class_mapping
 import nndet.core.ops_np as ops_np
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.mixins.bgcrop import RandomBGCrop2D, RandomBGCrop3D
 from nndet.io.datamodule.mixins.fgcrop import (
@@ -203,9 +203,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 constant_values=0,
             )[0]
             if self.load_seg:
-                case_seg = with_data_format.load_seg(
-                    self._data[case_id]["seg_file"]
-                )
+                case_seg = with_data_format.load_seg(self._data[case_id]["seg_file"])
                 seg_batch[batch_idx] = save_get_crop(
                     case_seg,
                     crop=crop,
