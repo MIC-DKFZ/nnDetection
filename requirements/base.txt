@@ -14,3 +14,4 @@ matplotlib
 seaborn
 tensorboard
 GitPython
+blosc2
