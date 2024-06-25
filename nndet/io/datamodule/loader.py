@@ -59,6 +59,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -567,6 +568,7 @@ class DataLoader3DOffsetObjectBalanced(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".

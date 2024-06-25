@@ -61,7 +61,7 @@ def _preprocess(
         preprocessed_dir: directory where preprocessed data is placed.
             Specifically, data is saved in
             `preprocessed_dir/data_identifier`
-        training_dir: cirectory containing the model which should be predicted
+        training_dir: directory containing the model which should be predicted
             afterwards. Specifically, the plan file is used here.
         num_processes: number of processes to use for preprocessing
 

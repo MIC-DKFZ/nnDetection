@@ -156,6 +156,7 @@ def run_create_label_preprocessed(source_dir: Path, case_id: str, dim: int, targ
         case_id: case id to process
         dim: number of spatial dimensions
         target_dir: directory to save results
+        data_format: data format to save or load preprocessed data
     """
     with_data_format = data_format_to_class_mapping[data_format]
     instances = with_data_format.load_seg(

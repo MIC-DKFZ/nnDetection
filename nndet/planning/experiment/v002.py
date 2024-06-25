@@ -171,6 +171,13 @@ class D3C010(D3V002):
 @PLANNER_REGISTRY.register
 class D3V002Blosc(D3V002):
     def __init__(self, preprocessed_output_dir: PathLike):
+        """
+        Class for experiment planning using Blosc2 for preprocessed data
+
+        Args:
+            preprocessed_output_dir: path to directory where preprocessed
+                data will be saved
+        """
         super().__init__(preprocessed_output_dir)
         self.preprocessed_data_format = "b2nd"
 

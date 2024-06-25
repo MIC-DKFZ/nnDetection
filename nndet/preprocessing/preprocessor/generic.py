@@ -46,6 +46,9 @@ class GenericPreprocessor(AbstractPreprocessor):
                 `percentile_99_5`; `percentile_00_5`
                 `local_props`: contains a dict (with case ids) where statistics
                 where computed per case
+            patch_size: Patch size for reading small segments from the large memory-mapped files on disk
+            preprocessed_data_format: data format to save or load preprocessed data
+                
 
         Overwrites:
             :self:`data_id`: unique identifier of GenericPreprocessor

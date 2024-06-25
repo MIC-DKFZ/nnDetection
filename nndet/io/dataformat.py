@@ -20,7 +20,7 @@ class PreprocessedDataset(ABC):
     def __init__(self, file_extension: str):
         """
         Args:
-            file_extension: file extension of the preprocessed data
+            file_extension: File extension of the preprocessed data
         """
         self.file_extension = file_extension
 
@@ -30,7 +30,10 @@ class PreprocessedDataset(ABC):
         Load the preprocessed data
 
         Args:
-            path: path to the preprocessed data
+            path: Path to the preprocessed data
+        
+        Returns:
+            The segmentation data in the expected format
         """
         pass
 
@@ -40,23 +43,45 @@ class PreprocessedDataset(ABC):
         Load the preprocessed segmentation data
 
         Args:
-            path: path to the preprocessed data
+            path: Path to the preprocessed data
+            
+        Returns:
+            The segmentation data in the expected format
         """
         pass
 
     @abstractmethod
     def save(self, truncated_path: str, data: np.ndarray, seg: np.ndarray, **kwargs):
+        """
+        Save the preprocessed image and segmentation data
+
+        Args:
+            truncated_path: Preprocessed file path with case_id and truncated afterwards
+            data: Preprocessed image data
+            seg: Preprocessed segmentation data  
+        
+        Kwargs:
+            patch_size: Patch size for reading small segments from the large memory-mapped files on disk
+        
+        """
         pass
 
     def get_file_extension(self):
+        """
+        Returns:
+            The file extension string of the preprocessed data.
+        """
         return self.file_extension
 
 
 class PreprocessedDatasetNumpy(PreprocessedDataset):
+    """Class for handling preprocessed data in the numpy format"""
+    
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
 
     def load_data(self, path: str):
+        
         data = np.load(path, mmap_mode="r", allow_pickle=True)
 
         if type(data) == np.memmap:
@@ -77,6 +102,8 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
 
 
 class PreprocessedDatasetBlosc2(PreprocessedDataset):
+    """Class for handling preprocessed data in Blosc2 format"""
+    
     def __init__(self):
         super().__init__(file_extension="b2nd")
         self.block_size = None
@@ -149,34 +176,18 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         """
         Computes a recommended block and chunk size for saving arrays with blosc v2.
 
-        Bloscv2 NDIM doku: "Remember that having a second partition means that we have better flexibility to fit the
-        different partitions at the different CPU cache levels; typically the first partition (aka chunks) should
-        be made to fit in L3 cache, whereas the second partition (aka blocks) should rather fit in L2/L1 caches
-        (depending on whether compression ratio or speed is desired)."
-        (https://www.blosc.org/posts/blosc2-ndim-intro/)
-        -> We are not 100% sure how to optimize for that. For now we try to fit the uncompressed block in L1. This
-        might spill over into L2, which is fine in our books.
-
-        Note: this is optimized for nnU-Net dataloading where each read operation is done by one core.
-        We cannot use threading
-
-        Cache default values computed based on old Intel 4110 CPU with 32K L1, 128K L2 and 1408K L3 cache per core.
-        We cannot optimize further for more modern CPUs with more cache as the data will need be be read by the
-        old ones as well.
-
         Args:
-            patch_size: Image size, must be 4D (c, x, y, z). For 2D images, make x=1
+            image_size: Image size, must be 4D (c, x, y, z). For 2D images, make x=1
             patch_size: Patch size, spatial dimensions only. So (x, y) or (x, y, z)
             bytes_per_pixel: Number of bytes per element. Example: float32 -> 4 bytes
             l1_cache_size_per_core_in_bytes: The size of the L1 cache per core in Bytes.
             l3_cache_size_per_core_in_bytes: The size of the L3 cache exclusively accessible by each core.
                 Usually the global size of the L3 cache divided by the number of cores.
+            safety_factor: Use the given parcentage for the caches
 
         Returns:
             The recommended block and the chunk size.
         """
-        # Fabians code is ugly, but eh
-
         num_channels = image_size[0]
         if len(patch_size) == 2:
             patch_size = [1, *patch_size]
@@ -221,7 +232,6 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
                     break
             if all([i == j for i, j in zip(chunk_size, image_size)]):
                 break
-        # print(image_size, chunk_size, block_size)
         return tuple(block_size), tuple(chunk_size)
 
 
