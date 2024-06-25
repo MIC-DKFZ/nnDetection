@@ -31,7 +31,7 @@ class PreprocessedDataset(ABC):
 
         Args:
             path: Path to the preprocessed data
-        
+
         Returns:
             The segmentation data in the expected format
         """
@@ -44,7 +44,7 @@ class PreprocessedDataset(ABC):
 
         Args:
             path: Path to the preprocessed data
-            
+
         Returns:
             The segmentation data in the expected format
         """
@@ -58,11 +58,11 @@ class PreprocessedDataset(ABC):
         Args:
             truncated_path: Preprocessed file path with case_id and truncated afterwards
             data: Preprocessed image data
-            seg: Preprocessed segmentation data  
-        
+            seg: Preprocessed segmentation data
+
         Kwargs:
             patch_size: Patch size for reading small segments from the large memory-mapped files on disk
-        
+
         """
         pass
 
@@ -76,12 +76,12 @@ class PreprocessedDataset(ABC):
 
 class PreprocessedDatasetNumpy(PreprocessedDataset):
     """Class for handling preprocessed data in the numpy format"""
-    
+
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
 
     def load_data(self, path: str):
-        
+
         data = np.load(path, mmap_mode="r", allow_pickle=True)
 
         if type(data) == np.memmap:
@@ -103,7 +103,7 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
 
 class PreprocessedDatasetBlosc2(PreprocessedDataset):
     """Class for handling preprocessed data in Blosc2 format"""
-    
+
     def __init__(self):
         super().__init__(file_extension="b2nd")
         self.block_size = None

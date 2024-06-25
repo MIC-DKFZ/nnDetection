@@ -48,7 +48,7 @@ class GenericPreprocessor(AbstractPreprocessor):
                 where computed per case
             patch_size: Patch size for reading small segments from the large memory-mapped files on disk
             preprocessed_data_format: data format to save or load preprocessed data
-                
+
 
         Overwrites:
             :self:`data_id`: unique identifier of GenericPreprocessor
