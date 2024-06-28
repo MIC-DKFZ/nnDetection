@@ -25,12 +25,13 @@ class PreprocessedDataset(ABC):
         self.file_extension = file_extension
 
     @abstractmethod
-    def load_data(self, path: str):
+    def load_data(self, path: str, is_path_truncated: bool = False):
         """
         Load the preprocessed data
 
         Args:
             path: Path to the preprocessed data
+            is_path_truncated: If True then `path` is truncated after case_id, else `path` is the full filepath
 
         Returns:
             The segmentation data in the expected format
@@ -38,12 +39,13 @@ class PreprocessedDataset(ABC):
         pass
 
     @abstractmethod
-    def load_seg(self, path: str):
+    def load_seg(self, path: str, is_path_truncated: bool = False):
         """
         Load the preprocessed segmentation data
 
         Args:
             path: Path to the preprocessed data
+            is_path_truncated: If True then `path` is truncated after case_id, else `path` is the full filepath
 
         Returns:
             The segmentation data in the expected format
@@ -56,7 +58,7 @@ class PreprocessedDataset(ABC):
         Save the preprocessed image and segmentation data
 
         Args:
-            truncated_path: Preprocessed file path with case_id and truncated afterwards
+            truncated_path: Preprocessed file path truncated after case_id
             data: Preprocessed image data
             seg: Preprocessed segmentation data
 
@@ -80,17 +82,22 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
     def __init__(self) -> None:
         super().__init__(file_extension="npz")
 
-    def load_data(self, path: str):
-
-        data = np.load(path, mmap_mode="r", allow_pickle=True)
+    def load_data(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            data = np.load(f"{path}.npz", mmap_mode="r", allow_pickle=True)
+        else:
+            data = np.load(path, mmap_mode="r", allow_pickle=True)
 
         if type(data) == np.memmap:
             return data
         else:
             return data["data"]
 
-    def load_seg(self, path: str):
-        data = np.load(path, mmap_mode="r", allow_pickle=True)
+    def load_seg(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            data = np.load(f"{path}.npz", mmap_mode="r", allow_pickle=True)
+        else:
+            data = np.load(path, mmap_mode="r", allow_pickle=True)
 
         if type(data) == np.memmap:
             return data
@@ -124,11 +131,17 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         self.dparams = {"nthreads": 1}
         blosc2.set_nthreads(1)
 
-    def load_data(self, path: str):
-        return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
+    def load_data(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            return blosc2.open(urlpath=f"{path}.b2nd", mode="r", dparams=self.dparams, mmap_mode="r")
+        else:
+            return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
 
-    def load_seg(self, path: str):
-        return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
+    def load_seg(self, path: str, is_path_truncated: bool = False):
+        if is_path_truncated:
+            return blosc2.open(urlpath=f"{path}_seg.b2nd", dparams=self.dparams, mode="r", mmap_mode="r")
+        else:
+            return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
 
     def save(
         self,
