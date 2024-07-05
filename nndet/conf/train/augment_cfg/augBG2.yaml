@@ -13,92 +13,90 @@ spatial:
   patch_center_dist_from_border: 0 # Union[int, List[int], Tuple[int, ...]],
   random_crop: True # bool
   p_elastic_deform: 0 # float
-  elastic_deform_scale: (0, 0.2) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
-  elastic_deform_magnitude: (0, 0.2) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  elastic_deform_scale: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  elastic_deform_magnitude: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_synchronize_def_scale_across_axes: False # float
   p_rotation: 0 # float
-  rotation: (0, 6.283185307179586) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  rotation: [-20, 20] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_scaling: 0 # float
-  scaling: (0.7, 1.3) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  scaling: [0.7, 1.3] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_synchronize_scaling_across_axes: False # float,
   bg_style_seg_sampling: True # bool
   mode_seg: "bilinear" # str
 
 # GaussianNoiseTransform
 gaussian_noise:
-  noise_variance: (0, 0.1) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  noise_variance: [0, 0.1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_per_channel: 1.0 # float
   synchronize_channels: False # bool
-  random_transform:
-    apply_probability: 0.1 # float
+  randomness: 0.1 # float
 
 # GaussianBlurTransform
 gaussian_blur:
-  blur_sigma: (1, 5) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  blur_sigma: [1, 5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   synchronize_channels: False # bool
   synchronize_axes: False # bool
   p_per_channel: 1 # float
   benchmark: False # bool
-  random_transform:
-    apply_probability: 0.2 # float
+  randomness: 0.2 # float
 
 # MultiplicativeBrightnessTransform
 brightness:
-  multiplier_range: (0.75, 1.25) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  multiplier_range: [0.75, 1.25] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   synchronize_channels: False # bool
   p_per_channel: 1 # float
-  random_transform:
-    apply_probability: 0.15 # float
+  randomness: 0.15 # float
 
 # ContrastTransform
 contrast:
-  contrast_range: (0.75, 1.25) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  contrast_range: [0.75, 1.25] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   preserve_range: True # bool
   synchronize_channels: False # bool
   p_per_channel: 1 # float = 1
-  random_transform:
-    apply_probability: 0.15 # float
+  randomness: 0.15 # float
 
 
 # SimulateLowResolutionTransform
 do_sim_low_res: False
 sim_low_res:
-  scale: (0.5, 1) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  scale: [0.5, 1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   synchronize_channels: False # bool
   synchronize_axes: True # bool
   allowed_channels: None # Tuple[int, ...]
   p_per_channel: 1 # float
-  random_transform:
-    apply_probability: 0.25 # float
+  randomness: 0.25 # float
 
 
 # GammaTransformInverted
 do_gamma_inverted: True
 gamma_inverted:
-  gamma: (0.7, 1.5) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  gamma: [0.7, 1.5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_invert_image: 1 # float
   synchronize_channels: False # bool
   p_per_channel: 1 # float
   p_retain_stats: 1 # float
-  random_transform:
-    apply_probability: 0.1 # float
+  randomness: 0.1 # float
 
 
 # GammaTransform
 do_gamma: True
 gamma:
-  gamma: (0.7, 1.5) # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  gamma: [0.7, 1.5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_invert_image: 0 # float
   synchronize_channels: False # bool
   p_per_channel: 1 # float
   p_retain_stats: 1 # float
-  random_transform:
-    apply_probability: 0.3 # float
+  randomness: 0.3 # float
 
 # MirrorTransform
 do_mirror: True
 mirror:
   allowed_axes: [0, 1, 2] # Tuple[int, ...]
+
+rotation_x: ${.spatial.rotation}
+rotation_y: ${.spatial.rotation}
+rotation_z: ${.spatial.rotation}
+scale_range: ${.spatial.scaling}
 
 2d_overwrites:
   elastic_deform_alpha: [0., 200.]
