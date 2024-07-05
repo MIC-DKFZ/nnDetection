@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import numpy as np
+import torch
 from batchgenerators.transforms.channel_selection_transforms import (
     DataChannelSelectionTransform,
     SegChannelSelectionTransform,
@@ -38,7 +39,6 @@ from batchgenerators.transforms.utility_transforms import (
     RemoveLabelTransform,
     RenameTransform,
 )
-from batchgeneratorsv2.helpers.scalar_type import RandomScalar as BGv2RandomScalar
 from batchgeneratorsv2.transforms.base.basic_transform import (
     BasicTransform as BGv2BasicTransform,
 )
@@ -55,15 +55,6 @@ from batchgeneratorsv2.transforms.intensity.gamma import (
 from batchgeneratorsv2.transforms.intensity.gaussian_noise import (
     GaussianNoiseTransform as BGv2GaussianNoiseTransform,
 )
-from batchgeneratorsv2.transforms.nnunet.random_binary_operator import (
-    ApplyRandomBinaryOperatorTransform as BGv2ApplyRandomBinaryOperatorTransform,
-)
-from batchgeneratorsv2.transforms.nnunet.remove_connected_components import (
-    RemoveRandomConnectedComponentFromOneHotEncodingTransform as BGv2RemoveRandomConnectedComponentFromOneHotEncodingTransform,
-)
-from batchgeneratorsv2.transforms.nnunet.seg_to_onehot import (
-    MoveSegAsOneHotToDataTransform as BGv2MoveSegAsOneHotToDataTransform,
-)
 from batchgeneratorsv2.transforms.noise.gaussian_blur import (
     GaussianBlurTransform as BGv2GaussianBlurTransform,
 )
@@ -79,9 +70,6 @@ from batchgeneratorsv2.transforms.spatial.spatial import (
 from batchgeneratorsv2.transforms.utils.compose import (
     ComposeTransforms as BGv2ComposeTransforms,
 )
-from batchgeneratorsv2.transforms.utils.deep_supervision_downsampling import (
-    DownsampleSegForDSTransform as BGv2DownsampleSegForDSTransform,
-)
 from batchgeneratorsv2.transforms.utils.nnunet_masking import (
     MaskImageTransform as BGv2MaskImageTransform,
 )
@@ -93,12 +81,6 @@ from batchgeneratorsv2.transforms.utils.pseudo2d import (
 )
 from batchgeneratorsv2.transforms.utils.random import (
     RandomTransform as BGv2RandomTransform,
-)
-from batchgeneratorsv2.transforms.utils.remove_label import (
-    RemoveLabelTansform as BGv2RemoveLabelTansform,
-)
-from batchgeneratorsv2.transforms.utils.seg_to_regions import (
-    ConvertSegmentationToRegionsTransform as BGv2ConvertSegmentationToRegionsTransform,
 )
 
 import nndet.io.transforms.detection as nndet_transforms
@@ -115,20 +97,21 @@ from nndet.io.transforms.format import (
     ObjectPoints2BoxesTransform,
 )
 
-import torch
+
 def call(self, **data_dict) -> dict:
     image = []
     segmentation = []
-    for i in range(len(data_dict['data'])):
-        data_dict['image'] = torch.tensor(data_dict['data'][i], dtype=torch.float32)
-        data_dict['segmentation'] = torch.tensor(data_dict['seg'][i], dtype=torch.float32)
+    for i in range(len(data_dict["data"])):
+        data_dict["image"] = torch.tensor(data_dict["data"][i], dtype=torch.float32)
+        data_dict["segmentation"] = torch.tensor(data_dict["seg"][i], dtype=torch.float32)
         params = self.get_parameters(**data_dict)
         data_dict = self.apply(data_dict, **params)
-        image.append(data_dict['image'])
-        segmentation.append(data_dict['segmentation'])
-    data_dict['data'] = torch.stack(image)
-    data_dict['seg'] = torch.stack(segmentation)
+        image.append(data_dict["image"])
+        segmentation.append(data_dict["segmentation"])
+    data_dict["data"] = torch.stack(image)
+    data_dict["seg"] = torch.stack(segmentation)
     return data_dict
+
 
 BGv2BasicTransform.__call__ = call
 
@@ -218,9 +201,7 @@ class AugModularBG2(NoAug):
         tr_transforms.append(
             BGv2RandomTransform(
                 BGv2MultiplicativeBrightnessTransform(
-                    multiplier_range=BGv2BGContrast(
-                        self.params["brightness"].get("multiplier_range")
-                    ),
+                    multiplier_range=BGv2BGContrast(self.params["brightness"].get("multiplier_range")),
                     synchronize_channels=self.params["brightness"].get("synchronize_channels"),
                     p_per_channel=self.params["brightness"].get("p_per_channel"),
                 ),
@@ -301,7 +282,7 @@ class AugModularBG2(NoAug):
         tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
         # transforms = ComposePretty(tr_transforms)
         # logger.info(f"Training Transforms: \n{transforms}")
-        
+
         return BGv2ComposeTransforms(tr_transforms)
 
 
