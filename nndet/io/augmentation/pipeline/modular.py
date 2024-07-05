@@ -115,6 +115,23 @@ from nndet.io.transforms.format import (
     ObjectPoints2BoxesTransform,
 )
 
+import torch
+def call(self, **data_dict) -> dict:
+    image = []
+    segmentation = []
+    for i in range(len(data_dict['data'])):
+        data_dict['image'] = torch.tensor(data_dict['data'][i], dtype=torch.float32)
+        data_dict['segmentation'] = torch.tensor(data_dict['seg'][i], dtype=torch.float32)
+        params = self.get_parameters(**data_dict)
+        data_dict = self.apply(data_dict, **params)
+        image.append(data_dict['image'])
+        segmentation.append(data_dict['segmentation'])
+    data_dict['data'] = torch.stack(image)
+    data_dict['seg'] = torch.stack(segmentation)
+    return data_dict
+
+BGv2BasicTransform.__call__ = call
+
 
 @AUGMENTATION_REGISTRY.register
 class AugModularBG2(NoAug):
@@ -162,7 +179,7 @@ class AugModularBG2(NoAug):
                 elastic_deform_magnitude=self.params["spatial"].get("elastic_deform_magnitude"),
                 p_synchronize_def_scale_across_axes=self.params["spatial"].get("p_synchronize_def_scale_across_axes"),
                 p_rotation=self.params["spatial"].get("p_rotation"),
-                rotation=self.params["spatial"].get("rotation"),
+                rotation=np.array(self.params["spatial"].get("rotation")) * np.pi / 180,
                 p_scaling=self.params["spatial"].get("p_scaling"),
                 scaling=self.params["spatial"].get("scaling"),
                 p_synchronize_scaling_across_axes=self.params["spatial"].get("p_synchronize_scaling_across_axes"),
@@ -181,7 +198,7 @@ class AugModularBG2(NoAug):
                     p_per_channel=self.params["gaussian_noise"].get("p_per_channel"),
                     synchronize_channels=self.params["gaussian_noise"].get("synchronize_channels"),
                 ),
-                apply_probability=self.params["gaussian_noise"]["random_transform"].get("apply_probability"),
+                apply_probability=self.params["gaussian_noise"].get("randomness"),
             )
         )
 
@@ -194,7 +211,7 @@ class AugModularBG2(NoAug):
                     p_per_channel=self.params["gaussian_blur"].get("p_per_channel"),
                     benchmark=self.params["gaussian_blur"].get("benchmark"),
                 ),
-                apply_probability=self.params["gaussian_blur"]["random_transform"].get("apply_probability"),
+                apply_probability=self.params["gaussian_blur"].get("randomness"),
             )
         )
 
@@ -202,12 +219,12 @@ class AugModularBG2(NoAug):
             BGv2RandomTransform(
                 BGv2MultiplicativeBrightnessTransform(
                     multiplier_range=BGv2BGContrast(
-                        self.params["brightness"]["multiplier_range"]["contrast"].get("contrast_range")
+                        self.params["brightness"].get("multiplier_range")
                     ),
                     synchronize_channels=self.params["brightness"].get("synchronize_channels"),
                     p_per_channel=self.params["brightness"].get("p_per_channel"),
                 ),
-                apply_probability=self.params["brightness"]["random_transform"].get("apply_probability"),
+                apply_probability=self.params["brightness"].get("randomness"),
             )
         )
 
@@ -219,7 +236,7 @@ class AugModularBG2(NoAug):
                     synchronize_channels=self.params["contrast"].get("synchronize_channels"),
                     p_per_channel=self.params["contrast"].get("p_per_channel"),
                 ),
-                apply_probability=self.params["contrast"]["random_transform"].get("apply_probability"),
+                apply_probability=self.params["contrast"].get("randomness"),
             )
         )
 
@@ -234,7 +251,7 @@ class AugModularBG2(NoAug):
                         allowed_channels=self.params["sim_low_res"].get("allowed_channels"),
                         p_per_channel=self.params["sim_low_res"].get("p_per_channel"),
                     ),
-                    apply_probability=self.params["sim_low_res"]["random_transform"].get("apply_probability"),
+                    apply_probability=self.params["sim_low_res"].get("randomness"),
                 )
             )
 
@@ -248,7 +265,7 @@ class AugModularBG2(NoAug):
                         p_per_channel=self.params["gamma_inverted"].get("p_per_channel"),
                         p_retain_stats=self.params["gamma_inverted"].get("p_retain_stats"),
                     ),
-                    apply_probability=self.params["gamma_inverted"]["random_transform"].get("apply_probability"),
+                    apply_probability=self.params["gamma_inverted"].get("randomness"),
                 )
             )  # inverted gamma
 
@@ -262,7 +279,7 @@ class AugModularBG2(NoAug):
                         p_per_channel=self.params["gamma"].get("p_per_channel"),
                         p_retain_stats=self.params["gamma"].get("p_retain_stats"),
                     ),
-                    apply_probability=self.params["gamma_inverted"]["random_transform"].get("apply_probability"),
+                    apply_probability=self.params["gamma_inverted"].get("randomness"),
                 )
             )
 
@@ -279,13 +296,13 @@ class AugModularBG2(NoAug):
                 )
             )
 
-        tr_transforms.append(BGv2RemoveLabelTansform(-1, 0))
-        tr_transforms.append(RenameTransform("seg", "target", True))
+        tr_transforms.append(RemoveLabelTransform(-1, 0))
+        tr_transforms.append(RenameTransform("seg", "target", False))
         tr_transforms.append(NumpyToTensor(["data", "target"], "float"))
-        transforms = ComposePretty(tr_transforms)
+        # transforms = ComposePretty(tr_transforms)
         # logger.info(f"Training Transforms: \n{transforms}")
         
-        return BGv2ComposeTransforms(transforms)
+        return BGv2ComposeTransforms(tr_transforms)
 
 
 @AUGMENTATION_REGISTRY.register
