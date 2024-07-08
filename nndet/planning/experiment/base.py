@@ -368,7 +368,7 @@ class AbstractPlanner(ABC):
             plan: plan to use for preprocessing
             num_processes: number of processes to use for preprocessing
         """
-        preprocessor = self.create_preprocessor(plan=plan, preprocessed_data_format=self.preprocessed_data_format)
+        preprocessor = self.create_preprocessor(plan=plan)
         preprocessor.run(
             target_spacings=[plan["target_spacing"]],
             identifiers=[plan["data_identifier"]],
