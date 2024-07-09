@@ -36,19 +36,21 @@ class GenericPreprocessor(AbstractPreprocessor):
         Preprocess data
 
         Args:
-            norm_scheme_per_modality: integer index represents modality and string is
-                either `CT`, `CT2`, 'BValRaw'. Other modalities are treated the with zeo mean and unit std.
-            use_mask_for_norm: only foreground values should be used for normalization
-                (defined for each modality)
+            norm_scheme_per_modality: integer index represents modality and
+                string is either `CT`, `CT2`, 'BValRaw'. Other modalities are
+                        treated the with zero mean and unit std.
+            use_mask_for_norm: only foreground values should be used for
+                normalization (defined for each modality)
             transpose_forward: transpose input data
-            intensity_properties: Intensity properties of foreground over the dataset.
-                Evaluated statistics: `median`; `mean`; `std`; `min`; `max`;
-                `percentile_99_5`; `percentile_00_5`
+            intensity_properties: Intensity properties of foreground over the
+                dataset. Evaluated statistics: `median`; `mean`; `std`;
+                `min`; `max`; `percentile_99_5`; `percentile_00_5`
                 `local_props`: contains a dict (with case ids) where statistics
                 where computed per case
-            patch_size: Patch size for reading small segments from the large memory-mapped files on disk
-            preprocessed_data_format: data format to save or load preprocessed data
-
+            patch_size: Patch size for reading small segments from the large
+                memory-mapped files on disk
+            preprocessed_data_format: data format to save or load preprocessed
+                data
 
         Overwrites:
             :self:`data_id`: unique identifier of GenericPreprocessor
@@ -195,7 +197,10 @@ class GenericPreprocessor(AbstractPreprocessor):
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
         self.with_preprocessed_data_format.save(
-            truncated_path=f"{output_dir_stage}/{case_id}", data=data, seg=seg, patch_size=self.patch_size
+            truncated_path=f"{output_dir_stage}/{case_id}",
+            data=data,
+            seg=seg,
+            patch_size=self.patch_size,
         )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")

@@ -12,8 +12,8 @@ from nndet.io.paths import get_case_id_from_path, get_case_ids_from_dir
 
 def get_np_paths_from_dir(directory: os.PathLike) -> List[str]:
     """
-    First looks for npz files inside dir. If no files are found, it looks
-    for npy files.
+    First looks for npy files inside dir. If no files are found, it looks
+    for npz files.
 
     Args:
         directory: path to folder
