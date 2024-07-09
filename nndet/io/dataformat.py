@@ -6,8 +6,10 @@
 # nnU-Net repository: https://github.com/MIC-DKFZ/nnUNet
 
 import math
+import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from pathlib import Path
 from typing import Tuple, Union
 
 import blosc2
@@ -25,50 +27,46 @@ class PreprocessedDataset(ABC):
         self.file_extension = file_extension
 
     @abstractmethod
-    def load_data(self, path: str, is_path_truncated: bool = False):
+    def load_data(self, path: os.PathLike) -> np.ndarray:
         """
         Load the preprocessed data
 
         Args:
             path: Path to the preprocessed data
-            is_path_truncated: If True then `path` is truncated after case_id, else `path` is the full filepath
 
         Returns:
-            The segmentation data in the expected format
+            np.ndarray: the segmentation data in the expected format
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def load_seg(self, path: str, is_path_truncated: bool = False):
+    def load_seg(self, path: os.PathLike) -> np.ndarray:
         """
         Load the preprocessed segmentation data
 
         Args:
             path: Path to the preprocessed data
-            is_path_truncated: If True then `path` is truncated after case_id, else `path` is the full filepath
 
         Returns:
-            The segmentation data in the expected format
+            np.ndarray: the segmentation data in the expected format
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def save(self, truncated_path: str, data: np.ndarray, seg: np.ndarray, **kwargs):
+    def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
         """
         Save the preprocessed image and segmentation data
 
         Args:
-            truncated_path: Preprocessed file path truncated after case_id
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
             data: Preprocessed image data
             seg: Preprocessed segmentation data
-
-        Kwargs:
-            patch_size: Patch size for reading small segments from the large memory-mapped files on disk
-
+            kwargs: additional keyword arguments passed to underlying function
         """
-        pass
+        raise NotImplementedError
 
-    def get_file_extension(self):
+    def get_file_extension(self) -> str:
         """
         Returns:
             The file extension string of the preprocessed data.
@@ -77,41 +75,75 @@ class PreprocessedDataset(ABC):
 
 
 class PreprocessedDatasetNumpy(PreprocessedDataset):
-    """Class for handling preprocessed data in the numpy format"""
-
     def __init__(self) -> None:
+        """
+        Class for handling preprocessed data in the numpy format
+        """
         super().__init__(file_extension="npz")
 
-    def load_data(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode="r", allow_pickle=True)
-        else:
+    def load_data(self, path: os.PathLike) -> np.ndarray:
+        """
+        Load the preprocessed numpy data
+
+        Args:
+            path: Path to the preprocessed numpy data
+
+        Returns:
+            np.ndarray: array with data
+        """
+        path = Path(path)
+
+        if path.basename().endswith(".npz"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
-
-        if type(data) == np.memmap:
-            return data
-        else:
-            return data["data"]
-
-    def load_seg(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
-            data = np.load(f"{path}.npz", mmap_mode="r", allow_pickle=True)
-        else:
+            data = data["data"]  # unpack dict
+        elif path.basename().endswith(".npy"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
-
-        if type(data) == np.memmap:
-            return data
         else:
-            return data["seg"]
+            data = np.load(path.with_suffix(".npz"), mmap_mode="r", allow_pickle=True)
+            data = data["data"]  # unpack dict
+        return data
 
-    def save(self, truncated_path: str, data: np.ndarray, seg: np.ndarray, **kwargs):
-        np.savez_compressed(truncated_path + ".npz", data=data, seg=seg)
+    def load_seg(self, path: os.PathLike) -> np.ndarray:
+        """
+        Load the preprocessed numpy segmentation
+
+        Args:
+            path: Path to the preprocessed numpy segmentation
+
+        Returns:
+            np.ndarray: array with segmentation
+        """
+        path = Path(path)
+
+        if path.basename().endswith(".npz"):
+            data = np.load(path, mmap_mode="r", allow_pickle=True)
+            data = data["seg"]  # unpack dict
+        elif path.basename().endswith(".npy"):
+            data = np.load(path, mmap_mode="r", allow_pickle=True)
+        else:
+            data = np.load(path.with_suffix(".npz"), mmap_mode="r", allow_pickle=True)
+            data = data["seg"]  # unpack dict
+        return data
+
+    def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
+        """
+        Save the preprocessed image and segmentation data in numpy format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            data: Preprocessed image data
+            seg: Preprocessed segmentation data
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        np.savez_compressed(truncated_path.with_suffix(".npz"), data=data, seg=seg, **kwargs)
 
 
 class PreprocessedDatasetBlosc2(PreprocessedDataset):
-    """Class for handling preprocessed data in Blosc2 format"""
-
     def __init__(self):
+        """
+        Class for handling preprocessed data in Blosc2 format
+        """
         super().__init__(file_extension="b2nd")
         self.block_size = None
         self.chunk_size = None
@@ -131,17 +163,39 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         self.dparams = {"nthreads": 1}
         blosc2.set_nthreads(1)
 
-    def load_data(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
+    def load_data(self, path: str):
+        """
+        Load the preprocessed blosc2 data
+
+        Args:
+            path: Path to the preprocessed blosc2 data
+
+        Returns:
+            np.ndarray: array with data
+        """
+        path = Path(path)
+
+        if not path.name.endswith(".b2nd"):
             return blosc2.open(urlpath=f"{path}.b2nd", mode="r", dparams=self.dparams, mmap_mode="r")
         else:
             return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
 
-    def load_seg(self, path: str, is_path_truncated: bool = False):
-        if is_path_truncated:
+    def load_seg(self, path: os.PathLike):
+        """
+        Load the preprocessed blosc2 segmentation
+
+        Args:
+            path: Path to the preprocessed blosc2 segmentation
+
+        Returns:
+            np.ndarray: array with segmentation
+        """
+        path = Path(path)
+
+        if not path.name.endswith("_seg.b2nd"):
             return blosc2.open(urlpath=f"{path}_seg.b2nd", dparams=self.dparams, mode="r", mmap_mode="r")
         else:
-            return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
+            return blosc2.open(urlpath=str(path), mode="r", dparams=self.dparams, mmap_mode="r")
 
     def save(
         self,
@@ -149,7 +203,20 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         data: np.ndarray,
         seg: np.ndarray,
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
-    ):
+        **kwargs,
+    ) -> None:
+        """
+        Save the preprocessed image and segmentation data in blosc2 format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            data: Preprocessed image data
+            seg: Preprocessed segmentation data
+            patch_size: Patch size for reading small segments from the large
+                memory-mapped files on disk
+            kwargs: additional keyword arguments passed to underlying function
+        """
         if (self.data_size != data.shape) or (self.seg_size != seg.shape) or (self.patch_size != patch_size):
             self.data_size = data.shape
             self.seg_size = seg.shape
@@ -166,6 +233,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             blocks=self.block_size,
             cparams=self.cparams,
             mmap_mode="w+",
+            **kwargs,
         )
         blosc2.asarray(
             np.ascontiguousarray(seg),
@@ -174,6 +242,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             blocks=self.seg_block_size,
             cparams=self.cparams,
             mmap_mode="w+",
+            **kwargs,
         )
 
     @staticmethod
