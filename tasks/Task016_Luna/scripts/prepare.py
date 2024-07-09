@@ -175,7 +175,9 @@ def main():
         original_fold_ids[fid].append(cid)
 
     splits = []
+    splits811 = []
     for test_fold in range(10):
+        # first split - 10 Fold Cross-validation
         all_folds = list(range(10))
         all_folds.pop(test_fold)
 
@@ -188,8 +190,31 @@ def main():
                 "val": original_fold_ids[test_fold],
             }
         )
+        assert (len(splits[-1]["train"]) + len(splits[-1]["val"])) == 888
+
+        # second split - 8-1-1 Split
+        all_folds = list(range(10))
+        val_fold = test_fold - 1 if test_fold > 0 else 9
+        all_folds = [f for f in all_folds if f != val_fold and f != test_fold]
+        # print(all_folds)
+        assert len(all_folds) == 8
+
+        train_ids = []
+        for af in all_folds:
+            train_ids.extend(original_fold_ids[af])
+        splits811.append(
+            {
+                "train": train_ids,
+                "val": original_fold_ids[val_fold],
+                "test": original_fold_ids[test_fold],
+            }
+        )
+        assert (len(splits811[-1]["train"]) + len(splits811[-1]["val"]) + len(splits811[-1]["test"])) == 888
+
     save_pickle(splits, target_preprocessed_dir / "splits_final.pkl")
     save_json(splits, target_preprocessed_dir / "splits_final.json")
+    save_pickle(splits811, target_preprocessed_dir / "splits_final811.pkl")
+    save_json(splits811, target_preprocessed_dir / "splits_final811.json")
 
 
 if __name__ == "__main__":

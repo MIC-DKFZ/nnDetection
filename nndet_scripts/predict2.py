@@ -546,12 +546,6 @@ def entrypoint_predict_with_folders():
 @env_guard
 def entrypoint_predict_test_split():
     parser = argparse.ArgumentParser()
-    parser.add_argument("data", type=Path, help="Path to directory containing data.")
-    parser.add_argument(
-        "prediction",
-        type=Path,
-        help="Path to directory where predictions should be saved.",
-    )
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
     parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
     parser.add_argument(
@@ -560,24 +554,11 @@ def entrypoint_predict_test_split():
         help="fold to use for prediction. -1 for consolidated",
     )
     parser.add_argument(
-        "--skip_preprocessing",
-        action="store_true",
-        help="Skip preprocessing of data, data needs to be in preprocessed format already!",
-    )
-    parser.add_argument(
         "--load_models",
         type=str,
         help="Define model weights, one of all | last | best",
         default="all",
         required=False,
-    )
-    parser.add_argument(
-        "-npp",
-        "--num_processes_preprocessing",
-        type=int,
-        default=2,
-        required=False,
-        help="Number of processes to use for preprocessing.",
     )
     parser.add_argument(
         "-ntta",
@@ -621,7 +602,9 @@ def entrypoint_predict_test_split():
 
     # determine preprocessed data
     plan = load_plan_from_dir(training_dir, "plan_inference")
-    preprocessed_data_dir = Path(os.getenv("det_data")) / "preprocessed" / plan["data_identifier"] / "imagesTr"
+    preprocessed_data_dir = (
+        Path(os.getenv("det_data")) / task_name / "preprocessed" / plan["data_identifier"] / "imagesTr"
+    )
 
     # determine case ids
     splits = load_splits_from_dir(training_dir, "splits")

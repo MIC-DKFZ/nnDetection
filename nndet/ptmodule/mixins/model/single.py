@@ -419,7 +419,7 @@ class SingleStageMixin(ModelMixin):
             AnchorHead: instantiated head
         """
         head_name = cls.head_cls.__name__
-        head_kwargs = model_cfg["head_kwargs"]
+        head_kwargs = dict(model_cfg["head_kwargs"])
 
         logger.info(f"Building:: head {head_name}: {head_kwargs} ")
 
