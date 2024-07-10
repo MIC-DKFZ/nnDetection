@@ -53,6 +53,32 @@ class PreprocessedDataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def save_data(self, truncated_path: os.PathLike, data: np.ndarray, **kwargs) -> None:
+        """
+        Save the preprocessed image
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            data: Preprocessed image data
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def save_seg(self, truncated_path: os.PathLike, seg: np.ndarray, **kwargs) -> None:
+        """
+        Save the segmentation data
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            seg: Preprocessed segmentation data
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
         """
         Save the preprocessed image and segmentation data
@@ -93,10 +119,10 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
         """
         path = Path(path)
 
-        if path.basename().endswith(".npz"):
+        if path.name.endswith(".npz"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
             data = data["data"]  # unpack dict
-        elif path.basename().endswith(".npy"):
+        elif path.name.endswith(".npy"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
         else:
             data = np.load(path.with_suffix(".npz"), mmap_mode="r", allow_pickle=True)
@@ -115,15 +141,39 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
         """
         path = Path(path)
 
-        if path.basename().endswith(".npz"):
+        if path.name.endswith(".npz"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
             data = data["seg"]  # unpack dict
-        elif path.basename().endswith(".npy"):
+        elif path.name.endswith(".npy"):
             data = np.load(path, mmap_mode="r", allow_pickle=True)
         else:
             data = np.load(path.with_suffix(".npz"), mmap_mode="r", allow_pickle=True)
             data = data["seg"]  # unpack dict
         return data
+
+    def save_data(self, truncated_path: os.PathLike, data: np.ndarray, **kwargs) -> None:
+        """
+        Save the preprocessed image data in numpy format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            data: Preprocessed image data
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        np.savez_compressed(truncated_path.with_suffix(".npz"), data=data, **kwargs)
+
+    def save_seg(self, truncated_path: os.PathLike, seg: np.ndarray, **kwargs) -> None:
+        """
+        Save the segmentation data in numpy format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            seg: Preprocessed segmentation data
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        np.savez_compressed(truncated_path.with_suffix(".npz"), seg=seg, **kwargs)
 
     def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
         """
@@ -197,6 +247,74 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         else:
             return blosc2.open(urlpath=str(path), mode="r", dparams=self.dparams, mmap_mode="r")
 
+    def save_data(
+        self,
+        truncated_path: os.PathLike,
+        data: np.ndarray,
+        patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
+        **kwargs,
+    ) -> None:
+        """
+        Save the preprocessed image in blosc2 format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            data: Preprocessed image data
+            patch_size: Patch size for reading small segments from the large
+                memory-mapped files on disk
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        if (self.data_size != data.shape) or (self.patch_size != patch_size):
+            self.data_size = data.shape
+            self.patch_size = patch_size
+            self.block_size, self.chunk_size = self.comp_blosc2_params(self.data_size, self.patch_size, data.itemsize)
+
+        blosc2.asarray(
+            np.ascontiguousarray(data),
+            urlpath=f"{truncated_path}.b2nd",
+            chunks=self.chunk_size,
+            blocks=self.block_size,
+            cparams=self.cparams,
+            mmap_mode="w+",
+            **kwargs,
+        )
+
+    def save_seg(
+        self,
+        truncated_path: os.PathLike,
+        seg: np.ndarray,
+        patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
+        **kwargs,
+    ) -> None:
+        """
+        Save the segmentation data in blosc2 format
+
+        Args:
+            truncated_path: Preprocessed file path. Does not include the file
+                extension.
+            seg: Preprocessed segmentation data
+            patch_size: Patch size for reading small segments from the large
+                memory-mapped files on disk
+            kwargs: additional keyword arguments passed to underlying function
+        """
+        
+        if (self.seg_size != seg.shape) or (self.patch_size != patch_size):
+            self.seg_size = seg.shape
+            self.patch_size = patch_size
+            self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(
+                self.seg_size, self.patch_size, seg.itemsize
+            )
+        blosc2.asarray(
+            np.ascontiguousarray(seg),
+            urlpath=f"{truncated_path}_seg.b2nd",
+            chunks=self.seg_chunk_size,
+            blocks=self.seg_block_size,
+            cparams=self.cparams,
+            mmap_mode="w+",
+            **kwargs,
+        )
+        
     def save(
         self,
         truncated_path: str,
@@ -217,33 +335,9 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
                 memory-mapped files on disk
             kwargs: additional keyword arguments passed to underlying function
         """
-        if (self.data_size != data.shape) or (self.seg_size != seg.shape) or (self.patch_size != patch_size):
-            self.data_size = data.shape
-            self.seg_size = seg.shape
-            self.patch_size = patch_size
-            self.block_size, self.chunk_size = self.comp_blosc2_params(self.data_size, self.patch_size, data.itemsize)
-            self.seg_block_size, self.seg_chunk_size = self.comp_blosc2_params(
-                self.seg_size, self.patch_size, seg.itemsize
-            )
-
-        blosc2.asarray(
-            np.ascontiguousarray(data),
-            urlpath=truncated_path + ".b2nd",
-            chunks=self.chunk_size,
-            blocks=self.block_size,
-            cparams=self.cparams,
-            mmap_mode="w+",
-            **kwargs,
-        )
-        blosc2.asarray(
-            np.ascontiguousarray(seg),
-            urlpath=truncated_path + "_seg.b2nd",
-            chunks=self.seg_chunk_size,
-            blocks=self.seg_block_size,
-            cparams=self.cparams,
-            mmap_mode="w+",
-            **kwargs,
-        )
+        self.save_data(truncated_path, data, patch_size=patch_size)
+        self.save_seg(truncated_path, seg, patch_size=patch_size)
+        
 
     @staticmethod
     def comp_blosc2_params(
@@ -268,7 +362,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             safety_factor: Use the given parcentage for the caches
 
         Returns:
-            The recommended block and the chunk size.
+            tuple[tuple[int, int, int, int], tuple[int, int, int, int]]: The recommended block and the chunk size.
         """
         num_channels = image_size[0]
         if len(patch_size) == 2:
