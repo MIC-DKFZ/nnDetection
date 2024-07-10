@@ -567,7 +567,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             target_spacing=target_spacing,
         )
         case_id = get_case_id_from_path(str(data_files[0]), remove_modality=True)
-        np.savez_compressed(str(target_dir / f"{case_id}.npz"), data=data)
+        self.with_preprocessed_data_format.save_data(target_dir / case_id, data=data, patch_size=self.patch_size)
         save_pickle(properties, target_dir / f"{case_id}")
 
     def preprocess_test_case(
