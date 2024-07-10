@@ -449,7 +449,7 @@ class AbstractPlanner(ABC):
         preprocessed_data_dir: Path = preprocessed_dir / plan["data_identifier"]
         preprocessed_data_dir.mkdir(exist_ok=True, parents=True)
         preprocessed_data_format = plan["preprocessed_data_format"]
-        
+
         cases_processed = get_case_ids_from_dir(
             preprocessed_data_dir,
             remove_modality=False,

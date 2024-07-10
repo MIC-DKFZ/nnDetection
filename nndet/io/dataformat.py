@@ -298,7 +298,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
                 memory-mapped files on disk
             kwargs: additional keyword arguments passed to underlying function
         """
-        
+
         if (self.seg_size != seg.shape) or (self.patch_size != patch_size):
             self.seg_size = seg.shape
             self.patch_size = patch_size
@@ -314,7 +314,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             mmap_mode="w+",
             **kwargs,
         )
-        
+
     def save(
         self,
         truncated_path: str,
@@ -337,7 +337,6 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         """
         self.save_data(truncated_path, data, patch_size=patch_size)
         self.save_seg(truncated_path, seg, patch_size=patch_size)
-        
 
     @staticmethod
     def comp_blosc2_params(
