@@ -260,7 +260,9 @@ def _get_case_ids(source_prediction_dirs: List[Path]) -> List[str]:
 
     if not all([case_ids[0] == case_ids[i + 1] for i in range(len(source_prediction_dirs) - 1)]):
         raise ValueError("Found different case ids in prediction directories.")
-    return list(case_ids[0])
+    case_ids = list(case_ids[0])
+    case_ids.sort()
+    return case_ids
 
 
 @env_guard
@@ -460,6 +462,7 @@ def _determine_best_ensemble_and_parameter(
             # load & ensemble predictions
             case_predictions = _load_ensemble_predictions([prediction_dirs[m] for m in model_subset], case_ids, iou)
 
+            assert len(case_predictions) == len(case_ids)
             # evaluate
             for cid in maybe_verbose_iterable(case_ids):
                 # eval
