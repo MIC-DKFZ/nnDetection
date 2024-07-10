@@ -120,12 +120,12 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         with_data_format = data_format_to_class_mapping[self.preprocessed_data_format]
         k = list(self._data.keys())[0]
         if (p := Path(self._data[k]["data_file"])).is_file():
-            data = with_data_format.load_data(str(p))
+            data = with_data_format.load_data(p)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
         if (p := Path(self._data[k]["seg_file"])).is_file():
-            seg = with_data_format.load_seg(str(p))
+            seg = with_data_format.load_seg(p)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 

@@ -197,7 +197,7 @@ class GenericPreprocessor(AbstractPreprocessor):
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
         self.with_preprocessed_data_format.save(
-            truncated_path=f"{output_dir_stage}/{case_id}",
+            truncated_path=output_dir_stage / case_id,
             data=data,
             seg=seg,
             patch_size=self.patch_size,
