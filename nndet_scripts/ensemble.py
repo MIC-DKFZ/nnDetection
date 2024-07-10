@@ -441,13 +441,6 @@ def _determine_best_ensemble_and_parameter(
     all_subsets = all_subsets[1:]  # remove empty subset
 
     # sweep
-    evaluator = BoxEvaluator.create(
-        classes=classes,
-        fast=True,
-        verbose=False,
-        save_dir=None,
-    )
-
     best_optim_metric = 0
     best_iou = None
     best_model_subset = None
@@ -456,6 +449,13 @@ def _determine_best_ensemble_and_parameter(
         for iou_idx, iou in enumerate(iou_values):  # iterate all iou values
             if len(model_subset) == 1 and iou_idx > 0:
                 continue  # skip iou optimization for single model
+
+            evaluator = BoxEvaluator.create(
+                classes=classes,
+                fast=True,
+                verbose=False,
+                save_dir=None,
+            )
 
             # load & ensemble predictions
             case_predictions = _load_ensemble_predictions([prediction_dirs[m] for m in model_subset], case_ids, iou)
@@ -482,6 +482,7 @@ def _determine_best_ensemble_and_parameter(
                 best_optim_metric = eval_scores[optim_metric]
                 best_iou = iou
                 best_model_subset = model_subset
+
     assert best_iou is not None
     assert best_model_subset is not None
 
