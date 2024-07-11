@@ -230,5 +230,11 @@ class D3V002DynDtype(D3V002):
             transpose_forward=plan["transpose_forward"],
             intensity_properties=plan["dataset_properties"]["intensity_properties"],
             resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+            patch_size=plan["patch_size"],
+            preprocessed_data_format=plan["preprocessed_data_format"],
         )
         return preprocessor
+
+@PLANNER_REGISTRY.register
+class D3V002DynDtypeBlosc(D3V002DynDtype, D3V002Blosc):
+    pass
