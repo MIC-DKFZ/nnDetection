@@ -33,3 +33,8 @@ Please read the information from the homepage carefully and follow the rules and
 IMPORTANT: the prepare script automatically created multiple split files which follow the published PN9 splits (single split & official val), you need to specify the approriate split file when training the networks via `-o +io_cfg.splits=[split file name]`!
 
 The data is now saved in the correct format. Please folow the instructions from the nnDetection README can be used to train the networks.
+
+## Evaluation
+
+1. Run `python prepare_eval_cpm.py [model] [fold]` to export the nnDetection predictions into the CSV format.
+2. Clone `https://github.com/mibaumgartner/SANet` and run `python noduleCADEvaluationLUNA16.py` with the approriate arguments to evaluate the predictions of nnDetection. Please Note: the evaluation script is adapted from `https://github.com/mj129/SANet` and `https://github.com/LinZhuoChen/LSANet` to evaluate the prediction, we are not providing active maintanence of the script, please refer to the original repositories for more guidance on the evaluation procedure.

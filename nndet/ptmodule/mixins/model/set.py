@@ -285,7 +285,7 @@ class DETRModelMixin(ModelMixin):
             ChannelMapper: module to perform channel mapping
         """
         conv = Generator(cls.channel_mapper_conv_cls, plan_arch["dim"])
-        channel_mapper_kwargs = model_cfg["channel_mapper_kwargs"]
+        channel_mapper_kwargs = dict(model_cfg["channel_mapper_kwargs"])
 
         num_in_features = model_cfg["transformer"]["num_feature_levels"]
         num_total_levels = num_in_features + channel_mapper_kwargs.pop("extra_levels")

@@ -8,6 +8,7 @@ import numpy as np
 from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 
 import nndet.core.ops_np as ops_np
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.datamodule import DATALOADER_REGISTRY
 from nndet.io.datamodule.mixins.bgcrop import RandomBGCrop2D, RandomBGCrop3D
 from nndet.io.datamodule.mixins.fgcrop import (
@@ -39,6 +40,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -57,6 +59,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -87,6 +90,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         self.oversample_foreground_percent = oversample_foreground_percent
         self.memmap_mode = memmap_mode
         self.num_batches_per_epoch = num_batches_per_epoch
+        self.preprocessed_data_format = preprocessed_data_format
 
         # we sample bigger patches and create a center crop during augmentation
         # to cover the boarders of the patient we need to adjust the position
@@ -113,14 +117,15 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             Tuple[int]: Final shape of data (including batchdim)
             Tuple[int]: Final shape of seg (including batchdim)
         """
+        with_data_format = data_format_to_class_mapping[self.preprocessed_data_format]
         k = list(self._data.keys())[0]
         if (p := Path(self._data[k]["data_file"])).is_file():
-            data = np.load(str(p), self.memmap_mode, allow_pickle=False)
+            data = with_data_format.load_data(p)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
         if (p := Path(self._data[k]["seg_file"])).is_file():
-            seg = np.load(str(p), self.memmap_mode, allow_pickle=False)
+            seg = with_data_format.load_seg(p)
         else:
             raise RuntimeError("You shall not pass! Unpack data first!")
 
@@ -156,6 +161,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                     case ids
 
         """
+        with_data_format = data_format_to_class_mapping[self.preprocessed_data_format]
         data_batch = np.zeros(self.data_shape_batch, dtype=float)
         instances_batch, properties_batch, case_ids_batch = [], [], []
 
@@ -168,7 +174,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
         selected_cases, selected_instances = self.select()
         for batch_idx, (case_id, instance_id) in enumerate(zip(selected_cases, selected_instances)):
             # print(case_id, instance_id)
-            case_data = np.load(self._data[case_id]["data_file"], self.memmap_mode, allow_pickle=True)
+            case_data = with_data_format.load_data(self._data[case_id]["data_file"])
             properties = load_pickle(self._data[case_id]["properties_file"])
 
             # determine positions and patches
@@ -198,11 +204,7 @@ class BaseDataLoader3D(SlimDataLoaderBase):
                 constant_values=0,
             )[0]
             if self.load_seg:
-                case_seg = np.load(
-                    self._data[case_id]["seg_file"],
-                    self.memmap_mode,
-                    allow_pickle=True,
-                )
+                case_seg = with_data_format.load_seg(self._data[case_id]["seg_file"])
                 seg_batch[batch_idx] = save_get_crop(
                     case_seg,
                     crop=crop,
@@ -541,6 +543,7 @@ class DataLoader3DOffsetObjectBalanced(
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -565,6 +568,7 @@ class DataLoader3DOffsetObjectBalanced(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -604,6 +608,7 @@ class DataLoader3DOffsetObjectBalanced(
             num_batches_per_epoch=num_batches_per_epoch,
             load_seg=load_seg,
             load_box=load_box,
+            preprocessed_data_format=preprocessed_data_format,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
