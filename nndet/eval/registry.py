@@ -44,6 +44,7 @@ def evaluate_box_dir(
     if save_dir is not None:
         save_dir.mkdir(parents=True, exist_ok=True)
     case_ids = [p.stem.rsplit("_boxes", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_boxes")]
+    case_ids.sort()
     logger.info(f"Found {len(case_ids)} for box evaluation in {pred_dir}")
 
     evaluator = BoxEvaluator.create(
@@ -215,6 +216,7 @@ def evaluate_case_dir(
     pred_dir = Path(pred_dir)
     gt_dir = Path(gt_dir)
     case_ids = [p.stem.rsplit("_boxes", 1)[0] for p in pred_dir.iterdir() if p.is_file() and p.stem.endswith("_boxes")]
+    case_ids.sort()
     logger.info(f"Found {len(case_ids)} for case evaluation in {pred_dir}")
 
     evaluator = CaseEvaluator.create(
