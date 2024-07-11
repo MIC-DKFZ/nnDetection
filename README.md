@@ -47,6 +47,31 @@ docker run --gpus all -v ${det_data}:/opt/data -v ${det_models}:/opt/models -it 
 Warning:
 When running a training inside the container it is necessary to [increase the shared memory](https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
 
+## Local
+To create a working environment locally with conda, please run:
+```
+conda create --name nndet_venv python=3.8
+conda activate nndet_venv
+```
+
+Now run the following commands to properly set it up:
+
+```
+git clone https://github.com/MIC-DKFZ/nnDetection.git
+cd nnDetection
+
+export CXX=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-c++
+export CC=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-cc
+
+conda install gxx_linux-64==9.3.0
+conda install cuda -c nvidia/label/cuda-11.3.1
+conda install pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
+
+pip install -r requirements.txt  \
+  && pip install hydra-core --upgrade --pre \
+  && pip install git+https://github.com/mibaumgartner/pytorch_model_summary.git
+FORCE_CUDA=1 pip install -v -e .
+```
 
 ## Source
 
