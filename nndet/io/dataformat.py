@@ -10,17 +10,17 @@ import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import blosc2
 import numpy as np
 
 
 class PreprocessedDataset(ABC):
-    "Interface for preprocessed dataset"
-
     def __init__(self, file_extension: str):
         """
+        Interface for preprocessed dataset
+
         Args:
             file_extension: File extension of the preprocessed data
         """
@@ -53,7 +53,12 @@ class PreprocessedDataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_data(self, truncated_path: os.PathLike, data: np.ndarray, **kwargs) -> None:
+    def save_data(
+        self,
+        truncated_path: os.PathLike,
+        data: np.ndarray,
+        **kwargs,
+    ) -> None:
         """
         Save the preprocessed image
 
@@ -66,7 +71,12 @@ class PreprocessedDataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_seg(self, truncated_path: os.PathLike, seg: np.ndarray, **kwargs) -> None:
+    def save_seg(
+        self,
+        truncated_path: os.PathLike,
+        seg: np.ndarray,
+        **kwargs,
+    ) -> None:
         """
         Save the segmentation data
 
@@ -79,7 +89,15 @@ class PreprocessedDataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
+    def save(
+        self,
+        truncated_path: os.PathLike,
+        data: np.ndarray,
+        seg: np.ndarray,
+        data_kwargs: Optional[dict] = None,
+        seg_kwargs: Optional[dict] = None,
+        **kwargs,
+    ) -> None:
         """
         Save the preprocessed image and segmentation data
 
@@ -88,7 +106,9 @@ class PreprocessedDataset(ABC):
                 extension.
             data: Preprocessed image data
             seg: Preprocessed segmentation data
-            kwargs: additional keyword arguments passed to underlying function
+            data_kwargs: keyword arguments passed to save function for data
+            seg_kwargs: keyword arguments passed to save function for seg
+            kwargs: keyword arguments kept for compatibility; Otherwise unused
         """
         raise NotImplementedError
 
@@ -175,7 +195,15 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
         """
         np.savez_compressed(truncated_path.with_suffix(".npz"), seg=seg, **kwargs)
 
-    def save(self, truncated_path: os.PathLike, data: np.ndarray, seg: np.ndarray, **kwargs) -> None:
+    def save(
+        self,
+        truncated_path: os.PathLike,
+        data: np.ndarray,
+        seg: np.ndarray,
+        data_kwargs: Optional[dict] = None,
+        seg_kwargs: Optional[dict] = None,
+        **kwargs,
+    ) -> None:
         """
         Save the preprocessed image and segmentation data in numpy format
 
@@ -184,9 +212,17 @@ class PreprocessedDatasetNumpy(PreprocessedDataset):
                 extension.
             data: Preprocessed image data
             seg: Preprocessed segmentation data
-            kwargs: additional keyword arguments passed to underlying function
+            data_kwargs: keyword arguments passed to save function for data
+            seg_kwargs: keyword arguments passed to save function for seg
+            kwargs: passed to save function
         """
-        np.savez_compressed(truncated_path.with_suffix(".npz"), data=data, seg=seg, **kwargs)
+        if data_kwargs is None:
+            data_kwargs = {}
+        if seg_kwargs is None:
+            seg_kwargs = {}
+        np.savez_compressed(
+            truncated_path.with_suffix(".npz"), data=data, seg=seg, **data_kwargs, **seg_kwargs, **kwargs
+        )
 
 
 class PreprocessedDatasetBlosc2(PreprocessedDataset):
@@ -213,7 +249,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         self.dparams = {"nthreads": 1}
         blosc2.set_nthreads(1)
 
-    def load_data(self, path: str):
+    def load_data(self, path: str) -> np.ndarray:
         """
         Load the preprocessed blosc2 data
 
@@ -230,7 +266,7 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         else:
             return blosc2.open(urlpath=path, mode="r", dparams=self.dparams, mmap_mode="r")
 
-    def load_seg(self, path: os.PathLike):
+    def load_seg(self, path: os.PathLike) -> np.ndarray:
         """
         Load the preprocessed blosc2 segmentation
 
@@ -321,6 +357,8 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         data: np.ndarray,
         seg: np.ndarray,
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]],
+        data_kwargs: Optional[dict] = None,
+        seg_kwargs: Optional[dict] = None,
         **kwargs,
     ) -> None:
         """
@@ -333,10 +371,16 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
             seg: Preprocessed segmentation data
             patch_size: Patch size for reading small segments from the large
                 memory-mapped files on disk
-            kwargs: additional keyword arguments passed to underlying function
+            data_kwargs: keyword arguments passed to save function for data
+            seg_kwargs: keyword arguments passed to save function for seg
+            kwargs: keyword arguments kept for compatibility; Otherwise unused
         """
-        self.save_data(truncated_path, data, patch_size=patch_size)
-        self.save_seg(truncated_path, seg, patch_size=patch_size)
+        if data_kwargs is None:
+            data_kwargs = {}
+        if seg_kwargs is None:
+            seg_kwargs = {}
+        self.save_data(truncated_path, data, patch_size=patch_size, **data_kwargs)
+        self.save_seg(truncated_path, seg, patch_size=patch_size, **seg_kwargs)
 
     @staticmethod
     def comp_blosc2_params(
@@ -347,21 +391,28 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         l3_cache_size_per_core_in_bytes: int = 1441792,
         # 1 Mibibyte (MiB) = 2^20 Byte = 1.048.576 Byte; 1.375MiB = 1441792 Byte
         safety_factor: float = 0.8,  # we dont will the caches to the brim. 0.8 means we target 80% of the caches
-    ):
+    ) -> Tuple[Tuple[int, int, int, int], Tuple[int, int, int, int]]:
         """
-        Computes a recommended block and chunk size for saving arrays with blosc v2.
+        Computes a recommended block and chunk size for saving arrays with
+        blosc v2.
 
         Args:
-            image_size: Image size, must be 4D (c, x, y, z). For 2D images, make x=1
-            patch_size: Patch size, spatial dimensions only. So (x, y) or (x, y, z)
-            bytes_per_pixel: Number of bytes per element. Example: float32 -> 4 bytes
-            l1_cache_size_per_core_in_bytes: The size of the L1 cache per core in Bytes.
-            l3_cache_size_per_core_in_bytes: The size of the L3 cache exclusively accessible by each core.
-                Usually the global size of the L3 cache divided by the number of cores.
+            image_size: Image size, must be 4D (c, x, y, z). For 2D images,
+                make x=1
+            patch_size: Patch size, spatial dimensions only. So (x, y) or
+                (x, y, z)
+            bytes_per_pixel: Number of bytes per element. Example:
+                float32 -> 4 bytes
+            l1_cache_size_per_core_in_bytes: The size of the L1 cache per core
+                in Bytes.
+            l3_cache_size_per_core_in_bytes: The size of the L3 cache
+                exclusively accessible by each core. Usually the global size
+                of the L3 cache divided by the number of cores.
             safety_factor: Use the given parcentage for the caches
 
         Returns:
-            tuple[tuple[int, int, int, int], tuple[int, int, int, int]]: The recommended block and the chunk size.
+            tuple[tuple[int, int, int, int], tuple[int, int, int, int]]: The
+                recommended block and the chunk size.
         """
         num_channels = image_size[0]
         if len(patch_size) == 2:
