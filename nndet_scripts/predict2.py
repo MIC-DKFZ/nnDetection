@@ -323,9 +323,9 @@ def entrypoint_predict_with_imagesTs():
 
     if skip_preprocessing:
         plan = load_plan_from_dir(training_dir, "plan_inference")
-        preprocessed_data_dir = task_data_dir / "preprocessed" / plan["data_identifier"]
+        preprocessed_data_dir = task_data_dir / "preprocessed" / "imagesTs" / plan["data_identifier"]
     else:
-        preprocessed_dir: Path = task_data_dir / "preprocessed"
+        preprocessed_dir: Path = task_data_dir / "preprocessed" / "imagesTs"
         preprocessed_dir.mkdir(exist_ok=True)
         data_identifier = _preprocess(
             data_dir=data_dir,

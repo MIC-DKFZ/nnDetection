@@ -41,7 +41,8 @@ repos:
         (?x)(
           ^tests/|
           ^projects/|
-          ^tasks/
+          ^tasks/|
+          setup.py
         )
 
   # - repo: local
