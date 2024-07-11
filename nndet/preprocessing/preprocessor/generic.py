@@ -10,6 +10,7 @@ from typing import Dict, List, Sequence, Tuple, Union
 import numpy as np
 from loguru import logger
 
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.load import load_case_cropped, save_pickle
 from nndet.io.paths import get_case_id_from_path, get_case_ids_from_dir
 from nndet.io.transforms.instances import instances_to_boxes_np
@@ -28,21 +29,28 @@ class GenericPreprocessor(AbstractPreprocessor):
         transpose_forward: Sequence[int],
         intensity_properties: Dict[int, Dict] = None,
         resample_anisotropy_threshold: float = 3.0,
+        patch_size: Union[Tuple[int, int], Tuple[int, int, int]] = (128, 128, 128),
+        preprocessed_data_format: str = "b2nd",
     ):
         """
         Preprocess data
 
         Args:
-            norm_scheme_per_modality: integer index represents modality and string is
-                either `CT`, `CT2`, 'BValRaw'. Other modalities are treated the with zeo mean and unit std.
-            use_mask_for_norm: only foreground values should be used for normalization
-                (defined for each modality)
+            norm_scheme_per_modality: integer index represents modality and
+                string is either `CT`, `CT2`, 'BValRaw'. Other modalities are
+                        treated the with zero mean and unit std.
+            use_mask_for_norm: only foreground values should be used for
+                normalization (defined for each modality)
             transpose_forward: transpose input data
-            intensity_properties: Intensity properties of foreground over the dataset.
-                Evaluated statistics: `median`; `mean`; `std`; `min`; `max`;
-                `percentile_99_5`; `percentile_00_5`
+            intensity_properties: Intensity properties of foreground over the
+                dataset. Evaluated statistics: `median`; `mean`; `std`;
+                `min`; `max`; `percentile_99_5`; `percentile_00_5`
                 `local_props`: contains a dict (with case ids) where statistics
                 where computed per case
+            patch_size: Patch size for reading small segments from the large
+                memory-mapped files on disk
+            preprocessed_data_format: data format to save or load preprocessed
+                data
 
         Overwrites:
             :self:`data_id`: unique identifier of GenericPreprocessor
@@ -53,6 +61,8 @@ class GenericPreprocessor(AbstractPreprocessor):
         self.use_mask_for_norm = {int(k): i for k, i in use_mask_for_norm.items()}
         self.norm_scheme_per_modality = {int(k): i for k, i in norm_scheme_per_modality.items()}
         self.norm_schemes = self.init_norm_schemes()
+        self.patch_size = tuple([int(x) for x in patch_size])
+        self.with_preprocessed_data_format = data_format_to_class_mapping[preprocessed_data_format]
 
     def init_norm_schemes(self):
         return {
@@ -82,6 +92,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             num_processes: number of processes used for preprocessing
             overwrite: overwrite existing data
         """
+
         case_ids, num_processes = self.initialize_run(
             target_spacings=target_spacings,
             cropped_data_dir=cropped_data_dir,
@@ -111,12 +122,7 @@ class GenericPreprocessor(AbstractPreprocessor):
                 with Pool(processes=nump) as p:
                     p.starmap(
                         self.run_process,
-                        zip(
-                            repeat(spacing),
-                            _case_ids,
-                            repeat(output_dir_stage),
-                            repeat(cropped_data_dir),
-                        ),
+                        zip(repeat(spacing), _case_ids, repeat(output_dir_stage), repeat(cropped_data_dir)),
                     )
 
     def initialize_run(
@@ -190,10 +196,11 @@ class GenericPreprocessor(AbstractPreprocessor):
         )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(
-            str(output_dir_stage / f"{case_id}.npz"),
+        self.with_preprocessed_data_format.save(
+            truncated_path=output_dir_stage / case_id,
             data=data,
             seg=seg,
+            patch_size=self.patch_size,
         )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
@@ -560,7 +567,7 @@ class GenericPreprocessor(AbstractPreprocessor):
             target_spacing=target_spacing,
         )
         case_id = get_case_id_from_path(str(data_files[0]), remove_modality=True)
-        np.savez_compressed(str(target_dir / f"{case_id}.npz"), data=data)
+        self.with_preprocessed_data_format.save_data(target_dir / case_id, data=data, patch_size=self.patch_size)
         save_pickle(properties, target_dir / f"{case_id}")
 
     def preprocess_test_case(

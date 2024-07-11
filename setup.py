@@ -134,16 +134,17 @@ setup(
             # evaluation
             "nndet_eval = nndet_scripts.train:evaluate",
             "nndet_eval_with_folders = nndet_scripts.train:evaluate_with_folders",
+            # ensembling
+            "nndet_determine_best_ensemble_with_task = nndet_scripts.ensemble:entrypoint_determine_best_ensemble_with_task",
+            "nndet_ensemble_with_task = nndet_scripts.ensemble:entrypoint_ensemble_with_task",
+            "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
+            "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
             # prediction
             "nndet_predict_with_imagesTs = nndet_scripts.predict2:entrypoint_predict_with_imagesTs",
             "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",
             "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
             "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split",
             "nndet_preprocess_for_inference = nndet_scripts.predict2:entrypoint_preprocess_for_inference",
-            # manual ensembling
-            "nndet_ensemble_with_task = nndet_scripts.ensemble:entrypoint_ensemble_with_task",
-            "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
-            "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
             # unpack
             "nndet_unpack = nndet_scripts.utils:unpack",
             "nndet_unpack_task = nndet_scripts.utils:unpack_task",

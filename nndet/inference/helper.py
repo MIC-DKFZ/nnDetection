@@ -5,9 +5,9 @@ import os
 from pathlib import Path
 from typing import Callable, Optional, Sequence
 
-import numpy as np
 from loguru import logger
 
+from nndet.io.dataformat import data_format_to_class_mapping
 from nndet.io.load import load_pickle
 from nndet.utils.info import maybe_verbose_iterable
 
@@ -65,21 +65,23 @@ def predict_dir(
         num_tta_transforms=num_tta_transforms,
         **kwargs,
     )
+    with_dataformat = data_format_to_class_mapping[plan["preprocessed_data_format"]]
+    file_extension = with_dataformat.get_file_extension()
 
     if case_ids is None:
-        case_paths = list(source_dir.glob("*.npz"))
-        case_paths = [cp for cp in case_paths if "_gt.npz" not in str(cp)]
+        case_paths = list(source_dir.glob(f"*.{file_extension}"))
+        case_paths = [cp for cp in case_paths if f"_gt.{file_extension}" not in str(cp)]
     else:
-        case_paths = [source_dir / f"{cid}.npz" for cid in case_ids]
+        case_paths = [source_dir / f"{cid}.{file_extension}" for cid in case_ids]
     logger.info(f"Found {len(case_paths)} files for inference.")
 
     for idx, path in enumerate(case_paths, start=1):
         logger.info(f"Predicting case {idx} of {len(case_paths)}.")
         case_id = path.stem
         if path.is_file():
-            case = np.load(str(path), allow_pickle=True)["data"]
+            case = with_dataformat.load_data(str(path))
         else:
-            case = np.load(str(path)[:-4] + ".npy", allow_pickle=True)
+            case = with_dataformat.load_data(str(path).replace("npz", "npy"))
         properties = load_pickle(path.parent / f"{case_id}.pkl")
         properties["transpose_backward"] = plan["transpose_backward"]
 

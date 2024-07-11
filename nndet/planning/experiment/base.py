@@ -36,6 +36,7 @@ class AbstractPlanner(ABC):
         """
         super().__init__()
         self.preprocessed_output_dir = Path(preprocessed_output_dir)
+        self.preprocessed_data_format = "npz"
 
         self.transpose_forward = None
         self.transpose_backward = None
@@ -199,6 +200,7 @@ class AbstractPlanner(ABC):
             "transpose_backward": self.transpose_backward,
             "dataset_properties": self.data_properties,
             "planner_id": self.__class__.__name__,
+            "preprocessed_data_format": self.preprocessed_data_format,
         }
         return plan
 
@@ -380,8 +382,8 @@ class AbstractPlanner(ABC):
             num_processes=num_processes,
         )
 
-    @staticmethod
     def create_labels_tr_preprocessed(
+        self,
         preprocessed_plan_dir: Path,
         dim: int,
         num_processes: int = 6,
@@ -402,7 +404,7 @@ class AbstractPlanner(ABC):
         case_ids = get_case_ids_from_dir(
             source_dir,
             remove_modality=False,
-            pattern="*.npz",
+            pattern=f"*.{self.preprocessed_data_format}",
         )
         logger.info("Preparing preprocessed evaluation labels")
         if num_processes > 0:
@@ -414,11 +416,12 @@ class AbstractPlanner(ABC):
                         case_ids,
                         repeat(dim),
                         repeat(target_dir),
+                        repeat(self.preprocessed_data_format),
                     ),
                 )
         else:
             for cid in case_ids:
-                run_create_label_preprocessed(source_dir, cid, dim, target_dir)
+                run_create_label_preprocessed(source_dir, cid, dim, target_dir, self.preprocessed_data_format)
 
     @classmethod
     def run_preprocessing_test2(
@@ -445,11 +448,12 @@ class AbstractPlanner(ABC):
         preprocessed_dir = Path(preprocessed_dir)
         preprocessed_data_dir: Path = preprocessed_dir / plan["data_identifier"]
         preprocessed_data_dir.mkdir(exist_ok=True, parents=True)
+        preprocessed_data_format = plan["preprocessed_data_format"]
 
         cases_processed = get_case_ids_from_dir(
             preprocessed_data_dir,
             remove_modality=False,
-            pattern="*.npz",
+            pattern=f"*.{preprocessed_data_format}",
         )
         cases_available = get_case_ids_from_dir(
             data_dir,

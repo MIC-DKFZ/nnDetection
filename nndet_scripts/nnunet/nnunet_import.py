@@ -436,7 +436,7 @@ if __name__ == "__main__":
     cfg = compose(task, "config.yaml", overrides=[])
 
     if simple:
-        nndet_unet_dir = task_dir / f"{nnunet_model_name}_Simple" / "consolidated"
+        nndet_unet_dir = task_dir / f"{nnunet_model_name}Basic" / "consolidated"
     else:
         nndet_unet_dir = task_dir / f"{nnunet_model_name}" / "consolidated"
 
