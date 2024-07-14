@@ -635,10 +635,11 @@ class DynDTypePreprocessor(GenericPreprocessor):
         )
 
         logger.info(f"Saving: {case_id} into {output_dir_stage}.")
-        np.savez_compressed(
-            str(output_dir_stage / f"{case_id}.npz"),
+        self.with_preprocessed_data_format.save(
+            output_dir_stage / case_id,
             data=data,
             seg=seg,
+            patch_size=self.patch_size,
         )
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
