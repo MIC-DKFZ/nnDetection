@@ -105,7 +105,7 @@ class NoAug(AugmentationSetup):
 
 
 @AUGMENTATION_REGISTRY.register
-class NoAugV2(AugmentationSetup):
+class NoAugBG2(AugmentationSetup):
     def __init__(
         self,
         patch_size: Sequence[int],

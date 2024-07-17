@@ -20,12 +20,14 @@ class ComposePretty(Compose):
         return s
 
 
-class ComposeBGV2(BasicTransform):
+class ComposeBG2(BasicTransform):
     def __init__(self, transforms: List[BasicTransform]):
         """
         This is a custom compose class for batchgeneratorsv2. It iterates
         through a batched data dictionary and applies the transforms to each
         image in the batch.
+        Please note that the input of the segmentation is to be expected
+        at the 'seg' key while the output will be saved in 'target'.
 
         Args:
             transforms: transforms to apply to samples (only transforms from
@@ -60,7 +62,7 @@ class ComposeBGV2(BasicTransform):
                     image.append(data_dict["image"])
                     segmentation.append(data_dict["segmentation"])
         data_dict["data"] = torch.stack(image)
-        data_dict["seg"] = torch.stack(segmentation)
+        data_dict["target"] = torch.stack(segmentation)
         return data_dict
 
     def __str__(self) -> str:
