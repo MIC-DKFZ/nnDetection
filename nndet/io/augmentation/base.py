@@ -5,10 +5,64 @@ from abc import ABC, abstractmethod
 from typing import List, Sequence
 
 import numpy as np
+import torch
 from batchgenerators.transforms.abstract_transforms import Compose
+from batchgeneratorsv2.transforms.base.basic_transform import BasicTransform
+from threadpoolctl import threadpool_limits
 
 
 class ComposePretty(Compose):
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s
+
+
+class ComposeBGV2(BasicTransform):
+    def __init__(self, transforms: List[BasicTransform]):
+        """
+        This is a custom compose class for batchgeneratorsv2. It iterates
+        through a batched data dictionary and applies the transforms to each
+        image in the batch.
+
+        Args:
+            transforms: transforms to apply to samples (only transforms from
+                BGV2 supported here!)
+        """
+        super().__init__()
+        self.transforms = transforms
+
+    def apply(self, data_dict, **params) -> dict:
+        """
+        Apply transforms to data dictionary
+
+        Args:
+            data_dict: dictionary containing information from a batch of data
+
+        Returns:
+            dict: transformed batch
+        """
+        image = []
+        segmentation = []
+
+        with torch.inference_mode():
+            with threadpool_limits(limits=1, user_api=None):
+                for i in range(len(data_dict["data"])):  # iterate over all images in the batch
+                    data_dict["image"] = torch.tensor(data_dict["data"][i], dtype=torch.float)
+                    data_dict["segmentation"] = torch.tensor(data_dict["seg"][i], dtype=torch.int16)
+
+                    # iterate over all transforms
+                    for t in self.transforms:
+                        data_dict = t(**data_dict)
+
+                    image.append(data_dict["image"])
+                    segmentation.append(data_dict["segmentation"])
+        data_dict["data"] = torch.stack(image)
+        data_dict["seg"] = torch.stack(segmentation)
+        return data_dict
+
     def __str__(self) -> str:
         s = "--- Augmentation ---\n"
         for tr in self.transforms:
