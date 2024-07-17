@@ -71,7 +71,7 @@ class AugModularBG2(NoAugBG2):
                 elastic_deform_magnitude=self.params["spatial"].get("elastic_deform_magnitude"),
                 p_synchronize_def_scale_across_axes=self.params["spatial"].get("p_synchronize_def_scale_across_axes"),
                 p_rotation=self.params["spatial"].get("p_rotation"),
-                rotation=np.array(self.params["spatial"].get("rotation")) * np.pi / 180,
+                rotation=[r * np.pi / 180 for r in self.params["spatial"].get("rotation")],
                 p_scaling=self.params["spatial"].get("p_scaling"),
                 scaling=self.params["spatial"].get("scaling"),
                 p_synchronize_scaling_across_axes=self.params["spatial"].get("p_synchronize_scaling_across_axes"),

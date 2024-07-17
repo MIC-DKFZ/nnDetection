@@ -10,34 +10,38 @@ selected_seg_channels:
 
 # Spatial Transformation
 spatial:
-  patch_center_dist_from_border: 0 # Union[int, List[int], Tuple[int, ...]],
-  random_crop: True # bool
+  # elastic
   p_elastic_deform: 0 # float
   elastic_deform_scale: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   elastic_deform_magnitude: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
-  p_synchronize_def_scale_across_axes: False # float
-  p_rotation: 0 # float
-  rotation: [-20, 20] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
-  p_scaling: 0 # float
-  scaling: [0.7, 1.3] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
-  p_synchronize_scaling_across_axes: False # float,
-  bg_style_seg_sampling: True # bool
-  mode_seg: "bilinear" # str
+  # rotation
+  p_rotation: 0.2 # float
+  rotation: [-30, 30] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  # scale
+  p_scaling: 0.2 # float
+  scaling: [0.7, 1.4] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_synchronize_scaling_across_axes: 1 # float,
+  p_synchronize_def_scale_across_axes: False # float #TODO
+  # params
+  mode_seg: "nearest" # str
+  random_crop: False # bool
+  bg_style_seg_sampling: False # bool
+  patch_center_dist_from_border: 0 # Union[int, List[int], Tuple[int, ...]],
 
 # GaussianNoiseTransform
 gaussian_noise:
   noise_variance: [0, 0.1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_per_channel: 1.0 # float
-  synchronize_channels: False # bool
+  synchronize_channels: True # bool
   randomness: 0.1 # float
 
 # GaussianBlurTransform
 gaussian_blur:
-  blur_sigma: [1, 5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  blur_sigma: [0.5, 1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   synchronize_channels: False # bool
   synchronize_axes: False # bool
-  p_per_channel: 1 # float
-  benchmark: False # bool
+  p_per_channel: 0.5 # float
+  benchmark: True # bool
   randomness: 0.2 # float
 
 # MultiplicativeBrightnessTransform
@@ -55,7 +59,6 @@ contrast:
   p_per_channel: 1 # float = 1
   randomness: 0.15 # float
 
-
 # SimulateLowResolutionTransform
 do_sim_low_res: False
 sim_low_res:
@@ -63,9 +66,8 @@ sim_low_res:
   synchronize_channels: False # bool
   synchronize_axes: True # bool
   allowed_channels: None # Tuple[int, ...]
-  p_per_channel: 1 # float
+  p_per_channel: 0.5 # float
   randomness: 0.25 # float
-
 
 # GammaTransformInverted
 do_gamma_inverted: True
@@ -76,7 +78,6 @@ gamma_inverted:
   p_per_channel: 1 # float
   p_retain_stats: 1 # float
   randomness: 0.1 # float
-
 
 # GammaTransform
 do_gamma: True
@@ -91,8 +92,9 @@ gamma:
 # MirrorTransform
 do_mirror: True
 mirror:
-  allowed_axes: [0, 1, 2] # Tuple[int, ...]
+  allowed_axes: [0, 1, 2] # Tuple[int, ...] # TODO: make this automatic and configurable
 
+#FIXME
 rotation_x: ${.spatial.rotation}
 rotation_y: ${.spatial.rotation}
 rotation_z: ${.spatial.rotation}
