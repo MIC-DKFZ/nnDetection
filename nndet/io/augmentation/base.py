@@ -49,11 +49,11 @@ class ComposeBG2(BasicTransform):
         image = []
         segmentation = []
 
-        with torch.inference_mode():
+        with torch.no_grad():
             with threadpool_limits(limits=1, user_api=None):
                 for i in range(len(data_dict["data"])):  # iterate over all images in the batch
-                    data_dict["image"] = torch.tensor(data_dict["data"][i], dtype=torch.float)
-                    data_dict["segmentation"] = torch.tensor(data_dict["seg"][i], dtype=torch.int16)
+                    data_dict["image"] = torch.from_numpy(data_dict["data"][i]).to(dtype=torch.float)
+                    data_dict["segmentation"] = torch.from_numpy(data_dict["seg"][i]).to(dtype=torch.int16)
 
                     # iterate over all transforms
                     for t in self.transforms:
