@@ -22,6 +22,8 @@ LEVEL_MAPPER = {
     "cytology": False,
     "MSD_dataset": True,
     "NIH_dataset": False,
+    "histopathology": False,
+    "radiology / 3yFU": False,
 }
 EXCLUDE = [
     "100051_00001",
@@ -190,17 +192,17 @@ def main():
         filtered_series.append(row[1])
     patient_filtered_df = pd.DataFrame(filtered_series)
 
-    # for cid in maybe_verbose_iterable(patient_filtered_df.index):
-    #     logger.info(f"Preparing case {cid}")
-    #     patient_meta = patient_df.loc[cid]
-    #     prepare_case(
-    #         case_id=cid,
-    #         source_data=source_data_dir,
-    #         source_label_dir=source_label_dir,
-    #         target_data_dir=target_data_dir,
-    #         target_label_dir=target_label_dir,
-    #         patient_meta=patient_meta,
-    #     )
+    for cid in maybe_verbose_iterable(patient_filtered_df.index):
+        logger.info(f"Preparing case {cid}")
+        patient_meta = patient_df.loc[cid]
+        prepare_case(
+            case_id=cid,
+            source_data=source_data_dir,
+            source_label_dir=source_label_dir,
+            target_data_dir=target_data_dir,
+            target_label_dir=target_label_dir,
+            patient_meta=patient_meta,
+        )
 
     # create custom split
     create_custom_split(
