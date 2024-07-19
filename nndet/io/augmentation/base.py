@@ -54,7 +54,7 @@ class ComposeBG2(BasicTransform):
                 data_torch = torch.from_numpy(data_dict.pop("data")).to(dtype=torch.float)
                 seg_torch = torch.from_numpy(data_dict.pop("seg")).to(dtype=torch.int16)
 
-                for i in range(len(data_dict["data"])):  # iterate over all images in the batch
+                for i in range(data_torch.shape[0]):  # iterate over all images in the batch
                     sample_dict = {"image": data_torch[i], "segmentation": seg_torch[i]}
                     # iterate over all transforms
                     for t in self.transforms:
