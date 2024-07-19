@@ -136,6 +136,11 @@ def boxes2mitkv2():
         default=0.5,
     )
     parser.add_argument("--test", action="store_true")
+    parser.add_argument(
+        "--publication",
+        action="store_true",
+        help="Produces an extra set of files with red boxes without labels e.g. for publication",
+    )
 
     args = parser.parse_args()
     model = args.model
@@ -143,6 +148,7 @@ def boxes2mitkv2():
     task = args.task
     test = args.test
     threshold = args.threshold
+    publication = args.publication
 
     task_name = get_task(task, name=True, models=True)
     task_dir = Path(os.getenv("det_models")) / task_name
@@ -177,7 +183,7 @@ def boxes2mitkv2():
         mitk_json = {
             "FileFormat": "MITK ROI",
             "Version": 2,
-            "Caption": "{label}: {score}",
+            "Caption": "{label}|{score}",
             "Geometry": {
                 "Size": img_size,
                 "Transform": transform,
@@ -197,14 +203,15 @@ def boxes2mitkv2():
         labels = labels[idx]
 
         _dtype = float
+        rois = []
         for instance_id, (pbox, pscore, plabel) in enumerate(zip(boxes, scores, labels), start=1):
-            mitk_json["ROIs"].append(
+            rois.append(
                 {
                     "ID": instance_id,
                     "Min": [_dtype(pbox[0]), _dtype(pbox[1]), _dtype(pbox[4])][::-1],
                     "Max": [_dtype(pbox[2]), _dtype(pbox[3]), _dtype(pbox[5])][::-1],
                     "Properties": {
-                        "ColorProperty": {"color": [1, 0, 0]},  # color of bounding box
+                        "ColorProperty": {"color": [1, 1, 1]},  # color of bounding box
                         "FloatProperty": {
                             "score": round(float(pscore), 2),
                             "label": float(plabel),
@@ -213,8 +220,18 @@ def boxes2mitkv2():
                     },
                 }
             )
+        mitk_json["ROIs"] = rois
+
         logger.info(f"Created prediction {cid} with {len(mitk_json['ROIs'])} instances.")
         save_json(mitk_json, save_dir / f"{cid}_boxes_mitkv2.json")
+
+        if publication:
+            mitk_json["Caption"] = ""  # remove caption
+            # set all boxes to red
+            for roi_idx in range(len(rois)):
+                rois[roi_idx]["Properties"]["ColorProperty"]["color"] = [1, 0, 0]
+            mitk_json["ROIs"] = rois
+            save_json(mitk_json, save_dir / f"{cid}_boxes_mitkv2_publication.json")
 
 
 @env_guard
