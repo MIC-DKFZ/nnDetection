@@ -14,6 +14,7 @@ spatial:
   p_elastic_deform: 0 # float
   elastic_deform_scale: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   elastic_deform_magnitude: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_synchronize_def_scale_across_axes: 0 # float
   # rotation
   p_rotation: 0.2 # float
   rotation: [-30, 30] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
@@ -21,7 +22,6 @@ spatial:
   p_scaling: 0.2 # float
   scaling: [0.7, 1.4] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
   p_synchronize_scaling_across_axes: 1 # float,
-  p_synchronize_def_scale_across_axes: False # float
   # params
   mode_seg: "nearest" # str
   random_crop: False # bool
