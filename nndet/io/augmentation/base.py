@@ -51,8 +51,8 @@ class ComposeBG2(BasicTransform):
 
         with torch.no_grad():
             with threadpool_limits(limits=1, user_api=None):
-                data_torch = torch.from_numpy(data_dict["data"]).to(dtype=torch.float)
-                seg_torch = torch.from_numpy(data_dict["seg"]).to(dtype=torch.int16)
+                data_torch = torch.from_numpy(data_dict.pop("data")).to(dtype=torch.float)
+                seg_torch = torch.from_numpy(data_dict.pop("seg")).to(dtype=torch.int16)
 
                 for i in range(len(data_dict["data"])):  # iterate over all images in the batch
                     sample_dict = {"image": data_torch[i], "segmentation": seg_torch[i]}
