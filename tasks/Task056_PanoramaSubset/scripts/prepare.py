@@ -22,9 +22,14 @@ LEVEL_MAPPER = {
     "cytology": False,
     "MSD_dataset": True,
     "NIH_dataset": False,
+    "histopathology": False,
+    "radiology / 3yFU": False,
 }
 EXCLUDE = [
     "100051_00001",
+    "100036_00001",
+    "100433_00001",
+    "101381_00001",
 ]
 
 
@@ -81,7 +86,7 @@ def create_custom_split(
     images_ts.mkdir(parents=True, exist_ok=True)
     labels_ts.mkdir(parents=True, exist_ok=True)
 
-    case_ids = patient_info.index
+    case_ids = list(patient_info.index)
     case_ids.sort()
 
     patient_info_grouped = patient_info.groupby("PANORAMA_patient_id").max()
@@ -168,7 +173,7 @@ def main():
         p.name.rsplit(".", 2)[0].rsplit("_", 1)[0] for p in source_data_dir.iterdir() if p.name.endswith(".nii.gz")
     ]
     image_cases_found.sort()
-    assert len(image_cases_found) == 2234, "Inconsistent cases"
+    assert len(image_cases_found) == 2235, "Inconsistent cases"
 
     # filter patients
     cases_automatic_labels = [
@@ -202,6 +207,7 @@ def main():
     # create custom split
     create_custom_split(
         patient_info=patient_filtered_df,
+        splitted_dir=raw_splitted_dir,
         num_modalities=len(meta["modalities"]),
         test_size=0.3,
     )
