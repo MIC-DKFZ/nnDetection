@@ -30,7 +30,7 @@ class GenericPreprocessor(AbstractPreprocessor):
         intensity_properties: Dict[int, Dict] = None,
         resample_anisotropy_threshold: float = 3.0,
         patch_size: Union[Tuple[int, int], Tuple[int, int, int]] = (128, 128, 128),
-        preprocessed_data_format: str = "b2nd",
+        preprocessed_data_format: str = "npz",
     ):
         """
         Preprocess data
