@@ -1,6 +1,8 @@
+import concurrent.futures
 import os
 import shutil
 import sys
+from itertools import repeat
 from pathlib import Path
 
 import pandas as pd
@@ -128,6 +130,25 @@ def create_custom_split(
     return train_pids, test_pids
 
 
+def prepare_and_filter(
+    cid: str,
+    patient_df: pd.DataFrame,
+    source_data_dir: Path,
+    source_label_dir: Path,
+    target_data_dir: Path,
+    target_label_dir: Path,
+) -> None:
+    patient_meta = patient_df.loc[cid]
+    prepare_case(
+        case_id=cid,
+        source_data=source_data_dir,
+        source_label_dir=source_label_dir,
+        target_data_dir=target_data_dir,
+        target_label_dir=target_label_dir,
+        patient_meta=patient_meta,
+    )
+
+
 @env_guard
 def main():
     task = "Task056_PanoramaSubset"
@@ -201,19 +222,34 @@ def main():
         if row[1]["level_msd"]:  # exclude all MSD cases
             continue
         filtered_series.append(row[1])
-    patient_filtered_df = pd.DataFrame(filtered_series)
 
-    for cid in maybe_verbose_iterable(patient_filtered_df.index):
-        logger.info(f"Preparing case {cid}")
-        patient_meta = patient_df.loc[cid]
-        prepare_case(
-            case_id=cid,
-            source_data=source_data_dir,
-            source_label_dir=source_label_dir,
-            target_data_dir=target_data_dir,
-            target_label_dir=target_label_dir,
-            patient_meta=patient_meta,
-        )
+    patient_filtered_df = pd.DataFrame(filtered_series)
+    filtered_case_ids = list(patient_filtered_df.index)
+    num_processes = int(os.getenv("det_num_threads", 4))
+    if num_processes < 1:
+        logger.info("Running in single process mode")
+        for cid in maybe_verbose_iterable(filtered_case_ids):
+            prepare_and_filter(
+                cid=cid,
+                patient_df=patient_filtered_df,
+                source_data=source_data_dir,
+                source_label_dir=source_label_dir,
+                target_data_dir=target_data_dir,
+                target_label_dir=target_label_dir,
+            )
+    else:
+        logger.info(f"Running in multi process mode with {num_processes} processes")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+            for cid in executor.map(
+                prepare_and_filter,
+                filtered_case_ids,
+                repeat(patient_filtered_df),
+                repeat(source_data_dir),
+                repeat(source_label_dir),
+                repeat(target_data_dir),
+                repeat(target_label_dir),
+            ):
+                logger.info(f"Finished processing case {cid}")
 
     # create custom split
     create_custom_split(
