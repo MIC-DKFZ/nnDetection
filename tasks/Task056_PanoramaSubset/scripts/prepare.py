@@ -4,9 +4,11 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import SimpleITK as sitk
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
+from nndet.io.itk import load_sitk
 from nndet.io.load import save_json
 from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
@@ -42,8 +44,17 @@ def prepare_case(
     patient_meta: pd.Series,
 ) -> None:
     # scan id _ patient id _ modality id
+    img_itk = load_sitk(source_data / f"{case_id}_0000.nii.gz")
+    label_itk = load_sitk(source_label_dir / f"{case_id}.nii.gz")
+
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+    # resampler.SetTransform(sitk.Transform())
+    resampler.SetReferenceImage(img_itk)
+    resampled_label_itk = resampler.Execute(label_itk)
+
     shutil.copy2(source_data / f"{case_id}_0000.nii.gz", target_data_dir / f"{case_id}_0000.nii.gz")
-    shutil.copy2(source_label_dir / f"{case_id}.nii.gz", target_label_dir / f"{case_id}.nii.gz")
+    sitk.WriteImage(resampled_label_itk, target_label_dir / f"{case_id}.nii.gz")
 
     if patient_meta["label"] == "non-PDAC":
         label_int = 0
