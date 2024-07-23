@@ -323,6 +323,7 @@ class DataLoader3D(
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -343,6 +344,7 @@ class DataLoader3D(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -375,6 +377,7 @@ class DataLoader3D(
             num_batches_per_epoch=num_batches_per_epoch,
             load_seg=load_seg,
             load_box=load_box,
+            preprocessed_data_format=preprocessed_data_format,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -394,6 +397,7 @@ class DataLoader3DOffset(
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -415,6 +419,7 @@ class DataLoader3DOffset(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -447,6 +452,7 @@ class DataLoader3DOffset(
             num_batches_per_epoch=num_batches_per_epoch,
             load_seg=load_seg,
             load_box=load_box,
+            preprocessed_data_format=preprocessed_data_format,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -466,6 +472,7 @@ class DataLoader3DOffsetV2(
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -488,6 +495,7 @@ class DataLoader3DOffsetV2(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -523,6 +531,7 @@ class DataLoader3DOffsetV2(
             num_batches_per_epoch=num_batches_per_epoch,
             load_seg=load_seg,
             load_box=load_box,
+            preprocessed_data_format=preprocessed_data_format,
         )
         self.force_bg_case = force_bg_case
         self.offset_prob = offset_prob
@@ -630,6 +639,7 @@ class DataLoader3DOffsetPatientBalanced(
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -653,6 +663,7 @@ class DataLoader3DOffsetPatientBalanced(
             batch_size: size of batches to generate
             patch_size_generator: patch size prduced by the dataloader
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Oversample foreground patches.
                 Each batch will be balanced to fullfill this criterion.
             memmap_mode: Do not change this. Defaults to "r".
@@ -687,6 +698,7 @@ class DataLoader3DOffsetPatientBalanced(
             batch_size=batch_size,
             patch_size_generator=patch_size_generator,
             patch_size_final=patch_size_final,
+            preprocessed_data_format=preprocessed_data_format,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
@@ -708,6 +720,7 @@ class NoiseLoader(BaseDataLoader3D):
         batch_size: int,
         patch_size_generator: Sequence[int],
         patch_size_final: Sequence[int],
+        preprocessed_data_format: str,
         oversample_foreground_percent: float = 0.5,
         memmap_mode: str = "r",
         num_batches_per_epoch: int = 2500,
@@ -724,6 +737,7 @@ class NoiseLoader(BaseDataLoader3D):
             batch_size: size of batches to generate
             patch_size_generator: Ignored.
             patch_size_final: final patch size after spatial transform
+            preprocessed_data_format: data format to save or load preprocessed data
             oversample_foreground_percent: Ignored.
             memmap_mode: Ignored.
             num_batches_per_epoch: number of batcher per epoch
@@ -742,6 +756,7 @@ class NoiseLoader(BaseDataLoader3D):
             batch_size=batch_size,
             patch_size_generator=patch_size_generator,
             patch_size_final=patch_size_final,
+            preprocessed_data_format=preprocessed_data_format,
             oversample_foreground_percent=oversample_foreground_percent,
             memmap_mode=memmap_mode,
             num_batches_per_epoch=num_batches_per_epoch,
