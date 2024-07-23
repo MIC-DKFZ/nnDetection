@@ -138,6 +138,7 @@ def prepare_and_filter(
     target_data_dir: Path,
     target_label_dir: Path,
 ) -> None:
+    logger.info(f"Processing case {cid}")
     patient_meta = patient_df.loc[cid]
     prepare_case(
         case_id=cid,
