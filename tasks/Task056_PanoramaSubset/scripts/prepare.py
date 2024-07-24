@@ -34,6 +34,8 @@ EXCLUDE = [
     "100036_00001",
     "100433_00001",
     "101381_00001",
+    "100028_00001",  # label broken in my download
+    "100936_00001",  # label broken in my download
 ]
 
 
