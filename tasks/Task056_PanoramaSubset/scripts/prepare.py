@@ -150,6 +150,7 @@ def prepare_and_filter(
         target_label_dir=target_label_dir,
         patient_meta=patient_meta,
     )
+    logger.info(f"Finished processing case {cid}")
 
 
 @env_guard
@@ -243,7 +244,7 @@ def main():
     else:
         logger.info(f"Running in multi process mode with {num_processes} processes")
         with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
-            for cid in executor.map(
+            for _ in executor.map(
                 prepare_and_filter,
                 filtered_case_ids,
                 repeat(patient_filtered_df),
@@ -252,7 +253,7 @@ def main():
                 repeat(target_data_dir),
                 repeat(target_label_dir),
             ):
-                logger.info(f"Finished processing case {cid}")
+                pass
 
     # create custom split
     create_custom_split(
