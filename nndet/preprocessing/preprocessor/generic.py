@@ -645,8 +645,7 @@ class DynDTypePreprocessor(GenericPreprocessor):
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
 
-
-class TorchResamplingPreprocessor(GenericPreprocessor):
+class TorchPreprocessor(GenericPreprocessor):
     """
     Resample data and segmentation with torch resampler
     """

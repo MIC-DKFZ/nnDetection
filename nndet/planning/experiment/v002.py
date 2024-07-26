@@ -13,7 +13,7 @@ from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
 from nndet.preprocessing.preprocessor.generic import (
     DynDTypePreprocessor,
-    TorchResamplingPreprocessor,
+    TorchPreprocessor,
 )
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.config import load_plan_from_dir
@@ -223,11 +223,11 @@ class D3V002EstV1(D3V002):
 @PLANNER_REGISTRY.register
 class D3V002TorchResampling(D3V002):
     @staticmethod
-    def create_preprocessor(plan: Dict) -> TorchResamplingPreprocessor:
+    def create_preprocessor(plan: Dict) -> TorchPreprocessor:
         """
         Create Preprocessor
         """
-        preprocessor = TorchResamplingPreprocessor(
+        preprocessor = TorchPreprocessor(
             norm_scheme_per_modality=plan["normalization_schemes"],
             use_mask_for_norm=plan["use_mask_for_norm"],
             transpose_forward=plan["transpose_forward"],
