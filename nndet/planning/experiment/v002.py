@@ -11,7 +11,10 @@ from nndet.planning.architecture.boxes.v002 import BoxV002
 from nndet.planning.estimator import MemoryEstimatorDetection, NoGPUMemoryEstimator
 from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
-from nndet.preprocessing.preprocessor.generic import DynDTypePreprocessor
+from nndet.preprocessing.preprocessor.generic import (
+    DynDTypePreprocessor,
+    TorchResamplingPreprocessor,
+)
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.config import load_plan_from_dir
 
@@ -215,6 +218,25 @@ class D3V002EstV1(D3V002):
             model_cfg=model_cfg,
         )
         return architecture_planner
+
+
+@PLANNER_REGISTRY.register
+class D3V002TorchResampling(D3V002):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> TorchResamplingPreprocessor:
+        """
+        Create Preprocessor
+        """
+        preprocessor = TorchResamplingPreprocessor(
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+            patch_size=plan["patch_size"],
+            preprocessed_data_format=plan["preprocessed_data_format"],
+        )
+        return preprocessor
 
 
 @PLANNER_REGISTRY.register
