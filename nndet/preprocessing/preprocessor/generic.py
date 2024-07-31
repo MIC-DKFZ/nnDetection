@@ -17,6 +17,7 @@ from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.preprocessing.crop import ImageCropper
 from nndet.preprocessing.preprocessor.abstract import AbstractPreprocessor
 from nndet.preprocessing.resampling import resample_patient
+from nndet.preprocessing.torchresampling import torch_resample_patient
 
 
 class GenericPreprocessor(AbstractPreprocessor):
@@ -678,18 +679,15 @@ class TorchPreprocessor(GenericPreprocessor):
         target_spacing = np.array(target_spacing)
         data[np.isnan(data)] = 0
 
-        data, seg = resample_patient(
+        data, seg = torch_resample_patient(
             data,
             seg,
             original_spacing,
             target_spacing,
-            order_data=3,
-            order_seg=0,
             force_separate_z=False,
             order_z_data=9999,
             order_z_seg=9999,
             separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
-            use_torch=True,
         )
 
         after = {

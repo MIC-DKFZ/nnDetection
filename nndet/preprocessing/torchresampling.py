@@ -6,12 +6,10 @@ Direct copy of nnU-Net
 All credits go to: https://github.com/MIC-DKFZ/nnUNet
 """
 
-from collections import OrderedDict
-
 import numpy as np
-from batchgenerators.augmentations.utils import resize_segmentation
+import torch
 from scipy.ndimage.interpolation import map_coordinates
-from skimage.transform import resize
+from torch.nn import functional as F
 
 
 def get_do_separate_z(spacing, anisotropy_threshold: float = 3):
@@ -30,13 +28,11 @@ def get_lowres_axis(new_spacing):
     return axis
 
 
-def resample_patient(
+def torch_resample_patient(
     data,
     seg,
     original_spacing,
     target_spacing,
-    order_data=3,
-    order_seg=0,
     force_separate_z=False,
     order_z_data=0,
     order_z_seg=0,
@@ -86,19 +82,74 @@ def resample_patient(
             pass
 
     if data is not None:
-        data_reshaped = resample_data_or_seg(
-            data, new_shape, False, axis, order_data, do_separate_z, order_z=order_z_data
-        )
+        data_reshaped = resample_data_or_seg(data, new_shape, False, axis, do_separate_z, order_z=order_z_data)
     else:
         data_reshaped = None
     if seg is not None:
-        seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, order_seg, do_separate_z, order_z=order_z_seg)
+        seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, do_separate_z, order_z=order_z_seg)
     else:
         seg_reshaped = None
     return data_reshaped, seg_reshaped
 
 
-def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, order_z=0) -> np.ndarray:
+def torch_resampler(
+    data,
+    new_shape,
+    is_seg=False,
+    num_threads=4,
+    device=torch.device("cpu"),
+    memefficient_seg_resampling=False,
+    mode="linear",
+):
+    if mode == "linear":
+        if data.ndim == 3:
+            torch_mode = "trilinear"
+        elif data.ndim == 2:
+            torch_mode = "bilinear"
+        else:
+            raise RuntimeError
+    else:
+        torch_mode = mode
+
+    n_threads = torch.get_num_threads()
+    torch.set_num_threads(num_threads)
+
+    data = torch.from_numpy(data).to(device)
+    new_shape = tuple(new_shape)
+
+    if is_seg:
+        unique_values = torch.unique(data)
+        result_dtype = torch.int8 if max(unique_values) < 127 else torch.int16
+        result = torch.zeros(new_shape, dtype=result_dtype, device=device)
+        if not memefficient_seg_resampling:
+            result_tmp = torch.zeros((len(unique_values), *new_shape), dtype=torch.float16, device=device)
+            scale_factor = 1000
+            done_mask = torch.zeros_like(result, dtype=torch.bool, device=device)
+            for i, u in enumerate(unique_values):
+                result_tmp[i] = F.interpolate(
+                    (data[None, None] == u).float() * scale_factor, new_shape, mode=torch_mode, antialias=False
+                )[0, 0]
+                mask = result_tmp[i] > (0.7 * scale_factor)
+                result[mask] = u.item()
+                done_mask |= mask
+            if not torch.all(done_mask):
+                result[~done_mask] = unique_values[result_tmp[:, ~done_mask].argmax(0)].to(result_dtype)
+        else:
+            for i, u in enumerate(unique_values):
+                if u == 0:
+                    pass
+                result[
+                    F.interpolate((data[None, None] == u).float(), new_shape, mode=torch_mode, antialias=False)[0] > 0.5
+                ] = u
+
+    else:
+        result = F.interpolate(data[None, None].float(), new_shape, mode=torch_mode, antialias=False)[0, 0]
+
+    torch.set_num_threads(n_threads)
+    return result.cpu().numpy()
+
+
+def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False, order_z=0) -> np.ndarray:
     """
     Resample data or segmentation
     Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
@@ -117,19 +168,19 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
     """
     assert len(data.shape) == 4, "data must be (c, x, y, z)"
     assert len(new_shape) == len(data.shape) - 1
-    if is_seg:
-        resize_fn = resize_segmentation
-        kwargs = OrderedDict()
-    else:
-        resize_fn = resize
-        kwargs = {"mode": "edge", "anti_aliasing": False}
+
+    resize_fn = torch_resampler
+    kwargs = dict(
+        is_seg=is_seg, num_threads=4, device=torch.device("cpu"), memefficient_seg_resampling=False, mode="linear"
+    )
+
     dtype_data = data.dtype
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
     if np.any(shape != new_shape):
         data = data.astype(float)
         if do_separate_z:
-            print("separate z, order in z is", order_z, "order inplane is", order)
+            print("separate z, order in z is", order_z)
             assert len(axis) == 1, "only one anisotropic axis supported"
             axis = axis[0]
             if axis == 0:
@@ -144,16 +195,12 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
                 reshaped_data = []
                 for slice_id in range(shape[axis]):
                     if axis == 0:
-                        reshaped_data.append(
-                            resize_fn(data[c, slice_id], new_shape_2d, order, **kwargs).astype(dtype_data)
-                        )
+                        reshaped_data.append(resize_fn(data[c, slice_id], new_shape_2d, **kwargs).astype(dtype_data))
                     elif axis == 1:
-                        reshaped_data.append(
-                            resize_fn(data[c, :, slice_id], new_shape_2d, order, **kwargs).astype(dtype_data)
-                        )
+                        reshaped_data.append(resize_fn(data[c, :, slice_id], new_shape_2d, **kwargs).astype(dtype_data))
                     else:
                         reshaped_data.append(
-                            resize_fn(data[c, :, :, slice_id], new_shape_2d, order, **kwargs).astype(dtype_data)
+                            resize_fn(data[c, :, :, slice_id], new_shape_2d, **kwargs).astype(dtype_data)
                         )
                 reshaped_data = np.stack(reshaped_data, axis)
                 if shape[axis] != new_shape[axis]:
@@ -194,10 +241,10 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
                     reshaped_final_data.append(reshaped_data[None].astype(dtype_data))
             reshaped_final_data = np.vstack(reshaped_final_data)
         else:
-            print("no separate z, order", order)
+            print("no separate z")
             reshaped = []
             for c in range(data.shape[0]):
-                reshaped.append(resize_fn(data[c], new_shape, order, **kwargs)[None].astype(dtype_data))
+                reshaped.append(resize_fn(data[c], new_shape, **kwargs)[None].astype(dtype_data))
             reshaped_final_data = np.vstack(reshaped)
         return reshaped_final_data.astype(dtype_data)
     else:
