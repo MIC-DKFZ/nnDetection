@@ -139,6 +139,7 @@ setup(
             "nndet_ensemble_with_task = nndet_scripts.ensemble:entrypoint_ensemble_with_task",
             "nndet_ensemble_with_models = nndet_scripts.ensemble:entrypoint_ensemble_with_models",
             "nndet_ensemble_with_folders = nndet_scripts.ensemble:entrypoint_ensemble_with_folders",
+            "nndet_ensemble_with_determined_model = nndet_scripts.ensemble:entrypoint_ensemble_with_determined_model",
             # prediction
             "nndet_predict_with_imagesTs = nndet_scripts.predict2:entrypoint_predict_with_imagesTs",
             "nndet_predict_with_task = nndet_scripts.predict2:entrypoint_predict_with_task",

@@ -2,6 +2,7 @@ import argparse
 import itertools
 import os
 import sys
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Sequence, Set, Tuple, Union
@@ -14,6 +15,7 @@ from nndet.core.boxes.nms import batched_nms
 from nndet.core.boxes.wbc import batched_wbc
 from nndet.eval.det.evaluator import BoxEvaluator
 from nndet.io import load_pickle, save_pickle
+from nndet.io.load import load_json, save_json
 from nndet.io.paths import get_task
 from nndet.utils.check import env_guard
 from nndet.utils.config import load_dataset_info
@@ -29,7 +31,7 @@ def entrypoint_ensemble_with_task():
     parser.add_argument(
         "target_model",
         type=str,
-        help="name of new model directory to save predictions in",
+        help="name of new model name to save predictions",
     )
     parser.add_argument(
         "source_models",
@@ -239,6 +241,64 @@ def entrypoint_ensemble_with_folders():
     )
 
 
+@env_guard
+def entrypoint_ensemble_with_determined_model():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument(
+        "model",
+        type=str,
+        help="Model which was selected by 'nndet_determine_best_ensemble'",
+    )
+    parser.add_argument("fold", type=int, help="fold, use -1 for consolidated")
+    parser.add_argument("--test", help="Ensemble test predictions", action="store_true")
+    args = parser.parse_args()
+
+    task = args.task
+    model = args.model
+    fold = args.fold
+    test = args.test
+
+    # env paths
+    det_models = Path(os.getenv("det_models"))
+    task = get_task(task, name=True, models=True)
+    fold = "consolidated" if fold == -1 else f"fold{fold}"
+    predictions_dir_name = "test_predictions" if test else "val_predictions"
+
+    selected_configuration = load_json(det_models / task / model / "determine_ensemble_result.json")
+    source_models = selected_configuration["models"]
+    iou = selected_configuration["iou"]
+    mode = selected_configuration["mode"]
+    logger.info(f"Ensembling with {source_models} and IoU {iou} using mode {mode}")
+
+    source_prediction_paths = [det_models / task / m / fold / predictions_dir_name for m in source_models]
+    target_prediction_path = det_models / task / model / fold / predictions_dir_name
+
+    if len(source_prediction_paths) < 1:
+        raise ValueError("Only a single model was passed. Ensembling can only be used for multiple models.")
+    if mode not in ["wbc", "nms"]:
+        raise ValueError(f"{mode} is not supported for mode, only 'nms' or 'wbc' are supported")
+    mode = f"batched_{mode}"  # enums refer to batched modes
+
+    if not (iou <= 1 and iou >= 0):
+        raise ValueError("IoU need to be in the range [0, 1].")
+
+    target_prediction_dir = Path(target_prediction_path)
+    target_prediction_dir.mkdir(parents=True, exist_ok=True)
+
+    source_prediction_dirs: List[Path] = [Path(spp) for spp in source_prediction_paths]
+    for spd in source_prediction_dirs:
+        if not spd.is_dir():
+            raise ValueError(f"Expected {spd} to be a prediction dir but this directory does not exist.")
+
+    _ensemble(
+        source_prediction_dirs=source_prediction_dirs,
+        target_prediction_dir=target_prediction_dir,
+        mode=mode,
+        iou=iou,
+    )
+
+
 def _get_case_ids(source_prediction_dirs: List[Path]) -> List[str]:
     """
     Retrieve case ids from directories.
@@ -372,11 +432,19 @@ def entrypoint_determine_best_ensemble_with_task():
     logger.info(f"+++ Running 'find best ensemble and paramter' {current_time_str} +++")
     logger.info(f"Looking for ensemble models out of {models}")
 
-    best_model_subset, best_iou, _ = _determine_best_ensemble_and_parameter(
+    best_model_subset, best_iou, _, ensemble_results = _determine_best_ensemble_and_parameter(
         prediction_dirs=prediction_dirs,
         ground_truth_dir=data_dir_task / "preprocessed" / "labelsTr",
         classes=list(data_cfg["labels"].values()),
         optim_metric="AP_IoU_0.10",
+    )
+
+    # save results
+    save_json(ensemble_results, new_model_dir / "determine_ensemble_sweep.json")
+    save_json(
+        # {"models": list(best_model_subset), "iou": best_iou, "mode": "wbc"},
+        {"models": list(best_model_subset), "iou": best_iou, "mode": "nms"},
+        new_model_dir / "determine_ensemble_result.json",
     )
 
     # print instructions for ensembling
@@ -426,9 +494,7 @@ def _determine_best_ensemble_and_parameter(
     ground_truth_dir = Path(ground_truth_dir)
 
     # define ensembling setup
-
-    # iou_values = np.arange(0.0, 1.05, 0.05)
-    iou_values = np.arange(0.0, 0.55, 0.05)
+    iou_values = [round(i, 3) for i in np.arange(0.0, 0.55, 0.05)]
     iou_values[0] = 1e-5  # use small value to indicate any overlap, 0 not working
 
     # determine predictions
@@ -443,10 +509,8 @@ def _determine_best_ensemble_and_parameter(
     all_subsets = all_subsets[1:]  # remove empty subset
 
     # sweep
-    best_optim_metric = 0
-    best_iou = None
-    best_model_subset = None
     logger.info("Start sweeping through all possible ensemble configurations.")
+    ensemble_results = []
     for model_subset in all_subsets:  # iterate all model combinations
         for iou_idx, iou in enumerate(iou_values):  # iterate all iou values
             if len(model_subset) == 1 and iou_idx > 0:
@@ -479,12 +543,50 @@ def _determine_best_ensemble_and_parameter(
 
             # store results
             eval_scores, _ = evaluator.finish_online_evaluation()
+            evaluator.reset()
             logger.info(f"Evaluated ensemble {model_subset} with IoU {iou}: {eval_scores[optim_metric]}")
-            if eval_scores[optim_metric] > best_optim_metric:
-                logger.info("New best ensemble configuration found.")
-                best_optim_metric = eval_scores[optim_metric]
-                best_iou = iou
-                best_model_subset = model_subset
+            ensemble_results.append(
+                {
+                    "models": list(model_subset),
+                    "iou": iou,
+                    f"{optim_metric}": eval_scores[optim_metric],
+                }
+            )
+
+    # select best model configuration
+    best_result_all = max(ensemble_results, key=lambda x: x[optim_metric])
+    best_result_single = max(
+        [r for r in ensemble_results if len(r["models"]) == 1],
+        key=lambda x: x[optim_metric],
+    )
+    if len(best_result_all["models"]) > 1:
+        # an ensemble was the best -> we use a two-step selection process to make a robust selection
+        # we first check for the best IoU threshold across model combinations
+        iou_indexed_results = defaultdict(list)
+        for r in ensemble_results:
+            if len(r["models"]) > 1:
+                iou_indexed_results[r["iou"]].append(r)
+        best_iou = max(
+            iou_indexed_results,
+            key=lambda x: np.mean([v[optim_metric] for v in iou_indexed_results[x]]),
+        )
+
+        # now we select the model combination for the determined IoU
+        best_iou_results = iou_indexed_results[best_iou]
+        best_result = max(best_iou_results, key=lambda x: x[optim_metric])
+
+        if best_result[optim_metric] < best_result_single[optim_metric]:
+            logger.info("Selected ensemble is worse than best single model -> backing up to single model")
+            # if the selected ensemble is worse than the best single model, roll back to a single model
+            best_result = best_result_single
+    else:
+        # single model was best
+        best_result = best_result_all
+        assert best_result == best_result_single
+
+    best_model_subset = best_result["models"]
+    best_iou = best_result["iou"]
+    best_optim_metric = best_result[optim_metric]
 
     assert best_iou is not None
     assert best_model_subset is not None
@@ -493,7 +595,7 @@ def _determine_best_ensemble_and_parameter(
         f"Best ensemble configuration: {best_model_subset} with IoU {best_iou} and "
         f"{optim_metric} {best_optim_metric}"
     )
-    return best_model_subset, best_iou, best_optim_metric
+    return best_model_subset, best_iou, best_optim_metric, ensemble_results
 
 
 def _load_ensemble_predictions(
@@ -514,9 +616,10 @@ def _load_ensemble_predictions(
     Returns:
         Dict[str, Dict[str, np.ndarray]]: ensembled predictions
     """
-    ensemble_function = batched_wbc
     case_predictions = {}
-    num_models = len(prediction_dirs)
+    ensemble_function = batched_nms
+    # ensemble_function = batched_wbc
+    # num_models = len(prediction_dirs)
 
     for cid in maybe_verbose_iterable(case_ids):
         if len(prediction_dirs) == 1:
@@ -541,9 +644,6 @@ def _load_ensemble_predictions(
                 labels=torch.from_numpy(labels),
                 weights=torch.from_numpy(np.ones_like(scores)),
                 iou_thresh=iou,
-                n_exp_preds=torch.from_numpy(np.ones_like(scores) * num_models),
-                use_area=False,
-                missing_weight=1.0,
             )
             case_predictions[cid] = {
                 "pred_boxes": pred_boxes.cpu().numpy(),
