@@ -1,6 +1,7 @@
 import argparse
 import itertools
 import os
+import shutil
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -334,51 +335,56 @@ def _ensemble(
 ) -> None:
     case_ids = _get_case_ids(source_prediction_dirs)
     target_prediction_dir.mkdir(exist_ok=True)
-    mode = EnsembleNMS(mode)
 
-    for cid in maybe_verbose_iterable(case_ids):
-        boxes = []
-        scores = []
-        labels = []
-        for pd in source_prediction_dirs:
-            pred = load_pickle(pd / f"{cid}_boxes.pkl")
-            boxes.append(pred["pred_boxes"])
-            scores.append(pred["pred_scores"])
-            labels.append(pred["pred_labels"])
+    if len(source_prediction_dirs) == 1:
+        logger.warning("+++ Only a single model was passed. No ensembling required. +++")
+        for cid in maybe_verbose_iterable(case_ids):
+            shutil.copy2(source_prediction_dirs[0] / f"{cid}_boxes.pkl", target_prediction_dir / f"{cid}_boxes.pkl")
+    else:
+        mode = EnsembleNMS(mode)
+        for cid in maybe_verbose_iterable(case_ids):
+            boxes = []
+            scores = []
+            labels = []
+            for pd in source_prediction_dirs:
+                pred = load_pickle(pd / f"{cid}_boxes.pkl")
+                boxes.append(pred["pred_boxes"])
+                scores.append(pred["pred_scores"])
+                labels.append(pred["pred_labels"])
 
-        boxes = np.concatenate(boxes, axis=0)
-        scores = np.concatenate(scores, axis=0)
-        labels = np.concatenate(labels, axis=0)
+            boxes = np.concatenate(boxes, axis=0)
+            scores = np.concatenate(scores, axis=0)
+            labels = np.concatenate(labels, axis=0)
 
-        if mode == EnsembleNMS.NMS:
-            pred_boxes, pred_scores, pred_labels, _ = batched_nms(
-                boxes=torch.from_numpy(boxes),
-                scores=torch.from_numpy(scores),
-                labels=torch.from_numpy(labels),
-                iou_thresh=iou,
-            )
-        elif mode == EnsembleNMS.WBC:
-            pred_boxes, pred_scores, pred_labels, _ = batched_wbc(
-                boxes=torch.from_numpy(boxes),
-                scores=torch.from_numpy(scores),
-                labels=torch.from_numpy(labels),
-                weights=torch.from_numpy(np.ones_like(scores)),
-                iou_thresh=iou,
-                n_exp_preds=torch.from_numpy(np.ones_like(scores) * len(source_prediction_dirs)),
-                use_area=False,
-                missing_weight=1.0,
-            )
+            if mode == EnsembleNMS.NMS:
+                pred_boxes, pred_scores, pred_labels, _ = batched_nms(
+                    boxes=torch.from_numpy(boxes),
+                    scores=torch.from_numpy(scores),
+                    labels=torch.from_numpy(labels),
+                    iou_thresh=iou,
+                )
+            elif mode == EnsembleNMS.WBC:
+                pred_boxes, pred_scores, pred_labels, _ = batched_wbc(
+                    boxes=torch.from_numpy(boxes),
+                    scores=torch.from_numpy(scores),
+                    labels=torch.from_numpy(labels),
+                    weights=torch.from_numpy(np.ones_like(scores)),
+                    iou_thresh=iou,
+                    n_exp_preds=torch.from_numpy(np.ones_like(scores) * len(source_prediction_dirs)),
+                    use_area=False,
+                    missing_weight=1.0,
+                )
 
-        pred_boxes = pred_boxes.cpu().numpy()
-        pred_scores = pred_scores.cpu().numpy()
-        pred_labels = pred_labels.cpu().numpy()
+            pred_boxes = pred_boxes.cpu().numpy()
+            pred_scores = pred_scores.cpu().numpy()
+            pred_labels = pred_labels.cpu().numpy()
 
-        pred_ensemble = {
-            "pred_boxes": pred_boxes,
-            "pred_scores": pred_scores,
-            "pred_labels": pred_labels,
-        }
-        save_pickle(pred_ensemble, target_prediction_dir / f"{cid}_boxes.pkl")
+            pred_ensemble = {
+                "pred_boxes": pred_boxes,
+                "pred_scores": pred_scores,
+                "pred_labels": pred_labels,
+            }
+            save_pickle(pred_ensemble, target_prediction_dir / f"{cid}_boxes.pkl")
 
 
 @env_guard
