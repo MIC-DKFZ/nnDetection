@@ -265,7 +265,7 @@ def entrypoint_ensemble_with_determined_model():
     fold = "consolidated" if fold == -1 else f"fold{fold}"
     predictions_dir_name = "test_predictions" if test else "val_predictions"
 
-    selected_configuration = load_json(det_models / task / model / "determine_ensemble_result.json")
+    selected_configuration = load_json(det_models / task / model / fold / "determine_ensemble_result.json")
     source_models = selected_configuration["models"]
     iou = selected_configuration["iou"]
     mode = selected_configuration["mode"]
@@ -389,7 +389,6 @@ def entrypoint_determine_best_ensemble_with_task():
         "new_model",
         type=str,
         help="name of new model directory to save predictions in",
-        # default="nnDetectonV2_ensemble",
     )
     parser.add_argument(
         "models",
@@ -397,22 +396,32 @@ def entrypoint_determine_best_ensemble_with_task():
         nargs="+",
         help="models to ensemble",
     )
+    parser.add_argument(
+        "-f",
+        "--fold",
+        type=int,
+        help="Specify fold to select ensemble for. Use -1 for consolidated",
+        default=-1,
+    )
 
     args = parser.parse_args()
     task: str = args.task
     models: List[str] = args.models
     new_model: str = args.new_model
+    fold: int = args.fold
 
     # prepare paths
     task = get_task(task, name=True, models=True)
     data_dir_task = Path(os.getenv("det_data")) / task
     data_cfg = load_dataset_info(data_dir_task)
 
-    new_model_dir = Path(os.getenv("det_models")) / task / new_model
-    new_model_dir.mkdir(exist_ok=True)
+    new_model_dir = Path(os.getenv("det_models")) / task / new_model / fold
+    new_model_dir.mkdir(exist_ok=True, parents=True)
+
+    fold: str = "consolidated" if fold == -1 else f"fold{fold}"
 
     prediction_dirs = {
-        model: Path(os.getenv("det_models")) / task / model / "consolidated" / "val_predictions" for model in models
+        model: Path(os.getenv("det_models")) / task / model / fold / "val_predictions" for model in models
     }
     for model, pd in prediction_dirs.items():
         if not pd.is_dir():
