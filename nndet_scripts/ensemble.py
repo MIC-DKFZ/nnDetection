@@ -410,6 +410,8 @@ def entrypoint_determine_best_ensemble_with_task():
     new_model: str = args.new_model
     fold: int = args.fold
 
+    fold: str = "consolidated" if fold == -1 else f"fold{fold}"
+
     # prepare paths
     task = get_task(task, name=True, models=True)
     data_dir_task = Path(os.getenv("det_data")) / task
@@ -417,8 +419,6 @@ def entrypoint_determine_best_ensemble_with_task():
 
     new_model_dir = Path(os.getenv("det_models")) / task / new_model / fold
     new_model_dir.mkdir(exist_ok=True, parents=True)
-
-    fold: str = "consolidated" if fold == -1 else f"fold{fold}"
 
     prediction_dirs = {
         model: Path(os.getenv("det_models")) / task / model / fold / "val_predictions" for model in models
