@@ -8,7 +8,7 @@ All credits go to: https://github.com/MIC-DKFZ/nnUNet
 
 import numpy as np
 import torch
-from scipy.ndimage.interpolation import map_coordinates
+from einops import rearrange
 from torch.nn import functional as F
 
 
@@ -102,9 +102,9 @@ def torch_resampler(
     mode="linear",
 ):
     if mode == "linear":
-        if data.ndim == 3:
+        if data.ndim == 4:
             torch_mode = "trilinear"
-        elif data.ndim == 2:
+        elif data.ndim == 3:
             torch_mode = "bilinear"
         else:
             raise RuntimeError
@@ -120,14 +120,16 @@ def torch_resampler(
     if is_seg:
         unique_values = torch.unique(data)
         result_dtype = torch.int8 if max(unique_values) < 127 else torch.int16
-        result = torch.zeros(new_shape, dtype=result_dtype, device=device)
+        result = torch.zeros((data.shape[0], *new_shape), dtype=result_dtype, device=device)
         if not memefficient_seg_resampling:
-            result_tmp = torch.zeros((len(unique_values), *new_shape), dtype=torch.float16, device=device)
+            result_tmp = torch.zeros(
+                (len(unique_values), data.shape[0], *new_shape), dtype=torch.float16, device=device
+            )
             scale_factor = 1000
             done_mask = torch.zeros_like(result, dtype=torch.bool, device=device)
             for i, u in enumerate(unique_values):
                 result_tmp[i] = F.interpolate(
-                    (data[None, None] == u).float() * scale_factor, new_shape, mode=torch_mode, antialias=False
+                    (data[None] == u).float() * scale_factor, new_shape, mode=torch_mode, antialias=False
                 )[0, 0]
                 mask = result_tmp[i] > (0.7 * scale_factor)
                 result[mask] = u.item()
@@ -139,11 +141,11 @@ def torch_resampler(
                 if u == 0:
                     pass
                 result[
-                    F.interpolate((data[None, None] == u).float(), new_shape, mode=torch_mode, antialias=False)[0] > 0.5
+                    F.interpolate((data[None] == u).float(), new_shape, mode=torch_mode, antialias=False)[0] > 0.5
                 ] = u
 
     else:
-        result = F.interpolate(data[None, None].float(), new_shape, mode=torch_mode, antialias=False)[0, 0]
+        result = F.interpolate(data[None].float(), new_shape, mode=torch_mode, antialias=False)[0]
 
     torch.set_num_threads(n_threads)
     return result.cpu().numpy()
@@ -183,70 +185,27 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
             print("separate z, order in z is", order_z)
             assert len(axis) == 1, "only one anisotropic axis supported"
             axis = axis[0]
-            if axis == 0:
-                new_shape_2d = new_shape[1:]
-            elif axis == 1:
-                new_shape_2d = new_shape[[0, 2]]
-            else:
-                new_shape_2d = new_shape[:-1]
+            tmp = "xyz"
+            axis_letter = tmp[axis]
+            others_int = [i for i in range(3) if i != axis]
+            others = [tmp[i] for i in others_int]
 
-            reshaped_final_data = []
-            for c in range(data.shape[0]):
-                reshaped_data = []
-                for slice_id in range(shape[axis]):
-                    if axis == 0:
-                        reshaped_data.append(resize_fn(data[c, slice_id], new_shape_2d, **kwargs).astype(dtype_data))
-                    elif axis == 1:
-                        reshaped_data.append(resize_fn(data[c, :, slice_id], new_shape_2d, **kwargs).astype(dtype_data))
-                    else:
-                        reshaped_data.append(
-                            resize_fn(data[c, :, :, slice_id], new_shape_2d, **kwargs).astype(dtype_data)
-                        )
-                reshaped_data = np.stack(reshaped_data, axis)
-                if shape[axis] != new_shape[axis]:
+            # reshape by overloading c channel
+            data = rearrange(data, f"c x y z -> (c {axis_letter}) {others[0]} {others[1]}")
 
-                    # The following few lines are blatantly copied and modified from sklearn's resize()
-                    rows, cols, dim = new_shape[0], new_shape[1], new_shape[2]
-                    orig_rows, orig_cols, orig_dim = reshaped_data.shape
-
-                    row_scale = float(orig_rows) / rows
-                    col_scale = float(orig_cols) / cols
-                    dim_scale = float(orig_dim) / dim
-
-                    map_rows, map_cols, map_dims = np.mgrid[:rows, :cols, :dim]
-                    map_rows = row_scale * (map_rows + 0.5) - 0.5
-                    map_cols = col_scale * (map_cols + 0.5) - 0.5
-                    map_dims = dim_scale * (map_dims + 0.5) - 0.5
-
-                    coord_map = np.array([map_rows, map_cols, map_dims])
-                    if not is_seg or order_z == 0:
-                        reshaped_final_data.append(
-                            map_coordinates(reshaped_data, coord_map, order=order_z, mode="nearest")[None].astype(
-                                dtype_data
-                            )
-                        )
-                    else:
-                        unique_labels = np.unique(reshaped_data)
-                        reshaped = np.zeros(new_shape, dtype=dtype_data)
-
-                        for i, cl in enumerate(unique_labels):
-                            reshaped_multihot = np.round(
-                                map_coordinates(
-                                    (reshaped_data == cl).astype(float), coord_map, order=order_z, mode="nearest"
-                                )
-                            )
-                            reshaped[reshaped_multihot > 0.5] = cl
-                        reshaped_final_data.append(reshaped[None].astype(dtype_data))
-                else:
-                    reshaped_final_data.append(reshaped_data[None].astype(dtype_data))
-            reshaped_final_data = np.vstack(reshaped_final_data)
+            # reshape in-plane
+            tmp_new_shape = [new_shape[i] for i in others_int]
+            data = resize_fn(data, tmp_new_shape, **kwargs)
+            data = rearrange(
+                data,
+                f"(c {axis_letter}) {others[0]} {others[1]} -> c x y z",
+                **{axis_letter: shape[axis], others[0]: tmp_new_shape[0], others[1]: tmp_new_shape[1]},
+            )
+            # reshape out of plane w/ nearest
+            data = resize_fn(data, new_shape, **kwargs)
         else:
             print("no separate z")
-            reshaped = []
-            for c in range(data.shape[0]):
-                reshaped.append(resize_fn(data[c], new_shape, **kwargs)[None].astype(dtype_data))
-            reshaped_final_data = np.vstack(reshaped)
-        return reshaped_final_data.astype(dtype_data)
+            data = resize_fn(data, new_shape, **kwargs).astype(dtype_data)
     else:
         print("no resampling necessary")
-        return data
+    return data
