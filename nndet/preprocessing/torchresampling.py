@@ -201,7 +201,7 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
                 **{axis_letter: shape[axis], others[0]: tmp_new_shape[0], others[1]: tmp_new_shape[1]},
             )
             # reshape out of plane w/ nearest
-            data = resize_fn(data, new_shape, **kwargs)
+            data = resize_fn(data, new_shape, **kwargs).astype(dtype_data)
         else:
             print("no separate z")
             data = resize_fn(data, new_shape, **kwargs).astype(dtype_data)
