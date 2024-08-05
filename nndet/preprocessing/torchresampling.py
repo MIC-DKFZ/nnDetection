@@ -130,7 +130,7 @@ def torch_resampler(
             for i, u in enumerate(unique_values):
                 result_tmp[i] = F.interpolate(
                     (data[None] == u).float() * scale_factor, new_shape, mode=torch_mode, antialias=False
-                )[0, 0]
+                )[0]
                 mask = result_tmp[i] > (0.7 * scale_factor)
                 result[mask] = u.item()
                 done_mask |= mask
@@ -161,7 +161,6 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
         new_shape: define new dims (without channels)
         is_seg: changes the resampling strategy
         axis: anisotropic axis, different resampling order used here
-        order: order of resampling along the isotropic axis
         do_separate_z: Different resampling along z dimensions
         order_z: if separate z resampling is done then this is the order for resampling in z
 
