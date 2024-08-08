@@ -173,7 +173,7 @@ class AugModularBG2(NoAugBG2):
             )
 
         if self.params.get("do_mirror"):
-            tr_transforms.append(MirrorTransform(self.params["mirror"]["allowed_axes"]))
+            tr_transforms.append(MirrorTransform(self.params["mirror"]["mirror_axes"]))
 
         if self.params.get("use_mask_for_norm"):
             use_mask_for_norm = self.params["use_mask_for_norm"]

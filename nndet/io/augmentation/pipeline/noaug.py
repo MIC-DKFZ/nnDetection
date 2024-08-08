@@ -133,9 +133,13 @@ class NoAugBG2(NoAug):
         elif self.dim == 3 and params["do_dummy_2D_data_aug"]:
             logger.info("Using dummy 2d augmentation params")
             params["dummy_2D"] = True
-            params["spatial"]["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
-            params["spatial"]["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
-            params["spatial"]["rotation"] = params["2d_overwrites"]["rotation"]
+            params["spatial"]["elastic_deform_alpha"] = params["2d_overwrites"].pop("elastic_deform_alpha")
+            params["spatial"]["elastic_deform_sigma"] = params["2d_overwrites"].pop("elastic_deform_sigma")
+            params["spatial"]["rotation"] = params["2d_overwrites"].pop("rotation")
+            if "mirror_axes" in params["2d_overwrites"]:
+                params["mirror"]["mirror_axes"] = params["2d_overwrites"].pop("mirror_axes")
+            if params["2d_overwrites"]:
+                logger.warning(f"Unused 2d_overwrites: {params['2d_overwrites']} which will be ignored!!!")
 
         params["selected_seg_channels"] = [0]
         params["spatial"]["rotation"] = [i / 180 * np.pi for i in params["spatial"]["rotation"]]

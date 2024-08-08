@@ -92,9 +92,10 @@ gamma:
 # MirrorTransform
 do_mirror: True
 mirror:
-  allowed_axes: [0, 1, 2] # Tuple[int, ...] # TODO: make this automatic and configurable
+  mirror_axes: [0, 1, 2] # Tuple[int, ...]
 
 2d_overwrites:
   elastic_deform_alpha: [0., 200.]
   elastic_deform_sigma: [9., 13.]
   rotation: [-180, 180]
+  # mirror_axes: [0, 1]
