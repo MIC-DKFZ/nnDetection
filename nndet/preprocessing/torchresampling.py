@@ -117,7 +117,7 @@ def torch_resampler(
     data = torch.from_numpy(data).to(device)
     new_shape = tuple(new_shape)
 
-    if is_seg and torch_mode != 'nearest':
+    if is_seg and torch_mode != "nearest":
         unique_values = torch.unique(data)
         result_dtype = torch.int8 if max(unique_values) < 127 else torch.int16
         result = torch.zeros((data.shape[0], *new_shape), dtype=result_dtype, device=device)
@@ -200,10 +200,10 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
                 **{axis_letter: shape[axis], others[0]: tmp_new_shape[0], others[1]: tmp_new_shape[1]},
             )
             # reshape out of plane w/ nearest
-            data = resize_fn(data, new_shape, **kwargs).astype(dtype_data)
+            data = resize_fn(data, new_shape, **kwargs)
         else:
             print("no separate z")
-            data = resize_fn(data, new_shape, **kwargs).astype(dtype_data)
+            data = resize_fn(data, new_shape, **kwargs)
     else:
         print("no resampling necessary")
-    return data
+    return data.astype(dtype_data)
