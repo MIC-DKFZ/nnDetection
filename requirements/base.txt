@@ -14,5 +14,5 @@ matplotlib
 seaborn
 tensorboard
 GitPython
-batchgeneratorsv2
-blosc2
+batchgeneratorsv2>=0.2
+blosc2>=3.0.0b1
