@@ -117,7 +117,7 @@ def torch_resampler(
     data = torch.from_numpy(data).to(device)
     new_shape = tuple(new_shape)
 
-    if is_seg:
+    if is_seg and torch_mode != 'nearest':
         unique_values = torch.unique(data)
         result_dtype = torch.int8 if max(unique_values) < 127 else torch.int16
         result = torch.zeros((data.shape[0], *new_shape), dtype=result_dtype, device=device)
@@ -143,7 +143,6 @@ def torch_resampler(
                 result[
                     F.interpolate((data[None] == u).float(), new_shape, mode=torch_mode, antialias=False)[0] > 0.5
                 ] = u
-
     else:
         result = F.interpolate(data[None].float(), new_shape, mode=torch_mode, antialias=False)[0]
 
