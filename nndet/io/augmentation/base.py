@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from batchgenerators.transforms.abstract_transforms import Compose
 from batchgeneratorsv2.transforms.base.basic_transform import BasicTransform
+from loguru import logger
 from threadpoolctl import threadpool_limits
 
 
@@ -141,8 +142,51 @@ class AugmentationSetup(ABC):
             transformations which should be used.
         """
         self.patch_size = patch_size
-        self.params = params
+        self.dim = len(self.patch_size)
         self.use_box_io = use_box_io
+        self.params = self.process_params(params)
+
+    def process_params(self, params: dict) -> dict:
+        """
+        Process parameters for augmentation
+
+        Args:
+            params: parameters for augmentation
+
+        Returns:
+            dict: processed parameters
+        """
+        if self.dim == 2:
+            logger.info("Using 2D augmentation params")
+            overwrites_2d = params.get("2d_overwrites", {})
+            params.update(overwrites_2d)
+        elif self.dim == 3 and params["do_dummy_2D_data_aug"]:
+            logger.info("Using dummy 2d augmentation params")
+            params["dummy_2D"] = True
+            params["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
+            params["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
+            params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
+
+        params["selected_seg_channels"] = [0]
+        params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
+        params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
+        params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]
+        return params
+
+    def get_patch_size_generator(self) -> List[int]:
+        """
+        Compute patch size to extract from volume to avoid augmentation
+        artifacts
+        """
+        return list(
+            get_patch_size(
+                patch_size=self.patch_size,
+                rot_x=self.params["rotation_x"],
+                rot_y=self.params["rotation_y"],
+                rot_z=self.params["rotation_z"],
+                scale_range=self.params["scale_range"],
+            )
+        )
 
     @abstractmethod
     def get_training_transforms(self):
@@ -159,18 +203,3 @@ class AugmentationSetup(ABC):
         Needs to be overwritten in subclasses.
         """
         raise NotImplementedError
-
-    def get_patch_size_generator(self) -> List[int]:
-        """
-        Compute patch size to extract from volume to avoid augmentation
-        artifacts
-        """
-        return list(
-            get_patch_size(
-                patch_size=self.patch_size,
-                rot_x=self.params["rotation_x"],
-                rot_y=self.params["rotation_y"],
-                rot_z=self.params["rotation_z"],
-                scale_range=self.params["scale_range"],
-            )
-        )

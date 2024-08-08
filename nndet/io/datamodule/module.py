@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 import os
 import random
 import subprocess
@@ -163,30 +164,13 @@ class BaseDatamodule(BaseModule):
         patch size, the patch size for the generator and create the
         augmentation object.
         """
-        dim = len(self.patch_size)
-        params = self.augment_cfg
-        patch_size = self.patch_size
-
-        if dim == 2:
-            logger.info("Using 2D augmentation params")
-            overwrites_2d = params.get("2d_overwrites", {})
-            params.update(overwrites_2d)
-        elif dim == 3 and self.plan["do_dummy_2D_data_aug"]:
-            logger.info("Using dummy 2d augmentation params")
-            params["dummy_2D"] = True
-            params["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
-            params["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
-            params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
-
-        params["selected_seg_channels"] = [0]
+        params = copy.deepcopy(self.augment_cfg)
         params["use_mask_for_norm"] = {int(k): i for k, i in self.plan["use_mask_for_norm"].items()}
-        params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
-        params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
-        params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]
+        params["do_dummy_2D_data_aug"] = self.plan["do_dummy_2D_data_aug"]
 
         augmentation_cls = AUGMENTATION_REGISTRY[params["transforms"]]
         self.augmentation = augmentation_cls(
-            patch_size=patch_size,
+            patch_size=self.patch_size,
             params=params,
             use_box_io=self.use_box_io,
         )

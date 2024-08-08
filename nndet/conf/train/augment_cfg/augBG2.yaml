@@ -17,10 +17,10 @@ spatial:
   p_synchronize_def_scale_across_axes: 0 # float
   # rotation
   p_rotation: 0.2 # float
-  rotation: [-30, 30] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  rotation: [-30, 30] # Sequence[float]
   # scale
   p_scaling: 0.2 # float
-  scaling: [0.7, 1.4] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  scaling: [0.7, 1.4] # Sequence[float]
   p_synchronize_scaling_across_axes: 1 # float,
   # params
   mode_seg: "nearest" # str
@@ -94,17 +94,7 @@ do_mirror: True
 mirror:
   allowed_axes: [0, 1, 2] # Tuple[int, ...] # TODO: make this automatic and configurable
 
-#FIXME
-rotation_x: ${.spatial.rotation}
-rotation_y: ${.spatial.rotation}
-rotation_z: ${.spatial.rotation}
-scale_range: ${.spatial.scaling}
-
 2d_overwrites:
   elastic_deform_alpha: [0., 200.]
   elastic_deform_sigma: [9., 13.]
-  rotation_x: [-180, 180]
-  rotation_y: [0, 0]
-  rotation_z: [0, 0]
-  dummy_2D: False
-  mirror_axes: [0, 1]
+  rotation: [-180, 180]

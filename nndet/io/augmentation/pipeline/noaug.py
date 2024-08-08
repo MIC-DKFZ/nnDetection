@@ -105,7 +105,7 @@ class NoAug(AugmentationSetup):
 
 
 @AUGMENTATION_REGISTRY.register
-class NoAugBG2(AugmentationSetup):
+class NoAugBG2(NoAug):
     def __init__(
         self,
         patch_size: Sequence[int],
@@ -113,53 +113,46 @@ class NoAugBG2(AugmentationSetup):
         use_box_io: bool = False,
     ) -> None:
         super().__init__(patch_size, params, use_box_io=use_box_io)
-        self.dummy_2d = self.params.get("dummy_2D", False)
-        if self.dummy_2d:
-            logger.info("Running dummy 2d augmentation transforms!")
-
-        if self.dummy_2d:
-            self._spatial_transform_patch_size = self.patch_size[1:]
-        else:
-            self._spatial_transform_patch_size = self.patch_size
-
         if self.use_box_io:
-            raise NotImplementedError
+            raise NotImplementedError("Box IO is not implemented for BG2")
 
-    def any_matching_axes(self) -> bool:
+    def process_params(self, params: dict) -> dict:
         """
-        Check if any axes have the same size
+        Process parameters for augmentation
 
-        Returns:
-            bool: `True` if at least two axes have the same size.
-                `False` otherwise
-        """
-        num_matching_axes = np.array([sum([i == j for j in self.patch_size]) for i in self.patch_size])
-        return np.any(num_matching_axes > 1)
-
-    def same_axes(self) -> List[int]:
-        """
-        Compute number of matching axes of patch size
+        Args:
+            params: parameters for augmentation
 
         Returns:
-            List[int: indices of axes which has the same patch size
+            dict: processed parameters
         """
-        num_matching_axes = np.array([sum([i == j for j in self.patch_size]) for i in self.patch_size])
-        same_axes = list(np.where(num_matching_axes == np.max(num_matching_axes))[0])
-        return same_axes
+        if self.dim == 2:
+            logger.info("Using 2D augmentation params")
+            overwrites_2d = params.get("2d_overwrites", {})
+            params.update(overwrites_2d)
+        elif self.dim == 3 and params["do_dummy_2D_data_aug"]:
+            logger.info("Using dummy 2d augmentation params")
+            params["dummy_2D"] = True
+            params["spatial"]["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
+            params["spatial"]["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
+            params["spatial"]["rotation"] = params["2d_overwrites"]["rotation"]
+
+        params["selected_seg_channels"] = [0]
+        params["spatial"]["rotation"] = [i / 180 * np.pi for i in params["spatial"]["rotation"]]
+        return params
 
     def get_patch_size_generator(self) -> List[int]:
         """
         Compute patch size to extract from volume to avoid augmentation
         artifacts
         """
-        # TODO : recheck
         _patch_size = list(
             get_patch_size(
                 patch_size=self._spatial_transform_patch_size,
-                rot_x=self.params["rotation_x"],
-                rot_y=self.params["rotation_y"],
-                rot_z=self.params["rotation_z"],
-                scale_range=self.params["scale_range"],
+                rot_x=self.params["spatial"]["rotation"],
+                rot_y=self.params["spatial"]["rotation"],
+                rot_z=self.params["spatial"]["rotation"],
+                scale_range=self.params["spatial"]["scaling"],
             )
         )
         if self.dummy_2d:
