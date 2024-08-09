@@ -13,6 +13,7 @@ from nndet.planning.experiment import PLANNER_REGISTRY
 from nndet.planning.experiment.v001 import D3V001
 from nndet.preprocessing.preprocessor.generic import (
     DynDTypePreprocessor,
+    TorchDynDTypePreprocessor,
     TorchPreprocessor,
 )
 from nndet.ptmodule import MODULE_REGISTRY
@@ -221,25 +222,6 @@ class D3V002EstV1(D3V002):
 
 
 @PLANNER_REGISTRY.register
-class D3V002TorchResampling(D3V002):
-    @staticmethod
-    def create_preprocessor(plan: Dict) -> TorchPreprocessor:
-        """
-        Create Preprocessor
-        """
-        preprocessor = TorchPreprocessor(
-            norm_scheme_per_modality=plan["normalization_schemes"],
-            use_mask_for_norm=plan["use_mask_for_norm"],
-            transpose_forward=plan["transpose_forward"],
-            intensity_properties=plan["dataset_properties"]["intensity_properties"],
-            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
-            patch_size=plan["patch_size"],
-            preprocessed_data_format=plan["preprocessed_data_format"],
-        )
-        return preprocessor
-
-
-@PLANNER_REGISTRY.register
 class D3V002DynDtype(D3V002):
     @staticmethod
     def create_preprocessor(plan: Dict) -> DynDTypePreprocessor:
@@ -261,3 +243,41 @@ class D3V002DynDtype(D3V002):
 @PLANNER_REGISTRY.register
 class D3V002DynDtypeBlosc(D3V002DynDtype, D3V002Blosc):
     pass
+
+
+@PLANNER_REGISTRY.register
+class D3V002TorchResampling(D3V002Blosc):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> TorchPreprocessor:
+        """
+        Create Preprocessor
+        """
+        preprocessor = TorchPreprocessor(
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+            patch_size=plan["patch_size"],
+            preprocessed_data_format=plan["preprocessed_data_format"],
+        )
+        return preprocessor
+
+
+@PLANNER_REGISTRY.register
+class D3V002TorchResamplingDynDType(D3V002Blosc):
+    @staticmethod
+    def create_preprocessor(plan: Dict) -> TorchDynDTypePreprocessor:
+        """
+        Create Preprocessor
+        """
+        preprocessor = TorchDynDTypePreprocessor(
+            norm_scheme_per_modality=plan["normalization_schemes"],
+            use_mask_for_norm=plan["use_mask_for_norm"],
+            transpose_forward=plan["transpose_forward"],
+            intensity_properties=plan["dataset_properties"]["intensity_properties"],
+            resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
+            patch_size=plan["patch_size"],
+            preprocessed_data_format=plan["preprocessed_data_format"],
+        )
+        return preprocessor

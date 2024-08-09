@@ -695,3 +695,7 @@ class TorchPreprocessor(GenericPreprocessor):
             "shape (resampled)": data.shape,
         }
         return data, seg, after
+
+
+class TorchDynDTypePreprocessor(TorchPreprocessor, DynDTypePreprocessor):
+    pass
