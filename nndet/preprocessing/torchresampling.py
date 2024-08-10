@@ -6,6 +6,10 @@ Direct copy of nnU-Net
 All credits go to: https://github.com/MIC-DKFZ/nnUNet
 """
 
+
+from copy import deepcopy
+from typing import List, Tuple, Union
+
 import numpy as np
 import torch
 from einops import rearrange
@@ -23,7 +27,19 @@ def torch_resample_patient(
     separate_z_anisotropy_threshold: float = 3,
 ):
     """
-    Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
+    Resample data and segmentation to new spacing
+
+    Args:
+        data: input data
+        seg: input segmentation
+        original_spacing: original spacing
+        target_spacing: target spacing
+        force_separate_z: force separate lowres axis as z-axis
+        separate_z_anisotropy_threshold: anisotropy threshold for separating z-axis
+
+    Returns:
+        Union[torch.Tensor, np.ndarray, None]: resampled data
+        Union[torch.Tensor, np.ndarray, None]: resampled segmentation
     """
     new_shape = get_new_shape(data, seg, original_spacing, target_spacing)
     do_separate_z, axis = get_do_separate_z(
@@ -52,6 +68,23 @@ def torch_resampler(
     memefficient_seg_resampling: bool = False,
     mode: str = "linear",
 ):
+    """
+    Resample the given data into a given shape
+
+    Args:
+        data: array to resample [C, dims]
+        new_shape: define new dims (without channels)
+        is_seg: changes the resampling strategy
+        num_threads: number of threads to use for resampling
+        device: device to be used for resampling
+        memefficient_seg_resampling: execute slow but memory efficient resampling 
+        mode: algorithm to be used for resampling. Available options are: nearest,
+            linear (3D-only), bilinear, bicubic (4D-only), trilinear (5D-only),
+            area, nearest-exact
+
+        Returns:
+            torch.Tensor: resampled array
+    """
     if mode == "linear":
         if data.ndim == 4:
             torch_mode = "trilinear"
@@ -123,8 +156,12 @@ def resample_data_or_seg(
         is_seg: changes the resampling strategy
         axis: anisotropic axis, different resampling order used here
         do_separate_z: Different resampling along z dimensions
-        order_z: if separate z resampling is done then this is the order for resampling in z
-
+        num_threads: number of threads to use for resampling
+        device: device to be used for resampling
+        memefficient_seg_resampling: execute slow but memory efficient resampling 
+        mode: algorithm to be used for resampling. Available options are: nearest,
+            linear (3D-only), bilinear, bicubic (4D-only), trilinear (5D-only),
+            area, nearest-exact
     Returns:
         np.ndarray: resampled array
     """
