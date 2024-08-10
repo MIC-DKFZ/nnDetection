@@ -171,10 +171,16 @@ def resample_data_or_seg(
     dtype_data = data.dtype
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
+    
+    was_numpy = isinstance(data, np.ndarray)
+    if was_numpy:
+        data = torch.from_numpy(data)
+    else:
+        orig_device = deepcopy(data.device)
+        
     if np.any(shape != new_shape):
-        data = data.astype(float)
         if do_separate_z:
-            print("separate z, order in z is", order_z)
+            print("separate z")
             assert len(axis) == 1, "only one anisotropic axis supported"
             axis = axis[0]
             tmp = "xyz"
@@ -201,4 +207,9 @@ def resample_data_or_seg(
 
     else:
         print("no resampling necessary")
-    return data.astype(dtype_data)
+        
+    if was_numpy:
+        data = data.cpu().numpy().astype(dtype_data)
+    else:
+        data = data.to(orig_device).type(dtype_data)
+    return data
