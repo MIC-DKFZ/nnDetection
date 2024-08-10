@@ -1,9 +1,6 @@
-import os
-from pathlib import Path
-
-import torch
 import numpy as np
 import pytest
+import torch
 
 from nndet.preprocessing.torchresampling import resample_data_or_seg
 
