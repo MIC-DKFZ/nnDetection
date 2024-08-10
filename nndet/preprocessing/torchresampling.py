@@ -44,13 +44,13 @@ def torch_resample_patient(
 
 
 def torch_resampler(
-    data,
-    new_shape,
-    is_seg=False,
-    num_threads=4,
-    device=torch.device("cpu"),
-    memefficient_seg_resampling=False,
-    mode="linear",
+    data: torch.Tensor,
+    new_shape: Union[Tuple[int, ...], List[int], np.ndarray],
+    is_seg: bool = False,
+    num_threads: int = 4,
+    device: torch.device = torch.device("cpu"),
+    memefficient_seg_resampling: bool = False,
+    mode: str = "linear",
 ):
     if mode == "linear":
         if data.ndim == 4:
@@ -101,7 +101,18 @@ def torch_resampler(
     return result.cpu().numpy()
 
 
-def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False, order_z=0) -> np.ndarray:
+def resample_data_or_seg(
+    data: Union[torch.Tensor, np.ndarray],
+    new_shape: Union[Tuple[int, ...], List[int], np.ndarray],
+    is_seg: bool = False,
+    axis=None,
+    do_separate_z=False,
+    num_threads: int = 4,
+    device: torch.device = torch.device("cpu"),
+    memefficient_seg_resampling: bool = False,
+    mode: str = "linear",
+    aniso_axis_mode: str = "nearest-exact",
+) -> np.ndarray:
     """
     Resample data or segmentation
     Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
