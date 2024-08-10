@@ -77,7 +77,7 @@ def torch_resampler(
         is_seg: changes the resampling strategy
         num_threads: number of threads to use for resampling
         device: device to be used for resampling
-        memefficient_seg_resampling: execute slow but memory efficient resampling 
+        memefficient_seg_resampling: execute slow but memory efficient resampling
         mode: algorithm to be used for resampling. Available options are: nearest,
             linear (3D-only), bilinear, bicubic (4D-only), trilinear (5D-only),
             area, nearest-exact
@@ -158,7 +158,7 @@ def resample_data_or_seg(
         do_separate_z: Different resampling along z dimensions
         num_threads: number of threads to use for resampling
         device: device to be used for resampling
-        memefficient_seg_resampling: execute slow but memory efficient resampling 
+        memefficient_seg_resampling: execute slow but memory efficient resampling
         mode: algorithm to be used for resampling. Available options are: nearest,
             linear (3D-only), bilinear, bicubic (4D-only), trilinear (5D-only),
             area, nearest-exact
@@ -171,13 +171,13 @@ def resample_data_or_seg(
     dtype_data = data.dtype
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
-    
+
     was_numpy = isinstance(data, np.ndarray)
     if was_numpy:
         data = torch.from_numpy(data)
     else:
         orig_device = deepcopy(data.device)
-        
+
     if np.any(shape != new_shape):
         if do_separate_z:
             print("separate z")
@@ -200,14 +200,16 @@ def resample_data_or_seg(
                 **{axis_letter: shape[axis], others[0]: tmp_new_shape[0], others[1]: tmp_new_shape[1]},
             )
             # reshape out of plane w/ nearest
-            data = torch_resampler(data, new_shape, is_seg, num_threads, device, memefficient_seg_resampling, aniso_axis_mode)
+            data = torch_resampler(
+                data, new_shape, is_seg, num_threads, device, memefficient_seg_resampling, aniso_axis_mode
+            )
         else:
             print("no separate z")
             data = torch_resampler(data, new_shape, is_seg, num_threads, device, memefficient_seg_resampling)
 
     else:
         print("no resampling necessary")
-        
+
     if was_numpy:
         data = data.cpu().numpy().astype(dtype_data)
     else:

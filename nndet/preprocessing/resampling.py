@@ -65,9 +65,9 @@ def get_new_shape(data, seg, original_spacing, target_spacing):
         shape = np.array(data[0].shape)
     else:
         shape = np.array(seg[0].shape)
-        
+
     new_shape = np.round(((np.array(original_spacing) / np.array(target_spacing)).astype(float) * shape)).astype(int)
-   
+
     return new_shape
 
 
