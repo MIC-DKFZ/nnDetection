@@ -169,11 +169,6 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
     assert len(data.shape) == 4, "data must be (c, x, y, z)"
     assert len(new_shape) == len(data.shape) - 1
 
-    resize_fn = torch_resampler
-    kwargs = dict(
-        is_seg=is_seg, num_threads=4, device=torch.device("cpu"), memefficient_seg_resampling=False, mode="linear"
-    )
-
     dtype_data = data.dtype
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
@@ -193,17 +188,18 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, do_separate_z=False
 
             # reshape in-plane
             tmp_new_shape = [new_shape[i] for i in others_int]
-            data = resize_fn(data, tmp_new_shape, **kwargs)
+            data = torch_resampler(data, tmp_new_shape, is_seg, num_threads, device, memefficient_seg_resampling, mode)
             data = rearrange(
                 data,
                 f"(c {axis_letter}) {others[0]} {others[1]} -> c x y z",
                 **{axis_letter: shape[axis], others[0]: tmp_new_shape[0], others[1]: tmp_new_shape[1]},
             )
             # reshape out of plane w/ nearest
-            data = resize_fn(data, new_shape, **kwargs)
+            data = torch_resampler(data, new_shape, is_seg, num_threads, device, memefficient_seg_resampling, aniso_axis_mode)
         else:
             print("no separate z")
-            data = resize_fn(data, new_shape, **kwargs)
+            data = torch_resampler(data, new_shape, is_seg, num_threads, device, memefficient_seg_resampling)
+
     else:
         print("no resampling necessary")
     return data.astype(dtype_data)
