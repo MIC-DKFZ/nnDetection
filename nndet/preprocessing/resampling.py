@@ -14,14 +14,6 @@ from scipy.ndimage.interpolation import map_coordinates
 from skimage.transform import resize
 
 
-def get_do_separate_z(spacing, anisotropy_threshold: float = 3):
-    """
-    Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
-    """
-    do_separate_z = (np.max(spacing) / np.min(spacing)) > anisotropy_threshold
-    return do_separate_z
-
-
 def get_lowres_axis(new_spacing):
     """
     Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
@@ -30,33 +22,7 @@ def get_lowres_axis(new_spacing):
     return axis
 
 
-def resample_patient(
-    data,
-    seg,
-    original_spacing,
-    target_spacing,
-    order_data=3,
-    order_seg=0,
-    force_separate_z=False,
-    order_z_data=0,
-    order_z_seg=0,
-    separate_z_anisotropy_threshold: float = 3,
-):
-    """
-    Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
-    """
-    assert not ((data is None) and (seg is None))
-    if data is not None:
-        assert len(data.shape) == 4, "data must be c x y z"
-    if seg is not None:
-        assert len(seg.shape) == 4, "seg must be c x y z"
-
-    if data is not None:
-        shape = np.array(data[0].shape)
-    else:
-        shape = np.array(seg[0].shape)
-    new_shape = np.round(((np.array(original_spacing) / np.array(target_spacing)).astype(float) * shape)).astype(int)
-
+def get_do_separate_z(original_spacing, target_spacing, force_separate_z, separate_z_anisotropy_threshold):
     if force_separate_z is not None:
         do_separate_z = force_separate_z
         if force_separate_z:
@@ -64,10 +30,10 @@ def resample_patient(
         else:
             axis = None
     else:
-        if get_do_separate_z(original_spacing, separate_z_anisotropy_threshold):
+        if (np.max(original_spacing) / np.min(original_spacing)) > separate_z_anisotropy_threshold:
             do_separate_z = True
             axis = get_lowres_axis(original_spacing)
-        elif get_do_separate_z(target_spacing, separate_z_anisotropy_threshold):
+        elif (np.max(target_spacing) / np.min(target_spacing)) > separate_z_anisotropy_threshold:
             do_separate_z = True
             axis = get_lowres_axis(target_spacing)
         else:
@@ -85,16 +51,58 @@ def resample_patient(
         else:
             pass
 
+    return do_separate_z, axis
+
+
+def get_new_shape(data, seg, original_spacing, target_spacing):
+    assert not ((data is None) and (seg is None))
+    if data is not None:
+        assert len(data.shape) == 4, "data must be c x y z"
+    if seg is not None:
+        assert len(seg.shape) == 4, "seg must be c x y z"
+
+    if data is not None:
+        shape = np.array(data[0].shape)
+    else:
+        shape = np.array(seg[0].shape)
+        
+    new_shape = np.round(((np.array(original_spacing) / np.array(target_spacing)).astype(float) * shape)).astype(int)
+   
+    return new_shape
+
+
+def resample_patient(
+    data,
+    seg,
+    original_spacing,
+    target_spacing,
+    order_data=3,
+    order_seg=0,
+    force_separate_z=False,
+    order_z_data=0,
+    order_z_seg=0,
+    separate_z_anisotropy_threshold: float = 3,
+):
+    """
+    Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
+    """
+    new_shape = get_new_shape(data, seg, original_spacing, target_spacing)
+    do_separate_z, axis = get_do_separate_z(
+        original_spacing, target_spacing, force_separate_z, separate_z_anisotropy_threshold
+    )
+
     if data is not None:
         data_reshaped = resample_data_or_seg(
             data, new_shape, False, axis, order_data, do_separate_z, order_z=order_z_data
         )
     else:
         data_reshaped = None
+
     if seg is not None:
         seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, order_seg, do_separate_z, order_z=order_z_seg)
     else:
         seg_reshaped = None
+
     return data_reshaped, seg_reshaped
 
 
