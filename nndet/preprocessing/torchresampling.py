@@ -98,7 +98,7 @@ def torch_resampler(
     n_threads = torch.get_num_threads()
     torch.set_num_threads(num_threads)
 
-    data = torch.from_numpy(data).to(device)
+    data = data.to(device)
     new_shape = tuple(new_shape)
 
     if is_seg and torch_mode != "nearest":
@@ -131,7 +131,7 @@ def torch_resampler(
         result = F.interpolate(data[None].float(), new_shape, mode=torch_mode, antialias=False)[0]
 
     torch.set_num_threads(n_threads)
-    return result.cpu().numpy()
+    return result
 
 
 def resample_data_or_seg(
