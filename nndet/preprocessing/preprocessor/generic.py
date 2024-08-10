@@ -685,8 +685,6 @@ class TorchPreprocessor(GenericPreprocessor):
             original_spacing,
             target_spacing,
             force_separate_z=False,
-            order_z_data=9999,
-            order_z_seg=9999,
             separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
         )
 
