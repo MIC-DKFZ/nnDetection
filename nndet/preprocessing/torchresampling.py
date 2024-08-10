@@ -15,13 +15,11 @@ from nndet.preprocessing.resampling import get_do_separate_z, get_new_shape
 
 
 def torch_resample_patient(
-    data,
-    seg,
-    original_spacing,
-    target_spacing,
-    force_separate_z=False,
-    order_z_data=0,
-    order_z_seg=0,
+    data: Union[torch.Tensor, np.ndarray, None],
+    seg: Union[torch.Tensor, np.ndarray, None],
+    original_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+    target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+    force_separate_z: Union[bool, None] = False,
     separate_z_anisotropy_threshold: float = 3,
 ):
     """
@@ -36,10 +34,12 @@ def torch_resample_patient(
         data_reshaped = resample_data_or_seg(data, new_shape, False, axis, do_separate_z)
     else:
         data_reshaped = None
+
     if seg is not None:
-        seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, do_separate_z, order_z=order_z_seg)
+        seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, do_separate_z)
     else:
         seg_reshaped = None
+
     return data_reshaped, seg_reshaped
 
 
