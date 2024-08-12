@@ -10,6 +10,7 @@ from collections import OrderedDict
 from typing import List, Tuple, Union
 
 import numpy as np
+import torch
 from batchgenerators.augmentations.utils import resize_segmentation
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.transform import resize
@@ -73,7 +74,12 @@ def get_do_separate_z(
     return do_separate_z, axis
 
 
-def get_new_shape(data, seg, original_spacing, target_spacing):
+def get_new_shape(
+    data: Union[torch.Tensor, np.ndarray, None],
+    seg: Union[torch.Tensor, np.ndarray, None],
+    original_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+    target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+):
     """
     Determine the shape of the resampled array
 
