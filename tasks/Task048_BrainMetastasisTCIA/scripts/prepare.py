@@ -30,9 +30,9 @@ def prepare_case(
     # copy seg
     seg_itk = load_sitk(source_data / case_id / f"{case_id}-seg.nii.gz")
     seg_np = sitk.GetArrayFromImage(seg_itk)
-    seg_np[seg_np == 1] = 1  # map necrosis
-    seg_np[seg_np == 2] = 0  # map enhancing tumor to background
-    seg_np[seg_np == 3] = 1  # map tumor core
+    seg_np[seg_np == 1] = 1  # map tumor core
+    seg_np[seg_np == 2] = 0  # map flair hyperintensities
+    seg_np[seg_np == 3] = 1  # map enahncing tumor
     new_seg_itk = sitk.GetImageFromArray(seg_np)
     new_seg_itk.CopyInformation(seg_itk)
     sitk.WriteImage(new_seg_itk, target_label_dir / f"{case_id}_000.nii.gz")
