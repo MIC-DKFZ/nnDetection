@@ -7,6 +7,7 @@ All credits go to: https://github.com/MIC-DKFZ/nnUNet
 """
 
 from collections import OrderedDict
+from typing import List, Tuple, Union
 
 import numpy as np
 from batchgenerators.augmentations.utils import resize_segmentation
@@ -22,7 +23,25 @@ def get_lowres_axis(new_spacing):
     return axis
 
 
-def get_do_separate_z(original_spacing, target_spacing, force_separate_z, separate_z_anisotropy_threshold):
+def get_do_separate_z(
+    original_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+    target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
+    force_separate_z: Union[bool, None],
+    separate_z_anisotropy_threshold: float,
+):
+    """
+    Determine whether or not to do separate z resampling and along which axis
+
+    Args:
+        original_spacing: original spacing
+        target_spacing: target spacing
+        force_separate_z: force separate lowres axis as z-axis
+        separate_z_anisotropy_threshold: anisotropy threshold for separating z-axis
+
+        Returns:
+            bool: whether or not to do separate z resampling
+            Union[np.ndarray | None]: anisotropic axis
+    """
     if force_separate_z is not None:
         do_separate_z = force_separate_z
         if force_separate_z:
@@ -55,6 +74,18 @@ def get_do_separate_z(original_spacing, target_spacing, force_separate_z, separa
 
 
 def get_new_shape(data, seg, original_spacing, target_spacing):
+    """
+    Determine the shape of the resampled array
+
+    Args:
+        data: input data
+        seg: input segmentation
+        original_spacing: original spacing
+        target_spacing: target spacing
+
+    Returns:
+        np.ndarray: new shape of the resampled array
+    """
     assert not ((data is None) and (seg is None))
     if data is not None:
         assert len(data.shape) == 4, "data must be c x y z"
