@@ -7,7 +7,7 @@ All credits go to: https://github.com/MIC-DKFZ/nnUNet
 """
 
 from collections import OrderedDict
-from typing import List, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -29,7 +29,7 @@ def get_do_separate_z(
     target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
     force_separate_z: Union[bool, None],
     separate_z_anisotropy_threshold: float,
-):
+) -> Union[bool, np.ndarray]:
     """
     Determine whether or not to do separate z resampling and along which axis
 
@@ -70,7 +70,6 @@ def get_do_separate_z(
             do_separate_z = False
         else:
             pass
-
     return do_separate_z, axis
 
 
@@ -79,7 +78,7 @@ def get_new_shape(
     seg: Union[torch.Tensor, np.ndarray, None],
     original_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
     target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
-):
+) -> np.ndarray:
     """
     Determine the shape of the resampled array
 
@@ -109,41 +108,71 @@ def get_new_shape(
 
 
 def resample_patient(
-    data,
-    seg,
-    original_spacing,
-    target_spacing,
-    order_data=3,
-    order_seg=0,
-    force_separate_z=False,
-    order_z_data=0,
-    order_z_seg=0,
+    data: np.ndarray,
+    seg: Optional[np.ndarray],
+    original_spacing: Sequence[float],
+    target_spacing: Sequence[float],
+    order_data: int = 3,
+    order_seg: int = 0,
+    force_separate_z: bool = False,
+    order_z_data: int = 0,
+    order_z_seg: int = 0,
     separate_z_anisotropy_threshold: float = 3,
-):
+) -> Union[Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
     """
-    new_shape = get_new_shape(data, seg, original_spacing, target_spacing)
+    new_shape = get_new_shape(
+        data=data,
+        seg=seg,
+        original_spacing=original_spacing,
+        target_spacing=target_spacing,
+    )
     do_separate_z, axis = get_do_separate_z(
-        original_spacing, target_spacing, force_separate_z, separate_z_anisotropy_threshold
+        original_spacing=original_spacing,
+        target_spacing=target_spacing,
+        force_separate_z=force_separate_z,
+        separate_z_anisotropy_threshold=separate_z_anisotropy_threshold,
     )
 
     if data is not None:
         data_reshaped = resample_data_or_seg(
-            data, new_shape, False, axis, order_data, do_separate_z, order_z=order_z_data
+            data=data,
+            new_shape=new_shape,
+            is_seg=False,
+            axis=axis,
+            order=order_data,
+            do_separate_z=do_separate_z,
+            order_z=order_z_data,
         )
     else:
         data_reshaped = None
 
     if seg is not None:
-        seg_reshaped = resample_data_or_seg(seg, new_shape, True, axis, order_seg, do_separate_z, order_z=order_z_seg)
+        seg_reshaped = resample_data_or_seg(
+            data=seg,
+            new_shape=new_shape,
+            is_seg=True,
+            axis=axis,
+            order=order_seg,
+            do_separate_z=do_separate_z,
+            order_z=order_z_seg,
+        )
     else:
         seg_reshaped = None
 
     return data_reshaped, seg_reshaped
 
 
-def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separate_z=False, order_z=0) -> np.ndarray:
+def resample_data_or_seg(
+    data: np.ndarray,
+    new_shape: Sequence[int],
+    is_seg: bool,
+    axis: Optional[Sequence[int]] = None,
+    order: int = 3,
+    do_separate_z: bool = False,
+    order_z: int = 0,
+) -> np.ndarray:
     """
     Resample data or segmentation
     Direct copy of nnunet: https://github.com/MIC-DKFZ/nnUNet
@@ -171,6 +200,7 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
     dtype_data = data.dtype
     shape = np.array(data[0].shape)
     new_shape = np.array(new_shape)
+
     if np.any(shape != new_shape):
         data = data.astype(float)
         if do_separate_z:
@@ -230,7 +260,10 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
                         for i, cl in enumerate(unique_labels):
                             reshaped_multihot = np.round(
                                 map_coordinates(
-                                    (reshaped_data == cl).astype(float), coord_map, order=order_z, mode="nearest"
+                                    (reshaped_data == cl).astype(float),
+                                    coord_map,
+                                    order=order_z,
+                                    mode="nearest",
                                 )
                             )
                             reshaped[reshaped_multihot > 0.5] = cl
