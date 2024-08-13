@@ -22,6 +22,10 @@ from nndet.utils.check import env_guard
 DILATION_FACTOR = 1
 MIN_VOLUME = 2  # mm^3
 
+UCSF_EXCLUDE = [
+    "100363B",
+]
+
 
 def convert_seg2mask(seg_itk: sitk.Image) -> Union[sitk.Image, Dict[int, int]]:
     seg = sitk.GetArrayFromImage(seg_itk)
@@ -270,6 +274,11 @@ def main():
     df_ucsf = pd.read_excel(source_ucsf_file)
     df_ucsf = df_ucsf.dropna(subset=["BraTS_ID"])
     ucsf_case_ids = list(df_ucsf["SubjectID"])
+    ucsf_case_ids = [cid for cid in ucsf_case_ids if cid not in UCSF_EXCLUDE]
+
+    assert len(base_case_ids) == 165
+    assert len(add_case_ids) == 73
+    assert len(ucsf_case_ids) == (324 - len(UCSF_EXCLUDE))
 
     base_case_ids.sort()
     add_case_ids.sort()
