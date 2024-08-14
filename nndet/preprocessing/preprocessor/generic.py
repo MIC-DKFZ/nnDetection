@@ -17,6 +17,7 @@ from nndet.io.transforms.instances import instances_to_boxes_np
 from nndet.preprocessing.crop import ImageCropper
 from nndet.preprocessing.preprocessor.abstract import AbstractPreprocessor
 from nndet.preprocessing.resampling import resample_patient
+from nndet.preprocessing.torchresampling import torch_resample_patient
 
 
 class GenericPreprocessor(AbstractPreprocessor):
@@ -644,3 +645,59 @@ class DynDTypePreprocessor(GenericPreprocessor):
 
         save_pickle(candidates, output_dir_stage / f"{case_id}_boxes.pkl")
         save_pickle(properties, output_dir_stage / f"{case_id}.pkl")
+
+
+class TorchPreprocessor(GenericPreprocessor):
+    """
+    Resample data and segmentation with torch resampler
+    """
+
+    def resample(
+        self,
+        data: np.ndarray,
+        seg: np.ndarray,
+        original_spacing: Sequence[float],
+        target_spacing: Sequence[float],
+    ) -> Tuple[np.ndarray, np.ndarray, dict]:
+        """
+        Resample data and segmentation with torch resampler
+
+        Args:
+            data: input data
+            seg: input segmentation
+            original_spacing: original spacing
+            target_spacing: target spacing
+
+        Returns:
+            np.ndarray: resampled data
+            np.ndarray: resampled segmentation
+            dict: properties after resampling
+                `spacing`: spacing after resampling
+                `shape (resampled)`: shape after resampling
+        """
+        original_spacing = np.array(original_spacing)
+        target_spacing = np.array(target_spacing)
+        data[np.isnan(data)] = 0
+
+        data, seg = torch_resample_patient(
+            data=data,
+            seg=seg,
+            original_spacing=original_spacing,
+            target_spacing=target_spacing,
+            order_data=1,
+            order_seg=0,
+            force_separate_z=False,
+            order_z_data=0,
+            order_z_seg=0,
+            separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
+        )
+
+        after = {
+            "spacing": target_spacing,
+            "shape (resampled)": data.shape,
+        }
+        return data, seg, after
+
+
+class TorchDynDTypePreprocessor(TorchPreprocessor, DynDTypePreprocessor):
+    pass
