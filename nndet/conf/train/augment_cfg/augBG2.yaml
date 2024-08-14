@@ -1,0 +1,101 @@
+# SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+name: "augBG2"
+transforms: "AugModularBG2"
+transforms_kwargs: {}
+
+selected_data_channels:
+selected_seg_channels:
+
+# Spatial Transformation
+spatial:
+  # elastic
+  p_elastic_deform: 0 # float
+  elastic_deform_scale: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  elastic_deform_magnitude: [0, 0.2] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_synchronize_def_scale_across_axes: 0 # float
+  # rotation
+  p_rotation: 0.2 # float
+  rotation: [-30, 30] # Sequence[float]
+  # scale
+  p_scaling: 0.2 # float
+  scaling: [0.7, 1.4] # Sequence[float]
+  p_synchronize_scaling_across_axes: 1 # float,
+  # params
+  mode_seg: "nearest" # str
+  random_crop: False # bool
+  bg_style_seg_sampling: False # bool
+  patch_center_dist_from_border: 0 # Union[int, List[int], Tuple[int, ...]],
+
+# GaussianNoiseTransform
+gaussian_noise:
+  randomness: 0.1 # float
+  noise_variance: [0, 0.1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_per_channel: 1.0 # float
+  synchronize_channels: True # bool
+
+# GaussianBlurTransform
+gaussian_blur:
+  randomness: 0.2 # float
+  blur_sigma: [0.5, 1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  synchronize_channels: False # bool
+  synchronize_axes: False # bool
+  p_per_channel: 0.5 # float
+  benchmark: True # bool
+
+# MultiplicativeBrightnessTransform
+brightness:
+  randomness: 0.15 # float
+  multiplier_range: [0.75, 1.25] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  synchronize_channels: False # bool
+  p_per_channel: 1 # float
+
+# ContrastTransform
+contrast:
+  randomness: 0.15 # float
+  contrast_range: [0.75, 1.25] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  preserve_range: True # bool
+  synchronize_channels: False # bool
+  p_per_channel: 1 # float = 1
+
+# SimulateLowResolutionTransform
+do_sim_low_res: False
+sim_low_res:
+  randomness: 0.25 # float
+  scale: [0.5, 1] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  synchronize_channels: False # bool
+  synchronize_axes: True # bool
+  allowed_channels: None # Tuple[int, ...]
+  p_per_channel: 0.5 # float
+
+# GammaTransformInverted
+do_gamma_inverted: True
+gamma_inverted:
+  randomness: 0.1 # float
+  gamma: [0.7, 1.5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_invert_image: 1 # float
+  synchronize_channels: False # bool
+  p_per_channel: 1 # float
+  p_retain_stats: 1 # float
+
+# GammaTransform
+do_gamma: True
+gamma:
+  randomness: 0.3 # float
+  gamma: [0.7, 1.5] # Union[int, float, Tuple[float, float], Callable[..., Union[int, float]]]
+  p_invert_image: 0 # float
+  synchronize_channels: False # bool
+  p_per_channel: 1 # float
+  p_retain_stats: 1 # float
+
+# MirrorTransform
+do_mirror: True
+mirror:
+  mirror_axes: [0, 1, 2] # Tuple[int, ...]
+
+2d_overwrites:
+  elastic_deform_alpha: [0., 200.]
+  elastic_deform_sigma: [9., 13.]
+  rotation: [-180, 180]
+  # mirror_axes: [0, 1]
