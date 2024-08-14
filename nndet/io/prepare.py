@@ -4,7 +4,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 import numpy as np
 import SimpleITK as sitk
@@ -108,6 +108,7 @@ def create_test_split(
     random_state: int = 0,
     shuffle: bool = True,
     do_stratify: bool = False,
+    case_ids: Optional[List[str]] = None,
 ):
     """
     Helper function to create an artificial test split from the splitted data
@@ -120,6 +121,7 @@ def create_test_split(
         test_size: size of test set, needs to be a value between 0 and 1
         seed: seed for splitting
         shuffle: shuffle data
+        case_ids: optinally provide the case ids which should be splitted
     """
     images_tr = Path(splitted_dir) / "imagesTr"
     labels_tr = Path(splitted_dir) / "labelsTr"
@@ -133,8 +135,11 @@ def create_test_split(
     images_ts.mkdir(parents=True, exist_ok=True)
     labels_ts.mkdir(parents=True, exist_ok=True)
 
-    case_ids = sorted(get_case_ids_from_dir(images_tr, remove_modality=True))
-    logger.info(f"Found {len(case_ids)} to split")
+    if case_ids is None:
+        case_ids = sorted(get_case_ids_from_dir(images_tr, remove_modality=True))
+        logger.info(f"Found {len(case_ids)} to split")
+    else:
+        logger.info(f"Using provided {len(case_ids)} to split")
 
     if do_stratify:
         logger.info("Creating a stratified split (best effort) and will try to balance rare classes")

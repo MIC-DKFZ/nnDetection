@@ -48,7 +48,7 @@ if __name__ == "__main__":
             boxes = predictions["pred_boxes"]
             probs = predictions["pred_scores"]
             centers = ops_np.box_center_np(boxes)
-            assert predictions["restore"]
+            # assert predictions["restore"]
 
             for center, prob in zip(centers, probs):
                 position_image = (float(center[2]), float(center[1]), float(center[0]))

@@ -5,10 +5,68 @@ from abc import ABC, abstractmethod
 from typing import List, Sequence
 
 import numpy as np
+import torch
 from batchgenerators.transforms.abstract_transforms import Compose
+from batchgeneratorsv2.transforms.base.basic_transform import BasicTransform
+from loguru import logger
+from threadpoolctl import threadpool_limits
 
 
 class ComposePretty(Compose):
+    def __str__(self) -> str:
+        s = "--- Augmentation ---\n"
+        for tr in self.transforms:
+            s += f"{tr}\n"
+        s += "---"
+        return s
+
+
+class ComposeBG2(BasicTransform):
+    def __init__(self, transforms: List[BasicTransform]):
+        """
+        This is a custom compose class for batchgeneratorsv2. It iterates
+        through a batched data dictionary and applies the transforms to each
+        image in the batch.
+        Please note that the input of the segmentation is to be expected
+        at the 'seg' key while the output will be saved in 'target'.
+
+        Args:
+            transforms: transforms to apply to samples (only transforms from
+                BGV2 supported here!)
+        """
+        super().__init__()
+        self.transforms = transforms
+
+    def apply(self, data_dict, **params) -> dict:
+        """
+        Apply transforms to data dictionary
+
+        Args:
+            data_dict: dictionary containing information from a batch of data
+
+        Returns:
+            dict: transformed batch
+        """
+        image = []
+        segmentation = []
+
+        with torch.no_grad():
+            with threadpool_limits(limits=1, user_api=None):
+                data_torch = torch.from_numpy(data_dict.pop("data")).to(dtype=torch.float)
+                seg_torch = torch.from_numpy(data_dict.pop("seg")).to(dtype=torch.int16)
+
+                for i in range(data_torch.shape[0]):  # iterate over all images in the batch
+                    sample_dict = {"image": data_torch[i], "segmentation": seg_torch[i]}
+                    # iterate over all transforms
+                    for t in self.transforms:
+                        sample_dict = t(**sample_dict)
+
+                    image.append(sample_dict["image"])
+                    segmentation.append(sample_dict["segmentation"])
+        data_dict["data"] = torch.stack(image)
+        data_dict["target"] = torch.stack(segmentation)
+        return data_dict
+
     def __str__(self) -> str:
         s = "--- Augmentation ---\n"
         for tr in self.transforms:
@@ -84,8 +142,51 @@ class AugmentationSetup(ABC):
             transformations which should be used.
         """
         self.patch_size = patch_size
-        self.params = params
+        self.dim = len(self.patch_size)
         self.use_box_io = use_box_io
+        self.params = self.process_params(params)
+
+    def process_params(self, params: dict) -> dict:
+        """
+        Process parameters for augmentation
+
+        Args:
+            params: parameters for augmentation
+
+        Returns:
+            dict: processed parameters
+        """
+        if self.dim == 2:
+            logger.info("Using 2D augmentation params")
+            overwrites_2d = params.get("2d_overwrites", {})
+            params.update(overwrites_2d)
+        elif self.dim == 3 and params["do_dummy_2D_data_aug"]:
+            logger.info("Using dummy 2d augmentation params")
+            params["dummy_2D"] = True
+            params["elastic_deform_alpha"] = params["2d_overwrites"]["elastic_deform_alpha"]
+            params["elastic_deform_sigma"] = params["2d_overwrites"]["elastic_deform_sigma"]
+            params["rotation_x"] = params["2d_overwrites"]["rotation_x"]
+
+        params["selected_seg_channels"] = [0]
+        params["rotation_x"] = [i / 180 * np.pi for i in params["rotation_x"]]
+        params["rotation_y"] = [i / 180 * np.pi for i in params["rotation_y"]]
+        params["rotation_z"] = [i / 180 * np.pi for i in params["rotation_z"]]
+        return params
+
+    def get_patch_size_generator(self) -> List[int]:
+        """
+        Compute patch size to extract from volume to avoid augmentation
+        artifacts
+        """
+        return list(
+            get_patch_size(
+                patch_size=self.patch_size,
+                rot_x=self.params["rotation_x"],
+                rot_y=self.params["rotation_y"],
+                rot_z=self.params["rotation_z"],
+                scale_range=self.params["scale_range"],
+            )
+        )
 
     @abstractmethod
     def get_training_transforms(self):
@@ -102,18 +203,3 @@ class AugmentationSetup(ABC):
         Needs to be overwritten in subclasses.
         """
         raise NotImplementedError
-
-    def get_patch_size_generator(self) -> List[int]:
-        """
-        Compute patch size to extract from volume to avoid augmentation
-        artifacts
-        """
-        return list(
-            get_patch_size(
-                patch_size=self.patch_size,
-                rot_x=self.params["rotation_x"],
-                rot_y=self.params["rotation_y"],
-                rot_z=self.params["rotation_z"],
-                scale_range=self.params["scale_range"],
-            )
-        )

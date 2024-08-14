@@ -15,4 +15,5 @@ seaborn
 tensorboard
 GitPython
 einops
+batchgeneratorsv2>=0.2
 blosc2>=3.0.0b1
