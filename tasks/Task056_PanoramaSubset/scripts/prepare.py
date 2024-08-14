@@ -1,12 +1,16 @@
+import concurrent.futures
 import os
 import shutil
 import sys
+from itertools import repeat
 from pathlib import Path
 
 import pandas as pd
+import SimpleITK as sitk
 from loguru import logger
 from sklearn.model_selection import train_test_split
 
+from nndet.io.itk import load_sitk
 from nndet.io.load import save_json
 from nndet.utils.check import env_guard
 from nndet.utils.info import maybe_verbose_iterable
@@ -30,6 +34,8 @@ EXCLUDE = [
     "100036_00001",
     "100433_00001",
     "101381_00001",
+    "100028_00001",  # label broken in my download
+    "100936_00001",  # label broken in my download
 ]
 
 
@@ -42,8 +48,17 @@ def prepare_case(
     patient_meta: pd.Series,
 ) -> None:
     # scan id _ patient id _ modality id
+    img_itk = load_sitk(source_data / f"{case_id}_0000.nii.gz")
+    label_itk = load_sitk(source_label_dir / f"{case_id}.nii.gz")
+
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+    # resampler.SetTransform(sitk.Transform())
+    resampler.SetReferenceImage(img_itk)
+    resampled_label_itk = resampler.Execute(label_itk)
+
     shutil.copy2(source_data / f"{case_id}_0000.nii.gz", target_data_dir / f"{case_id}_0000.nii.gz")
-    shutil.copy2(source_label_dir / f"{case_id}.nii.gz", target_label_dir / f"{case_id}.nii.gz")
+    sitk.WriteImage(resampled_label_itk, target_label_dir / f"{case_id}.nii.gz")
 
     if patient_meta["label"] == "non-PDAC":
         label_int = 0
@@ -115,6 +130,27 @@ def create_custom_split(
             for p in labels_tr.glob(f"{cid}*"):
                 shutil.move(p, labels_ts / p.name)
     return train_pids, test_pids
+
+
+def prepare_and_filter(
+    cid: str,
+    patient_df: pd.DataFrame,
+    source_data_dir: Path,
+    source_label_dir: Path,
+    target_data_dir: Path,
+    target_label_dir: Path,
+) -> None:
+    logger.info(f"Processing case {cid}")
+    patient_meta = patient_df.loc[cid]
+    prepare_case(
+        case_id=cid,
+        source_data=source_data_dir,
+        source_label_dir=source_label_dir,
+        target_data_dir=target_data_dir,
+        target_label_dir=target_label_dir,
+        patient_meta=patient_meta,
+    )
+    logger.info(f"Finished processing case {cid}")
 
 
 @env_guard
@@ -190,19 +226,34 @@ def main():
         if row[1]["level_msd"]:  # exclude all MSD cases
             continue
         filtered_series.append(row[1])
-    patient_filtered_df = pd.DataFrame(filtered_series)
 
-    for cid in maybe_verbose_iterable(patient_filtered_df.index):
-        logger.info(f"Preparing case {cid}")
-        patient_meta = patient_df.loc[cid]
-        prepare_case(
-            case_id=cid,
-            source_data=source_data_dir,
-            source_label_dir=source_label_dir,
-            target_data_dir=target_data_dir,
-            target_label_dir=target_label_dir,
-            patient_meta=patient_meta,
-        )
+    patient_filtered_df = pd.DataFrame(filtered_series)
+    filtered_case_ids = list(patient_filtered_df.index)
+    num_processes = int(os.getenv("det_num_threads", 4))
+    if num_processes < 1:
+        logger.info("Running in single process mode")
+        for cid in maybe_verbose_iterable(filtered_case_ids):
+            prepare_and_filter(
+                cid=cid,
+                patient_df=patient_filtered_df,
+                source_data=source_data_dir,
+                source_label_dir=source_label_dir,
+                target_data_dir=target_data_dir,
+                target_label_dir=target_label_dir,
+            )
+    else:
+        logger.info(f"Running in multi process mode with {num_processes} processes")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+            for _ in executor.map(
+                prepare_and_filter,
+                filtered_case_ids,
+                repeat(patient_filtered_df),
+                repeat(source_data_dir),
+                repeat(source_label_dir),
+                repeat(target_data_dir),
+                repeat(target_label_dir),
+            ):
+                pass
 
     # create custom split
     create_custom_split(
