@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from nndet.preprocessing.torchresampling import resample_data_or_seg
+from nndet.preprocessing.torchresampling import resample_data_or_seg_torch
 
 np.random.seed(141)
 torch.manual_seed(141)
@@ -18,119 +18,122 @@ ptint16seg = torch.randint(low=2**15 - 10, high=2**15, size=(3, 115, 229, 256)).
 
 
 @pytest.mark.parametrize(
-    "data,new_shape,is_seg,memefficient_seg_resampling,mode,do_separate_z,axis",
+    "data,new_shape,is_seg,memefficient_seg_resampling,mode,aniso_axis_mode,do_separate_z,axis",
     [
-        # numpy float32 with linear interpolation
-        (npfloat32data, (100, 196, 196), False, False, "linear", False, None),
-        (npfloat32data, (51, 131, 155), False, False, "linear", False, None),
-        # numpy float16 with linear interpolation
-        (npfloat16data, (100, 196, 128), False, False, "linear", False, None),
-        (npfloat16data, (51, 100, 155), False, False, "linear", False, None),
-        # numpy seg int8 with linear interpolation
-        (npint8seg, (100, 128, 256), True, False, "linear", False, None),
-        (npint8seg, (51, 131, 155), True, False, "linear", False, None),
-        # numpy seg int16 with linear interpolation
-        (npint16seg, (75, 100, 100), True, False, "linear", False, None),
-        (npint16seg, (51, 131, 155), True, False, "linear", False, None),
-        # numpy seg int8 with linear interpolation with memefficient_seg_resampling
-        (npint8seg, (100, 128, 256), True, True, "linear", False, None),
-        (npint8seg, (51, 131, 155), True, True, "linear", False, None),
-        # numpy seg int16 with linear interpolation with memefficient_seg_resampling
-        (npint16seg, (75, 100, 100), True, True, "linear", False, None),
-        (npint16seg, (51, 131, 155), True, True, "linear", False, None),
-        # numpy seg int8 with linear interpolation
-        (npint8seg, (100, 128, 256), True, False, "nearest", False, None),
-        (npint8seg, (51, 131, 155), True, False, "nearest", False, None),
-        # numpy seg int16 with linear interpolation
-        (npint16seg, (75, 100, 100), True, False, "nearest", False, None),
-        (npint16seg, (51, 131, 155), True, False, "nearest", False, None),
-        # numpy seg int8 with linear interpolation with memefficient_seg_resampling
-        (npint8seg, (100, 128, 256), True, True, "nearest", False, None),
-        (npint8seg, (51, 131, 155), True, True, "nearest", False, None),
-        # numpy seg int16 with linear interpolation with memefficient_seg_resampling
-        (npint16seg, (75, 100, 100), True, True, "nearest", False, None),
-        (npint16seg, (51, 131, 155), True, True, "nearest", False, None),
+        # numpy float32 with trilinear interpolation
+        (npfloat32data, (100, 196, 196), False, False, "trilinear", "nearest-exact", False, None),
+        (npfloat32data, (51, 131, 155), False, False, "trilinear", "nearest-exact", False, None),
+        # numpy float16 with trilinear interpolation
+        (npfloat16data, (100, 196, 128), False, False, "trilinear", "nearest-exact", False, None),
+        (npfloat16data, (51, 100, 155), False, False, "trilinear", "nearest-exact", False, None),
+        # numpy seg int8 with trilinear interpolation
+        (npint8seg, (100, 128, 256), True, False, "trilinear", "nearest-exact", False, None),
+        (npint8seg, (51, 131, 155), True, False, "trilinear", "nearest-exact", False, None),
+        # numpy seg int16 with trilinear interpolation
+        (npint16seg, (75, 100, 100), True, False, "trilinear", "nearest-exact", False, None),
+        (npint16seg, (51, 131, 155), True, False, "trilinear", "nearest-exact", False, None),
+        # numpy seg int8 with trilinear interpolation with memefficient_seg_resampling
+        (npint8seg, (100, 128, 256), True, True, "trilinear", "nearest-exact", False, None),
+        (npint8seg, (51, 131, 155), True, True, "trilinear", "nearest-exact", False, None),
+        # numpy seg int16 with trilinear interpolation with memefficient_seg_resampling
+        (npint16seg, (75, 100, 100), True, True, "trilinear", "nearest-exact", False, None),
+        (npint16seg, (51, 131, 155), True, True, "trilinear", "nearest-exact", False, None),
+        # numpy seg int8 with trilinear interpolation
+        (npint8seg, (100, 128, 256), True, False, "nearest", "nearest-exact", False, None),
+        (npint8seg, (51, 131, 155), True, False, "nearest", "nearest-exact", False, None),
+        # numpy seg int16 with trilinear interpolation
+        (npint16seg, (75, 100, 100), True, False, "nearest", "nearest-exact", False, None),
+        (npint16seg, (51, 131, 155), True, False, "nearest", "nearest-exact", False, None),
+        # numpy seg int8 with trilinear interpolation with memefficient_seg_resampling
+        (npint8seg, (100, 128, 256), True, True, "nearest", "nearest-exact", False, None),
+        (npint8seg, (51, 131, 155), True, True, "nearest", "nearest-exact", False, None),
+        # numpy seg int16 with trilinear interpolation with memefficient_seg_resampling
+        (npint16seg, (75, 100, 100), True, True, "nearest", "nearest-exact", False, None),
+        (npint16seg, (51, 131, 155), True, True, "nearest", "nearest-exact", False, None),
         # ----------------
-        # pytorch float32 with linear interpolation
-        (ptfloat32data, (100, 196, 196), False, False, "linear", False, None),
-        (ptfloat32data, (51, 131, 155), False, False, "linear", False, None),
-        # pytorch float16 with linear interpolation
-        (ptfloat16data, (100, 196, 128), False, False, "linear", False, None),
-        (ptfloat16data, (51, 100, 155), False, False, "linear", False, None),
-        # pytorch seg int8 with linear interpolation
-        (ptint8seg, (100, 128, 256), True, False, "linear", False, None),
-        (ptint8seg, (51, 131, 155), True, False, "linear", False, None),
-        # pytorch seg int16 with linear interpolation
-        (ptint16seg, (75, 100, 100), True, False, "linear", False, None),
-        (ptint16seg, (51, 131, 155), True, False, "linear", False, None),
-        # pytorch seg int8 with linear interpolation with memefficient_seg_resampling
-        (ptint8seg, (100, 128, 256), True, True, "linear", False, None),
-        (ptint8seg, (51, 131, 155), True, True, "linear", False, None),
-        # pytorch seg int16 with linear interpolation with memefficient_seg_resampling
-        (ptint16seg, (75, 100, 100), True, True, "linear", False, None),
-        (ptint16seg, (51, 131, 155), True, True, "linear", False, None),
-        # pytorch seg int8 with linear interpolation
-        (ptint8seg, (100, 128, 256), True, False, "nearest", False, None),
-        (ptint8seg, (51, 131, 155), True, False, "nearest", False, None),
-        # pytorch seg int16 with linear interpolation
-        (ptint16seg, (75, 100, 100), True, False, "nearest", False, None),
-        (ptint16seg, (51, 131, 155), True, False, "nearest", False, None),
-        # pytorch seg int8 with linear interpolation with memefficient_seg_resampling
-        (ptint8seg, (100, 128, 256), True, True, "nearest", False, None),
-        (ptint8seg, (51, 131, 155), True, True, "nearest", False, None),
-        # pytorch seg int16 with linear interpolation with memefficient_seg_resampling
-        (ptint16seg, (75, 100, 100), True, True, "nearest", False, None),
-        (ptint16seg, (51, 131, 155), True, True, "nearest", False, None),
+        # pytorch float32 with trilinear interpolation
+        (ptfloat32data, (100, 196, 196), False, False, "trilinear", "nearest-exact", False, None),
+        (ptfloat32data, (51, 131, 155), False, False, "trilinear", "nearest-exact", False, None),
+        # pytorch float16 with trilinear interpolation
+        (ptfloat16data, (100, 196, 128), False, False, "trilinear", "nearest-exact", False, None),
+        (ptfloat16data, (51, 100, 155), False, False, "trilinear", "nearest-exact", False, None),
+        # pytorch seg int8 with trilinear interpolation
+        (ptint8seg, (100, 128, 256), True, False, "trilinear", "nearest-exact", False, None),
+        (ptint8seg, (51, 131, 155), True, False, "trilinear", "nearest-exact", False, None),
+        # pytorch seg int16 with trilinear interpolation
+        (ptint16seg, (75, 100, 100), True, False, "trilinear", "nearest-exact", False, None),
+        (ptint16seg, (51, 131, 155), True, False, "trilinear", "nearest-exact", False, None),
+        # pytorch seg int8 with trilinear interpolation with memefficient_seg_resampling
+        (ptint8seg, (100, 128, 256), True, True, "trilinear", "nearest-exact", False, None),
+        (ptint8seg, (51, 131, 155), True, True, "trilinear", "nearest-exact", False, None),
+        # pytorch seg int16 with trilinear interpolation with memefficient_seg_resampling
+        (ptint16seg, (75, 100, 100), True, True, "trilinear", "nearest-exact", False, None),
+        (ptint16seg, (51, 131, 155), True, True, "trilinear", "nearest-exact", False, None),
+        # pytorch seg int8 with trilinear interpolation
+        (ptint8seg, (100, 128, 256), True, False, "nearest", "nearest-exact", False, None),
+        (ptint8seg, (51, 131, 155), True, False, "nearest", "nearest-exact", False, None),
+        # pytorch seg int16 with trilinear interpolation
+        (ptint16seg, (75, 100, 100), True, False, "nearest", "nearest-exact", False, None),
+        (ptint16seg, (51, 131, 155), True, False, "nearest", "nearest-exact", False, None),
+        # pytorch seg int8 with trilinear interpolation with memefficient_seg_resampling
+        (ptint8seg, (100, 128, 256), True, True, "nearest", "nearest-exact", False, None),
+        (ptint8seg, (51, 131, 155), True, True, "nearest", "nearest-exact", False, None),
+        # pytorch seg int16 with trilinear interpolation with memefficient_seg_resampling
+        (ptint16seg, (75, 100, 100), True, True, "nearest", "nearest-exact", False, None),
+        (ptint16seg, (51, 131, 155), True, True, "nearest", "nearest-exact", False, None),
         # make sure the it works for do_separate_z
-        (npfloat32data, (100, 196, 196), False, False, "linear", True, [0]),
-        (npfloat32data, (51, 131, 155), False, False, "linear", True, [1]),
-        (npfloat16data, (100, 196, 128), False, False, "linear", True, [2]),
-        (npfloat16data, (51, 100, 155), False, False, "linear", True, [0]),
-        (npint8seg, (100, 128, 256), True, False, "linear", True, [1]),
-        (npint8seg, (51, 131, 155), True, False, "linear", True, [2]),
-        (npint16seg, (75, 100, 100), True, False, "linear", True, [0]),
-        (npint16seg, (51, 131, 155), True, False, "linear", True, [1]),
-        (npint8seg, (100, 128, 256), True, True, "linear", True, [2]),
-        (npint8seg, (51, 131, 155), True, True, "linear", True, [0]),
-        (npint16seg, (75, 100, 100), True, True, "linear", True, [1]),
-        (npint16seg, (51, 131, 155), True, True, "linear", True, [2]),
-        (npint8seg, (100, 128, 256), True, False, "nearest", True, [0]),
-        (npint8seg, (51, 131, 155), True, False, "nearest", True, [1]),
-        (npint16seg, (75, 100, 100), True, False, "nearest", True, [2]),
-        (npint16seg, (51, 131, 155), True, False, "nearest", True, [0]),
-        (npint8seg, (100, 128, 256), True, True, "nearest", True, [1]),
-        (npint8seg, (51, 131, 155), True, True, "nearest", True, [2]),
-        (npint16seg, (75, 100, 100), True, True, "nearest", True, [0]),
-        (npint16seg, (51, 131, 155), True, True, "nearest", True, [1]),
-        (ptfloat32data, (100, 196, 196), False, False, "linear", True, [1]),
-        (ptfloat32data, (51, 131, 155), False, False, "linear", True, [2]),
-        (ptfloat16data, (100, 196, 128), False, False, "linear", True, [0]),
-        (ptfloat16data, (51, 100, 155), False, False, "linear", True, [1]),
-        (ptint8seg, (100, 128, 256), True, False, "linear", True, [2]),
-        (ptint8seg, (51, 131, 155), True, False, "linear", True, [0]),
-        (ptint16seg, (75, 100, 100), True, False, "linear", True, [1]),
-        (ptint16seg, (51, 131, 155), True, False, "linear", True, [2]),
-        (ptint8seg, (100, 128, 256), True, True, "linear", True, [0]),
-        (ptint8seg, (51, 131, 155), True, True, "linear", True, [1]),
-        (ptint16seg, (75, 100, 100), True, True, "linear", True, [2]),
-        (ptint16seg, (51, 131, 155), True, True, "linear", True, [0]),
-        (ptint8seg, (100, 128, 256), True, False, "nearest", True, [1]),
-        (ptint8seg, (51, 131, 155), True, False, "nearest", True, [2]),
-        (ptint16seg, (75, 100, 100), True, False, "nearest", True, [0]),
-        (ptint16seg, (51, 131, 155), True, False, "nearest", True, [1]),
-        (ptint8seg, (100, 128, 256), True, True, "nearest", True, [2]),
-        (ptint8seg, (51, 131, 155), True, True, "nearest", True, [0]),
-        (ptint16seg, (75, 100, 100), True, True, "nearest", True, [1]),
-        (ptint16seg, (51, 131, 155), True, True, "nearest", True, [2]),
+        (npfloat32data, (100, 196, 196), False, False, "bilinear", "nearest-exact", True, [0]),
+        (npfloat32data, (51, 131, 155), False, False, "bilinear", "nearest-exact", True, [1]),
+        (npfloat16data, (100, 196, 128), False, False, "bilinear", "nearest-exact", True, [2]),
+        (npfloat16data, (51, 100, 155), False, False, "bilinear", "nearest-exact", True, [0]),
+        (npint8seg, (100, 128, 256), True, False, "bilinear", "nearest-exact", True, [1]),
+        (npint8seg, (51, 131, 155), True, False, "bilinear", "nearest-exact", True, [2]),
+        (npint16seg, (75, 100, 100), True, False, "bilinear", "nearest-exact", True, [0]),
+        (npint16seg, (51, 131, 155), True, False, "bilinear", "nearest-exact", True, [1]),
+        (npint8seg, (100, 128, 256), True, True, "bilinear", "nearest-exact", True, [2]),
+        (npint8seg, (51, 131, 155), True, True, "bilinear", "nearest-exact", True, [0]),
+        (npint16seg, (75, 100, 100), True, True, "bilinear", "nearest-exact", True, [1]),
+        (npint16seg, (51, 131, 155), True, True, "bilinear", "nearest-exact", True, [2]),
+        (npint8seg, (100, 128, 256), True, False, "nearest", "nearest-exact", True, [0]),
+        (npint8seg, (51, 131, 155), True, False, "nearest", "nearest-exact", True, [1]),
+        (npint16seg, (75, 100, 100), True, False, "nearest", "nearest-exact", True, [2]),
+        (npint16seg, (51, 131, 155), True, False, "nearest", "nearest-exact", True, [0]),
+        (npint8seg, (100, 128, 256), True, True, "nearest", "nearest-exact", True, [1]),
+        (npint8seg, (51, 131, 155), True, True, "nearest", "nearest-exact", True, [2]),
+        (npint16seg, (75, 100, 100), True, True, "nearest", "nearest-exact", True, [0]),
+        (npint16seg, (51, 131, 155), True, True, "nearest", "nearest-exact", True, [1]),
+        (ptfloat32data, (100, 196, 196), False, False, "bilinear", "nearest-exact", True, [1]),
+        (ptfloat32data, (51, 131, 155), False, False, "bilinear", "nearest-exact", True, [2]),
+        (ptfloat16data, (100, 196, 128), False, False, "bilinear", "nearest-exact", True, [0]),
+        (ptfloat16data, (51, 100, 155), False, False, "bilinear", "nearest-exact", True, [1]),
+        (ptint8seg, (100, 128, 256), True, False, "bilinear", "nearest-exact", True, [2]),
+        (ptint8seg, (51, 131, 155), True, False, "bilinear", "nearest-exact", True, [0]),
+        (ptint16seg, (75, 100, 100), True, False, "bilinear", "nearest-exact", True, [1]),
+        (ptint16seg, (51, 131, 155), True, False, "bilinear", "nearest-exact", True, [2]),
+        (ptint8seg, (100, 128, 256), True, True, "bilinear", "nearest-exact", True, [0]),
+        (ptint8seg, (51, 131, 155), True, True, "bilinear", "nearest-exact", True, [1]),
+        (ptint16seg, (75, 100, 100), True, True, "bilinear", "nearest-exact", True, [2]),
+        (ptint16seg, (51, 131, 155), True, True, "bilinear", "nearest-exact", True, [0]),
+        (ptint8seg, (100, 128, 256), True, False, "nearest", "nearest-exact", True, [1]),
+        (ptint8seg, (51, 131, 155), True, False, "nearest", "nearest-exact", True, [2]),
+        (ptint16seg, (75, 100, 100), True, False, "nearest", "nearest-exact", True, [0]),
+        (ptint16seg, (51, 131, 155), True, False, "nearest", "nearest-exact", True, [1]),
+        (ptint8seg, (100, 128, 256), True, True, "nearest", "nearest-exact", True, [2]),
+        (ptint8seg, (51, 131, 155), True, True, "nearest", "nearest-exact", True, [0]),
+        (ptint16seg, (75, 100, 100), True, True, "nearest", "nearest-exact", True, [1]),
+        (ptint16seg, (51, 131, 155), True, True, "nearest", "nearest-exact", True, [2]),
     ],
 )
-def test_resample_data_or_seg(data, new_shape, is_seg, memefficient_seg_resampling, mode, do_separate_z, axis):
-    resampled_data = resample_data_or_seg(
+def test_resample_data_or_seg_torch(
+    data, new_shape, is_seg, memefficient_seg_resampling, mode, aniso_axis_mode, do_separate_z, axis
+):
+    resampled_data = resample_data_or_seg_torch(
         data,
         new_shape,
         is_seg,
         memefficient_seg_resampling=memefficient_seg_resampling,
         mode=mode,
+        aniso_axis_mode=aniso_axis_mode,
         do_separate_z=do_separate_z,
         axis=axis,
     )
