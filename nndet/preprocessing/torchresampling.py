@@ -55,7 +55,7 @@ def torch_resample_patient(
     seg: Union[torch.Tensor, np.ndarray, None],
     original_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
     target_spacing: Union[Tuple[float, ...], List[float], np.ndarray],
-    order_data: int = 3,
+    order_data: int = 1,
     order_seg: int = 0,
     force_separate_z: Union[bool, None] = False,
     order_z_data: int = 0,

@@ -687,8 +687,8 @@ class TorchPreprocessor(GenericPreprocessor):
             order_data=1,
             order_seg=0,
             force_separate_z=False,
-            order_z_data=999,
-            order_z_seg=999,
+            order_z_data=0,
+            order_z_seg=0,
             separate_z_anisotropy_threshold=self.resample_anisotropy_threshold,
         )
 
