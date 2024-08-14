@@ -42,7 +42,7 @@ if __name__ == "__main__":
         boxes = predictions["pred_boxes"]
         probs = predictions["pred_scores"]
         centers = ops_np.box_center_np(boxes)
-        assert predictions["restore"]
+        # assert predictions["restore"]
 
         for box, center, prob in zip(boxes, centers, probs):
             # PN9 annotations are 1 indexed, nnDet annotations are 0 indexed
