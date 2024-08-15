@@ -233,7 +233,8 @@ class BaseDatamodule(BaseModule):
             seeds=None,
             pin_memory=True,
         )
-        logger.info("TRAINING KEYS:\n %s" % (str(self.dataset_tr.keys())))
+        training_keys = list(self.dataset_tr.keys())
+        logger.info(f"TRAINING KEYS n={len(training_keys)}:\n {training_keys}")
         return tr_gen
 
     def val_dataloader(self):
@@ -270,7 +271,8 @@ class BaseDatamodule(BaseModule):
             seeds=None,
             pin_memory=True,
         )
-        logger.info("VALIDATION KEYS:\n %s" % (str(self.dataset_val.keys())))
+        validation_keys = list(self.dataset_val.keys())
+        logger.info(f"VALIDATION KEYS n={len(validation_keys)}:\n {validation_keys}")
         return val_gen
 
     @abstractstaticmethod
