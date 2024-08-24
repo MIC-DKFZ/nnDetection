@@ -66,6 +66,7 @@ class BaseModule(pl.LightningDataModule):
         self.dataset_val = {}
         self.dataset = load_dataset_id(self.data_dir, self.label_dir)
         self.do_split()
+        logger.info(f"Initialized datamodule with batch size: {self.batch_size}")
 
     @staticmethod
     def get_label_dir(data_dir: os.PathLike) -> Path:
