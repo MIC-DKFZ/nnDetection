@@ -3,6 +3,7 @@
 
 import os
 import time
+import warnings
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from loguru import logger
 from matplotlib.ticker import FuncFormatter
+from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import roc_curve
 
 from nndet.eval import DetectionMetric
@@ -231,7 +233,12 @@ class FROCMetric(DetectionMetric):
             assert len(_scores) == len(_dt_matches)
 
             _fps, _sens, _th = self.compute_froc_curve_one_iou(
-                _dt_matches, _scores, num_images, num_gt, verbose=self.verbose
+                dt_matches=_dt_matches,
+                dt_scores=_scores,
+                num_images=num_images,
+                num_gt=num_gt,
+                verbose=self.verbose,
+                tag=tag,
             )
             # interpolate at defined fpr thresholds
             sens_interp = self.get_froc_points(_fps, _sens)
@@ -349,6 +356,7 @@ class FROCMetric(DetectionMetric):
         num_images: int,
         num_gt: int,
         verbose: bool = False,
+        tag: Optional[str] = None,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute FROC curve for a single IoU value
@@ -363,6 +371,8 @@ class FROCMetric(DetectionMetric):
             num_gt: number of ground truth bounding boxes
             verbose: additional warning if no matches or no false positives
                 are found
+            tag: optional tag for current evalution, only used to optionally
+                suppress warnings
 
         Returns:
             np.ndarray: false positives per image
@@ -374,14 +384,19 @@ class FROCMetric(DetectionMetric):
         num_unmatched = num_detections - num_matched
 
         if dt_matches.size == 0:
-            if verbose:
+            if tag is None:
                 logger.warning("WARNING, no matches found.")
             return np.zeros((2,)), np.zeros((2,)), np.zeros((2,))
         else:
-            fpr, tpr, thresholds = roc_curve(dt_matches, dt_scores)
+            if tag is None:
+                fpr, tpr, thresholds = roc_curve(dt_matches, dt_scores)
+            else:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
+                    fpr, tpr, thresholds = roc_curve(dt_matches, dt_scores)
 
         if num_unmatched == 0:
-            if verbose:
+            if tag is None:
                 logger.warning("WARNING, no false positives found")
             fps = np.zeros(len(fpr))
         else:
