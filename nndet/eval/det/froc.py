@@ -307,12 +307,19 @@ class FROCMetric(DetectionMetric):
             assert len(results_by_cls) == num_images_og, "Inconsistent num images!"
             if results_by_cls:
                 cls_scores, cls_curves = self.compute_froc_mul_iou(results_by_cls, tag=tag)
+            else:
+                logger.info(f"Did not find class wise results for class {cls_str}")
+                cls_scores, cls_curves = self.zero_result(
+                    num_images=np.nan,
+                    num_gt=np.nan,
+                    tag=tag,
+                )
 
-                for key, item in cls_scores.items():
-                    froc_scores_cache[key].append(item)
+            for key, item in cls_scores.items():
+                froc_scores_cache[key].append(item)
 
-                froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
-                froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
+            froc_scores_cls.update({f"{cls_str}_{key}": item for key, item in cls_scores.items()})
+            froc_curves_cls.update({f"{cls_str}_{key}": item for key, item in cls_curves.items()})
 
         for metric_str, metric_cache in froc_scores_cache.items():
             froc_scores_cls[f"mc_{metric_str}"] = float(sum(metric_cache) / len(self.classes))
@@ -425,7 +432,6 @@ class FROCMetric(DetectionMetric):
             Dict: figures of create plots
         """
         metric_name = cls.get_name(tag=tag)
-
         fpi = result_meta[f"{metric_name}_fpi_thresholds"]
         for iou in result_meta[f"{metric_name}_iou_thresholds"]:
             # parse info
