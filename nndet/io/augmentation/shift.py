@@ -15,7 +15,6 @@ class RandomShiftTransform(AbstractTransform):
         self,
         data_key: str,
         patch_size: ND_TUPLE_INT,
-        generator_patch_size: ND_TUPLE_INT,
         magnitude: float = 1.0,
         p_per_sample: float = 1.0,
         seg_key: Optional[str] = None,
@@ -32,7 +31,6 @@ class RandomShiftTransform(AbstractTransform):
         Args:
             keys: keys to crop
             patch_size: patch size after SpatialAugmentation
-            generator_patch_size: patch size before SpatialAugmentation
             magnitude: magnitude of offset
             p_per_sample: probability to apply transformation per sample
             fill_data: values filled for data
@@ -40,7 +38,6 @@ class RandomShiftTransform(AbstractTransform):
         """
         super().__init__()
         self.patch_size = np.array(patch_size)
-        self.generator_patch_size = np.array(generator_patch_size)
         self.magnitude = magnitude
         self.p_per_sample = p_per_sample
 
@@ -58,28 +55,34 @@ class RandomShiftTransform(AbstractTransform):
                 data_sample = data[self.data_key][batch_idx]
                 seg_sample = data[self.seg_key][batch_idx] if self.seg_key is not None else None
                 content_shape = np.array(data["properties"][batch_idx]["size_after_resampling"])
+                generator_patch_size = np.array(data_sample.shape[1:])
 
-                data_sample, seg_sample = self._random_crop(
-                    data_sample,
-                    seg_sample,
+                data_sample, seg_sample = self._random_shift(
+                    data=data_sample,
                     content_shape=content_shape,
+                    generator_patch_size=generator_patch_size,
+                    seg=seg_sample,
                 )
                 data[self.data_key][batch_idx] = data_sample
                 if self.seg_key is not None:
                     data[self.seg_key][batch_idx] = seg_sample
         return data
 
-    def _random_crop(
+    def _random_shift(
         self,
         data: np.ndarray,
+        generator_patch_size: np.ndarray,
+        content_shape: np.ndarray,
         seg: Optional[np.ndarray],
-        content_shape: Optional[np.ndarray],
     ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Perform random shifting of data within bounds
 
         Args:
             data: data of chape, [c, x, y, z]
+            generator_patch_size: patch size of the incoming data
+            content_shape: shape of the original data actually containing
+                content
             seg: optionally provide segmentation of shape [c, x, y, z]
 
         Returns:
@@ -87,27 +90,33 @@ class RandomShiftTransform(AbstractTransform):
             np.ndarray: cropped and padded segmentation
         """
         dim = len(self.patch_size)
-        content_difference = np.maximum(0, self.patch_size - content_shape) // 2
+        # estimate lower and upper bound of offset
+        content_difference = np.maximum(0, self.patch_size - content_shape) / 2
+        max_content_difference = np.floor(content_difference)
 
         for d in range(dim):
             # if == 0 content fills the entire patch -> no shifting
             if content_difference[d] > 0:
                 # determine offset
                 max_offset = self.magnitude * content_difference[d]
-                offset = np.random.randint(-max_offset, max_offset)
-                print(offset)
+                offset = np.random.randint(-np.floor(max_offset), np.ceil(max_offset))
+                if offset < 0:
+                    offset = int(np.maximum(max_content_difference[d], offset))
+                else:
+                    offset = int(np.minimum(max_content_difference[d], offset))
 
                 # determine slices
-                pg_center = self.generator_patch_size[d] / 2
+                pg_center = generator_patch_size[d] / 2
                 ps_extend = self.patch_size[d] / 2
-                original_slices = slice(math.floor(pg_center - ps_extend), math.ceil(pg_center + ps_extend))
-                shifted_slices = slice(
-                    math.floor(pg_center - ps_extend + offset), math.ceil(pg_center + ps_extend + offset)
-                )
+
+                lw = math.floor(pg_center - ps_extend)
+                up = math.ceil(pg_center + ps_extend)
+                original_slices = slice(lw, up)
+                shifted_slices = slice(lw + offset, up + offset)
                 if offset > 0:
                     remaining_slices = slice(0, original_slices.start)
                 else:
-                    remaining_slices = slice(original_slices.stop, self.generator_patch_size[d])
+                    remaining_slices = slice(original_slices.stop, generator_patch_size[d])
 
                 # shift data
                 data[d][shifted_slices] = data[d][original_slices]

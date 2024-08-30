@@ -38,6 +38,7 @@ from batchgenerators.transforms.utility_transforms import (
     RemoveLabelTransform,
     RenameTransform,
 )
+from loguru import logger
 
 import nndet.io.transforms.detection as nndet_transforms
 from nndet.io.augmentation import AUGMENTATION_REGISTRY
@@ -48,6 +49,7 @@ from nndet.io.augmentation.nnunet import (
     MaskTransform,
 )
 from nndet.io.augmentation.pipeline.noaug import NoAug
+from nndet.io.augmentation.shift import RandomShiftTransform
 from nndet.io.transforms.format import (
     Boxes2ObjectPointsTransform,
     ObjectPoints2BoxesTransform,
@@ -92,6 +94,22 @@ class AugModular(NoAug):
             tr_transforms.append(Convert3DTo2DTransform())
         else:
             ignore_axes = None
+
+        if self.params.get("do_custom_shift", False):
+            logger.warning("Added custom shift transform to pipeline, only use this if you know why you need it")
+            if self.params.get("dummy_2D", False):
+                raise NotImplementedError("Custom shift is not implemented for 2D data and dummy 2D is active")
+            tr_transforms.append(
+                RandomShiftTransform(
+                    data_key="data",
+                    patch_size=self._spatial_transform_patch_size,
+                    magnitude=self.params["custom_shift"]["magnitude"],
+                    p_per_sample=self.params["custom_shift"]["p_per_sample"],
+                    seg_key="seg",
+                    fill_data=0,
+                    fill_seg=-1,
+                )
+            )
 
         tr_transforms.append(
             SpatialTransform(
