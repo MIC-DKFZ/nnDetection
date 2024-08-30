@@ -176,7 +176,6 @@ class BaseDataLoader3D(SlimDataLoaderBase):
             # print(case_id, instance_id)
             case_data = with_data_format.load_data(self._data[case_id]["data_file"])
             properties = load_pickle(self._data[case_id]["properties_file"])
-
             # determine positions and patches
             if instance_id < 0:
                 candidates = self.load_candidates(case_id=case_id, fg_crop=False)
