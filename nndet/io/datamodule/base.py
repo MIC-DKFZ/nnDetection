@@ -61,6 +61,7 @@ class BaseModule(pl.LightningDataModule):
 
         self.preprocessed_dir = self.data_dir.parent.parent
         self.splits_file = self.io_cfg.get("splits", "splits_final")
+        self.splits_allow_shared = self.io_cfg.get("splits_allow_shared", False)
 
         self.dataset_tr = {}
         self.dataset_val = {}
@@ -154,12 +155,19 @@ class BaseModule(pl.LightningDataModule):
 
         self.dataset_tr = OrderedDict()
         for i in tr_keys:
-            self.dataset_tr[i] = _dataset.pop(i)
+            if self.splits_allow_shared:
+                self.dataset_tr[i] = _dataset[i]
+            else:
+                self.dataset_tr[i] = _dataset.pop(i)
 
         self.dataset_val = OrderedDict()
         for j in val_keys:
-            self.dataset_val[j] = _dataset.pop(j)
-        if len(_dataset) > 0:
+            if self.splits_allow_shared:
+                self.dataset_val[j] = _dataset[j]
+            else:
+                self.dataset_val[j] = _dataset.pop(j)
+
+        if not self.splits_allow_shared and len(_dataset) > 0:
             logger.error(
                 "IMPORTANT: Found data samples which are not present "
                 f"in split file and will be ignored: {list(_dataset.keys())}"
