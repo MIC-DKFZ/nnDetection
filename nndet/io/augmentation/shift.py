@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 from batchgenerators.transforms.abstract_transforms import AbstractTransform
+from loguru import logger
 
 from nndet.utils.typing import ND_TUPLE_INT
 
@@ -50,6 +51,10 @@ class RandomShiftTransform(AbstractTransform):
     def __call__(self, **data) -> dict:
         batch_size = len(data[self.data_key])
 
+        if not data[self.data_key].ndim == 5:
+            logger.error(f"Data must be 5D, got {data[self.data_key].shape}; Case {data['keys']}")
+            raise ValueError("Data must be 5D")
+
         for batch_idx in range(batch_size):
             if np.random.random() < self.p_per_sample:
                 data_sample = data[self.data_key][batch_idx]
@@ -89,11 +94,22 @@ class RandomShiftTransform(AbstractTransform):
             np.ndarray: cropped and padded data
             np.ndarray: cropped and padded segmentation
         """
+        assert data.ndim == 4
+        assert data.shape[0] == 1
         dim = len(self.patch_size)
         # estimate lower and upper bound of offset
         content_difference = np.maximum(0, self.patch_size - content_shape) / 2
-        max_content_difference = np.floor(content_difference)
+        max_content_difference = np.floor(content_difference) - 1
 
+        sample_shifted_slices = [
+            ...,
+        ]
+        sample_original_slices = [
+            ...,
+        ]
+        sample_remaining_slices = [
+            ...,
+        ]
         for d in range(dim):
             # if == 0 content fills the entire patch -> no shifting
             if content_difference[d] > 0:
@@ -118,10 +134,18 @@ class RandomShiftTransform(AbstractTransform):
                 else:
                     remaining_slices = slice(original_slices.stop, generator_patch_size[d])
 
-                # shift data
-                data[d][shifted_slices] = data[d][original_slices]
-                data[d][remaining_slices] = self.fill_data
-                if seg is not None:
-                    seg[d][shifted_slices] = seg[d][original_slices]
-                    seg[d][remaining_slices] = self.fill_seg
+                sample_shifted_slices.append(shifted_slices)
+                sample_original_slices.append(original_slices)
+                sample_remaining_slices.append(remaining_slices)
+            else:
+                sample_shifted_slices.append(slice(0, generator_patch_size[d]))
+                sample_original_slices.append(slice(0, generator_patch_size[d]))
+                sample_remaining_slices.append(slice(0, 0))
+
+        # shift data
+        data[tuple(sample_shifted_slices)] = data[tuple(sample_original_slices)]
+        data[tuple(sample_remaining_slices)] = self.fill_data
+        if seg is not None:
+            seg[tuple(sample_shifted_slices)] = seg[tuple(sample_original_slices)]
+            seg[tuple(sample_remaining_slices)] = self.fill_seg
         return data, seg
