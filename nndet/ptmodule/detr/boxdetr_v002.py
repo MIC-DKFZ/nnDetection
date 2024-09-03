@@ -196,3 +196,42 @@ class BoxDeformableDETRV002Fine(BoxDeformableDETRV002):
                     raise NotImplementedError
         self.load_state_dict(checkpoint["state_dict"], strict=False)
         return
+
+
+@MODULE_REGISTRY.register
+class BoxDeformableDETRV002HeadOnly(BoxDeformableDETRV002Fine):
+    def configure_optimizers(self):
+        from nndet.training.learning_rate import LinearWarmupPolyLR
+
+        trainer_cfg = self.trainer_cfg
+        # configure optimizer
+        logger.info(
+            f"Running: initial_lr {trainer_cfg['initial_lr']} "
+            f"weight_decay {trainer_cfg['weight_decay']} "
+            f"AdamW with LinearWarmupPolyLR Scheduler"
+        )
+        param_groups = [{"params": []}]
+        for name, param in self.named_parameters():
+            if "classifier" in name or "regressor" in name:
+                param_groups[0]["params"].append(param)
+
+        betas = (trainer_cfg["beta1"], trainer_cfg["beta2"])
+        optimizer = torch.optim.AdamW(
+            param_groups,
+            trainer_cfg["initial_lr"],
+            weight_decay=trainer_cfg["weight_decay"],
+            betas=betas,
+            eps=trainer_cfg["eps"],
+            amsgrad=trainer_cfg["amsgrad"],
+        )
+
+        # configure lr scheduler
+        num_iterations = trainer_cfg["max_num_epochs"] * trainer_cfg["num_train_batches_per_epoch"]
+        scheduler = LinearWarmupPolyLR(
+            optimizer=optimizer,
+            warm_iterations=trainer_cfg["warm_iterations"],
+            warm_lr=trainer_cfg["warm_lr"],
+            poly_gamma=trainer_cfg["poly_gamma"],
+            num_iterations=num_iterations,
+        )
+        return [optimizer], {"scheduler": scheduler, "interval": "step"}
