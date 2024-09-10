@@ -409,6 +409,21 @@ def entrypoint_determine_best_ensemble_with_task():
         help="Specify fold to select ensemble for. Use -1 for consolidated",
         default=-1,
     )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        required=False,
+        default="nms",
+        help="Define ensembling mode, one of 'wbc' or 'nms'.",
+    )
+    parser.add_argument(
+        "--metric",
+        type=str,
+        required=False,
+        default="AP_IoU_0.10",
+        help="Select metric for optimization",
+    )
 
     args = parser.parse_args()
     task: str = args.task
@@ -417,6 +432,11 @@ def entrypoint_determine_best_ensemble_with_task():
     fold: int = args.fold
 
     fold: str = "consolidated" if fold == -1 else f"fold{fold}"
+    mode: str = args.mode
+    if mode not in ["wbc", "nms"]:
+        raise ValueError(f"{mode} is not supported for mode, only 'nms' or 'wbc' are supported")
+
+    metric = args.metric
 
     # prepare paths
     task = get_task(task, name=True, models=True)
@@ -451,14 +471,14 @@ def entrypoint_determine_best_ensemble_with_task():
         prediction_dirs=prediction_dirs,
         ground_truth_dir=data_dir_task / "preprocessed" / "labelsTr",
         classes=list(data_cfg["labels"].values()),
-        optim_metric="AP_IoU_0.10",
+        optim_metric=metric,
+        mode=mode,
     )
 
     # save results
     save_json(ensemble_results, new_model_dir / "determine_ensemble_sweep.json")
     save_json(
-        # {"models": list(best_model_subset), "iou": best_iou, "mode": "wbc"},
-        {"models": list(best_model_subset), "iou": best_iou, "mode": "nms"},
+        {"models": list(best_model_subset), "iou": best_iou, "mode": mode},
         new_model_dir / "determine_ensemble_result.json",
     )
 
@@ -487,7 +507,8 @@ def _determine_best_ensemble_and_parameter(
     prediction_dirs: Dict[str, os.PathLike],
     ground_truth_dir: os.PathLike,
     classes: List[str],
-    optim_metric: str = "AP_IoU_0.10",
+    optim_metric: str,
+    mode: str,
 ) -> Tuple[List[str], float, float]:
     """
     Determines the best IoU for WBC to ensemble predictions from different
@@ -499,7 +520,8 @@ def _determine_best_ensemble_and_parameter(
         ground_truth_dir: path to directory containing ground truth
             bounding boxes
         classes: classes present in dataset
-        optim_metric: metric to optimize. Defaults to "AP_IoU_0.10".
+        optim_metric: metric to optimize.
+        mode: ensembling mode, one of 'wbc' or 'nms'
 
     Returns:
         Tuple[List[str], float, float]: return the best model subset, the best
@@ -539,7 +561,12 @@ def _determine_best_ensemble_and_parameter(
             )
 
             # load & ensemble predictions
-            case_predictions = _load_ensemble_predictions([prediction_dirs[m] for m in model_subset], case_ids, iou)
+            case_predictions = _load_ensemble_predictions(
+                [prediction_dirs[m] for m in model_subset],
+                case_ids=case_ids,
+                iou=iou,
+                mode=mode,
+            )
 
             assert len(case_predictions) == len(case_ids)
             # evaluate
@@ -617,6 +644,7 @@ def _load_ensemble_predictions(
     prediction_dirs: List[os.PathLike],
     case_ids: Sequence[str],
     iou: float,
+    mode: str,
 ) -> Dict[str, Dict[str, np.ndarray]]:
     """
     Helper function to load and ensemble predictions from different models
@@ -627,14 +655,19 @@ def _load_ensemble_predictions(
         case_ids: case ids which should be used for ensembling
         iou: the iou thresold used to determined if predictins should be
             grouped
+        mode: ensembling mode, one of 'wbc' or 'nms'
 
     Returns:
         Dict[str, Dict[str, np.ndarray]]: ensembled predictions
     """
     case_predictions = {}
-    ensemble_function = batched_nms
-    # ensemble_function = batched_wbc
-    # num_models = len(prediction_dirs)
+    if mode == "nms":
+        ensemble_function = batched_nms
+    elif mode == "wbc":
+        num_models = len(prediction_dirs)
+        ensemble_function = batched_wbc
+    else:
+        raise ValueError(f"Unknown mode {mode}")
 
     for cid in maybe_verbose_iterable(case_ids):
         if len(prediction_dirs) == 1:
@@ -653,12 +686,19 @@ def _load_ensemble_predictions(
             boxes = np.concatenate(boxes, axis=0)
             scores = np.concatenate(scores, axis=0)
             labels = np.concatenate(labels, axis=0)
+
+            kwargs = {}
+            if mode == "wbc":
+                kwargs["n_exp_preds"] = torch.from_numpy(np.ones_like(scores)) * num_models
+                kwargs["use_area"] = False
+
             pred_boxes, pred_scores, pred_labels, _ = ensemble_function(
                 boxes=torch.from_numpy(boxes),
                 scores=torch.from_numpy(scores),
                 labels=torch.from_numpy(labels),
                 weights=torch.from_numpy(np.ones_like(scores)),
                 iou_thresh=iou,
+                **kwargs,
             )
             case_predictions[cid] = {
                 "pred_boxes": pred_boxes.cpu().numpy(),
