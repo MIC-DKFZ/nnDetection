@@ -600,7 +600,10 @@ def _train_module(
         logger.info(f"Continue training -> loading checkpoint: {_path}")
         fit_kwargs["ckpt_path"] = _path
     if transfer_learning:
-        _path = train_dir / "model_transfer.ckpt"
+        if "transfer_learning_ckpt" in cfg["model_cfg"]:
+            _path = Path(os.path.expandvars(cfg["model_cfg"]["transfer_learning_ckpt"]))
+        else:
+            _path = train_dir / "model_transfer.ckpt"
         logger.info(f"Performing transfer learning -> loading model weights: {_path}")
         if continue_training:
             _s = "Found continue training and transfer learning, only one can be activated at the same time!"

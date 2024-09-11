@@ -2,12 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
-import os
-from pathlib import Path
 from typing import Optional, Sequence, Type
-
-import torch
-from loguru import logger
 
 from nndet.core.boxes.criterions.base import BoxCriterion, ClassCriterion
 from nndet.core.boxes.criterions.box import GIoUCenterBoxCriterion, L1RegCriterion
@@ -159,79 +154,3 @@ class BoxDeformableDETRV002(
     matcher_box_criterion_cls: Optional[
         BoxCriterion
     ] = GIoUCenterBoxCriterion  #: criterion to compute regression cost matrix
-
-
-@MODULE_REGISTRY.register
-class BoxDeformableDETRV002Fine(BoxDeformableDETRV002):
-    def load_custom_state_dict(self, path: os.PathLike) -> None:
-        """
-        Load custom state_dict
-
-        Args:
-            path: filepath to model checkpoint
-        """
-
-        path = Path(path)
-        if not path.is_file():
-            _s = f"Path {path} for checkpoint for transfer learning does not exist."
-            logger.error(_s)
-            raise RuntimeError(_s)
-
-        checkpoint = torch.load(str(path), map_location="cpu")
-        current_state_dict = self.state_dict()
-
-        assert current_state_dict.keys() == checkpoint["state_dict"].keys(), "State dicts do not match"
-        for key in list(checkpoint["state_dict"].keys()):
-            if current_state_dict[key].shape != checkpoint["state_dict"][key].shape:
-                assert "classifier" in key
-                assert "mlp" in key
-                assert "fc" in key
-                logger.info(f"Repeating key {key} from transfer learning checkpoint")
-                n_classes = current_state_dict[key].shape[0]
-                if checkpoint["state_dict"][key].ndim == 2:
-                    checkpoint["state_dict"][key] = checkpoint["state_dict"][key].repeat(n_classes, 1)
-                elif checkpoint["state_dict"][key].ndim == 1:
-                    checkpoint["state_dict"][key] = checkpoint["state_dict"][key].repeat(n_classes)
-                else:
-                    raise NotImplementedError
-        self.load_state_dict(checkpoint["state_dict"], strict=False)
-        return
-
-
-@MODULE_REGISTRY.register
-class BoxDeformableDETRV002HeadOnly(BoxDeformableDETRV002Fine):
-    def configure_optimizers(self):
-        from nndet.training.learning_rate import LinearWarmupPolyLR
-
-        trainer_cfg = self.trainer_cfg
-        # configure optimizer
-        logger.info(
-            f"Running: initial_lr {trainer_cfg['initial_lr']} "
-            f"weight_decay {trainer_cfg['weight_decay']} "
-            f"AdamW with LinearWarmupPolyLR Scheduler"
-        )
-        param_groups = [{"params": []}]
-        for name, param in self.named_parameters():
-            if "classifier" in name or "regressor" in name:
-                param_groups[0]["params"].append(param)
-
-        betas = (trainer_cfg["beta1"], trainer_cfg["beta2"])
-        optimizer = torch.optim.AdamW(
-            param_groups,
-            trainer_cfg["initial_lr"],
-            weight_decay=trainer_cfg["weight_decay"],
-            betas=betas,
-            eps=trainer_cfg["eps"],
-            amsgrad=trainer_cfg["amsgrad"],
-        )
-
-        # configure lr scheduler
-        num_iterations = trainer_cfg["max_num_epochs"] * trainer_cfg["num_train_batches_per_epoch"]
-        scheduler = LinearWarmupPolyLR(
-            optimizer=optimizer,
-            warm_iterations=trainer_cfg["warm_iterations"],
-            warm_lr=trainer_cfg["warm_lr"],
-            poly_gamma=trainer_cfg["poly_gamma"],
-            num_iterations=num_iterations,
-        )
-        return [optimizer], {"scheduler": scheduler, "interval": "step"}
