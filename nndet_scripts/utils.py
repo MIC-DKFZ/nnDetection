@@ -1038,9 +1038,10 @@ def numpy2blosc():
 
     data_identifier = meta_json["data_identifier"]
     patch_size = meta_json["patch_size"]
+    stripped_data_identifier = meta_json["data_identifier"].split("_")[0]
 
     npx_dir = preprocessed_dir / data_identifier
-    blosc_dir = preprocessed_dir / "D3V001Blosc_3d"
+    blosc_dir = preprocessed_dir / f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
 
     npx_handler = data_format_to_class_mapping["npz"]
     blosc_handler = data_format_to_class_mapping["b2nd"]
@@ -1079,15 +1080,15 @@ def numpy2blosc():
         else:
             logger.warning(f"No labels{mode} folder found!")
 
-    meta_json["planner_id"] = "D3V002Blosc"
+    meta_json["planner_id"] = f"{meta_json['planner_id']}Blosc"
     meta_json["preprocessed_data_format"] = "b2nd"
-    meta_json["data_identifier"] = "D3V001Blosc_3d"
-    save_json(meta_json, preprocessed_dir / "D3V002Blosc_3d.json")
+    meta_json["data_identifier"] = f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
+    save_json(meta_json, preprocessed_dir / f"{meta_json['planner_id']}_{meta_json['mode']}.json")
 
-    meta_pkl["planner_id"] = "D3V002Blosc"
+    meta_pkl["planner_id"] = f"{meta_json['planner_id']}Blosc"
     meta_pkl["preprocessed_data_format"] = "b2nd"
-    meta_pkl["data_identifier"] = "D3V001Blosc_3d"
-    save_pickle(meta_pkl, preprocessed_dir / "D3V002Blosc_3d.pkl")
+    meta_pkl["data_identifier"] = f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
+    save_pickle(meta_pkl, preprocessed_dir / f"{meta_json['planner_id']}_{meta_json['mode']}.pkl")
 
 
 if __name__ == "__main__":
