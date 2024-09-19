@@ -80,7 +80,7 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_logo = "_static/nnDetectionText.svg"
+html_logo = "_static/logos_nndet_short.png"
 html_title = "nnDetection Documentation"
 
 # options
