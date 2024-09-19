@@ -38,7 +38,7 @@ Medical Object Detection](https://miccai2021.org/openaccess/paperlinks/2021/09/0
 
 <div align="center">
 
-:boom::exclamation:Please refer to our [online documentation]():exclamation::boom:
+:boom: :exclamation:Please refer to our [online documentation]():exclamation: :boom:
 
 </div>
 
@@ -60,7 +60,7 @@ We provide an extensive documentation for:
 
 
 ### [Related Project] Deep-learning based Detection of Vessel Occlusions was Accepted at Nature Communications
-:page_facing_up::tada: Fast and accurate detection and vessel occlusions in CTA images is an important clinical task but was previously tackled with many hand crafted solutions. In our study, we present a detection based approach which provides provides great resutls without relying on expensive pre-processing or anatomical limitations. Intereted in our findings? Check out our [paper](https://www.nature.com/articles/s41467-023-40564-8). 
+:page_facing_up: :tada: Fast and accurate detection and vessel occlusions in CTA images is an important clinical task but was previously tackled with many hand crafted solutions. In our study, we present a detection based approach which provides provides great resutls without relying on expensive pre-processing or anatomical limitations. Intereted in our findings? Check out our [paper](https://www.nature.com/articles/s41467-023-40564-8). 
 
     Brugnara, G., Baumgartner, M., Scholze, E. D., Deike-Hofmann, K., Kades, K., Scherer, J., ... & Vollmuth, P. (2023).
     Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke. 
@@ -70,7 +70,7 @@ We provide an extensive documentation for:
 :sparkles: Our method based on nnDetection ranked second in the detection track of the [TDSC-ABUS23 Challenge](https://tdsc-abus2023.grand-challenge.org/TDSC-ABUS2023/).
 
 ### [Related Project] DETR Pilot Project was Accepted at BVM23 as Oral presentation
-:page_facing_up::tada: Our pilot project to investigate the feasibility of DEtection TRansformers (DETR) for medical object detection was accepted to BVM23 as an oral presentation. It ranked third for best scientific contribution. Intereted in our findings? Check out our [paper](https://arxiv.org/abs/2306.15472).
+:page_facing_up: :tada: Our pilot project to investigate the feasibility of DEtection TRansformers (DETR) for medical object detection was accepted to BVM23 as an oral presentation. It ranked third for best scientific contribution. Intereted in our findings? Check out our [paper](https://arxiv.org/abs/2306.15472).
 
     Ickler, M. K., Baumgartner, M., Roy, S., Wald, T., & Maier-Hein, K. H. (2023, June).
     Taming Detection Transformers for Medical Object Detection.
@@ -85,7 +85,7 @@ We provide an extensive documentation for:
     https://doi.org/10.1007/978-3-031-27324-7_10
 
 ### nnDetection was Accepted at MICCAI21
-:page_facing_up::tada: nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21)
+:page_facing_up: :tada: nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21)
 
     Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021)
     nnDetection: A Self-configuring Method for Medical Object Detection.
