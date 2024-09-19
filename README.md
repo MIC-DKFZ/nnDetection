@@ -56,20 +56,20 @@ We provide an extensive documentation for:
 # Acknowledgements
 nnDetection combines the information from multiple open source repositores we wish to acknoledge for their awesome work, please check them out!
 
-## [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)
+### [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)
 nnU-Net is self-configuring method for semantic segmentation and many steps of nnDetection follow in the footsteps of nnU-Net.
 
-## [Medical Detection Toolkit](https://github.com/MIC-DKFZ/medicaldetectiontoolkit)
+### [Medical Detection Toolkit](https://github.com/MIC-DKFZ/medicaldetectiontoolkit)
 The Medical Detection Toolkit introduced the first codebase for 3D Object Detection and multiple tricks were transferred to nnDetection to assure optimal configuration for medical object detection.
 
-## [Torchvision](https://github.com/pytorch/vision)
+### [Torchvision](https://github.com/pytorch/vision)
 nnDetection tried to follow the interfaces of torchvision to make it easy to understand for everyone coming from the 2D (and video) detection scene. As a result we used based our implementations of some of the core modules of the torchvision implementation.
 
 
-## [transoar](https://github.com/bwittmann/transoar)
+### [transoar](https://github.com/bwittmann/transoar)
 3D Deformable Attention for Deformable DETR was integration from transoar, and was extremely helpful. We are grateful for the open source release of this code.
 
-## DETR
+### DETR
 
 DETR components from multiple repositores were adapted for 3D use, we would like to thank the authors for their great work and open sourcing their code under nice licenses.
 
@@ -79,9 +79,9 @@ DETR components from multiple repositores were adapted for 3D use, we would like
 - [detrex: Benchmarking Detection Transformers](https://github.com/IDEA-Research/detrex)
 
 
-## License
-This project is licensed under multiple licenses, please refer to the `LICENSES` directory for an overview of the licenses. 
-
-
 ## Funding
 Part of this work was funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – 410981386 and the Helmholtz Imaging Platform (HIP), a platform of the Helmholtz Incubator on Information and Data Science.
+
+
+# License
+This project is licensed under multiple licenses, please refer to the `LICENSES` directory for an overview of the licenses. 

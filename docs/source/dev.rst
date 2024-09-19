@@ -93,11 +93,6 @@ Different optimizers can be registered in the optimizer registry and selected vi
 Overview
 ********
 
-.. image:: _static/nnDetectionModule.svg
-   :width: 600
-   :align: center
-   :alt: nnDetection Module Overview
-
 Config Files
 ============
 
@@ -279,12 +274,3 @@ There are four different loss categories in nnDetection:
    The input follows the same format at segmentation losses but the targets
    are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
    the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
-
-
-Custom Splits
--------------
-#TODO: add docs
-
-
-Evaluation
-==========

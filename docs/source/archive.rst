@@ -1,4 +1,4 @@
-Projects
+Archive
 ========
 
 nnDetection Pool V1
@@ -7,15 +7,17 @@ This is the inital pool of data sets nnDetection was developed on.
 It consists of 10 training / validation data sets and 3 "test" data sets.
 More information can be found in our `paper <https://arxiv.org/abs/2106.00817>`_ .
 
-If you use nnDetection please cite our paper:
+If you use these results from nnDetection please cite our paper:
 
-.. code-block::
+`nnDetection: Self-configuring Medical Object Detection <https://miccai2021.org/openaccess/paperlinks/2021/09/01/341-Paper1836.html>`_
 
-   TODO
+.. tip::
+   Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021)
 
-Data Sets
-~~~~~~~~~~~~~~~
-TODO
+   nnDetection: A Self-configuring Method for Medical Object Detection.
+   
+   https://doi.org/10.1007/978-3-030-87240-3_51
+
 
 Results
 ~~~~~~~

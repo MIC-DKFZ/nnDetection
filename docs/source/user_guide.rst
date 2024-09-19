@@ -3,16 +3,20 @@
 User Guide
 ==========
 
-TODOs
-=====
-- application limited to 3D
-- Pointer to Projects and Plugins
-- Improvements
-   - select best model for evaluation
-   - run inference on CPU (inference_kwargs.device=cpu)
-   - run segmentation of RetinaU-Net
+This section includes dedicated guides to use nnDetection as a self-cofiguring baseline for volumetric (i.e. 3D like CT, MR etc.) detection tasks.
+It provides an exmaple application via the toy dataset which generates an artifical training and testing dataset for a simple 3D detection task.
+The guide also includes a detailed explanation of the data set format and how to prepare data sets for nnDetection.
+Specifically, 21 data sets are provided with detailed guides on how to prepare them for nnDetection.
 
-- Training Time / Training Speed / Benchmark?
+Internally nnDetection is based on a complex set of rules, fixed and empirical optimisation but it will execute everything automatically -> As a user it is only necessary to execute a few commands in a sequential order to obtain state-of-art detction resutls |:tada:|.
+
+.. image:: ./_static/main_methods_conf.jpg
+   :width: 600
+   :align: center
+   :alt: nnDetection
+
+|
+|
 
 Preparing Data Sets
 *******************
@@ -41,46 +45,66 @@ After running the generation script follow the `Planning`, `Training` and `Infer
     .. code-block::
         
         # this is a very short training schedule specifically to speed up the toy data set and should not be used in any other circumstance!
-        nndet_train 000 -o train=toy --sweep
+        nndet_train 000 toy 0 --sweep
 
-Experiments
------------
+Paper Experiments
+-----------------
 
 .. note::
 
     The data sets used for our experiments are not hosted or maintained by us, please give credit to the authors of the data sets.
     Some of the labels were corrected in data sets which we converted and can be downloaded (links can be found in the guides).
-    The `Experiments` section contains multiple guides which explain the preparation of the data sets via the provided scripts.
 
 Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
+
+.. image:: ./_static/main_data.jpg
+   :width: 900
+   :align: center
+   :alt: nnDetection2E Datasets
+
+|
+|
+
 We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
-Furthermore, we provide pretrained models which can be used without investing large amounts of compute to rerun our experiments (see Section `Pretrained Models`).
+The guides are located in the source repository under `/tasks` and include:
 
-* Task 003 Liver: nndetection/projects/Task001_Decathlon
-* Task 007 Pancreas: nndetection/projects/Task001_Decathlon
-* Task 008 HepaticVessel: nndetection/projects/Task001_Decathlon
-* Task 010 Colon: nndetection/projects/Task001_Decathlon
-* Task 017 CADA: nndetection/projects/Task017_CADA
-* Task 020 RibFrac: nndetection/projects/Task020_RibFrac
-* Task 016 Luna: nndetection/projects/Task016_Luna
+Development Pool:
 
-# TODO: finish V2 datasets
-Additional data sets from nnDetection V2 (recommended):
+* D01 as Task 003 Liver: nndetection/tasks/Task001_Decathlon
+* D02 as Task 007 Pancreas: nndetection/tasks/Task001_Decathlon
+* D03 as Task 008 HepaticVessel: nndetection/tasks/Task001_Decathlon
+* D04 as Task 010 Colon: nndetection/tasks/Task001_Decathlon
+* D05 as Task 017 CADA: nndetection/tasks/Task017_CADA
+* D06 as Task 020 RibFrac: nndetection/tasks/Task020_RibFrac
+* D07 as Task 035 KiTS21: nndetection/tasks/Task_035_KiTS21
+* D08 as Task 036 PICAI: nndetection/tasks/Task_036_PICAI
+* D09 as Task 037 ADAM TOF A: nndetection/tasks/Task_037_ADAM_TOF_A
+* D10 as Task 045 LIDC: nndetection/tasks/Task044_LIDC_pylidc
 
-* Task 035 KiTS21: nndetection/projects/Task_035_KiTS21
-* Task 036 PICAI: nndetection/projects/Task_036_PICAI
-* Task 037 ADAM TOF A: nndetection/projects/Task_037_ADAM_TOF_A
-* Task 038 LIDC: nndetection/projects/Task017_CADA
+Generaliation Pool:
 
-Additional data sets from nnDetection V1:
+* D11 as Task 038 KiPA: nndetection/tasks/Task038_KiPA
+* D12 as Task 052 MRAAneurysms: nndetection/tasks/Task052_MRAAneurysms
+* D13 as Task 041 PancreasCysts: nndetection/tasks/Task041_PancreasCysts
+* D14 as Task 042 Duke: nndetection/tasks/Task042_Duke
+* D15 as Task 057 BraTSMets: nndetection/tasks/Task057_BraTSMets
+* D16 as Task 056 PanoramaSubset: nndetection/tasks/Task056_PanoramaSubset
+* D17 as Task 050 MELA: nndetection/tasks/Task050_MELA
+* D18 as Task 051 VALDO Microbleeds: nndetection/tasks/Task051_VALDO_Microbleeds
+* D19 as Task 054 LNDb: nndetection/tasks/Task054_LNDb
 
-* Task 011 Kits: nndetection/projects/Task011_Kits
-* Task 019 ADAM: nndetection/projects/Task019_ADAM
-* Task 021 ProstateX: nndetection/projects/Task021_ProstateX
-* Task 012 LIDC: nndetection/projects/Task012_LIDC
-* Task 025 LymphNodes: nndetection/projects/Task025_LymphNodes
+Benchmarking Pool:
 
-Check the Projects tab for additional projects and results of nnDetection.
+* D20 as Task 016 Luna: nndetection/tasks/Task016_Luna
+* D21 as Task 053 PN9: nndetection/tasks/Task053_PN9
+
+Dataset scripts from nnDetection V1:
+
+* Task 011 Kits: nndetection/tasks/Task011_Kits
+* Task 012 LIDC: nndetection/tasks/Task012_LIDC
+* Task 021 ProstateX: nndetection/tasks/Task021_ProstateX
+* Task 025 LymphNodes (updared to Task 046): nndetection/tasks/Task025_LymphNodes
+
 
 Adding New Data Sets
 --------------------
@@ -163,6 +187,7 @@ An example with two modalities could look like this:
     - case002_000_0001.nii.gz # Case ID    patient: case002; session: 000; Modality: 1
 
 If multiple modalities are available, please check beforehand if they need to be registered and perform registration befor nnDetection preprocessing. nnDetection does (!)not(!) include automatic registration of multiple modalities.
+All images need to have the same number of modalities.
 
 Label Format
 ~~~~~~~~~~~~
@@ -181,11 +206,11 @@ The nifty file should contain all annotated instances where each instance has a 
     }
 
 
-Each label file needs a corresponding json file to define the classes.
-
-# TODO: all images need to have the same number of modalities
-# TODO: images (all modalities) and corresponding label need to have the same size (number of pixels)
-# TODO: modalities need to be registered (bias field correction?)
+Each label file needs a corresponding json file to define the classes. The corresponding image and labels files need to have the same size (in terms of voxels).
+In case of weak annotations, they need to be converted into segmentation maps before using them within nnDetection. We usually recommend representing them as boxes or spheres in the segmentation map.
+Depending on the chosen network, the segmentation won't be used during training but we have observed better results when augmenting dense masks rather than extreme points.
+Since in the 3D space, a single point can only be occupied by a single object this procedure can be executed without loss of generality.
+In some cases, boxes might slightly overlap with each other, than we recommend starting with the largest boxes and sequentially pasting smaller objects to retain the size of the smallest obejcts.
 
 
 Using nnDetection
@@ -274,7 +299,15 @@ Training and Evaluation
 -----------------------
 
 After the planning and preprocessing stage is finished the training phase can be started.
-The default setup of nnDetection is trained in a 5 fold cross-validation scheme.
+nnDetectio2E supports several object detection models which can be trained on multiple resolutions (if triggered during planning).
+We recommend following this flow chart to first determine a good resolution and than training the remaining models:
+
+.. image:: ./_static/main_methods_inference.jpg
+   :width: 900
+   :align: center
+   :alt: nnDetection2E Flow Chart
+
+The default setup is trained in a 5 fold cross-validation scheme.
 First, check which plans were generated during planning by checking the preprocessing folder and look for the pickled plan files.
 In most cases only the defaul plan will be generated (`D3V001_3d`) but there might be instances (e.g. Kits) where the low resolution plan will be generated too (`D3V001_3dlr1`).
 
@@ -287,6 +320,22 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
 
     # Script
     # /scripts/train.py - train()
+
+These commands run different models included in nnDetection2E:
+
+.. code-block:: bash
+    # One-stage detectors 
+    nndet_train 000 retinaunet_focal_v002 0 --sweep # Retina U-Net V2
+    nndet_train 000 retinaunet_focal_v002 0 -o module=RetinaNetFocalV002 --sweep # Retina Net V2
+
+    # Two-stage detectors
+    nndet_train 000 retinaunet2sm_v002 0 --sweep # Retina U-Net 2SM V2
+    nndet_train 000 retinaunet2sm_v002 0 -o module=RetinaNet2SV002 --sweep # Retina Net 2S V2
+    
+    # Set prediction models
+    nndet_train 000 def_detr_v002 0 --sweep # Deformable DETR V2
+
+If your dataset is annoated with weak annotations (bounding boxes, spheres, etc.) you should train `Retina Net V2, Retina Net 2S V2, Deformable DETR V2` and if the dataset includes dense pixel-wise annotations these models should be trained: `Retina U-Net V2, Retina U-Net 2SM V2, Deformable DETR V2`.
 
 `nndet_train` needs to be run for every fold separately, by default this means running it 5 times with `fold` varying between 0 and 4 (inclusive).
 `--continue_training` can be activated to continue training from the last saved checkpoint.
@@ -321,8 +370,8 @@ Evaluation can be invoked by the following command (requires access to the model
 
 It is now also possible to invoke the evaluation on individual folders with `nndet_eval_with_folders`.
 
-Inference
----------
+Consoldiate and Model Ensembling
+--------------------------------
 
 After running all folds it is time to collect the models and creat a unified inference plan.
 The following command will copy all the models and predictions from the folds. By adding the `sweep_` options, the empiricaly hyperparameter optimization across all folds can be started.
@@ -338,26 +387,56 @@ This will generate a unified plan for all models which will be used during infer
     # Script
     # /scripts/consolidate.py - main()
 
+To determine the best ensemble of models for nnDetection2E the following command can be used:
+
+.. code-block:: bash
+
+    nndet_determine_best_ensemble_with_task [task] [new model name] [+models to ensemble]]
+
+    # Example
+    # for weak annotations
+    nndet_determine_best_ensemble_with_task 000 nnDetectionV2_ensemble RetinaNetFocalV002_D3V002_3d RetinaNet2SV002_D3V002_3d BoxDeformableDETRV002_D3V002_3d
+
+    # for segmentation annotations
+    nndet_determine_best_ensemble_with_task 000 nnDetectionV2_ensemble RetinaUNetFocalV002_D3V002_3d RetinaUNet2SMV002_D3V002_3d BoxDeformableDETRV002_D3V002_3d
+
+    # Script
+    # /scripts/ensemble.py - entrypoint_determine_best_ensemble_with_task()
+
+This will create a new model folder and create config files to perform the ensembling.
+
+The actual ensembling step can than be executed via the following command:
+
+.. code-block:: bash
+    nndet_ensemble_with_determined_model [task] [model] [fold] [--test]
+
+    # Example
+    nndet_ensemble_with_determined_model 000 nnDetectionV2_ensemble -1
+
+This will execute the ensembling step with the determined model and parameter configuration.
+More fine grained control for custom use cases is provided via `nndet_ensemble_with_task`, `nndet_ensemble_with_models` and `nndet_ensemble_with_folders` where parameters and models can be manually defined.
+Refer to the code documentation in `nndet_scripts/ensemble.py` for more information.
+
+
+Inference
+---------
+
 For the final test set predictions simply select the best model according to the validation scores and run the prediction command below.
 Data which is located in `raw_splitted/imagesTs` will be automatically preprocessed and predicted by running the following command:
 
 .. code-block:: bash
 
-    nndet_predict_with_imagesTs [task] [model] [--fold] [--num_tta] [--no_preprocess] [--check] [-npp / --num_processes_preprocessing] [--force_args]
+    nndet_predict_with_imagesTs [task] [model] [fold] [-ntta] [--skip_preprocessing] [-npp / --num_processes_preprocessing] [--load_models] [-o]
 
     # Example
     nndet_predict_with_imagesTs 000 RetinaUNetV001_D3V001_3d -1
 
     # Script
-    # /scripts/predict.py - main()
+    # /scripts/predict2.py - main()
 
 If a self-made test set was used, evaluation can be performed by invoking `nndet_eval` with `--test` as described above.
-Other predict commands which allow for the prediction of individual folders with pre-trained models are now also available.
-
-# TODO: udpate predict command to predict2
-# TODO: pretrained models
-# TODO: continue training
-# TODO: move nnU-Net for detection into a separate project page
+Other predict commands which allow more fine grained control for custom scenarios over input and output, please refer to the source file `/scripts/predict2.py` for more info.
+Possible commands are `nndet_predict_with_task`, `nndet_predict_with_folders` and `nndet_predict_test_split`.
 
 Results
 -------
@@ -385,13 +464,21 @@ Finally, some metrics are extended with additional analysis functions e.g. compu
 * `FROCwp_IoU_0.10`: FROC computed at default FPPI values of (1/8, 1/4, 1/2, 1, 2, 4, 8), sensitivty at FPPI value is determined by last working point (not interpolated). This implementation pools all of the predictions and is *not* computed per class.
 * `mc_FROCwp_IoU_0.10`: compute FROC per class and average across classes. This one should be used in most cases in multi class scenarios to stratify for the number of objects inside the classes.
 
-.. warning::
+nnDetection offers multiple ways to visualize results:
 
-    nnDetection provides some additional analysis files (located in the analysis folders) which are purely for qualitative analysis purposes and should never be used for quantitative evaluation!
-    Since they are not part of the official functionality we do not provide extensive documentation nor support for this.
+* `nndet_boxes2mitkv2`: this function creates predictions in the `[val/test]_predictions` folder. The latest version of MITK is needed to view these files. Just drag and drop the json files into MITK and the boxes are shown with their class and score. This method is highly recommended since it provides the best user experience.
+* `nndet_boxes2nii`: this function creates predictions in the `[val/test]_predictions` folder in the original image space. The predictions are saved as nifty files with the same name as the original image files. They can be viewed in any medical image viewer. In addition to the segmentation the json files contain the scores. Overlapping predictions are not shown and or partially occluded.
 
-# TODO: visualisation of results
-# TODO: format of predictions
+nnU-Net for Detection
+---------------------
+
+The desired dataset need to be provided in nnDetection format, the labels need to be prepared via the `nndet_prep_labels` commands and nnU-Net needs to be installed and configured.
+The provided dataset can be exported into nnU-Net format via `python nndet_scripts/nnunet/nnunet_export.py [task]`.
+Than nnU-Net needs to be trained and the softmax predictions (this required an additional flag, npz files) need to be saved for further processing.
+After training all models, `python nndet_scripts/nnunet/nnunet_import.py --nnuet [nnunet plan] --mode val --nnunet_model_name nnUNet3d --num_workers 6 [--simple]` can be executed to determine the postprocesing for nnU_Net on the validation set. By setting the mode to test, the test predictions can be determined (nnU-Net predict needs to be called first with the option to save the softmax logits i.e. the npz files).
+An example can look like this `python nndet_scripts/nnunet/nnunet_import.py --nnuet $nnunet_base/nnunet_models/nnUNet/3d_fullres/${TASK}/nnUNetTrainerV2__nnUNetPlansv2.1 --mode val --nnunet_model_name nnUNet3d --num_workers 6 [--simple]`.
+**We have only tested up to nnU-Net 1.7.1, nnU-Net v2 was not tested and is thus not supported.**
+The normal nndet eval and ensembling functions can be called on the result afterwards.
 
 
 Advanced Use Cases
@@ -399,34 +486,6 @@ Advanced Use Cases
 
 An advanced use case might require some minor coding which is not covered by the default functionality of nnDetection.
 Nevertheless, some cases can occur frequently and are thus covered here. 
-
-Detection Zoo
--------------
-
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-| **Models**               | **Internal Inputs**    || **Command**                                                                  |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Retina U-Net V001       | BB + SS                || nndet_train [task] retinaunet_v001 [fold]                                    |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| RetinaNet V002 HNM      | BB                     || nndet_train [task] retinaunet_hnm_v002 [fold] -o model=RetinaNetHNMV002      |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| RetinaNet V002 Focal    | BB                     || nndet_train [task] retinaunet_focal_v002 [fold] -o model=RetinaNetFocalV002  |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Faster RCNN V002        | BB                     ||                                                                              |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Retina U-Net V002 HNM   | BB (+ SS)              || nndet_train [task] retinaunet_hnm_v002 [fold]                                |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Retina U-Net V002 Focal | BB (+ SS)              || nndet_train [task] retinaunet_focal_v002 [fold]                              |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Box Mask RCNN V002      | BB + BI                ||                                                                              |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-|| Box Mask U-RCNN V002    | BB + BI (+ SS)         ||                                                                              |
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-+--------------------------+------------------------++------------------------------------------------------------------------------+
-
-Legend: BB = Bounding Boxes, BI = Binary Mask, SS = Semantic Segmentation (dervied from instance segmentation mask)
 
 
 Evaluation Framework
@@ -487,14 +546,22 @@ Custom evaluation scripts can be esily created by passing the predictions and gr
         )
     return evaluator.finish_online_evaluation()
 
+Custom Split
+------------
 
-Custom Applications
--------------------
+Custom splits can be easily created by placing a `[your_split].json` file inside the preprocessing folder of the task.
+The file should contain a list for the folds and each list item is a dict with keys 'train' and 'val' which contain the case ids for the respective split.
+The training command should than be extended with the `+io_cfg.splits=[your_split]` option.
 
-# TODO: custom split
-# TODO: custom network -> refer to developer guide
-# TODO: Running unit tests
+Running Unittests
+-----------------
 
+nnDetection provides a set of unittests which can be run by invoking the running the following command within the root dir:
+
+.. code-block:: bash
+    pytest .
+
+The installation needs to be performed in `dev` mode to install all dependencies properly.
 
 
 FAQ
