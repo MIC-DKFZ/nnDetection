@@ -102,5 +102,7 @@ html_theme_options = {
     ],
 }
 
+html_context = {"default_mode": "light"}
+
 # disable primary nav bar
 html_sidebars = {"**": []}
