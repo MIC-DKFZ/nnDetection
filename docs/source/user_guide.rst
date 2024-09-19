@@ -10,13 +10,6 @@ Specifically, 21 data sets are provided with detailed guides on how to prepare t
 
 Internally nnDetection is based on a complex set of rules, fixed and empirical optimisation but it will execute everything automatically -> As a user it is only necessary to execute a few commands in a sequential order to obtain state-of-art detction resutls |:tada:|.
 
-.. image:: ./_static/main_methods_conf.jpg
-   :width: 600
-   :align: center
-   :alt: nnDetection
-
-|
-|
 
 Preparing Data Sets
 *******************
@@ -56,15 +49,6 @@ Paper Experiments
     Some of the labels were corrected in data sets which we converted and can be downloaded (links can be found in the guides).
 
 Besides the self-configuring method, nnDetection acts as a standard interface for many data sets.
-
-.. image:: ./_static/main_data.jpg
-   :width: 900
-   :align: center
-   :alt: nnDetection2E Datasets
-
-|
-|
-
 We provide guides to prepare all data sets from our evaluation to the correct and make it easy to reproduce our resutls.
 The guides are located in the source repository under `/tasks` and include:
 
@@ -221,7 +205,7 @@ A typical flow of commands would look like this:
 
 .. note::
 
-    nndet_prep -> nndet_unpack -> nndet_cv_split -> nndet_train -> nndet_consolidate -> nndet_predict
+    nndet_prep -> nndet_unpack -> nndet_cv_split -> nndet_train -> nndet_consolidate -> nndet_determine_best_ensemble_with_task -> nndet_predict -> nndet_ensemble_with_determined_model
 
 Eachs of this commands is explained below and more detailt information can be obtained by running `nndet_[command] -h` in the terminal.
 
@@ -300,12 +284,8 @@ Training and Evaluation
 
 After the planning and preprocessing stage is finished the training phase can be started.
 nnDetectio2E supports several object detection models which can be trained on multiple resolutions (if triggered during planning).
-We recommend following this flow chart to first determine a good resolution and than training the remaining models:
-
-.. image:: ./_static/main_methods_inference.jpg
-   :width: 900
-   :align: center
-   :alt: nnDetection2E Flow Chart
+We recommend first training the selected one stage model on the different resolutions and select the best resolution to train the remaining models.
+The one stage model has the shortest training times and offers the best tradeoff.
 
 The default setup is trained in a 5 fold cross-validation scheme.
 First, check which plans were generated during planning by checking the preprocessing folder and look for the pickled plan files.
@@ -324,6 +304,7 @@ In most cases only the defaul plan will be generated (`D3V001_3d`) but there mig
 These commands run different models included in nnDetection2E:
 
 .. code-block:: bash
+
     # One-stage detectors 
     nndet_train 000 retinaunet_focal_v002 0 --sweep # Retina U-Net V2
     nndet_train 000 retinaunet_focal_v002 0 -o module=RetinaNetFocalV002 --sweep # Retina Net V2
@@ -408,6 +389,7 @@ This will create a new model folder and create config files to perform the ensem
 The actual ensembling step can than be executed via the following command:
 
 .. code-block:: bash
+
     nndet_ensemble_with_determined_model [task] [model] [fold] [--test]
 
     # Example
@@ -559,6 +541,7 @@ Running Unittests
 nnDetection provides a set of unittests which can be run by invoking the running the following command within the root dir:
 
 .. code-block:: bash
+
     pytest .
 
 The installation needs to be performed in `dev` mode to install all dependencies properly.

@@ -2,9 +2,7 @@
 Developer Guide
 ===============
 
-TODO: interaction diagram of the different classes  (ptmodule = core)
-
-Intro ... # TODO
+These sections provide extended guides to implement custom features into the nnDetection framework.
 
 Developer Flags
 ===============
@@ -138,8 +136,6 @@ nnDetection uses `Pytorch Lightning` for training to provide a widely used, stan
 Instead of using the lightning module directly, all modules in nnDetection are build on `LightningBaseModule` (`nndet.ptmodule.module`) which integrates additional procedures to setup transformations, the evaluation and the prediction pipeline.
 A flow chart visualising the call procedure of nnDetection can be found below.
 
-# TODO: flow chart
-
 Each detection module in nnDetection should be a combination of the `LightningBaseModule` and multiple `Mixins` which are explained below.
 By leveraging `Mixins` nnDetection can cover various input/output formats and provide models for: Bounding Box Detection + auxiliary task training, Instance Segmentation + auxiliary task training.
 An example which builds a standard RetinaNet is shown below:
@@ -219,19 +215,19 @@ Prepare Mixins
 Sometimes it is necessary to add multiple `PrepareMixin` to create different ground truth formats, e.g. Retina U-Net requires bounding boxes and semantic segmentations.
 In general there are three `PrepareMixin` Types which save the result in different keys:
 
-- `BoxesPrepareMixin` saves the boxes in `boxes` and class in `classes`
-- `SemanticPrepareMixin` save semantic segmentation into `target_seg`
-- `SemanticFgPrepareMixin` save semantic segmentation (fg vs bg) into `target_seg`
-- `BinaryMasksPrepareMixin` save binary masks into `target_binary_masks`
+* `BoxesPrepareMixin` saves the boxes in `boxes` and class in `classes`
+* `SemanticPrepareMixin` save semantic segmentation into `target_seg`
+* `SemanticFgPrepareMixin` save semantic segmentation (fg vs bg) into `target_seg`
+* `BinaryMasksPrepareMixin` save binary masks into `target_binary_masks`
 
 Eval Mixins
 ~~~~~~~~~~~
 The `EvalMixin` defines the metrics which are tracked during the trainig.
 It provides three important methods which can be used to customize the bahvior:
 
-- `evaluation_init`: initilize the `Evaluator` (see `nndet.evaluator`) object
-- `evaluation_step`: is called in every validation step and should cache intermediate results
-- `evaluation_end`: is called at the end of the validation epoch to compute the final validation metrics.
+* `evaluation_init`: initilize the `Evaluator` (see `nndet.evaluator`) object
+* `evaluation_step`: is called in every validation step and should cache intermediate results
+* `evaluation_end`: is called at the end of the validation epoch to compute the final validation metrics.
 
 Since most detection metrics are computed over the whole data set `evaluation_step` usually does not return intermediate metrics and `evaluation_end` will aggreagte the prediction and gt to compute the final set of metrics.
 
