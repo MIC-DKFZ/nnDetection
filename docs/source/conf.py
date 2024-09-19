@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx_toolbox.collapse",
+    "sphinxemoji.sphinxemoji",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 # autoclass_content = 'both'
@@ -85,7 +86,7 @@ html_title = "nnDetection Documentation"
 # options
 html_theme_options = {
     "show_prev_next": False,
-    "collapse_navigation": False,
+    "collapse_navigation": True,
     "navigation_depth": 4,
     "icon_links": [
         {
@@ -100,3 +101,6 @@ html_theme_options = {
         },
     ],
 }
+
+# disable primary nav bar
+html_sidebars = {"**": []}

@@ -1,23 +1,106 @@
 Installation
 ============
 
+The following sections provide all information needed to install nnDetection.
+
 Configuration
 -------------
+
+The configuration of the framework requires several environment variables to be set.
+
 * `det_data`: Path to the source directory where all the data will be located
 * `det_models`: Path to directory where all models will be saved
 * `OMP_NUM_THREADS=1`: Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
 * `det_num_threads`: Number processes to use for augmentation (at least 6, default 12)
 
 Optional flags for nnDetection:
+
 * `nndet_eval_max_detections_image_based`: define number of predictions per image per class which is used for evaluation. Per default 400 is used.
 * `det_verbose`: Can be used to deactivate progress bars (activated by default)
 * `det_logging`: Specify the logging directory, by default logs will be written to the current training directory.
-* `det_logger`: Define logger type. One of tensorboard | mlflow | none. nnDetection supports [MLFlow]((https://www.mlflow.org/docs/latest/tracking.html)) or [Tensorboard](https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard).
+* `det_logger`: Define logger type. One of tensorboard | mlflow | none. nnDetection supports `MLFlow <https://www.mlflow.org/docs/latest/tracking.html>`_ or `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard>`_.
 
 Only trensorboard is installed by default, other logger might require running additional isntallation instructions (e.g. via pip).
 
+Prerequisites
+-------------
+nnDetection currently only supports execution on CUDA GPUs. Deployment to CPU devices is currently limited to a subset of the models and experimental (i.e. use at your own risk).
+As a consequence, at least one NVIDIA GPU (compatible to with minimal PyTorch and CUDA versions is required).
+While it is possible to run the planning stage of nnDetection for arbitrary GPUs via the `*EstV1` planners (e.g. `D3V002EstV1`) we recommend sticking with the new default `D3V002` which performs planning offline and requires a GPU with 16GB of VRAM. Scaling for larger GPUs needs to be performed manually for now (see some of our challenge participations for inspiration on scaling options).
+A GPU with at least 11GB VRAM is highly recommended in all cases otherwise performance might suffer significantly.
+
+Due to limited backwards compatibility of external dependencies, at least PyTorch 2.0 is required. Only CUDA versions >= 10.1 were tested during the development lifecycle of nnDetection.
+
+Finally, at least Python 3.8 is needed to run nnDetection.
+
+.. note::
+  Requirements summary:
+    - CUDA >= 10.1
+    - Python >= 3.8
+    - PyTorch >= 2.0
+
+.. warning::
+  nnDetection was developed on Linux => Windows is not supported. For usage on Windows systems, Docker is likely the best solution.
+
+.. note::
+  To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7.X-1.8.X
+  Starting from PyTorch 1.9.X the pip installation gives mixed precision 3D conv speedup aswell.
+
+Source Install with Conda CUDA
+------------------------------
+
+This installation method provides a source install of nnDetection and uses CUDA installed via CONDA. It is recommended for most users to use this installation method due to its ease of use.
+
+1. Install conda / miniconda etc. Please refer to the official repository for additional guidance.
+2. Install setup dependencies
+    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!, Note minimal torch version from `Prerequisites`)
+    - torchvision(https://github.com/pytorch/vision)(make sure to match the versions with pytorch!).
+3. Install CUDA via conda, e.g. to install CUDA 11.7.1 `conda install cuda -c nvidia/label/cuda-11.7.1`
+4. Set the CUDA_HOME path to your conda environment, e.g. `export CUDA_HOME=$CONDA_PREFIX`
+5. [Optional] In some cases the local C/C++ compile version is not supported by the selected PyTorch version. In this cases it is possible to install them via conda as well, e.g. `conda install gxx_linux-64==9.3.0` and set the environment variables `export CXX=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-c++ && export CC=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-cc`.
+6. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
+7. Set environment variables.
+8. Test Installation
+    - Test installation by running `python -c "import torch; import nndet._C; import nndet"` (not inside the pytorch folder)
+    - To test the whole installation please run the Toy Data set example.
+
+
+Summary of all steps (excluding env variables):
+
+.. code-block:: bash
+
+  # when writing this PyTorch CUDA 12.1 is the default version of PyTorch you might need to adapt!
+  pip install torch torchvision
+  conda install cuda -c nvidia/label/cuda-12.1.1 # adapt to the needed CUDA version from pytorch
+  conda install gxx_linux-64 # specify version if needed
+  export CUDA_HOME=$CONDA_PREFIX
+  export CXX=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-c++
+  export CC=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-cc
+  git clone https://github.com/MIC-DKFZ/nnDetection
+  cd nnDetection
+  pip install -e . -v
+
+
+Source Install with Local CUDA
+------------------------------
+
+This installation method provides the best performance but we  only recommend this for experiences users. Prefer Docker or Source with CONDA CUDA over this one.
+
+1. Install CUDA (make sure to select compatible versions(https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)
+2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check compute capabilities(https://developer.nvidia.com/cuda-gpus) here.
+3. Install setup dependencies
+    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!, Note minimal torch version from `Prerequisites`)
+    - torchvision(https://github.com/pytorch/vision)(make sure to match the versions with pytorch!).
+4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
+5. Set environment variables.
+6. Test Installation
+    - Test installation by running `python -c "import torch; import nndet._C; import nndet"` (not inside the pytorch folder)
+    - To test the whole installation please run the Toy Data set example.
+
+
 Docker
 ------
+
 The easiest way to get started with nnDetection is the provided is to build a Docker Container with the provided Dockerfile.
 
 Please install docker and nvidia-docker2(https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) before continuing.
@@ -42,67 +125,11 @@ Run to start the container:
 .. warning::
   When running a training inside the container it is necessary to increase the shared memory(https://stackoverflow.com/questions/30210362/how-to-increase-the-size-of-the-dev-shm-in-docker-container) (via --shm-size).
 
-
-Pypi / Source Installation
---------------------------
-
-Prerequisites
-~~~~~~~~~~~~~
-nnDetection currently only supports execution on CUDA GPUs. Deployment to CPU devices is currently limited to a subset of the models and experimental (i.e. use at your own risk).
-As a consequence, at least one NVIDIA GPU (compatible to with minimal PyTorch and CUDA versions is required).
-
-Due to limited backwards compatibility of external dependencies, at least PyTorch 2.0 is required. Only CUDA versions >= 10.1 were tested during the development lifecycle of nnDetection.
-
-Finally, at least Python 3.8 is needed to run nnDetection.
-
-.. note::
-  Requirements summary:
-    - CUDA >= 10.1
-    - Python >= 3.8
-    - PyTorch >= 2.0
-
-.. warning::
-  nnDetection was developed on Linux => Windows is not supported. For usage on Windows systems, Docker is likely the best solution.
-
-.. note::
-  To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7.X-1.8.X
-  Starting from PyTorch 1.9.X the pip installation gives mixed precision 3D conv speedup aswell.
-
-Pypi
-~~~~
-
-1. Install setup dependencies
-    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!, Note minimal torch version from `Prerequisites`)
-    - torchvision(https://github.com/pytorch/vision)(make sure to match the versions with pytorch!).
-2. `pip install nndet` (Make sure to install the correct version of nnDeteciton which is compatible with your selected PyTorch version!)
-3. Set environment variables:
-    - `det_data`: [required] Path to the source directory where all the data will be located
-    - `det_models`: [required] Path to directory where all models will be saved
-    - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
-    - other configuration variables can be found above.
-4. Test Instalation
-    - Test installation by running `python -c "import torch; import nndet._C; import nndet"` (not inside the pytorch folder)
-    - To test the whole installation please run the Toy Data set example.
-
-Source
-~~~~~~
-
-1. Install CUDA (make sure to select compatible versions(https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)
-2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check compute capabilities(https://developer.nvidia.com/cuda-gpus) here.
-3. Install setup dependencies
-    - torch(https://pytorch.org/) (make sure to match the pytorch and CUDA versions!, Note minimal torch version from `Prerequisites`)
-    - torchvision(https://github.com/pytorch/vision)(make sure to match the versions with pytorch!).
-4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
-5. Set environment variables:
-    - `det_data`: [required] Path to the source directory where all the data will be located
-    - `det_models`: [required] Path to directory where all models will be saved
-    - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
-    - other configuration variables can be found above.
-6. Test Instalation
-    - Test installation by running `python -c "import torch; import nndet._C; import nndet"` (not inside the pytorch folder)
-    - To test the whole installation please run the Toy Data set example.
+Extended Dev Install
+--------------------
 
 For a full development installation of nnDetection, just run `pip install -e .\[dev\]`. This will install additional pckages which are required for full unittesting.
+The remaining steps are the same as for any source intallation of nnDetection
 
 
 Installation & Initial Setup Errors

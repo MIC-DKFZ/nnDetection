@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: ./_static/nnDetection.svg
-   :width: 500
+.. image:: ./_static/logos_nndet.png
+   :width: 900
    :align: center
    :alt: nnDetection
 
@@ -15,74 +15,128 @@
 What is nnDetection?
 ====================
 Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
-For this task (detecting objects in 3D medical images) we have developed nnDetection which can be use in three different ways:
-
-
-A self-configuring method for medical object detection
-------------------------------------------------------
+For this task, the cumbersome and iterative process of method configuration constitutes a major research bottleneck.
+Recently, nnU-Net has tackled this challenge for the task of image segmentation with great success.
 Following nnU-Net’s agenda, in this work we systematize and automate the configuration process for medical object detection.
-The resulting self-configuring method, nnDetection, adapts itself without any manual intervention to arbitrary medical detection problems while achieving results en par with or superior to the state-of-the-art.
+The resulting self-configuring method, nnDetection, adapts itself without minimal intervention to arbitrary medical (volumetric) detection problems while achieving results en par with or superior to the state-of-the-art.
 
-.. .. image:: ./_static/nnDetectionFunctional.svg
-..    :width: 600
-..    :align: center
-..    :alt: nnDetection functional overview
+nnDetection t(w)o Ensemble (nnDetection2E), systematises the design of single-stage, multi-stage and
+set-prediction based object detection methods in a unified framework. nnDetection2E outperforms all baseline methods on a new pool of nine generalization datasets. Additionally, it surpasses all existing specialized solutions on two public benchmarking datasets.
 
-.. |
 
-.. note::
+**If you use nnDetection(2E) please cite our papers:**
 
-   **If you used nnDetection for your project please cite the following publication(s):**
+[1] `nnDetection2E: Systematic Design of Medical Object Detection <todo>`_
+
+.. tip::
+   TODO
+
+[2] `nnDetection: Self-configuring Medical Object Detection <https://miccai2021.org/openaccess/paperlinks/2021/09/01/341-Paper1836.html>`_
+
+.. tip::
+   Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021)
+
+   nnDetection: A Self-configuring Method for Medical Object Detection.
    
-   Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021) nnDetection: A Self-configuring Method for Medical Object Detection. In: de Bruijne M. et al. (eds) Medical Image Computing and Computer Assisted Intervention – MICCAI 2021. MICCAI 2021. Lecture Notes in Computer Science, vol 12905. Springer, Cham. https://doi.org/10.1007/978-3-030-87240-3_51
+   https://doi.org/10.1007/978-3-030-87240-3_51
 
 
-A medical object detection development framework
-------------------------------------------------
-nnDetection provides a rich ecosystem of detection models (e.g. Retina Net, Retina U-Net, Faster R-CNN+, Mask R-CNN), standardised access to a large number of datasets and a well tested training, inference and evaluation pipeline.
-We have created various projects which use this framework as the primary development framework and achieve state-of-the-art results in clinical applications and challenges.
+.. image:: ./_static/main_qualitative.jpg
+   :width: 900
+   :align: center
+   :alt: Qualitative Results of nnDetection2E
 
 
-*Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke*
+Documentation
+=============
 
-.. note::
+|:boom:| Welcome to the online Documentation of nnDetection, we provide an extensive information for: |:boom:|
 
-   Brugnara, Gianluca and Baumgartner, Michael and Scholze, Edwin D. et al. "Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke." Nature Communications 14.1 (2023): 4938.
-
-*Accurate Detection of Mediastinal Lesions with nnDetection*
-Ranked third in the MELA2022 challenge where three out of five best performing solutions (inlcuding winning solution) were based on nnDetection.
-
-.. note::
-
-   Baumgartner, Michael, Peter M. Full, and Klaus H. Maier-Hein. "Accurate Detection of Mediastinal Lesions with nnDetection." MICCAI Challenge on Correction of Brainshift with Intra-Operative Ultrasound. Cham: Springer Nature Switzerland, 2022. 79-85.
-
-*Retina U-Net for Aneurysm Detection in MR Images*
-Ranked first in the detection track of the ADAM2020 challenge.
-
-.. note::
-
-   Baumgartner, Michael, et al. "Retina U-Net for aneurysm detection in MR images." Automatic Detection and SegMentation Challenge (ADAM) (2020).
+* Installation (Source install & Docker) -> see Installation Tab
+* Using nnDetection as a self-configuring Object Detection Method -> see User Guide Tab
+* Integrating new functionality when using our framework as a research platform -> see Developer Guide Tab
+* Using the evaluation framework of nnDetection to compute metrics for Object Detection problems -> see User Guide Tab
+* Guides to prepare 21 different medical detection datasets -> see User Guide Tab
 
 
-A medical object detection toolbox
-----------------------------------
-Our repository contains code to evaluate 2D and 3D object detection tasks with a large number of metrics such as mAP, AP and FROC which can be easily integrated into existing code or used for evaluation.
-Detailed guides to common and advanced use cases are provided in :ref:`_user_guide`.
-#TODO #FIXME: label not working
+News
+====
+
+nnDetection2E is now publicly available
+---------------------------------------
+
+|:computer:| The code for nnDetection t(w)o ensemble is not publicly available. It systematises the design of single-stage, multi-stage and set-prediction based object detection methods in a unified framework. nnDetection2E outperforms all baseline methods on a new pool of nine generalization datasets. Additionally, it surpasses all existing specialized solutions on two public benchmarking datasets.
 
 
-Features
-========
+[Related Project] Deep-learning based Detection of Vessel Occlusions was Accepted at Nature Communications
+----------------------------------------------------------------------------------------------------------
 
-nnDetection can be used in two different ways:
+|:page_facing_up:| Fast and accurate detection and vessel occlusions in CTA images is an important clinical task but was previously tackled with many hand crafted solutions. In our study, we present a detection based approach which provides provides great resutls without relying on expensive pre-processing or anatomical limitations. Intereted in our findings? Check out our `Paper <https://www.nature.com/articles/s41467-023-40564-8>`_ . 
 
-1. As an out-of-the box detection baseline: nnDetection contains a self-configuring method which can be applied to new medical datasets without modifications.
-In many applications, it can serve as a strong baseline without manual modifications.
+.. tip::
+   Brugnara, G., Baumgartner, M., Scholze, E. D., Deike-Hofmann, K., Kades, K., Scherer, J., ... & Vollmuth, P. (2023).
 
-2. As a medical object detection framework: While many features didn't make it into the final self-configuring pipeline, nnDetection comprises many additional options such as Static Backbone networks, a Detection Zoo and much more.
-More information on the Detection Zoo can be found :ref:`here<Detection Zoo>` and the :ref:`developer guide<Developer Guide>` provides the best entrypoint for any further modifications.
+   Deep-learning based detection of vessel occlusions on CT-angiography in patients with suspected acute ischemic stroke. 
+   
+   Nature Communications, 14(1), 4938.
 
-#TODO #FIXME: ref not working
+nnDetection Ranked Second in the TDSC-ABUS23 Challenge
+-------------------------------------------------------------------------------
+
+|:sparkles:| Our method based on nnDetection ranked second in the detection track of the `TDSC-ABUS23 Challenge <https://tdsc-abus2023.grand-challenge.org/TDSC-ABUS2023/>`_ .
+
+
+DETR Pilot Project was Accepted at BVM23 as Oral presentation
+-----------------------------------------------------------------------------------
+
+|:page_facing_up:| Our pilot project to investigate the feasibility of DEtection TRansformers (DETR) for medical object detection was accepted to BVM23 as an oral presentation. It ranked third for best scientific contribution. Intereted in our findings? Check out our `Paper <https://arxiv.org/abs/2306.15472>`_ .
+
+.. tip::
+   Ickler, M. K., Baumgartner, M., Roy, S., Wald, T., & Maier-Hein, K. H. (2023, June).
+   
+   Taming Detection Transformers for Medical Object Detection.
+   
+   In BVM Workshop (pp. 183-188). Wiesbaden: Springer Fachmedien Wiesbaden.
+
+
+nnDetection Ranked Third in the Mediastinal Detection Challenge 
+---------------------------------------------------------------
+|:sparkles:| Our method based on nnDetection ranked third in the detection track of the `Mediastinal Lesion Analysis Challenge 2022 <https://mela.grand-challenge.org/>`_ .
+
+.. tip::
+   Baumgartner, M., Full, P.M., Maier-Hein, K.H. (2023).
+   
+   Accurate Detection of Mediastinal Lesions with nnDetection.
+   
+   In: Xiao, Y., Yang, G., Song, S. (eds) Lesion Segmentation in Surgical and Diagnostic Applications. CuRIOUS KiPA MELA 2022 2022 2022. Lecture Notes in Computer Science, vol 13648. Springer, Cham.
+   
+   https://doi.org/10.1007/978-3-031-27324-7_10
+
+
+nnDetection was Accepted at MICCAI21
+------------------------------------
+
+|:page_facing_up:| nnDetection was early accepted to  the International Conference on Medical Image Computing & Computer Assisted Intervention 2021 (MICCAI21)
+
+.. tip::
+   Baumgartner M., Jäger P.F., Isensee F., Maier-Hein K.H. (2021)
+   
+   nnDetection: A Self-configuring Method for Medical Object Detection.
+   
+   https://doi.org/10.1007/978-3-030-87240-3_51
+
+
+nnDetection Prototype ranked first in ADAM2020 challenge
+--------------------------------------------------------
+
+|:sparkles:| Our prototype version of nnDetection ranked first in the detection task of the ADAM 2020 challenge. Check out the following publication for moer info:
+
+.. tip::
+   Baumgartner, Michael, et al.
+   
+   Retina U-Net for aneurysm detection in MR images.
+   
+   Automatic Detection and SegMentation Challenge (ADAM) (2020).
 
 
 Contents:
@@ -154,10 +208,11 @@ DETR
 ----
 
 DETR components from multiple repositores were adapted for 3D use, we would like to thank the authors for their great work and open sourcing their code under nice licenses.
-- `DETR <https://github.com/facebookresearch/detr>`_
-- `Conditional DETR <https://github.com/Atten4Vis/ConditionalDETR>`_
-- `Deformable DETR <https://github.com/fundamentalvision/Deformable-DETR>`_
-- `detrex: Benchmarking Detection Transformers <https://github.com/IDEA-Research/detrex>`_
+
+* `DETR <https://github.com/facebookresearch/detr>`_
+* `Conditional DETR <https://github.com/Atten4Vis/ConditionalDETR>`_
+* `Deformable DETR <https://github.com/fundamentalvision/Deformable-DETR>`_
+* `detrex: Benchmarking Detection Transformers <https://github.com/IDEA-Research/detrex>`_
 
 
 Funding
