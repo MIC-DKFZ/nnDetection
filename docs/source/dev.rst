@@ -2,9 +2,7 @@
 Developer Guide
 ===============
 
-TODO: interaction diagram of the different classes  (ptmodule = core)
-
-Intro ... # TODO
+These sections provide extended guides to implement custom features into the nnDetection framework.
 
 Developer Flags
 ===============
@@ -92,58 +90,94 @@ Different optimizers can be registered in the optimizer registry and selected vi
 
 Overview
 ********
+This section gives an overview of possible configuration and customization options. 
 
-.. image:: _static/nnDetectionModule.svg
-   :width: 600
-   :align: center
-   :alt: nnDetection Module Overview
+
+Custom Preprocessing
+====================
+The experiment planner defines the entire planning and preprocessing pipeline and is responsible for tying these components together.
+They are retrieved from the planner registry and the primary entry point during planning is the `plan_experiment` function.
+Individual parameters can be customized by overwriting the respective function e.g. `determine_dummy_2d_data_augmentation`, `determine_forward_backward_permutation`, `determine_target_spacing` and `trigger_low_res_model`.
+The `create_architecture_planner` and `create_preprocessor` can be overwritten to implement other architecture planner (responsible for batch size, patch size, kernels etc.) and preprocessor classes (responsible for resampling, intensity normalisation etc.).
+The `D3V002EstV1` planner can be used to perform VRAM esitmation on the current GPU like in nnDetection V1. V2 will perform estimation offline with a fixed set of heuristics to ensure reproducibility across GPUs and software versions.
+
 
 Config Files
 ============
 
-- train new model with `exp.tag` key
+The config files of nnDetection are responsible for providing information for model configuration (fixed parameters), data loading, augmentation and training.
+Training directories of nnDetection are composed of three part `{module name}_{plan name}_{exp tag}`. By changing the exp tag it is possible to create different training runs where hyperparameters are varied.
+Each config consists of several parts which will be explained in the following:
+Parts of the configs can be overwritten with the following structure `-o train/{XXX}_cfg@{key}_cfg={value}` e.g. `-o train/augment_cfg@augment_cfg=my_custom_aug`.
 
+Augmentation
+-------------
 
-=================
-Specialised Items
-=================
+The augmentation part of the config file is responsible for defining the augmentation pipeline.
+The `name` key is simply a short identifier of the augmentation config for easy lookup in the json file which will be saved for each training run.
+The `transforms` key defines the augmentation transformations which will be executes in the python code. It will be retrieved through the augmentation registry.
+The remaining parameters will depend on the selceted augmentation pipeline the implemented augmentation transformations.
 
+Custom augmentation pipelines can be created by inserting new augmentations are declaring new pipelines in python.
+Their configuration can than be changed via the config files. nnDetection also provides an interface to use augmentation from MONAI (see `MonaiTransform`).  
 
-Preprocessing
-=============
+Data-Loading
+------------
 
+The `dataloader` key specified the intended dataloader class which will be retrieved from the dataloader registry.
+The reaining parameters depend on the selected dataloader.
 
-Inference
-=========
+Each dataloader implementation is composed out of fours parts:
 
+* the base moduel: this provides the general basis for the dataloader and is the access point from the outside
+* the selection mixin: this mixin is responsible to select case ids and instance ids which shuld be sampled from the DATALOADER_REGISTRY
+* the foreground mixin: given the case id and instance id, this mixin is responsible to load the data from the disk and crop the patch around the object
+* the background mixin: this mixin is responsible to load the data from the disk and crop a patch, most implementations simply crop randomly.
 
-Training
-========
+A new dataloader can be created by mixing these four components. An example is shown below:
 
-Dataloading
-***********
+.. code:: python
 
+   @DATALOADER_REGISTRY.register
+   class DataLoader3DOffsetV2(
+      RandomBGCrop3D, # define background cropping
+      OffsetFGCrop3DV2, # define foreground cropping
+      RandomSelectionMixin, # define selection strategy
+      BaseDataLoader3D, # define base module
+   ):
+      ...
 
-Customized Dataloaders
-----------------------
+Trainer Config
+--------------
 
+The trainer config defines the learning rate, length of the training, metrics to observe and optimizer hyperparemters.
+The `opt_class` key specifies the optimizer class which will be retrieved from the optimizer registry.
+The remaining parameters are highly dependent on the selected optimizer but should be self explanatory.
 
-Customized Augmentation Pipelines
----------------------------------
+Accelerator Config
+------------------
 
+A small configuration file containing the hardware resoruce and model optimizsation settings.
+Sometime additional speed ups can be achieved by using the `gpu1_mixed16_bench` but it might not work on all datasets depending on the determined patch size and model configuration.
+Multi-gpu support is not officially supported but can be performed by increasing the number of GPUs.
+Please note, that the online validation won't compute metrics since the metrics will simply be averaged across GPUs and the inference (including final validation) do not support multi gpu setups.
+These were never extensively tested and there might be other aspects influencing the performance of the models.
+Use multi-gpu at your own risk.
 
-Lightning Module
-****************
+Model Config
+------------
+
+The model config defined fixed parameters for the selected architecture.
+The exact set of paraemeters will vary between models and need to be cross-referenced with the respective model parameters in the code or documentation.
+The majority of parameters will be self-explentory, e.g. `loss_weight` defined the weight of the respective loss. 
 
 
 Customized Models
------------------
+=================
 
 nnDetection uses `Pytorch Lightning` for training to provide a widely used, standardiced structure for its models.
 Instead of using the lightning module directly, all modules in nnDetection are build on `LightningBaseModule` (`nndet.ptmodule.module`) which integrates additional procedures to setup transformations, the evaluation and the prediction pipeline.
 A flow chart visualising the call procedure of nnDetection can be found below.
-
-# TODO: flow chart
 
 Each detection module in nnDetection should be a combination of the `LightningBaseModule` and multiple `Mixins` which are explained below.
 By leveraging `Mixins` nnDetection can cover various input/output formats and provide models for: Bounding Box Detection + auxiliary task training, Instance Segmentation + auxiliary task training.
@@ -224,19 +258,19 @@ Prepare Mixins
 Sometimes it is necessary to add multiple `PrepareMixin` to create different ground truth formats, e.g. Retina U-Net requires bounding boxes and semantic segmentations.
 In general there are three `PrepareMixin` Types which save the result in different keys:
 
-- `BoxesPrepareMixin` saves the boxes in `boxes` and class in `classes`
-- `SemanticPrepareMixin` save semantic segmentation into `target_seg`
-- `SemanticFgPrepareMixin` save semantic segmentation (fg vs bg) into `target_seg`
-- `BinaryMasksPrepareMixin` save binary masks into `target_binary_masks`
+* `BoxesPrepareMixin` saves the boxes in `boxes` and class in `classes`
+* `SemanticPrepareMixin` save semantic segmentation into `target_seg`
+* `SemanticFgPrepareMixin` save semantic segmentation (fg vs bg) into `target_seg`
+* `BinaryMasksPrepareMixin` save binary masks into `target_binary_masks`
 
 Eval Mixins
 ~~~~~~~~~~~
 The `EvalMixin` defines the metrics which are tracked during the trainig.
 It provides three important methods which can be used to customize the bahvior:
 
-- `evaluation_init`: initilize the `Evaluator` (see `nndet.evaluator`) object
-- `evaluation_step`: is called in every validation step and should cache intermediate results
-- `evaluation_end`: is called at the end of the validation epoch to compute the final validation metrics.
+* `evaluation_init`: initilize the `Evaluator` (see `nndet.evaluator`) object
+* `evaluation_step`: is called in every validation step and should cache intermediate results
+* `evaluation_end`: is called at the end of the validation epoch to compute the final validation metrics.
 
 Since most detection metrics are computed over the whole data set `evaluation_step` usually does not return intermediate metrics and `evaluation_end` will aggreagte the prediction and gt to compute the final set of metrics.
 
@@ -279,12 +313,3 @@ There are four different loss categories in nnDetection:
    The input follows the same format at segmentation losses but the targets
    are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
    the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
-
-
-Custom Splits
--------------
-#TODO: add docs
-
-
-Evaluation
-==========

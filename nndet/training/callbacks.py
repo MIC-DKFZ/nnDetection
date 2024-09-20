@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import time
+from collections import deque
+from typing import Hashable
 
 import pytorch_lightning as pl
 import torch
@@ -23,6 +25,14 @@ class WeightsNaNError(Exception):
 class LossNaNError(Exception):
     """
     Custom exception if NaN loss is found during training.
+    """
+
+    pass
+
+
+class LowPerformanceError(Exception):
+    """
+    Custom exception if performance is lower than a certain threshold.
     """
 
     pass
@@ -120,3 +130,50 @@ class EpochTimerCallback(Callback):
     ) -> None:
         logger.info("+++ Sanity Check +++")
         return super().on_train_epoch_start(trainer, pl_module)
+
+
+class CheckLowPerformance(Callback):
+    def __init__(
+        self,
+        threshold: float,
+        wait_epochs: int,
+        avg_epochs: int,
+        monitor_key: Hashable,
+    ) -> None:
+        """
+        Callback to check if the performance is lower than a certain threshold.
+        If the performance is lower, the training is aborted.
+
+        Args:
+            threshold: The threshold to check the performance against.
+            wait_epochs: The number of epochs to wait before checking the
+                performance.
+            avg_epochs: The number of epochs to average the performance over.
+            monitor_key: The key of the metric to monitor.
+        """
+        super().__init__()
+        self.threshold = threshold
+        self.wait_epochs = wait_epochs
+        self.avg_epochs = avg_epochs
+        self.monitor_key = monitor_key
+
+        self.monitored_values = deque([], maxlen=avg_epochs)
+
+    def on_train_epoch_end(
+        self,
+        trainer: "pl.Trainer",
+        pl_module: "pl.LightningModule",
+    ) -> None:
+        module_logs = trainer.callback_metrics
+        self.monitored_values.append(float(module_logs[self.monitor_key]))
+
+        print(f"Performance: {module_logs[self.monitor_key]}")
+        print(self.monitored_values)
+
+        if trainer.current_epoch == (self.wait_epochs - 1):
+            avg_performance = sum(self.monitored_values) / len(self.monitored_values)
+            if avg_performance < self.threshold:
+                raise LowPerformanceError(
+                    f"Performance {avg_performance} is lower than threshold {self.threshold} after {self.wait_epochs}."
+                )
+        return None

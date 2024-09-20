@@ -18,6 +18,7 @@ from nndet.preprocessing.preprocessor.generic import (
 )
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.utils.config import load_plan_from_dir
+from nndet.utils.enums import AnnotationStyle
 
 
 @PLANNER_REGISTRY.register
@@ -154,22 +155,32 @@ class D3V002(D3V001):
         do_dummy_2d_data_aug = (max(patch_size) / min(patch_size)) >= self.anisotropy_threshold
         return do_dummy_2d_data_aug
 
-
-@PLANNER_REGISTRY.register
-class D3C010(D3V002):
-    # temporary renaming for final testing of some last aspects :)
-    def get_data_identifier(self, mode: str) -> str:
+    @classmethod
+    def propose_models(cls, data_info: dict) -> None:
         """
-        D3V001 and D3V002 share the same data preprocessing paramters
-        and preprocessor -> thus we use D3V001 data for this plan as well
+        Greate a message to the user which models should be trained from here.
 
         Args:
-            mode: current operation mode
-
-        Returns:
-            str: data identifier
+            data_info: information from dataset information file
         """
-        return f"D3V001_{mode}"
+        anno_style = AnnotationStyle(data_info["annotation_style"].lower())
+        logger.info("*****************************************************************************")
+        if anno_style == AnnotationStyle.SEG:
+            logger.info(
+                "** Model Proposal Stage** => Found segmentation style dataset recommend training "
+                "Retina U-Net V002 (`retinaunet_focal_v002`), Retina U-Net 2SM V2 (`retinaunet2sm_v002`) "
+                "and Deformable DETR V2 (`def_detr_v002`)"
+            )
+        elif anno_style == AnnotationStyle.WEAK:
+            logger.info(
+                "** Model Proposal Stage** => Found weak annotation style dataset recommend training "
+                "Retina Net V002 (`retinaunet_focal_v002` with `-o module=RetinaNetFocalV002`), "
+                "Retina Net 2S V2 (`retinaunet2sm_v002` with `-o module=RetinaNet2SV002`) "
+                "and Deformable DETR V2 (`def_detr_v002`)"
+            )
+        else:
+            raise NotImplementedError(f"Annotation style {anno_style} not implemented")
+        logger.info("*****************************************************************************")
 
 
 @PLANNER_REGISTRY.register

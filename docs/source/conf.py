@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx_toolbox.collapse",
+    "sphinxemoji.sphinxemoji",
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 # autoclass_content = 'both'
@@ -79,13 +80,13 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_logo = "_static/nnDetectionText.svg"
+html_logo = "_static/logos_nndet_short.png"
 html_title = "nnDetection Documentation"
 
 # options
 html_theme_options = {
     "show_prev_next": False,
-    "collapse_navigation": False,
+    "collapse_navigation": True,
     "navigation_depth": 4,
     "icon_links": [
         {
@@ -100,3 +101,8 @@ html_theme_options = {
         },
     ],
 }
+
+html_context = {"default_mode": "light"}
+
+# disable primary nav bar
+html_sidebars = {"**": []}

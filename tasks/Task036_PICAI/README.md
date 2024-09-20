@@ -62,4 +62,6 @@ python -m picai_baseline.splits.picai_nnunet --output "${det_data}/Task036_PICAI
 python scripts/prepare.py
 ```
 
+7. Add `"annotation_style": "seg"` to the dataset info file.
+
 The data is now converted to the correct format and the instructions from the nnDetection README can be used to train the networks.

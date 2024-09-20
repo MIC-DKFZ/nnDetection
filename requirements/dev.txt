@@ -7,4 +7,5 @@ pre-commit
 sphinx
 pydata-sphinx-theme
 sphinx-toolbox
+sphinxemoji
 pycocotools

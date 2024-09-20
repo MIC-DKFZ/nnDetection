@@ -231,6 +231,22 @@ class D3V001(AbstractPlanner):
             ids.append(self._get_identifier("3dlr1"))
         return ids
 
+    @classmethod
+    def propose_models(cls, data_info: dict) -> None:
+        """
+        Greate a message to the user which models should be trained from here.
+
+        Args:
+            data_info: information from dataset information file
+        """
+        # nnDet V1 didn't differentiate between models to it will always recommend the same one
+        logger.info("*****************************************************************************")
+        logger.info(
+            "** Model Proposal Stage** => Found nnDetection V1 planner, always recommending to train "
+            "Retina U-Net V001 with config `retinaunet_v001`"
+        )
+        logger.info("*****************************************************************************")
+
 
 @PLANNER_REGISTRY.register
 class D3V001DynDtype(D3V001):

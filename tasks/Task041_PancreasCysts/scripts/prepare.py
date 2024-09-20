@@ -54,6 +54,7 @@ def main():
         "labels": {"0": "cyst"},
         "modalities": {"0": "CT"},
         "dim": 3,
+        "annotation_style": "seg",
         # needed to run connected components for instances
         "seg2det_stuff": [],
         "seg2det_things": [1],

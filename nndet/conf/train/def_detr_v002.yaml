@@ -6,9 +6,18 @@
 defaults:
   - augment_cfg: more_modular_ord1
   - io_cfg: offsetV2_obj_bal
-  - trainer_cfg: adamw_100ep_high_lr_wd
+  - trainer_cfg: adamw_100ep_high_lr_wd_warm_restart
   - accelerator_cfg: gpu1_mixed16
   - model_cfg: deformable_detr_sigm
+
+# trainer_cfg:
+# nnDetection2E experiments were run with `adamw_100ep_high_lr_wd` config
+# we observed convergence problems with this config on 2 datases -> VALDO and PN9
+# for these we restarted the training with the `adamw_100ep_low_lr_wd_warm` config.
+# This process is described in the manuscript and refered to as a "minimal intervention"
+# The `adamw_100ep_high_lr_wd_warm_restart` config automates this
+# Training restarts if the average AP 0.1 of epochs 14-19 is below 0.1
+# with a lower learning rate and warmup
 
 module: BoxDeformableDETRV002
 plan: ${planner}_3d # plan used for training

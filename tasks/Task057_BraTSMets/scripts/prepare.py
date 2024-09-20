@@ -263,6 +263,7 @@ def main():
         "labels": {"0": "tumor"},
         "modalities": {"0": "T1n", "1": "T1c", "2": "FLAIR"},
         "dim": 3,
+        "annotation_style": "seg",
         # Multiple scans per patient available
         "session_id": True,
     }

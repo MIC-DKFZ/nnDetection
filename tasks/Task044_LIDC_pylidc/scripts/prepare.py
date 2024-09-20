@@ -260,6 +260,7 @@ def main():
         # optional keys
         "target_class": target_class,
         "test_labels": False,
+        "annotation_style": "seg",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

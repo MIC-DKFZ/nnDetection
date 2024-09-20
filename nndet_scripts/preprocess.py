@@ -329,6 +329,8 @@ def run(
     cropped_output_dir = task_data_dir / "raw_cropped"
     preprocessed_output_dir = task_data_dir / "preprocessed"
 
+    planner_name = cfg["planner"]
+
     if not skip_crop:
         run_cropping_and_convert(
             splitted_4d_output_dir=splitted_4d_output_dir,
@@ -350,19 +352,22 @@ def run(
         run_planning(
             model_name=cfg["module"],
             model_cfg=cfg["model_cfg"],
-            planner_name=cfg["planner"],
+            planner_name=planner_name,
             preprocessed_output_dir=preprocessed_output_dir,
         )
     if not skip_process:
         run_preprocess(
             dim=data_info["dim"],
-            planner_name=cfg["planner"],
+            planner_name=planner_name,
             splitted_4d_output_dir=splitted_4d_output_dir,
             cropped_output_dir=cropped_output_dir,
             preprocessed_output_dir=preprocessed_output_dir,
             num_processes=num_processes_preprocessing,
             skip_all_lowres=skip_all_lowres,
         )
+
+    # propose models here so it is always printed
+    PLANNER_REGISTRY.get(planner_name).propose_models(data_info=data_info)
 
 
 @env_guard

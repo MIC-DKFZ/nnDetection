@@ -27,3 +27,16 @@ poly_gamma: 0.9 # poly learning rate gamma
 
 swa_epochs: 0 # number of epochs to run swa with cyclic learning rate
 # sweep_ckpt: Select checkpoint identifier for sweeping. Default "last".
+
+do_restart: False # if NaN weight/loss is encountered restart trainign with different opt params
+do_restart_low_performance: False # if performance is below threshold after specified epochs restart training
+
+restart_performance:
+  threshold: 0.1 # threshold for performance to restart training
+  wait_epochs: 7 # number of epochs to wait before restarting
+  avg_epochs: 5 # number of epochs to average performance over
+  monitor_key: ${trainer_cfg.monitor_key} # monitor key to use for performance
+
+restart_overwrites:
+  initial_lr: 1.e-4 # reduce momentum when restarting
+  warm_iterations: 10000 # number of iterations with warmup

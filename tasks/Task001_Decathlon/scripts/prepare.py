@@ -124,6 +124,7 @@ def main():
                 "original_labels": original_meta["labels"],
                 "original_numTraining": original_meta["numTraining"],
             },
+            "annotation_style": "seg",
         }
         dataset_info.update(decathlon_props[task])
         save_json(dataset_info, task_data_dir / "dataset.json")

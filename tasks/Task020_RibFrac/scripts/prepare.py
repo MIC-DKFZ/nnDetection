@@ -91,6 +91,7 @@ def main():
         "labels": {"0": "fracture"},  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "CT"},
         "dim": 3,
+        "annotation_style": "seg",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

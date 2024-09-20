@@ -143,6 +143,7 @@ def main():
         "labels": {"0": "Aneurysm"},  # since we are running FG vs BG this is not completely correct
         "modalities": {"0": "Structured", "1": "TOF"},
         "dim": 3,
+        "annotation_style": "seg",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

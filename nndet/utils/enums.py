@@ -71,3 +71,8 @@ class FFNRegWeightInit(Enum):
     NONE = "none"  # default weight initialisation by linear layer
     ZERO = "zero"  # set weight and bias to zero
     ZERO_BIAS = "zero_bias"  # set bias to zero
+
+
+class AnnotationStyle(Enum):
+    WEAK = "weak"
+    SEG = "seg"

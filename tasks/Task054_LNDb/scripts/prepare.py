@@ -117,6 +117,7 @@ def main():
         "test_labels": True,
         "labels": {"0": "nodule"},
         "modalities": {"0": "CT"},
+        "annotation_style": "seg",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

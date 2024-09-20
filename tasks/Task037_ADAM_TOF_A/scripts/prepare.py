@@ -151,6 +151,7 @@ def main():
         "name": "ADAM",
         "target_class": None,
         "test_labels": False,
+        "annotation_style": "seg",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

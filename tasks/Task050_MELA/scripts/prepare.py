@@ -170,6 +170,7 @@ def main():
         "test_labels": True,
         "labels": {"0": "lesion"},
         "modalities": {"0": "CT"},
+        "annotation_style": "weak",
     }
     save_json(meta, task_data_dir / "dataset.json")
 
