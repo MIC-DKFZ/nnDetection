@@ -255,6 +255,66 @@ def box_area_2d(
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
+def box_inter(
+    boxes1: Tensor,
+    boxes2: Tensor,
+) -> Tensor:
+    """
+    Returns intersection of boxes. Both sets of boxes are expected to be in
+    (x1, y1, x2, y2, (z1, z2)) format.
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        boxes2: set of boxes (x1, y1, x2, y2, (z1, z2))[M, dim * 2]
+
+    Returns:
+        Tensor: the NxM matrix containing the pairwise intersection values for
+            every element in boxes1 and boxes2, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+    """
+
+    if boxes1.shape[-1] == boxes2.shape[-1] == 4:
+        box_inter = box_inter_2d(boxes1, boxes2)
+    elif boxes1.shape[-1] == boxes2.shape[-1] == 6:
+        box_inter = box_inter_3d(boxes1, boxes2)
+
+    return box_inter
+
+
+def box_inter_3d(
+    boxes1: Tensor,
+    boxes2: Tensor,
+) -> Tensor:
+    """
+    Returns intersection of boxes. Both sets of boxes are expected to be in
+    (x1, y1, x2, y2, z1, z2) format.
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2, z1, z2)[N, 6]
+        boxes2: set of boxes (x1, y1, x2, y2, z1, z2)[M, 6]
+
+    Returns:
+        Tensor: the NxM matrix containing the pairwise intersection values for
+            every element in boxes1 and boxes2, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+    """
+
+    x1 = torch.max(boxes1[:, None, 0], boxes2[:, 0])  # [N, M]
+    y1 = torch.max(boxes1[:, None, 1], boxes2[:, 1])  # [N, M]
+    x2 = torch.min(boxes1[:, None, 2], boxes2[:, 2])  # [N, M]
+    y2 = torch.min(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
+    z1 = torch.max(boxes1[:, None, 4], boxes2[:, 4])  # [N, M]
+    z2 = torch.min(boxes1[:, None, 5], boxes2[:, 5])  # [N, M]
+
+    inter = (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0) * (z2 - z1).clamp(min=0)  # [N, M]
+
+    return inter
+
+
 def box_iou_union_3d(
     boxes1: Tensor,
     boxes2: Tensor,
@@ -429,6 +489,36 @@ def distance_box_iou_3d_paired(
     z2 = torch.max(boxes1[:, 5], boxes2[:, 5])  # [N]
     diag = (x2 - x1).pow(2) + (y2 - y1).pow(2) + (z2 - z1).pow(2) + eps
     return 1 - iou + (dc / diag)
+
+
+def box_inter_2d(
+    boxes1: Tensor,
+    boxes2: Tensor,
+) -> Tensor:
+    """
+    Returns intersection of boxes. Both sets of boxes are expected to be in
+    (x1, y1, x2, y2) format.
+
+    Args:
+        boxes1: set of boxes (x1, y1, x2, y2)[N, 4]
+        boxes2: set of boxes (x1, y1, x2, y2)[M, 4]
+
+    Returns:
+        Tensor: the NxM matrix containing the pairwise intersection values for
+            every element in boxes1 and boxes2, shape [N, M]
+
+    Notes:
+        always prefer using the n-D version since it takes care of data types.
+    """
+
+    x1 = torch.max(boxes1[:, None, 0], boxes2[:, 0])  # [N, M]
+    y1 = torch.max(boxes1[:, None, 1], boxes2[:, 1])  # [N, M]
+    x2 = torch.min(boxes1[:, None, 2], boxes2[:, 2])  # [N, M]
+    y2 = torch.min(boxes1[:, None, 3], boxes2[:, 3])  # [N, M]
+
+    inter = (x2 - x1).clamp(min=0) * (y2 - y1).clamp(min=0)  # [N, M]
+
+    return inter
 
 
 def box_iou_union_2d(
