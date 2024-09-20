@@ -37,7 +37,7 @@ from nndet.io.load import load_json, load_yaml, save_json, save_pickle
 from nndet.io.paths import get_task, get_training_dir
 from nndet.ptmodule import MODULE_REGISTRY
 from nndet.ptmodule.module import LightningBaseModule
-from nndet.training.callbacks import LossNaNError, WeightsNaNError
+from nndet.training.callbacks import LossNaNError, LowPerformanceError, WeightsNaNError
 from nndet.utils.check import env_guard
 from nndet.utils.config import (
     compose,
@@ -450,13 +450,22 @@ def _train(
             log_net=log_net,
             log_aug=log_aug,
         )
-    except (WeightsNaNError, LossNaNError) as e:
+    except (WeightsNaNError, LossNaNError, LowPerformanceError) as e:
         # sometimes we want to restart the training with a different optimizer
-        if cfg["trainer_cfg"].get("do_restart"):
+        restart = False
+        if isinstance(e, (WeightsNaNError, LossNaNError)) and cfg["trainer_cfg"].get("do_restart"):
             logger.warning(
                 "Found NaN in weights or loss, restarting training with different "
                 "optimizer settings as defined in config!"
             )
+            restart = True
+        if isinstance(e, LowPerformanceError) and cfg["trainer_cfg"].get("do_restart_low_performance"):
+            logger.warning(
+                "Found low performance, restarting training with different " "optimizer settings as defined in config!"
+            )
+            restart = True
+
+        if restart:
             logger.info(f"Updating optimizer settings to {cfg['trainer_cfg']['restart_overwrites']}")
             cfg["trainer_cfg"].update(cfg["trainer_cfg"]["restart_overwrites"])
             logger.info(f"Running training with trainer_cfg {cfg['trainer_cfg']}")

@@ -15,7 +15,12 @@ from loguru import logger
 from nndet.core.abstract import AbstractDetector
 from nndet.io.transforms import Compose
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
-from nndet.training.callbacks import CheckWeightsNaN, EpochTimerCallback, LossNaNError
+from nndet.training.callbacks import (
+    CheckLowPerformance,
+    CheckWeightsNaN,
+    EpochTimerCallback,
+    LossNaNError,
+)
 from nndet.training.swa import SWACycleLinear
 from nndet.utils.check import check_torch_version
 
@@ -347,6 +352,12 @@ class LightningBaseModule(pl.LightningModule):
                     cycle_initial_lr=self.trainer_cfg["initial_lr"] / 10.0,
                     cycle_final_lr=self.trainer_cfg["initial_lr"] / 1000.0,
                     num_iterations_per_epoch=self.trainer_cfg["num_train_batches_per_epoch"],
+                )
+            )
+        if self.trainer_cfg.get("do_restart_low_performance"):
+            callbacks.append(
+                CheckLowPerformance(
+                    **self.trainer_cfg["restart_performance"],
                 )
             )
         return callbacks
