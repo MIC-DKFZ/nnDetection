@@ -146,6 +146,11 @@ Note: [Important] Classes and modalities start with index 0!
     modalities: # modalities of data set; need to start at 0
         "0": "CT"
 
+    # use weak to indicate box or spherical annotation masks
+    # use seg to indicate dense segmentation masks
+    # based on this information nnDetection will propose to train different models
+    annotation_style: "seg" # type of annotation; "weak" or "seg"
+
     # [optional information]
     # Note: need to use integer value which is defined below of target class!
     session_id: False # if multiple sessions of the same patient are available, default `False`
@@ -316,7 +321,9 @@ These commands run different models included in nnDetection2E:
     # Set prediction models
     nndet_train 000 def_detr_v002 0 --sweep # Deformable DETR V2
 
-If your dataset is annoated with weak annotations (bounding boxes, spheres, etc.) you should train `Retina Net V2, Retina Net 2S V2, Deformable DETR V2` and if the dataset includes dense pixel-wise annotations these models should be trained: `Retina U-Net V2, Retina U-Net 2SM V2, Deformable DETR V2`.
+For nnDetection2E the model proposal stage will recommend the following models:
+**If your data had dense annoatations with instance segmentations (including converted semantic segmentations) nnDetection will propose to train: `Retina U-Net V2, Retina U-Net 2SM V2, Deformable DETR V2`.**
+**If your dataset has weak annotations (bounding boxes, spheres, etc.) nnDetection will propose to train `Retina Net V2, Retina Net 2S V2, Deformable DETR V2`.**
 
 `nndet_train` needs to be run for every fold separately, by default this means running it 5 times with `fold` varying between 0 and 4 (inclusive).
 `--continue_training` can be activated to continue training from the last saved checkpoint.

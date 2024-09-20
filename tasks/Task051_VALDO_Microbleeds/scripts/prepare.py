@@ -38,6 +38,7 @@ def main():
             "0": "CMB",
         },
         "modalities": {"0": "T1", "1": "T2", "2": "T2S"},
+        "annotation_style": "seg",
         # needed to run connected components for instances
         "seg2det_stuff": [],
         "seg2det_things": [1],

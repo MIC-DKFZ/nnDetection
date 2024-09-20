@@ -119,6 +119,7 @@ def _check_dataset_file(cfg: dict):
     _check_key_missing(cfg, "dim", ktype=int)
     _check_key_missing(cfg, "labels", ktype=dict)
     _check_key_missing(cfg, "modalities", ktype=dict)
+    _check_key_missing(cfg, "annotation_style", ktype=str)
 
     # check dim
     if dim := cfg["dim"] not in [2, 3]:
@@ -159,6 +160,12 @@ def _check_dataset_file(cfg: dict):
     if target_class is not None and (not isinstance(target_class, int) or target_class not in found_classes):
         raise ValueError(
             "If target class is defined, it needs to be an integer, " f"found {type(target_class)} : {target_class}"
+        )
+
+    # check anno style
+    if cfg["annotation_style"] not in ["seg", "weak"]:
+        raise ValueError(
+            f"Found annotation style {cfg['annotation_style']} in dataset info but only support 'seg' or 'weak'."
         )
 
     print("Dataset info check complete.")

@@ -133,6 +133,7 @@ def main():
         "labels": {"0": "Square", "1": "SquareHole"},
         "modalities": {str(i): "MRI" for i in range(modalities)},
         "dim": dim,
+        "annotation_style": "seg",
     }
 
     # setup paths

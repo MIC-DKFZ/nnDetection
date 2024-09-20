@@ -262,6 +262,7 @@ def main():
         "labels": {"0": "tumor"},
         "modalities": {k: i for k, i in enumerate(SEQUENCES.keys())},
         "dim": 3,
+        "annotation_style": "weak",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

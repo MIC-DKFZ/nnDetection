@@ -268,6 +268,7 @@ def main():
         "labels": {"0": "nodule"},
         # scans are already preprocessed, default CT scheme does not apply
         "modalities": {"0": "CT_preprocessed"},
+        "annotation_style": "weak",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

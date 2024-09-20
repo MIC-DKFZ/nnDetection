@@ -186,6 +186,7 @@ def main():
         "labels": {"0": "tumor"},
         "modalities": {"0": "CT"},
         "dim": 3,
+        "annotation_style": "seg",
         # Multiple scans per patient available
         "session_id": True,
         # needed to run connected components for instances

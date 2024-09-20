@@ -538,3 +538,14 @@ class AbstractPlanner(ABC):
         save_pickle(plan, self.preprocessed_output_dir / f"{identifier}.pkl")
         save_json(plan, self.preprocessed_output_dir / f"{identifier}.json")
         return identifier
+
+    @classmethod
+    @abstractmethod
+    def propose_models(cls, data_info: dict) -> None:
+        """
+        Greate a message to the user which models should be trained from here.
+
+        Args:
+            data_info: information from dataset information file
+        """
+        raise NotImplementedError

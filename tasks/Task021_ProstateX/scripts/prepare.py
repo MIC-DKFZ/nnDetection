@@ -172,6 +172,7 @@ def main():
         },
         "modalities": {"0": "T2", "1": "ADC", "2": "PD-W", "3": "Ktrans"},
         "dim": 3,
+        "annotation_style": "seg",
         "info": "Ground Truth: T2 Masks; \n"
         "Modalities: T2, ADC, PD-W, Ktrans \n;"
         "Classes: clinically significant = 1, insignificant = 0 \n"

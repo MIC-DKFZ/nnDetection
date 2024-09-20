@@ -247,6 +247,7 @@ def main():
         "test_labels": True,
         "labels": {"0": "aneurysm"},
         "modalities": {"0": "TOF"},
+        "annotation_style": "weak",
     }
     save_json(meta, task_data_dir / "dataset.json")
 

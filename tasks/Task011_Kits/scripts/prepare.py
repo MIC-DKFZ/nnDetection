@@ -47,6 +47,7 @@ def main():
         "labels_stuff": {"1": "kidney"},
         "modalities": {"0": "CT"},
         "dim": 3,
+        "annotation_style": "seg",
     }
     save_json(dataset_info, task_data_dir / "dataset.json")
 

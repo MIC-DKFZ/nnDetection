@@ -156,6 +156,7 @@ def main():
             "0": "CT",
         },
         "dim": 3,
+        "annotation_style": "weak",
     }
     save_json(meta, task_data_dir / "dataset.json")
 
