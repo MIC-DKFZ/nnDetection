@@ -34,6 +34,7 @@ def dataset_info():
             "0": "CT",
             "1": "CT",
         },  # modalities of data set; need to start at 0
+        "annotation_style": "seg",
     }
 
 
