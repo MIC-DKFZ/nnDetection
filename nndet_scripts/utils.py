@@ -997,5 +997,99 @@ def splits_pkl_to_json():
     save_json(splits_no_array, splits_path_json)
 
 
+@env_guard
+def numpy2blosc():
+    import argparse
+    import os
+    import shutil
+    from pathlib import Path
+
+    from loguru import logger
+
+    from nndet.io import load_json, load_pickle, save_json, save_pickle
+    from nndet.io.dataformat import data_format_to_class_mapping
+    from nndet.utils.info import maybe_verbose_iterable
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("metafile", type=str, help="D3V002_3d")
+    parser.add_argument("--process_npy", action="store_true")
+    parser.add_argument("--process_npz", action="store_true")
+
+    args = parser.parse_args()
+    task = args.task
+    metafile = args.metafile
+    process_npy = args.process_npy
+    process_npz = args.process_npz if args.process_npy else (not process_npy)
+
+    task_name = get_task(task, name=True)
+    task_dir = Path(os.getenv("det_data")) / task_name
+
+    if not task_dir.is_dir():
+        raise ValueError(f"{task_dir} is not a valid task directory!")
+    preprocessed_dir = task_dir / "preprocessed"
+    if not preprocessed_dir.is_dir():
+        raise ValueError(f"{preprocessed_dir} is not a directory!")
+    if not (preprocessed_dir / f"{metafile}.json").is_file():
+        raise ValueError(f"{metafile}.json not found!")
+
+    meta_json = load_json(preprocessed_dir / f"{metafile}.json")
+    meta_pkl = load_pickle(preprocessed_dir / f"{metafile}.pkl")
+
+    data_identifier = meta_json["data_identifier"]
+    patch_size = meta_json["patch_size"]
+    stripped_data_identifier = meta_json["data_identifier"].split("_")[0]
+
+    npx_dir = preprocessed_dir / data_identifier
+    blosc_dir = preprocessed_dir / f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
+
+    npx_handler = data_format_to_class_mapping["npz"]
+    blosc_handler = data_format_to_class_mapping["b2nd"]
+
+    for mode in ["Tr", "Ts"]:
+        npx_imgdir = npx_dir / f"images{mode}"
+        blosc_imgdir = blosc_dir / f"images{mode}"
+
+        npx_lbldir = npx_dir / f"labels{mode}"
+        blosc_lbldir = blosc_dir / f"labels{mode}"
+
+        if npx_imgdir.is_dir():
+            logger.info(f"Converting {'npz' if process_npz else 'npy'} files to blosc")
+            blosc_imgdir.mkdir(parents=True, exist_ok=True)
+            if process_npz:
+                cases = [p.stem for p in npx_imgdir.glob("*.npz")]
+                for case in maybe_verbose_iterable(cases):
+                    data = npx_handler.load_data(npx_imgdir / f"{case}.npz")
+                    seg = npx_handler.load_seg(npx_imgdir / f"{case}.npz")
+                    blosc_handler.save(blosc_imgdir / case, data, seg, patch_size=patch_size)
+            else:
+                cases = [p.stem for p in npx_imgdir.glob("*.npy") if "_seg" not in p.stem]
+                for case in maybe_verbose_iterable(cases):
+                    data = npx_handler.load_data(npx_imgdir / f"{case}.npy")
+                    seg = npx_handler.load_seg(npx_imgdir / f"{case}_seg.npy")
+                    blosc_handler.save(blosc_imgdir / case, data, seg, patch_size=patch_size)
+
+            pkls = [p.name for p in npx_imgdir.glob("*.pkl")]
+            for pkl in pkls:
+                shutil.copy(npx_imgdir / pkl, blosc_imgdir / pkl)
+        else:
+            logger.warning(f"No images{mode} folder found!")
+
+        if npx_lbldir.is_dir():
+            shutil.copytree(npx_lbldir, blosc_lbldir, dirs_exist_ok=True)
+        else:
+            logger.warning(f"No labels{mode} folder found!")
+
+    meta_json["planner_id"] = f"{meta_json['planner_id']}Blosc"
+    meta_json["preprocessed_data_format"] = "b2nd"
+    meta_json["data_identifier"] = f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
+    save_json(meta_json, preprocessed_dir / f"{meta_json['planner_id']}_{meta_json['mode']}.json")
+
+    meta_pkl["planner_id"] = f"{meta_json['planner_id']}Blosc"
+    meta_pkl["preprocessed_data_format"] = "b2nd"
+    meta_pkl["data_identifier"] = f"{stripped_data_identifier}Blosc_{meta_json['mode']}"
+    save_pickle(meta_pkl, preprocessed_dir / f"{meta_json['planner_id']}_{meta_json['mode']}.pkl")
+
+
 if __name__ == "__main__":
     env()
