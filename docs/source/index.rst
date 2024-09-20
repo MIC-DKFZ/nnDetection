@@ -139,7 +139,7 @@ nnDetection Prototype ranked first in ADAM2020 challenge
    Automatic Detection and SegMentation Challenge (ADAM) (2020).
 
 
-Contents:
+Contents
 =========
 
 .. toctree::
