@@ -3,25 +3,6 @@ Installation
 
 The following sections provide all information needed to install nnDetection.
 
-Configuration
--------------
-
-The configuration of the framework requires several environment variables to be set.
-
-* `det_data`: Path to the source directory where all the data will be located
-* `det_models`: Path to directory where all models will be saved
-* `OMP_NUM_THREADS=1`: Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
-* `det_num_threads`: Number processes to use for augmentation (at least 6, default 12)
-
-Optional flags for nnDetection:
-
-* `nndet_eval_max_detections_image_based`: define number of predictions per image per class which is used for evaluation. Per default 400 is used.
-* `det_verbose`: Can be used to deactivate progress bars (activated by default)
-* `det_logging`: Specify the logging directory, by default logs will be written to the current training directory.
-* `det_logger`: Define logger type. One of tensorboard | mlflow | none. nnDetection supports `MLFlow <https://www.mlflow.org/docs/latest/tracking.html>`_ or `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard>`_.
-
-Only trensorboard is installed by default, other logger might require running additional isntallation instructions (e.g. via pip).
-
 Prerequisites
 -------------
 nnDetection currently only supports execution on CUDA GPUs. Deployment to CPU devices is currently limited to a subset of the models and experimental (i.e. use at your own risk).
@@ -45,6 +26,25 @@ Finally, at least Python 3.8 is needed to run nnDetection.
 .. note::
   To get the best possible performance we recommend using CUDA 11.0+ with cuDNN 8.1.X+ and a (!)locally compiled version(!) of Pytorch 1.7.X-1.8.X
   Starting from PyTorch 1.9.X the pip installation gives mixed precision 3D conv speedup aswell.
+
+Configuration
+-------------
+
+The configuration of the framework requires several environment variables to be set.
+
+* `det_data`: Path to the source directory where all the data will be located
+* `det_models`: Path to directory where all models will be saved
+* `OMP_NUM_THREADS=1`: Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
+* `det_num_threads`: Number processes to use for augmentation (at least 6, default 12)
+
+Optional flags for nnDetection:
+
+* `nndet_eval_max_detections_image_based`: define number of predictions per image per class which is used for evaluation. Per default 400 is used.
+* `det_verbose`: Can be used to deactivate progress bars (activated by default)
+* `det_logging`: Specify the logging directory, by default logs will be written to the current training directory.
+* `det_logger`: Define logger type. One of tensorboard | mlflow | none. nnDetection supports `MLFlow <https://www.mlflow.org/docs/latest/tracking.html>`_ or `Tensorboard <https://pytorch.org/docs/stable/tensorboard.html?highlight=tensorboard>`_.
+
+Only trensorboard is installed by default, other logger might require running additional isntallation instructions (e.g. via pip).
 
 Source Install with Conda CUDA
 ------------------------------
