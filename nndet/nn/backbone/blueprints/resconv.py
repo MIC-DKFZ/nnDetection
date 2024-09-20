@@ -155,7 +155,7 @@ class ResConvBackbone(ConvBackbone):
                 ``'kwargs'``
                     keyword arguments passed to conv in level
 
-            pooling_mode: define pooling type. One of 'res_block' |
+            pooling_mode: define pooling type. One of 'block' |
                 'conv_kernel' | 'conv_stride' | 'max_kernel' | 'max_stride |
                 'avg_kernel' | 'avg_stride'
 
