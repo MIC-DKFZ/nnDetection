@@ -122,6 +122,23 @@ class BaseModule(pl.LightningDataModule):
         else:
             return self.plan["batch_size"]
 
+    @property
+    def num_batches_scaling(self) -> int:
+        """
+        Compute scaling num batches parameter for lightning to keep number
+        of steps consistent when increasing number of GPUs
+
+        Returns:
+            int: scaling for num batches. Depending on number of gpus
+                and gradient accumulation steps
+        """
+        scale = 1
+        for value in self.io_cfg.get("num_batches_scaling", {}).values():
+            scale = scale * value
+        if scale > 1:
+            logger.info(f"Found scaling for num_batches to keep steps consistent: {scale}")
+        return scale
+
     def log_augmentation(self, pipeline: Any) -> None:
         """
         Log augmentation pipeline into file and logger

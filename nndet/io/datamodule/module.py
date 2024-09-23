@@ -192,6 +192,7 @@ class BaseDatamodule(BaseModule):
         dataloader_cls = DATALOADER_REGISTRY.get(self.dataloader)
         logger.info(f"Using training {self.dataloader} with {self.dataloader_kwargs}")
 
+        num_train_batches_per_epoch = self.io_cfg["num_train_batches_per_epoch"] * self.num_batches_scaling
         dl_tr = dataloader_cls(
             data=self.dataset_tr,
             batch_size=self.batch_size,
@@ -199,7 +200,7 @@ class BaseDatamodule(BaseModule):
             patch_size_final=self.patch_size,
             preprocessed_data_format=self.preprocessed_data_format,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            num_batches_per_epoch=self.io_cfg["num_train_batches_per_epoch"],
+            num_batches_per_epoch=num_train_batches_per_epoch,
             load_seg=not self.use_box_io,
             load_box=self.use_box_io,
             **self.dataloader_kwargs,
@@ -231,6 +232,7 @@ class BaseDatamodule(BaseModule):
         """
         dataloader_cls = DATALOADER_REGISTRY.get(self.dataloader)
         logger.info(f"Using validation {self.dataloader} with {self.dataloader_kwargs}")
+        num_val_batches_per_epoch = self.io_cfg["num_val_batches_per_epoch"] * self.num_batches_scaling
 
         dl_val = dataloader_cls(
             data=self.dataset_val,
@@ -239,7 +241,7 @@ class BaseDatamodule(BaseModule):
             patch_size_final=self.patch_size,
             preprocessed_data_format=self.preprocessed_data_format,
             oversample_foreground_percent=self.io_cfg["oversample_foreground_percent"],
-            num_batches_per_epoch=self.io_cfg["num_val_batches_per_epoch"],
+            num_batches_per_epoch=num_val_batches_per_epoch,
             load_seg=not self.use_box_io,
             load_box=self.use_box_io,
             **self.dataloader_kwargs,

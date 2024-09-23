@@ -3,6 +3,8 @@
 
 num_train_batches_per_epoch: ${trainer_cfg.num_train_batches_per_epoch}
 num_val_batches_per_epoch: ${trainer_cfg.num_val_batches_per_epoch}
+num_batches_scaling:
+  num_gpus: ${accelerator_cfg.gpus}
 
 dataloader: "DataLoader{}DOffset"
 oversample_foreground_percent: 0.5 # ratio of fg and bg in batches
