@@ -197,3 +197,74 @@ def batched_weighted_nms(
         return boxes[keep], masks[keep], scores[keep], labels[keep], new_weights[keep]
     else:
         return boxes[keep], scores[keep], labels[keep], new_weights[keep]
+
+
+def asymmetric_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    iov_threshold: float = 1,
+) -> Tensor:
+    """
+    Performs non-maximum suppression on smaller bounding boxes whose scores are
+    lower than the enveloping bounding box
+
+    Args:
+        boxes: tensor with boxes (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: score for each box [N]
+        iov_threshold: discards all nested bounding boxes with IoV >= iov_threshold
+
+    Returns:
+        Tensor: int64 tensor with the indices of the elements that have been
+            kept by Asymmetric NMS, sorted in decreasing order of scores
+    """
+    assert 0 <= iov_threshold <= 1
+    box_vols = ops_torch.box_area(boxes)
+    box_inter = ops_torch.box_inter(boxes, boxes)
+    iovs = box_inter / box_vols
+
+    _, _idx = torch.sort(scores, descending=True)
+
+    keep = []
+    while _idx.nelement() > 0:
+        keep.append(_idx[0])
+        # get all elements that were not matched and discard all others.
+        non_matches = torch.where((iovs[_idx[0]][_idx] < iov_threshold))[0]
+        _idx = _idx[non_matches]
+    return torch.tensor(keep).to(boxes).long()
+
+
+def multiclass_asymmetric_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iov_threshold: float,
+) -> Tensor:
+    """
+    Performs asymmetric non-maximum suppression in a batched fashion.
+    Each index value correspond to a category, and Asymmetric NMS
+    will not be applied between elements of different categories.
+
+    Args:
+        boxes: boxes where Asymmetric NMS will be performed
+            (x1, y1, x2, y2, (z1, z2))[N, dim * 2]
+        scores: scores for each one of the boxes [N]
+        idxs: indices of the categories for each one of the boxes. [N]
+        iov_threshold: discards all nested bounding boxes with IoV >= iov_threshold
+
+    Returns:
+        Tensor: (sorted) postprocessed boxes
+        Tensor: (sorted) postprocessed scores (descending)
+        Tensor: (sorted) postprocessed labels
+
+    """
+    if boxes.numel() == 0:
+        return boxes, scores, idxs
+    # strategy: in order to perform Asymmetric NMS independently per class.
+    # we add an offset to all the boxes. The offset is dependent
+    # only on the class idx, and is large enough so that boxes
+    # from different classes do not overlap
+    max_coordinate = boxes.max()
+    offsets = idxs.to(boxes) * (max_coordinate + 1)
+    boxes_for_asym_nms = boxes + offsets[:, None]
+    keep = asymmetric_nms(boxes_for_asym_nms, scores, iov_threshold)
+    return boxes[keep], scores[keep], idxs[keep]

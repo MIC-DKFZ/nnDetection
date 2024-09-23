@@ -49,6 +49,20 @@ def test_box_area_3d(boxes0_3d, boxes1_3d):
     assert (areas1 == torch.tensor([8, 8, 8])).all()
 
 
+def test_box_inter_2d(boxes0_2d, boxes1_2d):
+    intersections = ops_torch.box_inter(boxes0_2d, boxes1_2d)
+    assert all([a == b for a, b in zip(intersections.shape, (2, 3))])
+    expected = torch.empty_like(intersections).fill_(1.0)
+    assert intersections.allclose(expected)
+
+
+def test_box_inter_3d(boxes0_3d, boxes1_3d):
+    intersections = ops_torch.box_inter(boxes0_3d, boxes1_3d)
+    assert all([a == b for a, b in zip(intersections.shape, (2, 3))])
+    expected = torch.empty_like(intersections).fill_(1.0)
+    assert intersections.allclose(expected)
+
+
 def test_box_iou_2d(boxes0_2d, boxes1_2d):
     ious = ops_torch.box_iou(boxes0_2d, boxes1_2d)
     assert all([a == b for a, b in zip(ious.shape, (2, 3))])

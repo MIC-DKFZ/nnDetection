@@ -3,7 +3,12 @@ import pytest
 import torch
 from torchvision.ops.boxes import nms as nms_torchvision
 
-from nndet.core.boxes.nms import batched_nms, nms
+from nndet.core.boxes.nms import (
+    asymmetric_nms,
+    batched_nms,
+    multiclass_asymmetric_nms,
+    nms,
+)
 from nndet.core.boxes.nms import nms_cpu as nms_pytorch
 from nndet.core.boxes.nms import nms_gpu
 
@@ -65,7 +70,7 @@ def generate_2d_fixed():
 
 def generate_3d_fixed():
     """
-    Generate 2d example
+    Generate 3d example
 
     Returns:
         Tensor: boxes (x1, y1, x2, y2, (z1, z2))[N, 6]
@@ -78,6 +83,50 @@ def generate_3d_fixed():
     return boxes, scores, expected
 
 
+def generate_2d_fixed_for_asym_nms():
+    """
+    Generate 2d example for asymmetric_nms
+
+    Returns:
+        Tensor: boxes (x1, y1, x2, y2)[N, 4]
+        Tensor: scores [N]
+        Tensor: expected keep [M]
+    """
+    boxes = torch.tensor(
+        [
+            [1, 1, 3, 3],
+            [3, 3, 6, 6],
+            [0, 0, 6, 6],
+            [5, 5, 8, 8],
+        ]
+    ).float()
+    scores = torch.tensor([0.9, 0.7, 0.8, 0.8]).float()
+    expected = torch.tensor([0, 2, 3])
+    return boxes, scores, expected
+
+
+def generate_3d_fixed_for_asym_nms():
+    """
+    Generate 3d example for asymmetric_nms
+
+    Returns:
+        Tensor: boxes (x1, y1, x2, y2, (z1, z2))[N, 6]
+        Tensor: scores [N]
+        Tensor: expected keep [M]
+    """
+    boxes = torch.tensor(
+        [
+            [1, 1, 3, 3, 1, 3],
+            [3, 3, 6, 6, 3, 6],
+            [0, 0, 6, 6, 0, 6],
+            [5, 5, 8, 8, 5, 8],
+        ]
+    ).float()
+    scores = torch.tensor([0.8, 0.7, 0.9, 0.8]).float()
+    expected = torch.tensor([2, 3])
+    return boxes, scores, expected
+
+
 @pytest.fixture
 def th():
     return 0.01
@@ -87,7 +136,7 @@ class TestNMS:
     def test_nms_torchvision_2d_cpu(self, th):
         boxes, scores, expected = generate_2d_fixed()
         computed_wrapper = nms(boxes, scores, th)
-        computed_vision = nms(boxes, scores, th)
+        computed_vision = nms_torchvision(boxes, scores, th)
         assert (computed_wrapper == expected).all()
         assert (computed_vision == expected).all()
 
@@ -97,7 +146,7 @@ class TestNMS:
         boxes, scores, expected = generate_2d_fixed()
         boxes, scores, expected = boxes.cuda(), scores.cuda(), expected.cuda()
         computed_wrapper = nms(boxes, scores, th)
-        computed_vision = nms(boxes, scores, th)
+        computed_vision = nms_torchvision(boxes, scores, th)
         assert (computed_wrapper == expected).all()
         assert (computed_vision == expected).all()
 
@@ -163,3 +212,22 @@ class TestNMS:
         assert boxes_res.allclose(boxes)
         assert scores_res.allclose(scores)
         assert labels_res.allclose(groups)
+
+    def test_asymmetric_nms_2d(self):
+        boxes, scores, expected = generate_2d_fixed_for_asym_nms()
+        result = asymmetric_nms(boxes, scores, iov_threshold=1)
+        assert (result == expected).all()
+
+    def test_asymmetric_nms_3d(self):
+        boxes, scores, expected = generate_3d_fixed_for_asym_nms()
+        result = asymmetric_nms(boxes, scores, iov_threshold=1)
+        assert (result == expected).all()
+
+    def test_multiclass_asymmetric_nms(self):
+        boxes, scores, expected = generate_3d_fixed_for_asym_nms()
+        groups = torch.tensor([0, 0, 0, 1])
+        boxes_res, scores_res, labels_res = multiclass_asymmetric_nms(boxes, scores, groups, iov_threshold=1)
+
+        assert boxes_res.allclose(boxes[expected])
+        assert scores_res.allclose(scores[expected])
+        assert labels_res.allclose(groups[expected])
