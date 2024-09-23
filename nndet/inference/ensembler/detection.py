@@ -12,7 +12,11 @@ from torch import Tensor
 
 import nndet.core.ops_torch as ops_torch
 from nndet.core.boxes.merging import GreedyIoUBoxMerger, VoteLabelGreedyIoUBoxMerger
-from nndet.core.boxes.nms import batched_nms, batched_weighted_nms
+from nndet.core.boxes.nms import (
+    batched_nms,
+    batched_weighted_nms,
+    multiclass_asymmetric_nms,
+)
 from nndet.core.boxes.wbc import batched_wbc
 from nndet.inference.ensembler.base import BaseEnsembler, OverlapMap
 from nndet.inference.ensembler.utils import (
@@ -1489,3 +1493,136 @@ class BoxEnsemblerSelectiveFaster(BoxEnsemblerSelective):
             "remove_small_boxes": 1e-2,
             "ensemble_score_thresh": 0.0,
         }
+
+
+class BoxEnsemblerSelectiveAsymNMS(BoxEnsemblerSelective):
+    @classmethod
+    def get_default_parameters(cls):
+        """
+        Generate default parameters for instantiation
+
+        Returns:
+            Dict:
+                `model_iou`: IoU for model nms function
+                `model_nms_fn`: function to use for model NMS
+                `model_topk`: number of predictions with the highest
+                    probability to keep
+                `ensemble_iou`: IoU for ensembling the predictions of multiple
+                    models
+                `ensemble_nms_fn`: ensemble predictions from multiple
+                    models
+                `ensemble_nms_topk`: number of predictions with the highest
+                    probability to keep
+                `ensemble_remove_small_boxes`: minimum size of the box
+                `ensemble_score_thresh`: minimum probability
+                `ensemble_iov`: IoV for the asymmetric nms function
+        """
+        return {
+            # single model
+            "model_iou": 0.1,
+            "model_nms_fn": "batched_weighted_nms",
+            "model_score_thresh": 0.0,
+            "model_topk": 1000,
+            "model_detections_per_image": 100,
+            # ensemble multiple models
+            "ensemble_iou": 0.5,
+            "ensemble_nms_fn": "batched_wbc",
+            "ensemble_topk": 1000,
+            "remove_small_boxes": 1e-2,
+            "ensemble_score_thresh": 0.0,
+            "ensemble_iov": 1.0,
+        }
+
+    @torch.no_grad()
+    def get_case_result(
+        self,
+        restore: bool = False,
+        names: Optional[Sequence[Hashable]] = None,
+    ) -> Dict[str, Tensor]:
+        """
+        Process all the batches and models and create the final prediction
+
+        Args:
+            restore: restore prediction in the original image space
+            names: name of the models to use. By default all models are used.
+
+        Returns:
+            Dict: final result
+                `pred_boxes`: predicted box locations
+                    [N, dims * 2] (x1, y1, x2, y2, (z1, z2))
+                `pred_scores`: predicted probability per box [N]
+                `pred_labels`: predicted label per box [N]
+                `restore`: indicate whether predictions were restored in
+                    original image space
+                `original_size_of_raw_data`: image shape befor preprocessing
+                `itk_origin`: itk origin of image before preprocessing
+                `itk_spacing`: itk spacing of image before preprocessing
+                `itk_direction`: itk direction of image before preprocessing
+        """
+        if names is None:
+            names = list(self.model_results.keys())
+
+        boxes, probs, labels, weights = [], [], [], []
+        for name in names:
+            _boxes, _probs, _labels, _weights = self.process_model(name)
+            boxes.append(_boxes)
+            probs.append(_probs)
+            labels.append(_labels)
+            weights.append(_weights)
+
+        boxes, probs, labels = self.process_ensemble(
+            boxes=boxes,
+            probs=probs,
+            labels=labels,
+            weights=weights,
+        )
+
+        if self.parameters["ensemble_iov"] <= 1:
+            boxes, probs, labels = multiclass_asymmetric_nms(
+                boxes=boxes,
+                scores=probs,
+                idxs=labels,
+                iov_threshold=self.parameters["ensemble_iov"],
+            )
+
+        if restore:
+            boxes = self.restore_prediction(boxes)
+
+        if boxes.numel == 0:
+            boxes = boxes.view(-1, self.properties["dim"] * 2)
+        assert boxes.ndim == 2
+        assert probs.ndim == 1
+        assert labels.ndim == 1
+
+        return {
+            "pred_boxes": boxes,
+            "pred_scores": probs,
+            "pred_labels": labels,
+            "restore": restore,
+            "original_size_of_raw_data": self.properties["original_size_of_raw_data"],
+            "itk_origin": self.properties["itk_origin"],
+            "itk_spacing": self.properties["itk_spacing"],
+            "itk_direction": self.properties["itk_direction"],
+        }
+
+    @classmethod
+    def sweep_parameters(cls) -> Tuple[Dict[str, Any], Dict[str, Sequence[Any]]]:
+        # iou_threshs = np.linspace(0.0, 0.8, 9)
+        iou_threshs = np.linspace(0.0, 0.5, 6)
+        iou_threshs[0] = 1e-5
+        iov_threshs = np.linspace(0.5, 1.0, 6)
+        small_boxes_thresh = np.linspace(2.0, 7.0, 6)
+
+        param_sweep = {
+            "model_iou": iou_threshs,
+            "model_nms_fn": [
+                "batched_nms",
+                "batched_weighted_nms",
+            ],
+            # ensemble multiple models
+            "ensemble_iou": iou_threshs,
+            "model_score_thresh": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+            "remove_small_boxes": small_boxes_thresh,
+            "ensemble_iov": iov_threshs,
+        }
+        return cls.get_default_parameters(), param_sweep

@@ -9,6 +9,7 @@ from nndet.inference.ensembler.base import BaseEnsembler
 from nndet.inference.ensembler.detection import (
     BoxEnsemblerSelective,
     BoxEnsemblerSelective2D,
+    BoxEnsemblerSelectiveAsymNMS,
 )
 from nndet.inference.ensembler.segmentation import SegmentationEnsembler
 from nndet.inference.predictor import Predictor
@@ -181,3 +182,17 @@ class BoxPredictionMixinV2(BoxPredictionMixin):
         if plan["network_dim"] == 2:
             predictor.pre_transform = Inference2D(["data"])
         return predictor
+
+
+class BoxPredictionMixinV3(BoxPredictionMixin):
+    @classmethod
+    def get_ensembler_cls(cls, dim: int) -> Type[BaseEnsembler]:
+        """
+        Returns:
+            Type[BaseEnsembler]: return class of ensembler to use for this
+                class
+        """
+        if dim == 3:
+            return BoxEnsemblerSelectiveAsymNMS
+        else:
+            raise ValueError(f"Dim {dim} not supported in get_ensembler_cls.")
