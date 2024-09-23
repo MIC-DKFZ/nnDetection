@@ -159,10 +159,10 @@ Accelerator Config
 
 A small configuration file containing the hardware resoruce and model optimizsation settings.
 Sometime additional speed ups can be achieved by using the `gpu1_mixed16_bench` but it might not work on all datasets depending on the determined patch size and model configuration.
-Multi-gpu support is not officially supported but can be performed by increasing the number of GPUs.
+Multi-gpu support is not officially supported but can be performed by increasing the number of GPUs in lightning.
 Please note, that the online validation won't compute metrics since the metrics will simply be averaged across GPUs and the inference (including final validation) do not support multi gpu setups.
-These were never extensively tested and there might be other aspects influencing the performance of the models.
-Use multi-gpu at your own risk.
+These were never tested and there might be other aspects influencing the performance of the models (e.g. number of steps need to be scaled).
+**Use multi-gpu at your own risk.**
 
 Model Config
 ------------
