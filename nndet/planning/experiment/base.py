@@ -448,7 +448,7 @@ class AbstractPlanner(ABC):
         preprocessed_dir = Path(preprocessed_dir)
         preprocessed_data_dir: Path = preprocessed_dir / plan["data_identifier"]
         preprocessed_data_dir.mkdir(exist_ok=True, parents=True)
-        preprocessed_data_format = plan["preprocessed_data_format"]
+        preprocessed_data_format = plan.get("preprocessed_data_format", "npz")
 
         cases_processed = get_case_ids_from_dir(
             preprocessed_data_dir,

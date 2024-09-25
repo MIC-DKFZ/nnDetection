@@ -65,7 +65,8 @@ def predict_dir(
         num_tta_transforms=num_tta_transforms,
         **kwargs,
     )
-    with_dataformat = data_format_to_class_mapping[plan["preprocessed_data_format"]]
+    preprocessed_data_format = plan.get("preprocessed_data_format", "npz")
+    with_dataformat = data_format_to_class_mapping[preprocessed_data_format]
     file_extension = with_dataformat.get_file_extension()
 
     if case_ids is None:

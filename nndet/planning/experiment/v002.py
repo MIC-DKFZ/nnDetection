@@ -239,6 +239,7 @@ class D3V002DynDtype(D3V002):
         """
         Create Preprocessor
         """
+        preprocessed_data_format = plan.get("preprocessed_data_format", "npz")
         preprocessor = DynDTypePreprocessor(
             norm_scheme_per_modality=plan["normalization_schemes"],
             use_mask_for_norm=plan["use_mask_for_norm"],
@@ -246,7 +247,7 @@ class D3V002DynDtype(D3V002):
             intensity_properties=plan["dataset_properties"]["intensity_properties"],
             resample_anisotropy_threshold=plan["resample_anisotropy_threshold"],
             patch_size=plan["patch_size"],
-            preprocessed_data_format=plan["preprocessed_data_format"],
+            preprocessed_data_format=preprocessed_data_format,
         )
         return preprocessor
 

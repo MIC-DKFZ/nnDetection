@@ -461,4 +461,8 @@ class PreprocessedDatasetBlosc2(PreprocessedDataset):
         return tuple(block_size), tuple(chunk_size)
 
 
-data_format_to_class_mapping = {"npz": PreprocessedDatasetNumpy(), "b2nd": PreprocessedDatasetBlosc2()}
+data_format_to_class_mapping = {
+    "npy": PreprocessedDatasetNumpy(),
+    "npz": PreprocessedDatasetNumpy(),
+    "b2nd": PreprocessedDatasetBlosc2(),
+}
