@@ -1,9 +1,11 @@
 import os
 import sys
 from pathlib import Path
+from shutil import copytree, rmtree
 
 import torch
 from setuptools import find_packages, setup
+from setuptools.command.install import install
 from torch.utils.cpp_extension import (
     CUDA_HOME,
     BuildExtension,
@@ -33,6 +35,19 @@ def read_file(file):
 def clean():
     """Custom clean command to tidy up the project root."""
     os.system("rm -vrf ./build ./dist ./*.pyc ./*.tgz")
+
+
+class PostInstallCommand(install):
+    def run(self):
+        install.run(self)
+        this_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+
+        for dirname in ["conf", "csrc"]:
+            src_path = this_dir / "nndet" / dirname
+            dest_path = Path(os.path.abspath(self.install_lib)) / "nndet" / dirname
+            if dest_path.exists():
+                rmtree(dest_path)
+            copytree(src_path, dest_path)
 
 
 def get_extensions():
@@ -119,6 +134,7 @@ setup(
     cmdclass={
         "build_ext": BuildExtension,
         "clean": clean,
+        "install": PostInstallCommand,
     },
     entry_points={
         "console_scripts": [
