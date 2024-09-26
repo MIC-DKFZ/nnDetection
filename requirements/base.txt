@@ -16,3 +16,4 @@ tensorboard
 GitPython
 torchvision
 numpy<2.0
+torch==2.4.0
