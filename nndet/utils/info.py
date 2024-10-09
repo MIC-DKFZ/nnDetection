@@ -67,9 +67,9 @@ class ModelSummary(_ModelSummary):
 
         if trainer.is_global_zero:
             summary_table = _format_summary_table(
-                total_parameters,
-                trainable_parameters,
-                model_size,
+                total_parameters=total_parameters,
+                trainable_parameters=trainable_parameters,
+                model_size=model_size,
                 *summary_data,
             )
 
