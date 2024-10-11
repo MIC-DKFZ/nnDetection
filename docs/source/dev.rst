@@ -322,7 +322,8 @@ To create a binary distribution package (wheel) one simply need to execute the f
 .. code:: bash
    python setup.py bdist_wheel
 
-On the other hand, to create a source distribution package (tarball or zip) execute the following command:
+On the other hand, to create a source distribution package (tarball) execute the following command:
+
 .. code:: bash
    python setup.py sdist
 
