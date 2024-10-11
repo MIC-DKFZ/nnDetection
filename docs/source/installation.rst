@@ -74,8 +74,8 @@ Summary of all steps (excluding env variables):
   conda install cuda -c nvidia/label/cuda-12.1.1 # adapt to the needed CUDA version from pytorch
   conda install gxx_linux-64 # specify version if needed
   export CUDA_HOME=$CONDA_PREFIX
-  export CXX=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-c++
-  export CC=$CONDA_PREFIX/bin/x86_64-conda_cos6-linux-gnu-cc
+  export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-c++
+  export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-cc
   git clone https://github.com/MIC-DKFZ/nnDetection
   cd nnDetection
   pip install -e . -v
