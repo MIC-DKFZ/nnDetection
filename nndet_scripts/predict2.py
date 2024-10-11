@@ -234,7 +234,7 @@ def entrypoint_preprocess_for_inference():
     num_processes_preprocessing = args.num_processes_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
@@ -312,7 +312,7 @@ def entrypoint_predict_with_imagesTs():
     skip_preprocessing = args.skip_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     nndet_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(nndet_model_dir / task_name / model, fold)
     prediction_dir = training_dir / "test_predictions"
@@ -425,7 +425,7 @@ def entrypoint_predict_with_task():
     skip_preprocessing = args.skip_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
@@ -608,7 +608,7 @@ def entrypoint_predict_test_split():
     overwrites = args.overwrites
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
     prediction_dir = training_dir / "test_predictions"
