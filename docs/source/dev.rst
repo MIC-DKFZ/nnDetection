@@ -313,3 +313,18 @@ There are four different loss categories in nnDetection:
    The input follows the same format at segmentation losses but the targets
    are already ont hot encoded, i.e. they have shape `[B, C, *]` , where `B` is
    the batch size, `C` is the number of classes and `*` are arbitrary dimensions.
+
+
+Distribution Package
+====================
+To create a binary distribution package (wheel) one simply need to execute the following command:
+
+.. code:: bash
+   python setup.py bdist_wheel
+
+On the other hand, to create a source distribution package (tarball) execute the following command:
+
+.. code:: bash
+   python setup.py sdist
+
+After the execution, both the binary distribution package (`.whl`) or the source distribution (`.tar.gz`) can be then found in the `dist` directory.
