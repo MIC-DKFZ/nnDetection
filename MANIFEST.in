@@ -3,6 +3,7 @@ include LICENSE
 
 recursive-include requirements *.txt
 recursive-include nndet/conf *
+recursive-include nndet/csrc *
 
 global-exclude *.pyc
 global-exclude __pycache__
