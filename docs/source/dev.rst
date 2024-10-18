@@ -327,4 +327,9 @@ On the other hand, to create a source distribution package (tarball) execute the
 .. code:: bash
    python setup.py sdist
 
+The following docker command can be used to build the the distribution packages:
+
+.. code:: bash
+   docker run --rm --gpus all -v .:/opt/nndet --shm-size=48gb continuumio/miniconda3 /bin/bash -c "conda create --name venv python=3.10 -y && source activate base && conda activate venv && export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-c++ && export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-cc && pip3 install torch torchvision torchaudio && conda install cuda -c nvidia/label/cuda-$(python -c "import torch; print(torch.version.cuda)") -y && conda install gxx_linux-64 -y && cd /opt/nndet && rm -rf build nndet.egg-info && python setup.py bdist_wheel && python setup.py sdist"
+
 After the execution, both the binary distribution package (`.whl`) or the source distribution (`.tar.gz`) can be then found in the `dist` directory.
