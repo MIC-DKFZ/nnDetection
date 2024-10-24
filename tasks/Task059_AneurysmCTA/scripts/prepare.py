@@ -48,8 +48,8 @@ def prepare_case(
     # Cross check labels with label dataframe
     num_aneurysms = case_labels["num_IAs"]
     if num_instances != num_aneurysms:
-        logger.warning(
-            f"Number of aneurysms in {case_id} does not match: {num_aneurysms} (CC) vs {num_aneurysms} (CSV). "
+        logger.info(
+            f"CCN: Number of aneurysms in {case_id} does not match: {num_aneurysms} (CC) vs {num_aneurysms} (CSV). "
         )
         if num_instances < num_aneurysms:
             points = np.array(np.nonzero(labels_out)).T
@@ -59,7 +59,7 @@ def prepare_case(
             for instance_index in range(num_aneurysms):
                 instance_points = points[clustering.labels_ == instance_index]
                 labels_out[instance_points[:, 0], instance_points[:, 1], instance_points[:, 2]] = instance_index + 1
-            logger.warning(f"Running in spectral clustering to bump up the number of instances to {num_aneurysms}")
+            logger.info(f"CCN: Running in spectral clustering to bump up the number of instances to {num_aneurysms}")
         else:
             vols = [np.sum(labels_out == instance_index) for instance_index in range(1, num_instances + 1)]
             tmp_labels_out = np.zeros_like(labels_out)
@@ -68,7 +68,7 @@ def prepare_case(
             ):
                 tmp_labels_out[labels_out == old_instance_index] = new_instance_index
             labels_out = tmp_labels_out
-            logger.warning(f"Removing min volumes to bring down the number of instances to {num_aneurysms}")
+            logger.info(f"CCN: Removing min volumes to bring down the number of instances to {num_aneurysms}")
 
     new_label_itk = sitk.GetImageFromArray(labels_out)
     new_label_itk.CopyInformation(label_itk)
