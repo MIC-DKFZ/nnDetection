@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import List
 
 import cc3d
+import numpy as np
 import pandas as pd
 import SimpleITK as sitk
 from loguru import logger
+from sklearn.cluster import SpectralClustering
 
 from nndet.io.load import save_json
 from nndet.utils.check import env_guard
@@ -47,8 +49,26 @@ def prepare_case(
     num_aneurysms = case_labels["num_IAs"]
     if num_instances != num_aneurysms:
         logger.warning(
-            f"Number of aneurysms in {case_id} does not " f"match: {num_instances} (CC) vs {num_aneurysms} (CSV)"
+            f"Number of aneurysms in {case_id} does not match: {num_aneurysms} (CC) vs {num_aneurysms} (CSV). "
         )
+        if num_instances < num_aneurysms:
+            points = np.array(np.nonzero(labels_out)).T
+            clustering = SpectralClustering(n_clusters=num_aneurysms, assign_labels="discretize", random_state=0).fit(
+                points
+            )
+            for instance_index in range(num_aneurysms):
+                instance_points = points[clustering.labels_ == instance_index]
+                labels_out[instance_points[:, 0], instance_points[:, 1], instance_points[:, 2]] = instance_index + 1
+            logger.warning(f"Running in spectral clustering to bump up the number of instances to {num_aneurysms}")
+        else:
+            vols = [np.sum(labels_out == instance_index) for instance_index in range(1, num_instances + 1)]
+            tmp_labels_out = np.zeros_like(labels_out)
+            for new_instance_index, old_instance_index in enumerate(
+                np.argsort(vols)[::-1][:num_aneurysms] + 1, start=1
+            ):
+                tmp_labels_out[labels_out == old_instance_index] = new_instance_index
+            labels_out = tmp_labels_out
+            logger.warning(f"Removing min volumes to bring down the number of instances to {num_aneurysms}")
 
     new_label_itk = sitk.GetImageFromArray(labels_out)
     new_label_itk.CopyInformation(label_itk)
@@ -61,7 +81,7 @@ def prepare_case(
 
     # Create and save meta information
     meta_info = {
-        "instances": {str(int(i)): 0 for i in range(1, num_instances + 1)},
+        "instances": {str(int(i)): 0 for i in np.unique(labels_out) if i != 0},
         "num_aneurysms_cc": int(num_aneurysms),
         "subset": str(case_labels["subset"]),
         "institution_id": int(case_labels["institution_id"]),
@@ -173,7 +193,7 @@ def main():
 
     # load meta information for labels
     internal_labels_df = pd.read_csv(internal_csv_path).set_index("instance_id")
-    external_labels_df = pd.read_csv(internal_csv_path).set_index("instance_id")
+    external_labels_df = pd.read_csv(external_csv_path).set_index("instance_id")
 
     # prepare dataset info
     meta = {
