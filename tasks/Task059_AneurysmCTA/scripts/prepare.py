@@ -59,7 +59,9 @@ def prepare_case(
             for instance_index in range(num_aneurysms):
                 instance_points = points[clustering.labels_ == instance_index]
                 labels_out[instance_points[:, 0], instance_points[:, 1], instance_points[:, 2]] = instance_index + 1
-            logger.info(f"CCN: Running in spectral clustering to bump up the number of instances to {num_aneurysms}")
+            logger.info(
+                f"CCN {case_id}: Running in spectral clustering to bump up the number of instances to {num_aneurysms}"
+            )
         else:
             vols = [np.sum(labels_out == instance_index) for instance_index in range(1, num_instances + 1)]
             tmp_labels_out = np.zeros_like(labels_out)
@@ -68,7 +70,7 @@ def prepare_case(
             ):
                 tmp_labels_out[labels_out == old_instance_index] = new_instance_index
             labels_out = tmp_labels_out
-            logger.info(f"CCN: Removing min volumes to bring down the number of instances to {num_aneurysms}")
+            logger.info(f"CCN {case_id}: Removing min volumes to bring down the number of instances to {num_aneurysms}")
 
     new_label_itk = sitk.GetImageFromArray(labels_out)
     new_label_itk.CopyInformation(label_itk)
@@ -135,6 +137,7 @@ def main():
     task = "Task059_AneurysmCTA"
     det_data_dir = Path(os.getenv("det_data"))
     task_data_dir = det_data_dir / task
+    assert task_data_dir.is_dir(), f"{task_data_dir} does not exist."
 
     # traning data paths
     source_data_dir = task_data_dir / "raw" / "imagesTr"
@@ -172,7 +175,7 @@ def main():
 
     logger.remove()
     logger.add(sys.stdout, level="INFO")
-    logger.add(task_data_dir / "prepare.log", level="DEBUG")
+    logger.add(task_data_dir / "prepare2.log", level="DEBUG")
 
     # setup raw splitted dirs
     raw_splitted_dir = task_data_dir / "raw_splitted"
