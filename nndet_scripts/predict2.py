@@ -249,6 +249,49 @@ def entrypoint_preprocess_for_inference():
 
 
 @env_guard
+def entrypoint_preprocess_folders_for_inference():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source_data", type=Path, help="Path to raw data directory.")
+    parser.add_argument("target_data", type=Path, help="Path to target preprocessed directory.")
+    parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
+    parser.add_argument("model", type=str, help="model name, e.g. RetinaUNetV0")
+    parser.add_argument(
+        "fold",
+        type=int,
+        help="fold to use for prediction. -1 for consolidated",
+    )
+    parser.add_argument(
+        "-npp",
+        "--num_processes_preprocessing",
+        type=int,
+        default=2,
+        required=False,
+        help="Number of processes to use for preprocessing.",
+    )
+    args = parser.parse_args()
+    source_data = args.source_data
+    target_data = args.target_data
+    task = args.task
+    model = args.model
+    fold = args.fold
+    num_processes_preprocessing = args.num_processes_preprocessing
+
+    # setup folders
+    task_name = get_task(task, name=True, models=True)
+    task_model_dir = Path(os.getenv("det_models"))
+    training_dir = get_training_dir(task_model_dir / task_name / model, fold)
+
+    preprocessed_dir: Path = target_data / "preprocessed"
+    preprocessed_dir.mkdir(exist_ok=True, parents=True)
+    _ = _preprocess(
+        data_dir=source_data,
+        preprocessed_dir=preprocessed_dir,
+        training_dir=training_dir,
+        num_processes=num_processes_preprocessing,
+    )
+
+
+@env_guard
 def entrypoint_predict_with_imagesTs():
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task id e.g. Task12_LIDC OR 12 OR LIDC")
