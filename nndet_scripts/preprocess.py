@@ -21,7 +21,7 @@ from omegaconf import OmegaConf
 from nndet.io.load import load_npz_looped, load_pickle
 from nndet.io.paths import get_case_id_from_path, get_paths_from_splitted_dir, get_task
 from nndet.planning import PLANNER_REGISTRY, DatasetAnalyzer
-from nndet.planning.experiment.utils import create_labels
+from nndet.planning.experiment.utils import create_labels, create_labels_folder
 from nndet.planning.properties.registry import medical_instance_props
 from nndet.preprocessing import ImageCropper
 from nndet.utils.check import (
@@ -531,6 +531,35 @@ def main_prep_labels():
             preprocessed_output_dir=task_path / "preprocessed",
             num_processes=num_processes,
         )
+
+
+@env_guard
+def main_prep_labels_folders():
+    """
+    Prepare (non preprocessed) labels from folders
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source_labels", type=Path, help="Path to directory containing source labels.")
+    parser.add_argument("target_labels", type=Path, help="Path to directory containing taget labels.")
+    parser.add_argument(
+        "-np",
+        "--num_processes",
+        type=int,
+        default=4,
+        required=False,
+        help="Number of processes to use for croppping.",
+    )
+
+    args = parser.parse_args()
+    source_labels = args.source_labels
+    target_labels = args.target_labels
+    num_processes = args.num_processes
+
+    create_labels_folder(
+        source_labels_dir=source_labels,
+        target_labels_dir=target_labels,
+        num_processes=num_processes,
+    )
 
 
 if __name__ == "__main__":

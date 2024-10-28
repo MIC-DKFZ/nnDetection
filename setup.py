@@ -125,6 +125,7 @@ setup(
             # preprocessing + preparation
             "nndet_prep = nndet_scripts.preprocess:main",
             "nndet_prep_labels = nndet_scripts.preprocess:main_prep_labels",
+            "nndet_prep_labels_folders = nndet_scripts.preprocess:main_prep_labels_folders",
             "nndet_cv_split = nndet_scripts.utils:create_cv_split",
             "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
             # training
