@@ -47,7 +47,7 @@ class DetectionEvaluator(AbstractEvaluator):
         """
         self.criterion = criterion
         # set range to cover every object
-        self.criterion_ranges = {"": (np.NINF, np.inf)}
+        self.criterion_ranges = {"": (-np.inf, np.inf)}
         # expand by additional ranges
         if criterion_ranges is not None:
             for key, bounds in criterion_ranges.items():
