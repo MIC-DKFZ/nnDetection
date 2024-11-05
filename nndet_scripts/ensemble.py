@@ -498,7 +498,7 @@ def entrypoint_determine_best_ensemble_with_task():
             )
         logger.info(
             f"Than run: `nndet_ensemble_with_task {task} -1 {new_model} "
-            f"{' '.join(best_model_subset)} -i {best_iou} -m wbc [--test]` to ensemble the model "
+            f"{' '.join(best_model_subset)} -i {best_iou} -m nms [--test]` to ensemble the model "
             "predictions."
         )
 
