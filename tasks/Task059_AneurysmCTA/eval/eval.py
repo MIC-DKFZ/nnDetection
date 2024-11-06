@@ -24,7 +24,7 @@ SIZE_OFFSET = 1
 
 ################################################################################
 # DIRECT COPY OF EVAL CODE https://github.com/alceballosa/deform-aneurysm-detection
-# ADDED ONE LINE TO PRINT THE MEAN :) 
+# ADDED ONE LINE TO PRINT THE MEAN AND CHANGED some prints to logger.info
 # MAKE SURE TO CHECK THE LICENSE IN THE FOLDER!!
 # DATE: 2024-11-06
 
@@ -234,8 +234,8 @@ class FROCEvaluator:
         df.loc["mean"] = means
         df.to_csv(os.path.join(self._out_dir, "froc.csv"), index=False, columns=headers)
 
-        print(f"Found results: {results}")
-        print(f"MEAN: {results[0].mean()}")
+        logger.info(f"Found results: {results}")
+        logger.info(f"MEAN: {results[0].mean()}")
 
         table = tabulate(
             results_table + [[means[x] for x in headers]],
@@ -245,7 +245,7 @@ class FROCEvaluator:
             numalign="left",
         )
         # self._logger.info(f"Per-finding bbox FROC at iou {self._iou_thr} \n" + table)
-        print((f"Per-finding bbox FROC at iou {self._iou_thr} \n" + table))
+        logger.info((f"Per-finding bbox FROC at iou {self._iou_thr} \n" + table))
 
     def _derive_bt_results(self, classes, m_results, ub_results, lb_results):
         """
