@@ -141,6 +141,7 @@ setup(
             # preprocessing + preparation
             "nndet_prep = nndet_scripts.preprocess:main",
             "nndet_prep_labels = nndet_scripts.preprocess:main_prep_labels",
+            "nndet_prep_labels_folders = nndet_scripts.preprocess:main_prep_labels_folders",
             "nndet_cv_split = nndet_scripts.utils:create_cv_split",
             "nndet_test_data_split = nndet_scripts.utils:create_test_data_split",
             # training
@@ -162,6 +163,7 @@ setup(
             "nndet_predict_with_folders = nndet_scripts.predict2:entrypoint_predict_with_folders",
             "nndet_predict_test_split = nndet_scripts.predict2:entrypoint_predict_test_split",
             "nndet_preprocess_for_inference = nndet_scripts.predict2:entrypoint_preprocess_for_inference",
+            "nndet_preprocess_folders_for_inference = nndet_scripts.predict2:entrypoint_preprocess_folders_for_inference",
             # unpack
             "nndet_unpack = nndet_scripts.utils:unpack",
             "nndet_unpack_task = nndet_scripts.utils:unpack_task",
