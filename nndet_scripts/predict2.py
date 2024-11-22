@@ -234,7 +234,7 @@ def entrypoint_preprocess_for_inference():
     num_processes_preprocessing = args.num_processes_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
@@ -312,7 +312,7 @@ def entrypoint_predict_with_imagesTs():
     skip_preprocessing = args.skip_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     nndet_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(nndet_model_dir / task_name / model, fold)
     prediction_dir = training_dir / "test_predictions"
@@ -403,12 +403,19 @@ def entrypoint_predict_with_task():
             "keyword arguments to inference."
         ),
     )
+    parser.add_argument(
+        "-spio",
+        "--save_preprocessed_in_output",
+        action="store_true",
+        help="Preprocessing data will be saved into a subdirectory of the output directory.",
+    )
     args = parser.parse_args()
     data_dir = args.data
     prediction_dir = args.prediction
     task = args.task
     model = args.model
     fold = args.fold
+    save_preprocessed_in_output = args.save_preprocessed_in_output
 
     num_tta_transforms = args.num_tta_transforms
     load_models = LoadModels(args.load_models)
@@ -418,15 +425,21 @@ def entrypoint_predict_with_task():
     skip_preprocessing = args.skip_preprocessing
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
 
     if skip_preprocessing:
         plan = load_plan_from_dir(training_dir, "plan_inference")
-        preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
+        if save_preprocessed_in_output:
+            preprocessed_data_dir = prediction_dir / "preprocessed" / plan["data_identifier"]
+        else:
+            preprocessed_data_dir = data_dir / "preprocessed" / plan["data_identifier"]
     else:
-        preprocessed_dir: Path = data_dir / "preprocessed"
+        if save_preprocessed_in_output:
+            preprocessed_dir: Path = prediction_dir / "preprocessed"
+        else:
+            preprocessed_dir: Path = data_dir / "preprocessed"
         preprocessed_dir.mkdir(exist_ok=True)
         data_identifier = _preprocess(
             data_dir=data_dir,
@@ -595,7 +608,7 @@ def entrypoint_predict_test_split():
     overwrites = args.overwrites
 
     # setup folders
-    task_name = get_task(task, name=True)
+    task_name = get_task(task, name=True, models=True)
     task_model_dir = Path(os.getenv("det_models"))
     training_dir = get_training_dir(task_model_dir / task_name / model, fold)
     prediction_dir = training_dir / "test_predictions"

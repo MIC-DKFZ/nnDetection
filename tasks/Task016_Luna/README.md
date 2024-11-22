@@ -16,7 +16,7 @@ The data is now converted to the correct format and the instructions from the nn
 
 Notes:
 - since Luna is a 10 Fold cross validation, all 10 folds need to be run
-- all runs should be run with the `--sweep` option and consolidation should be performed via the `--no_model -c copy` since we are not planning to predict a separate test set.
+- all runs should be run with the `--sweep` option and consolidation should be performed via the `--num_folds 10 --no_model -c copy` since we are not planning to predict a separate test set.
 
 1. Run `python prepare_eval_cpm.py [model_name]` to convert the predictions to the Luna format.
 Note: The script needs access to the raw_splitted images.

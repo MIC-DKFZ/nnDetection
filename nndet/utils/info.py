@@ -19,6 +19,7 @@ import pytorch_lightning as pl
 import torch
 from git import InvalidGitRepositoryError, Repo
 from loguru import logger
+from packaging.version import Version
 from pytorch_lightning.callbacks import ModelSummary as _ModelSummary
 from pytorch_lightning.utilities.model_summary.model_summary import (
     _format_summary_table,
@@ -66,12 +67,21 @@ class ModelSummary(_ModelSummary):
         model_size = model_summary.model_size
 
         if trainer.is_global_zero:
-            summary_table = _format_summary_table(
-                total_parameters,
-                trainable_parameters,
-                model_size,
-                *summary_data,
-            )
+            if Version(pl.__version__) >= Version("2.4.0"):
+                summary_table = _format_summary_table(
+                    total_parameters,
+                    trainable_parameters,
+                    model_size,
+                    model_summary.total_training_modes,
+                    *summary_data,
+                )
+            else:
+                summary_table = _format_summary_table(
+                    total_parameters,
+                    trainable_parameters,
+                    model_size,
+                    *summary_data,
+                )
 
             summary_full = f"+++ Network Summary +++ \n\n{summary_table} \n\n{pl_module}"
             Path("./network.txt").unlink(missing_ok=True)

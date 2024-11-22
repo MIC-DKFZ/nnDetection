@@ -338,5 +338,7 @@ def save_splits_to_model(
     try:
         save_json(splits, model_dir / f"{save_name}")
     except TypeError:
+        if (model_dir / f"{save_name}.json").is_file():  # need to remove partially written file
+            (model_dir / f"{save_name}.json").unlink()
         logger.warning(f"Saving splits to {model_dir / f'{save_name}'} which is deprected since nnDetV2")
         save_pickle(splits, model_dir / f"{save_name}")

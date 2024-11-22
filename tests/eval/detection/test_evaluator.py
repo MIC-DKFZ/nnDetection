@@ -40,7 +40,7 @@ class TestBoxEvaluator:
         assert all([a == b for a, b in zip(evaluator.iou_thresholds, [0.1, 0.2, 0.3, 0.4])])
         assert all([a == b for a, b in zip(evaluator.iou_mapping, [[0, 1], [2, 3]])])
         assert "" in evaluator.criterion_ranges.keys()
-        assert evaluator.criterion_ranges[""][0] == np.NINF
+        assert evaluator.criterion_ranges[""][0] == -np.inf
         assert evaluator.criterion_ranges[""][1] == np.inf
 
     def test_run_online_evaluation_smoke(self, evaluator):
