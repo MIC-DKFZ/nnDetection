@@ -2,20 +2,21 @@ import argparse
 import logging
 import os
 import sys
+from collections import defaultdict
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-import matplotlib.pyplot as plt
-from collections import defaultdict
-from pathlib import Path
+from loguru import logger
 from sklearn.metrics._ranking import _binary_clf_curve
 from tabulate import tabulate
 from tqdm import tqdm
 
-from nndet.io import load_pickle
 import nndet.core.ops_np as ops_np
+from nndet.io import load_pickle
 from nndet.utils.check import env_guard
-from loguru import logger
 
 # nndet uses -1 (lower boundary) and +1 (upper boundary) for the sizes
 # ref implementation only uses +1 at the upper boundary
@@ -30,6 +31,7 @@ SIZE_OFFSET = 1
 
 DISEASE = "aneurysm"
 np.set_printoptions(linewidth=310)
+
 
 class FROCEvaluator:
     def __init__(
@@ -87,9 +89,7 @@ class FROCEvaluator:
         self._logger = logging.getLogger(__name__) if logger is None else logger
         self._exp_name = exp_name
         # self._gts, self._categories, self._images = self.parse_gt_json(label_file)
-        self._gts, self._categories, self._images = self.parse_gt_csv(
-            label_file, meta=meta_data
-        )
+        self._gts, self._categories, self._images = self.parse_gt_csv(label_file, meta=meta_data)
         # self._dts = self.parse_dt_json(preds, self._categories)
         self._dts = self.parse_dt_csv(preds, self._categories, meta=meta_data)
 
@@ -98,16 +98,14 @@ class FROCEvaluator:
         for cat in self._categories.values():
             n_pos = sum([len(x["box"]) for x in self._gts[cat].values()])
             n_pos_per_cat[cat] = n_pos
-        #print(n_pos_per_cat)
+        # print(n_pos_per_cat)
         self._n_pos_per_cat = n_pos_per_cat
         if mode == "val":
             self._images = [f"Ts{i:0>4}.nii.gz" for i in range(1, 153)]
         elif mode == "train":
             self._images = [f"Tr{i:0>4}.nii.gz" for i in range(1, 1187)]
         elif mode == "ext":
-            self._images = [f"ExtA{i:0>4}.nii.gz" for i in range(1, 72)] + [
-                f"ExtB{i:0>4}.nii.gz" for i in range(1, 68)
-            ]
+            self._images = [f"ExtA{i:0>4}.nii.gz" for i in range(1, 72)] + [f"ExtB{i:0>4}.nii.gz" for i in range(1, 68)]
         elif mode == "priv" or mode == "hospital":
             self._images = [f"CA_{i:0>5}_0000.nii.gz" for i in range(0, 38)]
 
@@ -144,9 +142,7 @@ class FROCEvaluator:
                 p_boxes = self._dts[category].get(img_id, {"box": []})["box"]
                 p_scores = self._dts[category].get(img_id, {"score": []})["score"]
                 gts = self._gts[category].get(img_id, [])
-                dict_match, un_matched_gt = self._match(
-                    p_boxes, p_scores, gts, ious[category][img_id], self._iou_thr
-                )
+                dict_match, un_matched_gt = self._match(p_boxes, p_scores, gts, ious[category][img_id], self._iou_thr)
                 dict_match["un_matched_gt"] = un_matched_gt
 
                 match_result[img_id][category] = dict_match
@@ -157,9 +153,7 @@ class FROCEvaluator:
                         list_detections.append((self._exp_name, img_id, True))
 
         df_detections = pd.DataFrame(list_detections, columns=col_detections)
-        df_detections.to_csv(
-            os.path.join(self._out_dir, "model_detections.csv"), index=False
-        )
+        df_detections.to_csv(os.path.join(self._out_dir, "model_detections.csv"), index=False)
         print(self._out_dir)
         self._match_results = match_result
 
@@ -192,9 +186,7 @@ class FROCEvaluator:
             gts = np.concatenate(gts)
             preds = np.concatenate(preds)
 
-            recalls, FPpI, _ = compute_froc(
-                preds, gts, self._n_pos_per_cat[category], n_imgs
-            )
+            recalls, FPpI, _ = compute_froc(preds, gts, self._n_pos_per_cat[category], n_imgs)
             results.append(np.interp(fppi_thrs, FPpI, recalls))
             print(np.interp(fppi_thrs, FPpI, _))
             if save_fig:
@@ -264,15 +256,11 @@ class FROCEvaluator:
 
         metric_names = self._metric_names
         results_table = []
-        for cat, k_means, k_lbs, k_ubs in zip(
-            classes, m_results, lb_results, ub_results
-        ):
+        for cat, k_means, k_lbs, k_ubs in zip(classes, m_results, lb_results, ub_results):
             row = [cat]
             for mean, lb, ub in zip(k_means, k_lbs, k_ubs):
                 # print(mean, lb, ub)
-                row.append(
-                    f"{f2str(float(mean))}({f2str(float(lb))}--{f2str(float(ub))})"
-                )
+                row.append(f"{f2str(float(mean))}({f2str(float(lb))}--{f2str(float(ub))})")
             results_table.append(row)
 
         headers = ["Finding"] + metric_names
@@ -282,9 +270,7 @@ class FROCEvaluator:
         #     means[metric] = f2str(df[metric].apply(lambda x: str2f(x[:4])).mean())
         # means[headers[0]] = "Mean"
         # df.loc['mean'] = means
-        df.to_csv(
-            os.path.join(self._out_dir, "froc_bt.csv"), index=False, columns=headers
-        )
+        df.to_csv(os.path.join(self._out_dir, "froc_bt.csv"), index=False, columns=headers)
 
         table = tabulate(
             # results_table + [[means[x] for x in headers]],
@@ -294,22 +280,15 @@ class FROCEvaluator:
             headers=headers,
             numalign="left",
         )
-        
 
     def _save_fig(self, recalls, FPpI, category, *, rec_ub=None, rec_lb=None):
         assert self._out_dir is not None
         plt.close()
-        path = os.path.join(
-            self._out_dir, "figures", f"{category.replace('/', '_')}_froc.png"
-        )
+        path = os.path.join(self._out_dir, "figures", f"{category.replace('/', '_')}_froc.png")
 
-        path_recalls = os.path.join(
-            self._out_dir, "figures", f"{category.replace('/', '_')}_recalls.npy"
-        )
+        path_recalls = os.path.join(self._out_dir, "figures", f"{category.replace('/', '_')}_recalls.npy")
         np.save(path_recalls, recalls)
-        path_FPpI = os.path.join(
-            self._out_dir, "figures", f"{category.replace('/', '_')}_FPpI.npy"
-        )
+        path_FPpI = os.path.join(self._out_dir, "figures", f"{category.replace('/', '_')}_FPpI.npy")
         np.save(path_FPpI, FPpI)
         plt.figure(figsize=(5, 5))
         plt.title(f"{category} FROC")
@@ -392,9 +371,7 @@ class FROCEvaluator:
 
             # update un_matched_gt
             un_matched_gt[matched_gt_id] = 0
-            all_un_matched_gts.append(
-                [float(p_scores[i]), un_matched_gt.numpy().copy()]
-            )
+            all_un_matched_gts.append([float(p_scores[i]), un_matched_gt.numpy().copy()])
 
             # update results
             gt = 1.0 if matched_gt_id > -1 else 0.0
@@ -429,9 +406,9 @@ class FROCEvaluator:
         assume box is non empty
         """
         # compute intersection
-        width_height = torch.min(
-            box_list1[:, None, 3:], box_list2[None, :, 3:]
-        ) - torch.max(box_list1[:, None, :3], box_list2[None, :, :3])
+        width_height = torch.min(box_list1[:, None, 3:], box_list2[None, :, 3:]) - torch.max(
+            box_list1[:, None, :3], box_list2[None, :, :3]
+        )
         width_height.clamp_(min=0.0)
         intersection = width_height.prod(dim=2)  # (N,M)
 
@@ -462,7 +439,7 @@ class FROCEvaluator:
 
         # self._logger.info(f"got {len(all_imgs)} gt images")
 
-        #print("parsing ground truth ...")
+        # print("parsing ground truth ...")
         for seriesuid, rows in data.groupby("seriesuid"):
             all_imgs.append(seriesuid)
             box = np.array(rows[["coordX", "coordY", "coordZ", "w", "h", "d"]])
@@ -478,7 +455,7 @@ class FROCEvaluator:
                 # for i in range(len(box)):
                 #    box[i,3:] = box[i,3:].mean()
 
-            if meta is not None and self._mode not in ["ext",  "hospital"]:
+            if meta is not None and self._mode not in ["ext", "hospital"]:
                 origin = np.array(meta[seriesuid]["origin"])
                 spacing = np.array(meta[seriesuid]["spacing"])
                 # only convert box xyz if needed
@@ -501,11 +478,9 @@ class FROCEvaluator:
             pred_part = pred * spacing + origin * np.array([1, -1, 1])
             return pred_part * np.array([1, -1, 1])
 
-        #print("parsing predictions ...")
+        # print("parsing predictions ...")
         for seriesuid, rows in preds.groupby("seriesuid"):
-            box_data = np.array(
-                rows[["coordX", "coordY", "coordZ", "w", "h", "d", "probability"]]
-            )
+            box_data = np.array(rows[["coordX", "coordY", "coordZ", "w", "h", "d", "probability"]])
 
             # convert box in pixel coordinate to world coordinates
 
@@ -567,6 +542,7 @@ def compute_froc(preds, gts, n_pos, n_imgs, *, outputs=None):
     FPpI = fps / n_imgs
     return recalls.astype(np.float32), FPpI.astype(np.float32), thrs.astype(np.float32)
 
+
 ################################################################################
 
 
@@ -575,7 +551,7 @@ def main():
     """
     This is a nnDetection adaption layer for the provided evaluation script.
     nnDetection uses a different box format than the original code so we need
-    to account for that here. The FROC scores are otherwise identical 
+    to account for that here. The FROC scores are otherwise identical
     to the FROC computed by nnDetection.
     """
     parser = argparse.ArgumentParser()
@@ -665,8 +641,8 @@ def _convert(
         # include offset due to conversion
         # adapt lower boundary of the boxes to adjust to ref implementation
         # ref implementation likely evaluates in preprocessed space -> we don't do that
-        # labels change after preprocessing making evaluation dependent 
-        # on resampling procedure 
+        # labels change after preprocessing making evaluation dependent
+        # on resampling procedure
         gt_boxes[:, 0] += SIZE_OFFSET
         gt_boxes[:, 1] += SIZE_OFFSET
         gt_boxes[:, 4] += SIZE_OFFSET
@@ -678,7 +654,7 @@ def _convert(
         num_gt = len(gt_boxes) if gt_boxes.size > 0 else 0
         gt_centers = ops_np.box_center_np(gt_boxes)
         gt_sizes = ops_np.box_size_np(gt_boxes)
-        
+
         for gt_idx in range(num_gt):
             gt_converted_data.append(
                 {
@@ -723,7 +699,7 @@ def _run(
     out_dir: Path,
     exp: str,
     external: bool,
-    ):
+):
     iou_thr = 0.3
     min_fppi = 1 / 16
     max_fppi = 16
@@ -731,7 +707,7 @@ def _run(
     n_bootstraps = 10000
     n_workers = 1
     fp_scale = "log"
-    meta = None # optionally include meta data with origin and spacing -> adds and rescales preds and images
+    meta = None  # optionally include meta data with origin and spacing -> adds and rescales preds and images
     mode = "val" if not external else "ext"
 
     df_preds = pd.read_csv(pred_file)
@@ -748,7 +724,7 @@ def _run(
         n_workers=n_workers,
         fp_scale=fp_scale,
         meta_data=meta,
-        use_world_xyz=False, # seems to be unused in the code
+        use_world_xyz=False,  # seems to be unused in the code
         exp_name=exp + f"_{mode}",
         mode=mode,
     )
