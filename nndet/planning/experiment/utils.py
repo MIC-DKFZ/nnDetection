@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
 # SPDX-License-Identifier: Apache-2.0
 
+import concurrent
 import os
 from itertools import repeat
 from multiprocessing import Pool
@@ -113,12 +114,64 @@ def create_labels(
                     run_create_label(source_label_dir, cid, 3, target_dir)
 
 
+def create_labels_folder(
+    source_labels_dir: os.PathLike,
+    target_labels_dir: os.PathLike,
+    num_processes: int = 6,
+):
+    """
+    Creates labels for visualization and analysis purposes from raw labels
+    Prepares: instance segmentation, bounding boxes, semantic segmentation
+
+    Args:
+        source_dir: base dir which containes labelsTr/labelsTs
+        dim: number of spatial dimensions
+        num_processes: number of processed to use
+    """
+    source_labels_dir = Path(source_labels_dir)
+    target_labels_dir = Path(target_labels_dir)
+
+    if not source_labels_dir.is_dir():
+        raise ValueError(f"Source labels dir {source_labels_dir} does not exist")
+    target_labels_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Preparing labels in {source_labels_dir} to {target_labels_dir}")
+    case_ids = get_case_ids_from_dir(
+        source_labels_dir,
+        remove_modality=False,
+        pattern="*.json",
+    )
+    logger.info(f"Found {len(case_ids)} cases -> {case_ids}")
+
+    if num_processes > 0:
+        logger.info(f"Running in multi process mode with {num_processes} processes")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+            for cid in executor.map(
+                run_create_label,
+                repeat(source_labels_dir),
+                case_ids,
+                repeat(3),
+                repeat(target_labels_dir),
+            ):
+                logger.info(f"Finished processing case {cid}")
+    else:
+        logger.info("Running in main process")
+        for cid in case_ids:
+            run_create_label(
+                source_label_dir=source_labels_dir,
+                target_dir=target_labels_dir,
+                case_id=cid,
+                dim=3,
+            )
+    logger.info("Finished preparing labels")
+
+
 def run_create_label(
     source_label_dir: Path,
     case_id: str,
     dim: int,
     target_dir: Path,
-):
+) -> str:
     """
     Helper to run preparation with multiprocessing
 
@@ -145,6 +198,7 @@ def run_create_label(
         dim=dim,
         properties=properties,
     )
+    return case_id
 
 
 def run_create_label_preprocessed(source_dir: Path, case_id: str, dim: int, target_dir: Path, data_format: str):
