@@ -226,7 +226,19 @@ class ImageCropper(object):
 
             if not (npz_exists and pkl_exists) or overwrite_existing:
                 data, seg, properties = self.load_crop_from_list_of_files(case[:-1], case[-1])
-
+                
+                # Double check consistency between data and properties
+                if seg is not None:
+                    instances = np.unique(seg)
+                    instances = instances[instances > 0]
+                    
+                    # Ensure properties['instances'] only contains instances present in the data
+                    if "instances" in properties:
+                        properties["instances"] = {
+                            str(inst): properties["instances"].get(str(inst), 0) 
+                            for inst in instances
+                        }
+                
                 all_data = np.vstack((data, seg))
                 np.savez_compressed(self.output_dir / "imagesTr" / f"{case_id}.npz", data=all_data)
                 with open(self.output_dir / "imagesTr" / f"{case_id}.pkl", 'wb') as f:
@@ -288,8 +300,20 @@ class ImageCropper(object):
         logger.info(f"Shape before crop {shape_before}; after crop {shape_after}; "
                     f"spacing {np.array(properties['original_spacing'])}")
 
+        # Get unique values in segmentation (excluding background -1 and 0)
+        instances = np.unique(seg)
+        instances = instances[instances > 0]
+        
         properties["crop_bbox"] = bbox
         properties['classes'] = np.unique(seg)
+        
+        # Update instances dictionary to only include present instances
+        if "instances" in properties:
+            properties["instances"] = {
+                str(inst): properties["instances"].get(str(inst), 0) 
+                for inst in instances
+            }
+            
         seg[seg < -1] = 0
         properties["size_after_cropping"] = data[0].shape
         return data, seg, properties
