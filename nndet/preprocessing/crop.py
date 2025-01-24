@@ -230,7 +230,8 @@ class ImageCropper(object):
                 # Double check consistency between data and properties
                 if seg is not None:
                     instances = np.unique(seg)
-                    instances = instances[instances > 0]
+                    instances = instances[instances > 0].astype(np.int32)
+                    instances = instances.tolist()
                     
                     # Ensure properties['instances'] only contains instances present in the data
                     if "instances" in properties:
@@ -302,7 +303,8 @@ class ImageCropper(object):
 
         # Get unique values in segmentation (excluding background -1 and 0)
         instances = np.unique(seg)
-        instances = instances[instances > 0]
+        instances = instances[instances > 0].astype(np.int32)
+        instances = instances.tolist()
         
         properties["crop_bbox"] = bbox
         properties['classes'] = np.unique(seg)
