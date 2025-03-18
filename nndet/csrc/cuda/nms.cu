@@ -170,7 +170,7 @@ at::Tensor nms_cuda(const at::Tensor& dets, const at::Tensor& scores, float iou_
   if (is_3d) {
   //std::cout << "performing NMS on 3D boxes in CUDA" << std::endl;
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
         nms_kernel_3d<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
@@ -180,7 +180,7 @@ at::Tensor nms_cuda(const at::Tensor& dets, const at::Tensor& scores, float iou_
    }
    else {
    AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,

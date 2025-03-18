@@ -399,7 +399,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input, const at::Tensor& rois
     return output;
   }
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign forward in 3d", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "ROIAlign forward in 3d", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
         output_size,
         input.contiguous().data_ptr<scalar_t>(),
@@ -467,7 +467,7 @@ at::Tensor ROIAlign_backward_cuda(
   int w_stride = grad.stride(3);
   int d_stride = grad.stride(4);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign backward 3D", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "ROIAlign backward 3D", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
         grad.data_ptr<scalar_t>(),
