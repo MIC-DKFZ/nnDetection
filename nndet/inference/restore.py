@@ -20,16 +20,21 @@ import numpy as np
 from loguru import logger
 
 from nndet.core.boxes.ops import permute_boxes, expand_to_boxes
-from nndet.preprocessing.resampling import resample_data_or_seg, get_do_separate_z, get_lowres_axis
+from nndet.preprocessing.resampling import (
+    resample_data_or_seg,
+    get_do_separate_z,
+    get_lowres_axis,
+)
 
 
-def restore_detection(boxes: np.ndarray,
-                      transpose_backward: Sequence[int],
-                      original_spacing: Sequence[float],
-                      spacing_after_resampling: Sequence[float],
-                      crop_bbox: Sequence[Tuple[int, int]],
-                      **kwargs,
-                      ) -> np.ndarray:
+def restore_detection(
+    boxes: np.ndarray,
+    transpose_backward: Sequence[int],
+    original_spacing: Sequence[float],
+    spacing_after_resampling: Sequence[float],
+    crop_bbox: Sequence[Tuple[int, int]],
+    **kwargs,
+) -> np.ndarray:
     """
     Restore boxes from preprocessed space into original space
 
@@ -61,17 +66,18 @@ def restore_detection(boxes: np.ndarray,
     return boxes_original
 
 
-def restore_fmap(fmap: np.ndarray,
-                 transpose_backward: Sequence[int],
-                 original_spacing: Sequence[float],
-                 spacing_after_resampling: Sequence[float],
-                 original_size_before_cropping: Sequence[int],
-                 size_after_cropping: Sequence[int],
-                 crop_bbox: Optional[Sequence[Tuple[int, int]]] = None,
-                 interpolation_order: int = 3,
-                 interpolation_order_z: int = 0,
-                 do_separate_z: bool = None,
-                 ) -> np.ndarray:
+def restore_fmap(
+    fmap: np.ndarray,
+    transpose_backward: Sequence[int],
+    original_spacing: Sequence[float],
+    spacing_after_resampling: Sequence[float],
+    original_size_before_cropping: Sequence[int],
+    size_after_cropping: Sequence[int],
+    crop_bbox: Optional[Sequence[Tuple[int, int]]] = None,
+    interpolation_order: int = 3,
+    interpolation_order_z: int = 0,
+    do_separate_z: bool = None,
+) -> np.ndarray:
     """
     Restore feature map from preprocessed space into original space
 
@@ -101,13 +107,21 @@ def restore_fmap(fmap: np.ndarray,
     resampled_spacing = spacing_after_resampling[transpose_backward]
 
     if np.any([i != j for i, j in zip(fmap_transposed.shape[1:], size_after_cropping)]):
-        lowres_axis = _get_lowres_axes(original_spacing, resampled_spacing,
-                                       do_separate_z=do_separate_z)
-        logger.info(f"Resampling: do separate z: {do_separate_z}; lowres axis: {lowres_axis}")
-        fmap_old_spacing = resample_data_or_seg(fmap_transposed, size_after_cropping, is_seg=False,
-                                                axis=lowres_axis, order=interpolation_order,
-                                                do_separate_z=do_separate_z,
-                                                order_z=interpolation_order_z)
+        lowres_axis = _get_lowres_axes(
+            original_spacing, resampled_spacing, do_separate_z=do_separate_z
+        )
+        logger.info(
+            f"Resampling: do separate z: {do_separate_z}; lowres axis: {lowres_axis}"
+        )
+        fmap_old_spacing = resample_data_or_seg(
+            fmap_transposed,
+            size_after_cropping,
+            is_seg=False,
+            axis=lowres_axis,
+            order=interpolation_order,
+            do_separate_z=do_separate_z,
+            order_z=interpolation_order_z,
+        )
     else:
         logger.info(f"Resampling: no resampling necessary")
         fmap_old_spacing = fmap_transposed
@@ -118,19 +132,28 @@ def restore_fmap(fmap: np.ndarray,
 
         for c in range(len(crop_bbox)):
             crop_bbox[c][1] = np.min(
-                (crop_bbox[c][0] + fmap_old_spacing.shape[c + 1], original_size_before_cropping[c]))
+                (
+                    crop_bbox[c][0] + fmap_old_spacing.shape[c + 1],
+                    original_size_before_cropping[c],
+                )
+            )
 
-        _slices = [...] + [slice(b[0], b[1]) for b in crop_bbox]
-        tmp[_slices] = fmap_old_spacing
+        # _slices = [...] + [slice(b[0], b[1]) for b in crop_bbox]
+        # tmp[_slices] = fmap_old_spacing
+        _slices = [slice(b[0], b[1]) for b in crop_bbox]
+        tmp[(..., *_slices)] = fmap_old_spacing
+
         fmap_original = tmp
     else:
         fmap_original = fmap_old_spacing
     return fmap_original
 
 
-def _get_lowres_axes(original_spacing: Sequence[float],
-                     resampled_spacing: Sequence[float],
-                     do_separate_z: bool) -> Union[Sequence[int], None]:
+def _get_lowres_axes(
+    original_spacing: Sequence[float],
+    resampled_spacing: Sequence[float],
+    do_separate_z: bool,
+) -> Union[Sequence[int], None]:
     """
     Dynamically determine lowres axes
 
