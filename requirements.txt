@@ -18,3 +18,4 @@ GitPython
 matplotlib
 seaborn
 torchmetrics>=0.7.0,<=0.7.3
+python-gdcm<3.0.26
