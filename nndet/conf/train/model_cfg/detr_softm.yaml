@@ -4,7 +4,7 @@
 # DETR
 # detector settings
 detector:
-  min_detection_per_img: 12 # minimum number of detections per image
+  min_detections_per_img: 12 # minimum number of detections per image
 
 # backbone
 backbone_kwargs: # keyword arguments passed to encoder
