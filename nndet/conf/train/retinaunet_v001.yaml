@@ -73,7 +73,7 @@ accelerator_cfg:
 model_cfg:
   # detector settings
   detector:
-    min_detection_per_img: 100 # minimum number of detections per image
+    min_detections_per_img: 100 # minimum number of detections per image
 
   backbone_kwargs: {} # keyword arguments passed to encoder
   neck_kwargs: # keyword arguments passed to decoder

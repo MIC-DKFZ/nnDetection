@@ -224,7 +224,7 @@ class DETRModelMixin(ModelMixin):
             int: number of detections for model
         """
         est_instances_patch = plan_arch["est_instances_patch"]["perc95"]
-        return max(model_cfg["detector"]["min_detection_per_img"], 3 * est_instances_patch)
+        return max(model_cfg["detector"]["min_detections_per_img"], 3 * est_instances_patch)
 
     @classmethod
     def _build_backbone(
