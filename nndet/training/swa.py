@@ -5,11 +5,10 @@ from abc import abstractmethod
 from typing import Callable, Optional, Union, cast
 
 import torch
-from lightning_fabric.utilities.types import LRScheduler
 from loguru import logger
 from pytorch_lightning.callbacks import StochasticWeightAveraging
 from pytorch_lightning.utilities import rank_zero_warn
-from pytorch_lightning.utilities.types import LRSchedulerConfig
+from pytorch_lightning.utilities.types import LRScheduler, LRSchedulerConfig
 from torch.optim.lr_scheduler import _LRScheduler
 
 from nndet.training.learning_rate import CycleLinear
