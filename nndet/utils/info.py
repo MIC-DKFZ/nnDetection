@@ -68,11 +68,14 @@ class ModelSummary(_ModelSummary):
 
         if trainer.is_global_zero:
             if Version(pl.__version__) >= Version("2.4.0"):
+                extra = [model_summary.total_training_modes]
+                if hasattr(model_summary, "total_flops"):
+                    extra.append(model_summary.total_flops)
                 summary_table = _format_summary_table(
                     total_parameters,
                     trainable_parameters,
                     model_size,
-                    model_summary.total_training_modes,
+                    *extra, # model_summary.total_training_modes,
                     *summary_data,
                 )
             else:
