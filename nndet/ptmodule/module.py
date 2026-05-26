@@ -376,6 +376,6 @@ class LightningBaseModule(pl.LightningModule):
             logger.error(_s)
             raise RuntimeError(_s)
 
-        checkpoint = torch.load(str(path), map_location="cpu")
+        checkpoint = torch.load(str(path), map_location="cpu", weights_only=False)
         self.load_state_dict(checkpoint["state_dict"], strict=True)
         return

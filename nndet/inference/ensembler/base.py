@@ -208,7 +208,7 @@ class BaseEnsembler(ABC):
         """
         Path to result file
         """
-        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{self.ID}.pt"))
+        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{self.ID}.pt"), weights_only=False)
         self._load(ckp)
         return ckp
 
@@ -218,7 +218,7 @@ class BaseEnsembler(ABC):
 
     @classmethod
     def from_checkpoint(cls, base_dir: PathLike, case_id: str):
-        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"))
+        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"), weights_only=False)
         t = cls(
             properties=ckp["properties"],
             parameters=ckp["parameters"],
