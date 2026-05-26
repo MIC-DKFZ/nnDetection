@@ -324,7 +324,7 @@ class SegmentationEnsembler(BaseEnsembler):
 
     @classmethod
     def from_checkpoint(cls, base_dir: PathLike, case_id: str, **kwargs):
-        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"))
+        ckp = torch.load(str(Path(base_dir) / f"{case_id}_{cls.ID}.pt"), weights_only=False)
         t = cls(
             properties=ckp["properties"],
             parameters=ckp["parameters"],
