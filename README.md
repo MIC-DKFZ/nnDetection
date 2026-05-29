@@ -19,10 +19,11 @@ set-prediction based object detection methods in a unified framework. nnDetectio
 
 **If you use nnDetection(2E) please cite our papers:**
 
-[1] [nnDetection2E: A Self-Configuring Ensemble for
-Generalized Medical Object Detection]()
+[1] [nnDetection: A Self-configuring Method for Volumetric 3D Object Detection]()
 ```
-TODO
+Baumgartner M., Kovacs B., Ickler M.K., Jäger P.F., Isensee F., Ulrich C., Wald T., Holzschuh J.C., Ghosh P., for the ALFA study, Maier-Hein K.H.
+nnDetection: A Self-configuring Method for Volumetric 3D Object Detection.
+Nature Methods (in press, 2026).
 ```
 
 [2] [nnDetection: A Self-configuring Method for
