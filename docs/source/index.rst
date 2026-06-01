@@ -24,12 +24,16 @@ nnDetection t(w)o Ensemble (nnDetection2E), systematises the design of single-st
 set-prediction based object detection methods in a unified framework. nnDetection2E outperforms all baseline methods on a new pool of nine generalization datasets. Additionally, it surpasses all existing specialized solutions on two public benchmarking datasets.
 
 
-**If you use nnDetection(2E) please cite our papers:**
+**If you use nnDetection please cite our papers:**
 
 [1] `nnDetection2E: Systematic Design of Medical Object Detection <todo>`_
 
 .. tip::
-   TODO
+   Baumgartner M., Kovacs B., Ickler M.K., Jäger P.F., Isensee F., Ulrich C., Wald T., Holzschuh J.C., Ghosh P., for the ALFA study, Maier-Hein K.H.
+   
+   nnDetection: A Self-configuring Method for Volumetric 3D Object Detection.
+   
+   Nature Methods (in press, 2026).
 
 [2] `nnDetection: Self-configuring Medical Object Detection <https://miccai2021.org/openaccess/paperlinks/2021/09/01/341-Paper1836.html>`_
 

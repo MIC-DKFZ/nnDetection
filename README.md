@@ -39,7 +39,7 @@ Medical Object Detection](https://miccai2021.org/openaccess/paperlinks/2021/09/0
 
 <div align="center">
 
-:boom: :exclamation: Please refer to our [online documentation]():exclamation: :boom:
+:boom: :exclamation: Please refer to our [online documentation](docs/source/index.rst) :exclamation: :boom:
 
 </div>
 
@@ -85,4 +85,7 @@ Part of this work was funded by the Deutsche Forschungsgemeinschaft (DFG, German
 
 
 # License
-This project is licensed under multiple licenses, please refer to the `LICENSES` directory for an overview of the licenses. 
+This project is licensed under multiple licenses, please refer to the `LICENSES` directory for an overview of the licenses.
+
+# Copyright
+Copyright German Cancer Research Center (DKFZ) and contributors.
