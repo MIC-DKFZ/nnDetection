@@ -12,5 +12,5 @@ defaults:
 
 module: RetinaUNetHNMV002 # RetinaUNetHNMC017MH
 plan: ${planner}_3d # plan used for training
-planner: D3V002 # planner used for preprocessing
+planner: D3V002Blosc # planner used for preprocessing
 
