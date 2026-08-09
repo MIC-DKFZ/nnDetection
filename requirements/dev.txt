@@ -4,8 +4,4 @@ pytest-cov
 pytest-mock
 syrupy==3.0.5
 pre-commit
-sphinx
-pydata-sphinx-theme
-sphinx-toolbox
-sphinxemoji
 pycocotools

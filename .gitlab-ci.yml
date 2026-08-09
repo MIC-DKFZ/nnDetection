@@ -62,26 +62,6 @@ pytest-job:
         path: coverage.xml 
   coverage: '/TOTAL.*\s+(\d+\%)/'
 
-pages:
-  stage: deploy
-  script:
-    - echo "Check Versions"
-    - python --version
-    - python -c "import torch"
-    - pip --version
-    - pip uninstall torchtext -y
-    - echo "Install Package"
-    - pip install .[dev]
-    - echo "Building Docs"
-    - mkdir public
-    - cd docs && make html
-    - cp -r ./build/html/* ../public
-  artifacts:
-    paths:
-      - public
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
 
 # wheel:
 #   stage: deploy
