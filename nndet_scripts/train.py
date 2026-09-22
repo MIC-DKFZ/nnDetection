@@ -56,6 +56,8 @@ from nndet.utils.info import (
     log_git,
     write_requirements,
 )
+from nndet.utils.make_json_safe_value import to_python
+from nndet.utils.pretrained_backbone_presets import BACKBONE_PRESETS
 
 
 @env_guard
@@ -114,6 +116,21 @@ def train() -> None:
         ),
         action="store_true",
     )
+    parser.add_argument(
+        "--load_adapt_plan",
+        help="load stuff from pretrained net",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--build_from_pretrained_arch",
+        help="build architecture from pretrained checkpoint but do not load pretrained weights",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--val_best",
+        help="validate with ckpr best",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
@@ -127,6 +144,9 @@ def train() -> None:
     do_sweep = args.sweep
     log_net = args.log_net
     log_aug = args.log_aug
+    load_adapt_plan = args.load_adapt_plan
+    build_from_pretrained_arch = args.build_from_pretrained_arch
+    val_best = args.val_best
 
     _train(
         task=task,
@@ -138,6 +158,9 @@ def train() -> None:
         do_sweep=do_sweep,
         log_net=log_net,
         log_aug=log_aug,
+        load_adapt_plan=load_adapt_plan,
+        build_from_pretrained_arch=build_from_pretrained_arch,
+        val_best=val_best,
     )
 
 
@@ -159,16 +182,23 @@ def sweep() -> None:
         help="Turn of model prediction",
         action="store_true",
     )
+    parser.add_argument(
+        "--val_best",
+        help="validate with ckpr best",
+        action="store_true",
+    )
     args = parser.parse_args()
     task = args.task
     model = args.model
     fold = args.fold
     run_prediction = bool(not args.no_pred)
+    val_best = args.val_best
     _sweep(
         task=task,
         model=model,
         fold=fold,
         run_prediction=run_prediction,
+        val_best=val_best,
     )
 
 
@@ -384,6 +414,9 @@ def _train(
     transfer_learning: bool,
     log_net: bool = False,
     log_aug: bool = False,
+    load_adapt_plan: bool = False,
+    build_from_pretrained_arch: bool = False,
+    val_best: bool = False,
 ):
     """
     Run training
@@ -398,6 +431,14 @@ def _train(
         transfer_learning: init model with weights from other training
         log_net: print the network architecture
         log_aug: print the augmentation pipeline
+        load_adapt_plan: overwrite backbone_kwargs/plan architecture from the
+            transfer_learning_ckpt's nnssl_adaptation_plan (or a matching
+            BACKBONE_PRESETS entry) before building the module
+        build_from_pretrained_arch: build the architecture implied by the
+            pretrained checkpoint without loading its weights (random init);
+            mutually exclusive with transfer_learning
+        val_best: use the best checkpoint (instead of trainer_cfg's configured
+            sweep_ckpt) for the sweep run after training
     """
     print(f"Overwrites: {ov}")
     ov = [] if ov is None else ov
@@ -447,6 +488,8 @@ def _train(
             train_dir=train_dir,
             transfer_learning=transfer_learning,
             continue_training=continue_training,
+            load_adapt_plan=load_adapt_plan,
+            build_from_pretrained_arch=build_from_pretrained_arch,
             log_net=log_net,
             log_aug=log_aug,
         )
@@ -477,6 +520,8 @@ def _train(
                 train_dir=train_dir,
                 transfer_learning=transfer_learning,
                 continue_training=continue_training,
+                load_adapt_plan=load_adapt_plan,
+                build_from_pretrained_arch=build_from_pretrained_arch,
                 log_net=log_net,
                 log_aug=log_aug,
             )
@@ -497,6 +542,7 @@ def _train(
             train_data_dir=data_dir,
             case_ids=case_ids,
             run_prediction=True,
+            val_best=val_best,
         )
         sweep_end = time.time()
         sweep_time = sweep_end - sweep_start
@@ -543,8 +589,98 @@ def _train_module(
     continue_training: bool,
     log_net: bool,
     log_aug: bool,
+    load_adapt_plan: bool = False,
+    build_from_pretrained_arch: bool = False,
 ) -> Tuple[LightningBaseModule, dict]:
     module_cls = MODULE_REGISTRY[cfg["module"]]
+
+    if transfer_learning and build_from_pretrained_arch:
+        e = "Found transfer training and build from pretrained architecture, only one can be activated at the same time!"
+        logger.error(e)
+        raise RuntimeError(e)
+
+    if (load_adapt_plan or build_from_pretrained_arch) and "transfer_learning_ckpt" in cfg:
+        # overwrite backbone_kwargs (and the plan's architecture) from the
+        # pretraining checkpoint's own adaptation plan, so the model built here
+        # is structurally identical to whatever nnssl pretrained -- falls back
+        # to a hardcoded BACKBONE_PRESETS entry if the checkpoint has no
+        # architecture_plans (e.g. older checkpoints).
+        pt_ckpt = torch.load(cfg["transfer_learning_ckpt"], map_location="cpu")
+
+        arch_plans = pt_ckpt["nnssl_adaptation_plan"]["architecture_plans"]
+        arch_kwargs = arch_plans.get("arch_kwargs", None)
+        arch_name = arch_plans.get("arch_class_name", None)
+
+        if arch_kwargs is not None:
+            for key in cfg["model_cfg"]["backbone_kwargs"].keys():
+                if key in arch_kwargs and key not in ["input_shape", "patch_size"]:
+                    cfg["model_cfg"]["backbone_kwargs"][key] = arch_kwargs[key]
+
+            logger.info("Loaded backbone config from arch_kwargs in checkpoint.")
+
+        else:
+            logger.warning("arch_kwargs is None -> falling back to backbone preset for arch_name")
+
+            if arch_name in BACKBONE_PRESETS:
+                preset = BACKBONE_PRESETS[arch_name]
+
+                for key, value in preset.items():
+                    if key not in ["input_shape", "patch_size"]:
+                        cfg["model_cfg"]["backbone_kwargs"][key] = value
+
+                logger.info(f"Loaded backbone preset for arch_name='{arch_name}'.")
+            else:
+                logger.warning(f"WARNING: arch_name='{arch_name}' is unknown. Not modifying backbone_kwargs.")
+
+        logger.info("Overwriting model_cfg with nnssl adaptation plan completed.")
+
+        # overwrite plan keys based on adaptation plan/backbone kwargs
+        backbone = cfg["model_cfg"]["backbone_kwargs"]
+
+        nnssl_to_plan = {
+            "features_per_stage": {
+                "max_channels": lambda v: v[-1],
+                "start_channels": lambda v: v[0],
+            },
+            "kernel_sizes": "conv_kernels",
+            "strides": "strides",
+            "fpn_channels": "fpn_channels",
+            "decoder_levels": "decoder_levels",
+            "n_blocks_per_stage": "n_blocks_per_stage",
+            "conv_op": "conv_op",
+            "conv_bias": "conv_bias",
+            "norm_op": "norm_op",
+            "norm_op_kwargs": "norm_op_kwargs",
+            "dropout_op": "dropout_op",
+            "dropout_op_kwargs": "dropout_op_kwargs",
+            "nonlin": "nonlin",
+            "nonlin_kwargs": "nonlin_kwargs",
+        }
+
+        for k, v in nnssl_to_plan.items():
+            if k in backbone:
+                raw_value = backbone[k]
+
+                if isinstance(v, dict):
+                    for plan_key, fn in v.items():
+                        val = fn(raw_value)
+                        safe_val = to_python(val)
+                        plan["architecture"][plan_key] = safe_val
+                        logger.debug(f"[PLAN SAFETY] {plan_key} = {safe_val}")
+                else:
+                    safe_val = to_python(raw_value)
+                    plan["architecture"][v] = safe_val
+                    logger.debug(f"[PLAN SAFETY] {v} = {safe_val}")
+
+    # some models come with fixed patch size -- overwrite plan patch size
+    if "input_shape" in cfg["model_cfg"]["backbone_kwargs"].keys():
+        plan["patch_size"] = list(cfg["model_cfg"]["backbone_kwargs"]["patch_size"])
+        plan["batch_size"] = cfg["model_cfg"]["backbone_kwargs"]["batch_size"]
+        logger.info(
+            f"Train with a fixed patchsize defined by architecture: "
+            f"{cfg['model_cfg']['backbone_kwargs']['patch_size']}, and a fixed batchsize of "
+            f"{cfg['model_cfg']['backbone_kwargs']['batch_size']} per gpu"
+        )
 
     # setup io
     datamodule = Datamodule(
@@ -609,8 +745,8 @@ def _train_module(
         logger.info(f"Continue training -> loading checkpoint: {_path}")
         fit_kwargs["ckpt_path"] = _path
     if transfer_learning:
-        if "transfer_learning_ckpt" in cfg["model_cfg"]:
-            _path = Path(os.path.expandvars(cfg["model_cfg"]["transfer_learning_ckpt"]))
+        if "transfer_learning_ckpt" in cfg:
+            _path = Path(os.path.expandvars(cfg["transfer_learning_ckpt"]))
         else:
             _path = train_dir / "model_transfer.ckpt"
         logger.info(f"Performing transfer learning -> loading model weights: {_path}")
@@ -624,6 +760,8 @@ def _train_module(
                 logger.error(_s)
                 raise RuntimeError(_s)
             module.load_custom_state_dict(_path)
+    else:
+        logger.info("Not loading pretrained weights (only using architecture).")
 
     num_gpus = cfg["accelerator_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
@@ -702,6 +840,7 @@ def _sweep(
     model: str,
     fold: int,
     run_prediction: bool,
+    val_best: bool = False,
 ):
     """
     Determine best postprocessing parameters for a trained model
@@ -763,6 +902,7 @@ def _sweep(
         train_data_dir=data_dir,
         case_ids=case_ids,
         run_prediction=run_prediction,
+        val_best=val_best,
     )
 
     plan["inference_plan"] = inference_plan

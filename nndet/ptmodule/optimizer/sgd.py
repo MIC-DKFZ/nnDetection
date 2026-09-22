@@ -6,7 +6,11 @@ from loguru import logger
 
 import nndet
 from nndet.ptmodule.optimizer import OPTIMIZER_REGISTRY
-from nndet.training.learning_rate import LinearWarmupPolyLR, PolyLR
+from nndet.training.learning_rate import (
+    LinearWarmup,
+    LinearWarmupPolyLR,
+    PolyLR,
+)
 from nndet.training.optimizer import get_params_no_wd_on_norm
 
 
@@ -259,3 +263,208 @@ class TwoStageSGDLWPoly:
             num_iterations=num_iterations,
         )
         return [optimizer], {"scheduler": scheduler, "interval": "step"}
+
+
+@OPTIMIZER_REGISTRY.register
+class SGDLWPoly_finetuning:
+    """
+    SGD Optimizer Mixin with Linear Warmup into PolyLR
+    """
+
+    @classmethod
+    def configure_optimizers(
+        cls,
+        module: "nndet.ptmodule.module.LightningBaseModule",
+        module_parts_to_train
+    ):
+        """
+        Configure optimizer and scheduler
+        Base configuration is `SGD` with `LinearWarmup` and `PolyLR` learning rate
+        schedule. Configuration is done via the config file.
+
+        module: module to configure with `trainer_cfg`
+
+            ``"initial_lr"`` float
+                learning rate *after* warmup
+
+            ``"weight_decay"`` float
+                weight decay passed to optimzier
+
+            ``"sgd_momentum"`` float
+                momentum term passed to optimizer
+
+            ``"sgd_nesterov"`` bool
+                passed to optimizer
+
+            ``"num_train_batches_per_epoch"`` int
+                number of batches per epoch
+
+            ``"warm_iterations"`` int
+                number of iterations to runw warm up
+
+            ``"warm_lr"`` float
+                learning rate to start warming up from
+
+            ``"poly_gamma"`` float
+                gamma term passed to PolyLR
+
+        """
+        trainer_cfg = module.trainer_cfg
+
+        # configure optimizer
+        logger.info(
+            f"Running {cls.__name__}: "
+            f"initial_lr {trainer_cfg['initial_lr_finetuning']} "
+            f"weight_decay {trainer_cfg['weight_decay']} "
+            f"SGD with momentum {trainer_cfg['sgd_momentum']} and "
+            f"nesterov {trainer_cfg['sgd_nesterov']}"
+        )
+
+        wd_groups_backbone=[]
+        wd_groups_neck=[]
+        wd_groups_head=[]
+
+        if "backbone" in module_parts_to_train:
+            wd_groups_backbone = get_params_no_wd_on_norm(module.model.backbone, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        if "neck" in module_parts_to_train:
+            wd_groups_neck = get_params_no_wd_on_norm(module.model.neck, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        if "head" in module_parts_to_train:
+            wd_groups_head = get_params_no_wd_on_norm(module.model.head, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        combined_wd_groups = wd_groups_backbone+wd_groups_neck+wd_groups_head
+
+        dict_no_wd= {'params': [], 'weight_decay': 0.0}
+        dict_wd = {'params': [], 'weight_decay': None}
+
+        for d in combined_wd_groups:
+            if d['weight_decay']==0.0:
+                dict_no_wd['params'].extend(d['params'])
+            else:
+                dict_wd['params'].extend(d['params'])
+                dict_wd['weight_decay']=d['weight_decay']
+
+        combined_dict = [dict_wd, dict_no_wd]
+
+        optimizer = torch.optim.SGD(
+            combined_dict,
+            trainer_cfg["initial_lr_finetuning"],
+            weight_decay=trainer_cfg["weight_decay"],
+            momentum=trainer_cfg["sgd_momentum"],
+            nesterov=trainer_cfg["sgd_nesterov"],
+        )
+
+        # configure lr scheduler
+        num_iterations = trainer_cfg['max_num_epochs']*trainer_cfg['num_train_batches_per_epoch']
+        scheduler = LinearWarmupPolyLR(
+            optimizer=optimizer,
+            warm_iterations=trainer_cfg["warm_iterations_finetuning"],
+            warm_lr=trainer_cfg["warm_lr_finetuning"],
+            poly_gamma=trainer_cfg["poly_gamma"],
+            num_iterations=num_iterations
+        )
+        return {"optimizer":optimizer, "lr_scheduler": scheduler}
+
+
+@OPTIMIZER_REGISTRY.register
+class SGDLWPoly_warmup:
+    """
+    into PolyLR
+    """
+
+    @classmethod
+    def configure_optimizers(
+        cls,
+        module: "nndet.ptmodule.module.LightningBaseModule",
+        module_parts_to_train
+    ):
+        """
+        Configure optimizer and scheduler
+        Base configuration is `SGD` with `LinearWarmup` and `PolyLR` learning rate
+        schedule. Configuration is done via the config file.
+
+        module: module to configure with `trainer_cfg`
+
+            ``"initial_lr"`` float
+                learning rate *after* warmup
+
+            ``"weight_decay"`` float
+                weight decay passed to optimzier
+
+            ``"sgd_momentum"`` float
+                momentum term passed to optimizer
+
+            ``"sgd_nesterov"`` bool
+                passed to optimizer
+
+            ``"num_train_batches_per_epoch"`` int
+                number of batches per epoch
+
+            ``"warm_iterations"`` int
+                number of iterations to runw warm up
+
+            ``"warm_lr"`` float
+                learning rate to start warming up from
+
+            ``"poly_gamma"`` float
+                gamma term passed to PolyLR
+
+        """
+        trainer_cfg = module.trainer_cfg
+
+        # configure optimizer
+        logger.info(
+            f"Running {cls.__name__}: "
+            f"initial_lr {trainer_cfg['initial_lr_warmup']} "
+            f"weight_decay {trainer_cfg['weight_decay']} "
+            f"SGD with momentum {trainer_cfg['sgd_momentum']} and "
+            f"nesterov {trainer_cfg['sgd_nesterov']}"
+        )
+
+        wd_groups_backbone=[]
+        wd_groups_neck=[]
+        wd_groups_head=[]
+
+        if "backbone" in module_parts_to_train:
+            wd_groups_backbone = get_params_no_wd_on_norm(module.model.backbone, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        if "neck" in module_parts_to_train:
+            wd_groups_neck = get_params_no_wd_on_norm(module.model.neck, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        if "head" in module_parts_to_train:
+            wd_groups_head = get_params_no_wd_on_norm(module.model.head, weight_decay=trainer_cfg["weight_decay"], on_conflict="skip")
+
+        combined_wd_groups = wd_groups_backbone+wd_groups_neck+wd_groups_head
+
+        dict_no_wd= {'params': [], 'weight_decay': 0.0}
+        dict_wd = {'params': [], 'weight_decay': None}
+
+        for d in combined_wd_groups:
+            if d['weight_decay']==0.0:
+                dict_no_wd['params'].extend(d['params'])
+            else:
+                dict_wd['params'].extend(d['params'])
+                dict_wd['weight_decay']=d['weight_decay']
+
+        combined_dict = [dict_wd, dict_no_wd]
+
+        optimizer = torch.optim.SGD(
+            combined_dict,
+            trainer_cfg["initial_lr_warmup"],
+            weight_decay=trainer_cfg["weight_decay"],
+            momentum=trainer_cfg["sgd_momentum"],
+            nesterov=trainer_cfg["sgd_nesterov"],
+        )
+
+        # configure lr scheduler
+        num_iterations =  trainer_cfg['num_warmup_epochs']*trainer_cfg['num_train_batches_per_epoch']
+
+        scheduler = LinearWarmup(
+            optimizer=optimizer,
+            warm_iterations=trainer_cfg["iterations_warmup"],
+            warm_lr=trainer_cfg["warm_lr"],
+            poly_gamma=trainer_cfg["poly_gamma"],
+            num_iterations=num_iterations,
+        )
+        return {"optimizer":optimizer, "lr_scheduler": scheduler}

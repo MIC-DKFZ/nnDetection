@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: 2020-2026 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# detector settings
+
+detector:
+  min_detections_per_img: 100 # minimum number of detections per image
+
+# backbone_kwargs intentionally has no n_stages/features_per_stage/kernel_sizes/
+# strides -- those are derived from nnDetection's own planned architecture
+# (plan_arch) instead. Same runtime kwargs schema as
+# deformable_detr_sigm_for_ResEnc_small_bs4_dyn.yaml (both build the same
+# ResidualEncoderUNetbackBoneWrapper_dyn backbone).
+backbone_kwargs:
+  conv_op: torch.nn.modules.conv.Conv3d
+  conv_bias: True
+  norm_op: torch.nn.modules.instancenorm.InstanceNorm3d
+  norm_op_kwargs: {'eps': 1e-05, 'affine': True}
+  dropout_op: null
+  dropout_op_kwargs: null
+  nonlin: torch.nn.modules.activation.LeakyReLU
+  nonlin_kwargs: {'inplace': True}
+  arch_kwargs_requiring_import: ['conv_op', 'norm_op', 'nonlin']
+  bottleneck_channels: null
+  block: dynamic_network_architectures.blocks.BasicBlockD
+  return_skips: True
+  disable_default_stem: False
+  stem_channels: null
+  pool_type: conv
+  stochastic_depth_p: 0.0
+  squeeze_excitation: False
+  squeeze_excitation_reduction_ratio: 0.0625
+
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
+
+head_kwargs: # keyword arguments to passed to head
+  ema_loss_kwargs:
+    beta: 0.7
+    bias_correction_steps: 5000
+
+head_classifier_kwargs: # keyword arguments passed to classifier in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "mean_last_sum"
+  gamma: 1.
+  alpha: 0.75
+  loss_weight: 0.3
+  prior_prob: 0.01
+  loss_fp32: True # requried for focal loss, jit won't work otherwise
+
+head_regressor_kwargs: # keyword arguments passed to regressor in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "sum"
+  loss_weight: 1.
+  learn_scale: True
+
+segmenter_kwargs:
+  dice_kwargs:
+    batch_dice: True
+    smooth_nom: 0.
+
+matcher_kwargs: # keyword arguments passed to matcher
+  num_candidates: 4
+  center_in_gt: False
+
+stem_override: '' # optional: overrides the checkpoint's own nnssl_adaptation_plan key_to_stem, without editing/copying the checkpoint

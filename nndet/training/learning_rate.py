@@ -308,3 +308,57 @@ class WarmUpExponential(_LRScheduler):
         """
         # last epoch is automatically handled by parent class
         return [base_lr * (1 - math.exp(-(1 - self.beta2) * self.last_epoch)) for base_lr in zip(self.base_lrs)]
+
+
+class LinearWarmup(_LRScheduler):
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        warm_iterations: int,
+        warm_lr: Union[float, Sequence[float]],
+        poly_gamma: float,
+        num_iterations: int,
+        last_epoch: int = -1
+    ) -> None:
+        """
+        Linear Warm Up LR
+
+        Args:
+            optimizer: optimizer for lr scheduling
+            warm_iterations: number of warmup iterations
+            warm_lr: initial learning rate of warm up
+            poly_gamma: gamma of poly lr
+            num_iterations: total number of iterations (including warmup)
+            last_epoch: The index of the last epoch. Defaults to -1.
+        """
+
+        self.num_iterations = num_iterations
+        self.warm_iterations = warm_iterations
+
+        if not isinstance(warm_lr, list) and not isinstance(warm_lr, tuple):
+            self.warm_lr = [warm_lr] * len(optimizer.param_groups)
+        else:
+            if len(warm_lr) != len(optimizer.param_groups):
+                raise ValueError("Expected {} warm_lr, but got {}".format(len(optimizer.param_groups), len(warm_lr)))
+            self.warm_lr = [warm_lr]
+
+        self.poly_gamma = poly_gamma
+
+        super().__init__(optimizer, last_epoch=last_epoch)
+
+    def get_lr(self) -> List[float]:
+        """
+        Compute current learning rate for each param group
+        """
+        # warm up period
+        lrs = [
+                linear_warm_up(
+                    iteration=self._step_count,
+                    initial_lr=self.warm_lr[idx],
+                    num_iterations=self.num_iterations,
+                    final_lr=base_lr,
+                )
+                for idx, base_lr in enumerate(self.base_lrs)
+            ]
+
+        return lrs

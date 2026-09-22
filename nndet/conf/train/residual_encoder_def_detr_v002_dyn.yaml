@@ -1,0 +1,15 @@
+# @package __global__
+
+# SPDX-FileCopyrightText: 2020-2026 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+defaults:
+  - augment_cfg: more_modular_ord1
+  - io_cfg: offsetV2_obj_bal
+  - trainer_cfg: adamw_100ep_high_lr_wd
+  - accelerator_cfg: gpu1_mixed16
+  - model_cfg: deformable_detr_sigm_for_ResEnc_small_bs4_dyn
+
+module: BoxDeformableDETRV002_ResEnc_dyn_TL
+plan: ${planner}_3d # plan used for training
+planner: D3V002 # planner used for preprocessing

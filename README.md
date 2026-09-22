@@ -52,6 +52,7 @@ MICCAI 2021. https://doi.org/10.1007/978-3-030-87240-3_51
 - [Dataset Format](#dataset-format)
 - [Dataset Guides](#dataset-guides)
 - [Advanced Usage](#advanced-usage)
+  - [Finetuning pretrained backbones](#finetuning-pretrained-backbones)
 - [Developer Guide](#developer-guide)
 - [FAQ & Troubleshooting](#faq--troubleshooting)
 - [Acknowledgements](#acknowledgements)
@@ -535,6 +536,13 @@ The [tasks](tasks) folder contains guides to prepare all data sets used in our e
 </details>
 
 # Advanced Usage
+
+## Finetuning pretrained backbones
+
+Using a pretrained ResEnc or Primus backbone (optionally initialized
+from a self-supervised pretraining checkpoint, with a two-phase warmup
+finetuning schedule) is covered in
+[docs/finetuning.md](docs/finetuning.md).
 
 ## Custom splits
 

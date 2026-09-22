@@ -161,6 +161,7 @@ class PredictionMixin(ABC):
         train_data_dir: os.PathLike,
         case_ids: Sequence[str],
         run_prediction: bool = True,
+        val_best: bool = False,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -173,6 +174,8 @@ class PredictionMixin(ABC):
                 data is located
             case_ids: case identifies to prepare and predict
             run_prediction: predict cases
+            val_best: use the best checkpoint (instead of the trainer_cfg's
+                configured `sweep_ckpt`, default "last") to predict cases
             kwargs: keyword arguments passed to predict function
 
         Returns:
@@ -193,6 +196,10 @@ class PredictionMixin(ABC):
 
         if run_prediction:
             logger.info("Predict cases with default settings...")
+            if val_best:
+                model_fn = get_loader_fn(mode=self.trainer_cfg.get("sweep_ckpt", "best"))
+            else:
+                model_fn = get_loader_fn(mode=self.trainer_cfg.get("sweep_ckpt", "last"))
             predict_dir(
                 source_dir=train_data_dir,
                 target_dir=prediction_dir,
@@ -203,7 +210,7 @@ class PredictionMixin(ABC):
                 num_tta_transforms=None,
                 case_ids=case_ids,
                 save_state=True,
-                model_fn=get_loader_fn(mode=self.trainer_cfg.get("sweep_ckpt", "last")),
+                model_fn=model_fn,
                 **kwargs,
             )
 

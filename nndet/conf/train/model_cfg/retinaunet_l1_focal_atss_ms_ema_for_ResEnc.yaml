@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2020-2026 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# detector settings
+
+detector:
+  min_detections_per_img: 100 # minimum number of detections per image
+
+
+# Same backbone_kwargs schema/values as deformable_detr_sigm_for_ResEnc.yaml
+# (both build the same ResidualEncoderUNetbackBoneWrapper/ResEnc backbone).
+# If +transfer_learning_ckpt=... (a top-level CLI override, not a key in
+# this file) is set and training uses --load_adapt_plan, everything here
+# except input_shape/patch_size is overwritten from the checkpoint's own
+# nnssl_adaptation_plan at train time.
+backbone_kwargs:
+  input_shape: [192,192,192]
+  patch_size: [128,128,128]
+  batch_size: 2
+  n_stages: 6
+  features_per_stage: [64, 128, 256, 512, 640, 640]
+  conv_op: torch.nn.modules.conv.Conv3d
+  kernel_sizes: [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]]
+  strides: [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+  n_blocks_per_stage: [2, 5, 6, 10, 10, 12]
+  conv_bias: True
+  norm_op: torch.nn.modules.instancenorm.InstanceNorm3d
+  norm_op_kwargs: {'eps': 1e-05, 'affine': True}
+  dropout_op: null
+  dropout_op_kwargs: null
+  nonlin: torch.nn.modules.activation.LeakyReLU
+  nonlin_kwargs: {'inplace': True}
+  return_skips: True
+
+#keyword argument32s passed to encoder
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
+
+head_kwargs: # keyword arguments to passed to head
+  ema_loss_kwargs:
+    beta: 0.7
+    bias_correction_steps: 5000
+
+head_classifier_kwargs: # keyword arguments passed to classifier in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "mean_last_sum"
+  gamma: 1.
+  alpha: 0.75
+  loss_weight: 0.3
+  prior_prob: 0.01
+  loss_fp32: True # requried for focal loss, jit won't work otherwise
+
+head_regressor_kwargs: # keyword arguments passed to regressor in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "sum"
+  loss_weight: 1.
+  learn_scale: True
+
+segmenter_kwargs:
+  dice_kwargs:
+    batch_dice: True
+    smooth_nom: 0.
+
+matcher_kwargs: # keyword arguments passed to matcher
+  num_candidates: 4
+  center_in_gt: False
+
+stem_override: '' # optional: overrides the checkpoint's own nnssl_adaptation_plan key_to_stem, without editing/copying the checkpoint

@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2020-2026 Division of Medical Image Computing, German Cancer Research Center (DKFZ), Heidelberg, Germany  # noqa: E501
+# SPDX-License-Identifier: Apache-2.0
+
+# Same as retinaunet_l1_focal_atss_ms_ema.yaml, except backbone_kwargs is
+# pre-populated with placeholder features_per_stage/kernel_sizes/strides/
+# fpn_channels. These are never read directly by ConvBackbone.from_config_plan
+# (it only reads num_conv/max_channels/start_channels/pooling_mode from
+# backbone_kwargs) -- they exist purely so `--load_adapt_plan` has existing
+# keys to overwrite from a checkpoint's nnssl_adaptation_plan; train.py's
+# adaptation-plan handling then relays start_channels/max_channels/
+# conv_kernels/strides/fpn_channels from here into plan["architecture"],
+# which IS what ConvBackbone/UFPN actually read. Without a checkpoint
+# (normal training), these placeholders are simply unused and the
+# architecture is planned
+# from the dataset as usual.
+
+detector:
+  min_detections_per_img: 100 # minimum number of detections per image
+
+backbone_kwargs:
+  features_per_stage: [32, 64, 128, 256, 320, 320]
+  kernel_sizes: [3, 3, 3, 3, 3, 3]
+  strides: [2, 2, 2, 2, 2]
+  fpn_channels: 128
+  decoder_levels: [2, 3, 4, 5]
+
+neck_kwargs: # keyword arguments passed to decoder
+  min_out_channels: 8
+  upsampling_mode: "transpose"
+
+  num_lateral: 1
+  norm_lateral: False
+  activation_lateral: False
+
+  num_out: 1
+  norm_out: False
+  activation_out: False
+
+head_kwargs: # keyword arguments to passed to head
+  ema_loss_kwargs:
+    beta: 0.7
+    bias_correction_steps: 5000
+
+head_classifier_kwargs: # keyword arguments passed to classifier in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "mean_last_sum"
+  gamma: 1.
+  alpha: 0.75
+  loss_weight: 0.3
+  prior_prob: 0.01
+  loss_fp32: True # requried for focal loss, jit won't work otherwise
+
+head_regressor_kwargs: # keyword arguments passed to regressor in head
+  num_convs: 1
+  norm_channels_per_group: 16
+  norm_affine: True
+  reduction: "sum"
+  loss_weight: 1.
+  learn_scale: True
+
+segmenter_kwargs:
+  dice_kwargs:
+    batch_dice: True
+    smooth_nom: 0.
+
+matcher_kwargs: # keyword arguments passed to matcher
+  num_candidates: 4
+  center_in_gt: False
+
+stem_override: '' # optional: overrides the checkpoint's own nnssl_adaptation_plan key_to_stem, without editing/copying the checkpoint

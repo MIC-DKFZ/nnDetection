@@ -1,0 +1,20 @@
+# Additional/pinned dependencies for the pretrained-backbone finetuning
+# capability (ResEnc, Primus backbones and the checkpoint-adaptation
+# training flow) -- install on top of base.txt:
+#
+#   pip install -r requirements/base.txt -r requirements/finetuning.txt
+#
+# dynamic_network_architectures provides ResidualEncoder (ResEnc) and Eva
+# (used by the Primus backbone). >=0.4.4 is required for Primus
+# (building_blocks.eva was not present before 0.4.4); ResEnc alone would
+# work with older versions, but there is no reason to pin lower since
+# both backbones share this one requirement.
+dynamic_network_architectures>=0.4.4
+
+# timm<1.0.23 is dynamic_network_architectures' own declared constraint
+# (see its PyPI metadata) and is not optional: timm>=1.0.29 changes the
+# rotary/absolute position-embedding init code that Eva calls into, and
+# Primus backbone construction fails with a tensor shape mismatch inside
+# timm's own code under that newer version. Confirmed by testing both
+# 1.0.22 (works) and 1.0.29 (fails) directly.
+timm<1.0.23

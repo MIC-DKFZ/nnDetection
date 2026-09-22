@@ -8,13 +8,16 @@ import torch
 from nndet.utils.collections import NORM_TYPES
 
 
-def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float):
+def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float, on_conflict: str = "raise"):
     """
     Apply weight decay to model but skip normalization layers
 
     Args:
         model (torch.nn.Module) : module for parameters
         weight_decay (float) : weight decay for other parameters
+        on_conflict: how to handle a parameter that was already tagged by an
+            earlier call, e.g. because the model was traversed more than once
+            for different module groups (see :func:`identify_parameters`)
 
     Returns:
         dict: dict with params and weight decay
@@ -22,7 +25,7 @@ def get_params_no_wd_on_norm(model: torch.nn.Module, weight_decay: float):
     See Also:
         https://discuss.pytorch.org/t/weight-decay-in-the-optimizers-is-a-bad-idea-especially-with-batchnorm/16994/2
     """
-    identify_parameters(model, {"no_wd": NORM_TYPES})
+    identify_parameters(model, {"no_wd": NORM_TYPES}, on_conflict=on_conflict)
 
     return [
         {
@@ -40,6 +43,7 @@ def identify_parameters(
     model: torch.nn.Module,
     type_mapping: Dict[str, Sequence],
     check_param_exist: bool = True,
+    on_conflict: str = "raise",
 ):
     """
     Add attribute to searched module types (can be used to filter for specific modules in parameter list)
@@ -50,13 +54,21 @@ def identify_parameters(
         check_param_exist: check if module already has attribute. Can be used to assure that
             attributes are not overwritten, but can lead to wrong results for shared parameters and
             non "primitive" types
+        on_conflict: how to handle a parameter that already has the attribute when
+            `check_param_exist` is True -- "raise" (default) asserts, "skip" leaves
+            it untouched. "skip" is needed when the model is traversed separately
+            per module group (e.g. backbone/neck/head), where a shared parameter
+            could otherwise be seen more than once.
     """
     for module in model.modules():
         for _name, _types in type_mapping.items():
             if any([isinstance(module, _type) for _type in _types]):
                 for param in module.parameters():
-                    if check_param_exist:
-                        assert not hasattr(param, _name)
+                    if check_param_exist and hasattr(param, _name):
+                        if on_conflict == "skip":
+                            print(f"Skipping setting attribute {_name} for parameter {param} as it already exists.")
+                            continue
+                        assert False, f"Parameter {param} already has attribute {_name}"
                     setattr(param, _name, True)
 
 

@@ -11,6 +11,7 @@ from nndet.core.boxes.matcher1to1.base import BaseMatcher
 from nndet.core.detr import BaseDETR
 from nndet.core.post.detr import DETRBoxPost
 from nndet.nn.backbone.abstract import AbstractBackbone
+from nndet.nn.backbone.abstract_ResEnc import WrapperResEncAbstractBackbone
 from nndet.nn.backbone.spine import SpineWrapper
 from nndet.nn.heads.classifier.ffn import FFNClassifier
 from nndet.nn.heads.detr.base import DETRHead
@@ -707,3 +708,45 @@ class DeformableSetModelMixin(DETRModelMixin):
             two_stage=model_cfg["transformer"]["two_stage"],
             **transformer_kwargs,
         )
+
+
+class DeformableSetModelMixin_ResEnc(DeformableSetModelMixin):
+
+    backbone_cls: Type[WrapperResEncAbstractBackbone] = ...  #: define class for backbone
+
+    @classmethod
+    def _build_backbone(
+        cls,
+        plan_arch: dict,
+        model_cfg: dict,
+        patch_size: Optional[Sequence[int]] = None,
+     ) -> WrapperResEncAbstractBackbone:
+        """
+        Build backbone network
+
+        Args:
+            plan_arch: architecture settings
+            model_cfg: additional architecture settings
+            patch_size: optionally provide the patch size
+                to check compatibility with backbone
+
+        Returns:
+            AbstractBackbone: backbone instance
+        """
+        backbone_kwargs = {}
+        if "backbone_kwargs" in model_cfg:
+            backbone_kwargs = model_cfg["backbone_kwargs"]
+        backbone: WrapperResEncAbstractBackbone = cls.backbone_cls.from_config_plan(
+            backbone_cfg=backbone_kwargs,
+            plan_arch=plan_arch,
+        )
+        if patch_size is not None:
+            if not backbone.check_patch_size(patch_size):
+                raise ValueError(
+                    f"Backbone {cls.backbone_cls.__name__} with absolute "
+                    f"strides {backbone.get_absolute_strides()} is not compatible "
+                    f"with patch size {patch_size}"
+                )
+            else:
+                logger.info("Patch size check complete, backbone is compatible.")
+        return backbone
