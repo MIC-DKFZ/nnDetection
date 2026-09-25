@@ -352,8 +352,7 @@ nndet_train Task<XXX>_YourDataset retinaunet_focal_v002_for_ConvBackboneMultiTal
     --transfer_learning --load_adapt_plan
 ```
 
-**Primus** (needs `-o module=...`). Its default `batch_size: 4` can OOM on a
-24 GB GPU -- `-o model_cfg.backbone_kwargs.batch_size=1` trains cleanly:
+**Primus** (needs `-o module=...`):
 
 ```bash
 nndet_train Task<XXX>_YourDataset Primus_def_detr_v002 0 \
