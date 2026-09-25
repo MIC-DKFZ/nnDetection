@@ -18,6 +18,12 @@ detector:
   min_detections_per_img: 100 # minimum number of detections per image
 
 backbone_kwargs:
+  # fixed patch/batch size, same as the ResEnc/Primus finetuning configs: the
+  # presence of input_shape makes train.py overwrite the plan's patch_size and
+  # batch_size with these values (ConvBackbone itself ignores all three keys)
+  input_shape: [128,128,128]
+  patch_size: [128,128,128]
+  batch_size: 4
   features_per_stage: [32, 64, 128, 256, 320, 320]
   kernel_sizes: [3, 3, 3, 3, 3, 3]
   strides: [2, 2, 2, 2, 2]

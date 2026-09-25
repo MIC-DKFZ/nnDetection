@@ -56,6 +56,7 @@ from nndet.utils.info import (
     log_git,
     write_requirements,
 )
+from nndet.utils.load_weights_utils import print_citations
 from nndet.utils.make_json_safe_value import to_python
 from nndet.utils.pretrained_backbone_presets import BACKBONE_PRESETS
 
@@ -760,6 +761,7 @@ def _train_module(
                 logger.error(_s)
                 raise RuntimeError(_s)
             module.load_custom_state_dict(_path)
+            print_citations(_path)
     else:
         logger.info("Not loading pretrained weights (only using architecture).")
 

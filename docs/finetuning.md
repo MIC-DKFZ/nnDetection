@@ -41,7 +41,7 @@ Then train, initializing the backbone from a pretrained checkpoint --
 
 ```bash
 nndet_train Task<XXX>_YourDataset residual_encoder_retinaunet_focal_v002 0 \
-    -o module=RetinaUNetFocalV002_ResEnc_TL \
+    -o module=RetinaUNetFocalV002_ResEnc_TL exp.tag=_<checkpoint_name> \
     +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
@@ -50,10 +50,13 @@ or **Deformable DETR** head instead (same checkpoints work with either head):
 
 ```bash
 nndet_train Task<XXX>_YourDataset residual_encoder_def_detr_v002 0 \
-    -o module=BoxDeformableDETRV002_ResEnc_TL \
+    -o module=BoxDeformableDETRV002_ResEnc_TL exp.tag=_<checkpoint_name> \
     +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
+
+(`exp.tag` picks the output folder name -- e.g. `_MAE`, `_VoCo`. Always
+set it to something identifying which checkpoint you're using; see §5.)
 
 Replace `Task<XXX>_YourDataset` with your own preprocessed task, and the
 checkpoint path with one from the table below. `--load_adapt_plan` reconciles
@@ -64,15 +67,22 @@ almost every first run.
 
 ## Provided checkpoints
 
-| Checkpoint (`trainer_name`) | What it is | Backbone | Recommended config |
+| Checkpoint | Pretraining | Backbone | Recommended config |
 |---|---|---|---|
-| `ModelGenesis` | "Model Genesis"-style self-supervised pretraining | ResEnc | `residual_encoder_retinaunet_focal_v002` or `residual_encoder_def_detr_v002` + matching `_TL` module (Quick start, or §3.3) |
-| `VariableSpark` | Variable Spark MAE self-supervised pretraining | ResEnc | same as above |
-| `VoCo` | "VoCo"-style self-supervised pretraining | ResEnc | same as above |
-| `MultiTalent` | MultiTalent joint segmentation pretraining across many datasets (multiple stems; defaults to a CT stem) | ResEnc | same as above; see §3.4 to pick a different stem |
-| `MultiTalent_meets_nndet` | MultiTalent joint pretraining (multiple stems; defaults to a CT stem) | nndetection's native `ConvBackbone` | `retinaunet_focal_v002_for_ConvBackboneMultiTalent` (§3.3); see §3.4 to pick a different stem |
-| `nnFoundationCNN` | Masked-autoencoder (MAE) self-supervised pretraining | ResEnc | same as above |
-| `nnFoundationViT` | EVA-style masked-autoencoder self-supervised pretraining | Primus (ViT) | `Primus_def_detr_v002` + `BoxDeformableDETRV002_Primus_TL` (§3.3) |
+| [`ResEncL-MissingPiece-MAE`](https://huggingface.co/MIC-DKFZ/ResEncL-MissingPiece-MAE) | Masked Autoencoder (MAE) | ResEnc | `residual_encoder_retinaunet_focal_v002` or `residual_encoder_def_detr_v002` + matching `_TL` module (Quick start, or §3.3) |
+| [`ResEncL-MissingPiece-MG`](https://huggingface.co/MIC-DKFZ/ResEncL-MissingPiece-MG) | Models Genesis (MG) | ResEnc | same as above |
+| [`ResEncL-MissingPiece-S3D`](https://huggingface.co/MIC-DKFZ/ResEncL-MissingPiece-S3D) | Spark 3D (S3D) | ResEnc | same as above |
+| [`ResEncL-MissingPiece-VoCo`](https://huggingface.co/MIC-DKFZ/ResEncL-MissingPiece-VoCo) | Volume Contrastive (VoCo) | ResEnc | same as above -- pre-training patch size `[192, 192, 64]` |
+| [`ResEncL-MissingPiece-MultiTalent`](https://huggingface.co/MIC-DKFZ/ResEncL-MissingPiece-MultiTalent) | MultiTalent (supervised) | ResEnc | same as above; see §3.4 to pick a different stem |
+| [`RetinaUNet-MissingPiece-MultiTalent`](https://huggingface.co/MIC-DKFZ/RetinaUNet-MissingPiece-MultiTalent) | MultiTalent (supervised) | nndetection's native `ConvBackbone` | `retinaunet_focal_v002_for_ConvBackboneMultiTalent` (§3.3); see §3.4 to pick a different stem |
+| [`nnFoundationCNN`](https://huggingface.co/MIC-DKFZ/nnFoundationCNN) | nnFoundation | ResEnc | `residual_encoder_retinaunet_focal_v002` or `residual_encoder_def_detr_v002` + matching `_TL` module (Quick start, or §3.3) |
+| [`nnFoundationViT`](https://huggingface.co/MIC-DKFZ/nnFoundationViT) | nnFoundation | Primus (ViT) | `Primus_def_detr_v002` + `BoxDeformableDETRV002_Primus_TL` (§3.3) |
+
+Each checkpoint name links to its Hugging Face repository. MAE, MG, S3D, VoCo
+and the two `nnFoundation` ones are self-supervised; the two MultiTalent ones
+are supervised joint segmentation pretraining.
+`RetinaUNet-MissingPiece-MultiTalent` contains the encoder and FPN decoder of
+a Retina U-Net, without the detection heads.
 
 All pretrained on single-channel (grayscale) 3D volumes; the MultiTalent ones
 across ~87 datasets of mixed modalities, hence the multiple stems. The same
@@ -80,9 +90,33 @@ across ~87 datasets of mixed modalities, hence the multiple stems. The same
 --load_adapt_plan` pattern from Quick start works for every row -- only the
 top-level config and module name differ (§3.3 has the exact command per row).
 
-**Where to get these checkpoint files:** <!-- TODO: fill in the actual
-download location (e.g. a Zenodo/HuggingFace release, or an institutional
-download link) before publishing this document externally -->.
+MAE, MG, S3D and VoCo all pretrain the exact
+same ResEncL encoder+stem architecture (byte-identical key names/shapes) --
+they only differ in the pretraining objective's own head (a reconstruction
+decoder for the MAE-style ones, a contrastive projector for VoCo), which
+isn't loaded downstream either way, so all four load through the same `_TL`
+classes identically.
+
+**Where to get these checkpoint files:** each is a separate Hugging Face model
+repository (linked from the table above) holding the weights
+(`checkpoint_final.pth`), a standalone `adaptation_plan.json`, and a model card
+with the papers to cite. The six Missing Piece checkpoints are grouped in the
+[The Missing Piece: Pre-trained nnDetection Backbones](https://huggingface.co/collections/MIC-DKFZ/the-missing-piece-pre-trained-nndetection-backbones-6ab62e4d50b7219ef37d1d50) collection; the two
+nnFoundation ones are released with their own publication
+([arXiv:2609.26924](https://arxiv.org/abs/2609.26924)) in the
+[nnFoundation](https://huggingface.co/collections/MIC-DKFZ/nnfoundation-6ab4e3a5a7a8152d83ed86bf) collection.
+
+Download a single checkpoint with:
+
+```bash
+pip install huggingface_hub
+hf download <repo-id> checkpoint_final.pth --local-dir ./checkpoints/<repo-name>
+# e.g.
+hf download MIC-DKFZ/ResEncL-MissingPiece-MAE checkpoint_final.pth --local-dir ./checkpoints/ResEncL-MissingPiece-MAE
+```
+
+Each checkpoint also carries the papers to cite (§3.1); they are printed to the
+training log when the weights are loaded.
 
 ## 1. Supported combinations
 
@@ -92,7 +126,7 @@ download link) before publishing this document externally -->.
 | ResEnc (**dynamic** architecture) | RetinaUNet | `RetinaUNetFocalV002_ResEnc_dyn` | `RetinaUNetFocalV002_ResEnc_dyn_TL` |
 | ResEnc (fixed architecture) | Deformable DETR | `BoxDeformableDETRV002_ResEnc` | `BoxDeformableDETRV002_ResEnc_TL` |
 | ResEnc (**dynamic** architecture) | Deformable DETR | `BoxDeformableDETRV002_ResEnc_dyn` | `BoxDeformableDETRV002_ResEnc_dyn_TL` |
-| Primus (EVA-style ViT) | Deformable DETR | `BoxDeformableDETRV002_Primus` | `BoxDeformableDETRV002_Primus_TL` |
+| Primus (ViT) | Deformable DETR | `BoxDeformableDETRV002_Primus` | `BoxDeformableDETRV002_Primus_TL` |
 | ConvBackbone (fixed architecture, MultiTalent-style stem) | RetinaUNet | `DetSegModel` | `DetSegModel_TL_MultiTalentStem` |
 
 "Fixed architecture" means the backbone's shape comes from the model config
@@ -101,6 +135,10 @@ comes from nnDetection's own planned architecture -- use this when you want
 nnDetection's normal architecture search/dataset adaptation while still
 loading as much as possible from a checkpoint, even if its depth/shape
 doesn't exactly match. Only ResEnc has a dynamic variant.
+
+Fixed-architecture configs train with a fixed patch size of `[128, 128, 128]`
+(set in `model_cfg.backbone_kwargs`); dynamic configs take the patch size,
+kernel sizes and strides from the nnDetection plan.
 
 The last row (`ConvBackbone`) is nndetection's own native architecture, not
 ResEnc -- it loads MultiTalent checkpoints whose input stem was trained as a
@@ -155,6 +193,42 @@ except `input_shape`/`patch_size` gets overwritten from the checkpoint at
 train time anyway, so the exact starting values mostly don't matter -- just
 make sure the keys exist so the config validates.
 
+### 2.2 Default settings, and what to actually use for finetuning
+
+What you get from each top-level config's own default `trainer_cfg`, unmodified:
+
+| Config | Default `trainer_cfg` | Optimizer | Epochs | Built-in LR ramp-up? |
+|---|---|---|---|---|
+| `residual_encoder_retinaunet_focal_v002[_dyn]` | `sgd_base` | SGD | 50 | Yes -- `warm_iterations: 4000` |
+| `residual_encoder_def_detr_v002[_dyn]` | `adamw_100ep_high_lr_wd` | AdamW | 100 | **No** -- `warm_iterations: 0` |
+| `Primus_def_detr_v002` | `adamw_100ep_low_lr_wd_warm` | AdamW | 100 | Yes -- `warm_iterations: 10000` |
+
+DETR's default is the odd one out -- it has no LR ramp-up at all. This
+matters for finetuning specifically: jumping straight to a high LR on a
+pretrained backbone tends to be less stable than easing into it.
+
+**Recommendation, based on real usage:** for finetuning a checkpoint,
+use the plain `_TL` module class (not a `_warmup*` class, §4) with a
+`trainer_cfg` that has a nonzero `warm_iterations` LR ramp-up. RetinaUNet's
+and Primus's defaults already have this; for DETR, override it explicitly:
+
+```bash
+nndet_train Task<XXX>_YourDataset residual_encoder_def_detr_v002 0 \
+    -o module=BoxDeformableDETRV002_ResEnc_TL exp.tag=_<checkpoint_name> \
+       train/trainer_cfg@trainer_cfg=adamw_100ep_high_lr_wd_warm \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
+    --transfer_learning --load_adapt_plan
+```
+
+This is what real finetuning experiments (the "rocket" project's own
+DETR+ResEnc runs) mostly used in practice -- plain `_TL` class, `_warm`
+trainer_cfg for the LR ramp-up, no two-phase freeze/unfreeze. The §4
+two-phase mechanism (freezing most of the model, then unfreezing) is a
+heavier, less-tested-in-practice alternative -- verified to work end-to-end
+(this document's own testing), but only found in one real ablation-style
+experiment rather than routine use. Reach for it if you specifically want
+to compare against the simpler LR-ramp-up approach, not as your first try.
+
 ## 3. Loading pretrained weights
 
 ### 3.1 Checkpoint format
@@ -178,11 +252,37 @@ Checkpoints are expected to contain:
         },
         "pretrain_plan": {"configurations": {"<name>": {"patch_size": [...]}}},
     },
+    "citations": [...],                # optional, see below
 }
 ```
 
 Set the checkpoint path via a **top-level** CLI override --
-`+transfer_learning_ckpt=/path/to/checkpoint.pt` (§5 explains the `+`).
+`+transfer_learning_ckpt=/path/to/checkpoint_final.pth` (§5 explains the `+`).
+
+#### Citations
+
+A checkpoint can carry the papers users should cite when finetuning from it.
+The format matches nnssl / nnU-Net's `PretrainedTrainer`:
+
+```python
+"citations": [
+    {
+        "type": "Pretraining Method",       # Architecture | Pretraining Method |
+                                            # Pre-Training Dataset | Framework | ...
+        "name": "Masked Auto Encoder",
+        "apa_citations": ["<full APA reference string>", ...],
+    },
+]
+```
+
+When `--transfer_learning` loads a checkpoint, these are printed to the training
+log, grouped by `type`. Checkpoints without the field are silently accepted.
+
+The field is read from **either** the checkpoint's top level (`ckpt["citations"]`,
+where nnssl writes it and where nnU-Net's `nnUNetv2_preprocess_like_nnssl` reads
+it from) **or** from inside `nnssl_adaptation_plan` (where the published
+`adaptation_plan.json` model cards carry it). The checkpoints in §"Provided
+checkpoints" set both, so they work with nnU-Net's pretraining tooling unchanged.
 
 ### 3.2 CLI flags
 
@@ -226,23 +326,26 @@ the checkpoint's own plan regardless of how deeply nested those keys are.
 
 ```bash
 nndet_train Task<XXX>_YourDataset residual_encoder_retinaunet_focal_v002_dyn 0 \
-    +transfer_learning_ckpt=/path/to/checkpoint.pt \
+    -o exp.tag=_<checkpoint_name> \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning
 ```
 
 ```bash
 nndet_train Task<XXX>_YourDataset residual_encoder_def_detr_v002_dyn 0 \
-    +transfer_learning_ckpt=/path/to/checkpoint.pt \
+    -o exp.tag=_<checkpoint_name> \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning
 ```
 
-**MultiTalent-meets-nndet** (native `ConvBackbone`, not ResEnc; module
+**`RetinaUNet-MissingPiece-MultiTalent`** (native `ConvBackbone`, not ResEnc; module
 already defaults correctly) -- see §5 for a real patch-size gotcha with
 this one:
 
 ```bash
 nndet_train Task<XXX>_YourDataset retinaunet_focal_v002_for_ConvBackboneMultiTalent 0 \
-    +transfer_learning_ckpt=/path/to/checkpoint.pt \
+    -o exp.tag=_<checkpoint_name> \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
 
@@ -252,10 +355,14 @@ real memory gotcha with this one:
 
 ```bash
 nndet_train Task<XXX>_YourDataset Primus_def_detr_v002 0 \
-    -o module=BoxDeformableDETRV002_Primus_TL \
-    +transfer_learning_ckpt=/path/to/checkpoint.pt \
+    -o module=BoxDeformableDETRV002_Primus_TL exp.tag=_<checkpoint_name> \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
+
+(`exp.tag` again picks the output folder name, same as in Quick start --
+every command in this section needs one to avoid overwriting a previous
+run; see §5.)
 
 If your downstream patch size differs from the checkpoint's pretraining
 patch size, Primus's loader trilinearly interpolates the position embedding
@@ -281,7 +388,7 @@ nndet_train Task<XXX>_YourDataset residual_encoder_retinaunet_focal_v002 0 \
     -o module=RetinaUNetFocalV002_ResEnc_TL \
        model_cfg.stem_override=encoder.stem.004 \
        exp.tag=_MRIstem \
-    +transfer_learning_ckpt=/path/to/checkpoint.pt \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
 
@@ -305,20 +412,6 @@ everything.
 | `_warmupnet_1e3` (RetinaUNet) | backbone, neck, head | backbone, neck, head (different LR) |
 | `_warmuptransformer_head` (DETR) | channel_mapper, transformer, head | backbone, channel_mapper, transformer, head |
 
-(`_warmupdecoder`/`_warmupheads`/`_warmuptransformer` -- warming up only
-*part* of the randomly-initialized new parts -- were removed as
-unmotivated: nothing justifies freezing part of an already-random submodule.
-`_warmupnet_1e3`, training everything at a different LR, is a genuinely
-different idea and was kept.)
-
-e.g. `RetinaUNetFocalV002_ResEnc_TL_warmupdecoder_heads`,
-`DetSegModel_TL_warmupdecoder_heads`,
-`BoxDeformableDETRV002_ResEnc_TL_warmuptransformer_head`,
-`DetSegModel_TL_MultiTalentStem_warmupdecoder_heads`. `_1e3`-suffixed classes
-(e.g. `..._warmupdecoder_heads_1e3`) are identical to their non-suffixed
-counterpart -- they exist only so a Hydra config can select a different
-`trainer_cfg` (1e-3 LR), not because the class differs.
-
 These classes use PyTorch Lightning's manual-optimization mode with **two
 separate optimizers**: `trainer_cfg.opt_class_1` during warmup
 (`trainer_cfg.num_warmup_epochs`), `trainer_cfg.opt_class_2` after.
@@ -331,11 +424,23 @@ AdamW-based `adamw_100ep_high_lr_wd_warmuptransformer_head(_3e5)`,
 nndet_train Task007_Pancreas residual_encoder_retinaunet_focal_v002 0 \
     -o module=RetinaUNetFocalV002_ResEnc_TL_warmupdecoder_heads \
        train/trainer_cfg@trainer_cfg=sgd_base_warmupdecoder_heads \
-    --transfer_learning
+       exp.tag=_<checkpoint_name> \
+    +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
+    --transfer_learning --load_adapt_plan
 ```
 
 Note the `train/trainer_cfg@trainer_cfg=<name>` syntax for selecting a
-different trainer_cfg -- see §5.
+different trainer_cfg -- see §5. **Pass `--load_adapt_plan` here** -- the
+warmup classes are all fixed-architecture (workflow A, §3.2), so without it
+the model builds with whatever shape the config's `backbone_kwargs` happens
+to declare rather than the checkpoint's. The shipped ResEnc configs default
+to exactly the ResEncL preset, so for a ResEncL checkpoint it currently
+makes no difference -- but any checkpoint whose architecture differs (or any
+edit to those defaults) fails at load with a `size mismatch` error without
+it, so it is worth passing unconditionally. Verified end-to-end: ran a real `nndet_train`
+subprocess across the warmup/finetune phase boundary (crossing
+`num_warmup_epochs`) with a real checkpoint, confirming both the checkpoint
+load and the two-optimizer phase switch work correctly.
 
 ## 5. Troubleshooting
 
@@ -369,7 +474,7 @@ you'll run into them:
   passed via `transfer_learning_ckpt`. Running two different checkpoints
   through the same module+config without a distinct `exp.tag` each time
   silently overwrites the first run's output directory. Adopt a convention
-  (`-o exp.tag=_VoCo`, `_ModelGenesis`, ...). Every run also saves
+  (`-o exp.tag=_VoCo`, `_MG`, ...). Every run also saves
   `meta.json` (raw CLI overwrites) and `config_resolved.yaml` (fully
   resolved config) regardless, so you can always check after the fact which
   checkpoint a given run used.
@@ -381,16 +486,19 @@ you'll run into them:
   surfaces later, as a `load_state_dict` shape/key mismatch. §6 has the full
   resolution algorithm.
 - **ConvBackboneMultiTalent patch-size requirement.** Its fixed architecture
-  has a total stride of 32 (6 stages / 5 downsampling steps) -- your task's
-  patch size needs every dimension divisible by 32, or model construction
-  fails with `Backbone ConvBackbone with absolute strides [...] is not
-  compatible with patch size [...]`. Encountered directly during testing on
-  a task with patch size `[80, 160, 128]` (80 isn't divisible by 32);
-  `[160, 128, 128]` worked.
-- **Primus memory.** Its default `batch_size: 4` at the full 192³ patch OOM'd
-  on a single RTX 3090 during testing (embed_dim 864, 16 encoder layers is a
-  large transformer). `-o model_cfg.backbone_kwargs.batch_size=1` trained
-  cleanly. Try that first if you hit an OOM here.
+  has a total stride of 32 (6 stages / 5 downsampling steps), so every patch
+  dimension must be divisible by 32, or model construction fails with
+  `Backbone ConvBackbone with absolute strides [...] is not compatible with
+  patch size [...]`. The default fixed `[128, 128, 128]` patch satisfies this;
+  keep it in mind if you override `model_cfg.backbone_kwargs.patch_size`
+  (e.g. `[80, 160, 128]` fails since 80 isn't divisible by 32).
+- **Primus memory.** Its default `batch_size: 4` OOM'd on a single RTX 3090
+  during testing (embed_dim 864, 16 encoder layers is a large transformer).
+  `-o model_cfg.backbone_kwargs.batch_size=1` trained cleanly. Try that first
+  if you hit an OOM here. Note Primus's `backbone_kwargs` carries both
+  `input_shape: [192,192,192]` (the volume the backbone and its position
+  embedding are built for) and `patch_size: [128,128,128]` (what training
+  actually feeds) -- it's the latter that sets the training patch size.
 
 ## 6. Internals
 

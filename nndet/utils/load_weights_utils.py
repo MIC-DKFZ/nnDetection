@@ -1,6 +1,43 @@
 from einops import rearrange
+from loguru import logger
 import torch.nn.functional as F
 import torch
+
+
+def print_citations(ckpt_path) -> None:
+    """
+    Log the papers a pretrained checkpoint asks users to cite, in the same
+    format as nnU-Net's PretrainedTrainer.print_citations.
+
+    Citations are looked up in both places they occur in the wild: at the
+    checkpoint's top level (where nnssl puts them and where nnU-Net's
+    `nnUNetv2_preprocess_like_nnssl` reads them from) and inside the adaptation
+    plan itself (where the published adaptation_plan.json files carry them).
+
+    Args:
+        ckpt_path: filepath to the pretrained checkpoint
+    """
+    try:
+        ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+        citations = ckpt.get("citations") or ckpt.get("nnssl_adaptation_plan", {}).get("citations") or []
+        if not citations:
+            return
+
+        lines = [
+            "\n#######################################################################\n"
+            "Please cite the associated papers when using pre-trained weights:\n"
+        ]
+        for citation in sorted(citations, key=lambda c: c.get("type", "")):
+            lines.append(f"{citation.get('type', '?')} used '{citation.get('name', '?')}'. Associated paper(s):")
+            lines.extend(citation.get("apa_citations") or citation.get("bibtex_citations") or [])
+            lines[-1] += "\n"
+        lines.append("#######################################################################\n")
+        logger.info("\n".join(lines))
+    except Exception as e:
+        logger.warning(
+            f"Could not print checkpoint citations ({e}). Please still cite the papers "
+            "associated with the pre-trained checkpoint."
+        )
 
 
 def resolve_stem_override(model_cfg: dict, adaptation_plan: dict):
