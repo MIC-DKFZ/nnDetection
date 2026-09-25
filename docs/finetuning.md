@@ -55,15 +55,17 @@ nndet_train Task<XXX>_YourDataset residual_encoder_def_detr_v002 0 \
     --transfer_learning --load_adapt_plan
 ```
 
-(`exp.tag` picks the output folder name -- e.g. `_MAE`, `_VoCo`. Always
-set it to something identifying which checkpoint you're using; see §5.)
+(`exp.tag` picks the output folder name -- e.g. `_MAE`, `_VoCo`. The folder
+name is `${module}_${plan}${exp.tag}` and does *not* encode which checkpoint
+you passed, so always set it to something identifying the checkpoint,
+otherwise a second run silently overwrites the first.)
 
 Replace `Task<XXX>_YourDataset` with your own preprocessed task, and the
 checkpoint path with one from the table below. `--load_adapt_plan` reconciles
 the model's architecture to match the checkpoint; `--transfer_learning` loads
-the weights. **Before running this for real, skim §5 (Troubleshooting)** --
-in particular the notes on `planner` mismatches and `exp.tag`, which trip up
-almost every first run.
+the weights. Note that each top-level config has a default `planner` (e.g.
+`D3V002`) and `nndet_train` looks for a plan preprocessed under that exact
+name -- if you preprocessed under a different one, add `-o planner=<name>`.
 
 ## Provided checkpoints
 
@@ -142,8 +144,7 @@ kernel sizes and strides from the nnDetection plan.
 
 The last row (`ConvBackbone`) is nndetection's own native architecture, not
 ResEnc -- it loads MultiTalent checkpoints whose input stem was trained as a
-separate per-dataset module. See §6 for exactly how the loading differs
-mechanically from the ResEnc classes.
+separate per-dataset module.
 
 Only the `_TL` classes actually load pretrained weights (§3). The non-`_TL`
 classes (e.g. `BoxDeformableDETRV002_ResEnc`) build the same architecture
@@ -257,7 +258,8 @@ Checkpoints are expected to contain:
 ```
 
 Set the checkpoint path via a **top-level** CLI override --
-`+transfer_learning_ckpt=/path/to/checkpoint_final.pth` (§5 explains the `+`).
+`+transfer_learning_ckpt=/path/to/checkpoint_final.pth` (`+` adds a brand-new
+key, `-o` only overrides one the config already declares).
 
 #### Citations
 
@@ -281,15 +283,16 @@ log, grouped by `type`. Checkpoints without the field are silently accepted.
 The field is read from **either** the checkpoint's top level (`ckpt["citations"]`,
 where nnssl writes it and where nnU-Net's `nnUNetv2_preprocess_like_nnssl` reads
 it from) **or** from inside `nnssl_adaptation_plan` (where the published
-`adaptation_plan.json` model cards carry it). The checkpoints in §"Provided
-checkpoints" set both, so they work with nnU-Net's pretraining tooling unchanged.
+`adaptation_plan.json` model cards carry it). The checkpoints in "Provided
+checkpoints" above set both, so they work with nnU-Net's pretraining tooling
+unchanged.
 
 ### 3.2 CLI flags
 
 | Flag | Effect |
 |---|---|
 | `-tl` / `--transfer_learning` | Load pretrained weights via the module's `load_custom_state_dict(path)`. Requires a `_TL` module class. |
-| `--load_adapt_plan` | Before building the model, overwrite `model_cfg.backbone_kwargs` (and the plan's `architecture` section) from the checkpoint's own `nnssl_adaptation_plan.architecture_plans` -- forces the model's architecture to match the checkpoint. §6 has the exact resolution algorithm. |
+| `--load_adapt_plan` | Before building the model, overwrite `model_cfg.backbone_kwargs` (and the plan's `architecture` section) from the checkpoint's own `nnssl_adaptation_plan.architecture_plans` -- forces the model's architecture to match the checkpoint. |
 | `--build_from_pretrained_arch` | Same architecture reconciliation as `--load_adapt_plan`, but doesn't load weights. Mutually exclusive with `--transfer_learning`. |
 | `--val_best` | Sweep/evaluate using the best checkpoint instead of the last one. |
 
@@ -339,8 +342,8 @@ nndet_train Task<XXX>_YourDataset residual_encoder_def_detr_v002_dyn 0 \
 ```
 
 **`RetinaUNet-MissingPiece-MultiTalent`** (native `ConvBackbone`, not ResEnc; module
-already defaults correctly) -- see §5 for a real patch-size gotcha with
-this one:
+already defaults correctly). Its fixed architecture has a total stride of 32,
+so every patch dimension must be divisible by 32:
 
 ```bash
 nndet_train Task<XXX>_YourDataset retinaunet_focal_v002_for_ConvBackboneMultiTalent 0 \
@@ -349,9 +352,8 @@ nndet_train Task<XXX>_YourDataset retinaunet_focal_v002_for_ConvBackboneMultiTal
     --transfer_learning --load_adapt_plan
 ```
 
-**Primus** (needs `-o module=...`; its `arch_kwargs` isn't guaranteed
-populated for every Primus checkpoint -- see §6 if not) -- see §5 for a
-real memory gotcha with this one:
+**Primus** (needs `-o module=...`). Its default `batch_size: 4` can OOM on a
+24 GB GPU -- `-o model_cfg.backbone_kwargs.batch_size=1` trains cleanly:
 
 ```bash
 nndet_train Task<XXX>_YourDataset Primus_def_detr_v002 0 \
@@ -362,18 +364,12 @@ nndet_train Task<XXX>_YourDataset Primus_def_detr_v002 0 \
 
 (`exp.tag` again picks the output folder name, same as in Quick start --
 every command in this section needs one to avoid overwriting a previous
-run; see §5.)
+run.)
 
 If your downstream patch size differs from the checkpoint's pretraining
 patch size, Primus's loader trilinearly interpolates the position embedding
 automatically -- no extra flag needed.
 
-**Verification status:** every command above (both heads x fixed/dynamic
-ResEnc, ConvBackboneMultiTalent, Primus) was run as a real `nndet_train`
-subprocess end-to-end (checkpoint load -> real training iterations -> clean
-stop) against real checkpoints from every trainer family in the table above,
-with zero missing/unexpected keys on load. The §5 gotchas came directly out
-of those runs.
 
 ### 3.4 Using a different MultiTalent stem
 
@@ -394,7 +390,7 @@ nndet_train Task<XXX>_YourDataset residual_encoder_retinaunet_focal_v002 0 \
 
 ConvBackbone checkpoints use the bare `stem.<id>` prefix instead of
 `encoder.stem.<id>` (e.g. `model_cfg.stem_override=stem.004`). Always set a
-distinct `exp.tag` alongside a stem change (§5). To find which stem id to
+distinct `exp.tag` alongside a stem change. To find which stem id to
 use: the checkpoint's trainer `training_log` records the dataset -> stem-id
 mapping; the CT stem (`351_0`) is what the provided checkpoints' plans
 default to.
@@ -428,10 +424,7 @@ nndet_train Task007_Pancreas residual_encoder_retinaunet_focal_v002 0 \
     +transfer_learning_ckpt=/path/to/checkpoint_final.pth \
     --transfer_learning --load_adapt_plan
 ```
-
-Note the `train/trainer_cfg@trainer_cfg=<name>` syntax for selecting a
-different trainer_cfg -- see §5. **Pass `--load_adapt_plan` here** -- the
-warmup classes are all fixed-architecture (workflow A, §3.2), so without it
+**Pass `--load_adapt_plan` here** -- the warmup classes are all fixed-architecture (workflow A, §3.2), so without it
 the model builds with whatever shape the config's `backbone_kwargs` happens
 to declare rather than the checkpoint's. The shipped ResEnc configs default
 to exactly the ResEncL preset, so for a ResEncL checkpoint it currently
@@ -442,108 +435,8 @@ subprocess across the warmup/finetune phase boundary (crossing
 `num_warmup_epochs`) with a real checkpoint, confirming both the checkpoint
 load and the two-optimizer phase switch work correctly.
 
-## 5. Troubleshooting
 
-Real gotchas hit while building and testing this, roughly in the order
-you'll run into them:
-
-- **`+` vs `-o` on the CLI.** `+key=value` adds a brand-new key (Hydra's
-  syntax for a key not already declared anywhere); `-o key=value` only
-  overrides a key that's already part of the resolved config. `transfer_learning_ckpt`
-  needs `+` (it's a fresh top-level key); `model_cfg.stem_override` needs
-  plain `-o` (it's pre-declared with an empty-string default in every
-  relevant model_cfg). If you hit `"... is not in struct"`, swap `-o` for
-  `+` on that specific override.
-- **Selecting a different `trainer_cfg`/`model_cfg`/`io_cfg` file needs `@`,
-  not `-o`.** These are chosen via a *nested* `defaults:` entry inside each
-  `train/*.yaml`. `-o trainer_cfg=<name>` silently replaces the whole
-  resolved `trainer_cfg` dict with the literal string `"<name>"`, failing
-  later with a confusing `TypeError`. Use
-  `train/trainer_cfg@trainer_cfg=<name>` instead. Overriding a single
-  **leaf key** inside an already-selected file (e.g.
-  `model_cfg.stem_override=...`) is unaffected -- only *swapping which file*
-  a nested group loads needs `@`.
-- **Plan/planner mismatch.** Every top-level config has a default `planner`
-  (e.g. `D3V002`), and `nndet_train` looks for a plan preprocessed under
-  that exact name. If you preprocessed under a different name (e.g.
-  `D3V002Blosc` -- same thing, just Blosc2 storage format instead of
-  `.npz`), add `-o planner=D3V002Blosc`. Check
-  `<det_data>/<your task>/preprocessed/` for the plan names you actually have.
-- **`exp.tag` and checkpoint provenance.** The output folder name is
-  `${module}_${plan}${exp.tag}` -- it does *not* encode which checkpoint you
-  passed via `transfer_learning_ckpt`. Running two different checkpoints
-  through the same module+config without a distinct `exp.tag` each time
-  silently overwrites the first run's output directory. Adopt a convention
-  (`-o exp.tag=_VoCo`, `_MG`, ...). Every run also saves
-  `meta.json` (raw CLI overwrites) and `config_resolved.yaml` (fully
-  resolved config) regardless, so you can always check after the fact which
-  checkpoint a given run used.
-- **`arch_class_name` unknown to this repo.** `--load_adapt_plan` silently
-  does nothing (just a logged warning) if the checkpoint's plan has
-  `arch_kwargs: None` and an `arch_class_name` not in `BACKBONE_PRESETS`
-  (currently only `"ResEncL"` is registered). Your model then builds with
-  whatever `backbone_kwargs` your yaml already had -- the failure only
-  surfaces later, as a `load_state_dict` shape/key mismatch. §6 has the full
-  resolution algorithm.
-- **ConvBackboneMultiTalent patch-size requirement.** Its fixed architecture
-  has a total stride of 32 (6 stages / 5 downsampling steps), so every patch
-  dimension must be divisible by 32, or model construction fails with
-  `Backbone ConvBackbone with absolute strides [...] is not compatible with
-  patch size [...]`. The default fixed `[128, 128, 128]` patch satisfies this;
-  keep it in mind if you override `model_cfg.backbone_kwargs.patch_size`
-  (e.g. `[80, 160, 128]` fails since 80 isn't divisible by 32).
-- **Primus memory.** Its default `batch_size: 4` OOM'd on a single RTX 3090
-  during testing (embed_dim 864, 16 encoder layers is a large transformer).
-  `-o model_cfg.backbone_kwargs.batch_size=1` trained cleanly. Try that first
-  if you hit an OOM here. Note Primus's `backbone_kwargs` carries both
-  `input_shape: [192,192,192]` (the volume the backbone and its position
-  embedding are built for) and `patch_size: [128,128,128]` (what training
-  actually feeds) -- it's the latter that sets the training patch size.
-
-## 6. Internals
-
-Deeper mechanism notes, for extending this code rather than just using it.
-
-**`arch_kwargs` vs. `BACKBONE_PRESETS` resolution** (`--load_adapt_plan`,
-`nndet_scripts/train.py`): reads `nnssl_adaptation_plan.architecture_plans`.
-If `arch_kwargs` is a dict, it's used directly -- for each key already
-present in your `model_cfg.backbone_kwargs`, if that key also exists in
-`arch_kwargs` it gets overwritten (keys not already in your `backbone_kwargs`
-are ignored, hence §2.1's placeholder-keys note); no preset lookup happens.
-If `arch_kwargs` is `None`, it falls back to
-`BACKBONE_PRESETS[arch_class_name]` (`nndet/utils/pretrained_backbone_presets.py`)
-the same way, or does nothing if `arch_class_name` isn't registered there
-(§5).
-
-**Weight-loading mechanics per family:** The ResEnc/Primus `_TL` classes
-strip the checkpoint's `key_to_encoder`/`key_to_stem` prefixes and load into
-the corresponding submodule directly (`get_submodule` + `load_state_dict`).
-If the checkpoint has fewer input channels than your downstream data, the
-first projection layer's weights are repeated across the extra channels
-(`weight.repeat(1, N, 1, 1, 1) / N`). The `_dyn_TL` variant additionally
-drops pretrained stages beyond the target architecture's depth (or leaves
-extra target stages at random init if the target is deeper) and adapts
-convolution kernels by mean-reducing a spatial dimension to size 1 when
-shapes differ (expansion isn't supported). Primus's loader additionally
-trilinearly interpolates the absolute position embedding when patch sizes
-differ.
-
-`DetSegModel_TL`/`DetSegModel_TL_MultiTalentStem` (ConvBackbone) work
-differently, since `ConvBackbone` has no standalone stem/encoder submodule
-to target with `get_submodule`: they build one remapped `state_dict` for the
-whole model (renaming `decoder.*` -> `neck.*`, fusing the checkpoint's chosen
-stem into `levels.0`'s first conv block and shifting the checkpoint's own
-`levels.0` block into the second one) and call `self.load_state_dict(...,
-strict=False)` once, relying on `strict=False` to leave neck/head at random
-init. `retinaunet_focal_v002_for_ConvBackboneMultiTalent.yaml`'s `model_cfg`
-pre-populates `backbone_kwargs` with placeholder
-`features_per_stage`/`kernel_sizes`/`strides`/`fpn_channels`/`decoder_levels`
-purely so `--load_adapt_plan` has existing keys to overwrite (`ConvBackbone`
-never reads these directly -- `nndet_scripts/train.py`'s `nnssl_to_plan`
-mapping relays them into `plan["architecture"]`, which is what `ConvBackbone`/
-`UFPN` actually read).
-
-## 7. Environment requirements
+## 5. Environment requirements
 
 The ResEnc/Primus backbones depend on the external
 `dynamic_network_architectures` package, pinned in
