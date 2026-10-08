@@ -87,7 +87,7 @@ are supervised joint segmentation pretraining.
 a Retina U-Net, without the detection heads.
 
 All pretrained on single-channel (grayscale) 3D volumes; the MultiTalent ones
-across ~87 datasets of mixed modalities, hence the multiple stems. The same
+across 65 datasets of mixed modalities, hence the multiple stems. The same
 `-o module=...` / `+transfer_learning_ckpt=...` / `--transfer_learning
 --load_adapt_plan` pattern from Quick start works for every row -- only the
 top-level config and module name differ (§3.3 has the exact command per row).
